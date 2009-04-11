@@ -1043,7 +1043,7 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
 	    {
 		/* building MbrCache SpatialIndex */
 		sprintf (trigger,
-			 "CREATE VIRTUAL TABLE \"cache_%s_%s\" USING MbrCache(\"%s\", \"%s\")\n",
+			 "CREATE VIRTUAL TABLE \"cache_%s_%s\" USING MbrCache(%s, %s)\n",
 			 curr_idx->TableName, curr_idx->ColumnName,
 			 curr_idx->TableName, curr_idx->ColumnName);
 		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);

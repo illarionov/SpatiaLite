@@ -285,7 +285,7 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
     int geom_done;
     int err_geom = 0;
     int geom_constraint_err = 0;
-    char prefix;
+    char prefix[16];
     const char *text;
     const unsigned char *blob;
     char *text_wkt;
@@ -298,20 +298,20 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
     for (ic = 0; ic < p_vt->nColumns; ic++)
       {
 	  if (ic == 0)
-	      prefix = '(';
+	      strcpy(prefix, "(");
 	  else
-	      prefix = ',';
-	  sprintf (buf, "%c%s", prefix, *(p_vt->Column + ic));
+	      prefix, ", ");
+	  sprintf (buf, "%s\"%s\"", prefix, *(p_vt->Column + ic));
 	  strcat (sql, buf);
       }
     strcat (sql, ") VALUES ");
     for (ic = 0; ic < p_vt->nColumns; ic++)
       {
 	  if (ic == 0)
-	      prefix = '(';
+	      strcpy(prefix, "(");
 	  else
-	      prefix = ',';
-	  sprintf (buf, "%c?", prefix);
+	      strcpy(prefix, ", ");
+	  sprintf (buf, "%s?", prefix);
 	  strcat (sql, buf);
       }
     strcat (sql, ")");
@@ -471,7 +471,7 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
     int geom_done;
     int err_geom = 0;
     int geom_constraint_err = 0;
-    char prefix;
+    char prefix[16];
     const char *text;
     const unsigned char *blob;
     char *text_wkt;
@@ -484,10 +484,10 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
     for (ic = 0; ic < p_vt->nColumns; ic++)
       {
 	  if (ic == 0)
-	      prefix = ' ';
+	      strcpy(prefix, " ");
 	  else
-	      prefix = ',';
-	  sprintf (buf, "\"%c%s\" = ?", prefix, *(p_vt->Column + ic));
+	      strcpy(prefix, ", ");
+	  sprintf (buf, "%s\"%s\" = ?", prefix, *(p_vt->Column + ic));
 	  strcat (sql, buf);
       }
 #if defined(_WIN32) || defined(__MINGW32__)
@@ -901,7 +901,7 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     char **results;
     char sql[4096];
     char buf[256];
-    char prefix;
+    char prefix[16];
     VirtualFDOPtr p_vt = NULL;
 /* checking for table_name */
     if (argc == 4)
@@ -1031,10 +1031,10 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     for (i = 0; i < p_vt->nColumns; i++)
       {
 	  if (i == 0)
-	      prefix = '(';
+	      strcpy(prefix, "(");
 	  else
-	      prefix = ',';
-	  sprintf (buf, "\"%c%s\" %s", prefix, *(p_vt->Column + i),
+	      strcpy(prefix, ", ");
+	  sprintf (buf, "%s\"%s\" %s", prefix, *(p_vt->Column + i),
 		   *(p_vt->Type + i));
 	  if (*(p_vt->NotNull + i))
 	      strcat (buf, " NOT NULL");
