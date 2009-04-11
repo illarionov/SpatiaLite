@@ -1,0 +1,47 @@
+# $Id: makefile.vc,v 1.3 2009/03/29 Sandro Furieri $
+#
+# NMAKE Makefile to build libspatialite on Windows
+#
+!INCLUDE nmake.opt
+
+LIBOBJ	               =	spatialite.obj sqlite3.obj
+SPATIALITE_DLL 	       =	libspatialite$(VERSION).dll
+
+CFLAGS	=	/nologo -IC:\libiconv\include -IC:\proj\include \
+	-I.\headers\spatialite -DOMIT_GEOS=1 $(OPTFLAGS)
+
+default:	all
+
+all: libspatialite.lib libspatialite_i.lib
+#$(EXIF_LOADER_EXE)
+
+libspatialite.lib:	$(LIBOBJ)
+	if exist libspatialite.lib del libspatialite.lib
+	lib /out:libspatialite.lib $(LIBOBJ)
+
+$(SPATIALITE_DLL):	spatialite_i.lib
+
+libspatialite_i.lib:	$(LIBOBJ)
+	link /debug /dll /def:libspatialite.def /out:$(SPATIALITE_DLL) /implib:libspatialite_i.lib \
+			$(LIBOBJ) C:\PROJ\lib\proj_i.lib C:\libiconv\lib\libiconv.lib
+	if exist $(SPATIALITE_DLL).manifest mt -manifest $(SPATIALITE_DLL).manifest -outputresource:$(SPATIALITE_DLL);2
+
+clean:
+	del *.dll
+	del *.exp
+	del *.manifest
+	del *.lib
+	del *.obj
+	del *.pdb
+
+install: all
+	-mkdir $(INSTDIR)
+	-mkdir $(INSTDIR)\bin
+	-mkdir $(INSTDIR)\lib
+	-mkdir $(INSTDIR)\include
+	-mkdir $(INSTDIR)\include\spatialite
+	copy *.dll $(INSTDIR)\bin
+	copy *.lib $(INSTDIR)\lib
+	copy headers\*.h $(INSTDIR)\include
+	copy headers\spatialite\*.h $(INSTDIR)\include\spatialite
+	
