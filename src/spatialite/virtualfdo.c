@@ -300,7 +300,7 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
 	  if (ic == 0)
 	      strcpy(prefix, "(");
 	  else
-	      prefix, ", ");
+	      strcpy(prefix, ", ");
 	  sprintf (buf, "%s\"%s\"", prefix, *(p_vt->Column + ic));
 	  strcat (sql, buf);
       }
