@@ -208,8 +208,8 @@ typedef VirtualNetworkCursor *VirtualNetworkCursorPtr;
 /
 / Author: Luigi Costalli luigi.costalli@gmail.com
 / version 1.0. 2008 October 21
- /
- */
+/
+*/
 
 static DijkstraNodesPtr
 dijkstra_init (NetworkPtr graph)
@@ -387,7 +387,7 @@ dijkstra_shortest_path (DijkstraNodesPtr e, NetworkNodePtr pfrom,
       }
     *ll = cnt;
     return (result);
-};
+}
 
 /* END of Luigi Costalli Dijkstra Shortest Path implementation */
 
@@ -468,7 +468,7 @@ delete_solution (SolutionPtr solution)
     if (solution->Geometry)
 	gaiaFreeGeomColl (solution->Geometry);
     free (solution);
-};
+}
 
 static void
 reset_solution (SolutionPtr solution)
@@ -512,7 +512,7 @@ reset_solution (SolutionPtr solution)
     solution->CurrentRowId = 0;
     solution->TotalCost = 0.0;
     solution->Geometry = NULL;
-};
+}
 
 static SolutionPtr
 alloc_solution ()
@@ -530,7 +530,7 @@ alloc_solution ()
     p->TotalCost = 0.0;
     p->Geometry = NULL;
     return p;
-};
+}
 
 static void
 add_arc_to_solution (SolutionPtr solution, NetworkArcPtr arc)
@@ -974,7 +974,7 @@ network_block (NetworkPtr graph, const unsigned char *blob, int size)
     int ia;
     int index;
     char code[256];
-    int nodeId;
+    int nodeId = -1;
     int arcs;
     NetworkNodePtr pN;
     NetworkArcPtr pA;

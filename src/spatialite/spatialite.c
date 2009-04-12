@@ -102,10 +102,10 @@ fnct_GeometryConstraints (sqlite3_context * context, int argc,
     unsigned char *p_blob = NULL;
     int n_bytes = 0;
     int srid;
-    int geom_srid;
+    int geom_srid = -1;
     const unsigned char *type;
     int xtype;
-    int geom_type;
+    int geom_type = -1;
     int ret;
     if (sqlite3_value_type (argv[0]) == SQLITE_BLOB
 	|| sqlite3_value_type (argv[0]) == SQLITE_NULL)
@@ -846,8 +846,8 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
 	  len = strlen ((char *) colname);
 	  curr_idx->ColumnName = malloc (len + 1);
 	  strcpy (curr_idx->ColumnName, (char *) colname);
-	  curr_idx->ValidRtree = index;
-	  curr_idx->ValidCache = cached;
+	  curr_idx->ValidRtree = (char) index;
+	  curr_idx->ValidCache = (char) cached;
 	  curr_idx->Next = NULL;
 	  if (!first_idx)
 	      first_idx = curr_idx;
@@ -2497,9 +2497,6 @@ fnct_AsText (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  else
 	    {
 		len = strlen (p_result);
-		//if (len > 65536)
-		//sqlite3_result_error_toobig(context);
-		//else
 		sqlite3_result_text (context, p_result, len, free);
 	    }
       }
@@ -7228,7 +7225,10 @@ fnct_math_cot (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  x = int_value;
       }
     else
-	sqlite3_result_null (context);
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
     tang = tan (x);
     if (tang == 0.0)
       {
@@ -7258,7 +7258,10 @@ fnct_math_degrees (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  x = int_value;
       }
     else
-	sqlite3_result_null (context);
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
     x = x * 57.29577951308232;
     sqlite3_result_double (context, x);
 }
@@ -7361,8 +7364,8 @@ fnct_math_logn2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / or NULL if any error is encountered
 */
     int int_value;
-    double x;
-    double b;
+    double x = 0.0;
+    double b = 1.0;
     double log1;
     double log2;
     errno = 0;
@@ -7371,7 +7374,7 @@ fnct_math_logn2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
       {
 	  int_value = sqlite3_value_int (argv[0]);
-	  b = int_value;
+	  x = int_value;
       }
     else
       {
@@ -7383,7 +7386,7 @@ fnct_math_logn2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
       {
 	  int_value = sqlite3_value_int (argv[1]);
-	  x = int_value;
+	  b = int_value;
       }
     else
       {
@@ -8467,7 +8470,7 @@ void
 spatialite_init (int verbose)
 {
 /* used when SQLite initializes SpatiaLite via statically linked lib */
-    sqlite3_auto_extension ((void *) init_static_spatialite);
+    sqlite3_auto_extension ((void (*)(void)) init_static_spatialite);
     if (verbose)
       {
 	  printf ("SpatiaLite version ..: %s", spatialite_version ());
@@ -8957,9 +8960,7 @@ SPATIALITE_DECLARE sqlite3_int64
 math_llabs (sqlite3_int64 value)
 {
 /* replacing the C99 llabs() function */
-    double dbl = value;
-    sqlite3_int64 int_value = fabs (dbl);
-    return (int_value);
+    return value < 0 ? -value : value;
 }
 
 SPATIALITE_DECLARE double

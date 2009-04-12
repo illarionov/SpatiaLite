@@ -1182,10 +1182,10 @@ exifParseTag (const unsigned char *blob, unsigned int offset, int endian_mode,
     type = exifImportU16 (blob + offset + 2, endian_mode, endian_arch);
     count = exifImportU32 (blob + offset + 4, endian_mode, endian_arch);
     tag = malloc (sizeof (gaiaExifTag));
-    tag->Gps = gps;
+    tag->Gps = (char) gps;
     tag->TagId = tag_id;
     tag->Type = type;
-    tag->Count = count;
+    tag->Count = (unsigned short) count;
     memcpy (tag->TagOffset, blob + offset + 8, 4);
     tag->ByteValue = NULL;
     tag->StringValue = NULL;
@@ -2219,12 +2219,12 @@ gaiaExifTagGetHumanReadable (const gaiaExifTagPtr tag, char *str, int len,
 		      if (dblval < 1.0)
 			{
 			    dblval = 1.0 / dblval;
-			    sprintf (dummy, "1/%1.0lf sec", dblval);
+			    sprintf (dummy, "1/%1.0f sec", dblval);
 			    human = dummy;
 			}
 		      else
 			{
-			    sprintf (dummy, "%1.0lf sec", dblval);
+			    sprintf (dummy, "%1.0f sec", dblval);
 			    human = dummy;
 			}
 		  }
@@ -2242,12 +2242,12 @@ gaiaExifTagGetHumanReadable (const gaiaExifTagPtr tag, char *str, int len,
 		      if (dblval < 1.0)
 			{
 			    dblval = math_round (1.0 / dblval);
-			    sprintf (dummy, "%1.0lf sec", dblval);
+			    sprintf (dummy, "%1.0f sec", dblval);
 			    human = dummy;
 			}
 		      else
 			{
-			    sprintf (dummy, "1/%1.0lf sec", dblval);
+			    sprintf (dummy, "1/%1.0f sec", dblval);
 			    human = dummy;
 			}
 		  }
@@ -2259,7 +2259,7 @@ gaiaExifTagGetHumanReadable (const gaiaExifTagPtr tag, char *str, int len,
 		dblval = gaiaExifTagGetRationalValue (tag, 0, &xok);
 		if (xok)
 		  {
-		      sprintf (dummy, "F %1.1lf", dblval);
+		      sprintf (dummy, "F %1.1f", dblval);
 		      human = dummy;
 		  }
 	    }
@@ -2272,7 +2272,7 @@ gaiaExifTagGetHumanReadable (const gaiaExifTagPtr tag, char *str, int len,
 		if (xok)
 		  {
 		      dblval = exp ((dblval * log (2)) / 2.0);
-		      sprintf (dummy, "F %1.1lf", dblval);
+		      sprintf (dummy, "F %1.1f", dblval);
 		      human = dummy;
 		  }
 	    }
@@ -2283,7 +2283,7 @@ gaiaExifTagGetHumanReadable (const gaiaExifTagPtr tag, char *str, int len,
 		dblval = gaiaExifTagGetRationalValue (tag, 0, &xok);
 		if (xok)
 		  {
-		      sprintf (dummy, "%1.1lf mm", dblval);
+		      sprintf (dummy, "%1.1f mm", dblval);
 		      human = dummy;
 		  }
 	    }
@@ -2301,7 +2301,7 @@ gaiaExifTagGetHumanReadable (const gaiaExifTagPtr tag, char *str, int len,
 		dblval = gaiaExifTagGetSignedRationalValue (tag, 0, &xok);
 		if (xok)
 		  {
-		      sprintf (dummy, "%1.2lf EV", dblval);
+		      sprintf (dummy, "%1.2f EV", dblval);
 		      human = dummy;
 		  }
 	    }
@@ -2480,19 +2480,19 @@ gaiaGetGpsCoords (const unsigned char *blob, int size, double *longitude,
 	    {
 		if (pT->Gps && pT->TagId == 0x01)
 		  {
-		      // ok, this one is the GPSLatitudeRef tag
+		      /* ok, this one is the GPSLatitudeRef tag */
 		      if (pT->Type == 2)
 			  lat_ref = *(pT->StringValue);
 		  }
 		if (pT->Gps && pT->TagId == 0x03)
 		  {
-		      // ok, this one is the GPSLongitudeRef tag
+		      /* ok, this one is the GPSLongitudeRef tag */
 		      if (pT->Type == 2)
 			  long_ref = *(pT->StringValue);
 		  }
 		if (pT->Gps && pT->TagId == 0x02)
 		  {
-		      // ok, this one is the GPSLatitude tag 
+		      /* ok, this one is the GPSLatitude tag */
 		      if (pT->Type == 5 && pT->Count == 3)
 			{
 			    dblval = gaiaExifTagGetRationalValue (pT, 0, &ok);
@@ -2508,7 +2508,7 @@ gaiaGetGpsCoords (const unsigned char *blob, int size, double *longitude,
 		  }
 		if (pT->Gps && pT->TagId == 0x04)
 		  {
-		      // ok, this one is the GPSLongitude tag
+		      /* ok, this one is the GPSLongitude tag */
 		      if (pT->Type == 5 && pT->Count == 3)
 			{
 			    dblval = gaiaExifTagGetRationalValue (pT, 0, &ok);
@@ -2589,19 +2589,19 @@ gaiaGetGpsLatLong (const unsigned char *blob, int size, char *latlong,
 	    {
 		if (pT->Gps && pT->TagId == 0x01)
 		  {
-		      // ok, this one is the GPSLatitudeRef tag
+		      /* ok, this one is the GPSLatitudeRef tag */
 		      if (pT->Type == 2)
 			  lat_ref = *(pT->StringValue);
 		  }
 		if (pT->Gps && pT->TagId == 0x03)
 		  {
-		      // ok, this one is the GPSLongitudeRef tag
+		      /* ok, this one is the GPSLongitudeRef tag */
 		      if (pT->Type == 2)
 			  long_ref = *(pT->StringValue);
 		  }
 		if (pT->Gps && pT->TagId == 0x02)
 		  {
-		      // ok, this one is the GPSLatitude tag 
+		      /* ok, this one is the GPSLatitude tag */
 		      if (pT->Type == 5 && pT->Count == 3)
 			{
 			    dblval = gaiaExifTagGetRationalValue (pT, 0, &ok);
@@ -2617,7 +2617,7 @@ gaiaGetGpsLatLong (const unsigned char *blob, int size, char *latlong,
 		  }
 		if (pT->Gps && pT->TagId == 0x04)
 		  {
-		      // ok, this one is the GPSLongitude tag
+		      /* ok, this one is the GPSLongitude tag */
 		      if (pT->Type == 5 && pT->Count == 3)
 			{
 			    dblval = gaiaExifTagGetRationalValue (pT, 0, &ok);
@@ -2641,7 +2641,7 @@ gaiaGetGpsLatLong (const unsigned char *blob, int size, char *latlong,
 	      && long_secs != -DBL_MAX)
 	    {
 		sprintf (ll,
-			 "%c %1.2lf %1.2lf %1.2lf / %c %1.2lf %1.2lf %1.2lf",
+			 "%c %1.2f %1.2f %1.2f / %c %1.2f %1.2f %1.2f",
 			 lat_ref, lat_degs, lat_mins, lat_secs, long_ref,
 			 long_degs, long_mins, long_secs);
 		len = strlen (ll);

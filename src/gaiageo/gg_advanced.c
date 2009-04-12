@@ -64,22 +64,18 @@ gaiaMeasureLength (double *coords, int vert)
     double y;
     double dist;
     int ind;
-    for (ind = 0; ind < vert; ind++)
+    if (vert <= 0)
+	return lung;
+    gaiaGetPoint (coords, 0, &xx1, &yy1);
+    for (ind = 1; ind < vert; ind++)
       {
-	  if (ind == 0)
-	    {
-		gaiaGetPoint (coords, ind, &xx1, &yy1);
-	    }
-	  else
-	    {
-		gaiaGetPoint (coords, ind, &xx2, &yy2);
-		x = xx1 - xx2;
-		y = yy1 - yy2;
-		dist = sqrt ((x * x) + (y * y));
-		lung += dist;
-		xx1 = xx2;
-		yy1 = yy2;
-	    }
+	  gaiaGetPoint (coords, ind, &xx2, &yy2);
+	  x = xx1 - xx2;
+	  y = yy1 - yy2;
+	  dist = sqrt ((x * x) + (y * y));
+	  lung += dist;
+	  xx1 = xx2;
+	  yy1 = yy2;
       }
     return lung;
 }
@@ -207,9 +203,9 @@ gaiaIsPointOnRingSurface (gaiaRingPtr ring, double pt_x, double pt_y)
 	  if (y > maxy)
 	      maxy = y;
       }
-    if (x < minx || x > maxx)
+    if (pt_x < minx || pt_x > maxx)
 	goto end;		/* outside the bounding box (x axis) */
-    if (y < miny || y > maxy)
+    if (pt_y < miny || pt_y > maxy)
 	goto end;		/* outside the bounding box (y axis) */
     for (i = 0, j = cnt - 1; i < cnt; j = i++)
       {
@@ -219,7 +215,7 @@ gaiaIsPointOnRingSurface (gaiaRingPtr ring, double pt_x, double pt_y)
 /  incorrect.
 */
 	  if ((((vert_y[i] <= pt_y) && (pt_y < vert_y[j]))
-	       || ((vert_y[j] <= pt_y) && (y < vert_y[i])))
+	       || ((vert_y[j] <= pt_y) && (pt_y < vert_y[i])))
 	      && (pt_x <
 		  (vert_x[j] - vert_x[i]) * (pt_y - vert_y[i]) / (vert_y[j] -
 								  vert_y[i]) +

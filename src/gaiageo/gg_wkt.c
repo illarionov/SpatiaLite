@@ -1400,9 +1400,9 @@ gaiaOutPoint (gaiaPointPtr point, char **buffer, int *size)
     char buf_y[128];
     char buf[256];
     gaiaOutCheckBuffer (buffer, size);
-    sprintf (buf_x, "%1.6lf", point->X);
+    sprintf (buf_x, "%1.6f", point->X);
     gaiaOutClean (buf_x);
-    sprintf (buf_y, "%1.6lf", point->Y);
+    sprintf (buf_y, "%1.6f", point->Y);
     gaiaOutClean (buf_y);
     sprintf (buf, "%s %s", buf_x, buf_y);
     strcat (*buffer, buf);
@@ -1422,9 +1422,9 @@ gaiaOutLinestring (gaiaLinestringPtr line, char **buffer, int *size)
       {
 	  gaiaGetPoint (line->Coords, iv, &x, &y);
 	  gaiaOutCheckBuffer (buffer, size);
-	  sprintf (buf_x, "%1.6lf", x);
+	  sprintf (buf_x, "%1.6f", x);
 	  gaiaOutClean (buf_x);
-	  sprintf (buf_y, "%1.6lf", y);
+	  sprintf (buf_y, "%1.6f", y);
 	  gaiaOutClean (buf_y);
 	  if (iv > 0)
 	      sprintf (buf, ", %s %s", buf_x, buf_y);
@@ -1450,9 +1450,9 @@ gaiaOutPolygon (gaiaPolygonPtr polyg, char **buffer, int *size)
       {
 	  gaiaGetPoint (ring->Coords, iv, &x, &y);
 	  gaiaOutCheckBuffer (buffer, size);
-	  sprintf (buf_x, "%1.6lf", x);
+	  sprintf (buf_x, "%1.6f", x);
 	  gaiaOutClean (buf_x);
-	  sprintf (buf_y, "%1.6lf", y);
+	  sprintf (buf_y, "%1.6f", y);
 	  gaiaOutClean (buf_y);
 	  if (iv == 0)
 	      sprintf (buf, "(%s %s", buf_x, buf_y);
@@ -1469,9 +1469,9 @@ gaiaOutPolygon (gaiaPolygonPtr polyg, char **buffer, int *size)
 	    {
 		gaiaGetPoint (ring->Coords, iv, &x, &y);
 		gaiaOutCheckBuffer (buffer, size);
-		sprintf (buf_x, "%1.6lf", x);
+		sprintf (buf_x, "%1.6f", x);
 		gaiaOutClean (buf_x);
-		sprintf (buf_y, "%1.6lf", y);
+		sprintf (buf_y, "%1.6f", y);
 		gaiaOutClean (buf_y);
 		if (iv == 0)
 		    sprintf (buf, ", (%s %s", buf_x, buf_y);
@@ -1724,29 +1724,21 @@ SvgPathRelative (int points, double *coords, char **buffer, int *size,
     char buf[256];
     double x;
     double y;
-    double lastX;
-    double lastY;
+    double lastX = 0.0;
+    double lastY = 0.0;
     int iv;
     for (iv = 0; iv < points; iv++)
       {
 	  gaiaGetPoint (coords, iv, &x, &y);
 	  gaiaOutCheckBuffer (buffer, size);
+	  sprintf (buf_x, "%.*f", precision, x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%.*f", precision, y * -1);
+	  gaiaOutClean (buf_y);
 	  if (iv == 0)
-	    {
-		sprintf (buf_x, "%.*f", precision, x);
-		gaiaOutClean (buf_x);
-		sprintf (buf_y, "%.*f", precision, y * -1);
-		gaiaOutClean (buf_y);
-		sprintf (buf, "M %s %s l ", buf_x, buf_y);
-	    }
+	      sprintf (buf, "M %s %s l ", buf_x, buf_y);
 	  else
-	    {
-		sprintf (buf_x, "%.*f", precision, (x - lastX));
-		gaiaOutClean (buf_x);
-		sprintf (buf_y, "%.*f", precision, (y - lastY) * -1);
-		gaiaOutClean (buf_y);
-		sprintf (buf, "%s %s ", buf_x, buf_y);
-	    }
+	      sprintf (buf, "%s %s ", buf_x, buf_y);
 	  lastX = x;
 	  lastY = y;
 	  if (iv == points - 1 && closePath == 1)

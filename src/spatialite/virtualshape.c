@@ -162,19 +162,10 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	    }
 	  *ppVTab = (sqlite3_vtab *) p_vt;
 	  return SQLITE_OK;
-	  *pzErr = sqlite3_mprintf ("%s", p_vt->Shp->LastError);
-	  return SQLITE_ERROR;
       }
-    if (p_vt->Shp->
-	Shape == 3
-	|| p_vt->
-	Shp->
-	Shape == 13
-	|| p_vt->
-	Shp->
-	Shape == 23
-	|| p_vt->
-	Shp->Shape == 5 || p_vt->Shp->Shape == 15 || p_vt->Shp->Shape == 25)
+    if (p_vt->Shp->Shape == 3 || p_vt->Shp->Shape == 13 ||
+	p_vt->Shp->Shape == 23 || p_vt->Shp->Shape == 5 ||
+	p_vt->Shp->Shape == 15 || p_vt->Shp->Shape == 25)
       {
 	  /* fixing anyway the Geometry type for LINESTRING/MULTILINESTRING or POLYGON/MULTIPOLYGON */
 	  gaiaShpAnalyze (p_vt->Shp);

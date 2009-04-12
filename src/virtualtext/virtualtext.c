@@ -367,13 +367,13 @@ text_parse (char *path, char *encoding, char first_line_titles,
 	  /* parsing the file, one char at each time */
 	  if (c == '\r' && !is_string)
 	    {
-		last = c;
+		last = (char) c;
 		continue;
 	    }
 	  if (c == field_separator && !is_string)
 	    {
-		/* insering a field into the fields tmp array */
-		last = c;
+		/* inserting a field into the fields tmp array */
+		last = (char) c;
 		*p = '\0';
 		len = strlen (buffer);
 		if (len)
@@ -392,7 +392,7 @@ text_parse (char *path, char *encoding, char first_line_titles,
 		if (is_string)
 		  {
 		      is_string = 0;
-		      last = c;
+		      last = (char) c;
 		  }
 		else
 		  {
@@ -402,7 +402,7 @@ text_parse (char *path, char *encoding, char first_line_titles,
 		  }
 		continue;
 	    }
-	  last = c;
+	  last = (char) c;
 	  if (c == '\n' && !is_string)
 	    {
 		/* inserting the row into the text buffer */
@@ -606,7 +606,7 @@ text_parse (char *path, char *encoding, char first_line_titles,
 	  return NULL;
       }
 /* ok, we can now go to prepare the rows array */
-    text->rows = malloc (sizeof (struct text_row *) * text->n_rows);
+    text->rows = malloc (sizeof (struct row_buffer *) * text->n_rows);
     ir = 0;
     row = text->first;
     while (row)

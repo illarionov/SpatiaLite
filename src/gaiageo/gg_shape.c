@@ -401,7 +401,7 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
     if (charFrom && charTo)
       {
 	  iconv_ret = iconv_open (charTo, charFrom);
-	  if (iconv_ret == (iconv_t) - 1)
+	  if (iconv_ret == (iconv_t) (-1))
 	    {
 		sprintf (errMsg, "conversion from '%s' to '%s' not available\n",
 			 charFrom, charTo);
@@ -634,7 +634,7 @@ gaiaOpenShpWrite (gaiaShapefilePtr shp, const char *path, int shape,
     if (charFrom && charTo)
       {
 	  iconv_ret = iconv_open (charTo, charFrom);
-	  if (iconv_ret == (iconv_t) - 1)
+	  if (iconv_ret == (iconv_t) (-1))
 	    {
 		sprintf (errMsg, "conversion from '%s' to '%s' not available\n",
 			 charFrom, charTo);
@@ -823,7 +823,7 @@ to_sqlite_julian_date (int year, int month, int day, double *julian)
 	  if (day > 31)
 	      return 0;
       };
-// computing the Julian date
+/* computing the Julian date */
     Y = year;
     M = month;
     D = day;
@@ -1086,7 +1086,7 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 	    {
 		if (pFld->Type == 'N')
 		  {
-		      // NUMERIC value
+		      /* NUMERIC value */
 		      if (pFld->Decimals > 0 || pFld->Length > 18)
 			  gaiaSetDoubleValue (pFld, atof ((char *) buf));
 		      else
@@ -1094,12 +1094,12 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		  }
 		else if (pFld->Type == 'D')
 		  {
-		      // DATE value
+		      /* DATE value */
 		      if (strlen ((char *) buf) != 8)
 			  gaiaSetNullValue (pFld);
 		      else
 			{
-			    // converting into a Julian Date
+			    /* converting into a Julian Date */
 			    double julian;
 			    char date[5];
 			    int year = 0;
@@ -1128,7 +1128,7 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		  }
 		else if (pFld->Type == 'L')
 		  {
-		      // LOGICAL [aka Boolean] value
+		      /* LOGICAL [aka Boolean] value */
 		      if (*buf == '1' || *buf == 't' || *buf == 'T'
 			  || *buf == 'Y' || *buf == 'y')
 			  gaiaSetIntValue (pFld, 1);
@@ -1137,7 +1137,7 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		  }
 		else
 		  {
-		      // CHARACTER [aka String, Text] value
+		      /* CHARACTER [aka String, Text] value */
 		      for (i = strlen ((char *) buf) - 1; i > 1; i--)
 			{
 			    /* cleaning up trailing spaces */
@@ -1152,7 +1152,7 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		      pUtf8buf = utf8buf;
 		      if (iconv
 			  ((iconv_t) (shp->IconvObj), &pBuf, &len, &pUtf8buf,
-			   &utf8len) < 0)
+			   &utf8len) == (size_t) (-1))
 			  goto conversion_error;
 		      memcpy (buf, utf8buf, 2048 - utf8len);
 		      buf[2048 - utf8len] = '\0';
@@ -1321,7 +1321,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 			    pUtf8buf = utf8buf;
 			    if (iconv
 				((iconv_t) (shp->IconvObj), &pBuf, &len,
-				 &pUtf8buf, &utf8len) < 0)
+				 &pUtf8buf, &utf8len) == (size_t) (-1))
 				goto conversion_error;
 			    memcpy (buf, utf8buf, 2048 - utf8len);
 			    buf[2048 - utf8len] = '\0';
@@ -1770,8 +1770,8 @@ gaiaFlushShpHeaders (gaiaShapefilePtr shp)
     *(buf_shp + 2) = 1;
     *(buf_shp + 3) = 1;
     gaiaExport32 (buf_shp + 4, dbf_recno, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports # records in this DBF */
-    gaiaExport16 (buf_shp + 8, dbf_size, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the file header size */
-    gaiaExport16 (buf_shp + 10, dbf_reclen, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the record length */
+    gaiaExport16 (buf_shp + 8, (short) dbf_size, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the file header size */
+    gaiaExport16 (buf_shp + 10, (short) dbf_reclen, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the record length */
     fwrite (buf_shp, 1, 32, fl_dbf);
 }
 

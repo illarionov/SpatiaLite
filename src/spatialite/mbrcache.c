@@ -1249,7 +1249,7 @@ mbrc_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 		/* the MBR column */
 		char envelope[1024];
 		sprintf (envelope,
-			 "POLYGON((%1.2lf %1.2lf, %1.2lf %1.2lf, %1.2lf %1.2lf, %1.2lf %1.2lf, %1.2lf %1.2lf))",
+			 "POLYGON((%1.2f %1.2f, %1.2f %1.2f, %1.2f %1.2f, %1.2f %1.2f, %1.2f %1.2f))",
 			 cursor->current_cell->minx, cursor->current_cell->miny,
 			 cursor->current_cell->maxx, cursor->current_cell->miny,
 			 cursor->current_cell->maxx, cursor->current_cell->maxy,

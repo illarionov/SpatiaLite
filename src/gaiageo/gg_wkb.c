@@ -201,8 +201,8 @@ gaiaFromSpatiaLiteBlobWkb (const unsigned char *blob, unsigned int size)
     type = gaiaImport32 (blob + 39, little_endian, endian_arch);
     geo = gaiaAllocGeomColl ();
     geo->Srid = gaiaImport32 (blob + 2, little_endian, endian_arch);
-    geo->endian_arch = endian_arch;
-    geo->endian = little_endian;
+    geo->endian_arch = (char) endian_arch;
+    geo->endian = (char) little_endian;
     geo->blob = blob;
     geo->size = size;
     geo->offset = 43;
@@ -626,8 +626,8 @@ gaiaFromWkb (const unsigned char *blob, unsigned int size)
     type = gaiaImport32 (blob + 1, little_endian, endian_arch);
     geo = gaiaAllocGeomColl ();
     geo->Srid = -1;
-    geo->endian_arch = endian_arch;
-    geo->endian = little_endian;
+    geo->endian_arch = (char) endian_arch;
+    geo->endian = (char) little_endian;
     geo->blob = blob;
     geo->size = size;
     geo->offset = 5;
@@ -1030,7 +1030,7 @@ polygonFromFgf (gaiaGeomCollPtr geom, int endian_arch,
 		unsigned int *consumed)
 {
 /* decoding a POLYGON Geometry from FGF  */
-    gaiaPolygonPtr pg;
+    gaiaPolygonPtr pg = NULL;
     gaiaRingPtr rng;
     int rings;
     int ir;

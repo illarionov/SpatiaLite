@@ -87,22 +87,20 @@ gaiaConvertCharset (char **buf, const char *fromCs, const char *toCs)
     char utf8buf[65536];
 #if defined(__MINGW32__) || defined(_WIN32)
     const char *pBuf;
-    int len;
-    int utf8len;
 #else /* not MINGW32 - WIN32 */
     char *pBuf;
+#endif
     size_t len;
     size_t utf8len;
-#endif
     char *pUtf8buf;
     iconv_t cvt = iconv_open (toCs, fromCs);
-    if (cvt == (iconv_t) - 1)
+    if (cvt == (iconv_t) (-1))
 	goto unsupported;
     len = strlen (*buf);
     utf8len = 65536;
     pBuf = *buf;
     pUtf8buf = utf8buf;
-    if (iconv (cvt, &pBuf, &len, &pUtf8buf, &utf8len) < 0)
+    if (iconv (cvt, &pBuf, &len, &pUtf8buf, &utf8len) == (size_t) (-1))
 	goto error;
     utf8buf[65536 - utf8len] = '\0';
     memcpy (*buf, utf8buf, (65536 - utf8len) + 1);
@@ -119,7 +117,7 @@ gaiaCreateUTF8Converter (const char *fromCS)
 {
 /* creating an UTF8 converter and returning on opaque reference to it */
     iconv_t cvt = iconv_open ("UTF-8", fromCS);
-    if (cvt == (iconv_t) - 1)
+    if (cvt == (iconv_t) (-1))
 	return NULL;
     return cvt;
 }
@@ -139,13 +137,11 @@ gaiaConvertToUTF8 (void *cvtCS, const char *buf, int buflen, int *err)
     char *utf8buf = 0;
 #if defined(__MINGW32__) || defined(_WIN32)
     const char *pBuf;
-    int len;
-    int utf8len;
 #else
     char *pBuf;
+#endif
     size_t len;
     size_t utf8len;
-#endif
     int maxlen = buflen * 4;
     char *pUtf8buf;
     *err = 0;
@@ -159,7 +155,7 @@ gaiaConvertToUTF8 (void *cvtCS, const char *buf, int buflen, int *err)
     utf8len = maxlen;
     pBuf = (char *) buf;
     pUtf8buf = utf8buf;
-    if (iconv (cvtCS, &pBuf, &len, &pUtf8buf, &utf8len) < 0)
+    if (iconv (cvtCS, &pBuf, &len, &pUtf8buf, &utf8len) == (size_t) (-1))
       {
 	  free (utf8buf);
 	  *err = 1;

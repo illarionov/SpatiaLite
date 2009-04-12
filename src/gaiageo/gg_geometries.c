@@ -1123,31 +1123,22 @@ GAIAGEO_DECLARE int
 gaiaIsEmpty (gaiaGeomCollPtr geom)
 {
 /* checks if this GEOMETRYCOLLECTION is an empty one */
-    gaiaPointPtr point;
-    gaiaLinestringPtr line;
-    gaiaPolygonPtr polyg;
     if (!geom)
 	return 1;
-    point = geom->FirstPoint;
-    while (point)
+    if (geom->FirstPoint != NULL)
       {
-	  /* checks for points */
+	  /* there is at least one point */
 	  return 0;
-	  point = point->Next;
       }
-    line = geom->FirstLinestring;
-    while (line)
+    if (geom->FirstLinestring != NULL)
       {
-	  /* checks for linestrings */
+	  /* there is at least one linestring */
 	  return 0;
-	  line = line->Next;
       }
-    polyg = geom->FirstPolygon;
-    while (polyg)
+    if (geom->FirstPolygon != NULL)
       {
-	  /* checks for polygons */
+	  /* there is at least one polygon */
 	  return 0;
-	  polyg = polyg->Next;
       }
     return 1;
 }
