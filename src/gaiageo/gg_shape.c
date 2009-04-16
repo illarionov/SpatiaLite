@@ -215,7 +215,7 @@ gaiaIsValidDbfList (gaiaDbfListPtr list)
     while (p)
       {
 	  if (p->Type == 'N' || p->Type == 'C' || p->Type == 'L'
-	      || p->Type == 'D')
+	      || p->Type == 'D' || p->Type == 'F')
 	      ;
 	  else
 	      return 0;
@@ -1091,6 +1091,14 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 			  gaiaSetDoubleValue (pFld, atof ((char *) buf));
 		      else
 			  gaiaSetIntValue (pFld, atoll ((char *) buf));
+		  }
+		else if (pFld->Type == 'F')
+		  {
+		      /* FLOAT value */
+		      if (strlen ((char *) buf) != 20)
+			  gaiaSetNullValue (pFld);
+		      else
+			  gaiaSetDoubleValue (pFld, atof ((char *) buf));
 		  }
 		else if (pFld->Type == 'D')
 		  {

@@ -214,6 +214,8 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 		else
 		    sprintf (field, "%s INTEGER", dummyName);
 	    }
+	  else if (pFld->Type == 'F')
+	      sprintf (field, "%s DOUBLE", dummyName);
 	  else
 	      sprintf (field, "%s VARCHAR(%d)", dummyName, pFld->Length);
 	  strcat (buf, ", ");
