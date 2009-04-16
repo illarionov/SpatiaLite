@@ -15,6 +15,7 @@ EXPORTS
     gaiaAllocRing @14
     gaiaAllocShapefile @15
     gaiaAppendPointToDynamicLine @16
+    gaiaBoundary @17
     gaiaBuildCircleMbr @18
     gaiaBuildFilterMbr @19
     gaiaBuildMbr @20
@@ -31,6 +32,7 @@ EXPORTS
     gaiaCloneValue @31
     gaiaConvertCharset @32
     gaiaConvertToUTF8 @33
+    gaiaConvexHull @34
     gaiaCreateDynamicLine @35
     gaiaCreatePolygon @36
     gaiaCreateUTF8Converter @37
@@ -85,8 +87,28 @@ EXPORTS
     gaiaFromSpatiaLiteBlobMbr @86
     gaiaFromSpatiaLiteBlobWkb @87
     gaiaFromWkb @88
+    gaiaGeomCollArea @89
+    gaiaGeomCollBuffer @90
+    gaiaGeomCollCentroid @91
+    gaiaGeomCollContains @92
+    gaiaGeomCollCrosses @93
+    gaiaGeomCollDisjoint @94
+    gaiaGeomCollDistance @95
+    gaiaGeomCollEquals @96
+    gaiaGeomCollIntersects @97
+    gaiaGeomCollLength @98
+    gaiaGeomCollOverlaps @99
+    gaiaGeomCollRelate @100
+    gaiaGeomCollSimplify @101
+    gaiaGeomCollSimplifyPreserveTopology @102
+    gaiaGeomCollTouches @103
+    gaiaGeomCollWithin @104
     gaiaGeometryAliasType @105
+    gaiaGeometryDifference @106
+    gaiaGeometryIntersection @107
+    gaiaGeometrySymDifference @108
     gaiaGeometryType @109
+    gaiaGeometryUnion @110
     gaiaGetExifGpsTagById @111
     gaiaGetExifTagById @112
     gaiaGetExifTagByName @113
@@ -100,6 +122,7 @@ EXPORTS
     gaiaGetMbrMaxY @121
     gaiaGetMbrMinX @122
     gaiaGetMbrMinY @123
+    gaiaGetPointOnSurface @124
     gaiaGuessBlobType @125
     gaiaIllegalSqlName @126
     gaiaImport16 @127
@@ -116,6 +139,9 @@ EXPORTS
     gaiaIsPointOnRingSurface @138
     gaiaIsReservedSqlName @139
     gaiaIsReservedSqliteName @140
+    gaiaIsRing @141
+    gaiaIsSimple @142
+    gaiaIsValid @143
     gaiaIsValidDbfList @144
     gaiaLinestringEquals @145
     gaiaMakePoint @146
@@ -140,6 +166,7 @@ EXPORTS
     gaiaParseFilterMbr @165
     gaiaParseWkt @166
     gaiaPolygonEquals @167
+    gaiaPolygonize @168
     gaiaPrependPointToDynamicLine @169
     gaiaRadsToDegs @170
     gaiaReadShpEntity @171
@@ -165,6 +192,7 @@ EXPORTS
     math_llabs @191
     math_round @192
     mbrcache_extension_init @193
+    rtreeUpdate @194
     spatialite_init @195
     spatialite_version @196
     spatialiteversion @197 DATA
@@ -349,3 +377,4 @@ EXPORTS
     virtualnetwork_extension_init @376
     virtualshape_extension_init @377
     virtualtext_extension_init @378
+
