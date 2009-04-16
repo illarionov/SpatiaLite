@@ -139,8 +139,8 @@ do_headers (FILE * out)
     fprintf (out, "#include <proj_api.h>\n");
     fprintf (out, "#endif\n\n");
     fprintf (out, "#ifdef _WIN32\n");
-    fprintf (out, "#define strcasecmp\tstricmp\n");
-    fprintf (out, "#define strncasecmp\tstrnicmp\n");
+    fprintf (out, "#define strcasecmp\t_stricmp\n");
+    fprintf (out, "#define strncasecmp\t_strnicmp\n");
     fprintf (out, "#define atoll\t_atoi64\n");
     fprintf (out, "#endif /* not WIN32 */\n\n");
 }
