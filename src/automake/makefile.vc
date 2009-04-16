@@ -5,24 +5,24 @@
 !INCLUDE nmake.opt
 
 LIBOBJ	               =	spatialite.obj sqlite3.obj
-SPATIALITE_DLL 	       =	libspatialite$(VERSION).dll
+SPATIALITE_DLL 	       =	spatialite$(VERSION).dll
 
 CFLAGS	=	/nologo -IC:\OSGeo4W\include $(OPTFLAGS)
 
 default:	all
 
-all: libspatialite.lib libspatialite_i.lib
+all: spatialite.lib spatialite_i.lib
 #$(EXIF_LOADER_EXE)
 
-libspatialite.lib:	$(LIBOBJ)
-	if exist libspatialite.lib del libspatialite.lib
-	lib /out:libspatialite.lib $(LIBOBJ)
+spatialite.lib:	$(LIBOBJ)
+	if exist spatialite.lib del spatialite.lib
+	lib /out:spatialite.lib $(LIBOBJ)
 
 $(SPATIALITE_DLL):	spatialite_i.lib
 
-libspatialite_i.lib:	$(LIBOBJ)
+spatialite_i.lib:	$(LIBOBJ)
 	link /debug /dll /def:libspatialite.def /out:$(SPATIALITE_DLL) \
-		/implib:libspatialite_i.lib $(LIBOBJ) \
+		/implib:spatialite_i.lib $(LIBOBJ) \
 		C:\OSGeo4W\lib\proj_i.lib C:\OSGeo4W\lib\geos_c_i.lib \
 		C:\OSGeo4w\lib\iconv.lib
 	if exist $(SPATIALITE_DLL).manifest mt -manifest \
