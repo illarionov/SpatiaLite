@@ -492,15 +492,6 @@ main ()
       }
     do_copy_plain (out, "/automake/libspatialite.def");
     fclose (out);
-    out = fopen ("amalgamation/libspatialite-geos.def", "wb");
-    if (!out)
-      {
-	  fprintf (stderr,
-		   "Error opening amalgamation/libspatialite-geos.def\n");
-	  return 1;
-      }
-    do_copy_plain (out, "/automake/libspatialite-geos.def");
-    fclose (out);
     out = fopen ("amalgamation/spatialite.pc.in", "wb");
     if (!out)
       {

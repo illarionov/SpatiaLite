@@ -37,7 +37,7 @@ endif
 
 AUTOMAKE_OPTIONS = dist-zip
 
-EXTRA_DIST = makefile.vc nmake.opt libspatialite.def libspatialite-geos.def
+EXTRA_DIST = makefile.vc nmake.opt libspatialite.def
 
 SUBDIRS = headers
 
