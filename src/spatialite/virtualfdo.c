@@ -298,9 +298,9 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
     for (ic = 0; ic < p_vt->nColumns; ic++)
       {
 	  if (ic == 0)
-	      strcpy(prefix, "(");
+	      strcpy (prefix, "(");
 	  else
-	      strcpy(prefix, ", ");
+	      strcpy (prefix, ", ");
 	  sprintf (buf, "%s\"%s\"", prefix, *(p_vt->Column + ic));
 	  strcat (sql, buf);
       }
@@ -308,9 +308,9 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
     for (ic = 0; ic < p_vt->nColumns; ic++)
       {
 	  if (ic == 0)
-	      strcpy(prefix, "(");
+	      strcpy (prefix, "(");
 	  else
-	      strcpy(prefix, ", ");
+	      strcpy (prefix, ", ");
 	  sprintf (buf, "%s?", prefix);
 	  strcat (sql, buf);
       }
@@ -484,9 +484,9 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
     for (ic = 0; ic < p_vt->nColumns; ic++)
       {
 	  if (ic == 0)
-	      strcpy(prefix, " ");
+	      strcpy (prefix, " ");
 	  else
-	      strcpy(prefix, ", ");
+	      strcpy (prefix, ", ");
 	  sprintf (buf, "%s\"%s\" = ?", prefix, *(p_vt->Column + ic));
 	  strcat (sql, buf);
       }
@@ -903,6 +903,8 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     char buf[256];
     char prefix[16];
     VirtualFDOPtr p_vt = NULL;
+    if (pAux)
+	pAux = pAux;		/* unused arg warning suppression */
 /* checking for table_name */
     if (argc == 4)
       {
@@ -1031,9 +1033,9 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     for (i = 0; i < p_vt->nColumns; i++)
       {
 	  if (i == 0)
-	      strcpy(prefix, "(");
+	      strcpy (prefix, "(");
 	  else
-	      strcpy(prefix, ", ");
+	      strcpy (prefix, ", ");
 	  sprintf (buf, "%s\"%s\" %s", prefix, *(p_vt->Column + i),
 		   *(p_vt->Type + i));
 	  if (*(p_vt->NotNull + i))
@@ -1074,6 +1076,8 @@ static int
 vfdo_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIndex)
 {
 /* best index selection */
+    if (pVTab || pIndex)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -1122,6 +1126,8 @@ vfdo_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
 	     int argc, sqlite3_value ** argv)
 {
 /* setting up a cursor filter */
+    if (pCursor || idxNum || idxStr || argc || argv)
+	pCursor = pCursor;	/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -1230,6 +1236,8 @@ static int
 vfdo_begin (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -1237,6 +1245,8 @@ static int
 vfdo_sync (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -1244,6 +1254,8 @@ static int
 vfdo_commit (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -1251,6 +1263,8 @@ static int
 vfdo_rollback (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 

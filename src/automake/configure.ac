@@ -60,9 +60,9 @@ AC_ARG_ENABLE(mathsql, [AS_HELP_STRING(
   [--enable-mathsql], [enables SQL math functions [default=yes]])],
   [], [mathsql=yes])
 if test x"$enable_mathsql" != "xno"; then
-  OMIT_MATHSQL_FLAGS=-DOMIT_MATHSQL=0
+  OMIT_MATHSQL_FLAGS=
 else
-  OMIT_MATHSQL_FLAGS=-DOMIT_MATHSQL=1
+  OMIT_MATHSQL_FLAGS=-DOMIT_MATHSQL
 fi
 AC_SUBST(OMIT_MATHSQL_FLAGS)
 #-----------------------------------------------------------------------
@@ -102,9 +102,9 @@ AC_ARG_ENABLE(proj, [AS_HELP_STRING(
   [--enable-proj], [enables PROJ.4 inclusion [default=yes]])],
   [], [proj=yes])
 if test x"$enable_proj" != "xno"; then
-  OMIT_PROJ_FLAGS=-DOMIT_PROJ=0
+  OMIT_PROJ_FLAGS=
 else
-  OMIT_PROJ_FLAGS=-DOMIT_PROJ=1
+  OMIT_PROJ_FLAGS=-DOMIT_PROJ
   PROJ_LIB_LA=
   AC_SUBST(PROJ_LIB_LA)
 fi
@@ -149,9 +149,9 @@ AC_ARG_ENABLE(geos, [AS_HELP_STRING(
   [--enable-geos], [enables GEOS inclusion [default=yes]])],
   [], [geos=yes])
 if test x"$enable_geos" != "xno"; then
-  OMIT_GEOS_FLAGS=-DOMIT_GEOS=0
+  OMIT_GEOS_FLAGS=
 else
-  OMIT_GEOS_FLAGS=-DOMIT_GEOS=1
+  OMIT_GEOS_FLAGS=-DOMIT_GEOS
   GEOS_LIB_CLA=
   GEOS_LIB_LA=
   AC_SUBST(GEOS_LIB_CLA)

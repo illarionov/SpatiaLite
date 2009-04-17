@@ -98,6 +98,8 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     int idup;
     char dummyName[4096];
     char **col_name = NULL;
+    if (pAux)
+	pAux = pAux;		/* unused arg warning suppression */
 /* checking for shapefile PATH */
     if (argc == 6)
       {
@@ -258,6 +260,8 @@ static int
 vshp_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIndex)
 {
 /* best index selection */
+    if (pVTab || pIndex)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -354,6 +358,8 @@ vshp_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
 	     int argc, sqlite3_value ** argv)
 {
 /* setting up a cursor filter */
+    if (pCursor || idxNum || idxStr || argc || argv)
+	pCursor = pCursor;	/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -453,6 +459,8 @@ vshp_update (sqlite3_vtab * pVTab, int argc, sqlite3_value ** argv,
 	     sqlite_int64 * pRowid)
 {
 /* generic update [INSERT / UPDATE / DELETE */
+    if (pVTab || argc || argv || pRowid)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_READONLY;
 }
 
@@ -460,6 +468,8 @@ static int
 vshp_begin (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -467,6 +477,8 @@ static int
 vshp_sync (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -474,6 +486,8 @@ static int
 vshp_commit (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -481,6 +495,8 @@ static int
 vshp_rollback (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 

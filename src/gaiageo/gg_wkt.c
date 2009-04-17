@@ -1681,8 +1681,7 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
  */
 
 static void
-SvgCoords (gaiaPointPtr point, char **buffer, int *size, int relative,
-	   int precision)
+SvgCoords (gaiaPointPtr point, char **buffer, int *size, int precision)
 {
 /* formats POINT as SVG-attributes x,y */
     char buf_x[128];
@@ -1698,8 +1697,7 @@ SvgCoords (gaiaPointPtr point, char **buffer, int *size, int relative,
 }
 
 static void
-SvgCircle (gaiaPointPtr point, char **buffer, int *size, int relative,
-	   int precision)
+SvgCircle (gaiaPointPtr point, char **buffer, int *size, int precision)
 {
 /* formats POINT as SVG-attributes cx,cy */
     char buf_x[128];
@@ -1716,7 +1714,7 @@ SvgCircle (gaiaPointPtr point, char **buffer, int *size, int relative,
 
 static void
 SvgPathRelative (int points, double *coords, char **buffer, int *size,
-		 int relative, int precision, int closePath)
+		 int precision, int closePath)
 {
 /* formats LINESTRING as SVG-path d-attribute with relative coordinate moves */
     char buf_x[128];
@@ -1749,7 +1747,7 @@ SvgPathRelative (int points, double *coords, char **buffer, int *size,
 
 static void
 SvgPathAbsolute (int points, double *coords, char **buffer, int *size,
-		 int relative, int precision, int closePath)
+		 int precision, int closePath)
 {
 /* formats LINESTRING as SVG-path d-attribute with relative coordinate moves */
     char buf_x[128];
@@ -1829,9 +1827,9 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 	    {
 		/* processing POINT */
 		if (relative == 1)
-		    SvgCoords (point, result, &txt_size, relative, precision);
+		    SvgCoords (point, result, &txt_size, precision);
 		else
-		    SvgCircle (point, result, &txt_size, relative, precision);
+		    SvgCircle (point, result, &txt_size, precision);
 		point = point->Next;
 	    }
 	  line = geom->FirstLinestring;
@@ -1840,10 +1838,10 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		/* processing LINESTRING */
 		if (relative == 1)
 		    SvgPathRelative (line->Points, line->Coords, result,
-				     &txt_size, relative, precision, 0);
+				     &txt_size, precision, 0);
 		else
 		    SvgPathAbsolute (line->Points, line->Coords, result,
-				     &txt_size, relative, precision, 0);
+				     &txt_size, precision, 0);
 		line = line->Next;
 	    }
 	  polyg = geom->FirstPolygon;
@@ -1854,23 +1852,23 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		if (relative == 1)
 		  {
 		      SvgPathRelative (ring->Points, ring->Coords, result,
-				       &txt_size, relative, precision, 1);
+				       &txt_size, precision, 1);
 		      for (ib = 0; ib < polyg->NumInteriors; ib++)
 			{
 			    ring = polyg->Interiors + ib;
 			    SvgPathRelative (ring->Points, ring->Coords, result,
-					     &txt_size, relative, precision, 1);
+					     &txt_size, precision, 1);
 			}
 		  }
 		else
 		  {
 		      SvgPathAbsolute (ring->Points, ring->Coords, result,
-				       &txt_size, relative, precision, 1);
+				       &txt_size, precision, 1);
 		      for (ib = 0; ib < polyg->NumInteriors; ib++)
 			{
 			    ring = polyg->Interiors + ib;
 			    SvgPathAbsolute (ring->Points, ring->Coords, result,
-					     &txt_size, relative, precision, 1);
+					     &txt_size, precision, 1);
 			}
 		  }
 		polyg = polyg->Next;
@@ -1889,11 +1887,9 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		      if (point != geom->FirstPoint)
 			  gaiaOutText (",", result, &txt_size);
 		      if (relative == 1)
-			  SvgCoords (point, result, &txt_size, relative,
-				     precision);
+			  SvgCoords (point, result, &txt_size, precision);
 		      else
-			  SvgCircle (point, result, &txt_size, relative,
-				     precision);
+			  SvgCircle (point, result, &txt_size, precision);
 		      point = point->Next;
 		  }
 	    }
@@ -1906,10 +1902,10 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		      /* processing LINESTRINGs */
 		      if (relative == 1)
 			  SvgPathRelative (line->Points, line->Coords, result,
-					   &txt_size, relative, precision, 0);
+					   &txt_size, precision, 0);
 		      else
 			  SvgPathAbsolute (line->Points, line->Coords, result,
-					   &txt_size, relative, precision, 0);
+					   &txt_size, precision, 0);
 		      line = line->Next;
 		  }
 	    }
@@ -1924,25 +1920,25 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		      if (relative == 1)
 			{
 			    SvgPathRelative (ring->Points, ring->Coords, result,
-					     &txt_size, relative, precision, 1);
+					     &txt_size, precision, 1);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
 			      {
 				  ring = polyg->Interiors + ib;
 				  SvgPathRelative (ring->Points, ring->Coords,
-						   result, &txt_size, relative,
-						   precision, 1);
+						   result, &txt_size, precision,
+						   1);
 			      }
 			}
 		      else
 			{
 			    SvgPathAbsolute (ring->Points, ring->Coords, result,
-					     &txt_size, relative, precision, 1);
+					     &txt_size, precision, 1);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
 			      {
 				  ring = polyg->Interiors + ib;
 				  SvgPathAbsolute (ring->Points, ring->Coords,
-						   result, &txt_size, relative,
-						   precision, 1);
+						   result, &txt_size, precision,
+						   1);
 			      }
 			}
 		      polyg = polyg->Next;
@@ -1962,11 +1958,9 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 			}
 		      ie++;
 		      if (relative == 1)
-			  SvgCoords (point, result, &txt_size, relative,
-				     precision);
+			  SvgCoords (point, result, &txt_size, precision);
 		      else
-			  SvgCircle (point, result, &txt_size, relative,
-				     precision);
+			  SvgCircle (point, result, &txt_size, precision);
 		      point = point->Next;
 		  }
 		line = geom->FirstLinestring;
@@ -1978,10 +1972,10 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		      ie++;
 		      if (relative == 1)
 			  SvgPathRelative (line->Points, line->Coords, result,
-					   &txt_size, relative, precision, 0);
+					   &txt_size, precision, 0);
 		      else
 			  SvgPathAbsolute (line->Points, line->Coords, result,
-					   &txt_size, relative, precision, 0);
+					   &txt_size, precision, 0);
 		      line = line->Next;
 		  }
 		polyg = geom->FirstPolygon;
@@ -1994,25 +1988,25 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		      if (relative == 1)
 			{
 			    SvgPathRelative (ring->Points, ring->Coords, result,
-					     &txt_size, relative, precision, 1);
+					     &txt_size, precision, 1);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
 			      {
 				  ring = polyg->Interiors + ib;
 				  SvgPathRelative (ring->Points, ring->Coords,
-						   result, &txt_size, relative,
-						   precision, 1);
+						   result, &txt_size, precision,
+						   1);
 			      }
 			}
 		      else
 			{
 			    SvgPathAbsolute (ring->Points, ring->Coords, result,
-					     &txt_size, relative, precision, 1);
+					     &txt_size, precision, 1);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
 			      {
 				  ring = polyg->Interiors + ib;
 				  SvgPathAbsolute (ring->Points, ring->Coords,
-						   result, &txt_size, relative,
-						   precision, 1);
+						   result, &txt_size, precision,
+						   1);
 			      }
 			}
 		      polyg = polyg->Next;

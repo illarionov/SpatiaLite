@@ -1169,6 +1169,8 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     int ok_id;
     int ok_data;
     NetworkPtr graph = NULL;
+    if (pAux)
+	pAux = pAux;		/* unused arg warning suppression */
 /* checking for table_name and geo_column_name */
     if (argc == 4)
       {
@@ -1279,6 +1281,8 @@ vnet_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIdxInfo)
     int to = 0;
     int i_from = -1;
     int i_to = -1;
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     for (i = 0; i < pIdxInfo->nConstraint; i++)
       {
 	  /* verifying the constraints */
@@ -1388,6 +1392,8 @@ vnet_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
     int node_code = 0;
     VirtualNetworkCursorPtr cursor = (VirtualNetworkCursorPtr) pCursor;
     VirtualNetworkPtr net = (VirtualNetworkPtr) cursor->pVtab;
+    if (idxStr)
+	idxStr = idxStr;	/* unused arg warning suppression */
     node_code = net->graph->NodeCode;
     reset_solution (cursor->solution);
     cursor->eof = 1;
@@ -1603,6 +1609,8 @@ vnet_update (sqlite3_vtab * pVTab, int argc, sqlite3_value ** argv,
 	     sqlite_int64 * pRowid)
 {
 /* generic update [INSERT / UPDATE / DELETE */
+    if (pVTab || argc || argv || pRowid)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_READONLY;
 }
 
@@ -1610,6 +1618,8 @@ static int
 vnet_begin (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -1617,6 +1627,8 @@ static int
 vnet_sync (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -1624,6 +1636,8 @@ static int
 vnet_commit (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -1631,6 +1645,8 @@ static int
 vnet_rollback (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 

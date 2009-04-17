@@ -46,7 +46,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdlib.h>
 #include <stdio.h>
 
-#if OMIT_GEOS == 0		/* including GEOS */
+#ifndef OMIT_GEOS		/* including GEOS */
 #include <geos_c.h>
 #endif
 
@@ -142,7 +142,7 @@ gaiaPolygonEquals (gaiaPolygonPtr polyg1, gaiaPolygonPtr polyg2)
     return 1;
 }
 
-#if OMIT_GEOS == 0		/* including GEOS */
+#ifndef OMIT_GEOS		/* including GEOS */
 
 GAIAGEO_DECLARE int
 gaiaGeomCollEquals (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)

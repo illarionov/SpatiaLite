@@ -46,7 +46,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
-#if OMIT_PROJ == 0		/* including PROJ.4 */
+#ifndef OMIT_PROJ		/* including PROJ.4 */
 #include <proj_api.h>
 #endif
 
@@ -398,7 +398,7 @@ gaiaSwapCoords (gaiaGeomCollPtr geom)
     gaiaMbrGeometry (geom);
 }
 
-#if OMIT_PROJ == 0		/* including PROJ.4 */
+#ifndef OMIT_PROJ		/* including PROJ.4 */
 
 static int
 gaiaIsLongLat (char *str)

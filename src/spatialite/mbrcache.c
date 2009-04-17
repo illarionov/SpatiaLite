@@ -858,6 +858,8 @@ mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     int ok_tbl;
     int ok_col;
     MbrCachePtr p_vt;
+    if (pAux)
+	pAux = pAux;		/* unused arg warning suppression */
     p_vt = (MbrCachePtr) sqlite3_malloc (sizeof (MbrCache));
     if (!p_vt)
 	return SQLITE_NOMEM;
@@ -964,6 +966,8 @@ mbrc_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIdxInfo)
     int errors = 0;
     int mbr = 0;
     int rowid = 0;
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     for (i = 0; i < pIdxInfo->nConstraint; i++)
       {
 	  /* verifying the constraints */
@@ -1137,6 +1141,8 @@ mbrc_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
 {
 /* setting up a cursor filter */
     MbrCacheCursorPtr cursor = (MbrCacheCursorPtr) pCursor;
+    if (idxStr || argc)
+	idxStr = idxStr;	/* unused arg warning suppression */
     if (cursor->pVtab->error)
       {
 	  cursor->eof = 1;
@@ -1287,6 +1293,8 @@ mbrc_update (sqlite3_vtab * pVTab, int argc, sqlite3_value ** argv,
     int mode;
     int illegal = 0;
     MbrCachePtr p_vtab = (MbrCachePtr) pVTab;
+    if (pRowid)
+	pRowid = pRowid;	/* unused arg warning suppression */
     if (p_vtab->error)
 	return SQLITE_OK;
     if (!(p_vtab->cache))
@@ -1384,6 +1392,8 @@ static int
 mbrc_begin (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -1391,6 +1401,8 @@ static int
 mbrc_sync (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -1398,6 +1410,8 @@ static int
 mbrc_commit (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -1405,6 +1419,8 @@ static int
 mbrc_rollback (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 

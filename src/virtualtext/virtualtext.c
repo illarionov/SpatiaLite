@@ -647,6 +647,8 @@ vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     char dummyName[4096];
     char **col_name = NULL;
     VirtualTextPtr p_vt;
+    if (pAux)
+	pAux = pAux;		/* unused arg warning suppression */
 /* checking for TEXTfile PATH */
     if (argc >= 5 && argc <= 9)
       {
@@ -804,6 +806,8 @@ static int
 vtxt_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIndex)
 {
 /* best index selection */
+    if (pVTab || pIndex)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -856,6 +860,8 @@ vtxt_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
 	     int argc, sqlite3_value ** argv)
 {
 /* setting up a cursor filter */
+    if (pCursor || idxNum || idxStr || argc || argv)
+	pCursor = pCursor;	/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -946,6 +952,8 @@ vtxt_update (sqlite3_vtab * pVTab, int argc, sqlite3_value ** argv,
 	     sqlite_int64 * pRowid)
 {
 /* generic update [INSERT / UPDATE / DELETE */
+    if (pVTab || argc || argv || pRowid)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_READONLY;
 }
 
@@ -953,6 +961,8 @@ static int
 vtxt_begin (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -960,6 +970,8 @@ static int
 vtxt_sync (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -967,6 +979,8 @@ static int
 vtxt_commit (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
@@ -974,6 +988,8 @@ static int
 vtxt_rollback (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
     return SQLITE_OK;
 }
 
