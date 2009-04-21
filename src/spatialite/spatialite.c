@@ -5116,6 +5116,8 @@ fnct_SwapCoords (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaFreeGeomColl (geo);
 }
 
+#ifndef OMIT_PROJ		/* including PROJ.4 */
+
 static void
 proj_params (sqlite3 * sqlite, int srid, char *proj_params)
 {
@@ -5143,8 +5145,6 @@ proj_params (sqlite3 * sqlite, int srid, char *proj_params)
 	fprintf (stderr, "unknown SRID: %d\n", srid);
     sqlite3_free_table (results);
 }
-
-#ifndef OMIT_PROJ		/* including PROJ.4 */
 
 static void
 fnct_Transform (sqlite3_context * context, int argc, sqlite3_value ** argv)
