@@ -5525,6 +5525,7 @@ fnct_Centroid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		else
 		  {
 		      result = gaiaAllocGeomColl ();
+		      result->Srid = geo->Srid;
 		      gaiaAddPointToGeomColl (result, x, y);
 		      gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
 		      gaiaFreeGeomColl (result);
