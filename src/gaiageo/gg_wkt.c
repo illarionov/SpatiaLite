@@ -1136,6 +1136,53 @@ gaiaGeometryFromGeomColl (gaiaGeomCollListTokenPtr geocoll)
     return geom;
 }
 
+static
+checkValidity (gaiaGeomCollPtr geom)
+{
+/* checks if this one is a degenerated geometry */
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr rng;
+    int ib;
+    int entities = 0;
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  /* checking points */
+	  entities++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  /* checking linestrings */
+	  if (ln->Points < 2)
+	      return 0;
+	  entities++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  /* checking polygons */
+	  rng = pg->Exterior;
+	  if (rng->Points < 4)
+	      return 0;
+	  for (ib = 0; ib < pg->NumInteriors; ib++)
+	    {
+		rng = pg->Interiors + ib;
+		if (rng->Points < 4)
+		    return 0;
+	    }
+	  entities++;
+	  pg = pg->Next;
+      }
+    if (!entities)
+	return 0;
+    return 1;
+}
+
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaParseWkt (const unsigned char *dirty_buffer, short type)
 {
@@ -1334,6 +1381,11 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
 	  ptn = pt->next;
 	  free (pt);
 	  pt = ptn;
+      }
+    if (!checkValidity (geo))
+      {
+	  gaiaFreeGeomColl (geo);
+	  return NULL;
       }
     gaiaMbrGeometry (geo);
     return geo;

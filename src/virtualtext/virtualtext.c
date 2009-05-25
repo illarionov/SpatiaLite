@@ -54,7 +54,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define VRTTXT_INTEGER	2
 #define VRTTXT_DOUBLE	3
 
-struct sqlite3_module my_text_module;
+struct sqlite3_module virtualtext_module;
 
 struct row_buffer
 {
@@ -715,7 +715,7 @@ vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     p_vt = (VirtualTextPtr) sqlite3_malloc (sizeof (VirtualText));
     if (!p_vt)
 	return SQLITE_NOMEM;
-    p_vt->pModule = &my_text_module;
+    p_vt->pModule = &virtualtext_module;
     p_vt->nRef = 0;
     p_vt->zErrMsg = NULL;
     p_vt->db = db;
@@ -745,12 +745,7 @@ vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     for (i = 0; i < text->max_n_cells; i++)
       {
 	  strcat (sql, ", ");
-	  if (gaiaIllegalSqlName (*(text->titles + i))
-	      || gaiaIsReservedSqlName (*(text->titles + i))
-	      || gaiaIsReservedSqliteName (*(text->titles + i)))
-	      sprintf (dummyName, "\"%s\"", *(text->titles + i));
-	  else
-	      strcpy (dummyName, *(text->titles + i));
+	  sprintf (dummyName, "\"%s\"", *(text->titles + i));
 	  dup = 0;
 	  for (idup = 0; idup < i; idup++)
 	    {
@@ -917,8 +912,8 @@ vtxt_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 		      if (*(row->cells + i))
 			{
 			    if (*(text->types + i) == VRTTXT_INTEGER)
-				sqlite3_result_int (pContext,
-						    atoi (*(row->cells + i)));
+				sqlite3_result_int64 (pContext,
+						      atol (*(row->cells + i)));
 			    else if (*(text->types + i) == VRTTXT_DOUBLE)
 				sqlite3_result_double (pContext,
 						       atof (*
@@ -997,26 +992,26 @@ int
 sqlite3VirtualTextInit (sqlite3 * db)
 {
     int rc = SQLITE_OK;
-    my_text_module.iVersion = 1;
-    my_text_module.xCreate = &vtxt_create;
-    my_text_module.xConnect = &vtxt_connect;
-    my_text_module.xBestIndex = &vtxt_best_index;
-    my_text_module.xDisconnect = &vtxt_disconnect;
-    my_text_module.xDestroy = &vtxt_destroy;
-    my_text_module.xOpen = &vtxt_open;
-    my_text_module.xClose = &vtxt_close;
-    my_text_module.xFilter = &vtxt_filter;
-    my_text_module.xNext = &vtxt_next;
-    my_text_module.xEof = &vtxt_eof;
-    my_text_module.xColumn = &vtxt_column;
-    my_text_module.xRowid = &vtxt_rowid;
-    my_text_module.xUpdate = &vtxt_update;
-    my_text_module.xBegin = &vtxt_begin;
-    my_text_module.xSync = &vtxt_sync;
-    my_text_module.xCommit = &vtxt_commit;
-    my_text_module.xRollback = &vtxt_rollback;
-    my_text_module.xFindFunction = NULL;
-    sqlite3_create_module_v2 (db, "VirtualText", &my_text_module, NULL, 0);
+    virtualtext_module.iVersion = 1;
+    virtualtext_module.xCreate = &vtxt_create;
+    virtualtext_module.xConnect = &vtxt_connect;
+    virtualtext_module.xBestIndex = &vtxt_best_index;
+    virtualtext_module.xDisconnect = &vtxt_disconnect;
+    virtualtext_module.xDestroy = &vtxt_destroy;
+    virtualtext_module.xOpen = &vtxt_open;
+    virtualtext_module.xClose = &vtxt_close;
+    virtualtext_module.xFilter = &vtxt_filter;
+    virtualtext_module.xNext = &vtxt_next;
+    virtualtext_module.xEof = &vtxt_eof;
+    virtualtext_module.xColumn = &vtxt_column;
+    virtualtext_module.xRowid = &vtxt_rowid;
+    virtualtext_module.xUpdate = &vtxt_update;
+    virtualtext_module.xBegin = &vtxt_begin;
+    virtualtext_module.xSync = &vtxt_sync;
+    virtualtext_module.xCommit = &vtxt_commit;
+    virtualtext_module.xRollback = &vtxt_rollback;
+    virtualtext_module.xFindFunction = NULL;
+    sqlite3_create_module_v2 (db, "VirtualText", &virtualtext_module, NULL, 0);
     return rc;
 }
 

@@ -191,12 +191,7 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     pFld = p_vt->Shp->Dbf->First;
     while (pFld)
       {
-	  if (gaiaIllegalSqlName (pFld->Name)
-	      || gaiaIsReservedSqlName (pFld->Name)
-	      || gaiaIsReservedSqliteName (pFld->Name))
-	      sprintf (dummyName, "\"%s\"", pFld->Name);
-	  else
-	      strcpy (dummyName, pFld->Name);
+	  sprintf (dummyName, "\"%s\"", pFld->Name);
 	  dup = 0;
 	  for (idup = 0; idup < cnt; idup++)
 	    {
