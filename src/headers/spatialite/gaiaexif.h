@@ -66,6 +66,7 @@ extern "C"
 #define GAIA_ZIP_BLOB		6
 #define GAIA_PDF_BLOB		7
 #define GAIA_GEOMETRY_BLOB	8
+#define GAIA_TIFF_BLOB		9
 
 /* constants used for EXIF value types */
 #define GAIA_EXIF_NONE		0

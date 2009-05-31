@@ -2340,6 +2340,8 @@ gaiaGuessBlobType (const unsigned char *blob, int size)
     unsigned char exif_signature[4];
     unsigned char png_signature[8];
     unsigned char zip_signature[4];
+    unsigned char tiff_signature_little[4];
+    unsigned char tiff_signature_big[4];
     jpeg1_signature[0] = 0xff;
     jpeg1_signature[1] = 0xd8;
     jpeg2_signature[0] = 0xff;
@@ -2368,8 +2370,23 @@ gaiaGuessBlobType (const unsigned char *blob, int size)
     zip_signature[1] = 0x4b;
     zip_signature[2] = 0x03;
     zip_signature[3] = 0x04;
+    tiff_signature_little[0] = 'I';
+    tiff_signature_little[1] = 'I';
+    tiff_signature_little[2] = 0x2a;
+    tiff_signature_little[3] = 0x00;
+    tiff_signature_big[0] = 'M';
+    tiff_signature_big[1] = 'M';
+    tiff_signature_big[2] = 0x00;
+    tiff_signature_big[3] = 0x2a;
     if (size < 1 || !blob)
 	return GAIA_HEX_BLOB;
+    if (size == 4)
+      {
+	  if (memcmp (blob, tiff_signature_big, 4) == 0)
+	      return GAIA_TIFF_BLOB;
+	  if (memcmp (blob, tiff_signature_little, 4) == 0)
+	      return GAIA_TIFF_BLOB;
+      }
     if (size > 5)
       {
 	  if (strncmp ((char *) blob, "%PDF-", 5) == 0)
