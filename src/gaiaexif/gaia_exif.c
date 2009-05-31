@@ -2380,7 +2380,7 @@ gaiaGuessBlobType (const unsigned char *blob, int size)
     tiff_signature_big[3] = 0x2a;
     if (size < 1 || !blob)
 	return GAIA_HEX_BLOB;
-    if (size == 4)
+    if (size > 4)
       {
 	  if (memcmp (blob, tiff_signature_big, 4) == 0)
 	      return GAIA_TIFF_BLOB;
