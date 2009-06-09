@@ -2323,6 +2323,36 @@ gaiaExifTagGetHumanReadable (const gaiaExifTagPtr tag, char *str, int len,
     *ok = 0;
 }
 
+static int
+check_wavelets (const unsigned char *blob, int blob_size)
+{
+/* testing WAVELETS */
+    int len;
+    char to_check[64];
+    int ok_header = 0;
+    int ok_footer = 0;
+/* checking the header */
+    strcpy (to_check, "StartWaveletsImage$$");
+    len = strlen (to_check);
+    if (blob_size > len)
+      {
+	  if (memcmp ((char *) blob, to_check, len + 1) == 0)
+	      ok_header = 1;
+      }
+/* checking the footer */
+    strcpy (to_check, "$$EndWaveletsImage");
+    len = strlen (to_check);
+    if (blob_size > len)
+      {
+	  if (memcmp
+	      ((char *) blob + (blob_size - (len + 1)), to_check, len + 1) == 0)
+	      ok_footer = 1;
+      }
+    if (ok_header && ok_footer)
+	return 1;
+    return 0;
+}
+
 GAIAEXIF_DECLARE int
 gaiaGuessBlobType (const unsigned char *blob, int size)
 {
@@ -2380,6 +2410,8 @@ gaiaGuessBlobType (const unsigned char *blob, int size)
     tiff_signature_big[3] = 0x2a;
     if (size < 1 || !blob)
 	return GAIA_HEX_BLOB;
+    if (check_wavelets (blob, size))
+	return GAIA_WAVELETS_BLOB;
     if (size > 4)
       {
 	  if (memcmp (blob, tiff_signature_big, 4) == 0)

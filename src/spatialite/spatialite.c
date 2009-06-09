@@ -4342,6 +4342,7 @@ point_n (sqlite3_context * context, int argc, sqlite3_value ** argv,
 		  {
 		      gaiaGetPoint (line->Coords, vertex, &x, &y);
 		      result = gaiaAllocGeomColl ();
+		      result->Srid = geo->Srid;
 		      gaiaAddPointToGeomColl (result, x, y);
 		  }
 		else
@@ -4423,6 +4424,7 @@ fnct_ExteriorRing (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	    {
 		ring = polyg->Exterior;
 		result = gaiaAllocGeomColl ();
+		result->Srid = geo->Srid;
 		line = gaiaAddLinestringToGeomColl (result, ring->Points);
 		for (iv = 0; iv < line->Points; iv++)
 		  {
@@ -4523,6 +4525,7 @@ fnct_InteriorRingN (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		  {
 		      ring = polyg->Interiors + (border - 1);
 		      result = gaiaAllocGeomColl ();
+		      result->Srid = geo->Srid;
 		      line = gaiaAddLinestringToGeomColl (result, ring->Points);
 		      for (iv = 0; iv < line->Points; iv++)
 			{
@@ -4651,6 +4654,7 @@ fnct_GeometryN (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		  {
 		      /* ok, required elementary geometry is this POINT */
 		      result = gaiaAllocGeomColl ();
+		      result->Srid = geo->Srid;
 		      gaiaAddPointToGeomColl (result, point->X, point->Y);
 		      goto skip;
 		  }
@@ -4665,6 +4669,7 @@ fnct_GeometryN (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		  {
 		      /* ok, required elementary geometry is this LINESTRING */
 		      result = gaiaAllocGeomColl ();
+		      result->Srid = geo->Srid;
 		      line2 =
 			  gaiaAddLinestringToGeomColl (result, line->Points);
 		      for (iv = 0; iv < line2->Points; iv++)
@@ -4685,6 +4690,7 @@ fnct_GeometryN (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		  {
 		      /* ok, required elementary geometry is this POLYGON */
 		      result = gaiaAllocGeomColl ();
+		      result->Srid = geo->Srid;
 		      ring_in = polyg->Exterior;
 		      polyg2 =
 			  gaiaAddPolygonToGeomColl (result, ring_in->Points,
@@ -8003,7 +8009,7 @@ blob_guess (sqlite3_context * context, int argc, sqlite3_value ** argv,
 /* SQL function:
 / IsGifBlob(BLOB encoded image)
 / IsPngBlob, IsJpegBlob, IsExifBlob, IsExifGpsBlob, IsTiffBlob,
-/ IsZipBlob, IsPdfBlob,IsGeometryBlob
+/ IsWaveletsBlob, IsZipBlob, IsPdfBlob,IsGeometryBlob
 /
 / returns:
 / 1 if the required BLOB_TYPE is TRUE
@@ -8041,6 +8047,14 @@ blob_guess (sqlite3_context * context, int argc, sqlite3_value ** argv,
     if (request == GAIA_PDF_BLOB)
       {
 	  if (blob_type == GAIA_PDF_BLOB)
+	      sqlite3_result_int (context, 1);
+	  else
+	      sqlite3_result_int (context, 0);
+	  return;
+      }
+    if (request == GAIA_WAVELETS_BLOB)
+      {
+	  if (blob_type == GAIA_WAVELETS_BLOB)
 	      sqlite3_result_int (context, 1);
 	  else
 	      sqlite3_result_int (context, 0);
@@ -8126,11 +8140,16 @@ fnct_IsPdfBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_IsWaveletsBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    blob_guess (context, argc, argv, GAIA_WAVELETS_BLOB);
+}
+
+static void
 fnct_IsTiffBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     blob_guess (context, argc, argv, GAIA_TIFF_BLOB);
 }
-
 
 static void
 fnct_IsGifBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
@@ -8445,6 +8464,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "IsPdfBlob", 1, SQLITE_ANY, 0, fnct_IsPdfBlob,
 			     0, 0);
+    sqlite3_create_function (db, "IsWaveletsBlob", 1, SQLITE_ANY, 0,
+			     fnct_IsWaveletsBlob, 0, 0);
     sqlite3_create_function (db, "IsTiffBlob", 1, SQLITE_ANY, 0,
 			     fnct_IsTiffBlob, 0, 0);
     sqlite3_create_function (db, "IsGifBlob", 1, SQLITE_ANY, 0, fnct_IsGifBlob,
@@ -8919,6 +8940,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "IsPdfBlob", 1, SQLITE_ANY, 0, fnct_IsPdfBlob,
 			     0, 0);
+    sqlite3_create_function (db, "IsWaveletsBlob", 1, SQLITE_ANY, 0,
+			     fnct_IsWaveletsBlob, 0, 0);
     sqlite3_create_function (db, "IsTiffBlob", 1, SQLITE_ANY, 0,
 			     fnct_IsTiffBlob, 0, 0);
     sqlite3_create_function (db, "IsGifBlob", 1, SQLITE_ANY, 0, fnct_IsGifBlob,
