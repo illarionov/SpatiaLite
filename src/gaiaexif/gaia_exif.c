@@ -2324,9 +2324,9 @@ gaiaExifTagGetHumanReadable (const gaiaExifTagPtr tag, char *str, int len,
 }
 
 static int
-check_wavelets (const unsigned char *blob, int blob_size)
+check_wavelet (const unsigned char *blob, int blob_size)
 {
-/* testing WAVELETS */
+/* testing WAVELET */
     int len;
     char to_check[64];
     int ok_header = 0;
@@ -2410,8 +2410,8 @@ gaiaGuessBlobType (const unsigned char *blob, int size)
     tiff_signature_big[3] = 0x2a;
     if (size < 1 || !blob)
 	return GAIA_HEX_BLOB;
-    if (check_wavelets (blob, size))
-	return GAIA_WAVELETS_BLOB;
+    if (check_wavelet (blob, size))
+	return GAIA_WAVELET_BLOB;
     if (size > 4)
       {
 	  if (memcmp (blob, tiff_signature_big, 4) == 0)

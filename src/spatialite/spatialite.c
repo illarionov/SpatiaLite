@@ -8052,9 +8052,9 @@ blob_guess (sqlite3_context * context, int argc, sqlite3_value ** argv,
 	      sqlite3_result_int (context, 0);
 	  return;
       }
-    if (request == GAIA_WAVELETS_BLOB)
+    if (request == GAIA_WAVELET_BLOB)
       {
-	  if (blob_type == GAIA_WAVELETS_BLOB)
+	  if (blob_type == GAIA_WAVELET_BLOB)
 	      sqlite3_result_int (context, 1);
 	  else
 	      sqlite3_result_int (context, 0);
@@ -8142,7 +8142,7 @@ fnct_IsPdfBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 static void
 fnct_IsWaveletsBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
-    blob_guess (context, argc, argv, GAIA_WAVELETS_BLOB);
+    blob_guess (context, argc, argv, GAIA_WAVELET_BLOB);
 }
 
 static void
