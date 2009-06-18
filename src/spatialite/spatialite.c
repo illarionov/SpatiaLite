@@ -86,6 +86,65 @@ struct fdo_table
 };
 
 static void
+fnct_spatialite_version (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ spatialite_version()
+/
+/ return a text string representing the current SpatiaLite version
+*/
+    int len;
+    const char *p_result = spatialite_version ();
+    GAIA_UNUSED ();
+    len = strlen (p_result);
+    sqlite3_result_text (context, p_result, len, SQLITE_TRANSIENT);
+}
+
+static void
+fnct_geos_version (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ geos_version()
+/
+/ return a text string representing the current GEOS version
+/ or NULL if GEOS is currently unsupported
+*/
+
+#ifndef OMIT_GEOS		/* GEOS version */
+    int len;
+    const char *p_result = GEOSversion ();
+    GAIA_UNUSED ();
+    len = strlen (p_result);
+    sqlite3_result_text (context, p_result, len, SQLITE_TRANSIENT);
+#else
+    sqlite3_result_null (context);
+#endif
+}
+
+
+static void
+fnct_proj4_version (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ proj4_version()
+/
+/ return a text string representing the current PROJ.4 version
+/ or NULL if PROJ.4 is currently unsupported
+*/
+
+#ifndef OMIT_PROJ		/* PROJ.4 version */
+    int len;
+    const char *p_result = pj_get_release ();
+    GAIA_UNUSED ();
+    len = strlen (p_result);
+    sqlite3_result_text (context, p_result, len, SQLITE_TRANSIENT);
+#else
+    sqlite3_result_null (context);
+#endif
+}
+
+static void
 fnct_GeometryConstraints (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
 {
@@ -8009,7 +8068,7 @@ blob_guess (sqlite3_context * context, int argc, sqlite3_value ** argv,
 /* SQL function:
 / IsGifBlob(BLOB encoded image)
 / IsPngBlob, IsJpegBlob, IsExifBlob, IsExifGpsBlob, IsTiffBlob,
-/ IsWaveletsBlob, IsZipBlob, IsPdfBlob,IsGeometryBlob
+/ IsWaveletBlob, IsZipBlob, IsPdfBlob,IsGeometryBlob
 /
 / returns:
 / 1 if the required BLOB_TYPE is TRUE
@@ -8140,7 +8199,7 @@ fnct_IsPdfBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
-fnct_IsWaveletsBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
+fnct_IsWaveletBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     blob_guess (context, argc, argv, GAIA_WAVELET_BLOB);
 }
@@ -8189,6 +8248,12 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 /* setting the POSIX locale for numeric */
     setlocale (LC_NUMERIC, "POSIX");
     *pzErrMsg = NULL;
+    sqlite3_create_function (db, "spatialite_version", 0, SQLITE_ANY, 0,
+			     fnct_spatialite_version, 0, 0);
+    sqlite3_create_function (db, "proj4_version", 0, SQLITE_ANY, 0,
+			     fnct_proj4_version, 0, 0);
+    sqlite3_create_function (db, "geos_version", 0, SQLITE_ANY, 0,
+			     fnct_geos_version, 0, 0);
     sqlite3_create_function (db, "GeometryConstraints", 3, SQLITE_ANY, 0,
 			     fnct_GeometryConstraints, 0, 0);
     sqlite3_create_function (db, "CheckSpatialMetaData", 0, SQLITE_ANY, 0,
@@ -8464,8 +8529,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "IsPdfBlob", 1, SQLITE_ANY, 0, fnct_IsPdfBlob,
 			     0, 0);
-    sqlite3_create_function (db, "IsWaveletsBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsWaveletsBlob, 0, 0);
+    sqlite3_create_function (db, "IsWaveletBlob", 1, SQLITE_ANY, 0,
+			     fnct_IsWaveletBlob, 0, 0);
     sqlite3_create_function (db, "IsTiffBlob", 1, SQLITE_ANY, 0,
 			     fnct_IsTiffBlob, 0, 0);
     sqlite3_create_function (db, "IsGifBlob", 1, SQLITE_ANY, 0, fnct_IsGifBlob,
@@ -8667,6 +8732,12 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
     SQLITE_EXTENSION_INIT2 (pApi);
     setlocale (LC_NUMERIC, "POSIX");
     *pzErrMsg = NULL;
+    sqlite3_create_function (db, "spatialite_version", 0, SQLITE_ANY, 0,
+			     fnct_spatialite_version, 0, 0);
+    sqlite3_create_function (db, "proj4_version", 0, SQLITE_ANY, 0,
+			     fnct_proj4_version, 0, 0);
+    sqlite3_create_function (db, "geos_version", 0, SQLITE_ANY, 0,
+			     fnct_geos_version, 0, 0);
     sqlite3_create_function (db, "GeometryConstraints", 3, SQLITE_ANY, 0,
 			     fnct_GeometryConstraints, 0, 0);
     sqlite3_create_function (db, "CheckSpatialMetaData", 0, SQLITE_ANY, 0,
@@ -8940,8 +9011,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "IsPdfBlob", 1, SQLITE_ANY, 0, fnct_IsPdfBlob,
 			     0, 0);
-    sqlite3_create_function (db, "IsWaveletsBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsWaveletsBlob, 0, 0);
+    sqlite3_create_function (db, "IsWaveletBlob", 1, SQLITE_ANY, 0,
+			     fnct_IsWaveletBlob, 0, 0);
     sqlite3_create_function (db, "IsTiffBlob", 1, SQLITE_ANY, 0,
 			     fnct_IsTiffBlob, 0, 0);
     sqlite3_create_function (db, "IsGifBlob", 1, SQLITE_ANY, 0, fnct_IsGifBlob,
