@@ -45,7 +45,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/sqlite3.h>
 #include <spatialite.h>
 
-const char spatialiteversion[] = "2.3.0";
+const char spatialiteversion[] = "2.3.1";
 
 SPATIALITE_DECLARE const char *
 spatialite_version (void)
