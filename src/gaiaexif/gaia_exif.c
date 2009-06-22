@@ -1026,7 +1026,7 @@ exifImportFloat32 (const unsigned char *p, int little_endian,
 
 static void
 exifSetTagValue (gaiaExifTagPtr tag, const unsigned char *blob, int endian_mode,
-		 int endian_arch)
+		 int endian_arch, int app1_offset)
 {
 /* setting the TAG value */
     int i;
@@ -1056,7 +1056,7 @@ exifSetTagValue (gaiaExifTagPtr tag, const unsigned char *blob, int endian_mode,
       {
 	  /* jumping to offset */
 	  offset = exifImportU32 (tag->TagOffset, endian_mode, endian_arch);
-	  offset += 12;
+	  offset += app1_offset + 10;
 	  ptr = blob + offset;
       }
     if (tag->Type == 1 || tag->Type == 6 || tag->Type == 7)
@@ -1171,7 +1171,8 @@ exifSetTagValue (gaiaExifTagPtr tag, const unsigned char *blob, int endian_mode,
 
 static void
 exifParseTag (const unsigned char *blob, unsigned int offset, int endian_mode,
-	      int endian_arch, gaiaExifTagListPtr list, int gps)
+	      int endian_arch, gaiaExifTagListPtr list, int gps,
+	      int app1_offset)
 {
 /* parsing some TAG and inserting into the list */
     unsigned short tag_id;
@@ -1199,7 +1200,7 @@ exifParseTag (const unsigned char *blob, unsigned int offset, int endian_mode,
     tag->SignedLongRationals2 = NULL;
     tag->FloatValues = NULL;
     tag->DoubleValues = NULL;
-    exifSetTagValue (tag, blob, endian_mode, endian_arch);
+    exifSetTagValue (tag, blob, endian_mode, endian_arch, app1_offset);
     tag->Next = NULL;
     if (!(list->First))
 	list->First = tag;
@@ -1234,7 +1235,7 @@ exifExpandIFD (gaiaExifTagListPtr list, const unsigned char *blob,
 		  {
 		      /* fetching the TAGs */
 		      exifParseTag (blob, offset, endian_mode, endian_arch,
-				    list, 0);
+				    list, 0, app1_offset);
 		      offset += 12;
 		  }
 	    }
@@ -1267,7 +1268,7 @@ exifExpandGPS (gaiaExifTagListPtr list, const unsigned char *blob,
 		  {
 		      /* fetching the TAGs */
 		      exifParseTag (blob, offset, endian_mode, endian_arch,
-				    list, 1);
+				    list, 1, app1_offset);
 		      offset += 12;
 		  }
 	    }
@@ -1373,7 +1374,8 @@ gaiaGetExifTags (const unsigned char *blob, int size)
     for (i = 0; i < items; i++)
       {
 /* fetching the EXIF TAGs */
-	  exifParseTag (blob, offset, endian_mode, endian_arch, list, 0);
+	  exifParseTag (blob, offset, endian_mode, endian_arch, list, 0,
+			app1_offset);
 	  offset += 12;
       }
 /* expanding the IFD and GPS tags */
