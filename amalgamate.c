@@ -44,7 +44,7 @@ do_headers (FILE * out)
     fprintf (out,
 	     "** This file is an amalgamation of many separate C source files from SpatiaLite\n");
     fprintf (out,
-	     "** version 2.3.1.  By combining all the individual C code files into this\n");
+	     "** version 2.4.0.  By combining all the individual C code files into this\n");
     fprintf (out,
 	     "** single large file, the entire code can be compiled as a one translation\n");
     fprintf (out,
@@ -329,6 +329,7 @@ main ()
     do_copy (out, "/gaiageo/", "gg_transform.c");
     do_copy (out, "/gaiageo/", "gg_wkb.c");
     do_copy (out, "/gaiageo/", "gg_wkt.c");
+    do_copy (out, "/gaiageo/", "gg_geodesic.c");
     do_copy (out, "/spatialite/", "spatialite.c");
     do_copy (out, "/spatialite/", "mbrcache.c");
     do_copy (out, "/spatialite/", "virtualshape.c");

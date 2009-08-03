@@ -144,6 +144,29 @@ extern "C"
 #define GAIA_XY_M	0x02
 #define GAIA_XY_Z_M	0x03
 
+/* constants used for length unit conversion */
+#define GAIA_KM		1
+#define GAIA_M		2
+#define GAIA_DM		3
+#define GAIA_CM		4
+#define GAIA_MM		5
+#define GAIA_KMI	6
+#define GAIA_IN		7
+#define GAIA_FT		8
+#define GAIA_YD		9
+#define GAIA_MI		10
+#define GAIA_FATH	11
+#define GAIA_CH		12
+#define GAIA_US_IN	13
+#define GAIA_US_FT	14
+#define GAIA_US_YD	15
+#define GAIA_US_MI	16
+#define GAIA_IND_YD	17
+#define GAIA_IND_FT	18
+#define GAIA_IND_CH	19
+#define GAIA_MIN_UNIT	GAIA_KM
+#define GAIA_MAX_UNIT	GAIA_IND_CH
+
 /* macros */
 #define gaiaGetPoint(xy,v,x,y)	{*x = xy[(v) * 2]; \
 				 *y = xy[(v) * 2 + 1];}
@@ -552,6 +575,24 @@ extern "C"
     GAIAGEO_DECLARE int gaiaGetMbrMaxY (const unsigned char *blob,
 					unsigned int size, double *maxy);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaBuildRings (gaiaGeomCollPtr geom);
+    GAIAGEO_DECLARE void gaiaFree (void *ptr);
+    GAIAGEO_DECLARE int gaiaEllipseParams (const char *name, double *a,
+					   double *b, double *rf);
+    GAIAGEO_DECLARE double gaiaGreatCircleDistance (double a, double b,
+						    double lat1, double lon1,
+						    double lat2, double lon2);
+    GAIAGEO_DECLARE double gaiaGeodesicDistance (double a, double b, double rf,
+						 double lat1, double lon1,
+						 double lat2, double lon2);
+    GAIAGEO_DECLARE double gaiaGreatCircleTotalLength (double a, double b,
+						       double rf,
+						       double *coords,
+						       int vert);
+    GAIAGEO_DECLARE double gaiaGeodesicTotalLength (double a, double b,
+						    double rf, double *coords,
+						    int vert);
+    GAIAGEO_DECLARE int gaiaConvertLength (double value, int unit_from,
+					   int unit_to, double *cvt);
 
 #ifndef OMIT_PROJ		/* including PROJ.4 */
 

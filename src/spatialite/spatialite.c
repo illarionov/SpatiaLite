@@ -5181,8 +5181,6 @@ fnct_SwapCoords (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaFreeGeomColl (geo);
 }
 
-#ifndef OMIT_PROJ		/* including PROJ.4 */
-
 static void
 proj_params (sqlite3 * sqlite, int srid, char *proj_params)
 {
@@ -5210,6 +5208,64 @@ proj_params (sqlite3 * sqlite, int srid, char *proj_params)
 	fprintf (stderr, "unknown SRID: %d\n", srid);
     sqlite3_free_table (results);
 }
+
+static int
+get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
+		    double *rf)
+{
+/* 
+/ retrives the PROJ +ellps=xx [+a=xx +b=xx] params 
+/from SPATIAL_SYS_REF table, if possible 
+*/
+    char proj4text[2048];
+    char *p_proj;
+    char *p_ellps;
+    char *p_a;
+    char *p_b;
+    char *p_end;
+    proj_params (sqlite, srid, proj4text);
+    if (*proj4text == '\0')
+	return 0;
+/* parsing the proj4text geodesic string */
+    p_proj = strstr (proj4text, "+proj=");
+    p_ellps = strstr (proj4text, "+ellps=");
+    p_a = strstr (proj4text, "+a=");
+    p_b = strstr (proj4text, "+b=");
+/* checking if +proj=longlat is true */
+    if (!p_proj)
+	return 0;
+    p_end = strchr (p_proj, ' ');
+    if (p_end)
+	*p_end = '\0';
+    if (strcmp (p_proj + 6, "longlat") != 0)
+	return 0;
+    if (p_ellps)
+      {
+	  /* tryng to retrieve the ellipsoid params by name */
+	  p_end = strchr (p_ellps, ' ');
+	  if (p_end)
+	      *p_end = '\0';
+	  if (gaiaEllipseParams (p_ellps + 7, a, b, rf))
+	      return 1;
+      }
+    if (p_a && p_b)
+      {
+	  /* trying to retrieve the +a=xx and +b=xx args */
+	  p_end = strchr (p_a, ' ');
+	  if (p_end)
+	      *p_end = '\0';
+	  p_end = strchr (p_b, ' ');
+	  if (p_end)
+	      *p_end = '\0';
+	  *a = atof (p_a + 3);
+	  *b = atof (p_b + 3);
+	  *rf = 1.0 / ((*a - *b) / *a);
+	  return 1;
+      }
+    return 0;
+}
+
+#ifndef OMIT_PROJ		/* including PROJ.4 */
 
 static void
 fnct_Transform (sqlite3_context * context, int argc, sqlite3_value ** argv)
@@ -8241,6 +8297,426 @@ fnct_IsExifGpsBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ GeodesicLength(BLOB encoded GEOMETRYCOLLECTION)
+/
+/ returns  the total Geodesic length for current geometry 
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    double l;
+    double length = 0.0;
+    int ret;
+    double a;
+    double b;
+    double rf;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaLinestringPtr line;
+    gaiaPolygonPtr polyg;
+    gaiaRingPtr ring;
+    int ib;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  if (get_ellipse_params (sqlite, geo->Srid, &a, &b, &rf))
+	    {
+		line = geo->FirstLinestring;
+		while (line)
+		  {
+		      /* Linestrings */
+		      l = gaiaGeodesicTotalLength (a, b, rf, line->Coords,
+						   line->Points);
+		      if (l < 0.0)
+			{
+			    length = -1.0;
+			    break;
+			}
+		      length += l;
+		      line = line->Next;
+		  }
+		if (length >= 0)
+		  {
+		      /* Polygons */
+		      polyg = geo->FirstPolygon;
+		      while (polyg)
+			{
+			    /* exterior Ring */
+			    ring = polyg->Exterior;
+			    l = gaiaGeodesicTotalLength (a, b, rf, ring->Coords,
+							 ring->Points);
+			    if (l < 0.0)
+			      {
+				  length = -1.0;
+				  break;
+			      }
+			    length += l;
+			    for (ib = 0; ib < polyg->NumInteriors; ib++)
+			      {
+				  /* interior Rings */
+				  ring = polyg->Interiors + ib;
+				  l = gaiaGeodesicTotalLength (a, b, rf,
+							       ring->Coords,
+							       ring->Points);
+				  if (l < 0.0)
+				    {
+					length = -1.0;
+					break;
+				    }
+				  length += l;
+			      }
+			    if (length < 0.0)
+				break;
+			    polyg = polyg->Next;
+			}
+		  }
+		if (length < 0.0)
+		    sqlite3_result_null (context);
+		else
+		    sqlite3_result_double (context, length);
+	    }
+	  else
+	      sqlite3_result_null (context);
+	  gaiaFreeGeomColl (geo);
+      }
+}
+
+static void
+fnct_GreatCircleLength (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ GreatCircleLength(BLOB encoded GEOMETRYCOLLECTION)
+/
+/ returns  the total Great Circle length for current geometry 
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    double l;
+    double length = 0.0;
+    int ret;
+    double a;
+    double b;
+    double rf;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaLinestringPtr line;
+    gaiaPolygonPtr polyg;
+    gaiaRingPtr ring;
+    int ib;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  if (get_ellipse_params (sqlite, geo->Srid, &a, &b, &rf))
+	    {
+		line = geo->FirstLinestring;
+		while (line)
+		  {
+		      /* Linestrings */
+		      length +=
+			  gaiaGreatCircleTotalLength (a, b, rf, line->Coords,
+						      line->Points);
+		      line = line->Next;
+		  }
+		if (length >= 0)
+		  {
+		      /* Polygons */
+		      polyg = geo->FirstPolygon;
+		      while (polyg)
+			{
+			    /* exterior Ring */
+			    ring = polyg->Exterior;
+			    length +=
+				gaiaGreatCircleTotalLength (a, b, rf,
+							    ring->Coords,
+							    ring->Points);
+			    for (ib = 0; ib < polyg->NumInteriors; ib++)
+			      {
+				  /* interior Rings */
+				  ring = polyg->Interiors + ib;
+				  length +=
+				      gaiaGreatCircleTotalLength (a, b, rf,
+								  ring->Coords,
+								  ring->Points);
+			      }
+			    polyg = polyg->Next;
+			}
+		  }
+		sqlite3_result_double (context, length);
+	    }
+	  else
+	      sqlite3_result_null (context);
+	  gaiaFreeGeomColl (geo);
+      }
+}
+
+static void
+convertUnit (sqlite3_context * context, int argc, sqlite3_value ** argv,
+	     int unit_from, int unit_to)
+{
+/* SQL functions:
+/ CvtToKm(), CvtToDm(), CvtToCm(), CvtToMm(), CvtToKmi(), CvtToIn(), CvtToYd(),
+/ CvtToMi(), CvtToFath(), CvtToCh(), CvtToUsIn(), CvtToUsFt(), CvtToUsYd(),
+/ CvtToUsMi(), CvtToIndFt(), CvtToIndYd(), CvtToIndCh(), 
+/ CvtFromKm(), CvtFromDm(), CvtFromCm(), CvtFromMm(), CvtFromKmi(), 
+/ CvtFromIn(), CvtFromYd(), CvtFromMi(), CvtFromFath(), CvtFromCh(), CvtFromUsIn(),
+/ CvtFromUsFt(), CvtFromUsYd(), CvtFromUsMi(), CvtFromIndFt(), CvtFromIndYd(), 
+/ CvtFromIndCh()
+/
+/ converts a Length from one unit to a different one
+/ or NULL if any error is encountered
+*/
+    double cvt;
+    double value;
+    int int_value;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	value = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[0]);
+	  value = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (!gaiaConvertLength (value, unit_from, unit_to, &cvt))
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_double (context, cvt);
+}
+
+static void
+fnct_cvtToKm (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_KM);
+}
+
+static void
+fnct_cvtToDm (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_DM);
+}
+
+static void
+fnct_cvtToCm (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_CM);
+}
+
+static void
+fnct_cvtToMm (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_MM);
+}
+
+static void
+fnct_cvtToKmi (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_KMI);
+}
+
+static void
+fnct_cvtToIn (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_IN);
+}
+
+static void
+fnct_cvtToYd (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_YD);
+}
+
+static void
+fnct_cvtToMi (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_MI);
+}
+
+static void
+fnct_cvtToFath (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_FATH);
+}
+
+static void
+fnct_cvtToCh (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_CH);
+}
+
+static void
+fnct_cvtToUsIn (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_US_IN);
+}
+
+static void
+fnct_cvtToUsFt (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_US_FT);
+}
+
+static void
+fnct_cvtToUsYd (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_US_YD);
+}
+
+static void
+fnct_cvtToUsMi (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_US_MI);
+}
+
+static void
+fnct_cvtToIndFt (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_IND_FT);
+}
+
+static void
+fnct_cvtToIndYd (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_IND_YD);
+}
+
+static void
+fnct_cvtToIndCh (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_IND_CH);
+}
+
+static void
+fnct_cvtFromKm (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_KM, GAIA_M);
+}
+
+static void
+fnct_cvtFromDm (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_DM, GAIA_M);
+}
+
+static void
+fnct_cvtFromCm (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_CM, GAIA_M);
+}
+
+static void
+fnct_cvtFromMm (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_MM, GAIA_M);
+}
+
+static void
+fnct_cvtFromKmi (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_KMI, GAIA_M);
+}
+
+static void
+fnct_cvtFromIn (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_IN, GAIA_M);
+}
+
+static void
+fnct_cvtFromYd (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_YD, GAIA_M);
+}
+
+static void
+fnct_cvtFromMi (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_MI, GAIA_M);
+}
+
+static void
+fnct_cvtFromFath (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_FATH, GAIA_M);
+}
+
+static void
+fnct_cvtFromCh (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_CH, GAIA_M);
+}
+
+static void
+fnct_cvtFromUsIn (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_US_IN, GAIA_M);
+}
+
+static void
+fnct_cvtFromUsFt (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_US_FT, GAIA_M);
+}
+
+static void
+fnct_cvtFromUsYd (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_US_YD, GAIA_M);
+}
+
+static void
+fnct_cvtFromUsMi (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_US_MI, GAIA_M);
+}
+
+static void
+fnct_cvtFromIndFt (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_IND_FT, GAIA_M);
+}
+
+static void
+fnct_cvtFromIndYd (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_IND_YD, GAIA_M);
+}
+
+static void
+fnct_cvtFromIndCh (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_IND_CH, GAIA_M);
+}
+
+static void
 init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			const sqlite3_api_routines * pApi)
 {
@@ -8545,6 +9021,82 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_IsExifGpsBlob, 0, 0);
     sqlite3_create_function (db, "GeomFromExifGpsBlob", 1, SQLITE_ANY, 0,
 			     fnct_GeomFromExifGpsBlob, 0, 0);
+
+/* some Geodesic functions */
+    sqlite3_create_function (db, "GreatCircleLength", 1, SQLITE_ANY, 0,
+			     fnct_GreatCircleLength, 0, 0);
+    sqlite3_create_function (db, "GeodesicLength", 1, SQLITE_ANY, 0,
+			     fnct_GeodesicLength, 0, 0);
+
+/* some Length Unit conversion functions */
+    sqlite3_create_function (db, "CvtToKm", 1, SQLITE_ANY, 0, fnct_cvtToKm, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToDm", 1, SQLITE_ANY, 0, fnct_cvtToDm, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToCm", 1, SQLITE_ANY, 0, fnct_cvtToCm, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToMm", 1, SQLITE_ANY, 0, fnct_cvtToMm, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToKmi", 1, SQLITE_ANY, 0, fnct_cvtToKmi, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToIn", 1, SQLITE_ANY, 0, fnct_cvtToIn, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToYd", 1, SQLITE_ANY, 0, fnct_cvtToYd, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToMi", 1, SQLITE_ANY, 0, fnct_cvtToMi, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToFath", 1, SQLITE_ANY, 0, fnct_cvtToFath,
+			     0, 0);
+    sqlite3_create_function (db, "CvtToCh", 1, SQLITE_ANY, 0, fnct_cvtToCh, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToUsIn", 1, SQLITE_ANY, 0, fnct_cvtToUsIn,
+			     0, 0);
+    sqlite3_create_function (db, "CvtToUsFt", 1, SQLITE_ANY, 0, fnct_cvtToUsFt,
+			     0, 0);
+    sqlite3_create_function (db, "CvtToUsYd", 1, SQLITE_ANY, 0, fnct_cvtToUsYd,
+			     0, 0);
+    sqlite3_create_function (db, "CvtToUsMi", 1, SQLITE_ANY, 0, fnct_cvtToUsMi,
+			     0, 0);
+    sqlite3_create_function (db, "CvtToIndFt", 1, SQLITE_ANY, 0,
+			     fnct_cvtToIndFt, 0, 0);
+    sqlite3_create_function (db, "CvtToIndYd", 1, SQLITE_ANY, 0,
+			     fnct_cvtToIndYd, 0, 0);
+    sqlite3_create_function (db, "CvtToIndCh", 1, SQLITE_ANY, 0,
+			     fnct_cvtToIndCh, 0, 0);
+    sqlite3_create_function (db, "CvtFromKm", 1, SQLITE_ANY, 0, fnct_cvtFromKm,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromDm", 1, SQLITE_ANY, 0, fnct_cvtFromDm,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromCm", 1, SQLITE_ANY, 0, fnct_cvtFromCm,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromMm", 1, SQLITE_ANY, 0, fnct_cvtFromMm,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromKmi", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromKmi, 0, 0);
+    sqlite3_create_function (db, "CvtFromIn", 1, SQLITE_ANY, 0, fnct_cvtFromIn,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromYd", 1, SQLITE_ANY, 0, fnct_cvtFromYd,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromMi", 1, SQLITE_ANY, 0, fnct_cvtFromMi,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromFath", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromFath, 0, 0);
+    sqlite3_create_function (db, "CvtFromCh", 1, SQLITE_ANY, 0, fnct_cvtFromCh,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromUsIn", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromUsIn, 0, 0);
+    sqlite3_create_function (db, "CvtFromUsFt", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromUsFt, 0, 0);
+    sqlite3_create_function (db, "CvtFromUsYd", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromUsYd, 0, 0);
+    sqlite3_create_function (db, "CvtFromUsMi", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromUsMi, 0, 0);
+    sqlite3_create_function (db, "CvtFromIndFt", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromIndFt, 0, 0);
+    sqlite3_create_function (db, "CvtFromIndYd", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromIndYd, 0, 0);
+    sqlite3_create_function (db, "CvtFromIndCh", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromIndCh, 0, 0);
 
 #ifndef OMIT_MATHSQL		/* supporting SQL math functions */
 
@@ -9027,6 +9579,82 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_IsExifGpsBlob, 0, 0);
     sqlite3_create_function (db, "GeomFromExifGpsBlob", 1, SQLITE_ANY, 0,
 			     fnct_GeomFromExifGpsBlob, 0, 0);
+
+/* some Geodesic functions */
+    sqlite3_create_function (db, "GreatCircleLength", 1, SQLITE_ANY, 0,
+			     fnct_GreatCircleLength, 0, 0);
+    sqlite3_create_function (db, "GeodesicLength", 1, SQLITE_ANY, 0,
+			     fnct_GeodesicLength, 0, 0);
+
+/* some Length Unit conversion functions */
+    sqlite3_create_function (db, "CvtToKm", 1, SQLITE_ANY, 0, fnct_cvtToKm, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToDm", 1, SQLITE_ANY, 0, fnct_cvtToDm, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToCm", 1, SQLITE_ANY, 0, fnct_cvtToCm, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToMm", 1, SQLITE_ANY, 0, fnct_cvtToMm, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToKmi", 1, SQLITE_ANY, 0, fnct_cvtToKmi, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToIn", 1, SQLITE_ANY, 0, fnct_cvtToIn, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToYd", 1, SQLITE_ANY, 0, fnct_cvtToYd, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToMi", 1, SQLITE_ANY, 0, fnct_cvtToMi, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToFath", 1, SQLITE_ANY, 0, fnct_cvtToFath,
+			     0, 0);
+    sqlite3_create_function (db, "CvtToCh", 1, SQLITE_ANY, 0, fnct_cvtToCh, 0,
+			     0);
+    sqlite3_create_function (db, "CvtToUsIn", 1, SQLITE_ANY, 0, fnct_cvtToUsIn,
+			     0, 0);
+    sqlite3_create_function (db, "CvtToUsFt", 1, SQLITE_ANY, 0, fnct_cvtToUsFt,
+			     0, 0);
+    sqlite3_create_function (db, "CvtToUsYd", 1, SQLITE_ANY, 0, fnct_cvtToUsYd,
+			     0, 0);
+    sqlite3_create_function (db, "CvtToUsMi", 1, SQLITE_ANY, 0, fnct_cvtToUsMi,
+			     0, 0);
+    sqlite3_create_function (db, "CvtToIndFt", 1, SQLITE_ANY, 0,
+			     fnct_cvtToIndFt, 0, 0);
+    sqlite3_create_function (db, "CvtToIndYd", 1, SQLITE_ANY, 0,
+			     fnct_cvtToIndYd, 0, 0);
+    sqlite3_create_function (db, "CvtToIndCh", 1, SQLITE_ANY, 0,
+			     fnct_cvtToIndCh, 0, 0);
+    sqlite3_create_function (db, "CvtFromKm", 1, SQLITE_ANY, 0, fnct_cvtFromKm,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromDm", 1, SQLITE_ANY, 0, fnct_cvtFromDm,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromCm", 1, SQLITE_ANY, 0, fnct_cvtFromCm,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromMm", 1, SQLITE_ANY, 0, fnct_cvtFromMm,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromKmi", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromKmi, 0, 0);
+    sqlite3_create_function (db, "CvtFromIn", 1, SQLITE_ANY, 0, fnct_cvtFromIn,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromYd", 1, SQLITE_ANY, 0, fnct_cvtFromYd,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromMi", 1, SQLITE_ANY, 0, fnct_cvtFromMi,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromFath", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromFath, 0, 0);
+    sqlite3_create_function (db, "CvtFromCh", 1, SQLITE_ANY, 0, fnct_cvtFromCh,
+			     0, 0);
+    sqlite3_create_function (db, "CvtFromUsIn", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromUsIn, 0, 0);
+    sqlite3_create_function (db, "CvtFromUsFt", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromUsFt, 0, 0);
+    sqlite3_create_function (db, "CvtFromUsYd", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromUsYd, 0, 0);
+    sqlite3_create_function (db, "CvtFromUsMi", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromUsMi, 0, 0);
+    sqlite3_create_function (db, "CvtFromIndFt", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromIndFt, 0, 0);
+    sqlite3_create_function (db, "CvtFromIndYd", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromIndYd, 0, 0);
+    sqlite3_create_function (db, "CvtFromIndCh", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromIndCh, 0, 0);
 
 #ifndef OMIT_MATHSQL		/* supporting SQL math functions */
 
