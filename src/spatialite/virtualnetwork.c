@@ -286,8 +286,13 @@ static int
 dijkstra_compare (const void *a, const void *b)
 {
 /* comparison function for QSORT */
-    return (int) (((DijkstraNodePtr) a)->Distance -
-		  ((DijkstraNodePtr) b)->Distance);
+    DijkstraNodePtr *na = (DijkstraNodePtr *) a;
+    DijkstraNodePtr *nb = (DijkstraNodePtr *) b;
+    if ((*na)->Distance == (*nb)->Distance)
+	return 0;
+    if ((*na)->Distance > (*nb)->Distance)
+	return 1;
+    return -1;
 }
 
 static void
