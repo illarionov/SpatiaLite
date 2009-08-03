@@ -145,25 +145,27 @@ extern "C"
 #define GAIA_XY_Z_M	0x03
 
 /* constants used for length unit conversion */
-#define GAIA_KM		1
-#define GAIA_M		2
-#define GAIA_DM		3
-#define GAIA_CM		4
-#define GAIA_MM		5
-#define GAIA_KMI	6
-#define GAIA_IN		7
-#define GAIA_FT		8
-#define GAIA_YD		9
-#define GAIA_MI		10
-#define GAIA_FATH	11
-#define GAIA_CH		12
+#define GAIA_KM		0
+#define GAIA_M		1
+#define GAIA_DM		2
+#define GAIA_CM		3
+#define GAIA_MM		4
+#define GAIA_KMI	5
+#define GAIA_IN		6
+#define GAIA_FT		7
+#define GAIA_YD		8
+#define GAIA_MI		9
+#define GAIA_FATH	10
+#define GAIA_CH		11
+#define GAIA_LINK	12
 #define GAIA_US_IN	13
 #define GAIA_US_FT	14
 #define GAIA_US_YD	15
-#define GAIA_US_MI	16
-#define GAIA_IND_YD	17
-#define GAIA_IND_FT	18
-#define GAIA_IND_CH	19
+#define GAIA_US_CH	16
+#define GAIA_US_MI	17
+#define GAIA_IND_YD	18
+#define GAIA_IND_FT	19
+#define GAIA_IND_CH	20
 #define GAIA_MIN_UNIT	GAIA_KM
 #define GAIA_MAX_UNIT	GAIA_IND_CH
 

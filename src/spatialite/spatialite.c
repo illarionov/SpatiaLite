@@ -8479,12 +8479,14 @@ convertUnit (sqlite3_context * context, int argc, sqlite3_value ** argv,
 	     int unit_from, int unit_to)
 {
 /* SQL functions:
-/ CvtToKm(), CvtToDm(), CvtToCm(), CvtToMm(), CvtToKmi(), CvtToIn(), CvtToYd(),
-/ CvtToMi(), CvtToFath(), CvtToCh(), CvtToUsIn(), CvtToUsFt(), CvtToUsYd(),
-/ CvtToUsMi(), CvtToIndFt(), CvtToIndYd(), CvtToIndCh(), 
+/ CvtToKm(), CvtToDm(), CvtToCm(), CvtToMm(), CvtToKmi(), CvtToIn(), CvtToFt(),
+/ CvtToYd(), CvtToMi(), CvtToFath(), CvtToCh(), CvtToLink(), CvtToUsIn(), 
+/ CvtToUsFt(), CvtToUsYd(), CvtToUsCh(), CvtToUsMi(), CvtToIndFt(), 
+/ CvtToIndYd(), CvtToIndCh(), 
 / CvtFromKm(), CvtFromDm(), CvtFromCm(), CvtFromMm(), CvtFromKmi(), 
-/ CvtFromIn(), CvtFromYd(), CvtFromMi(), CvtFromFath(), CvtFromCh(), CvtFromUsIn(),
-/ CvtFromUsFt(), CvtFromUsYd(), CvtFromUsMi(), CvtFromIndFt(), CvtFromIndYd(), 
+/ CvtFromIn(), CvtFromFt(), CvtFromYd(), CvtFromMi(), CvtFromFath(), 
+/ CvtFromCh(), CvtFromLink(), CvtFromUsIn(), CvtFromUsFt(), CvtFromUsYd(), 
+/ CvtFromUsCh(), CvtFromUsMi(), CvtFromIndFt(), CvtFromIndYd(), 
 / CvtFromIndCh()
 /
 / converts a Length from one unit to a different one
@@ -8549,6 +8551,12 @@ fnct_cvtToIn (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_cvtToFt (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_FT);
+}
+
+static void
 fnct_cvtToYd (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     convertUnit (context, argc, argv, GAIA_M, GAIA_YD);
@@ -8573,6 +8581,12 @@ fnct_cvtToCh (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_cvtToLink (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_LINK);
+}
+
+static void
 fnct_cvtToUsIn (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     convertUnit (context, argc, argv, GAIA_M, GAIA_US_IN);
@@ -8588,6 +8602,12 @@ static void
 fnct_cvtToUsYd (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     convertUnit (context, argc, argv, GAIA_M, GAIA_US_YD);
+}
+
+static void
+fnct_cvtToUsCh (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_M, GAIA_US_CH);
 }
 
 static void
@@ -8651,6 +8671,12 @@ fnct_cvtFromIn (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_cvtFromFt (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_FT, GAIA_M);
+}
+
+static void
 fnct_cvtFromYd (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     convertUnit (context, argc, argv, GAIA_YD, GAIA_M);
@@ -8675,6 +8701,12 @@ fnct_cvtFromCh (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_cvtFromLink (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_LINK, GAIA_M);
+}
+
+static void
 fnct_cvtFromUsIn (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     convertUnit (context, argc, argv, GAIA_US_IN, GAIA_M);
@@ -8690,6 +8722,12 @@ static void
 fnct_cvtFromUsYd (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     convertUnit (context, argc, argv, GAIA_US_YD, GAIA_M);
+}
+
+static void
+fnct_cvtFromUsCh (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    convertUnit (context, argc, argv, GAIA_US_CH, GAIA_M);
 }
 
 static void
@@ -9041,6 +9079,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     0);
     sqlite3_create_function (db, "CvtToIn", 1, SQLITE_ANY, 0, fnct_cvtToIn, 0,
 			     0);
+    sqlite3_create_function (db, "CvtToFt", 1, SQLITE_ANY, 0, fnct_cvtToFt, 0,
+			     0);
     sqlite3_create_function (db, "CvtToYd", 1, SQLITE_ANY, 0, fnct_cvtToYd, 0,
 			     0);
     sqlite3_create_function (db, "CvtToMi", 1, SQLITE_ANY, 0, fnct_cvtToMi, 0,
@@ -9049,11 +9089,15 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "CvtToCh", 1, SQLITE_ANY, 0, fnct_cvtToCh, 0,
 			     0);
+    sqlite3_create_function (db, "CvtToLink", 1, SQLITE_ANY, 0, fnct_cvtToLink,
+			     0, 0);
     sqlite3_create_function (db, "CvtToUsIn", 1, SQLITE_ANY, 0, fnct_cvtToUsIn,
 			     0, 0);
     sqlite3_create_function (db, "CvtToUsFt", 1, SQLITE_ANY, 0, fnct_cvtToUsFt,
 			     0, 0);
     sqlite3_create_function (db, "CvtToUsYd", 1, SQLITE_ANY, 0, fnct_cvtToUsYd,
+			     0, 0);
+    sqlite3_create_function (db, "CvtToUsCh", 1, SQLITE_ANY, 0, fnct_cvtToUsCh,
 			     0, 0);
     sqlite3_create_function (db, "CvtToUsMi", 1, SQLITE_ANY, 0, fnct_cvtToUsMi,
 			     0, 0);
@@ -9075,6 +9119,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_cvtFromKmi, 0, 0);
     sqlite3_create_function (db, "CvtFromIn", 1, SQLITE_ANY, 0, fnct_cvtFromIn,
 			     0, 0);
+    sqlite3_create_function (db, "CvtFromFt", 1, SQLITE_ANY, 0, fnct_cvtFromFt,
+			     0, 0);
     sqlite3_create_function (db, "CvtFromYd", 1, SQLITE_ANY, 0, fnct_cvtFromYd,
 			     0, 0);
     sqlite3_create_function (db, "CvtFromMi", 1, SQLITE_ANY, 0, fnct_cvtFromMi,
@@ -9083,12 +9129,16 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_cvtFromFath, 0, 0);
     sqlite3_create_function (db, "CvtFromCh", 1, SQLITE_ANY, 0, fnct_cvtFromCh,
 			     0, 0);
+    sqlite3_create_function (db, "CvtFromLink", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromLink, 0, 0);
     sqlite3_create_function (db, "CvtFromUsIn", 1, SQLITE_ANY, 0,
 			     fnct_cvtFromUsIn, 0, 0);
     sqlite3_create_function (db, "CvtFromUsFt", 1, SQLITE_ANY, 0,
 			     fnct_cvtFromUsFt, 0, 0);
     sqlite3_create_function (db, "CvtFromUsYd", 1, SQLITE_ANY, 0,
 			     fnct_cvtFromUsYd, 0, 0);
+    sqlite3_create_function (db, "CvtFromUsCh", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromUsCh, 0, 0);
     sqlite3_create_function (db, "CvtFromUsMi", 1, SQLITE_ANY, 0,
 			     fnct_cvtFromUsMi, 0, 0);
     sqlite3_create_function (db, "CvtFromIndFt", 1, SQLITE_ANY, 0,
@@ -9599,6 +9649,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     0);
     sqlite3_create_function (db, "CvtToIn", 1, SQLITE_ANY, 0, fnct_cvtToIn, 0,
 			     0);
+    sqlite3_create_function (db, "CvtToFt", 1, SQLITE_ANY, 0, fnct_cvtToFt, 0,
+			     0);
     sqlite3_create_function (db, "CvtToYd", 1, SQLITE_ANY, 0, fnct_cvtToYd, 0,
 			     0);
     sqlite3_create_function (db, "CvtToMi", 1, SQLITE_ANY, 0, fnct_cvtToMi, 0,
@@ -9607,11 +9659,15 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "CvtToCh", 1, SQLITE_ANY, 0, fnct_cvtToCh, 0,
 			     0);
+    sqlite3_create_function (db, "CvtToLink", 1, SQLITE_ANY, 0, fnct_cvtToLink,
+			     0, 0);
     sqlite3_create_function (db, "CvtToUsIn", 1, SQLITE_ANY, 0, fnct_cvtToUsIn,
 			     0, 0);
     sqlite3_create_function (db, "CvtToUsFt", 1, SQLITE_ANY, 0, fnct_cvtToUsFt,
 			     0, 0);
     sqlite3_create_function (db, "CvtToUsYd", 1, SQLITE_ANY, 0, fnct_cvtToUsYd,
+			     0, 0);
+    sqlite3_create_function (db, "CvtToUsCh", 1, SQLITE_ANY, 0, fnct_cvtToUsCh,
 			     0, 0);
     sqlite3_create_function (db, "CvtToUsMi", 1, SQLITE_ANY, 0, fnct_cvtToUsMi,
 			     0, 0);
@@ -9633,6 +9689,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_cvtFromKmi, 0, 0);
     sqlite3_create_function (db, "CvtFromIn", 1, SQLITE_ANY, 0, fnct_cvtFromIn,
 			     0, 0);
+    sqlite3_create_function (db, "CvtFromFt", 1, SQLITE_ANY, 0, fnct_cvtFromFt,
+			     0, 0);
     sqlite3_create_function (db, "CvtFromYd", 1, SQLITE_ANY, 0, fnct_cvtFromYd,
 			     0, 0);
     sqlite3_create_function (db, "CvtFromMi", 1, SQLITE_ANY, 0, fnct_cvtFromMi,
@@ -9641,12 +9699,16 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_cvtFromFath, 0, 0);
     sqlite3_create_function (db, "CvtFromCh", 1, SQLITE_ANY, 0, fnct_cvtFromCh,
 			     0, 0);
+    sqlite3_create_function (db, "CvtFromLink", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromLink, 0, 0);
     sqlite3_create_function (db, "CvtFromUsIn", 1, SQLITE_ANY, 0,
 			     fnct_cvtFromUsIn, 0, 0);
     sqlite3_create_function (db, "CvtFromUsFt", 1, SQLITE_ANY, 0,
 			     fnct_cvtFromUsFt, 0, 0);
     sqlite3_create_function (db, "CvtFromUsYd", 1, SQLITE_ANY, 0,
 			     fnct_cvtFromUsYd, 0, 0);
+    sqlite3_create_function (db, "CvtFromUsCh", 1, SQLITE_ANY, 0,
+			     fnct_cvtFromUsCh, 0, 0);
     sqlite3_create_function (db, "CvtFromUsMi", 1, SQLITE_ANY, 0,
 			     fnct_cvtFromUsMi, 0, 0);
     sqlite3_create_function (db, "CvtFromIndFt", 1, SQLITE_ANY, 0,
