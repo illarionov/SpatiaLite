@@ -66,7 +66,7 @@ typedef struct NetworkArcStruct
 /* an ARC */
     const struct NetworkNodeStruct *NodeFrom;
     const struct NetworkNodeStruct *NodeTo;
-    int ArcRowid;
+    sqlite3_int64 ArcRowid;
     double Cost;
 } NetworkArc;
 typedef NetworkArc *NetworkArcPtr;
@@ -75,7 +75,7 @@ typedef struct NetworkNodeStruct
 {
 /* a NODE */
     int InternalIndex;
-    int Id;
+    sqlite3_int64 Id;
     char *Code;
     int NumArcs;
     NetworkArcPtr Arcs;
@@ -85,6 +85,7 @@ typedef NetworkNode *NetworkNodePtr;
 typedef struct NetworkStruct
 {
 /* the main NETWORK structure */
+    int Net64;
     int EndianArch;
     int MaxCodeLength;
     int CurrentIndex;
@@ -94,6 +95,7 @@ typedef struct NetworkStruct
     char *FromColumn;
     char *ToColumn;
     char *GeometryColumn;
+    char *NameColumn;
     NetworkNodePtr Nodes;
 } Network;
 typedef Network *NetworkPtr;
@@ -101,14 +103,15 @@ typedef Network *NetworkPtr;
 typedef struct ArcSolutionStruct
 {
 /* Geometry corresponding to an Arc used by Dijkstra shortest path solution */
-    int ArcRowid;
+    sqlite3_int64 ArcRowid;
     char *FromCode;
     char *ToCode;
-    int FromId;
-    int ToId;
+    sqlite3_int64 FromId;
+    sqlite3_int64 ToId;
     int Points;
     double *Coords;
     int Srid;
+    char *Name;
     struct ArcSolutionStruct *Next;
 
 } ArcSolution;
@@ -118,6 +121,7 @@ typedef struct RowSolutionStruct
 {
 /* a row into the Dijkstra shortest path solution */
     NetworkArcPtr Arc;
+    char *Name;
     struct RowSolutionStruct *Next;
 
 } RowSolution;
@@ -133,7 +137,7 @@ typedef struct SolutionStruct
     RowSolutionPtr First;
     RowSolutionPtr Last;
     RowSolutionPtr CurrentRow;
-    int CurrentRowId;
+    sqlite3_int64 CurrentRowId;
     double TotalCost;
     gaiaGeomCollPtr Geometry;
 } Solution;
@@ -147,7 +151,7 @@ typedef Solution *SolutionPtr;
 
 typedef struct DijkstraNode
 {
-    int Id;
+    sqlite3_int64 Id;
     struct DijkstraNode **To;
     NetworkArcPtr *Link;
     int DimTo;
@@ -411,7 +415,11 @@ cmp_nodes_id (const void *p1, const void *p2)
 /* compares two nodes  by ID [for BSEARCH] */
     NetworkNodePtr pN1 = (NetworkNodePtr) p1;
     NetworkNodePtr pN2 = (NetworkNodePtr) p2;
-    return pN1->Id - pN2->Id;
+    if (pN1->Id == pN2->Id)
+	return 0;
+    if (pN1->Id > pN2->Id)
+	return 1;
+    return -1;
 }
 
 static NetworkNodePtr
@@ -428,7 +436,7 @@ find_node_by_code (NetworkPtr graph, const char *code)
 }
 
 static NetworkNodePtr
-find_node_by_id (NetworkPtr graph, const int id)
+find_node_by_id (NetworkPtr graph, const sqlite3_int64 id)
 {
 /* searching a Node (by Id) into the sorted list */
     NetworkNodePtr ret;
@@ -460,6 +468,8 @@ delete_solution (SolutionPtr solution)
 	      free (pA->ToCode);
 	  if (pA->Coords)
 	      free (pA->Coords);
+	  if (pA->Name)
+	      free (pA->Name);
 	  free (pA);
 	  pA = pAn;
       }
@@ -467,6 +477,8 @@ delete_solution (SolutionPtr solution)
     while (pR)
       {
 	  pRn = pR->Next;
+	  if (pR->Name)
+	      free (pR->Name);
 	  free (pR);
 	  pR = pRn;
       }
@@ -502,6 +514,8 @@ reset_solution (SolutionPtr solution)
     while (pR)
       {
 	  pRn = pR->Next;
+	  if (pR->Name)
+	      free (pR->Name);
 	  free (pR);
 	  pR = pRn;
       }
@@ -543,6 +557,7 @@ add_arc_to_solution (SolutionPtr solution, NetworkArcPtr arc)
 /* inserts an Arc into the Dijkstra Shortest Path solution */
     RowSolutionPtr p = malloc (sizeof (RowSolution));
     p->Arc = arc;
+    p->Name = NULL;
     p->Next = NULL;
     solution->TotalCost += arc->Cost;
     if (!(solution->First))
@@ -553,10 +568,11 @@ add_arc_to_solution (SolutionPtr solution, NetworkArcPtr arc)
 }
 
 static void
-add_arc_geometry_to_solution (SolutionPtr solution, int arc_id,
+add_arc_geometry_to_solution (SolutionPtr solution, sqlite3_int64 arc_id,
 			      const char *from_code, const char *to_code,
-			      int from_id, int to_id, int points,
-			      double *coords, int srid)
+			      sqlite3_int64 from_id, sqlite3_int64 to_id,
+			      int points, double *coords, int srid,
+			      const char *name)
 {
 /* inserts an Arc Geometry into the Dijkstra Shortest Path solution */
     int len;
@@ -581,6 +597,14 @@ add_arc_geometry_to_solution (SolutionPtr solution, int arc_id,
     p->Points = points;
     p->Coords = coords;
     p->Srid = srid;
+    if (!name)
+	p->Name = NULL;
+    else
+      {
+	  len = strlen (name);
+	  p->Name = malloc (len + 1);
+	  strcpy (p->Name, name);
+      }
     p->Next = NULL;
     if (!(solution->FirstArc))
 	solution->FirstArc = p;
@@ -595,18 +619,23 @@ dijkstra_solve (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution)
 /* computing a Dijkstra Shortest Path solution */
     int cnt;
     int i;
-    char sql[4096];
-    char dummy[64];
+    char sql[8192];
     int err;
     int error = 0;
     int ret;
-    int arc_id;
+    sqlite3_int64 arc_id;
     const unsigned char *blob;
     int size;
-    int from_id;
-    int to_id;
+    sqlite3_int64 from_id;
+    sqlite3_int64 to_id;
     char from_code[128];
     char to_code[128];
+    char name[2048];
+    int tbd;
+    int ind;
+    int base = 0;
+    int block = 128;
+    int how_many;
     sqlite3_stmt *stmt;
     NetworkArcPtr *shortest_path;
     DijkstraNodesPtr dijkstra = dijkstra_init (graph);
@@ -617,133 +646,184 @@ dijkstra_solve (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution)
       {
 	  /* building the solution */
 	  for (i = 0; i < cnt; i++)
-	      add_arc_to_solution (solution, shortest_path[i]);
-      }
-/* preparing the Geometry representing this solution */
-    sprintf (sql,
-	     "SELECT ROWID, \"%s\", \"%s\", \"%s\" FROM \"%s\" WHERE ROWID IN (",
-	     graph->
-	     FromColumn,
-	     graph->ToColumn, graph->GeometryColumn, graph->TableName);
-    for (i = 0; i < cnt; i++)
-      {
-	  if (i == 0)
-	      sprintf (dummy, "%d", shortest_path[i]->ArcRowid);
-	  else
-	      sprintf (dummy, ",%d", shortest_path[i]->ArcRowid);
-	  strcat (sql, dummy);
-      }
-    if (shortest_path)
-	free (shortest_path);
-    strcat (sql, ")");
-    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
-    if (ret != SQLITE_OK)
-      {
-	  error = 1;
-	  goto abort;
-      }
-    while (1)
-      {
-	  ret = sqlite3_step (stmt);
-	  if (ret == SQLITE_DONE)
-	      break;
-	  if (ret == SQLITE_ROW)
 	    {
-		arc_id = -1;
-		from_id = -1;
-		to_id = -1;
-		*from_code = '\0';
-		*to_code = '\0';
-		blob = NULL;
-		size = 0;
-		err = 0;
-		if (sqlite3_column_type (stmt, 0) == SQLITE_INTEGER)
-		    arc_id = sqlite3_column_int (stmt, 0);
+		add_arc_to_solution (solution, shortest_path[i]);
+	    }
+      }
+    tbd = cnt;
+    while (tbd > 0)
+      {
+	  /* requesting max 128 arcs at each time */
+	  if (tbd < block)
+	      how_many = tbd;
+	  else
+	      how_many = block;
+/* preparing the Geometry representing this solution [reading arcs] */
+	  if (graph->NameColumn)
+	    {
+		/* a Name column is defined */
+		sprintf (sql,
+			 "SELECT ROWID, \"%s\", \"%s\", \"%s\", \"%s\" FROM \"%s\" WHERE ROWID IN (",
+			 graph->FromColumn, graph->ToColumn,
+			 graph->GeometryColumn, graph->NameColumn,
+			 graph->TableName);
+	    }
+	  else
+	    {
+		/* no Name column is defined */
+		sprintf (sql,
+			 "SELECT ROWID, \"%s\", \"%s\", \"%s\" FROM \"%s\" WHERE ROWID IN (",
+			 graph->FromColumn, graph->ToColumn,
+			 graph->GeometryColumn, graph->TableName);
+	    }
+	  for (i = 0; i < how_many; i++)
+	    {
+		if (i == 0)
+		    strcat (sql, "?");
 		else
-		    err = 1;
-		if (graph->NodeCode)
+		    strcat (sql, ",?");
+	    }
+	  strcat (sql, ")");
+	  ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		error = 1;
+		goto abort;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  ind = 1;
+	  for (i = 0; i < cnt; i++)
+	    {
+		if (i < base)
+		    continue;
+		if (i >= (base + how_many))
+		    break;
+		sqlite3_bind_int64 (stmt, ind, shortest_path[i]->ArcRowid);
+		ind++;
+	    }
+	  while (1)
+	    {
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE)
+		    break;
+		if (ret == SQLITE_ROW)
 		  {
-		      /* nodes are identified by TEXT codes */
-		      if (sqlite3_column_type (stmt, 1) == SQLITE_TEXT)
-			  strcpy (from_code,
-				  (char *) sqlite3_column_text (stmt, 1));
+		      arc_id = -1;
+		      from_id = -1;
+		      to_id = -1;
+		      *from_code = '\0';
+		      *to_code = '\0';
+		      blob = NULL;
+		      size = 0;
+		      *name = '\0';
+		      err = 0;
+		      if (sqlite3_column_type (stmt, 0) == SQLITE_INTEGER)
+			  arc_id = sqlite3_column_int64 (stmt, 0);
 		      else
 			  err = 1;
-		      if (sqlite3_column_type (stmt, 2) == SQLITE_TEXT)
-			  strcpy (to_code,
-				  (char *) sqlite3_column_text (stmt, 2));
-		      else
-			  err = 1;
-		  }
-		else
-		  {
-		      /* nodes are identified by INTEGER ids */
-		      if (sqlite3_column_type (stmt, 1) == SQLITE_INTEGER)
-			  from_id = sqlite3_column_int (stmt, 1);
-		      else
-			  err = 1;
-		      if (sqlite3_column_type (stmt, 2) == SQLITE_INTEGER)
-			  to_id = sqlite3_column_int (stmt, 2);
-		      else
-			  err = 1;
-		  }
-		if (sqlite3_column_type (stmt, 3) == SQLITE_BLOB)
-		  {
-		      blob =
-			  (const unsigned char *) sqlite3_column_blob (stmt, 3);
-		      size = sqlite3_column_bytes (stmt, 3);
-		  }
-		else
-		    err = 1;
-		if (err)
-		    error = 1;
-		else
-		  {
-		      /* saving the Arc geometry into the temporary struct */
-		      gaiaGeomCollPtr geom =
-			  gaiaFromSpatiaLiteBlobWkb (blob, size);
-		      if (geom)
+		      if (graph->NodeCode)
 			{
-			    /* OK, we have fetched a valid Geometry */
-			    if (geom->FirstPoint == NULL
-				&& geom->FirstPolygon == NULL
-				&& geom->FirstLinestring != NULL
-				&& geom->FirstLinestring ==
-				geom->LastLinestring)
+			    /* nodes are identified by TEXT codes */
+			    if (sqlite3_column_type (stmt, 1) == SQLITE_TEXT)
+				strcpy (from_code,
+					(char *) sqlite3_column_text (stmt, 1));
+			    else
+				err = 1;
+			    if (sqlite3_column_type (stmt, 2) == SQLITE_TEXT)
+				strcpy (to_code,
+					(char *) sqlite3_column_text (stmt, 2));
+			    else
+				err = 1;
+			}
+		      else
+			{
+			    /* nodes are identified by INTEGER ids */
+			    if (sqlite3_column_type (stmt, 1) == SQLITE_INTEGER)
+				from_id = sqlite3_column_int64 (stmt, 1);
+			    else
+				err = 1;
+			    if (sqlite3_column_type (stmt, 2) == SQLITE_INTEGER)
+				to_id = sqlite3_column_int64 (stmt, 2);
+			    else
+				err = 1;
+			}
+		      if (sqlite3_column_type (stmt, 3) == SQLITE_BLOB)
+			{
+			    blob =
+				(const unsigned char *)
+				sqlite3_column_blob (stmt, 3);
+			    size = sqlite3_column_bytes (stmt, 3);
+			}
+		      else
+			  err = 1;
+		      if (graph->NameColumn)
+			{
+			    if (sqlite3_column_type (stmt, 4) == SQLITE_TEXT)
+				strcpy (name,
+					(char *) sqlite3_column_text (stmt, 4));
+			}
+		      if (err)
+			  error = 1;
+		      else
+			{
+			    /* saving the Arc geometry into the temporary struct */
+			    gaiaGeomCollPtr geom =
+				gaiaFromSpatiaLiteBlobWkb (blob, size);
+			    if (geom)
 			      {
-				  /* Geometry is LINESTRING as expected */
-				  int iv;
-				  int points = geom->FirstLinestring->Points;
-				  double *coords =
-				      malloc (sizeof (double) * (points * 2));
-				  for (iv = 0; iv < points; iv++)
+				  /* OK, we have fetched a valid Geometry */
+				  if (geom->FirstPoint == NULL
+				      && geom->FirstPolygon == NULL
+				      && geom->FirstLinestring != NULL
+				      && geom->FirstLinestring ==
+				      geom->LastLinestring)
 				    {
-					double x;
-					double y;
-					gaiaGetPoint (geom->FirstLinestring->
-						      Coords, iv, &x, &y);
-					*(coords + ((iv * 2) + 0)) = x;
-					*(coords + ((iv * 2) + 1)) = y;
+					/* Geometry is LINESTRING as expected */
+					int iv;
+					int points =
+					    geom->FirstLinestring->Points;
+					double *coords =
+					    malloc (sizeof (double) *
+						    (points * 2));
+					for (iv = 0; iv < points; iv++)
+					  {
+					      double x;
+					      double y;
+					      gaiaGetPoint (geom->
+							    FirstLinestring->
+							    Coords, iv, &x, &y);
+					      *(coords + ((iv * 2) + 0)) = x;
+					      *(coords + ((iv * 2) + 1)) = y;
+					  }
+					add_arc_geometry_to_solution (solution,
+								      arc_id,
+								      from_code,
+								      to_code,
+								      from_id,
+								      to_id,
+								      points,
+								      coords,
+								      geom->
+								      Srid,
+								      name);
 				    }
-				  add_arc_geometry_to_solution (solution,
-								arc_id,
-								from_code,
-								to_code,
-								from_id, to_id,
-								points, coords,
-								geom->Srid);
+				  else
+				      error = 1;
+				  gaiaFreeGeomColl (geom);
 			      }
 			    else
 				error = 1;
-			    gaiaFreeGeomColl (geom);
 			}
-		      else
-			  error = 1;
 		  }
 	    }
+	  sqlite3_finalize (stmt);
+	  tbd -= how_many;
+	  base += how_many;
       }
-    sqlite3_finalize (stmt);
   abort:
+    if (shortest_path)
+	free (shortest_path);
     if (!error)
       {
 	  /* building the Geometry representing the Dijsktra Shortest Path Solution */
@@ -850,6 +930,12 @@ dijkstra_solve (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution)
 					tot_pts++;
 				    }
 			      }
+			    if (pA->Name)
+			      {
+				  int len = strlen (pA->Name);
+				  pR->Name = malloc (len + 1);
+				  strcpy (pR->Name, pA->Name);
+			      }
 			    break;
 			}
 		      pA = pA->Next;
@@ -883,6 +969,8 @@ network_free (NetworkPtr p)
 	free (p->ToColumn);
     if (p->GeometryColumn)
 	free (p->GeometryColumn);
+    if (p->NameColumn)
+	free (p->NameColumn);
     free (p);
 }
 
@@ -891,6 +979,7 @@ network_init (const unsigned char *blob, int size)
 {
 /* parsing the HEADER block */
     NetworkPtr graph;
+    int net64;
     int nodes;
     int node_code;
     int max_code_length;
@@ -899,11 +988,16 @@ network_init (const unsigned char *blob, int size)
     const char *from;
     const char *to;
     const char *geom;
+    const char *name;
     int len;
     const unsigned char *ptr;
     if (size < 9)
 	return NULL;
-    if (*(blob + 0) != GAIA_NET_START)	/* signature */
+    if (*(blob + 0) == GAIA_NET_START)	/* signature - legacy format using 32bit ints */
+	net64 = 0;
+    else if (*(blob + 0) == GAIA_NET64_START)	/* signature - format using 64bit ints */
+	net64 = 1;
+    else
 	return NULL;
     if (*(blob + 1) != GAIA_NET_HEADER)	/* signature */
 	return NULL;
@@ -931,7 +1025,7 @@ network_init (const unsigned char *blob, int size)
     ptr += 2;
     from = (char *) ptr;
     ptr += len;
-    if (*ptr != GAIA_NET_TO)	/* signature for Toode COLUMN */
+    if (*ptr != GAIA_NET_TO)	/* signature for ToNode COLUMN */
 	return NULL;
     ptr++;
     len = gaiaImport16 (ptr, 1, endian_arch);	/* ToNode COLUMN is varlen */
@@ -945,9 +1039,20 @@ network_init (const unsigned char *blob, int size)
     ptr += 2;
     geom = (char *) ptr;
     ptr += len;
+    if (net64)
+      {
+	  if (*ptr != GAIA_NET_NAME)	/* signature for Name COLUMN - may be empty */
+	      return NULL;
+	  ptr++;
+	  len = gaiaImport16 (ptr, 1, endian_arch);	/* Name COLUMN is varlen */
+	  ptr += 2;
+	  name = (char *) ptr;
+	  ptr += len;
+      }
     if (*ptr != GAIA_NET_END)	/* signature */
 	return NULL;
     graph = malloc (sizeof (Network));
+    graph->Net64 = net64;
     graph->EndianArch = endian_arch;
     graph->CurrentIndex = 0;
     graph->NodeCode = node_code;
@@ -966,6 +1071,22 @@ network_init (const unsigned char *blob, int size)
     len = strlen (geom);
     graph->GeometryColumn = malloc (len + 1);
     strcpy (graph->GeometryColumn, geom);
+    if (!net64)
+      {
+	  /* Name column is not supported */
+	  graph->NameColumn = NULL;
+      }
+    else
+      {
+	  len = strlen (name);
+	  if (len <= 1)
+	      graph->NameColumn = NULL;
+	  else
+	    {
+		graph->NameColumn = malloc (len + 1);
+		strcpy (graph->NameColumn, name);
+	    }
+      }
     return graph;
 }
 
@@ -979,12 +1100,12 @@ network_block (NetworkPtr graph, const unsigned char *blob, int size)
     int ia;
     int index;
     char code[256];
-    int nodeId = -1;
+    sqlite3_int64 nodeId = -1;
     int arcs;
     NetworkNodePtr pN;
     NetworkArcPtr pA;
     int len;
-    int arcId;
+    sqlite3_int64 arcId;
     int nodeToIdx;
     double cost;
     if (size < 3)
@@ -1015,10 +1136,20 @@ network_block (NetworkPtr graph, const unsigned char *blob, int size)
 	  else
 	    {
 		/* Nodes are identified by an INTEGER Id */
-		if ((size - (in - blob)) < 4)
-		    goto error;
-		nodeId = gaiaImport32 (in, 1, graph->EndianArch);	/* the Node ID */
-		in += 4;
+		if (graph->Net64)
+		  {
+		      if ((size - (in - blob)) < 8)
+			  goto error;
+		      nodeId = gaiaImportI64 (in, 1, graph->EndianArch);	/* the Node ID: 64bit */
+		      in += 8;
+		  }
+		else
+		  {
+		      if ((size - (in - blob)) < 4)
+			  goto error;
+		      nodeId = gaiaImport32 (in, 1, graph->EndianArch);	/* the Node ID: 32bit */
+		      in += 4;
+		  }
 	    }
 	  if ((size - (in - blob)) < 2)
 	      goto error;
@@ -1051,12 +1182,28 @@ network_block (NetworkPtr graph, const unsigned char *blob, int size)
 		for (ia = 0; ia < arcs; ia++)
 		  {
 		      /* parsing each Arc */
-		      if ((size - (in - blob)) < 18)
-			  goto error;
+		      if (graph->Net64)
+			{
+			    if ((size - (in - blob)) < 22)
+				goto error;
+			}
+		      else
+			{
+			    if ((size - (in - blob)) < 18)
+				goto error;
+			}
 		      if (*in++ != GAIA_NET_ARC)	/* signature */
 			  goto error;
-		      arcId = gaiaImport32 (in, 1, graph->EndianArch);	/* # Arc ROWID */
-		      in += 4;
+		      if (graph->Net64)
+			{
+			    arcId = gaiaImportI64 (in, 1, graph->EndianArch);	/* # Arc ROWID: 64bit */
+			    in += 8;
+			}
+		      else
+			{
+			    arcId = gaiaImport32 (in, 1, graph->EndianArch);	/* # Arc ROWID: 32bit */
+			    in += 4;
+			}
 		      nodeToIdx = gaiaImport32 (in, 1, graph->EndianArch);	/* # NodeTo internal index */
 		      in += 4;
 		      cost = gaiaImport64 (in, 1, graph->EndianArch);	/* # Cost */
@@ -1254,7 +1401,11 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	strcat (buf, "\"NodeFrom\" TEXT, \"NodeTo\" TEXT,");
     else
 	strcat (buf, "\"NodeFrom\" INTEGER, \"NodeTo\" INTEGER,");
-    strcat (buf, " \"Cost\" DOUBLE, \"Geometry\" BLOB)");
+    strcat (buf, " \"Cost\" DOUBLE, \"Geometry\" BLOB");
+    if (p_vt->graph->NameColumn)
+	strcat (buf, ", \"Name\" TEXT)");
+    else
+	strcat (buf, ")");
     if (sqlite3_declare_vtab (db, buf) != SQLITE_OK)
       {
 	  *pzErr =
@@ -1556,6 +1707,11 @@ vnet_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 		      sqlite3_result_blob (pContext, p_result, len, free);
 		  }
 	    }
+	  if (column == 5)
+	    {
+		/* the [optional] Name column */
+		sqlite3_result_null (pContext);
+	    }
       }
     else
       {
@@ -1564,7 +1720,7 @@ vnet_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 	  if (column == 0)
 	    {
 		/* the ArcRowId column */
-		sqlite3_result_int (pContext, row->Arc->ArcRowid);
+		sqlite3_result_int64 (pContext, row->Arc->ArcRowid);
 	    }
 	  if (column == 1)
 	    {
@@ -1574,7 +1730,7 @@ vnet_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 					 strlen (row->Arc->NodeFrom->Code),
 					 SQLITE_STATIC);
 		else
-		    sqlite3_result_int (pContext, row->Arc->NodeFrom->Id);
+		    sqlite3_result_int64 (pContext, row->Arc->NodeFrom->Id);
 	    }
 	  if (column == 2)
 	    {
@@ -1584,7 +1740,7 @@ vnet_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 					 strlen (row->Arc->NodeTo->Code),
 					 SQLITE_STATIC);
 		else
-		    sqlite3_result_int (pContext, row->Arc->NodeTo->Id);
+		    sqlite3_result_int64 (pContext, row->Arc->NodeTo->Id);
 	    }
 	  if (column == 3)
 	    {
@@ -1595,6 +1751,15 @@ vnet_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 	    {
 		/* the Geometry column */
 		sqlite3_result_null (pContext);
+	    }
+	  if (column == 5)
+	    {
+		/* the [optional] Name column */
+		if (row->Name)
+		    sqlite3_result_text (pContext, row->Name,
+					 strlen (row->Name), SQLITE_STATIC);
+		else
+		    sqlite3_result_null (pContext);
 	    }
       }
     return SQLITE_OK;

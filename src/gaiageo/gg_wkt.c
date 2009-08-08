@@ -1136,7 +1136,7 @@ gaiaGeometryFromGeomColl (gaiaGeomCollListTokenPtr geocoll)
     return geom;
 }
 
-static
+static int
 checkValidity (gaiaGeomCollPtr geom)
 {
 /* checks if this one is a degenerated geometry */

@@ -265,8 +265,7 @@ gaiaFree (void *ptr)
 }
 
 GAIAGEO_DECLARE double
-gaiaGreatCircleTotalLength (double a, double b, double rf, double *coords,
-			    int vert)
+gaiaGreatCircleTotalLength (double a, double b, double *coords, int vert)
 {
 /* computing the GreatCircle total length for some Linestring/Ring */
     int iv;

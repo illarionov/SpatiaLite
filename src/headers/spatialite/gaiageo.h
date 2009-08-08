@@ -126,16 +126,18 @@ extern "C"
 
 /* constants used for VirtualNetwork */
 #define GAIA_NET_START	0x67
+#define GAIA_NET64_START	0x68
 #define GAIA_NET_END	0x87
 #define GAIA_NET_HEADER	0xc0
 #define GAIA_NET_CODE	0xa6
-#define GAIA_NET_ID		0xb5
+#define GAIA_NET_ID	0xb5
 #define GAIA_NET_NODE	0xde
 #define GAIA_NET_ARC	0x54
 #define GAIA_NET_TABLE	0xa0
 #define GAIA_NET_FROM	0xa1
-#define GAIA_NET_TO		0xa2
+#define GAIA_NET_TO	0xa2
 #define GAIA_NET_GEOM	0xa3
+#define GAIA_NET_NAME	0xa4
 #define GAIA_NET_BLOCK	0xed
 
 /* constants used for Coordinate Dimensions */
@@ -344,6 +346,9 @@ extern "C"
     GAIAGEO_DECLARE double gaiaImport64 (const unsigned char *p,
 					 int little_endian,
 					 int little_endian_arch);
+    GAIAGEO_DECLARE sqlite3_int64 gaiaImportI64 (const unsigned char *p,
+						 int little_endian,
+						 int little_endian_arch);
     GAIAGEO_DECLARE void gaiaExport16 (unsigned char *p, short value,
 				       int little_endian,
 				       int little_endian_arch);
@@ -353,6 +358,9 @@ extern "C"
     GAIAGEO_DECLARE void gaiaExport64 (unsigned char *p, double value,
 				       int little_endian,
 				       int little_endian_arch);
+    GAIAGEO_DECLARE void gaiaExportI64 (unsigned char *p, sqlite3_int64 value,
+					int little_endian,
+					int little_endian_arch);
     GAIAGEO_DECLARE gaiaPointPtr gaiaAllocPoint (double x, double y);
     GAIAGEO_DECLARE void gaiaFreePoint (gaiaPointPtr ptr);
     GAIAGEO_DECLARE gaiaLinestringPtr gaiaAllocLinestring (int vert);
@@ -587,7 +595,6 @@ extern "C"
 						 double lat1, double lon1,
 						 double lat2, double lon2);
     GAIAGEO_DECLARE double gaiaGreatCircleTotalLength (double a, double b,
-						       double rf,
 						       double *coords,
 						       int vert);
     GAIAGEO_DECLARE double gaiaGeodesicTotalLength (double a, double b,

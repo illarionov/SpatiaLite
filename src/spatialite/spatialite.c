@@ -8309,7 +8309,6 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int n_bytes;
     double l;
     double length = 0.0;
-    int ret;
     double a;
     double b;
     double rf;
@@ -8406,9 +8405,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 */
     unsigned char *p_blob;
     int n_bytes;
-    double l;
     double length = 0.0;
-    int ret;
     double a;
     double b;
     double rf;
@@ -8438,7 +8435,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 		  {
 		      /* Linestrings */
 		      length +=
-			  gaiaGreatCircleTotalLength (a, b, rf, line->Coords,
+			  gaiaGreatCircleTotalLength (a, b, line->Coords,
 						      line->Points);
 		      line = line->Next;
 		  }
@@ -8451,15 +8448,14 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    /* exterior Ring */
 			    ring = polyg->Exterior;
 			    length +=
-				gaiaGreatCircleTotalLength (a, b, rf,
-							    ring->Coords,
+				gaiaGreatCircleTotalLength (a, b, ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
 			      {
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  length +=
-				      gaiaGreatCircleTotalLength (a, b, rf,
+				      gaiaGreatCircleTotalLength (a, b,
 								  ring->Coords,
 								  ring->Points);
 			      }
