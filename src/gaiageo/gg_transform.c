@@ -723,7 +723,10 @@ gaiaTransform (gaiaGeomCollPtr org, char *proj_from, char *proj_to)
 	  dst->LastPolygon = NULL;
       }
     if (dst)
-	dst->DeclaredType = org->DeclaredType;
+      {
+	  gaiaMbrGeometry (dst);
+	  dst->DeclaredType = org->DeclaredType;
+      }
     return dst;
 }
 
