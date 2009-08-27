@@ -140,8 +140,8 @@ gaiaGreatCircleDistance (double a, double b, double lat1, double lon1,
 			 double lat2, double lon2)
 {
 /*
-/ Calculate great-circle distance (in m) between two points specified by latitude/longitude 
-/ (in decimal degrees) using Aviation Formulary
+/ Calculate great-circle distance (in m) between two points specified by 
+/ latitude/longitude (in decimal degrees) using Aviation Formulary
 /
 / http://williams.best.vwh.net/avform.htm#Dist
 /
