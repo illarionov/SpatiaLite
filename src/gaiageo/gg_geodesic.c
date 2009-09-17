@@ -2,7 +2,7 @@
 
  gg_geodesic.c -- Gaia functions for geodesic calculations
   
- version 2.3, 2009 August 2
+ version 2.4, 2009 September 17
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -265,7 +265,8 @@ gaiaFree (void *ptr)
 }
 
 GAIAGEO_DECLARE double
-gaiaGreatCircleTotalLength (double a, double b, double *coords, int vert)
+gaiaGreatCircleTotalLength (double a, double b, int dims, double *coords,
+			    int vert)
 {
 /* computing the GreatCircle total length for some Linestring/Ring */
     int iv;
@@ -273,10 +274,27 @@ gaiaGreatCircleTotalLength (double a, double b, double *coords, int vert)
     double y1;
     double x2;
     double y2;
+    double z;
+    double m;
     double len = 0.0;
     for (iv = 0; iv < vert; iv++)
       {
-	  gaiaGetPoint (coords, iv, &x2, &y2);
+	  if (dims == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (coords, iv, &x2, &y2, &z);
+	    }
+	  else if (dims == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (coords, iv, &x2, &y2, &m);
+	    }
+	  else if (dims == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (coords, iv, &x2, &y2, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (coords, iv, &x2, &y2);
+	    }
 	  if (iv > 0)
 	      len += gaiaGreatCircleDistance (a, b, x1, y1, x2, y2);
 	  x1 = x2;
@@ -286,8 +304,8 @@ gaiaGreatCircleTotalLength (double a, double b, double *coords, int vert)
 }
 
 GAIAGEO_DECLARE double
-gaiaGeodesicTotalLength (double a, double b, double rf, double *coords,
-			 int vert)
+gaiaGeodesicTotalLength (double a, double b, double rf, int dims,
+			 double *coords, int vert)
 {
 /* computing the Geodesic total length for some Linestring/Ring */
     int iv;
@@ -295,11 +313,28 @@ gaiaGeodesicTotalLength (double a, double b, double rf, double *coords,
     double y1;
     double x2;
     double y2;
+    double z;
+    double m;
     double l;
     double len = 0.0;
     for (iv = 0; iv < vert; iv++)
       {
-	  gaiaGetPoint (coords, iv, &x2, &y2);
+	  if (dims == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (coords, iv, &x2, &y2, &z);
+	    }
+	  else if (dims == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (coords, iv, &x2, &y2, &m);
+	    }
+	  else if (dims == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (coords, iv, &x2, &y2, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (coords, iv, &x2, &y2);
+	    }
 	  if (iv > 0)
 	    {
 		l = gaiaGeodesicDistance (a, b, rf, x1, y1, x2, y2);

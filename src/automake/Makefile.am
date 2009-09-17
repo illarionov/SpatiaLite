@@ -11,7 +11,7 @@ libspatialite_la_SOURCES = spatialite.c \
 	sqlite3.c
 
 if MINGW
-libspatialite_la_LDFLAGS = -version-info 2:3:1 -no-undefined
+libspatialite_la_LDFLAGS = -version-info 2:4:0 -no-undefined
 libspatialite_la_LIBADD = \
 	@GEOS_LIB_CLA@ \
 	@GEOS_LIB_LA@ \
@@ -19,14 +19,14 @@ libspatialite_la_LIBADD = \
 	-liconv -lm -lstdc++
 else
 if MACOSX
-libspatialite_la_LDFLAGS = -version-info 2:3:1
+libspatialite_la_LDFLAGS = -version-info 2:4:0
 libspatialite_la_LIBADD = \
 	@GEOS_LIB_CLA@ \
 	@GEOS_LIB_LA@ \
 	@PROJ_LIB_LA@ \
 	-liconv -lm -lstdc++ -lpthread -ldl
 else
-libspatialite_la_LDFLAGS = -version-info 2:3:1
+libspatialite_la_LDFLAGS = -version-info 2:4:0
 libspatialite_la_LIBADD = \
 	@GEOS_LIB_CLA@ \
 	@GEOS_LIB_LA@ \

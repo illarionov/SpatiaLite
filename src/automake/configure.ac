@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(libspatialite-amalgamation, 2.3.1, a.furieri@lqt.it)
+AC_INIT(libspatialite-amalgamation, 2.4.0, a.furieri@lqt.it)
 AC_LANG(C)
 
 AM_INIT_AUTOMAKE

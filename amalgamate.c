@@ -325,6 +325,7 @@ main ()
     do_copy (out, "/gaiageo/", "gg_endian.c");
     do_copy (out, "/gaiageo/", "gg_geometries.c");
     do_copy (out, "/gaiageo/", "gg_relations.c");
+    do_copy (out, "/gaiageo/", "gg_geoscvt.c");
     do_copy (out, "/gaiageo/", "gg_shape.c");
     do_copy (out, "/gaiageo/", "gg_transform.c");
     do_copy (out, "/gaiageo/", "gg_wkb.c");

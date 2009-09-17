@@ -2,7 +2,7 @@
 
  gg_wkt.c -- Gaia common support for WKT encoded geometries
   
- version 2.3, 2008 October 13
+ version 2.4, 2009 September 17
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -111,6 +111,8 @@ typedef struct gaiaVarListTokenStruct
 				 */
     double x;			/* X,Y are valids only if type is GAIA_POINT */
     double y;
+    double z;
+    double m;
     struct gaiaVarListTokenStruct *next;	/* points to next element in linked list */
 } gaiaVarListToken;
 typedef gaiaVarListToken *gaiaVarListTokenPtr;
@@ -210,17 +212,59 @@ gaiaCleanWkt (const unsigned char *old)
       {
 	  if (len > 6 && strncasecmp (buf, "POINT(", 6) == 0)
 	      ok = 1;
+	  if (len > 7 && strncasecmp (buf, "POINTZ(", 7) == 0)
+	      ok = 1;
+	  if (len > 7 && strncasecmp (buf, "POINTM(", 7) == 0)
+	      ok = 1;
+	  if (len > 8 && strncasecmp (buf, "POINTZM(", 8) == 0)
+	      ok = 1;
 	  if (len > 11 && strncasecmp (buf, "LINESTRING(", 11) == 0)
+	      ok = 1;
+	  if (len > 12 && strncasecmp (buf, "LINESTRINGZ(", 12) == 0)
+	      ok = 1;
+	  if (len > 12 && strncasecmp (buf, "LINESTRINGM(", 12) == 0)
+	      ok = 1;
+	  if (len > 13 && strncasecmp (buf, "LINESTRINGZM(", 13) == 0)
 	      ok = 1;
 	  if (len > 8 && strncasecmp (buf, "POLYGON(", 8) == 0)
 	      ok = 1;
+	  if (len > 9 && strncasecmp (buf, "POLYGONZ(", 9) == 0)
+	      ok = 1;
+	  if (len > 9 && strncasecmp (buf, "POLYGONM(", 9) == 0)
+	      ok = 1;
+	  if (len > 10 && strncasecmp (buf, "POLYGONZM(", 10) == 0)
+	      ok = 1;
 	  if (len > 11 && strncasecmp (buf, "MULTIPOINT(", 11) == 0)
+	      ok = 1;
+	  if (len > 12 && strncasecmp (buf, "MULTIPOINTZ(", 12) == 0)
+	      ok = 1;
+	  if (len > 12 && strncasecmp (buf, "MULTIPOINTM(", 12) == 0)
+	      ok = 1;
+	  if (len > 13 && strncasecmp (buf, "MULTIPOINTZM(", 13) == 0)
 	      ok = 1;
 	  if (len > 16 && strncasecmp (buf, "MULTILINESTRING(", 16) == 0)
 	      ok = 1;
+	  if (len > 17 && strncasecmp (buf, "MULTILINESTRINGZ(", 17) == 0)
+	      ok = 1;
+	  if (len > 17 && strncasecmp (buf, "MULTILINESTRINGM(", 17) == 0)
+	      ok = 1;
+	  if (len > 18 && strncasecmp (buf, "MULTILINESTRINGZM(", 18) == 0)
+	      ok = 1;
 	  if (len > 13 && strncasecmp (buf, "MULTIPOLYGON(", 13) == 0)
 	      ok = 1;
+	  if (len > 14 && strncasecmp (buf, "MULTIPOLYGONZ(", 14) == 0)
+	      ok = 1;
+	  if (len > 14 && strncasecmp (buf, "MULTIPOLYGONM(", 14) == 0)
+	      ok = 1;
+	  if (len > 15 && strncasecmp (buf, "MULTIPOLYGONZM(", 15) == 0)
+	      ok = 1;
 	  if (len > 19 && strncasecmp (buf, "GEOMETRYCOLLECTION(", 19) == 0)
+	      ok = 1;
+	  if (len > 20 && strncasecmp (buf, "GEOMETRYCOLLECTIONZ(", 20) == 0)
+	      ok = 1;
+	  if (len > 20 && strncasecmp (buf, "GEOMETRYCOLLECTIONM(", 20) == 0)
+	      ok = 1;
+	  if (len > 21 && strncasecmp (buf, "GEOMETRYCOLLECTIONZM(", 21) == 0)
 	      ok = 1;
 	  if (!ok)
 	      error = 1;
@@ -292,9 +336,11 @@ gaiaFreeGeomCollListToken (gaiaGeomCollListTokenPtr p)
     while (pt)
       {
 	  ptn = pt->next;
-	  if (pt->type == GAIA_LINESTRING)
+	  if (pt->type == GAIA_LINESTRING || pt->type == GAIA_LINESTRINGZ
+	      || pt->type == GAIA_LINESTRINGM || pt->type == GAIA_LINESTRINGZM)
 	      gaiaFreeListToken ((gaiaListTokenPtr) (pt->pointer));
-	  if (pt->type == GAIA_POLYGON)
+	  if (pt->type == GAIA_POLYGON || pt->type == GAIA_POLYGONZ
+	      || pt->type == GAIA_POLYGONM || pt->type == GAIA_POLYGONZM)
 	      gaiaFreeMultiListToken ((gaiaMultiListTokenPtr) (pt->pointer));
 	  pt = ptn;
       }
@@ -358,18 +404,60 @@ gaiaAddToken (char *token, gaiaTokenPtr * first, gaiaTokenPtr * last)
     p->coord = 0.0;
     if (strcasecmp (token, "POINT") == 0)
 	p->type = GAIA_POINT;
+    if (strcasecmp (token, "POINTZ") == 0)
+	p->type = GAIA_POINTZ;
+    if (strcasecmp (token, "POINTM") == 0)
+	p->type = GAIA_POINTM;
+    if (strcasecmp (token, "POINTZM") == 0)
+	p->type = GAIA_POINTZM;
     if (strcasecmp (token, "LINESTRING") == 0)
 	p->type = GAIA_LINESTRING;
+    if (strcasecmp (token, "LINESTRINGZ") == 0)
+	p->type = GAIA_LINESTRINGZ;
+    if (strcasecmp (token, "LINESTRINGM") == 0)
+	p->type = GAIA_LINESTRINGM;
+    if (strcasecmp (token, "LINESTRINGZM") == 0)
+	p->type = GAIA_LINESTRINGZM;
     if (strcasecmp (token, "POLYGON") == 0)
 	p->type = GAIA_POLYGON;
+    if (strcasecmp (token, "POLYGONZ") == 0)
+	p->type = GAIA_POLYGONZ;
+    if (strcasecmp (token, "POLYGONM") == 0)
+	p->type = GAIA_POLYGONM;
+    if (strcasecmp (token, "POLYGONZM") == 0)
+	p->type = GAIA_POLYGONZM;
     if (strcasecmp (token, "MULTIPOINT") == 0)
 	p->type = GAIA_MULTIPOINT;
+    if (strcasecmp (token, "MULTIPOINTZ") == 0)
+	p->type = GAIA_MULTIPOINTZ;
+    if (strcasecmp (token, "MULTIPOINTM") == 0)
+	p->type = GAIA_MULTIPOINTM;
+    if (strcasecmp (token, "MULTIPOINTZM") == 0)
+	p->type = GAIA_MULTIPOINTZM;
     if (strcasecmp (token, "MULTILINESTRING") == 0)
 	p->type = GAIA_MULTILINESTRING;
+    if (strcasecmp (token, "MULTILINESTRINGZ") == 0)
+	p->type = GAIA_MULTILINESTRINGZ;
+    if (strcasecmp (token, "MULTILINESTRINGM") == 0)
+	p->type = GAIA_MULTILINESTRINGM;
+    if (strcasecmp (token, "MULTILINESTRINGZM") == 0)
+	p->type = GAIA_MULTILINESTRINGZM;
     if (strcasecmp (token, "MULTIPOLYGON") == 0)
 	p->type = GAIA_MULTIPOLYGON;
+    if (strcasecmp (token, "MULTIPOLYGONZ") == 0)
+	p->type = GAIA_MULTIPOLYGONZ;
+    if (strcasecmp (token, "MULTIPOLYGONM") == 0)
+	p->type = GAIA_MULTIPOLYGONM;
+    if (strcasecmp (token, "MULTIPOLYGONZM") == 0)
+	p->type = GAIA_MULTIPOLYGONZM;
     if (strcasecmp (token, "GEOMETRYCOLLECTION") == 0)
 	p->type = GAIA_GEOMETRYCOLLECTION;
+    if (strcasecmp (token, "GEOMETRYCOLLECTIONZ") == 0)
+	p->type = GAIA_GEOMETRYCOLLECTIONZ;
+    if (strcasecmp (token, "GEOMETRYCOLLECTIONM") == 0)
+	p->type = GAIA_GEOMETRYCOLLECTIONM;
+    if (strcasecmp (token, "GEOMETRYCOLLECTIONZM") == 0)
+	p->type = GAIA_GEOMETRYCOLLECTIONZM;
     if (strcmp (token, "(") == 0)
 	p->type = GAIA_OPENED;
     if (strcmp (token, ")") == 0)
@@ -397,7 +485,10 @@ gaiaAddToken (char *token, gaiaTokenPtr * first, gaiaTokenPtr * last)
 static gaiaListTokenPtr
 gaiaBuildListToken (gaiaTokenPtr first, gaiaTokenPtr last)
 {
-/* builds a list of tokens representing a list in the form (1 2, 3 4, 5 6), as required by LINESTRING, MULTIPOINT or RING */
+/* 
+/ builds a list of tokens representing a list in the form 
+/ (1 2, 3 4, 5 6), as required by LINESTRING, MULTIPOINT or RING 
+*/
     gaiaListTokenPtr list = NULL;
     gaiaTokenPtr pt;
     int i = 0;
@@ -407,7 +498,7 @@ gaiaBuildListToken (gaiaTokenPtr first, gaiaTokenPtr last)
     int ny = 0;
     int iv;
     double x = 0.0;
-    double y;
+    double y = 0.0;
     pt = first;
     while (pt != NULL)
       {
@@ -463,7 +554,7 @@ gaiaBuildListToken (gaiaTokenPtr first, gaiaTokenPtr last)
 	err = 1;
     if (err)
 	return NULL;
-/* ok, there is no erorr. finally we can build the POINTS list */
+/* ok, there is no error. finally we can build the POINTS list */
     list = malloc (sizeof (gaiaListToken));
     list->points = nx;
     list->line = gaiaAllocLinestring (nx);
@@ -501,10 +592,415 @@ gaiaBuildListToken (gaiaTokenPtr first, gaiaTokenPtr last)
     return list;
 }
 
+static gaiaListTokenPtr
+gaiaBuildListTokenZ (gaiaTokenPtr first, gaiaTokenPtr last)
+{
+/* 
+/ builds a list of tokens representing a list in the form 
+/ (1 2 3, 4 5 6, 7 8 9), as required by LINESTRINGZ, MULTIPOINTZ or RINGZ 
+*/
+    gaiaListTokenPtr list = NULL;
+    gaiaTokenPtr pt;
+    int i = 0;
+    int ip = 0;
+    int err = 0;
+    int nx = 0;
+    int ny = 0;
+    int nz = 0;
+    int iv;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* check if this one is a valid list of POINTS */
+	  if (i == 0)
+	    {
+		if (pt->type != GAIA_OPENED)
+		    err = 1;
+	    }
+	  else if (pt == last)
+	    {
+		if (pt->type != GAIA_CLOSED)
+		    err = 1;
+	    }
+	  else
+	    {
+		if (ip == 0)
+		  {
+		      if (pt->type != GAIA_COORDINATE)
+			  err = 1;
+		      else
+			  nx++;
+		  }
+		else if (ip == 1)
+		  {
+		      if (pt->type != GAIA_SPACE)
+			  err = 1;
+		  }
+		else if (ip == 2)
+		  {
+		      if (pt->type != GAIA_COORDINATE)
+			  err = 1;
+		      else
+			  ny++;
+		  }
+		else if (ip == 3)
+		  {
+		      if (pt->type != GAIA_SPACE)
+			  err = 1;
+		  }
+		else if (ip == 4)
+		  {
+		      if (pt->type != GAIA_COORDINATE)
+			  err = 1;
+		      else
+			  nz++;
+		  }
+		else if (ip == 5)
+		  {
+		      if (pt->type != GAIA_COMMA)
+			  err = 1;
+		  }
+		ip++;
+		if (ip > 5)
+		    ip = 0;
+	    }
+	  i++;
+	  pt = pt->next;
+	  if (pt == last)
+	      break;
+      }
+    if (nx != ny)
+	err = 1;
+    if (nx != nz)
+	err = 1;
+    if (nx < 1)
+	err = 1;
+    if (err)
+	return NULL;
+/* ok, there is no error. finally we can build the POINTS list */
+    list = malloc (sizeof (gaiaListToken));
+    list->points = nx;
+    list->line = gaiaAllocLinestringXYZ (nx);
+    list->next = NULL;
+    iv = 0;
+    ip = 0;
+    i = 0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* sets coords for all POINTS */
+	  if (i == 0)
+	      ;
+	  else if (pt == last)
+	      ;
+	  else
+	    {
+		if (ip == 0)
+		    x = pt->coord;
+		else if (ip == 2)
+		    y = pt->coord;
+		else if (ip == 4)
+		  {
+		      z = pt->coord;
+		      gaiaSetPointXYZ (list->line->Coords, iv, x, y, z);
+		      iv++;
+		  }
+		ip++;
+		if (ip > 5)
+		    ip = 0;
+	    }
+	  i++;
+	  pt = pt->next;
+	  if (pt == last)
+	      break;
+      }
+    return list;
+}
+
+static gaiaListTokenPtr
+gaiaBuildListTokenM (gaiaTokenPtr first, gaiaTokenPtr last)
+{
+/* 
+/ builds a list of tokens representing a list in the form 
+/ (1 2 3, 4 5 6, 7 8 9), as required by LINESTRINGM, MULTIPOINTM or RINGM 
+*/
+    gaiaListTokenPtr list = NULL;
+    gaiaTokenPtr pt;
+    int i = 0;
+    int ip = 0;
+    int err = 0;
+    int nx = 0;
+    int ny = 0;
+    int nm = 0;
+    int iv;
+    double x = 0.0;
+    double y = 0.0;
+    double m = 0.0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* check if this one is a valid list of POINTS */
+	  if (i == 0)
+	    {
+		if (pt->type != GAIA_OPENED)
+		    err = 1;
+	    }
+	  else if (pt == last)
+	    {
+		if (pt->type != GAIA_CLOSED)
+		    err = 1;
+	    }
+	  else
+	    {
+		if (ip == 0)
+		  {
+		      if (pt->type != GAIA_COORDINATE)
+			  err = 1;
+		      else
+			  nx++;
+		  }
+		else if (ip == 1)
+		  {
+		      if (pt->type != GAIA_SPACE)
+			  err = 1;
+		  }
+		else if (ip == 2)
+		  {
+		      if (pt->type != GAIA_COORDINATE)
+			  err = 1;
+		      else
+			  ny++;
+		  }
+		else if (ip == 3)
+		  {
+		      if (pt->type != GAIA_SPACE)
+			  err = 1;
+		  }
+		else if (ip == 4)
+		  {
+		      if (pt->type != GAIA_COORDINATE)
+			  err = 1;
+		      else
+			  nm++;
+		  }
+		else if (ip == 5)
+		  {
+		      if (pt->type != GAIA_COMMA)
+			  err = 1;
+		  }
+		ip++;
+		if (ip > 5)
+		    ip = 0;
+	    }
+	  i++;
+	  pt = pt->next;
+	  if (pt == last)
+	      break;
+      }
+    if (nx != ny)
+	err = 1;
+    if (nx != nm)
+	err = 1;
+    if (nx < 1)
+	err = 1;
+    if (err)
+	return NULL;
+/* ok, there is no error. finally we can build the POINTS list */
+    list = malloc (sizeof (gaiaListToken));
+    list->points = nx;
+    list->line = gaiaAllocLinestringXYM (nx);
+    list->next = NULL;
+    iv = 0;
+    ip = 0;
+    i = 0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* sets coords for all POINTS */
+	  if (i == 0)
+	      ;
+	  else if (pt == last)
+	      ;
+	  else
+	    {
+		if (ip == 0)
+		    x = pt->coord;
+		else if (ip == 2)
+		    y = pt->coord;
+		else if (ip == 4)
+		  {
+		      m = pt->coord;
+		      gaiaSetPointXYM (list->line->Coords, iv, x, y, m);
+		      iv++;
+		  }
+		ip++;
+		if (ip > 5)
+		    ip = 0;
+	    }
+	  i++;
+	  pt = pt->next;
+	  if (pt == last)
+	      break;
+      }
+    return list;
+}
+
+static gaiaListTokenPtr
+gaiaBuildListTokenZM (gaiaTokenPtr first, gaiaTokenPtr last)
+{
+/* 
+/ builds a list of tokens representing a list in the form 
+/ (1 2 3 4, 5 6 7 8, 9 10 11 12), as required by LINESTRINGZM, MULTIPOINTZM or RINGZM 
+*/
+    gaiaListTokenPtr list = NULL;
+    gaiaTokenPtr pt;
+    int i = 0;
+    int ip = 0;
+    int err = 0;
+    int nx = 0;
+    int ny = 0;
+    int nz = 0;
+    int nm = 0;
+    int iv;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    double m = 0.0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* check if this one is a valid list of POINTS */
+	  if (i == 0)
+	    {
+		if (pt->type != GAIA_OPENED)
+		    err = 1;
+	    }
+	  else if (pt == last)
+	    {
+		if (pt->type != GAIA_CLOSED)
+		    err = 1;
+	    }
+	  else
+	    {
+		if (ip == 0)
+		  {
+		      if (pt->type != GAIA_COORDINATE)
+			  err = 1;
+		      else
+			  nx++;
+		  }
+		else if (ip == 1)
+		  {
+		      if (pt->type != GAIA_SPACE)
+			  err = 1;
+		  }
+		else if (ip == 2)
+		  {
+		      if (pt->type != GAIA_COORDINATE)
+			  err = 1;
+		      else
+			  ny++;
+		  }
+		else if (ip == 3)
+		  {
+		      if (pt->type != GAIA_SPACE)
+			  err = 1;
+		  }
+		else if (ip == 4)
+		  {
+		      if (pt->type != GAIA_COORDINATE)
+			  err = 1;
+		      else
+			  nz++;
+		  }
+		else if (ip == 5)
+		  {
+		      if (pt->type != GAIA_SPACE)
+			  err = 1;
+		  }
+		else if (ip == 6)
+		  {
+		      if (pt->type != GAIA_COORDINATE)
+			  err = 1;
+		      else
+			  nm++;
+		  }
+		else if (ip == 7)
+		  {
+		      if (pt->type != GAIA_COMMA)
+			  err = 1;
+		  }
+		ip++;
+		if (ip > 7)
+		    ip = 0;
+	    }
+	  i++;
+	  pt = pt->next;
+	  if (pt == last)
+	      break;
+      }
+    if (nx != ny)
+	err = 1;
+    if (nx != nz)
+	err = 1;
+    if (nx != nm)
+	err = 1;
+    if (nx < 1)
+	err = 1;
+    if (err)
+	return NULL;
+/* ok, there is no error. finally we can build the POINTS list */
+    list = malloc (sizeof (gaiaListToken));
+    list->points = nx;
+    list->line = gaiaAllocLinestringXYZM (nx);
+    list->next = NULL;
+    iv = 0;
+    ip = 0;
+    i = 0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* sets coords for all POINTS */
+	  if (i == 0)
+	      ;
+	  else if (pt == last)
+	      ;
+	  else
+	    {
+		if (ip == 0)
+		    x = pt->coord;
+		else if (ip == 2)
+		    y = pt->coord;
+		else if (ip == 4)
+		    z = pt->coord;
+		else if (ip == 6)
+		  {
+		      m = pt->coord;
+		      gaiaSetPointXYZM (list->line->Coords, iv, x, y, z, m);
+		      iv++;
+		  }
+		ip++;
+		if (ip > 7)
+		    ip = 0;
+	    }
+	  i++;
+	  pt = pt->next;
+	  if (pt == last)
+	      break;
+      }
+    return list;
+}
+
 static gaiaMultiListTokenPtr
 gaiaBuildMultiListToken (gaiaTokenPtr first, gaiaTokenPtr last)
 {
-/* builds a multi list of tokens representing an array of elementar lists in the form ((...),(....),(...)), as required by MULTILINESTRING and POLYGON */
+/* 
+/ builds a multi list of tokens representing an array of elementar lists in the form 
+/ ((...),(....),(...)), as required by MULTILINESTRING and POLYGON 
+*/
     gaiaMultiListTokenPtr multi_list = NULL;
     gaiaTokenPtr pt;
     gaiaTokenPtr p_first = NULL;
@@ -548,10 +1044,163 @@ gaiaBuildMultiListToken (gaiaTokenPtr first, gaiaTokenPtr last)
     return multi_list;
 }
 
+static gaiaMultiListTokenPtr
+gaiaBuildMultiListTokenZ (gaiaTokenPtr first, gaiaTokenPtr last)
+{
+/* 
+/ builds a multi list of tokens representing an array of elementar lists in the form 
+/ ((...),(....),(...)), as required by MULTILINESTRINGZ and POLYGONZ 
+*/
+    gaiaMultiListTokenPtr multi_list = NULL;
+    gaiaTokenPtr pt;
+    gaiaTokenPtr p_first = NULL;
+    gaiaListTokenPtr list;
+    int opened = 0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* identifies the sub-lists contained in this multi list */
+	  if (pt->type == GAIA_OPENED)
+	    {
+		opened++;
+		if (opened == 2)
+		    p_first = pt;
+	    }
+	  if (pt->type == GAIA_CLOSED)
+	    {
+		if (p_first)
+		  {
+		      list = gaiaBuildListTokenZ (p_first, pt);
+		      if (!multi_list)
+			{
+			    multi_list = malloc (sizeof (gaiaMultiListToken));
+			    multi_list->first = NULL;
+			    multi_list->last = NULL;
+			    multi_list->next = NULL;
+			}
+		      if (multi_list->first == NULL)
+			  multi_list->first = list;
+		      if (multi_list->last != NULL)
+			  multi_list->last->next = list;
+		      multi_list->last = list;
+		      p_first = NULL;
+		  }
+		opened--;
+	    }
+	  pt = pt->next;
+	  if (pt == last)
+	      break;
+      }
+    return multi_list;
+}
+
+static gaiaMultiListTokenPtr
+gaiaBuildMultiListTokenM (gaiaTokenPtr first, gaiaTokenPtr last)
+{
+/* 
+/ builds a multi list of tokens representing an array of elementar lists in the form 
+/ ((...),(....),(...)), as required by MULTILINESTRINGM and POLYGONM 
+*/
+    gaiaMultiListTokenPtr multi_list = NULL;
+    gaiaTokenPtr pt;
+    gaiaTokenPtr p_first = NULL;
+    gaiaListTokenPtr list;
+    int opened = 0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* identifies the sub-lists contained in this multi list */
+	  if (pt->type == GAIA_OPENED)
+	    {
+		opened++;
+		if (opened == 2)
+		    p_first = pt;
+	    }
+	  if (pt->type == GAIA_CLOSED)
+	    {
+		if (p_first)
+		  {
+		      list = gaiaBuildListTokenM (p_first, pt);
+		      if (!multi_list)
+			{
+			    multi_list = malloc (sizeof (gaiaMultiListToken));
+			    multi_list->first = NULL;
+			    multi_list->last = NULL;
+			    multi_list->next = NULL;
+			}
+		      if (multi_list->first == NULL)
+			  multi_list->first = list;
+		      if (multi_list->last != NULL)
+			  multi_list->last->next = list;
+		      multi_list->last = list;
+		      p_first = NULL;
+		  }
+		opened--;
+	    }
+	  pt = pt->next;
+	  if (pt == last)
+	      break;
+      }
+    return multi_list;
+}
+
+static gaiaMultiListTokenPtr
+gaiaBuildMultiListTokenZM (gaiaTokenPtr first, gaiaTokenPtr last)
+{
+/* 
+/ builds a multi list of tokens representing an array of elementar lists in the form 
+/ ((...),(....),(...)), as required by MULTILINESTRINGZM and POLYGONZM 
+*/
+    gaiaMultiListTokenPtr multi_list = NULL;
+    gaiaTokenPtr pt;
+    gaiaTokenPtr p_first = NULL;
+    gaiaListTokenPtr list;
+    int opened = 0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* identifies the sub-lists contained in this multi list */
+	  if (pt->type == GAIA_OPENED)
+	    {
+		opened++;
+		if (opened == 2)
+		    p_first = pt;
+	    }
+	  if (pt->type == GAIA_CLOSED)
+	    {
+		if (p_first)
+		  {
+		      list = gaiaBuildListTokenZM (p_first, pt);
+		      if (!multi_list)
+			{
+			    multi_list = malloc (sizeof (gaiaMultiListToken));
+			    multi_list->first = NULL;
+			    multi_list->last = NULL;
+			    multi_list->next = NULL;
+			}
+		      if (multi_list->first == NULL)
+			  multi_list->first = list;
+		      if (multi_list->last != NULL)
+			  multi_list->last->next = list;
+		      multi_list->last = list;
+		      p_first = NULL;
+		  }
+		opened--;
+	    }
+	  pt = pt->next;
+	  if (pt == last)
+	      break;
+      }
+    return multi_list;
+}
+
 static gaiaMultiMultiListTokenPtr
 gaiaBuildMultiMultiListToken (gaiaTokenPtr first, gaiaTokenPtr last)
 {
-/* builds a multi list of tokens representing an array of complex lists in the form (((...),(....),(...)),((...),(...)),((...))), as required by MULTIPOLYGON */
+/* 
+/ builds a multi list of tokens representing an array of complex lists 
+/ in the form (((...),(....),(...)),((...),(...)),((...))), as required by MULTIPOLYGON 
+*/
     gaiaMultiMultiListTokenPtr multi_multi_list = NULL;
     gaiaTokenPtr pt;
     gaiaTokenPtr p_first = NULL;
@@ -595,10 +1244,163 @@ gaiaBuildMultiMultiListToken (gaiaTokenPtr first, gaiaTokenPtr last)
     return multi_multi_list;
 }
 
+static gaiaMultiMultiListTokenPtr
+gaiaBuildMultiMultiListTokenZ (gaiaTokenPtr first, gaiaTokenPtr last)
+{
+/* 
+/ builds a multi list of tokens representing an array of complex lists 
+/ in the form (((...),(....),(...)),((...),(...)),((...))), as required by MULTIPOLYGONZ 
+*/
+    gaiaMultiMultiListTokenPtr multi_multi_list = NULL;
+    gaiaTokenPtr pt;
+    gaiaTokenPtr p_first = NULL;
+    gaiaMultiListTokenPtr multi_list;
+    int opened = 0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* identifies the sub-lists contained in this multi list */
+	  if (pt->type == GAIA_OPENED)
+	    {
+		opened++;
+		if (opened == 2)
+		    p_first = pt;
+	    }
+	  if (pt->type == GAIA_CLOSED)
+	    {
+		if (p_first && opened == 2)
+		  {
+		      multi_list = gaiaBuildMultiListTokenZ (p_first, pt);
+		      if (!multi_multi_list)
+			{
+			    multi_multi_list =
+				malloc (sizeof (gaiaMultiMultiListToken));
+			    multi_multi_list->first = NULL;
+			    multi_multi_list->last = NULL;
+			}
+		      if (multi_multi_list->first == NULL)
+			  multi_multi_list->first = multi_list;
+		      if (multi_multi_list->last != NULL)
+			  multi_multi_list->last->next = multi_list;
+		      multi_multi_list->last = multi_list;
+		      p_first = NULL;
+		  }
+		opened--;
+	    }
+	  pt = pt->next;
+	  if (pt == last)
+	      break;
+      }
+    return multi_multi_list;
+}
+
+static gaiaMultiMultiListTokenPtr
+gaiaBuildMultiMultiListTokenM (gaiaTokenPtr first, gaiaTokenPtr last)
+{
+/* 
+/ builds a multi list of tokens representing an array of complex lists 
+/ in the form (((...),(....),(...)),((...),(...)),((...))), as required by MULTIPOLYGONM 
+*/
+    gaiaMultiMultiListTokenPtr multi_multi_list = NULL;
+    gaiaTokenPtr pt;
+    gaiaTokenPtr p_first = NULL;
+    gaiaMultiListTokenPtr multi_list;
+    int opened = 0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* identifies the sub-lists contained in this multi list */
+	  if (pt->type == GAIA_OPENED)
+	    {
+		opened++;
+		if (opened == 2)
+		    p_first = pt;
+	    }
+	  if (pt->type == GAIA_CLOSED)
+	    {
+		if (p_first && opened == 2)
+		  {
+		      multi_list = gaiaBuildMultiListTokenM (p_first, pt);
+		      if (!multi_multi_list)
+			{
+			    multi_multi_list =
+				malloc (sizeof (gaiaMultiMultiListToken));
+			    multi_multi_list->first = NULL;
+			    multi_multi_list->last = NULL;
+			}
+		      if (multi_multi_list->first == NULL)
+			  multi_multi_list->first = multi_list;
+		      if (multi_multi_list->last != NULL)
+			  multi_multi_list->last->next = multi_list;
+		      multi_multi_list->last = multi_list;
+		      p_first = NULL;
+		  }
+		opened--;
+	    }
+	  pt = pt->next;
+	  if (pt == last)
+	      break;
+      }
+    return multi_multi_list;
+}
+
+static gaiaMultiMultiListTokenPtr
+gaiaBuildMultiMultiListTokenZM (gaiaTokenPtr first, gaiaTokenPtr last)
+{
+/* 
+/ builds a multi list of tokens representing an array of complex lists 
+/ in the form (((...),(....),(...)),((...),(...)),((...))), as required by MULTIPOLYGONZM 
+*/
+    gaiaMultiMultiListTokenPtr multi_multi_list = NULL;
+    gaiaTokenPtr pt;
+    gaiaTokenPtr p_first = NULL;
+    gaiaMultiListTokenPtr multi_list;
+    int opened = 0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* identifies the sub-lists contained in this multi list */
+	  if (pt->type == GAIA_OPENED)
+	    {
+		opened++;
+		if (opened == 2)
+		    p_first = pt;
+	    }
+	  if (pt->type == GAIA_CLOSED)
+	    {
+		if (p_first && opened == 2)
+		  {
+		      multi_list = gaiaBuildMultiListTokenZM (p_first, pt);
+		      if (!multi_multi_list)
+			{
+			    multi_multi_list =
+				malloc (sizeof (gaiaMultiMultiListToken));
+			    multi_multi_list->first = NULL;
+			    multi_multi_list->last = NULL;
+			}
+		      if (multi_multi_list->first == NULL)
+			  multi_multi_list->first = multi_list;
+		      if (multi_multi_list->last != NULL)
+			  multi_multi_list->last->next = multi_list;
+		      multi_multi_list->last = multi_list;
+		      p_first = NULL;
+		  }
+		opened--;
+	    }
+	  pt = pt->next;
+	  if (pt == last)
+	      break;
+      }
+    return multi_multi_list;
+}
+
 static gaiaGeomCollListTokenPtr
 gaiaBuildGeomCollListToken (gaiaTokenPtr first, gaiaTokenPtr last)
 {
-/* builds a variable list of tokens representing an array of entities in the form (ELEM(),ELEM(),ELEM())  as required by GEOMETRYCOLLECTION */
+/* 
+/ builds a variable list of tokens representing an array of entities in the form 
+/ (ELEM(),ELEM(),ELEM())  as required by GEOMETRYCOLLECTION 
+*/
     gaiaGeomCollListTokenPtr geocoll_list = NULL;
     gaiaTokenPtr pt;
     gaiaTokenPtr pt2;
@@ -776,6 +1578,606 @@ gaiaBuildGeomCollListToken (gaiaTokenPtr first, gaiaTokenPtr last)
     return NULL;
 }
 
+static gaiaGeomCollListTokenPtr
+gaiaBuildGeomCollListTokenZ (gaiaTokenPtr first, gaiaTokenPtr last)
+{
+/* 
+/ builds a variable list of tokens representing an array of entities in the form 
+/ (ELEM(),ELEM(),ELEM())  as required by GEOMETRYCOLLECTIONZ 
+*/
+    gaiaGeomCollListTokenPtr geocoll_list = NULL;
+    gaiaTokenPtr pt;
+    gaiaTokenPtr pt2;
+    gaiaTokenPtr p_first = NULL;
+    gaiaListTokenPtr list;
+    gaiaMultiListTokenPtr multi_list;
+    gaiaVarListTokenPtr var_list;
+    int opened = 0;
+    int i;
+    int err;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* identifies the sub-lists contained in this complex list */
+	  if (pt->type == GAIA_POINTZ)
+	    {
+		/* parsing a POINT list */
+		err = 0;
+		i = 0;
+		pt2 = pt->next;
+		while (pt2 != NULL)
+		  {
+		      /* check if this one is a valid POINT */
+		      switch (i)
+			{
+			case 0:
+			    if (pt2->type != GAIA_OPENED)
+				err = 1;
+			    break;
+			case 1:
+			    if (pt2->type != GAIA_COORDINATE)
+				err = 1;
+			    else
+				x = pt2->coord;
+			    break;
+			case 2:
+			    if (pt2->type != GAIA_SPACE)
+				err = 1;
+			    break;
+			case 3:
+			    if (pt2->type != GAIA_COORDINATE)
+				err = 1;
+			    else
+				y = pt2->coord;
+			    break;
+			case 4:
+			    if (pt2->type != GAIA_SPACE)
+				err = 1;
+			    break;
+			case 5:
+			    if (pt2->type != GAIA_COORDINATE)
+				err = 1;
+			    else
+				z = pt2->coord;
+			    break;
+			case 6:
+			    if (pt2->type != GAIA_CLOSED)
+				err = 1;
+			    break;
+			};
+		      i++;
+		      if (i > 6)
+			  break;
+		      pt2 = pt2->next;
+		  }
+		if (err)
+		    goto error;
+		var_list = malloc (sizeof (gaiaVarListToken));
+		var_list->type = GAIA_POINTZ;
+		var_list->x = x;
+		var_list->y = y;
+		var_list->z = z;
+		var_list->next = NULL;
+		if (!geocoll_list)
+		  {
+		      geocoll_list = malloc (sizeof (gaiaGeomCollListToken));
+		      geocoll_list->first = NULL;
+		      geocoll_list->last = NULL;
+		  }
+		if (geocoll_list->first == NULL)
+		    geocoll_list->first = var_list;
+		if (geocoll_list->last != NULL)
+		    geocoll_list->last->next = var_list;
+		geocoll_list->last = var_list;
+	    }
+	  else if (pt->type == GAIA_LINESTRINGZ)
+	    {
+		/* parsing a LINESTRING list */
+		p_first = NULL;
+		pt2 = pt->next;
+		while (pt2 != NULL)
+		  {
+		      if (pt2->type == GAIA_OPENED)
+			  p_first = pt2;
+		      if (pt2->type == GAIA_CLOSED)
+			{
+			    list = gaiaBuildListTokenZ (p_first, pt2);
+			    if (list)
+			      {
+				  var_list = malloc (sizeof (gaiaVarListToken));
+				  var_list->type = GAIA_LINESTRINGZ;
+				  var_list->pointer = list;
+				  var_list->next = NULL;
+				  if (!geocoll_list)
+				    {
+					geocoll_list =
+					    malloc (sizeof
+						    (gaiaGeomCollListToken));
+					geocoll_list->first = NULL;
+					geocoll_list->last = NULL;
+				    }
+				  if (geocoll_list->first == NULL)
+				      geocoll_list->first = var_list;
+				  if (geocoll_list->last != NULL)
+				      geocoll_list->last->next = var_list;
+				  geocoll_list->last = var_list;
+				  break;
+			      }
+			    else
+				goto error;
+			}
+		      pt2 = pt2->next;
+		      if (pt2 == last)
+			  break;
+		  }
+	    }
+	  else if (pt->type == GAIA_POLYGONZ)
+	    {
+		/* parsing a POLYGON list */
+		opened = 0;
+		p_first = NULL;
+		pt2 = pt->next;
+		while (pt2 != NULL)
+		  {
+		      if (pt2->type == GAIA_OPENED)
+			{
+			    opened++;
+			    if (opened == 1)
+				p_first = pt2;
+			}
+		      if (pt2->type == GAIA_CLOSED)
+			{
+			    if (p_first && opened == 1)
+			      {
+				  multi_list =
+				      gaiaBuildMultiListTokenZ (p_first, pt2);
+				  if (multi_list)
+				    {
+					var_list =
+					    malloc (sizeof (gaiaVarListToken));
+					var_list->type = GAIA_POLYGONZ;
+					var_list->pointer = multi_list;
+					var_list->next = NULL;
+					if (!geocoll_list)
+					  {
+					      geocoll_list =
+						  malloc (sizeof
+							  (gaiaGeomCollListToken));
+					      geocoll_list->first = NULL;
+					      geocoll_list->last = NULL;
+					  }
+					if (geocoll_list->first == NULL)
+					    geocoll_list->first = var_list;
+					if (geocoll_list->last != NULL)
+					    geocoll_list->last->next = var_list;
+					geocoll_list->last = var_list;
+					break;
+				    }
+				  else
+				      goto error;
+			      }
+			    opened--;
+			}
+		      pt2 = pt2->next;
+		      if (pt2 == last)
+			  break;
+		  }
+	    }
+	  pt = pt->next;
+      }
+    return geocoll_list;
+  error:
+    gaiaFreeGeomCollListToken (geocoll_list);
+    return NULL;
+}
+
+static gaiaGeomCollListTokenPtr
+gaiaBuildGeomCollListTokenM (gaiaTokenPtr first, gaiaTokenPtr last)
+{
+/* 
+/ builds a variable list of tokens representing an array of entities in the form 
+/ (ELEM(),ELEM(),ELEM())  as required by GEOMETRYCOLLECTIONM 
+*/
+    gaiaGeomCollListTokenPtr geocoll_list = NULL;
+    gaiaTokenPtr pt;
+    gaiaTokenPtr pt2;
+    gaiaTokenPtr p_first = NULL;
+    gaiaListTokenPtr list;
+    gaiaMultiListTokenPtr multi_list;
+    gaiaVarListTokenPtr var_list;
+    int opened = 0;
+    int i;
+    int err;
+    double x = 0.0;
+    double y = 0.0;
+    double m = 0.0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* identifies the sub-lists contained in this complex list */
+	  if (pt->type == GAIA_POINTM)
+	    {
+		/* parsing a POINT list */
+		err = 0;
+		i = 0;
+		pt2 = pt->next;
+		while (pt2 != NULL)
+		  {
+		      /* check if this one is a valid POINT */
+		      switch (i)
+			{
+			case 0:
+			    if (pt2->type != GAIA_OPENED)
+				err = 1;
+			    break;
+			case 1:
+			    if (pt2->type != GAIA_COORDINATE)
+				err = 1;
+			    else
+				x = pt2->coord;
+			    break;
+			case 2:
+			    if (pt2->type != GAIA_SPACE)
+				err = 1;
+			    break;
+			case 3:
+			    if (pt2->type != GAIA_COORDINATE)
+				err = 1;
+			    else
+				y = pt2->coord;
+			    break;
+			case 4:
+			    if (pt2->type != GAIA_SPACE)
+				err = 1;
+			    break;
+			case 5:
+			    if (pt2->type != GAIA_COORDINATE)
+				err = 1;
+			    else
+				m = pt2->coord;
+			    break;
+			case 6:
+			    if (pt2->type != GAIA_CLOSED)
+				err = 1;
+			    break;
+			};
+		      i++;
+		      if (i > 6)
+			  break;
+		      pt2 = pt2->next;
+		  }
+		if (err)
+		    goto error;
+		var_list = malloc (sizeof (gaiaVarListToken));
+		var_list->type = GAIA_POINTM;
+		var_list->x = x;
+		var_list->y = y;
+		var_list->m = m;
+		var_list->next = NULL;
+		if (!geocoll_list)
+		  {
+		      geocoll_list = malloc (sizeof (gaiaGeomCollListToken));
+		      geocoll_list->first = NULL;
+		      geocoll_list->last = NULL;
+		  }
+		if (geocoll_list->first == NULL)
+		    geocoll_list->first = var_list;
+		if (geocoll_list->last != NULL)
+		    geocoll_list->last->next = var_list;
+		geocoll_list->last = var_list;
+	    }
+	  else if (pt->type == GAIA_LINESTRINGM)
+	    {
+		/* parsing a LINESTRING list */
+		p_first = NULL;
+		pt2 = pt->next;
+		while (pt2 != NULL)
+		  {
+		      if (pt2->type == GAIA_OPENED)
+			  p_first = pt2;
+		      if (pt2->type == GAIA_CLOSED)
+			{
+			    list = gaiaBuildListTokenM (p_first, pt2);
+			    if (list)
+			      {
+				  var_list = malloc (sizeof (gaiaVarListToken));
+				  var_list->type = GAIA_LINESTRINGM;
+				  var_list->pointer = list;
+				  var_list->next = NULL;
+				  if (!geocoll_list)
+				    {
+					geocoll_list =
+					    malloc (sizeof
+						    (gaiaGeomCollListToken));
+					geocoll_list->first = NULL;
+					geocoll_list->last = NULL;
+				    }
+				  if (geocoll_list->first == NULL)
+				      geocoll_list->first = var_list;
+				  if (geocoll_list->last != NULL)
+				      geocoll_list->last->next = var_list;
+				  geocoll_list->last = var_list;
+				  break;
+			      }
+			    else
+				goto error;
+			}
+		      pt2 = pt2->next;
+		      if (pt2 == last)
+			  break;
+		  }
+	    }
+	  else if (pt->type == GAIA_POLYGONM)
+	    {
+		/* parsing a POLYGON list */
+		opened = 0;
+		p_first = NULL;
+		pt2 = pt->next;
+		while (pt2 != NULL)
+		  {
+		      if (pt2->type == GAIA_OPENED)
+			{
+			    opened++;
+			    if (opened == 1)
+				p_first = pt2;
+			}
+		      if (pt2->type == GAIA_CLOSED)
+			{
+			    if (p_first && opened == 1)
+			      {
+				  multi_list =
+				      gaiaBuildMultiListTokenM (p_first, pt2);
+				  if (multi_list)
+				    {
+					var_list =
+					    malloc (sizeof (gaiaVarListToken));
+					var_list->type = GAIA_POLYGONM;
+					var_list->pointer = multi_list;
+					var_list->next = NULL;
+					if (!geocoll_list)
+					  {
+					      geocoll_list =
+						  malloc (sizeof
+							  (gaiaGeomCollListToken));
+					      geocoll_list->first = NULL;
+					      geocoll_list->last = NULL;
+					  }
+					if (geocoll_list->first == NULL)
+					    geocoll_list->first = var_list;
+					if (geocoll_list->last != NULL)
+					    geocoll_list->last->next = var_list;
+					geocoll_list->last = var_list;
+					break;
+				    }
+				  else
+				      goto error;
+			      }
+			    opened--;
+			}
+		      pt2 = pt2->next;
+		      if (pt2 == last)
+			  break;
+		  }
+	    }
+	  pt = pt->next;
+      }
+    return geocoll_list;
+  error:
+    gaiaFreeGeomCollListToken (geocoll_list);
+    return NULL;
+}
+
+static gaiaGeomCollListTokenPtr
+gaiaBuildGeomCollListTokenZM (gaiaTokenPtr first, gaiaTokenPtr last)
+{
+/* 
+/ builds a variable list of tokens representing an array of entities in the form 
+/ (ELEM(),ELEM(),ELEM())  as required by GEOMETRYCOLLECTIONZM 
+*/
+    gaiaGeomCollListTokenPtr geocoll_list = NULL;
+    gaiaTokenPtr pt;
+    gaiaTokenPtr pt2;
+    gaiaTokenPtr p_first = NULL;
+    gaiaListTokenPtr list;
+    gaiaMultiListTokenPtr multi_list;
+    gaiaVarListTokenPtr var_list;
+    int opened = 0;
+    int i;
+    int err;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    double m = 0.0;
+    pt = first;
+    while (pt != NULL)
+      {
+	  /* identifies the sub-lists contained in this complex list */
+	  if (pt->type == GAIA_POINTZM)
+	    {
+		/* parsing a POINT list */
+		err = 0;
+		i = 0;
+		pt2 = pt->next;
+		while (pt2 != NULL)
+		  {
+		      /* check if this one is a valid POINT */
+		      switch (i)
+			{
+			case 0:
+			    if (pt2->type != GAIA_OPENED)
+				err = 1;
+			    break;
+			case 1:
+			    if (pt2->type != GAIA_COORDINATE)
+				err = 1;
+			    else
+				x = pt2->coord;
+			    break;
+			case 2:
+			    if (pt2->type != GAIA_SPACE)
+				err = 1;
+			    break;
+			case 3:
+			    if (pt2->type != GAIA_COORDINATE)
+				err = 1;
+			    else
+				y = pt2->coord;
+			    break;
+			case 4:
+			    if (pt2->type != GAIA_SPACE)
+				err = 1;
+			    break;
+			case 5:
+			    if (pt2->type != GAIA_COORDINATE)
+				err = 1;
+			    else
+				z = pt2->coord;
+			    break;
+			case 6:
+			    if (pt2->type != GAIA_SPACE)
+				err = 1;
+			    break;
+			case 7:
+			    if (pt2->type != GAIA_COORDINATE)
+				err = 1;
+			    else
+				m = pt2->coord;
+			    break;
+			case 8:
+			    if (pt2->type != GAIA_CLOSED)
+				err = 1;
+			    break;
+			};
+		      i++;
+		      if (i > 8)
+			  break;
+		      pt2 = pt2->next;
+		  }
+		if (err)
+		    goto error;
+		var_list = malloc (sizeof (gaiaVarListToken));
+		var_list->type = GAIA_POINTZM;
+		var_list->x = x;
+		var_list->y = y;
+		var_list->z = z;
+		var_list->m = m;
+		var_list->next = NULL;
+		if (!geocoll_list)
+		  {
+		      geocoll_list = malloc (sizeof (gaiaGeomCollListToken));
+		      geocoll_list->first = NULL;
+		      geocoll_list->last = NULL;
+		  }
+		if (geocoll_list->first == NULL)
+		    geocoll_list->first = var_list;
+		if (geocoll_list->last != NULL)
+		    geocoll_list->last->next = var_list;
+		geocoll_list->last = var_list;
+	    }
+	  else if (pt->type == GAIA_LINESTRINGZM)
+	    {
+		/* parsing a LINESTRING list */
+		p_first = NULL;
+		pt2 = pt->next;
+		while (pt2 != NULL)
+		  {
+		      if (pt2->type == GAIA_OPENED)
+			  p_first = pt2;
+		      if (pt2->type == GAIA_CLOSED)
+			{
+			    list = gaiaBuildListTokenZM (p_first, pt2);
+			    if (list)
+			      {
+				  var_list = malloc (sizeof (gaiaVarListToken));
+				  var_list->type = GAIA_LINESTRINGZM;
+				  var_list->pointer = list;
+				  var_list->next = NULL;
+				  if (!geocoll_list)
+				    {
+					geocoll_list =
+					    malloc (sizeof
+						    (gaiaGeomCollListToken));
+					geocoll_list->first = NULL;
+					geocoll_list->last = NULL;
+				    }
+				  if (geocoll_list->first == NULL)
+				      geocoll_list->first = var_list;
+				  if (geocoll_list->last != NULL)
+				      geocoll_list->last->next = var_list;
+				  geocoll_list->last = var_list;
+				  break;
+			      }
+			    else
+				goto error;
+			}
+		      pt2 = pt2->next;
+		      if (pt2 == last)
+			  break;
+		  }
+	    }
+	  else if (pt->type == GAIA_POLYGONZM)
+	    {
+		/* parsing a POLYGON list */
+		opened = 0;
+		p_first = NULL;
+		pt2 = pt->next;
+		while (pt2 != NULL)
+		  {
+		      if (pt2->type == GAIA_OPENED)
+			{
+			    opened++;
+			    if (opened == 1)
+				p_first = pt2;
+			}
+		      if (pt2->type == GAIA_CLOSED)
+			{
+			    if (p_first && opened == 1)
+			      {
+				  multi_list =
+				      gaiaBuildMultiListTokenZM (p_first, pt2);
+				  if (multi_list)
+				    {
+					var_list =
+					    malloc (sizeof (gaiaVarListToken));
+					var_list->type = GAIA_POLYGONZM;
+					var_list->pointer = multi_list;
+					var_list->next = NULL;
+					if (!geocoll_list)
+					  {
+					      geocoll_list =
+						  malloc (sizeof
+							  (gaiaGeomCollListToken));
+					      geocoll_list->first = NULL;
+					      geocoll_list->last = NULL;
+					  }
+					if (geocoll_list->first == NULL)
+					    geocoll_list->first = var_list;
+					if (geocoll_list->last != NULL)
+					    geocoll_list->last->next = var_list;
+					geocoll_list->last = var_list;
+					break;
+				    }
+				  else
+				      goto error;
+			      }
+			    opened--;
+			}
+		      pt2 = pt2->next;
+		      if (pt2 == last)
+			  break;
+		  }
+	    }
+	  pt = pt->next;
+      }
+    return geocoll_list;
+  error:
+    gaiaFreeGeomCollListToken (geocoll_list);
+    return NULL;
+}
+
 static gaiaPointPtr
 gaiaBuildPoint (gaiaTokenPtr first)
 {
@@ -828,6 +2230,206 @@ gaiaBuildPoint (gaiaTokenPtr first)
     return point;
 }
 
+static gaiaPointPtr
+gaiaBuildPointZ (gaiaTokenPtr first)
+{
+/* builds a POINTZ, if this token's list contains a valid POINTZ */
+    gaiaPointPtr point = NULL;
+    gaiaTokenPtr pt = first;
+    int i = 0;
+    int err = 0;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    while (pt != NULL)
+      {
+	  /* check if this one is a valid POINTZ */
+	  switch (i)
+	    {
+	    case 0:
+		if (pt->type != GAIA_OPENED)
+		    err = 1;
+		break;
+	    case 1:
+		if (pt->type != GAIA_COORDINATE)
+		    err = 1;
+		else
+		    x = pt->coord;
+		break;
+	    case 2:
+		if (pt->type != GAIA_SPACE)
+		    err = 1;
+		break;
+	    case 3:
+		if (pt->type != GAIA_COORDINATE)
+		    err = 1;
+		else
+		    y = pt->coord;
+		break;
+	    case 4:
+		if (pt->type != GAIA_SPACE)
+		    err = 1;
+		break;
+	    case 5:
+		if (pt->type != GAIA_COORDINATE)
+		    err = 1;
+		else
+		    z = pt->coord;
+		break;
+	    case 6:
+		if (pt->type != GAIA_CLOSED)
+		    err = 1;
+		break;
+	    default:
+		err = 1;
+		break;
+	    };
+	  i++;
+	  pt = pt->next;
+      }
+    if (err)
+	return NULL;
+    point = gaiaAllocPointXYZ (x, y, z);
+    return point;
+}
+
+static gaiaPointPtr
+gaiaBuildPointM (gaiaTokenPtr first)
+{
+/* builds a POINTM, if this token's list contains a valid POINTM */
+    gaiaPointPtr point = NULL;
+    gaiaTokenPtr pt = first;
+    int i = 0;
+    int err = 0;
+    double x = 0.0;
+    double y = 0.0;
+    double m = 0.0;
+    while (pt != NULL)
+      {
+	  /* check if this one is a valid POINTM */
+	  switch (i)
+	    {
+	    case 0:
+		if (pt->type != GAIA_OPENED)
+		    err = 1;
+		break;
+	    case 1:
+		if (pt->type != GAIA_COORDINATE)
+		    err = 1;
+		else
+		    x = pt->coord;
+		break;
+	    case 2:
+		if (pt->type != GAIA_SPACE)
+		    err = 1;
+		break;
+	    case 3:
+		if (pt->type != GAIA_COORDINATE)
+		    err = 1;
+		else
+		    y = pt->coord;
+		break;
+	    case 4:
+		if (pt->type != GAIA_SPACE)
+		    err = 1;
+		break;
+	    case 5:
+		if (pt->type != GAIA_COORDINATE)
+		    err = 1;
+		else
+		    m = pt->coord;
+		break;
+	    case 6:
+		if (pt->type != GAIA_CLOSED)
+		    err = 1;
+		break;
+	    default:
+		err = 1;
+		break;
+	    };
+	  i++;
+	  pt = pt->next;
+      }
+    if (err)
+	return NULL;
+    point = gaiaAllocPointXYM (x, y, m);
+    return point;
+}
+
+static gaiaPointPtr
+gaiaBuildPointZM (gaiaTokenPtr first)
+{
+/* builds a POINTZM, if this token's list contains a valid POINTZM */
+    gaiaPointPtr point = NULL;
+    gaiaTokenPtr pt = first;
+    int i = 0;
+    int err = 0;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    double m = 0.0;
+    while (pt != NULL)
+      {
+	  /* check if this one is a valid POINTZM */
+	  switch (i)
+	    {
+	    case 0:
+		if (pt->type != GAIA_OPENED)
+		    err = 1;
+		break;
+	    case 1:
+		if (pt->type != GAIA_COORDINATE)
+		    err = 1;
+		else
+		    x = pt->coord;
+		break;
+	    case 2:
+		if (pt->type != GAIA_SPACE)
+		    err = 1;
+		break;
+	    case 3:
+		if (pt->type != GAIA_COORDINATE)
+		    err = 1;
+		else
+		    y = pt->coord;
+		break;
+	    case 4:
+		if (pt->type != GAIA_SPACE)
+		    err = 1;
+		break;
+	    case 5:
+		if (pt->type != GAIA_COORDINATE)
+		    err = 1;
+		else
+		    z = pt->coord;
+		break;
+	    case 6:
+		if (pt->type != GAIA_SPACE)
+		    err = 1;
+		break;
+	    case 7:
+		if (pt->type != GAIA_COORDINATE)
+		    err = 1;
+		else
+		    m = pt->coord;
+		break;
+	    case 8:
+		if (pt->type != GAIA_CLOSED)
+		    err = 1;
+		break;
+	    default:
+		err = 1;
+		break;
+	    };
+	  i++;
+	  pt = pt->next;
+      }
+    if (err)
+	return NULL;
+    point = gaiaAllocPointXYZM (x, y, z, m);
+    return point;
+}
+
 static gaiaGeomCollPtr
 gaiaGeometryFromPoint (gaiaPointPtr point)
 {
@@ -836,6 +2438,42 @@ gaiaGeometryFromPoint (gaiaPointPtr point)
     geom = gaiaAllocGeomColl ();
     geom->DeclaredType = GAIA_POINT;
     gaiaAddPointToGeomColl (geom, point->X, point->Y);
+    gaiaFreePoint (point);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromPointZ (gaiaPointPtr point)
+{
+/* builds a GEOMETRY containing a POINTZ */
+    gaiaGeomCollPtr geom = NULL;
+    geom = gaiaAllocGeomCollXYZ ();
+    geom->DeclaredType = GAIA_POINT;
+    gaiaAddPointToGeomCollXYZ (geom, point->X, point->Y, point->Z);
+    gaiaFreePoint (point);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromPointM (gaiaPointPtr point)
+{
+/* builds a GEOMETRY containing a POINTM */
+    gaiaGeomCollPtr geom = NULL;
+    geom = gaiaAllocGeomCollXYM ();
+    geom->DeclaredType = GAIA_POINT;
+    gaiaAddPointToGeomCollXYM (geom, point->X, point->Y, point->M);
+    gaiaFreePoint (point);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromPointZM (gaiaPointPtr point)
+{
+/* builds a GEOMETRY containing a POINTZM */
+    gaiaGeomCollPtr geom = NULL;
+    geom = gaiaAllocGeomCollXYZM ();
+    geom->DeclaredType = GAIA_POINTZ;
+    gaiaAddPointToGeomCollXYZM (geom, point->X, point->Y, point->Z, point->M);
     gaiaFreePoint (point);
     return geom;
 }
@@ -857,6 +2495,76 @@ gaiaGeometryFromLinestring (gaiaLinestringPtr line)
 	  /* sets the POINTS for the exterior ring */
 	  gaiaGetPoint (line->Coords, iv, &x, &y);
 	  gaiaSetPoint (line2->Coords, iv, x, y);
+      }
+    gaiaFreeLinestring (line);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromLinestringZ (gaiaLinestringPtr line)
+{
+/* builds a GEOMETRY containing a LINESTRINGZ */
+    gaiaGeomCollPtr geom = NULL;
+    gaiaLinestringPtr line2;
+    int iv;
+    double x;
+    double y;
+    double z;
+    geom = gaiaAllocGeomCollXYZ ();
+    geom->DeclaredType = GAIA_LINESTRING;
+    line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
+    for (iv = 0; iv < line2->Points; iv++)
+      {
+	  /* sets the POINTS for the exterior ring */
+	  gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+	  gaiaSetPointXYZ (line2->Coords, iv, x, y, z);
+      }
+    gaiaFreeLinestring (line);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromLinestringM (gaiaLinestringPtr line)
+{
+/* builds a GEOMETRY containing a LINESTRINGM */
+    gaiaGeomCollPtr geom = NULL;
+    gaiaLinestringPtr line2;
+    int iv;
+    double x;
+    double y;
+    double m;
+    geom = gaiaAllocGeomCollXYM ();
+    geom->DeclaredType = GAIA_LINESTRING;
+    line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
+    for (iv = 0; iv < line2->Points; iv++)
+      {
+	  /* sets the POINTS for the exterior ring */
+	  gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+	  gaiaSetPointXYM (line2->Coords, iv, x, y, m);
+      }
+    gaiaFreeLinestring (line);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromLinestringZM (gaiaLinestringPtr line)
+{
+/* builds a GEOMETRY containing a LINESTRINGZM */
+    gaiaGeomCollPtr geom = NULL;
+    gaiaLinestringPtr line2;
+    int iv;
+    double x;
+    double y;
+    double z;
+    double m;
+    geom = gaiaAllocGeomCollXYZM ();
+    geom->DeclaredType = GAIA_LINESTRING;
+    line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
+    for (iv = 0; iv < line2->Points; iv++)
+      {
+	  /* sets the POINTS for the exterior ring */
+	  gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+	  gaiaSetPointXYZM (line2->Coords, iv, x, y, z, m);
       }
     gaiaFreeLinestring (line);
     return geom;
@@ -917,6 +2625,172 @@ gaiaGeometryFromPolygon (gaiaMultiListTokenPtr polygon)
 }
 
 static gaiaGeomCollPtr
+gaiaGeometryFromPolygonZ (gaiaMultiListTokenPtr polygon)
+{
+/* builds a GEOMETRY containing a POLYGONZ */
+    int iv;
+    int ib;
+    int borders = 0;
+    double x;
+    double y;
+    double z;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr ring;
+    gaiaLinestringPtr line;
+    gaiaGeomCollPtr geom = NULL;
+    gaiaListTokenPtr pt;
+    pt = polygon->first;
+    while (pt != NULL)
+      {
+	  /* counts how many rings are in the list */
+	  borders++;
+	  pt = pt->next;
+      }
+    if (!borders)
+	return NULL;
+    geom = gaiaAllocGeomCollXYZ ();
+    geom->DeclaredType = GAIA_POLYGON;
+/* builds the polygon */
+    line = polygon->first->line;
+    pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
+    ring = pg->Exterior;
+    for (iv = 0; iv < ring->Points; iv++)
+      {
+	  /* sets the POINTS for the exterior ring */
+	  gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+	  gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
+      }
+    ib = 0;
+    pt = polygon->first->next;
+    while (pt != NULL)
+      {
+	  /* builds the interior rings [if any] */
+	  line = pt->line;
+	  ring = gaiaAddInteriorRing (pg, ib, line->Points);
+	  for (iv = 0; iv < ring->Points; iv++)
+	    {
+		/* sets the POINTS for some interior ring */
+		gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+		gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
+	    }
+	  ib++;
+	  pt = pt->next;
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromPolygonM (gaiaMultiListTokenPtr polygon)
+{
+/* builds a GEOMETRY containing a POLYGONM */
+    int iv;
+    int ib;
+    int borders = 0;
+    double x;
+    double y;
+    double m;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr ring;
+    gaiaLinestringPtr line;
+    gaiaGeomCollPtr geom = NULL;
+    gaiaListTokenPtr pt;
+    pt = polygon->first;
+    while (pt != NULL)
+      {
+	  /* counts how many rings are in the list */
+	  borders++;
+	  pt = pt->next;
+      }
+    if (!borders)
+	return NULL;
+    geom = gaiaAllocGeomCollXYM ();
+    geom->DeclaredType = GAIA_POLYGON;
+/* builds the polygon */
+    line = polygon->first->line;
+    pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
+    ring = pg->Exterior;
+    for (iv = 0; iv < ring->Points; iv++)
+      {
+	  /* sets the POINTS for the exterior ring */
+	  gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+	  gaiaSetPointXYM (ring->Coords, iv, x, y, m);
+      }
+    ib = 0;
+    pt = polygon->first->next;
+    while (pt != NULL)
+      {
+	  /* builds the interior rings [if any] */
+	  line = pt->line;
+	  ring = gaiaAddInteriorRing (pg, ib, line->Points);
+	  for (iv = 0; iv < ring->Points; iv++)
+	    {
+		/* sets the POINTS for some interior ring */
+		gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+		gaiaSetPointXYM (ring->Coords, iv, x, y, m);
+	    }
+	  ib++;
+	  pt = pt->next;
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromPolygonZM (gaiaMultiListTokenPtr polygon)
+{
+/* builds a GEOMETRY containing a POLYGONZM */
+    int iv;
+    int ib;
+    int borders = 0;
+    double x;
+    double y;
+    double z;
+    double m;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr ring;
+    gaiaLinestringPtr line;
+    gaiaGeomCollPtr geom = NULL;
+    gaiaListTokenPtr pt;
+    pt = polygon->first;
+    while (pt != NULL)
+      {
+	  /* counts how many rings are in the list */
+	  borders++;
+	  pt = pt->next;
+      }
+    if (!borders)
+	return NULL;
+    geom = gaiaAllocGeomCollXYZM ();
+    geom->DeclaredType = GAIA_POLYGON;
+/* builds the polygon */
+    line = polygon->first->line;
+    pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
+    ring = pg->Exterior;
+    for (iv = 0; iv < ring->Points; iv++)
+      {
+	  /* sets the POINTS for the exterior ring */
+	  gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+	  gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
+      }
+    ib = 0;
+    pt = polygon->first->next;
+    while (pt != NULL)
+      {
+	  /* builds the interior rings [if any] */
+	  line = pt->line;
+	  ring = gaiaAddInteriorRing (pg, ib, line->Points);
+	  for (iv = 0; iv < ring->Points; iv++)
+	    {
+		/* sets the POINTS for some interior ring */
+		gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+		gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
+	    }
+	  ib++;
+	  pt = pt->next;
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
 gaiaGeometryFromMPoint (gaiaLinestringPtr mpoint)
 {
 /* builds a GEOMETRY containing a MULTIPOINT */
@@ -930,6 +2804,64 @@ gaiaGeometryFromMPoint (gaiaLinestringPtr mpoint)
       {
 	  gaiaGetPoint (mpoint->Coords, ie, &x, &y);
 	  gaiaAddPointToGeomColl (geom, x, y);
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromMPointZ (gaiaLinestringPtr mpoint)
+{
+/* builds a GEOMETRY containing a MULTIPOINTZ */
+    int ie;
+    double x;
+    double y;
+    double z;
+    gaiaGeomCollPtr geom = NULL;
+    geom = gaiaAllocGeomCollXYZ ();
+    geom->DeclaredType = GAIA_MULTIPOINT;
+    for (ie = 0; ie < mpoint->Points; ie++)
+      {
+	  gaiaGetPointXYZ (mpoint->Coords, ie, &x, &y, &z);
+	  gaiaAddPointToGeomCollXYZ (geom, x, y, z);
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromMPointM (gaiaLinestringPtr mpoint)
+{
+/* builds a GEOMETRY containing a MULTIPOINTM */
+    int ie;
+    double x;
+    double y;
+    double m;
+    gaiaGeomCollPtr geom = NULL;
+    geom = gaiaAllocGeomCollXYM ();
+    geom->DeclaredType = GAIA_MULTIPOINT;
+    for (ie = 0; ie < mpoint->Points; ie++)
+      {
+	  gaiaGetPointXYM (mpoint->Coords, ie, &x, &y, &m);
+	  gaiaAddPointToGeomCollXYM (geom, x, y, m);
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromMPointZM (gaiaLinestringPtr mpoint)
+{
+/* builds a GEOMETRY containing a MULTIPOINTZM */
+    int ie;
+    double x;
+    double y;
+    double z;
+    double m;
+    gaiaGeomCollPtr geom = NULL;
+    geom = gaiaAllocGeomCollXYZM ();
+    geom->DeclaredType = GAIA_MULTIPOINT;
+    for (ie = 0; ie < mpoint->Points; ie++)
+      {
+	  gaiaGetPointXYZM (mpoint->Coords, ie, &x, &y, &z, &m);
+	  gaiaAddPointToGeomCollXYZM (geom, x, y, z, m);
       }
     return geom;
 }
@@ -967,6 +2899,127 @@ gaiaGeometryFromMLine (gaiaMultiListTokenPtr mline)
 	    {
 		gaiaGetPoint (line->Coords, iv, &x, &y);
 		gaiaSetPoint (line2->Coords, iv, x, y);
+	    }
+	  pt = pt->next;
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromMLineZ (gaiaMultiListTokenPtr mline)
+{
+/* builds a GEOMETRY containing a MULTILINESTRINGZ */
+    int iv;
+    int lines = 0;
+    double x;
+    double y;
+    double z;
+    gaiaListTokenPtr pt;
+    gaiaLinestringPtr line;
+    gaiaLinestringPtr line2;
+    gaiaGeomCollPtr geom = NULL;
+    pt = mline->first;
+    while (pt != NULL)
+      {
+/* counts how many linestrings are in the list */
+	  lines++;
+	  pt = pt->next;
+      }
+    if (!lines)
+	return NULL;
+    geom = gaiaAllocGeomCollXYZ ();
+    geom->DeclaredType = GAIA_MULTILINESTRING;
+    pt = mline->first;
+    while (pt != NULL)
+      {
+	  /* creates and initializes one linestring for each iteration */
+	  line = pt->line;
+	  line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
+	  for (iv = 0; iv < line->Points; iv++)
+	    {
+		gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+		gaiaSetPointXYZ (line2->Coords, iv, x, y, z);
+	    }
+	  pt = pt->next;
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromMLineM (gaiaMultiListTokenPtr mline)
+{
+/* builds a GEOMETRY containing a MULTILINESTRINGM */
+    int iv;
+    int lines = 0;
+    double x;
+    double y;
+    double m;
+    gaiaListTokenPtr pt;
+    gaiaLinestringPtr line;
+    gaiaLinestringPtr line2;
+    gaiaGeomCollPtr geom = NULL;
+    pt = mline->first;
+    while (pt != NULL)
+      {
+/* counts how many linestrings are in the list */
+	  lines++;
+	  pt = pt->next;
+      }
+    if (!lines)
+	return NULL;
+    geom = gaiaAllocGeomCollXYM ();
+    geom->DeclaredType = GAIA_MULTILINESTRING;
+    pt = mline->first;
+    while (pt != NULL)
+      {
+	  /* creates and initializes one linestring for each iteration */
+	  line = pt->line;
+	  line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
+	  for (iv = 0; iv < line->Points; iv++)
+	    {
+		gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+		gaiaSetPointXYM (line2->Coords, iv, x, y, m);
+	    }
+	  pt = pt->next;
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromMLineZM (gaiaMultiListTokenPtr mline)
+{
+/* builds a GEOMETRY containing a MULTILINESTRINGZM */
+    int iv;
+    int lines = 0;
+    double x;
+    double y;
+    double z;
+    double m;
+    gaiaListTokenPtr pt;
+    gaiaLinestringPtr line;
+    gaiaLinestringPtr line2;
+    gaiaGeomCollPtr geom = NULL;
+    pt = mline->first;
+    while (pt != NULL)
+      {
+/* counts how many linestrings are in the list */
+	  lines++;
+	  pt = pt->next;
+      }
+    if (!lines)
+	return NULL;
+    geom = gaiaAllocGeomCollXYZM ();
+    geom->DeclaredType = GAIA_MULTILINESTRING;
+    pt = mline->first;
+    while (pt != NULL)
+      {
+	  /* creates and initializes one linestring for each iteration */
+	  line = pt->line;
+	  line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
+	  for (iv = 0; iv < line->Points; iv++)
+	    {
+		gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+		gaiaSetPointXYZM (line2->Coords, iv, x, y, z, m);
 	    }
 	  pt = pt->next;
       }
@@ -1034,6 +3087,220 @@ gaiaGeometryFromMPoly (gaiaMultiMultiListTokenPtr mpoly)
 		      /* sets the POINTS for the exterior ring */
 		      gaiaGetPoint (line->Coords, iv, &x, &y);
 		      gaiaSetPoint (ring->Coords, iv, x, y);
+		  }
+		ib++;
+		pt = pt->next;
+	    }
+	  multi = multi->next;
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromMPolyZ (gaiaMultiMultiListTokenPtr mpoly)
+{
+/* builds a GEOMETRY containing a MULTIPOLYGONZ */
+    int iv;
+    int ib;
+    int borders;
+    int entities = 0;
+    double x;
+    double y;
+    double z;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr ring;
+    gaiaLinestringPtr line;
+    gaiaGeomCollPtr geom = NULL;
+    gaiaMultiListTokenPtr multi;
+    gaiaListTokenPtr pt;
+    multi = mpoly->first;
+    while (multi != NULL)
+      {
+	  /* counts how many polygons are in the list */
+	  entities++;
+	  multi = multi->next;
+      }
+    if (!entities)
+	return NULL;
+/* allocates and initializes the geometry to be returned */
+    geom = gaiaAllocGeomCollXYZ ();
+    geom->DeclaredType = GAIA_MULTIPOLYGON;
+    multi = mpoly->first;
+    while (multi != NULL)
+      {
+	  borders = 0;
+	  pt = multi->first;
+	  while (pt != NULL)
+	    {
+		/* counts how many rings are in the list */
+		borders++;
+		pt = pt->next;
+	    }
+	  /* builds one polygon */
+	  line = multi->first->line;
+	  pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
+	  ring = pg->Exterior;
+	  for (iv = 0; iv < ring->Points; iv++)
+	    {
+		/* sets the POINTS for the exterior ring */
+		gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+		gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
+	    }
+	  ib = 0;
+	  pt = multi->first->next;
+	  while (pt != NULL)
+	    {
+		/* builds the interior rings [if any] */
+		line = pt->line;
+		ring = gaiaAddInteriorRing (pg, ib, line->Points);
+		for (iv = 0; iv < ring->Points; iv++)
+		  {
+		      /* sets the POINTS for the exterior ring */
+		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+		      gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
+		  }
+		ib++;
+		pt = pt->next;
+	    }
+	  multi = multi->next;
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromMPolyM (gaiaMultiMultiListTokenPtr mpoly)
+{
+/* builds a GEOMETRY containing a MULTIPOLYGONM */
+    int iv;
+    int ib;
+    int borders;
+    int entities = 0;
+    double x;
+    double y;
+    double m;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr ring;
+    gaiaLinestringPtr line;
+    gaiaGeomCollPtr geom = NULL;
+    gaiaMultiListTokenPtr multi;
+    gaiaListTokenPtr pt;
+    multi = mpoly->first;
+    while (multi != NULL)
+      {
+	  /* counts how many polygons are in the list */
+	  entities++;
+	  multi = multi->next;
+      }
+    if (!entities)
+	return NULL;
+/* allocates and initializes the geometry to be returned */
+    geom = gaiaAllocGeomCollXYM ();
+    geom->DeclaredType = GAIA_MULTIPOLYGON;
+    multi = mpoly->first;
+    while (multi != NULL)
+      {
+	  borders = 0;
+	  pt = multi->first;
+	  while (pt != NULL)
+	    {
+		/* counts how many rings are in the list */
+		borders++;
+		pt = pt->next;
+	    }
+	  /* builds one polygon */
+	  line = multi->first->line;
+	  pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
+	  ring = pg->Exterior;
+	  for (iv = 0; iv < ring->Points; iv++)
+	    {
+		/* sets the POINTS for the exterior ring */
+		gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+		gaiaSetPointXYM (ring->Coords, iv, x, y, m);
+	    }
+	  ib = 0;
+	  pt = multi->first->next;
+	  while (pt != NULL)
+	    {
+		/* builds the interior rings [if any] */
+		line = pt->line;
+		ring = gaiaAddInteriorRing (pg, ib, line->Points);
+		for (iv = 0; iv < ring->Points; iv++)
+		  {
+		      /* sets the POINTS for the exterior ring */
+		      gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+		      gaiaSetPointXYM (ring->Coords, iv, x, y, m);
+		  }
+		ib++;
+		pt = pt->next;
+	    }
+	  multi = multi->next;
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromMPolyZM (gaiaMultiMultiListTokenPtr mpoly)
+{
+/* builds a GEOMETRY containing a MULTIPOLYGONZM */
+    int iv;
+    int ib;
+    int borders;
+    int entities = 0;
+    double x;
+    double y;
+    double z;
+    double m;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr ring;
+    gaiaLinestringPtr line;
+    gaiaGeomCollPtr geom = NULL;
+    gaiaMultiListTokenPtr multi;
+    gaiaListTokenPtr pt;
+    multi = mpoly->first;
+    while (multi != NULL)
+      {
+	  /* counts how many polygons are in the list */
+	  entities++;
+	  multi = multi->next;
+      }
+    if (!entities)
+	return NULL;
+/* allocates and initializes the geometry to be returned */
+    geom = gaiaAllocGeomCollXYZM ();
+    geom->DeclaredType = GAIA_MULTIPOLYGON;
+    multi = mpoly->first;
+    while (multi != NULL)
+      {
+	  borders = 0;
+	  pt = multi->first;
+	  while (pt != NULL)
+	    {
+		/* counts how many rings are in the list */
+		borders++;
+		pt = pt->next;
+	    }
+	  /* builds one polygon */
+	  line = multi->first->line;
+	  pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
+	  ring = pg->Exterior;
+	  for (iv = 0; iv < ring->Points; iv++)
+	    {
+		/* sets the POINTS for the exterior ring */
+		gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+		gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
+	    }
+	  ib = 0;
+	  pt = multi->first->next;
+	  while (pt != NULL)
+	    {
+		/* builds the interior rings [if any] */
+		line = pt->line;
+		ring = gaiaAddInteriorRing (pg, ib, line->Points);
+		for (iv = 0; iv < ring->Points; iv++)
+		  {
+		      /* sets the POINTS for the exterior ring */
+		      gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+		      gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
 		  }
 		ib++;
 		pt = pt->next;
@@ -1125,6 +3392,290 @@ gaiaGeometryFromGeomColl (gaiaGeomCollListTokenPtr geocoll)
 			    /* sets the POINTS for the exterior ring */
 			    gaiaGetPoint (line->Coords, iv, &x, &y);
 			    gaiaSetPoint (ring->Coords, iv, x, y);
+			}
+		      ib++;
+		      pt = pt->next;
+		  }
+		break;
+	    };
+	  multi = multi->next;
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromGeomCollZ (gaiaGeomCollListTokenPtr geocoll)
+{
+/* builds a GEOMETRY containing a GEOMETRYCOLLECTIONZ */
+    int iv;
+    int ib;
+    int borders;
+    int entities = 0;
+    double x;
+    double y;
+    double z;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr ring;
+    gaiaLinestringPtr line2;
+    gaiaLinestringPtr line;
+    gaiaGeomCollPtr geom = NULL;
+    gaiaListTokenPtr linestring;
+    gaiaMultiListTokenPtr polyg;
+    gaiaVarListTokenPtr multi;
+    gaiaListTokenPtr pt;
+    multi = geocoll->first;
+    while (multi != NULL)
+      {
+	  /* counts how many polygons are in the list */
+	  entities++;
+	  multi = multi->next;
+      }
+    if (!entities)
+	return NULL;
+/* allocates and initializes the geometry to be returned */
+    geom = gaiaAllocGeomCollXYZ ();
+    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+    multi = geocoll->first;
+    while (multi != NULL)
+      {
+	  switch (multi->type)
+	    {
+	    case GAIA_POINTZ:
+		gaiaAddPointToGeomCollXYZ (geom, multi->x, multi->y, multi->z);
+		break;
+	    case GAIA_LINESTRINGZ:
+		linestring = (gaiaListTokenPtr) (multi->pointer);
+		line = linestring->line;
+		line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
+		for (iv = 0; iv < line2->Points; iv++)
+		  {
+		      /* sets the POINTS for the LINESTRING */
+		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+		      gaiaSetPointXYZ (line2->Coords, iv, x, y, z);
+		  }
+		break;
+	    case GAIA_POLYGONZ:
+		polyg = multi->pointer;
+		borders = 0;
+		pt = polyg->first;
+		while (pt != NULL)
+		  {
+		      /* counts how many rings are in the list */
+		      borders++;
+		      pt = pt->next;
+		  }
+		/* builds one polygon */
+		line = polyg->first->line;
+		pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
+		ring = pg->Exterior;
+		for (iv = 0; iv < ring->Points; iv++)
+		  {
+		      /* sets the POINTS for the exterior ring */
+		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+		      gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
+		  }
+		ib = 0;
+		pt = polyg->first->next;
+		while (pt != NULL)
+		  {
+		      /* builds the interior rings [if any] */
+		      line = pt->line;
+		      ring = gaiaAddInteriorRing (pg, ib, line->Points);
+		      for (iv = 0; iv < ring->Points; iv++)
+			{
+			    /* sets the POINTS for the exterior ring */
+			    gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+			    gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
+			}
+		      ib++;
+		      pt = pt->next;
+		  }
+		break;
+	    };
+	  multi = multi->next;
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromGeomCollM (gaiaGeomCollListTokenPtr geocoll)
+{
+/* builds a GEOMETRY containing a GEOMETRYCOLLECTIONM */
+    int iv;
+    int ib;
+    int borders;
+    int entities = 0;
+    double x;
+    double y;
+    double m;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr ring;
+    gaiaLinestringPtr line2;
+    gaiaLinestringPtr line;
+    gaiaGeomCollPtr geom = NULL;
+    gaiaListTokenPtr linestring;
+    gaiaMultiListTokenPtr polyg;
+    gaiaVarListTokenPtr multi;
+    gaiaListTokenPtr pt;
+    multi = geocoll->first;
+    while (multi != NULL)
+      {
+	  /* counts how many polygons are in the list */
+	  entities++;
+	  multi = multi->next;
+      }
+    if (!entities)
+	return NULL;
+/* allocates and initializes the geometry to be returned */
+    geom = gaiaAllocGeomCollXYM ();
+    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+    multi = geocoll->first;
+    while (multi != NULL)
+      {
+	  switch (multi->type)
+	    {
+	    case GAIA_POINTM:
+		gaiaAddPointToGeomCollXYM (geom, multi->x, multi->y, multi->m);
+		break;
+	    case GAIA_LINESTRINGM:
+		linestring = (gaiaListTokenPtr) (multi->pointer);
+		line = linestring->line;
+		line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
+		for (iv = 0; iv < line2->Points; iv++)
+		  {
+		      /* sets the POINTS for the LINESTRING */
+		      gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+		      gaiaSetPointXYM (line2->Coords, iv, x, y, m);
+		  }
+		break;
+	    case GAIA_POLYGONM:
+		polyg = multi->pointer;
+		borders = 0;
+		pt = polyg->first;
+		while (pt != NULL)
+		  {
+		      /* counts how many rings are in the list */
+		      borders++;
+		      pt = pt->next;
+		  }
+		/* builds one polygon */
+		line = polyg->first->line;
+		pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
+		ring = pg->Exterior;
+		for (iv = 0; iv < ring->Points; iv++)
+		  {
+		      /* sets the POINTS for the exterior ring */
+		      gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+		      gaiaSetPointXYM (ring->Coords, iv, x, y, m);
+		  }
+		ib = 0;
+		pt = polyg->first->next;
+		while (pt != NULL)
+		  {
+		      /* builds the interior rings [if any] */
+		      line = pt->line;
+		      ring = gaiaAddInteriorRing (pg, ib, line->Points);
+		      for (iv = 0; iv < ring->Points; iv++)
+			{
+			    /* sets the POINTS for the exterior ring */
+			    gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+			    gaiaSetPointXYM (ring->Coords, iv, x, y, m);
+			}
+		      ib++;
+		      pt = pt->next;
+		  }
+		break;
+	    };
+	  multi = multi->next;
+      }
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromGeomCollZM (gaiaGeomCollListTokenPtr geocoll)
+{
+/* builds a GEOMETRY containing a GEOMETRYCOLLECTIONZM */
+    int iv;
+    int ib;
+    int borders;
+    int entities = 0;
+    double x;
+    double y;
+    double z;
+    double m;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr ring;
+    gaiaLinestringPtr line2;
+    gaiaLinestringPtr line;
+    gaiaGeomCollPtr geom = NULL;
+    gaiaListTokenPtr linestring;
+    gaiaMultiListTokenPtr polyg;
+    gaiaVarListTokenPtr multi;
+    gaiaListTokenPtr pt;
+    multi = geocoll->first;
+    while (multi != NULL)
+      {
+	  /* counts how many polygons are in the list */
+	  entities++;
+	  multi = multi->next;
+      }
+    if (!entities)
+	return NULL;
+/* allocates and initializes the geometry to be returned */
+    geom = gaiaAllocGeomCollXYZM ();
+    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+    multi = geocoll->first;
+    while (multi != NULL)
+      {
+	  switch (multi->type)
+	    {
+	    case GAIA_POINTZM:
+		gaiaAddPointToGeomCollXYZM (geom, multi->x, multi->y, multi->z,
+					    multi->m);
+		break;
+	    case GAIA_LINESTRINGZM:
+		linestring = (gaiaListTokenPtr) (multi->pointer);
+		line = linestring->line;
+		line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
+		for (iv = 0; iv < line2->Points; iv++)
+		  {
+		      /* sets the POINTS for the LINESTRING */
+		      gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+		      gaiaSetPointXYZM (line2->Coords, iv, x, y, z, m);
+		  }
+		break;
+	    case GAIA_POLYGONZM:
+		polyg = multi->pointer;
+		borders = 0;
+		pt = polyg->first;
+		while (pt != NULL)
+		  {
+		      /* counts how many rings are in the list */
+		      borders++;
+		      pt = pt->next;
+		  }
+		/* builds one polygon */
+		line = polyg->first->line;
+		pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
+		ring = pg->Exterior;
+		for (iv = 0; iv < ring->Points; iv++)
+		  {
+		      /* sets the POINTS for the exterior ring */
+		      gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+		      gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
+		  }
+		ib = 0;
+		pt = polyg->first->next;
+		while (pt != NULL)
+		  {
+		      /* builds the interior rings [if any] */
+		      line = pt->line;
+		      ring = gaiaAddInteriorRing (pg, ib, line->Points);
+		      for (iv = 0; iv < ring->Points; iv++)
+			{
+			    /* sets the POINTS for the exterior ring */
+			    gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+			    gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
 			}
 		      ib++;
 		      pt = pt->next;
@@ -1295,6 +3846,9 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
     switch (first->type)
       {
       case GAIA_POINT:
+      case GAIA_POINTZ:
+      case GAIA_POINTM:
+      case GAIA_POINTZM:
 	  if (max_opened != 1)
 	      goto err;
 	  break;
@@ -1303,20 +3857,80 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
 	      goto err;
 	  list_token = gaiaBuildListToken (first->next, last);
 	  break;
+      case GAIA_LINESTRINGZ:
+	  if (max_opened != 1)
+	      goto err;
+	  list_token = gaiaBuildListTokenZ (first->next, last);
+	  break;
+      case GAIA_LINESTRINGM:
+	  if (max_opened != 1)
+	      goto err;
+	  list_token = gaiaBuildListTokenM (first->next, last);
+	  break;
+      case GAIA_LINESTRINGZM:
+	  if (max_opened != 1)
+	      goto err;
+	  list_token = gaiaBuildListTokenZM (first->next, last);
+	  break;
       case GAIA_POLYGON:
 	  if (max_opened != 2)
 	      goto err;
 	  multi_list_token = gaiaBuildMultiListToken (first->next, last);
+	  break;
+      case GAIA_POLYGONZ:
+	  if (max_opened != 2)
+	      goto err;
+	  multi_list_token = gaiaBuildMultiListTokenZ (first->next, last);
+	  break;
+      case GAIA_POLYGONM:
+	  if (max_opened != 2)
+	      goto err;
+	  multi_list_token = gaiaBuildMultiListTokenM (first->next, last);
+	  break;
+      case GAIA_POLYGONZM:
+	  if (max_opened != 2)
+	      goto err;
+	  multi_list_token = gaiaBuildMultiListTokenZM (first->next, last);
 	  break;
       case GAIA_MULTIPOINT:
 	  if (max_opened != 1)
 	      goto err;
 	  list_token = gaiaBuildListToken (first->next, last);
 	  break;
+      case GAIA_MULTIPOINTZ:
+	  if (max_opened != 1)
+	      goto err;
+	  list_token = gaiaBuildListTokenZ (first->next, last);
+	  break;
+      case GAIA_MULTIPOINTM:
+	  if (max_opened != 1)
+	      goto err;
+	  list_token = gaiaBuildListTokenM (first->next, last);
+	  break;
+      case GAIA_MULTIPOINTZM:
+	  if (max_opened != 1)
+	      goto err;
+	  list_token = gaiaBuildListTokenZM (first->next, last);
+	  break;
       case GAIA_MULTILINESTRING:
 	  if (max_opened != 2)
 	      goto err;
 	  multi_list_token = gaiaBuildMultiListToken (first->next, last);
+	  break;
+      case GAIA_MULTILINESTRINGZ:
+	  if (max_opened != 2)
+	      goto err;
+	  multi_list_token = gaiaBuildMultiListTokenZ (first->next, last);
+	  break;
+      case GAIA_MULTILINESTRINGM:
+	  if (max_opened != 2)
+	      goto err;
+	  multi_list_token = gaiaBuildMultiListTokenM (first->next, last);
+	  break;
+      case GAIA_MULTILINESTRINGZM:
+	  if (max_opened != 2)
+	      goto err;
+	  multi_list_token = gaiaBuildMultiListTokenZM (first->next, last);
 	  break;
       case GAIA_MULTIPOLYGON:
 	  if (max_opened != 3)
@@ -1324,12 +3938,51 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
 	  multi_multi_list_token =
 	      gaiaBuildMultiMultiListToken (first->next, last);
 	  break;
+      case GAIA_MULTIPOLYGONZ:
+	  if (max_opened != 3)
+	      goto err;
+	  multi_multi_list_token =
+	      gaiaBuildMultiMultiListTokenZ (first->next, last);
+	  break;
+      case GAIA_MULTIPOLYGONM:
+	  if (max_opened != 3)
+	      goto err;
+	  multi_multi_list_token =
+	      gaiaBuildMultiMultiListTokenM (first->next, last);
+	  break;
+      case GAIA_MULTIPOLYGONZM:
+	  if (max_opened != 3)
+	      goto err;
+	  multi_multi_list_token =
+	      gaiaBuildMultiMultiListTokenZM (first->next, last);
+	  break;
       case GAIA_GEOMETRYCOLLECTION:
 	  if (max_opened == 2 || max_opened == 3)
 	      ;
 	  else
 	      goto err;
 	  geocoll_list_token = gaiaBuildGeomCollListToken (first->next, last);
+	  break;
+      case GAIA_GEOMETRYCOLLECTIONZ:
+	  if (max_opened == 2 || max_opened == 3)
+	      ;
+	  else
+	      goto err;
+	  geocoll_list_token = gaiaBuildGeomCollListTokenZ (first->next, last);
+	  break;
+      case GAIA_GEOMETRYCOLLECTIONM:
+	  if (max_opened == 2 || max_opened == 3)
+	      ;
+	  else
+	      goto err;
+	  geocoll_list_token = gaiaBuildGeomCollListTokenM (first->next, last);
+	  break;
+      case GAIA_GEOMETRYCOLLECTIONZM:
+	  if (max_opened == 2 || max_opened == 3)
+	      ;
+	  else
+	      goto err;
+	  geocoll_list_token = gaiaBuildGeomCollListTokenZM (first->next, last);
 	  break;
       }
     switch (first->type)
@@ -1339,15 +3992,60 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
 	  if (point)
 	      geo = gaiaGeometryFromPoint (point);
 	  break;
+      case GAIA_POINTZ:
+	  point = gaiaBuildPointZ (first->next);
+	  if (point)
+	      geo = gaiaGeometryFromPointZ (point);
+	  break;
+      case GAIA_POINTM:
+	  point = gaiaBuildPointM (first->next);
+	  if (point)
+	      geo = gaiaGeometryFromPointM (point);
+	  break;
+      case GAIA_POINTZM:
+	  point = gaiaBuildPointZM (first->next);
+	  if (point)
+	      geo = gaiaGeometryFromPointZM (point);
+	  break;
       case GAIA_LINESTRING:
 	  line = list_token->line;
 	  if (line)
 	      geo = gaiaGeometryFromLinestring (line);
 	  list_token->line = NULL;
 	  break;
+      case GAIA_LINESTRINGZ:
+	  line = list_token->line;
+	  if (line)
+	      geo = gaiaGeometryFromLinestringZ (line);
+	  list_token->line = NULL;
+	  break;
+      case GAIA_LINESTRINGM:
+	  line = list_token->line;
+	  if (line)
+	      geo = gaiaGeometryFromLinestringM (line);
+	  list_token->line = NULL;
+	  break;
+      case GAIA_LINESTRINGZM:
+	  line = list_token->line;
+	  if (line)
+	      geo = gaiaGeometryFromLinestringZM (line);
+	  list_token->line = NULL;
+	  break;
       case GAIA_POLYGON:
 	  if (multi_list_token)
 	      geo = gaiaGeometryFromPolygon (multi_list_token);
+	  break;
+      case GAIA_POLYGONZ:
+	  if (multi_list_token)
+	      geo = gaiaGeometryFromPolygonZ (multi_list_token);
+	  break;
+      case GAIA_POLYGONM:
+	  if (multi_list_token)
+	      geo = gaiaGeometryFromPolygonM (multi_list_token);
+	  break;
+      case GAIA_POLYGONZM:
+	  if (multi_list_token)
+	      geo = gaiaGeometryFromPolygonZM (multi_list_token);
 	  break;
       case GAIA_MULTIPOINT:
 	  line = list_token->line;
@@ -1355,17 +4053,71 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
 	      geo = gaiaGeometryFromMPoint (line);
 	  list_token->line = NULL;
 	  break;
+      case GAIA_MULTIPOINTZ:
+	  line = list_token->line;
+	  if (line)
+	      geo = gaiaGeometryFromMPointZ (line);
+	  list_token->line = NULL;
+	  break;
+      case GAIA_MULTIPOINTM:
+	  line = list_token->line;
+	  if (line)
+	      geo = gaiaGeometryFromMPointM (line);
+	  list_token->line = NULL;
+	  break;
+      case GAIA_MULTIPOINTZM:
+	  line = list_token->line;
+	  if (line)
+	      geo = gaiaGeometryFromMPointZM (line);
+	  list_token->line = NULL;
+	  break;
       case GAIA_MULTILINESTRING:
 	  if (multi_list_token)
 	      geo = gaiaGeometryFromMLine (multi_list_token);
+	  break;
+      case GAIA_MULTILINESTRINGZ:
+	  if (multi_list_token)
+	      geo = gaiaGeometryFromMLineZ (multi_list_token);
+	  break;
+      case GAIA_MULTILINESTRINGM:
+	  if (multi_list_token)
+	      geo = gaiaGeometryFromMLineM (multi_list_token);
+	  break;
+      case GAIA_MULTILINESTRINGZM:
+	  if (multi_list_token)
+	      geo = gaiaGeometryFromMLineZM (multi_list_token);
 	  break;
       case GAIA_MULTIPOLYGON:
 	  if (multi_multi_list_token)
 	      geo = gaiaGeometryFromMPoly (multi_multi_list_token);
 	  break;
+      case GAIA_MULTIPOLYGONZ:
+	  if (multi_multi_list_token)
+	      geo = gaiaGeometryFromMPolyZ (multi_multi_list_token);
+	  break;
+      case GAIA_MULTIPOLYGONM:
+	  if (multi_multi_list_token)
+	      geo = gaiaGeometryFromMPolyM (multi_multi_list_token);
+	  break;
+      case GAIA_MULTIPOLYGONZM:
+	  if (multi_multi_list_token)
+	      geo = gaiaGeometryFromMPolyZM (multi_multi_list_token);
+	  break;
       case GAIA_GEOMETRYCOLLECTION:
 	  if (geocoll_list_token)
 	      geo = gaiaGeometryFromGeomColl (geocoll_list_token);
+	  break;
+      case GAIA_GEOMETRYCOLLECTIONZ:
+	  if (geocoll_list_token)
+	      geo = gaiaGeometryFromGeomCollZ (geocoll_list_token);
+	  break;
+      case GAIA_GEOMETRYCOLLECTIONM:
+	  if (geocoll_list_token)
+	      geo = gaiaGeometryFromGeomCollM (geocoll_list_token);
+	  break;
+      case GAIA_GEOMETRYCOLLECTIONZM:
+	  if (geocoll_list_token)
+	      geo = gaiaGeometryFromGeomCollZM (geocoll_list_token);
 	  break;
       }
     if (buffer)
@@ -1382,6 +4134,8 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
 	  free (pt);
 	  pt = ptn;
       }
+    if (!geo)
+	return NULL;
     if (!checkValidity (geo))
       {
 	  gaiaFreeGeomColl (geo);
@@ -1429,7 +4183,7 @@ gaiaOutCheckBuffer (char **buffer, int *size)
 /* checks if the receiving buffer has enough free room, and in case reallocates it */
     char *old = *buffer;
     int len = strlen (*buffer);
-    if ((*size - len) < 256)
+    if ((*size - len) < 1024)
       {
 	  *size += 4096;
 	  *buffer = realloc (old, *size);
@@ -1461,6 +4215,66 @@ gaiaOutPoint (gaiaPointPtr point, char **buffer, int *size)
 }
 
 static void
+gaiaOutPointZ (gaiaPointPtr point, char **buffer, int *size)
+{
+/* formats a WKT POINTZ */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_z[128];
+    char buf[512];
+    gaiaOutCheckBuffer (buffer, size);
+    sprintf (buf_x, "%1.6f", point->X);
+    gaiaOutClean (buf_x);
+    sprintf (buf_y, "%1.6f", point->Y);
+    gaiaOutClean (buf_y);
+    sprintf (buf_z, "%1.6f", point->Z);
+    gaiaOutClean (buf_z);
+    sprintf (buf, "%s %s %s", buf_x, buf_y, buf_z);
+    strcat (*buffer, buf);
+}
+
+static void
+gaiaOutPointM (gaiaPointPtr point, char **buffer, int *size)
+{
+/* formats a WKT POINTM */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_m[128];
+    char buf[512];
+    gaiaOutCheckBuffer (buffer, size);
+    sprintf (buf_x, "%1.6f", point->X);
+    gaiaOutClean (buf_x);
+    sprintf (buf_y, "%1.6f", point->Y);
+    gaiaOutClean (buf_y);
+    sprintf (buf_m, "%1.6f", point->M);
+    gaiaOutClean (buf_m);
+    sprintf (buf, "%s %s %s", buf_x, buf_y, buf_m);
+    strcat (*buffer, buf);
+}
+
+static void
+gaiaOutPointZM (gaiaPointPtr point, char **buffer, int *size)
+{
+/* formats a WKT POINTZM */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_z[128];
+    char buf_m[128];
+    char buf[1024];
+    gaiaOutCheckBuffer (buffer, size);
+    sprintf (buf_x, "%1.6f", point->X);
+    gaiaOutClean (buf_x);
+    sprintf (buf_y, "%1.6f", point->Y);
+    gaiaOutClean (buf_y);
+    sprintf (buf_z, "%1.6f", point->Z);
+    gaiaOutClean (buf_z);
+    sprintf (buf_m, "%1.6f", point->M);
+    gaiaOutClean (buf_m);
+    sprintf (buf, "%s %s %s %s", buf_x, buf_y, buf_z, buf_m);
+    strcat (*buffer, buf);
+}
+
+static void
 gaiaOutLinestring (gaiaLinestringPtr line, char **buffer, int *size)
 {
 /* formats a WKT LINESTRING */
@@ -1482,6 +4296,100 @@ gaiaOutLinestring (gaiaLinestringPtr line, char **buffer, int *size)
 	      sprintf (buf, ", %s %s", buf_x, buf_y);
 	  else
 	      sprintf (buf, "%s %s", buf_x, buf_y);
+	  strcat (*buffer, buf);
+      }
+}
+
+static void
+gaiaOutLinestringZ (gaiaLinestringPtr line, char **buffer, int *size)
+{
+/* formats a WKT LINESTRINGZ */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_z[128];
+    char buf[512];
+    double x;
+    double y;
+    double z;
+    int iv;
+    for (iv = 0; iv < line->Points; iv++)
+      {
+	  gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+	  gaiaOutCheckBuffer (buffer, size);
+	  sprintf (buf_x, "%1.6f", x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%1.6f", y);
+	  gaiaOutClean (buf_y);
+	  sprintf (buf_z, "%1.6f", z);
+	  gaiaOutClean (buf_z);
+	  if (iv > 0)
+	      sprintf (buf, ", %s %s %s", buf_x, buf_y, buf_z);
+	  else
+	      sprintf (buf, "%s %s %s", buf_x, buf_y, buf_z);
+	  strcat (*buffer, buf);
+      }
+}
+
+static void
+gaiaOutLinestringM (gaiaLinestringPtr line, char **buffer, int *size)
+{
+/* formats a WKT LINESTRINGM */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_m[128];
+    char buf[512];
+    double x;
+    double y;
+    double m;
+    int iv;
+    for (iv = 0; iv < line->Points; iv++)
+      {
+	  gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+	  gaiaOutCheckBuffer (buffer, size);
+	  sprintf (buf_x, "%1.6f", x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%1.6f", y);
+	  gaiaOutClean (buf_y);
+	  sprintf (buf_m, "%1.6f", m);
+	  gaiaOutClean (buf_m);
+	  if (iv > 0)
+	      sprintf (buf, ", %s %s %s", buf_x, buf_y, buf_m);
+	  else
+	      sprintf (buf, "%s %s %s", buf_x, buf_y, buf_m);
+	  strcat (*buffer, buf);
+      }
+}
+
+static void
+gaiaOutLinestringZM (gaiaLinestringPtr line, char **buffer, int *size)
+{
+/* formats a WKT LINESTRINGZM */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_z[128];
+    char buf_m[128];
+    char buf[1024];
+    double x;
+    double y;
+    double z;
+    double m;
+    int iv;
+    for (iv = 0; iv < line->Points; iv++)
+      {
+	  gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+	  gaiaOutCheckBuffer (buffer, size);
+	  sprintf (buf_x, "%1.6f", x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%1.6f", y);
+	  gaiaOutClean (buf_y);
+	  sprintf (buf_z, "%1.6f", z);
+	  gaiaOutClean (buf_z);
+	  sprintf (buf_m, "%1.6f", m);
+	  gaiaOutClean (buf_m);
+	  if (iv > 0)
+	      sprintf (buf, ", %s %s %s %s", buf_x, buf_y, buf_z, buf_m);
+	  else
+	      sprintf (buf, "%s %s %s %s", buf_x, buf_y, buf_z, buf_m);
 	  strcat (*buffer, buf);
       }
 }
@@ -1536,6 +4444,180 @@ gaiaOutPolygon (gaiaPolygonPtr polyg, char **buffer, int *size)
       }
 }
 
+static void
+gaiaOutPolygonZ (gaiaPolygonPtr polyg, char **buffer, int *size)
+{
+/* formats a WKT POLYGONZ */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_z[128];
+    char buf[512];
+    int ib;
+    int iv;
+    double x;
+    double y;
+    double z;
+    gaiaRingPtr ring = polyg->Exterior;
+    for (iv = 0; iv < ring->Points; iv++)
+      {
+	  gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);
+	  gaiaOutCheckBuffer (buffer, size);
+	  sprintf (buf_x, "%1.6f", x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%1.6f", y);
+	  gaiaOutClean (buf_y);
+	  sprintf (buf_z, "%1.6f", z);
+	  gaiaOutClean (buf_z);
+	  if (iv == 0)
+	      sprintf (buf, "(%s %s %s", buf_x, buf_y, buf_z);
+	  else if (iv == (ring->Points - 1))
+	      sprintf (buf, ", %s %s %s)", buf_x, buf_y, buf_z);
+	  else
+	      sprintf (buf, ", %s %s %s", buf_x, buf_y, buf_z);
+	  strcat (*buffer, buf);
+      }
+    for (ib = 0; ib < polyg->NumInteriors; ib++)
+      {
+	  ring = polyg->Interiors + ib;
+	  for (iv = 0; iv < ring->Points; iv++)
+	    {
+		gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);
+		gaiaOutCheckBuffer (buffer, size);
+		sprintf (buf_x, "%1.6f", x);
+		gaiaOutClean (buf_x);
+		sprintf (buf_y, "%1.6f", y);
+		gaiaOutClean (buf_y);
+		sprintf (buf_z, "%1.6f", z);
+		gaiaOutClean (buf_z);
+		if (iv == 0)
+		    sprintf (buf, ", (%s %s %s", buf_x, buf_y, buf_z);
+		else if (iv == (ring->Points - 1))
+		    sprintf (buf, ", %s %s %s)", buf_x, buf_y, buf_z);
+		else
+		    sprintf (buf, ", %s %s %s", buf_x, buf_y, buf_z);
+		strcat (*buffer, buf);
+	    }
+      }
+}
+
+static void
+gaiaOutPolygonM (gaiaPolygonPtr polyg, char **buffer, int *size)
+{
+/* formats a WKT POLYGONM */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_m[128];
+    char buf[512];
+    int ib;
+    int iv;
+    double x;
+    double y;
+    double m;
+    gaiaRingPtr ring = polyg->Exterior;
+    for (iv = 0; iv < ring->Points; iv++)
+      {
+	  gaiaGetPointXYM (ring->Coords, iv, &x, &y, &m);
+	  gaiaOutCheckBuffer (buffer, size);
+	  sprintf (buf_x, "%1.6f", x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%1.6f", y);
+	  gaiaOutClean (buf_y);
+	  sprintf (buf_m, "%1.6f", m);
+	  gaiaOutClean (buf_m);
+	  if (iv == 0)
+	      sprintf (buf, "(%s %s %s", buf_x, buf_y, buf_m);
+	  else if (iv == (ring->Points - 1))
+	      sprintf (buf, ", %s %s %s)", buf_x, buf_y, buf_m);
+	  else
+	      sprintf (buf, ", %s %s %s", buf_x, buf_y, buf_m);
+	  strcat (*buffer, buf);
+      }
+    for (ib = 0; ib < polyg->NumInteriors; ib++)
+      {
+	  ring = polyg->Interiors + ib;
+	  for (iv = 0; iv < ring->Points; iv++)
+	    {
+		gaiaGetPointXYM (ring->Coords, iv, &x, &y, &m);
+		gaiaOutCheckBuffer (buffer, size);
+		sprintf (buf_x, "%1.6f", x);
+		gaiaOutClean (buf_x);
+		sprintf (buf_y, "%1.6f", y);
+		gaiaOutClean (buf_y);
+		sprintf (buf_m, "%1.6f", m);
+		gaiaOutClean (buf_m);
+		if (iv == 0)
+		    sprintf (buf, ", (%s %s %s", buf_x, buf_y, buf_m);
+		else if (iv == (ring->Points - 1))
+		    sprintf (buf, ", %s %s %s)", buf_x, buf_y, buf_m);
+		else
+		    sprintf (buf, ", %s %s %s", buf_x, buf_y, buf_m);
+		strcat (*buffer, buf);
+	    }
+      }
+}
+
+static void
+gaiaOutPolygonZM (gaiaPolygonPtr polyg, char **buffer, int *size)
+{
+/* formats a WKT POLYGONZM */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_z[128];
+    char buf_m[128];
+    char buf[1024];
+    int ib;
+    int iv;
+    double x;
+    double y;
+    double z;
+    double m;
+    gaiaRingPtr ring = polyg->Exterior;
+    for (iv = 0; iv < ring->Points; iv++)
+      {
+	  gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
+	  gaiaOutCheckBuffer (buffer, size);
+	  sprintf (buf_x, "%1.6f", x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%1.6f", y);
+	  gaiaOutClean (buf_y);
+	  sprintf (buf_z, "%1.6f", z);
+	  gaiaOutClean (buf_z);
+	  sprintf (buf_m, "%1.6f", m);
+	  gaiaOutClean (buf_m);
+	  if (iv == 0)
+	      sprintf (buf, "(%s %s %s %s", buf_x, buf_y, buf_z, buf_m);
+	  else if (iv == (ring->Points - 1))
+	      sprintf (buf, ", %s %s %s %s)", buf_x, buf_y, buf_z, buf_m);
+	  else
+	      sprintf (buf, ", %s %s %s %s", buf_x, buf_y, buf_z, buf_m);
+	  strcat (*buffer, buf);
+      }
+    for (ib = 0; ib < polyg->NumInteriors; ib++)
+      {
+	  ring = polyg->Interiors + ib;
+	  for (iv = 0; iv < ring->Points; iv++)
+	    {
+		gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
+		gaiaOutCheckBuffer (buffer, size);
+		sprintf (buf_x, "%1.6f", x);
+		gaiaOutClean (buf_x);
+		sprintf (buf_y, "%1.6f", y);
+		gaiaOutClean (buf_y);
+		sprintf (buf_z, "%1.6f", z);
+		gaiaOutClean (buf_z);
+		sprintf (buf_m, "%1.6f", m);
+		gaiaOutClean (buf_m);
+		if (iv == 0)
+		    sprintf (buf, ", (%s %s %s %s", buf_x, buf_y, buf_z, buf_m);
+		else if (iv == (ring->Points - 1))
+		    sprintf (buf, ", %s %s %s %s)", buf_x, buf_y, buf_z, buf_m);
+		else
+		    sprintf (buf, ", %s %s %s %s", buf_x, buf_y, buf_z, buf_m);
+		strcat (*buffer, buf);
+	    }
+      }
+}
+
 GAIAGEO_DECLARE void
 gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
 {
@@ -1578,42 +4660,99 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
 	  pgs++;
 	  polyg = polyg->Next;
       }
-    if ((pts + lns +
-	 pgs) == 1
-	&& (geom->
-	    DeclaredType
-	    ==
-	    GAIA_POINT
-	    ||
-	    geom->
-	    DeclaredType
-	    == GAIA_LINESTRING || geom->DeclaredType == GAIA_POLYGON))
+    if ((pts + lns + pgs) == 1
+	&& (geom->DeclaredType == GAIA_POINT
+	    || geom->DeclaredType == GAIA_LINESTRING
+	    || geom->DeclaredType == GAIA_POLYGON))
       {
 	  /* we have only one elementary geometry */
 	  point = geom->FirstPoint;
 	  while (point)
 	    {
-		/* processing POINT */
-		strcpy (*result, "POINT(");
-		gaiaOutPoint (point, result, &txt_size);
+		if (point->DimensionModel == GAIA_XY_Z)
+		  {
+		      /* processing POINTZ */
+		      strcpy (*result, "POINT Z(");
+		      gaiaOutPointZ (point, result, &txt_size);
+		  }
+		else if (point->DimensionModel == GAIA_XY_M)
+		  {
+		      /* processing POINTM */
+		      strcpy (*result, "POINT M(");
+		      gaiaOutPointM (point, result, &txt_size);
+		  }
+		else if (point->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      /* processing POINTZM */
+		      strcpy (*result, "POINT ZM(");
+		      gaiaOutPointZM (point, result, &txt_size);
+		  }
+		else
+		  {
+		      /* processing POINT */
+		      strcpy (*result, "POINT(");
+		      gaiaOutPoint (point, result, &txt_size);
+		  }
 		gaiaOutText (")", result, &txt_size);
 		point = point->Next;
 	    }
 	  line = geom->FirstLinestring;
 	  while (line)
 	    {
-		/* processing LINESTRING */
-		strcpy (*result, "LINESTRING(");
-		gaiaOutLinestring (line, result, &txt_size);
+		if (line->DimensionModel == GAIA_XY_Z)
+		  {
+		      /* processing LINESTRINGZ */
+		      strcpy (*result, "LINESTRING Z(");
+		      gaiaOutLinestringZ (line, result, &txt_size);
+		  }
+		else if (line->DimensionModel == GAIA_XY_M)
+		  {
+		      /* processing LINESTRINGM */
+		      strcpy (*result, "LINESTRING M(");
+		      gaiaOutLinestringM (line, result, &txt_size);
+		  }
+		else if (line->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      /* processing LINESTRINGZM */
+		      strcpy (*result, "LINESTRING ZM(");
+		      gaiaOutLinestringZM (line, result, &txt_size);
+		  }
+		else
+		  {
+		      /* processing LINESTRING */
+		      strcpy (*result, "LINESTRING(");
+		      gaiaOutLinestring (line, result, &txt_size);
+		  }
 		gaiaOutText (")", result, &txt_size);
 		line = line->Next;
 	    }
 	  polyg = geom->FirstPolygon;
 	  while (polyg)
 	    {
-		/* counting how many POLYGON */
-		strcpy (*result, "POLYGON(");
-		gaiaOutPolygon (polyg, result, &txt_size);
+		if (polyg->DimensionModel == GAIA_XY_Z)
+		  {
+		      /* processing POLYGONZ */
+		      strcpy (*result, "POLYGON Z(");
+		      gaiaOutPolygonZ (polyg, result, &txt_size);
+		  }
+		else if (polyg->DimensionModel == GAIA_XY_M)
+		  {
+		      /* processing POLYGONM */
+		      strcpy (*result, "POLYGON M(");
+		      gaiaOutPolygonM (polyg, result, &txt_size);
+		  }
+		else if (polyg->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      /* processing POLYGONZM */
+		      strcpy (*result, "POLYGON ZM(");
+		      gaiaOutPolygonZM (polyg, result, &txt_size);
+		  }
+		else
+		  {
+		      /* processing POLYGON */
+		      strcpy (*result, "POLYGON(");
+		      gaiaOutPolygon (polyg, result, &txt_size);
+		  }
 		gaiaOutText (")", result, &txt_size);
 		polyg = polyg->Next;
 	    }
@@ -1624,15 +4763,42 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
 	  if (pts > 0 && lns == 0 && pgs == 0
 	      && geom->DeclaredType == GAIA_MULTIPOINT)
 	    {
-		/* this one is a MULTIPOINT */
-		strcpy (*result, "MULTIPOINT(");
+		/* some kind of MULTIPOINT */
+		if (geom->DimensionModel == GAIA_XY_Z)
+		    strcpy (*result, "MULTIPOINT Z(");
+		else if (geom->DimensionModel == GAIA_XY_M)
+		    strcpy (*result, "MULTIPOINT M(");
+		else if (geom->DimensionModel == GAIA_XY_Z_M)
+		    strcpy (*result, "MULTIPOINT ZM(");
+		else
+		    strcpy (*result, "MULTIPOINT(");
 		point = geom->FirstPoint;
 		while (point)
 		  {
-		      /* processing POINTs */
-		      if (point != geom->FirstPoint)
-			  gaiaOutText (", ", result, &txt_size);
-		      gaiaOutPoint (point, result, &txt_size);
+		      if (point->DimensionModel == GAIA_XY_Z)
+			{
+			    if (point != geom->FirstPoint)
+				gaiaOutText (", ", result, &txt_size);
+			    gaiaOutPointZ (point, result, &txt_size);
+			}
+		      else if (point->DimensionModel == GAIA_XY_M)
+			{
+			    if (point != geom->FirstPoint)
+				gaiaOutText (", ", result, &txt_size);
+			    gaiaOutPointM (point, result, &txt_size);
+			}
+		      else if (point->DimensionModel == GAIA_XY_Z_M)
+			{
+			    if (point != geom->FirstPoint)
+				gaiaOutText (", ", result, &txt_size);
+			    gaiaOutPointZM (point, result, &txt_size);
+			}
+		      else
+			{
+			    if (point != geom->FirstPoint)
+				gaiaOutText (", ", result, &txt_size);
+			    gaiaOutPoint (point, result, &txt_size);
+			}
 		      point = point->Next;
 		  }
 		gaiaOutText (")", result, &txt_size);
@@ -1640,18 +4806,42 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
 	  else if (pts == 0 && lns > 0 && pgs == 0
 		   && geom->DeclaredType == GAIA_MULTILINESTRING)
 	    {
-		/* this one is a MULTILINESTRING */
-		strcpy (*result, "MULTILINESTRING(");
+		/* some kind of MULTILINESTRING */
+		if (geom->DimensionModel == GAIA_XY_Z)
+		    strcpy (*result, "MULTILINESTRING Z(");
+		else if (geom->DimensionModel == GAIA_XY_M)
+		    strcpy (*result, "MULTILINESTRING M(");
+		else if (geom->DimensionModel == GAIA_XY_Z_M)
+		    strcpy (*result, "MULTILINESTRING ZM(");
+		else
+		    strcpy (*result, "MULTILINESTRING(");
 		line = geom->FirstLinestring;
 		while (line)
 		  {
-		      /* processing LINESTRINGs */
 		      if (line != geom->FirstLinestring)
 			  gaiaOutText (", (", result, &txt_size);
 		      else
 			  gaiaOutText ("(", result, &txt_size);
-		      gaiaOutLinestring (line, result, &txt_size);
-		      gaiaOutText (")", result, &txt_size);
+		      if (line->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaOutLinestringZ (line, result, &txt_size);
+			    gaiaOutText (")", result, &txt_size);
+			}
+		      else if (line->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaOutLinestringM (line, result, &txt_size);
+			    gaiaOutText (")", result, &txt_size);
+			}
+		      else if (line->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaOutLinestringZM (line, result, &txt_size);
+			    gaiaOutText (")", result, &txt_size);
+			}
+		      else
+			{
+			    gaiaOutLinestring (line, result, &txt_size);
+			    gaiaOutText (")", result, &txt_size);
+			}
 		      line = line->Next;
 		  }
 		gaiaOutText (")", result, &txt_size);
@@ -1659,27 +4849,58 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
 	  else if (pts == 0 && lns == 0 && pgs > 0
 		   && geom->DeclaredType == GAIA_MULTIPOLYGON)
 	    {
-		/* this one is a MULTIPOLYGON */
-		strcpy (*result, "MULTIPOLYGON(");
+		/* some kind of MULTIPOLYGON */
+		if (geom->DimensionModel == GAIA_XY_Z)
+		    strcpy (*result, "MULTIPOLYGON Z(");
+		else if (geom->DimensionModel == GAIA_XY_M)
+		    strcpy (*result, "MULTIPOLYGON M(");
+		else if (geom->DimensionModel == GAIA_XY_Z_M)
+		    strcpy (*result, "MULTIPOLYGON ZM(");
+		else
+		    strcpy (*result, "MULTIPOLYGON(");
 		polyg = geom->FirstPolygon;
 		while (polyg)
 		  {
-		      /* processing POLYGONs */
 		      if (polyg != geom->FirstPolygon)
 			  gaiaOutText (", (", result, &txt_size);
 		      else
 			  gaiaOutText ("(", result, &txt_size);
-		      gaiaOutPolygon (polyg, result, &txt_size);
-		      gaiaOutText (")", result, &txt_size);
+		      if (polyg->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaOutPolygonZ (polyg, result, &txt_size);
+			    gaiaOutText (")", result, &txt_size);
+			}
+		      else if (polyg->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaOutPolygonM (polyg, result, &txt_size);
+			    gaiaOutText (")", result, &txt_size);
+			}
+		      else if (polyg->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaOutPolygonZM (polyg, result, &txt_size);
+			    gaiaOutText (")", result, &txt_size);
+			}
+		      else
+			{
+			    gaiaOutPolygon (polyg, result, &txt_size);
+			    gaiaOutText (")", result, &txt_size);
+			}
 		      polyg = polyg->Next;
 		  }
 		gaiaOutText (")", result, &txt_size);
 	    }
 	  else
 	    {
-		/* this one is a GEOMETRYCOLLECTION */
+		/* some kind of GEOMETRYCOLLECTION */
 		int ie = 0;
-		strcpy (*result, "GEOMETRYCOLLECTION(");
+		if (geom->DimensionModel == GAIA_XY_Z)
+		    strcpy (*result, "GEOMETRYCOLLECTION Z(");
+		else if (geom->DimensionModel == GAIA_XY_M)
+		    strcpy (*result, "GEOMETRYCOLLECTION M(");
+		else if (geom->DimensionModel == GAIA_XY_Z_M)
+		    strcpy (*result, "GEOMETRYCOLLECTION ZM(");
+		else
+		    strcpy (*result, "GEOMETRYCOLLECTION(");
 		point = geom->FirstPoint;
 		while (point)
 		  {
@@ -1687,8 +4908,26 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
 		      if (ie > 0)
 			  gaiaOutText (", ", result, &txt_size);
 		      ie++;
-		      strcat (*result, "POINT(");
-		      gaiaOutPoint (point, result, &txt_size);
+		      if (point->DimensionModel == GAIA_XY_Z)
+			{
+			    strcat (*result, "POINT Z(");
+			    gaiaOutPointZ (point, result, &txt_size);
+			}
+		      else if (point->DimensionModel == GAIA_XY_M)
+			{
+			    strcat (*result, "POINT M(");
+			    gaiaOutPointM (point, result, &txt_size);
+			}
+		      else if (point->DimensionModel == GAIA_XY_Z_M)
+			{
+			    strcat (*result, "POINT ZM(");
+			    gaiaOutPointZM (point, result, &txt_size);
+			}
+		      else
+			{
+			    strcat (*result, "POINT(");
+			    gaiaOutPoint (point, result, &txt_size);
+			}
 		      gaiaOutText (")", result, &txt_size);
 		      point = point->Next;
 		  }
@@ -1699,8 +4938,26 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
 		      if (ie > 0)
 			  gaiaOutText (", ", result, &txt_size);
 		      ie++;
-		      strcat (*result, "LINESTRING(");
-		      gaiaOutLinestring (line, result, &txt_size);
+		      if (line->DimensionModel == GAIA_XY_Z)
+			{
+			    strcat (*result, "LINESTRING Z(");
+			    gaiaOutLinestringZ (line, result, &txt_size);
+			}
+		      else if (line->DimensionModel == GAIA_XY_M)
+			{
+			    strcat (*result, "LINESTRING M(");
+			    gaiaOutLinestringM (line, result, &txt_size);
+			}
+		      else if (line->DimensionModel == GAIA_XY_Z_M)
+			{
+			    strcat (*result, "LINESTRING ZM(");
+			    gaiaOutLinestringZM (line, result, &txt_size);
+			}
+		      else
+			{
+			    strcat (*result, "LINESTRING(");
+			    gaiaOutLinestring (line, result, &txt_size);
+			}
 		      gaiaOutText (")", result, &txt_size);
 		      line = line->Next;
 		  }
@@ -1711,8 +4968,26 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
 		      if (ie > 0)
 			  gaiaOutText (", ", result, &txt_size);
 		      ie++;
-		      strcat (*result, "POLYGON(");
-		      gaiaOutPolygon (polyg, result, &txt_size);
+		      if (polyg->DimensionModel == GAIA_XY_Z)
+			{
+			    strcat (*result, "POLYGON Z(");
+			    gaiaOutPolygonZ (polyg, result, &txt_size);
+			}
+		      else if (polyg->DimensionModel == GAIA_XY_M)
+			{
+			    strcat (*result, "POLYGON M(");
+			    gaiaOutPolygonM (polyg, result, &txt_size);
+			}
+		      else if (polyg->DimensionModel == GAIA_XY_Z_M)
+			{
+			    strcat (*result, "POLYGON ZM(");
+			    gaiaOutPolygonZM (polyg, result, &txt_size);
+			}
+		      else
+			{
+			    strcat (*result, "POLYGON(");
+			    gaiaOutPolygon (polyg, result, &txt_size);
+			}
 		      gaiaOutText (")", result, &txt_size);
 		      polyg = polyg->Next;
 		  }
@@ -1765,7 +5040,7 @@ SvgCircle (gaiaPointPtr point, char **buffer, int *size, int precision)
 }
 
 static void
-SvgPathRelative (int points, double *coords, char **buffer, int *size,
+SvgPathRelative (int dims, int points, double *coords, char **buffer, int *size,
 		 int precision, int closePath)
 {
 /* formats LINESTRING as SVG-path d-attribute with relative coordinate moves */
@@ -1774,12 +5049,29 @@ SvgPathRelative (int points, double *coords, char **buffer, int *size,
     char buf[256];
     double x;
     double y;
+    double z;
+    double m;
     double lastX = 0.0;
     double lastY = 0.0;
     int iv;
     for (iv = 0; iv < points; iv++)
       {
-	  gaiaGetPoint (coords, iv, &x, &y);
+	  if (dims == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (coords, iv, &x, &y, &z);
+	    }
+	  else if (dims == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (coords, iv, &x, &y, &m);
+	    }
+	  else if (dims == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (coords, iv, &x, &y);
+	    }
 	  gaiaOutCheckBuffer (buffer, size);
 	  sprintf (buf_x, "%.*f", precision, x);
 	  gaiaOutClean (buf_x);
@@ -1798,7 +5090,7 @@ SvgPathRelative (int points, double *coords, char **buffer, int *size,
 }
 
 static void
-SvgPathAbsolute (int points, double *coords, char **buffer, int *size,
+SvgPathAbsolute (int dims, int points, double *coords, char **buffer, int *size,
 		 int precision, int closePath)
 {
 /* formats LINESTRING as SVG-path d-attribute with relative coordinate moves */
@@ -1807,10 +5099,27 @@ SvgPathAbsolute (int points, double *coords, char **buffer, int *size,
     char buf[256];
     double x;
     double y;
+    double z;
+    double m;
     int iv;
     for (iv = 0; iv < points; iv++)
       {
-	  gaiaGetPoint (coords, iv, &x, &y);
+	  if (dims == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (coords, iv, &x, &y, &z);
+	    }
+	  else if (dims == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (coords, iv, &x, &y, &m);
+	    }
+	  else if (dims == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (coords, iv, &x, &y);
+	    }
 	  gaiaOutCheckBuffer (buffer, size);
 	  sprintf (buf_x, "%.*f", precision, x);
 	  gaiaOutClean (buf_x);
@@ -1889,11 +5198,13 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 	    {
 		/* processing LINESTRING */
 		if (relative == 1)
-		    SvgPathRelative (line->Points, line->Coords, result,
-				     &txt_size, precision, 0);
+		    SvgPathRelative (line->DimensionModel, line->Points,
+				     line->Coords, result, &txt_size, precision,
+				     0);
 		else
-		    SvgPathAbsolute (line->Points, line->Coords, result,
-				     &txt_size, precision, 0);
+		    SvgPathAbsolute (line->DimensionModel, line->Points,
+				     line->Coords, result, &txt_size, precision,
+				     0);
 		line = line->Next;
 	    }
 	  polyg = geom->FirstPolygon;
@@ -1903,24 +5214,28 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		ring = polyg->Exterior;
 		if (relative == 1)
 		  {
-		      SvgPathRelative (ring->Points, ring->Coords, result,
-				       &txt_size, precision, 1);
+		      SvgPathRelative (ring->DimensionModel, ring->Points,
+				       ring->Coords, result, &txt_size,
+				       precision, 1);
 		      for (ib = 0; ib < polyg->NumInteriors; ib++)
 			{
 			    ring = polyg->Interiors + ib;
-			    SvgPathRelative (ring->Points, ring->Coords, result,
-					     &txt_size, precision, 1);
+			    SvgPathRelative (ring->DimensionModel, ring->Points,
+					     ring->Coords, result, &txt_size,
+					     precision, 1);
 			}
 		  }
 		else
 		  {
-		      SvgPathAbsolute (ring->Points, ring->Coords, result,
-				       &txt_size, precision, 1);
+		      SvgPathAbsolute (ring->DimensionModel, ring->Points,
+				       ring->Coords, result, &txt_size,
+				       precision, 1);
 		      for (ib = 0; ib < polyg->NumInteriors; ib++)
 			{
 			    ring = polyg->Interiors + ib;
-			    SvgPathAbsolute (ring->Points, ring->Coords, result,
-					     &txt_size, precision, 1);
+			    SvgPathAbsolute (ring->DimensionModel, ring->Points,
+					     ring->Coords, result, &txt_size,
+					     precision, 1);
 			}
 		  }
 		polyg = polyg->Next;
@@ -1953,11 +5268,13 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		  {
 		      /* processing LINESTRINGs */
 		      if (relative == 1)
-			  SvgPathRelative (line->Points, line->Coords, result,
-					   &txt_size, precision, 0);
+			  SvgPathRelative (line->DimensionModel, line->Points,
+					   line->Coords, result, &txt_size,
+					   precision, 0);
 		      else
-			  SvgPathAbsolute (line->Points, line->Coords, result,
-					   &txt_size, precision, 0);
+			  SvgPathAbsolute (line->DimensionModel, line->Points,
+					   line->Coords, result, &txt_size,
+					   precision, 0);
 		      line = line->Next;
 		  }
 	    }
@@ -1971,24 +5288,28 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		      ring = polyg->Exterior;
 		      if (relative == 1)
 			{
-			    SvgPathRelative (ring->Points, ring->Coords, result,
-					     &txt_size, precision, 1);
+			    SvgPathRelative (ring->DimensionModel, ring->Points,
+					     ring->Coords, result, &txt_size,
+					     precision, 1);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
 			      {
 				  ring = polyg->Interiors + ib;
-				  SvgPathRelative (ring->Points, ring->Coords,
+				  SvgPathRelative (ring->DimensionModel,
+						   ring->Points, ring->Coords,
 						   result, &txt_size, precision,
 						   1);
 			      }
 			}
 		      else
 			{
-			    SvgPathAbsolute (ring->Points, ring->Coords, result,
-					     &txt_size, precision, 1);
+			    SvgPathAbsolute (ring->DimensionModel, ring->Points,
+					     ring->Coords, result, &txt_size,
+					     precision, 1);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
 			      {
 				  ring = polyg->Interiors + ib;
-				  SvgPathAbsolute (ring->Points, ring->Coords,
+				  SvgPathAbsolute (ring->DimensionModel,
+						   ring->Points, ring->Coords,
 						   result, &txt_size, precision,
 						   1);
 			      }
@@ -2023,11 +5344,13 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 			  gaiaOutText (";", result, &txt_size);
 		      ie++;
 		      if (relative == 1)
-			  SvgPathRelative (line->Points, line->Coords, result,
-					   &txt_size, precision, 0);
+			  SvgPathRelative (line->DimensionModel, line->Points,
+					   line->Coords, result, &txt_size,
+					   precision, 0);
 		      else
-			  SvgPathAbsolute (line->Points, line->Coords, result,
-					   &txt_size, precision, 0);
+			  SvgPathAbsolute (line->DimensionModel, line->Points,
+					   line->Coords, result, &txt_size,
+					   precision, 0);
 		      line = line->Next;
 		  }
 		polyg = geom->FirstPolygon;
@@ -2039,24 +5362,28 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		      ring = polyg->Exterior;
 		      if (relative == 1)
 			{
-			    SvgPathRelative (ring->Points, ring->Coords, result,
-					     &txt_size, precision, 1);
+			    SvgPathRelative (ring->DimensionModel, ring->Points,
+					     ring->Coords, result, &txt_size,
+					     precision, 1);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
 			      {
 				  ring = polyg->Interiors + ib;
-				  SvgPathRelative (ring->Points, ring->Coords,
+				  SvgPathRelative (ring->DimensionModel,
+						   ring->Points, ring->Coords,
 						   result, &txt_size, precision,
 						   1);
 			      }
 			}
 		      else
 			{
-			    SvgPathAbsolute (ring->Points, ring->Coords, result,
-					     &txt_size, precision, 1);
+			    SvgPathAbsolute (ring->DimensionModel, ring->Points,
+					     ring->Coords, result, &txt_size,
+					     precision, 1);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
 			      {
 				  ring = polyg->Interiors + ib;
-				  SvgPathAbsolute (ring->Points, ring->Coords,
+				  SvgPathAbsolute (ring->DimensionModel,
+						   ring->Points, ring->Coords,
 						   result, &txt_size, precision,
 						   1);
 			      }

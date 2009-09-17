@@ -2,7 +2,7 @@
 
  gg_shape.c -- Gaia shapefile handling
   
- version 2.3, 2008 October 13
+ version 2.4, 2009 September 17
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -321,6 +321,7 @@ gaiaAllocShapefile ()
     shp->Path = NULL;
     shp->Shape = -1;
     shp->EffectiveType = GAIA_UNKNOWN;
+    shp->EffectiveDims = GAIA_XY;
     shp->flShp = NULL;
     shp->flShx = NULL;
     shp->flDbf = NULL;
@@ -463,21 +464,12 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
 	goto error;
     size_shp = gaiaImport32 (buf_shp + 24, GAIA_BIG_ENDIAN, endian_arch);
     shape = gaiaImport32 (buf_shp + 32, GAIA_LITTLE_ENDIAN, endian_arch);
-    if (shape == 1
-	|| shape ==
-	11
-	|| shape ==
-	21
-	|| shape ==
-	3
-	|| shape ==
-	13
-	|| shape ==
-	23
-	|| shape ==
-	5
-	|| shape ==
-	15 || shape == 25 || shape == 8 || shape == 18 || shape == 28)
+    if (shape == GAIA_SHP_POINT || shape == GAIA_SHP_POINTZ
+	|| shape == GAIA_SHP_POINTM || shape == GAIA_SHP_POLYLINE
+	|| shape == GAIA_SHP_POLYLINEZ || shape == GAIA_SHP_POLYLINEM
+	|| shape == GAIA_SHP_POLYGON || shape == GAIA_SHP_POLYGONZ
+	|| shape == GAIA_SHP_POLYGONM || shape == GAIA_SHP_MULTIPOINT
+	|| shape == GAIA_SHP_MULTIPOINTZ || shape == GAIA_SHP_MULTIPOINTM)
 	;
     else
 	goto unsupported;
@@ -515,14 +507,49 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
     strcpy (shp->Path, path);
     shp->ReadOnly = 1;
     shp->Shape = shape;
-    if (shape == 1 || shape == 11 || shape == 21)
-	shp->EffectiveType = GAIA_POINT;
-    if (shape == 3 || shape == 13 || shape == 23)
-	shp->EffectiveType = GAIA_MULTILINESTRING;
-    if (shape == 5 || shape == 15 || shape == 25)
-	shp->EffectiveType = GAIA_MULTIPOLYGON;
-    if (shape == 8 || shape == 18 || shape == 28)
-	shp->EffectiveType = GAIA_MULTIPOINT;
+    switch (shape)
+      {
+	  /* setting up a prudential geometry type */
+      case GAIA_SHP_POINT:
+      case GAIA_SHP_POINTZ:
+      case GAIA_SHP_POINTM:
+	  shp->EffectiveType = GAIA_POINT;
+	  break;
+      case GAIA_SHP_POLYLINE:
+      case GAIA_SHP_POLYLINEZ:
+      case GAIA_SHP_POLYLINEM:
+	  shp->EffectiveType = GAIA_MULTILINESTRING;
+	  break;
+      case GAIA_SHP_POLYGON:
+      case GAIA_SHP_POLYGONZ:
+      case GAIA_SHP_POLYGONM:
+	  shp->EffectiveType = GAIA_MULTIPOLYGON;
+	  break;
+      case GAIA_SHP_MULTIPOINT:
+      case GAIA_SHP_MULTIPOINTZ:
+      case GAIA_SHP_MULTIPOINTM:
+	  shp->EffectiveType = GAIA_MULTIPOINT;
+	  break;
+      }
+    switch (shape)
+      {
+	  /* setting up a prudential dimension model */
+      case GAIA_SHP_POINTZ:
+      case GAIA_SHP_POLYLINEZ:
+      case GAIA_SHP_POLYGONZ:
+      case GAIA_SHP_MULTIPOINTZ:
+	  shp->EffectiveDims = GAIA_XY_Z_M;
+	  break;
+      case GAIA_SHP_POINTM:
+      case GAIA_SHP_POLYLINEM:
+      case GAIA_SHP_POLYGONM:
+      case GAIA_SHP_MULTIPOINTM:
+	  shp->EffectiveDims = GAIA_XY_M;
+	  break;
+      default:
+	  shp->EffectiveDims = GAIA_XY;
+	  break;
+      }
     shp->flShp = fl_shp;
     shp->flShx = fl_shx;
     shp->flDbf = fl_dbf;
@@ -727,14 +754,130 @@ gaiaOpenShpWrite (gaiaShapefilePtr shp, const char *path, int shape,
     shp->Path = malloc (len + 1);
     strcpy (shp->Path, path);
     shp->ReadOnly = 0;
-    if (shape == GAIA_POINT)
-	shp->Shape = 1;
-    if (shape == GAIA_MULTIPOINT)
-	shp->Shape = 8;
-    if (shape == GAIA_LINESTRING)
-	shp->Shape = 3;
-    if (shape == GAIA_POLYGON)
-	shp->Shape = 5;
+    switch (shape)
+      {
+	  /* setting up SHAPE and dimensions */
+      case GAIA_POINT:
+	  shp->Shape = GAIA_SHP_POINT;
+	  shp->EffectiveType = GAIA_POINT;
+	  shp->EffectiveDims = GAIA_XY;
+	  break;
+      case GAIA_POINTZ:
+	  shp->Shape = GAIA_SHP_POINTZ;
+	  shp->EffectiveType = GAIA_POINT;
+	  shp->EffectiveDims = GAIA_XY_Z;
+	  break;
+      case GAIA_POINTM:
+	  shp->Shape = GAIA_SHP_POINTM;
+	  shp->EffectiveType = GAIA_POINT;
+	  shp->EffectiveDims = GAIA_XY_M;
+	  break;
+      case GAIA_POINTZM:
+	  shp->Shape = GAIA_SHP_POINTZ;
+	  shp->EffectiveType = GAIA_POINT;
+	  shp->EffectiveDims = GAIA_XY_Z_M;
+	  break;
+      case GAIA_MULTIPOINT:
+	  shp->Shape = GAIA_SHP_MULTIPOINT;
+	  shp->EffectiveType = GAIA_MULTIPOINT;
+	  shp->EffectiveDims = GAIA_XY;
+	  break;
+      case GAIA_MULTIPOINTZ:
+	  shp->Shape = GAIA_SHP_MULTIPOINTZ;
+	  shp->EffectiveType = GAIA_MULTIPOINT;
+	  shp->EffectiveDims = GAIA_XY_Z;
+	  break;
+      case GAIA_MULTIPOINTM:
+	  shp->Shape = GAIA_SHP_MULTIPOINTM;
+	  shp->EffectiveType = GAIA_MULTIPOINT;
+	  shp->EffectiveDims = GAIA_XY_M;
+	  break;
+      case GAIA_MULTIPOINTZM:
+	  shp->Shape = GAIA_SHP_MULTIPOINTZ;
+	  shp->EffectiveType = GAIA_MULTIPOINT;
+	  shp->EffectiveDims = GAIA_XY_Z_M;
+	  break;
+      case GAIA_LINESTRING:
+	  shp->Shape = GAIA_SHP_POLYLINE;
+	  shp->EffectiveType = GAIA_LINESTRING;
+	  shp->EffectiveDims = GAIA_XY;
+	  break;
+      case GAIA_LINESTRINGZ:
+	  shp->Shape = GAIA_SHP_POLYLINEZ;
+	  shp->EffectiveType = GAIA_LINESTRING;
+	  shp->EffectiveDims = GAIA_XY_Z;
+	  break;
+      case GAIA_LINESTRINGM:
+	  shp->Shape = GAIA_SHP_POLYLINEM;
+	  shp->EffectiveType = GAIA_LINESTRING;
+	  shp->EffectiveDims = GAIA_XY_M;
+	  break;
+      case GAIA_LINESTRINGZM:
+	  shp->Shape = GAIA_SHP_POLYLINEZ;
+	  shp->EffectiveType = GAIA_LINESTRING;
+	  shp->EffectiveDims = GAIA_XY_Z_M;
+	  break;
+      case GAIA_MULTILINESTRING:
+	  shp->Shape = GAIA_SHP_POLYLINE;
+	  shp->EffectiveType = GAIA_MULTILINESTRING;
+	  shp->EffectiveDims = GAIA_XY;
+	  break;
+      case GAIA_MULTILINESTRINGZ:
+	  shp->Shape = GAIA_SHP_POLYLINEZ;
+	  shp->EffectiveType = GAIA_MULTILINESTRING;
+	  shp->EffectiveDims = GAIA_XY_Z;
+	  break;
+      case GAIA_MULTILINESTRINGM:
+	  shp->Shape = GAIA_SHP_POLYLINEM;
+	  shp->EffectiveType = GAIA_MULTILINESTRING;
+	  shp->EffectiveDims = GAIA_XY_M;
+	  break;
+      case GAIA_MULTILINESTRINGZM:
+	  shp->Shape = GAIA_SHP_POLYLINEZ;
+	  shp->EffectiveType = GAIA_MULTILINESTRING;
+	  shp->EffectiveDims = GAIA_XY_Z_M;
+	  break;
+      case GAIA_POLYGON:
+	  shp->Shape = GAIA_SHP_POLYGON;
+	  shp->EffectiveType = GAIA_POLYGON;
+	  shp->EffectiveDims = GAIA_XY;
+	  break;
+      case GAIA_POLYGONZ:
+	  shp->Shape = GAIA_SHP_POLYGONZ;
+	  shp->EffectiveType = GAIA_POLYGON;
+	  shp->EffectiveDims = GAIA_XY_Z;
+	  break;
+      case GAIA_POLYGONM:
+	  shp->Shape = GAIA_SHP_POLYGONM;
+	  shp->EffectiveType = GAIA_POLYGON;
+	  shp->EffectiveDims = GAIA_XY_M;
+	  break;
+      case GAIA_POLYGONZM:
+	  shp->Shape = GAIA_SHP_POLYGONZ;
+	  shp->EffectiveType = GAIA_POLYGON;
+	  shp->EffectiveDims = GAIA_XY_Z_M;
+	  break;
+      case GAIA_MULTIPOLYGON:
+	  shp->Shape = GAIA_SHP_POLYGON;
+	  shp->EffectiveType = GAIA_MULTIPOLYGON;
+	  shp->EffectiveDims = GAIA_XY;
+	  break;
+      case GAIA_MULTIPOLYGONZ:
+	  shp->Shape = GAIA_SHP_POLYGONZ;
+	  shp->EffectiveType = GAIA_MULTIPOLYGON;
+	  shp->EffectiveDims = GAIA_XY_Z;
+	  break;
+      case GAIA_MULTIPOLYGONM:
+	  shp->Shape = GAIA_SHP_POLYGONM;
+	  shp->EffectiveType = GAIA_MULTIPOLYGON;
+	  shp->EffectiveDims = GAIA_XY_M;
+	  break;
+      case GAIA_MULTIPOLYGONZM:
+	  shp->Shape = GAIA_SHP_POLYGONZ;
+	  shp->EffectiveType = GAIA_MULTIPOLYGON;
+	  shp->EffectiveDims = GAIA_XY_Z_M;
+	  break;
+      };
     shp->flShp = fl_shp;
     shp->flShx = fl_shx;
     shp->flDbf = fl_dbf;
@@ -865,14 +1008,21 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
     int shape;
     double x;
     double y;
+    double z;
+    double m;
     int points;
     int n;
     int n1;
     int base;
+    int baseZ;
+    int baseM;
     int start;
     int end;
     int iv;
     int ind;
+    int max_size;
+    int min_size;
+    int hasM;
     char errMsg[1024];
     gaiaGeomCollPtr geom = NULL;
     gaiaLinestringPtr line = NULL;
@@ -907,7 +1057,7 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 	goto error;
     sz = gaiaImport32 (buf + 4, GAIA_BIG_ENDIAN, shp->endian_arch);
     shape = gaiaImport32 (buf + 8, GAIA_LITTLE_ENDIAN, shp->endian_arch);
-    if (shape == 0)
+    if (shape == GAIA_SHP_NULL)
       {
 	  /* handling a NULL shape */
 	  goto null_shape;
@@ -921,7 +1071,7 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 	  shp->ShpBfsz = sz * 2;
 	  shp->BufShp = malloc (sizeof (unsigned char) * shp->ShpBfsz);
       }
-    if (shape == 1 || shape == 11 || shape == 21)
+    if (shape == GAIA_SHP_POINT)
       {
 	  /* shape point */
 	  rd = fread (shp->BufShp, sizeof (unsigned char), 16, shp->flShp);
@@ -930,12 +1080,100 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 	  x = gaiaImport64 (shp->BufShp, GAIA_LITTLE_ENDIAN, shp->endian_arch);
 	  y = gaiaImport64 (shp->BufShp + 8, GAIA_LITTLE_ENDIAN,
 			    shp->endian_arch);
-	  geom = gaiaAllocGeomColl ();
+	  if (shp->EffectiveDims == GAIA_XY_Z)
+	    {
+		geom = gaiaAllocGeomCollXYZ ();
+		gaiaAddPointToGeomCollXYZ (geom, x, y, 0.0);
+	    }
+	  else if (shp->EffectiveDims == GAIA_XY_M)
+	    {
+		geom = gaiaAllocGeomCollXYM ();
+		gaiaAddPointToGeomCollXYM (geom, x, y, 0.0);
+	    }
+	  else if (shp->EffectiveDims == GAIA_XY_Z_M)
+	    {
+		geom = gaiaAllocGeomCollXYZM ();
+		gaiaAddPointToGeomCollXYZM (geom, x, y, 0.0, 0.0);
+	    }
+	  else
+	    {
+		geom = gaiaAllocGeomColl ();
+		gaiaAddPointToGeomColl (geom, x, y);
+	    }
 	  geom->DeclaredType = GAIA_POINT;
-	  gaiaAddPointToGeomColl (geom, x, y);
 	  geom->Srid = srid;
       }
-    if (shape == 3 || shape == 13 || shape == 23)
+    if (shape == GAIA_SHP_POINTZ)
+      {
+	  /* shape point Z */
+	  rd = fread (shp->BufShp, sizeof (unsigned char), 32, shp->flShp);
+	  if (rd != 32)
+	      goto error;
+	  x = gaiaImport64 (shp->BufShp, GAIA_LITTLE_ENDIAN, shp->endian_arch);
+	  y = gaiaImport64 (shp->BufShp + 8, GAIA_LITTLE_ENDIAN,
+			    shp->endian_arch);
+	  z = gaiaImport64 (shp->BufShp + 16, GAIA_LITTLE_ENDIAN,
+			    shp->endian_arch);
+	  m = gaiaImport64 (shp->BufShp + 24, GAIA_LITTLE_ENDIAN,
+			    shp->endian_arch);
+	  if (shp->EffectiveDims == GAIA_XY_Z)
+	    {
+		geom = gaiaAllocGeomCollXYZ ();
+		gaiaAddPointToGeomCollXYZ (geom, x, y, z);
+	    }
+	  else if (shp->EffectiveDims == GAIA_XY_M)
+	    {
+		geom = gaiaAllocGeomCollXYM ();
+		gaiaAddPointToGeomCollXYM (geom, x, y, m);
+	    }
+	  else if (shp->EffectiveDims == GAIA_XY_Z_M)
+	    {
+		geom = gaiaAllocGeomCollXYZM ();
+		gaiaAddPointToGeomCollXYZM (geom, x, y, z, m);
+	    }
+	  else
+	    {
+		geom = gaiaAllocGeomColl ();
+		gaiaAddPointToGeomColl (geom, x, y);
+	    }
+	  geom->DeclaredType = GAIA_POINT;
+	  geom->Srid = srid;
+      }
+    if (shape == GAIA_SHP_POINTM)
+      {
+	  /* shape point M */
+	  rd = fread (shp->BufShp, sizeof (unsigned char), 24, shp->flShp);
+	  if (rd != 24)
+	      goto error;
+	  x = gaiaImport64 (shp->BufShp, GAIA_LITTLE_ENDIAN, shp->endian_arch);
+	  y = gaiaImport64 (shp->BufShp + 8, GAIA_LITTLE_ENDIAN,
+			    shp->endian_arch);
+	  m = gaiaImport64 (shp->BufShp + 16, GAIA_LITTLE_ENDIAN,
+			    shp->endian_arch);
+	  if (shp->EffectiveDims == GAIA_XY_Z)
+	    {
+		geom = gaiaAllocGeomCollXYZ ();
+		gaiaAddPointToGeomCollXYZ (geom, x, y, 0.0);
+	    }
+	  else if (shp->EffectiveDims == GAIA_XY_M)
+	    {
+		geom = gaiaAllocGeomCollXYM ();
+		gaiaAddPointToGeomCollXYM (geom, x, y, m);
+	    }
+	  else if (shp->EffectiveDims == GAIA_XY_Z_M)
+	    {
+		geom = gaiaAllocGeomCollXYZM ();
+		gaiaAddPointToGeomCollXYZM (geom, x, y, 0.0, m);
+	    }
+	  else
+	    {
+		geom = gaiaAllocGeomColl ();
+		gaiaAddPointToGeomColl (geom, x, y);
+	    }
+	  geom->DeclaredType = GAIA_POINT;
+	  geom->Srid = srid;
+      }
+    if (shape == GAIA_SHP_POLYLINE)
       {
 	  /* shape polyline */
 	  rd = fread (shp->BufShp, sizeof (unsigned char), 32, shp->flShp);
@@ -959,7 +1197,14 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		else
 		    end = n1;
 		points = end - start;
-		line = gaiaAllocLinestring (points);
+		if (shp->EffectiveDims == GAIA_XY_Z)
+		    line = gaiaAllocLinestringXYZ (points);
+		else if (shp->EffectiveDims == GAIA_XY_M)
+		    line = gaiaAllocLinestringXYM (points);
+		else if (shp->EffectiveDims == GAIA_XY_Z_M)
+		    line = gaiaAllocLinestringXYZM (points);
+		else
+		    line = gaiaAllocLinestring (points);
 		points = 0;
 		for (iv = start; iv < end; iv++)
 		  {
@@ -967,13 +1212,36 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 					GAIA_LITTLE_ENDIAN, shp->endian_arch);
 		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) + 8,
 					GAIA_LITTLE_ENDIAN, shp->endian_arch);
-		      gaiaSetPoint (line->Coords, points, x, y);
+		      if (shp->EffectiveDims == GAIA_XY_Z)
+			{
+			    gaiaSetPointXYZ (line->Coords, points, x, y, 0.0);
+			}
+		      else if (shp->EffectiveDims == GAIA_XY_M)
+			{
+			    gaiaSetPointXYM (line->Coords, points, x, y, 0.0);
+			}
+		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
+			{
+			    gaiaSetPointXYZM (line->Coords, points, x, y, 0.0,
+					      0.0);
+			}
+		      else
+			{
+			    gaiaSetPoint (line->Coords, points, x, y);
+			}
 		      start++;
 		      points++;
 		  }
 		if (!geom)
 		  {
-		      geom = gaiaAllocGeomColl ();
+		      if (shp->EffectiveDims == GAIA_XY_Z)
+			  geom = gaiaAllocGeomCollXYZ ();
+		      else if (shp->EffectiveDims == GAIA_XY_M)
+			  geom = gaiaAllocGeomCollXYM ();
+		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
+			  geom = gaiaAllocGeomCollXYZM ();
+		      else
+			  geom = gaiaAllocGeomColl ();
 		      if (shp->EffectiveType == GAIA_LINESTRING)
 			  geom->DeclaredType = GAIA_LINESTRING;
 		      else
@@ -983,7 +1251,193 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		gaiaInsertLinestringInGeomColl (geom, line);
 	    }
       }
-    if (shape == 5 || shape == 15 || shape == 25)
+    if (shape == GAIA_SHP_POLYLINEZ)
+      {
+	  /* shape polyline Z */
+	  rd = fread (shp->BufShp, sizeof (unsigned char), 32, shp->flShp);
+	  if (rd != 32)
+	      goto error;
+	  rd = fread (shp->BufShp, sizeof (unsigned char), (sz * 2) - 36,
+		      shp->flShp);
+	  if (rd != (sz * 2) - 36)
+	      goto error;
+	  n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN, shp->endian_arch);
+	  n1 = gaiaImport32 (shp->BufShp + 4, GAIA_LITTLE_ENDIAN,
+			     shp->endian_arch);
+	  hasM = 0;
+	  max_size = 38 + (2 * n) + (n1 * 16);	/* size [in 16 bits words !!!] ZM */
+	  min_size = 30 + (2 * n) + (n1 * 12);	/* size [in 16 bits words !!!] Z-only */
+	  if (sz < min_size)
+	      goto error;
+	  if (sz == max_size)
+	      hasM = 1;
+	  base = 8 + (n * 4);
+	  baseZ = base + (n1 * 16) + 16;
+	  baseM = baseZ + (n1 * 8) + 16;
+	  start = 0;
+	  for (ind = 0; ind < n; ind++)
+	    {
+		if (ind < (n - 1))
+		    end =
+			gaiaImport32 (shp->BufShp + 8 + ((ind + 1) * 4),
+				      GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		else
+		    end = n1;
+		points = end - start;
+		if (shp->EffectiveDims == GAIA_XY_Z)
+		    line = gaiaAllocLinestringXYZ (points);
+		else if (shp->EffectiveDims == GAIA_XY_M)
+		    line = gaiaAllocLinestringXYM (points);
+		else if (shp->EffectiveDims == GAIA_XY_Z_M)
+		    line = gaiaAllocLinestringXYZM (points);
+		else
+		    line = gaiaAllocLinestring (points);
+		points = 0;
+		for (iv = start; iv < end; iv++)
+		  {
+		      x = gaiaImport64 (shp->BufShp + base + (iv * 16),
+					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) + 8,
+					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      z = gaiaImport64 (shp->BufShp + baseZ + (iv * 8),
+					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      if (hasM)
+			  m = gaiaImport64 (shp->BufShp + baseM + (iv * 8),
+					    GAIA_LITTLE_ENDIAN,
+					    shp->endian_arch);
+		      else
+			  m = 0.0;
+		      if (shp->EffectiveDims == GAIA_XY_Z)
+			{
+			    gaiaSetPointXYZ (line->Coords, points, x, y, z);
+			}
+		      else if (shp->EffectiveDims == GAIA_XY_M)
+			{
+			    gaiaSetPointXYM (line->Coords, points, x, y, m);
+			}
+		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
+			{
+			    gaiaSetPointXYZM (line->Coords, points, x, y, z, m);
+			}
+		      else
+			{
+			    gaiaSetPoint (line->Coords, points, x, y);
+			}
+		      start++;
+		      points++;
+		  }
+		if (!geom)
+		  {
+		      if (shp->EffectiveDims == GAIA_XY_Z)
+			  geom = gaiaAllocGeomCollXYZ ();
+		      else if (shp->EffectiveDims == GAIA_XY_M)
+			  geom = gaiaAllocGeomCollXYM ();
+		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
+			  geom = gaiaAllocGeomCollXYZM ();
+		      else
+			  geom = gaiaAllocGeomColl ();
+		      if (shp->EffectiveType == GAIA_LINESTRING)
+			  geom->DeclaredType = GAIA_LINESTRING;
+		      else
+			  geom->DeclaredType = GAIA_MULTILINESTRING;
+		      geom->Srid = srid;
+		  }
+		gaiaInsertLinestringInGeomColl (geom, line);
+	    }
+      }
+    if (shape == GAIA_SHP_POLYLINEM)
+      {
+	  /* shape polyline M */
+	  rd = fread (shp->BufShp, sizeof (unsigned char), 32, shp->flShp);
+	  if (rd != 32)
+	      goto error;
+	  rd = fread (shp->BufShp, sizeof (unsigned char), (sz * 2) - 36,
+		      shp->flShp);
+	  if (rd != (sz * 2) - 36)
+	      goto error;
+	  n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN, shp->endian_arch);
+	  n1 = gaiaImport32 (shp->BufShp + 4, GAIA_LITTLE_ENDIAN,
+			     shp->endian_arch);
+	  hasM = 0;
+	  max_size = 30 + (2 * n) + (n1 * 12);	/* size [in 16 bits words !!!] M */
+	  min_size = 22 + (2 * n) + (n1 * 8);	/* size [in 16 bits words !!!] no-M */
+	  if (sz < min_size)
+	      goto error;
+	  if (sz == max_size)
+	      hasM = 1;
+	  base = 8 + (n * 4);
+	  baseM = base + (n1 * 16) + 16;
+	  start = 0;
+	  for (ind = 0; ind < n; ind++)
+	    {
+		if (ind < (n - 1))
+		    end =
+			gaiaImport32 (shp->BufShp + 8 + ((ind + 1) * 4),
+				      GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		else
+		    end = n1;
+		points = end - start;
+		if (shp->EffectiveDims == GAIA_XY_Z)
+		    line = gaiaAllocLinestringXYZ (points);
+		else if (shp->EffectiveDims == GAIA_XY_M)
+		    line = gaiaAllocLinestringXYM (points);
+		else if (shp->EffectiveDims == GAIA_XY_Z_M)
+		    line = gaiaAllocLinestringXYZM (points);
+		else
+		    line = gaiaAllocLinestring (points);
+		points = 0;
+		for (iv = start; iv < end; iv++)
+		  {
+		      x = gaiaImport64 (shp->BufShp + base + (iv * 16),
+					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) + 8,
+					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      if (hasM)
+			  m = gaiaImport64 (shp->BufShp + baseM + (iv * 8),
+					    GAIA_LITTLE_ENDIAN,
+					    shp->endian_arch);
+		      else
+			  m = 0.0;
+		      if (shp->EffectiveDims == GAIA_XY_Z)
+			{
+			    gaiaSetPointXYZ (line->Coords, points, x, y, 0.0);
+			}
+		      else if (shp->EffectiveDims == GAIA_XY_M)
+			{
+			    gaiaSetPointXYM (line->Coords, points, x, y, m);
+			}
+		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
+			{
+			    gaiaSetPointXYZM (line->Coords, points, x, y, 0.0,
+					      m);
+			}
+		      else
+			{
+			    gaiaSetPoint (line->Coords, points, x, y);
+			}
+		      start++;
+		      points++;
+		  }
+		if (!geom)
+		  {
+		      if (shp->EffectiveDims == GAIA_XY_Z)
+			  geom = gaiaAllocGeomCollXYZ ();
+		      else if (shp->EffectiveDims == GAIA_XY_M)
+			  geom = gaiaAllocGeomCollXYM ();
+		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
+			  geom = gaiaAllocGeomCollXYZM ();
+		      else
+			  geom = gaiaAllocGeomColl ();
+		      if (shp->EffectiveType == GAIA_LINESTRING)
+			  geom->DeclaredType = GAIA_LINESTRING;
+		      else
+			  geom->DeclaredType = GAIA_MULTILINESTRING;
+		      geom->Srid = srid;
+		  }
+		gaiaInsertLinestringInGeomColl (geom, line);
+	    }
+      }
+    if (shape == GAIA_SHP_POLYGON)
       {
 	  /* shape polygon */
 	  rd = fread (shp->BufShp, sizeof (unsigned char), 32, shp->flShp);
@@ -1007,7 +1461,14 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		else
 		    end = n1;
 		points = end - start;
-		ring = gaiaAllocRing (points);
+		if (shp->EffectiveDims == GAIA_XY_Z)
+		    ring = gaiaAllocRingXYZ (points);
+		else if (shp->EffectiveDims == GAIA_XY_M)
+		    ring = gaiaAllocRingXYM (points);
+		else if (shp->EffectiveDims == GAIA_XY_Z_M)
+		    ring = gaiaAllocRingXYZM (points);
+		else
+		    ring = gaiaAllocRing (points);
 		points = 0;
 		for (iv = start; iv < end; iv++)
 		  {
@@ -1015,14 +1476,37 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 					GAIA_LITTLE_ENDIAN, shp->endian_arch);
 		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) + 8,
 					GAIA_LITTLE_ENDIAN, shp->endian_arch);
-		      gaiaSetPoint (ring->Coords, points, x, y);
+		      if (shp->EffectiveDims == GAIA_XY_Z)
+			{
+			    gaiaSetPointXYZ (ring->Coords, points, x, y, 0.0);
+			}
+		      else if (shp->EffectiveDims == GAIA_XY_M)
+			{
+			    gaiaSetPointXYM (ring->Coords, points, x, y, 0.0);
+			}
+		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
+			{
+			    gaiaSetPointXYZM (ring->Coords, points, x, y, 0.0,
+					      0.0);
+			}
+		      else
+			{
+			    gaiaSetPoint (ring->Coords, points, x, y);
+			}
 		      start++;
 		      points++;
 		  }
 		if (!geom)
 		  {
 		      /* new geometry - new need to allocate a new POLYGON */
-		      geom = gaiaAllocGeomColl ();
+		      if (shp->EffectiveDims == GAIA_XY_Z)
+			  geom = gaiaAllocGeomCollXYZ ();
+		      else if (shp->EffectiveDims == GAIA_XY_M)
+			  geom = gaiaAllocGeomCollXYM ();
+		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
+			  geom = gaiaAllocGeomCollXYZM ();
+		      else
+			  geom = gaiaAllocGeomColl ();
 		      if (shp->EffectiveType == GAIA_POLYGON)
 			  geom->DeclaredType = GAIA_POLYGON;
 		      else
@@ -1046,7 +1530,222 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		  }
 	    }
       }
-    if (shape == 8 || shape == 18 || shape == 28)
+    if (shape == GAIA_SHP_POLYGONZ)
+      {
+	  /* shape polygon Z */
+	  rd = fread (shp->BufShp, sizeof (unsigned char), 32, shp->flShp);
+	  if (rd != 32)
+	      goto error;
+	  rd = fread (shp->BufShp, sizeof (unsigned char), (sz * 2) - 36,
+		      shp->flShp);
+	  if (rd != (sz * 2) - 36)
+	      goto error;
+	  n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN, shp->endian_arch);
+	  n1 = gaiaImport32 (shp->BufShp + 4, GAIA_LITTLE_ENDIAN,
+			     shp->endian_arch);
+	  hasM = 0;
+	  max_size = 38 + (2 * n) + (n1 * 16);	/* size [in 16 bits words !!!] ZM */
+	  min_size = 30 + (2 * n) + (n1 * 12);	/* size [in 16 bits words !!!] Z-only */
+	  if (sz < min_size)
+	      goto error;
+	  if (sz == max_size)
+	      hasM = 1;
+	  base = 8 + (n * 4);
+	  baseZ = base + (n1 * 16) + 16;
+	  baseM = baseZ + (n1 * 8) + 16;
+	  start = 0;
+	  for (ind = 0; ind < n; ind++)
+	    {
+		if (ind < (n - 1))
+		    end =
+			gaiaImport32 (shp->BufShp + 8 + ((ind + 1) * 4),
+				      GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		else
+		    end = n1;
+		points = end - start;
+		if (shp->EffectiveDims == GAIA_XY_Z)
+		    ring = gaiaAllocRingXYZ (points);
+		else if (shp->EffectiveDims == GAIA_XY_M)
+		    ring = gaiaAllocRingXYM (points);
+		else if (shp->EffectiveDims == GAIA_XY_Z_M)
+		    ring = gaiaAllocRingXYZM (points);
+		else
+		    ring = gaiaAllocRing (points);
+		points = 0;
+		for (iv = start; iv < end; iv++)
+		  {
+		      x = gaiaImport64 (shp->BufShp + base + (iv * 16),
+					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) + 8,
+					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      z = gaiaImport64 (shp->BufShp + baseZ + (iv * 8),
+					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      if (hasM)
+			  m = gaiaImport64 (shp->BufShp + baseM + (iv * 8),
+					    GAIA_LITTLE_ENDIAN,
+					    shp->endian_arch);
+		      else
+			  m = 0.0;
+		      if (shp->EffectiveDims == GAIA_XY_Z)
+			{
+			    gaiaSetPointXYZ (ring->Coords, points, x, y, z);
+			}
+		      else if (shp->EffectiveDims == GAIA_XY_M)
+			{
+			    gaiaSetPointXYM (ring->Coords, points, x, y, m);
+			}
+		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
+			{
+			    gaiaSetPointXYZM (ring->Coords, points, x, y, z, m);
+			}
+		      else
+			{
+			    gaiaSetPoint (ring->Coords, points, x, y);
+			}
+		      start++;
+		      points++;
+		  }
+		if (!geom)
+		  {
+		      /* new geometry - new need to allocate a new POLYGON */
+		      if (shp->EffectiveDims == GAIA_XY_Z)
+			  geom = gaiaAllocGeomCollXYZ ();
+		      else if (shp->EffectiveDims == GAIA_XY_M)
+			  geom = gaiaAllocGeomCollXYM ();
+		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
+			  geom = gaiaAllocGeomCollXYZM ();
+		      else
+			  geom = gaiaAllocGeomColl ();
+		      if (shp->EffectiveType == GAIA_POLYGON)
+			  geom->DeclaredType = GAIA_POLYGON;
+		      else
+			  geom->DeclaredType = GAIA_MULTIPOLYGON;
+		      geom->Srid = srid;
+		      polyg = gaiaInsertPolygonInGeomColl (geom, ring);
+		  }
+		else
+		  {
+		      gaiaClockwise (ring);
+		      if (ring->Clockwise)
+			{
+			    /* this one is a POLYGON exterior ring - we need to allocate e new POLYGON */
+			    polyg = gaiaInsertPolygonInGeomColl (geom, ring);
+			}
+		      else
+			{
+			    /* adding an interior ring to current POLYGON */
+			    gaiaAddRingToPolyg (polyg, ring);
+			}
+		  }
+	    }
+      }
+    if (shape == GAIA_SHP_POLYGONM)
+      {
+	  /* shape polygon M */
+	  rd = fread (shp->BufShp, sizeof (unsigned char), 32, shp->flShp);
+	  if (rd != 32)
+	      goto error;
+	  rd = fread (shp->BufShp, sizeof (unsigned char), (sz * 2) - 36,
+		      shp->flShp);
+	  if (rd != (sz * 2) - 36)
+	      goto error;
+	  n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN, shp->endian_arch);
+	  n1 = gaiaImport32 (shp->BufShp + 4, GAIA_LITTLE_ENDIAN,
+			     shp->endian_arch);
+	  hasM = 0;
+	  max_size = 30 + (2 * n) + (n1 * 12);	/* size [in 16 bits words !!!] M */
+	  min_size = 22 + (2 * n) + (n1 * 8);	/* size [in 16 bits words !!!] no-M */
+	  if (sz < min_size)
+	      goto error;
+	  if (sz == max_size)
+	      hasM = 1;
+	  base = 8 + (n * 4);
+	  baseM = base + (n1 * 16) + 16;
+	  start = 0;
+	  for (ind = 0; ind < n; ind++)
+	    {
+		if (ind < (n - 1))
+		    end =
+			gaiaImport32 (shp->BufShp + 8 + ((ind + 1) * 4),
+				      GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		else
+		    end = n1;
+		points = end - start;
+		if (shp->EffectiveDims == GAIA_XY_Z)
+		    ring = gaiaAllocRingXYZ (points);
+		else if (shp->EffectiveDims == GAIA_XY_M)
+		    ring = gaiaAllocRingXYM (points);
+		else if (shp->EffectiveDims == GAIA_XY_Z_M)
+		    ring = gaiaAllocRingXYZM (points);
+		else
+		    ring = gaiaAllocRing (points);
+		points = 0;
+		for (iv = start; iv < end; iv++)
+		  {
+		      x = gaiaImport64 (shp->BufShp + base + (iv * 16),
+					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) + 8,
+					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      if (hasM)
+			  m = gaiaImport64 (shp->BufShp + baseM + (iv * 8),
+					    GAIA_LITTLE_ENDIAN,
+					    shp->endian_arch);
+		      m = 0.0;
+		      if (shp->EffectiveDims == GAIA_XY_Z)
+			{
+			    gaiaSetPointXYZ (ring->Coords, points, x, y, 0.0);
+			}
+		      else if (shp->EffectiveDims == GAIA_XY_M)
+			{
+			    gaiaSetPointXYM (ring->Coords, points, x, y, m);
+			}
+		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
+			{
+			    gaiaSetPointXYZM (ring->Coords, points, x, y, 0.0,
+					      m);
+			}
+		      else
+			{
+			    gaiaSetPoint (ring->Coords, points, x, y);
+			}
+		      start++;
+		      points++;
+		  }
+		if (!geom)
+		  {
+		      /* new geometry - new need to allocate a new POLYGON */
+		      if (shp->EffectiveDims == GAIA_XY_Z)
+			  geom = gaiaAllocGeomCollXYZ ();
+		      else if (shp->EffectiveDims == GAIA_XY_M)
+			  geom = gaiaAllocGeomCollXYM ();
+		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
+			  geom = gaiaAllocGeomCollXYZM ();
+		      else
+			  geom = gaiaAllocGeomColl ();
+		      if (shp->EffectiveType == GAIA_POLYGON)
+			  geom->DeclaredType = GAIA_POLYGON;
+		      else
+			  geom->DeclaredType = GAIA_MULTIPOLYGON;
+		      geom->Srid = srid;
+		      polyg = gaiaInsertPolygonInGeomColl (geom, ring);
+		  }
+		else
+		  {
+		      gaiaClockwise (ring);
+		      if (ring->Clockwise)
+			{
+			    /* this one is a POLYGON exterior ring - we need to allocate e new POLYGON */
+			    polyg = gaiaInsertPolygonInGeomColl (geom, ring);
+			}
+		      else
+			{
+			    /* adding an interior ring to current POLYGON */
+			    gaiaAddRingToPolyg (polyg, ring);
+			}
+		  }
+	    }
+      }
+    if (shape == GAIA_SHP_MULTIPOINT)
       {
 	  /* shape multipoint */
 	  rd = fread (shp->BufShp, sizeof (unsigned char), 32, shp->flShp);
@@ -1057,7 +1756,14 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 	  if (rd != (sz * 2) - 36)
 	      goto error;
 	  n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN, shp->endian_arch);
-	  geom = gaiaAllocGeomColl ();
+	  if (shp->EffectiveDims == GAIA_XY_Z)
+	      geom = gaiaAllocGeomCollXYZ ();
+	  else if (shp->EffectiveDims == GAIA_XY_M)
+	      geom = gaiaAllocGeomCollXYM ();
+	  else if (shp->EffectiveDims == GAIA_XY_Z_M)
+	      geom = gaiaAllocGeomCollXYZM ();
+	  else
+	      geom = gaiaAllocGeomColl ();
 	  geom->DeclaredType = GAIA_MULTIPOINT;
 	  geom->Srid = srid;
 	  for (iv = 0; iv < n; iv++)
@@ -1066,7 +1772,117 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 				  GAIA_LITTLE_ENDIAN, shp->endian_arch);
 		y = gaiaImport64 (shp->BufShp + 4 + (iv * 16) + 8,
 				  GAIA_LITTLE_ENDIAN, shp->endian_arch);
-		gaiaAddPointToGeomColl (geom, x, y);
+		if (shp->EffectiveDims == GAIA_XY_Z)
+		    gaiaAddPointToGeomCollXYZ (geom, x, y, 0.0);
+		else if (shp->EffectiveDims == GAIA_XY_M)
+		    gaiaAddPointToGeomCollXYM (geom, x, y, 0.0);
+		else if (shp->EffectiveDims == GAIA_XY_Z_M)
+		    gaiaAddPointToGeomCollXYZM (geom, x, y, 0.0, 0.0);
+		else
+		    gaiaAddPointToGeomColl (geom, x, y);
+	    }
+      }
+    if (shape == GAIA_SHP_MULTIPOINTZ)
+      {
+	  /* shape multipoint Z */
+	  rd = fread (shp->BufShp, sizeof (unsigned char), 32, shp->flShp);
+	  if (rd != 32)
+	      goto error;
+	  rd = fread (shp->BufShp, sizeof (unsigned char), (sz * 2) - 36,
+		      shp->flShp);
+	  if (rd != (sz * 2) - 36)
+	      goto error;
+	  n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN, shp->endian_arch);
+	  hasM = 0;
+	  max_size = 38 + (n * 16);	/* size [in 16 bits words !!!] ZM */
+	  min_size = 30 + (n * 12);	/* size [in 16 bits words !!!] Z-only */
+	  if (sz < min_size)
+	      goto error;
+	  if (sz == max_size)
+	      hasM = 1;
+	  baseZ = 4 + (n * 16) + 16;
+	  baseM = baseZ + (n * 8) + 16;
+	  if (shp->EffectiveDims == GAIA_XY_Z)
+	      geom = gaiaAllocGeomCollXYZ ();
+	  else if (shp->EffectiveDims == GAIA_XY_M)
+	      geom = gaiaAllocGeomCollXYM ();
+	  else if (shp->EffectiveDims == GAIA_XY_Z_M)
+	      geom = gaiaAllocGeomCollXYZM ();
+	  else
+	      geom = gaiaAllocGeomColl ();
+	  geom->DeclaredType = GAIA_MULTIPOINT;
+	  geom->Srid = srid;
+	  for (iv = 0; iv < n; iv++)
+	    {
+		x = gaiaImport64 (shp->BufShp + 4 + (iv * 16),
+				  GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		y = gaiaImport64 (shp->BufShp + 4 + (iv * 16) + 8,
+				  GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		z = gaiaImport64 (shp->BufShp + baseZ + (iv * 8),
+				  GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		if (hasM)
+		    m = gaiaImport64 (shp->BufShp + baseM + (iv * 8),
+				      GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		else
+		    m = 0.0;
+		if (shp->EffectiveDims == GAIA_XY_Z)
+		    gaiaAddPointToGeomCollXYZ (geom, x, y, z);
+		else if (shp->EffectiveDims == GAIA_XY_M)
+		    gaiaAddPointToGeomCollXYM (geom, x, y, m);
+		else if (shp->EffectiveDims == GAIA_XY_Z_M)
+		    gaiaAddPointToGeomCollXYZM (geom, x, y, z, m);
+		else
+		    gaiaAddPointToGeomColl (geom, x, y);
+	    }
+      }
+    if (shape == GAIA_SHP_MULTIPOINTM)
+      {
+	  /* shape multipoint M */
+	  rd = fread (shp->BufShp, sizeof (unsigned char), 32, shp->flShp);
+	  if (rd != 32)
+	      goto error;
+	  rd = fread (shp->BufShp, sizeof (unsigned char), (sz * 2) - 36,
+		      shp->flShp);
+	  if (rd != (sz * 2) - 36)
+	      goto error;
+	  n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN, shp->endian_arch);
+	  hasM = 0;
+	  max_size = 30 + (n * 12);	/* size [in 16 bits words !!!] M */
+	  min_size = 22 + (n * 8);	/* size [in 16 bits words !!!] no-M */
+	  if (sz < min_size)
+	      goto error;
+	  if (sz == max_size)
+	      hasM = 1;
+	  baseM = 4 + (n * 16) + 16;
+	  if (shp->EffectiveDims == GAIA_XY_Z)
+	      geom = gaiaAllocGeomCollXYZ ();
+	  else if (shp->EffectiveDims == GAIA_XY_M)
+	      geom = gaiaAllocGeomCollXYM ();
+	  else if (shp->EffectiveDims == GAIA_XY_Z_M)
+	      geom = gaiaAllocGeomCollXYZM ();
+	  else
+	      geom = gaiaAllocGeomColl ();
+	  geom->DeclaredType = GAIA_MULTIPOINT;
+	  geom->Srid = srid;
+	  for (iv = 0; iv < n; iv++)
+	    {
+		x = gaiaImport64 (shp->BufShp + 4 + (iv * 16),
+				  GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		y = gaiaImport64 (shp->BufShp + 4 + (iv * 16) + 8,
+				  GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		if (hasM)
+		    m = gaiaImport64 (shp->BufShp + baseM + (iv * 8),
+				      GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		else
+		    m = 0.0;
+		if (shp->EffectiveDims == GAIA_XY_Z)
+		    gaiaAddPointToGeomCollXYZ (geom, x, y, 0.0);
+		else if (shp->EffectiveDims == GAIA_XY_M)
+		    gaiaAddPointToGeomCollXYM (geom, x, y, m);
+		else if (shp->EffectiveDims == GAIA_XY_Z_M)
+		    gaiaAddPointToGeomCollXYZM (geom, x, y, 0.0, m);
+		else
+		    gaiaAddPointToGeomColl (geom, x, y);
 	    }
       }
 /* setting up the current SHP ENTITY */
@@ -1212,6 +2028,8 @@ gaiaSaneClockwise (gaiaPolygonPtr polyg)
     int iv2;
     double x;
     double y;
+    double z;
+    double m;
     gaiaRingPtr new_ring;
     gaiaRingPtr ring = polyg->Exterior;
     gaiaClockwise (ring);
@@ -1222,8 +2040,26 @@ gaiaSaneClockwise (gaiaPolygonPtr polyg)
 	  iv2 = 0;
 	  for (iv = ring->Points - 1; iv >= 0; iv--)
 	    {
-		gaiaGetPoint (ring->Coords, iv, &x, &y);
-		gaiaSetPoint (new_ring->Coords, iv2, x, y);
+		if (ring->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);
+		      gaiaSetPointXYZ (new_ring->Coords, iv2, x, y, z);
+		  }
+		else if (ring->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (ring->Coords, iv, &x, &y, &m);
+		      gaiaSetPointXYM (new_ring->Coords, iv2, x, y, m);
+		  }
+		else if (ring->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
+		      gaiaSetPointXYZM (new_ring->Coords, iv2, x, y, z, m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (ring->Coords, iv, &x, &y);
+		      gaiaSetPoint (new_ring->Coords, iv2, x, y);
+		  }
 		iv2++;
 	    }
 	  polyg->Exterior = new_ring;
@@ -1240,14 +2076,52 @@ gaiaSaneClockwise (gaiaPolygonPtr polyg)
 		iv2 = 0;
 		for (iv = ring->Points - 1; iv >= 0; iv--)
 		  {
-		      gaiaGetPoint (ring->Coords, iv, &x, &y);
-		      gaiaSetPoint (new_ring->Coords, iv2, x, y);
+		      if (ring->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);
+			    gaiaSetPointXYZ (new_ring->Coords, iv2, x, y, z);
+			}
+		      else if (ring->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaGetPointXYM (ring->Coords, iv, &x, &y, &m);
+			    gaiaSetPointXYM (new_ring->Coords, iv2, x, y, m);
+			}
+		      else if (ring->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
+			    gaiaSetPointXYZM (new_ring->Coords, iv2, x, y, z,
+					      m);
+			}
+		      else
+			{
+			    gaiaGetPoint (ring->Coords, iv, &x, &y);
+			    gaiaSetPoint (new_ring->Coords, iv2, x, y);
+			}
 		      iv2++;
 		  }
 		for (iv = 0; iv < ring->Points; iv++)
 		  {
-		      gaiaGetPoint (new_ring->Coords, iv, &x, &y);
-		      gaiaSetPoint (ring->Coords, iv, x, y);
+		      if (ring->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaGetPointXYZ (new_ring->Coords, iv, &x, &y, &z);
+			    gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
+			}
+		      else if (ring->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaGetPointXYM (new_ring->Coords, iv, &x, &y, &m);
+			    gaiaSetPointXYM (ring->Coords, iv, x, y, m);
+			}
+		      else if (ring->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaGetPointXYZM (new_ring->Coords, iv, &x, &y, &z,
+					      &m);
+			    gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
+			}
+		      else
+			{
+			    gaiaGetPoint (new_ring->Coords, iv, &x, &y);
+			    gaiaSetPoint (ring->Coords, iv, x, y);
+			}
 		  }
 		gaiaFreeRing (new_ring);
 	    }
@@ -1270,6 +2144,13 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
     int ix;
     double x;
     double y;
+    double z;
+    double m;
+    int hasM;
+    double minZ;
+    double maxZ;
+    double minM;
+    double maxM;
 #ifdef __MINGW32__
     const char *pBuf;
     int len;
@@ -1377,12 +2258,12 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 	  gaiaExport32 (shp->BufShp, shp->ShpSize, GAIA_BIG_ENDIAN, endian_arch);	/* exports current SHP file position */
 	  gaiaExport32 (shp->BufShp + 4, 2, GAIA_BIG_ENDIAN, endian_arch);	/* exports entitiy size [in 16 bits words !!!] */
 	  fwrite (shp->BufShp, 1, 8, shp->flShx);
-	  (shp->ShxSize) += 4;	/* updating current SHX file poisition [in 16 bits words !!!] */
+	  (shp->ShxSize) += 4;	/* updating current SHX file position [in 16 bits words !!!] */
 	  gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 	  gaiaExport32 (shp->BufShp + 4, 2, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
-	  gaiaExport32 (shp->BufShp + 8, 0, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = NULL */
+	  gaiaExport32 (shp->BufShp + 8, GAIA_SHP_NULL, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = NULL */
 	  fwrite (shp->BufShp, 1, 12, shp->flShp);
-	  (shp->ShpSize) += 6;	/* updating current SHP file poisition [in 16 bits words !!!] */
+	  (shp->ShpSize) += 6;	/* updating current SHP file position [in 16 bits words !!!] */
       }
     else
       {
@@ -1396,7 +2277,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 	      shp->MinY = entity->Geometry->MinY;
 	  if (entity->Geometry->MaxY > shp->MaxY)
 	      shp->MaxY = entity->Geometry->MaxY;
-	  if (shp->Shape == 1)
+	  if (shp->Shape == GAIA_SHP_POINT)
 	    {
 		/* this one is expected to be a POINT */
 		gaiaPointPtr pt = entity->Geometry->FirstPoint;
@@ -1415,17 +2296,78 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		gaiaExport32 (shp->BufShp, shp->ShpSize, GAIA_BIG_ENDIAN, endian_arch);	/* exports current SHP file position */
 		gaiaExport32 (shp->BufShp + 4, 10, GAIA_BIG_ENDIAN, endian_arch);	/* exports entitiy size [in 16 bits words !!!] */
 		fwrite (shp->BufShp, 1, 8, shp->flShx);
-		(shp->ShxSize) += 4;	/* updating current SHX file poisition [in 16 bits words !!!] */
+		(shp->ShxSize) += 4;	/* updating current SHX file position [in 16 bits words !!!] */
 		/* inserting POINT into SHP file */
 		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, 10, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
-		gaiaExport32 (shp->BufShp + 8, 1, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POINT */
+		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POINT, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POINT */
 		gaiaExport64 (shp->BufShp + 12, pt->X, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports X coordinate */
 		gaiaExport64 (shp->BufShp + 20, pt->Y, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports Y coordinate */
 		fwrite (shp->BufShp, 1, 28, shp->flShp);
-		(shp->ShpSize) += 14;	/* updating current SHP file poisition [in 16 bits words !!!] */
+		(shp->ShpSize) += 14;	/* updating current SHP file position [in 16 bits words !!!] */
 	    }
-	  if (shp->Shape == 3)
+	  if (shp->Shape == GAIA_SHP_POINTZ)
+	    {
+		/* this one is expected to be a POINT Z */
+		gaiaPointPtr pt = entity->Geometry->FirstPoint;
+		if (!pt)
+		  {
+		      strcpy (dummy,
+			      "a POINT is expected, but there is no POINT in geometry");
+		      if (shp->LastError)
+			  free (shp->LastError);
+		      len = strlen (dummy);
+		      shp->LastError = malloc (len + 1);
+		      strcpy (shp->LastError, dummy);
+		      return 0;
+		  }
+		/* inserting POINT Z entity into SHX file */
+		gaiaExport32 (shp->BufShp, shp->ShpSize, GAIA_BIG_ENDIAN, endian_arch);	/* exports current SHP file position */
+		gaiaExport32 (shp->BufShp + 4, 18, GAIA_BIG_ENDIAN, endian_arch);	/* exports entitiy size [in 16 bits words !!!] */
+		fwrite (shp->BufShp, 1, 8, shp->flShx);
+		(shp->ShxSize) += 4;	/* updating current SHX file position [in 16 bits words !!!] */
+		/* inserting POINT into SHP file */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp + 4, 18, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
+		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POINTZ, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POINT Z */
+		gaiaExport64 (shp->BufShp + 12, pt->X, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports X coordinate */
+		gaiaExport64 (shp->BufShp + 20, pt->Y, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports Y coordinate */
+		gaiaExport64 (shp->BufShp + 28, pt->Z, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports Z coordinate */
+		gaiaExport64 (shp->BufShp + 36, pt->M, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports M coordinate */
+		fwrite (shp->BufShp, 1, 44, shp->flShp);
+		(shp->ShpSize) += 22;	/* updating current SHP file position [in 16 bits words !!!] */
+	    }
+	  if (shp->Shape == GAIA_SHP_POINTM)
+	    {
+		/* this one is expected to be a POINT M */
+		gaiaPointPtr pt = entity->Geometry->FirstPoint;
+		if (!pt)
+		  {
+		      strcpy (dummy,
+			      "a POINT is expected, but there is no POINT in geometry");
+		      if (shp->LastError)
+			  free (shp->LastError);
+		      len = strlen (dummy);
+		      shp->LastError = malloc (len + 1);
+		      strcpy (shp->LastError, dummy);
+		      return 0;
+		  }
+		/* inserting POINT entity into SHX file */
+		gaiaExport32 (shp->BufShp, shp->ShpSize, GAIA_BIG_ENDIAN, endian_arch);	/* exports current SHP file position */
+		gaiaExport32 (shp->BufShp + 4, 14, GAIA_BIG_ENDIAN, endian_arch);	/* exports entitiy size [in 16 bits words !!!] */
+		fwrite (shp->BufShp, 1, 8, shp->flShx);
+		(shp->ShxSize) += 4;	/* updating current SHX file position [in 16 bits words !!!] */
+		/* inserting POINT into SHP file */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp + 4, 14, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
+		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POINTM, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POINT M */
+		gaiaExport64 (shp->BufShp + 12, pt->X, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports X coordinate */
+		gaiaExport64 (shp->BufShp + 20, pt->Y, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports Y coordinate */
+		gaiaExport64 (shp->BufShp + 28, pt->Y, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports M coordinate */
+		fwrite (shp->BufShp, 1, 36, shp->flShp);
+		(shp->ShpSize) += 18;	/* updating current SHP file position [in 16 bits words !!!] */
+	    }
+	  if (shp->Shape == GAIA_SHP_POLYLINE)
 	    {
 		/* this one is expected to be a LINESTRING / MULTILINESTRING */
 		gaiaLinestringPtr line;
@@ -1466,7 +2408,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		/* inserting LINESTRING or MULTILINESTRING in SHP file */
 		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
-		gaiaExport32 (shp->BufShp + 8, 3, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POLYLINE */
+		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POLYLINE, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POLYLINE */
 		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
 		gaiaExport64 (shp->BufShp + 20, entity->Geometry->MinY,
 			      GAIA_LITTLE_ENDIAN, endian_arch);
@@ -1495,7 +2437,25 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		      for (iv = 0; iv < line->Points; iv++)
 			{
 			    /* exports a POINT [x,y] */
-			    gaiaGetPoint (line->Coords, iv, &x, &y);
+			    if (line->DimensionModel == GAIA_XY_Z)
+			      {
+				  gaiaGetPointXYZ (line->Coords, iv, &x, &y,
+						   &z);
+			      }
+			    else if (line->DimensionModel == GAIA_XY_M)
+			      {
+				  gaiaGetPointXYM (line->Coords, iv, &x, &y,
+						   &m);
+			      }
+			    else if (line->DimensionModel == GAIA_XY_Z_M)
+			      {
+				  gaiaGetPointXYZM (line->Coords, iv, &x, &y,
+						    &z, &m);
+			      }
+			    else
+			      {
+				  gaiaGetPoint (line->Coords, iv, &x, &y);
+			      }
 			    gaiaExport64 (shp->BufShp + ix, x,
 					  GAIA_LITTLE_ENDIAN, endian_arch);
 			    ix += 8;
@@ -1506,9 +2466,345 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		      line = line->Next;
 		  }
 		fwrite (shp->BufShp, 1, ix, shp->flShp);
-		(shp->ShpSize) += (ix / 2);	/* updating current SHP file poisition [in 16 bits words !!!] */
+		(shp->ShpSize) += (ix / 2);	/* updating current SHP file position [in 16 bits words !!!] */
 	    }
-	  if (shp->Shape == 5)
+	  if (shp->Shape == GAIA_SHP_POLYLINEZ)
+	    {
+		/* this one is expected to be a LINESTRING / MULTILINESTRING Z */
+		gaiaLinestringPtr line;
+		gaiaZRangeGeometry (entity->Geometry, &minZ, &maxZ);
+		gaiaMRangeGeometry (entity->Geometry, &minM, &maxM);
+		tot_ln = 0;
+		tot_v = 0;
+		line = entity->Geometry->FirstLinestring;
+		while (line)
+		  {
+		      /* computes # lines and total # points */
+		      tot_v += line->Points;
+		      tot_ln++;
+		      line = line->Next;
+		  }
+		if (!tot_ln)
+		  {
+		      strcpy (dummy,
+			      "a LINESTRING is expected, but there is no LINESTRING in geometry");
+		      if (shp->LastError)
+			  free (shp->LastError);
+		      len = strlen (dummy);
+		      shp->LastError = malloc (len + 1);
+		      strcpy (shp->LastError, dummy);
+		      return 0;
+		  }
+		hasM = 0;
+		if (line->DimensionModel == GAIA_XY_M
+		    || line->DimensionModel == GAIA_XY_Z_M)
+		    hasM = 1;
+		if (hasM)
+		    this_size = 38 + (2 * tot_ln) + (tot_v * 16);	/* size [in 16 bits words !!!] ZM */
+		else
+		    this_size = 30 + (2 * tot_ln) + (tot_v * 12);	/* size [in 16 bits words !!!] Z-only */
+		if ((this_size * 2) + 1024 > shp->ShpBfsz)
+		  {
+		      /* current buffer is too small; we need to allocate a bigger one */
+		      free (shp->BufShp);
+		      shp->ShpBfsz = (this_size * 2) + 1024;
+		      shp->BufShp = malloc (shp->ShpBfsz);
+		  }
+		/* inserting LINESTRING or MULTILINESTRING in SHX file */
+		gaiaExport32 (shp->BufShp, shp->ShpSize, GAIA_BIG_ENDIAN, endian_arch);	/* exports current SHP file position */
+		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entitiy size [in 16 bits words !!!] */
+		fwrite (shp->BufShp, 1, 8, shp->flShx);
+		(shp->ShxSize) += 4;
+		/* inserting LINESTRING or MULTILINESTRING in SHP file */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
+		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POLYLINEZ, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POLYLINE Z */
+		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
+		gaiaExport64 (shp->BufShp + 20, entity->Geometry->MinY,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport64 (shp->BufShp + 28, entity->Geometry->MaxX,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport64 (shp->BufShp + 36, entity->Geometry->MaxY,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport32 (shp->BufShp + 44, tot_ln, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports # lines in this polyline */
+		gaiaExport32 (shp->BufShp + 48, tot_v, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports total # points */
+		tot_v = 0;	/* resets points counter */
+		ix = 52;	/* sets current buffer offset */
+		line = entity->Geometry->FirstLinestring;
+		while (line)
+		  {
+		      /* exports start point index for each line */
+		      gaiaExport32 (shp->BufShp + ix, tot_v, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      tot_v += line->Points;
+		      ix += 4;
+		      line = line->Next;
+		  }
+		line = entity->Geometry->FirstLinestring;
+		while (line)
+		  {
+		      /* exports points for each line */
+		      for (iv = 0; iv < line->Points; iv++)
+			{
+			    /* exports a POINT [x,y] */
+			    if (line->DimensionModel == GAIA_XY_Z)
+			      {
+				  gaiaGetPointXYZ (line->Coords, iv, &x, &y,
+						   &z);
+			      }
+			    else if (line->DimensionModel == GAIA_XY_M)
+			      {
+				  gaiaGetPointXYM (line->Coords, iv, &x, &y,
+						   &m);
+			      }
+			    else if (line->DimensionModel == GAIA_XY_Z_M)
+			      {
+				  gaiaGetPointXYZM (line->Coords, iv, &x, &y,
+						    &z, &m);
+			      }
+			    else
+			      {
+				  gaiaGetPoint (line->Coords, iv, &x, &y);
+			      }
+			    gaiaExport64 (shp->BufShp + ix, x,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    ix += 8;
+			    gaiaExport64 (shp->BufShp + ix, y,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    ix += 8;
+			}
+		      line = line->Next;
+		  }
+		/* exporting the Z-range [min/max] */
+		gaiaExport64 (shp->BufShp + ix, minZ, GAIA_LITTLE_ENDIAN,
+			      endian_arch);
+		ix += 8;
+		gaiaExport64 (shp->BufShp + ix, maxZ, GAIA_LITTLE_ENDIAN,
+			      endian_arch);
+		ix += 8;
+		line = entity->Geometry->FirstLinestring;
+		while (line)
+		  {
+		      /* exports Z-values for each line */
+		      for (iv = 0; iv < line->Points; iv++)
+			{
+			    /* exports Z-value */
+			    z = 0.0;
+			    if (line->DimensionModel == GAIA_XY_Z)
+			      {
+				  gaiaGetPointXYZ (line->Coords, iv, &x, &y,
+						   &z);
+			      }
+			    else if (line->DimensionModel == GAIA_XY_M)
+			      {
+				  gaiaGetPointXYM (line->Coords, iv, &x, &y,
+						   &m);
+			      }
+			    else if (line->DimensionModel == GAIA_XY_Z_M)
+			      {
+				  gaiaGetPointXYZM (line->Coords, iv, &x, &y,
+						    &z, &m);
+			      }
+			    else
+			      {
+				  gaiaGetPoint (line->Coords, iv, &x, &y);
+			      }
+			    gaiaExport64 (shp->BufShp + ix, z,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    ix += 8;
+			}
+		      line = line->Next;
+		  }
+		if (hasM)
+		  {
+		      /* exporting the M-range [min/max] */
+		      gaiaExport64 (shp->BufShp + ix, minM, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      ix += 8;
+		      gaiaExport64 (shp->BufShp + ix, maxM, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      ix += 8;
+		      line = entity->Geometry->FirstLinestring;
+		      while (line)
+			{
+			    /* exports M-values for each line */
+			    for (iv = 0; iv < line->Points; iv++)
+			      {
+				  /* exports M-value */
+				  m = 0.0;
+				  if (line->DimensionModel == GAIA_XY_Z)
+				    {
+					gaiaGetPointXYZ (line->Coords, iv, &x,
+							 &y, &z);
+				    }
+				  else if (line->DimensionModel == GAIA_XY_M)
+				    {
+					gaiaGetPointXYM (line->Coords, iv, &x,
+							 &y, &m);
+				    }
+				  else if (line->DimensionModel == GAIA_XY_Z_M)
+				    {
+					gaiaGetPointXYZM (line->Coords, iv, &x,
+							  &y, &z, &m);
+				    }
+				  else
+				    {
+					gaiaGetPoint (line->Coords, iv, &x, &y);
+				    }
+				  gaiaExport64 (shp->BufShp + ix, m,
+						GAIA_LITTLE_ENDIAN,
+						endian_arch);
+				  ix += 8;
+			      }
+			    line = line->Next;
+			}
+		  }
+		fwrite (shp->BufShp, 1, ix, shp->flShp);
+		(shp->ShpSize) += (ix / 2);	/* updating current SHP file position [in 16 bits words !!!] */
+	    }
+	  if (shp->Shape == GAIA_SHP_POLYLINEM)
+	    {
+		/* this one is expected to be a LINESTRING / MULTILINESTRING M */
+		gaiaLinestringPtr line;
+		gaiaMRangeGeometry (entity->Geometry, &minM, &maxM);
+		tot_ln = 0;
+		tot_v = 0;
+		line = entity->Geometry->FirstLinestring;
+		while (line)
+		  {
+		      /* computes # lines and total # points */
+		      tot_v += line->Points;
+		      tot_ln++;
+		      line = line->Next;
+		  }
+		if (!tot_ln)
+		  {
+		      strcpy (dummy,
+			      "a LINESTRING is expected, but there is no LINESTRING in geometry");
+		      if (shp->LastError)
+			  free (shp->LastError);
+		      len = strlen (dummy);
+		      shp->LastError = malloc (len + 1);
+		      strcpy (shp->LastError, dummy);
+		      return 0;
+		  }
+		this_size = 30 + (2 * tot_ln) + (tot_v * 12);	/* size [in 16 bits words !!!] for this SHP entity */
+		if ((this_size * 2) + 1024 > shp->ShpBfsz)
+		  {
+		      /* current buffer is too small; we need to allocate a bigger one */
+		      free (shp->BufShp);
+		      shp->ShpBfsz = (this_size * 2) + 1024;
+		      shp->BufShp = malloc (shp->ShpBfsz);
+		  }
+		/* inserting LINESTRING or MULTILINESTRING in SHX file */
+		gaiaExport32 (shp->BufShp, shp->ShpSize, GAIA_BIG_ENDIAN, endian_arch);	/* exports current SHP file position */
+		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entitiy size [in 16 bits words !!!] */
+		fwrite (shp->BufShp, 1, 8, shp->flShx);
+		(shp->ShxSize) += 4;
+		/* inserting LINESTRING or MULTILINESTRING in SHP file */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
+		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POLYLINEM, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POLYLINE M */
+		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
+		gaiaExport64 (shp->BufShp + 20, entity->Geometry->MinY,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport64 (shp->BufShp + 28, entity->Geometry->MaxX,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport64 (shp->BufShp + 36, entity->Geometry->MaxY,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport32 (shp->BufShp + 44, tot_ln, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports # lines in this polyline */
+		gaiaExport32 (shp->BufShp + 48, tot_v, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports total # points */
+		tot_v = 0;	/* resets points counter */
+		ix = 52;	/* sets current buffer offset */
+		line = entity->Geometry->FirstLinestring;
+		while (line)
+		  {
+		      /* exports start point index for each line */
+		      gaiaExport32 (shp->BufShp + ix, tot_v, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      tot_v += line->Points;
+		      ix += 4;
+		      line = line->Next;
+		  }
+		line = entity->Geometry->FirstLinestring;
+		while (line)
+		  {
+		      /* exports points for each line */
+		      for (iv = 0; iv < line->Points; iv++)
+			{
+			    /* exports a POINT [x,y] */
+			    if (line->DimensionModel == GAIA_XY_Z)
+			      {
+				  gaiaGetPointXYZ (line->Coords, iv, &x, &y,
+						   &z);
+			      }
+			    else if (line->DimensionModel == GAIA_XY_M)
+			      {
+				  gaiaGetPointXYM (line->Coords, iv, &x, &y,
+						   &m);
+			      }
+			    else if (line->DimensionModel == GAIA_XY_Z_M)
+			      {
+				  gaiaGetPointXYZM (line->Coords, iv, &x, &y,
+						    &z, &m);
+			      }
+			    else
+			      {
+				  gaiaGetPoint (line->Coords, iv, &x, &y);
+			      }
+			    gaiaExport64 (shp->BufShp + ix, x,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    ix += 8;
+			    gaiaExport64 (shp->BufShp + ix, y,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    ix += 8;
+			}
+		      line = line->Next;
+		  }
+		/* exporting the M-range [min/max] */
+		gaiaExport64 (shp->BufShp + ix, minM, GAIA_LITTLE_ENDIAN,
+			      endian_arch);
+		ix += 8;
+		gaiaExport64 (shp->BufShp + ix, maxM, GAIA_LITTLE_ENDIAN,
+			      endian_arch);
+		ix += 8;
+		line = entity->Geometry->FirstLinestring;
+		while (line)
+		  {
+		      /* exports M-values for each line */
+		      for (iv = 0; iv < line->Points; iv++)
+			{
+			    /* exports M-value */
+			    m = 0.0;
+			    if (line->DimensionModel == GAIA_XY_Z)
+			      {
+				  gaiaGetPointXYZ (line->Coords, iv, &x, &y,
+						   &z);
+			      }
+			    else if (line->DimensionModel == GAIA_XY_M)
+			      {
+				  gaiaGetPointXYM (line->Coords, iv, &x, &y,
+						   &m);
+			      }
+			    else if (line->DimensionModel == GAIA_XY_Z_M)
+			      {
+				  gaiaGetPointXYZM (line->Coords, iv, &x, &y,
+						    &z, &m);
+			      }
+			    else
+			      {
+				  gaiaGetPoint (line->Coords, iv, &x, &y);
+			      }
+			    gaiaExport64 (shp->BufShp + ix, m,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    ix += 8;
+			}
+		      line = line->Next;
+		  }
+		fwrite (shp->BufShp, 1, ix, shp->flShp);
+		(shp->ShpSize) += (ix / 2);	/* updating current SHP file position [in 16 bits words !!!] */
+	    }
+	  if (shp->Shape == GAIA_SHP_POLYGON)
 	    {
 		/* this one is expected to be a POLYGON or a MULTIPOLYGON */
 		gaiaPolygonPtr polyg;
@@ -1560,7 +2856,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		/* inserting POLYGON or MULTIPOLYGON in SHP file */
 		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
-		gaiaExport32 (shp->BufShp + 8, 5, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POLYGON */
+		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POLYGON, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POLYGON */
 		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
 		gaiaExport64 (shp->BufShp + 20, entity->Geometry->MinY,
 			      GAIA_LITTLE_ENDIAN, endian_arch);
@@ -1600,7 +2896,25 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		      for (iv = 0; iv < ring->Points; iv++)
 			{
 			    /* exports a POINT [x,y] - exterior ring */
-			    gaiaGetPoint (ring->Coords, iv, &x, &y);
+			    if (ring->DimensionModel == GAIA_XY_Z)
+			      {
+				  gaiaGetPointXYZ (ring->Coords, iv, &x, &y,
+						   &z);
+			      }
+			    else if (ring->DimensionModel == GAIA_XY_M)
+			      {
+				  gaiaGetPointXYM (ring->Coords, iv, &x, &y,
+						   &m);
+			      }
+			    else if (ring->DimensionModel == GAIA_XY_Z_M)
+			      {
+				  gaiaGetPointXYZM (ring->Coords, iv, &x, &y,
+						    &z, &m);
+			      }
+			    else
+			      {
+				  gaiaGetPoint (ring->Coords, iv, &x, &y);
+			      }
 			    gaiaExport64 (shp->BufShp + ix, x,
 					  GAIA_LITTLE_ENDIAN, endian_arch);
 			    ix += 8;
@@ -1615,7 +2929,25 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 			    for (iv = 0; iv < ring->Points; iv++)
 			      {
 				  /* exports a POINT [x,y] - interior ring */
-				  gaiaGetPoint (ring->Coords, iv, &x, &y);
+				  if (ring->DimensionModel == GAIA_XY_Z)
+				    {
+					gaiaGetPointXYZ (ring->Coords, iv, &x,
+							 &y, &z);
+				    }
+				  else if (ring->DimensionModel == GAIA_XY_M)
+				    {
+					gaiaGetPointXYM (ring->Coords, iv, &x,
+							 &y, &m);
+				    }
+				  else if (ring->DimensionModel == GAIA_XY_Z_M)
+				    {
+					gaiaGetPointXYZM (ring->Coords, iv, &x,
+							  &y, &z, &m);
+				    }
+				  else
+				    {
+					gaiaGetPoint (ring->Coords, iv, &x, &y);
+				    }
 				  gaiaExport64 (shp->BufShp + ix, x,
 						GAIA_LITTLE_ENDIAN,
 						endian_arch);
@@ -1631,7 +2963,565 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		fwrite (shp->BufShp, 1, ix, shp->flShp);
 		(shp->ShpSize) += (ix / 2);
 	    }
-	  if (shp->Shape == 8)
+	  if (shp->Shape == GAIA_SHP_POLYGONZ)
+	    {
+		/* this one is expected to be a POLYGON or a MULTIPOLYGON Z */
+		gaiaPolygonPtr polyg;
+		gaiaRingPtr ring;
+		int ib;
+		gaiaZRangeGeometry (entity->Geometry, &minZ, &maxZ);
+		gaiaMRangeGeometry (entity->Geometry, &minM, &maxM);
+		tot_ln = 0;
+		tot_v = 0;
+		polyg = entity->Geometry->FirstPolygon;
+		while (polyg)
+		  {
+		      /* computes # rings and total # points */
+		      gaiaSaneClockwise (polyg);	/* we must assure that exterior ring is clockwise, and interior rings are anti-clockwise */
+		      ring = polyg->Exterior;	/* this one is the exterior ring */
+		      tot_v += ring->Points;
+		      tot_ln++;
+		      for (ib = 0; ib < polyg->NumInteriors; ib++)
+			{
+			    /* that ones are the interior rings */
+			    ring = polyg->Interiors + ib;
+			    tot_v += ring->Points;
+			    tot_ln++;
+			}
+		      polyg = polyg->Next;
+		  }
+		if (!tot_ln)
+		  {
+		      strcpy (dummy,
+			      "a POLYGON is expected, but there is no POLYGON in geometry");
+		      if (shp->LastError)
+			  free (shp->LastError);
+		      len = strlen (dummy);
+		      shp->LastError = malloc (len + 1);
+		      strcpy (shp->LastError, dummy);
+		      return 0;
+		  }
+		hasM = 0;
+		if (ring->DimensionModel == GAIA_XY_M
+		    || ring->DimensionModel == GAIA_XY_Z_M)
+		    hasM = 1;
+		if (hasM)
+		    this_size = 38 + (2 * tot_ln) + (tot_v * 16);	/* size [in 16 bits words !!!] ZM */
+		else
+		    this_size = 30 + (2 * tot_ln) + (tot_v * 12);	/* size [in 16 bits words !!!] Z-only */
+		if ((this_size * 2) + 1024 > shp->ShpBfsz)
+		  {
+		      /* current buffer is too small; we need to allocate a bigger one */
+		      free (shp->BufShp);
+		      shp->ShpBfsz = (this_size * 2) + 1024;
+		      shp->BufShp = malloc (shp->ShpBfsz);
+		  }
+		/* inserting POLYGON or MULTIPOLYGON in SHX file */
+		gaiaExport32 (shp->BufShp, shp->ShpSize, GAIA_BIG_ENDIAN, endian_arch);	/* exports current SHP file position */
+		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entitiy size [in 16 bits words !!!] */
+		fwrite (shp->BufShp, 1, 8, shp->flShx);
+		(shp->ShxSize) += 4;
+		/* inserting POLYGON or MULTIPOLYGON in SHP file */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
+		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POLYGONZ, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POLYGON Z */
+		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
+		gaiaExport64 (shp->BufShp + 20, entity->Geometry->MinY,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport64 (shp->BufShp + 28, entity->Geometry->MaxX,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport64 (shp->BufShp + 36, entity->Geometry->MaxY,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport32 (shp->BufShp + 44, tot_ln, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports # rings in this polygon */
+		gaiaExport32 (shp->BufShp + 48, tot_v, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports total # points */
+		tot_v = 0;	/* resets points counter */
+		ix = 52;	/* sets current buffer offset */
+		polyg = entity->Geometry->FirstPolygon;
+		while (polyg)
+		  {
+		      /* exports start point index for each line */
+		      ring = polyg->Exterior;	/* this one is the exterior ring */
+		      gaiaExport32 (shp->BufShp + ix, tot_v, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      tot_v += ring->Points;
+		      ix += 4;
+		      for (ib = 0; ib < polyg->NumInteriors; ib++)
+			{
+			    /* that ones are the interior rings */
+			    ring = polyg->Interiors + ib;
+			    gaiaExport32 (shp->BufShp + ix, tot_v,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    tot_v += ring->Points;
+			    ix += 4;
+			}
+		      polyg = polyg->Next;
+		  }
+		polyg = entity->Geometry->FirstPolygon;
+		while (polyg)
+		  {
+		      /* exports points for each ring */
+		      ring = polyg->Exterior;	/* this one is the exterior ring */
+		      for (iv = 0; iv < ring->Points; iv++)
+			{
+			    /* exports a POINT [x,y] - exterior ring */
+			    if (ring->DimensionModel == GAIA_XY_Z)
+			      {
+				  gaiaGetPointXYZ (ring->Coords, iv, &x, &y,
+						   &z);
+			      }
+			    else if (ring->DimensionModel == GAIA_XY_M)
+			      {
+				  gaiaGetPointXYM (ring->Coords, iv, &x, &y,
+						   &m);
+			      }
+			    else if (ring->DimensionModel == GAIA_XY_Z_M)
+			      {
+				  gaiaGetPointXYZM (ring->Coords, iv, &x, &y,
+						    &z, &m);
+			      }
+			    else
+			      {
+				  gaiaGetPoint (ring->Coords, iv, &x, &y);
+			      }
+			    gaiaExport64 (shp->BufShp + ix, x,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    ix += 8;
+			    gaiaExport64 (shp->BufShp + ix, y,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    ix += 8;
+			}
+		      for (ib = 0; ib < polyg->NumInteriors; ib++)
+			{
+			    /* that ones are the interior rings */
+			    ring = polyg->Interiors + ib;
+			    for (iv = 0; iv < ring->Points; iv++)
+			      {
+				  /* exports a POINT [x,y] - interior ring */
+				  if (ring->DimensionModel == GAIA_XY_Z)
+				    {
+					gaiaGetPointXYZ (ring->Coords, iv, &x,
+							 &y, &z);
+				    }
+				  else if (ring->DimensionModel == GAIA_XY_M)
+				    {
+					gaiaGetPointXYM (ring->Coords, iv, &x,
+							 &y, &m);
+				    }
+				  else if (ring->DimensionModel == GAIA_XY_Z_M)
+				    {
+					gaiaGetPointXYZM (ring->Coords, iv, &x,
+							  &y, &z, &m);
+				    }
+				  else
+				    {
+					gaiaGetPoint (ring->Coords, iv, &x, &y);
+				    }
+				  gaiaExport64 (shp->BufShp + ix, x,
+						GAIA_LITTLE_ENDIAN,
+						endian_arch);
+				  ix += 8;
+				  gaiaExport64 (shp->BufShp + ix, y,
+						GAIA_LITTLE_ENDIAN,
+						endian_arch);
+				  ix += 8;
+			      }
+			}
+		      polyg = polyg->Next;
+		  }
+		/* exporting the Z-range [min/max] */
+		gaiaExport64 (shp->BufShp + ix, minZ, GAIA_LITTLE_ENDIAN,
+			      endian_arch);
+		ix += 8;
+		gaiaExport64 (shp->BufShp + ix, maxZ, GAIA_LITTLE_ENDIAN,
+			      endian_arch);
+		ix += 8;
+		polyg = entity->Geometry->FirstPolygon;
+		while (polyg)
+		  {
+		      /* exports Z-values for each ring */
+		      ring = polyg->Exterior;	/* this one is the exterior ring */
+		      for (iv = 0; iv < ring->Points; iv++)
+			{
+			    /* exports Z-values - exterior ring */
+			    z = 0.0;
+			    if (ring->DimensionModel == GAIA_XY_Z)
+			      {
+				  gaiaGetPointXYZ (ring->Coords, iv, &x, &y,
+						   &z);
+			      }
+			    else if (ring->DimensionModel == GAIA_XY_M)
+			      {
+				  gaiaGetPointXYM (ring->Coords, iv, &x, &y,
+						   &m);
+			      }
+			    else if (ring->DimensionModel == GAIA_XY_Z_M)
+			      {
+				  gaiaGetPointXYZM (ring->Coords, iv, &x, &y,
+						    &z, &m);
+			      }
+			    else
+			      {
+				  gaiaGetPoint (ring->Coords, iv, &x, &y);
+			      }
+			    gaiaExport64 (shp->BufShp + ix, z,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    ix += 8;
+			}
+		      for (ib = 0; ib < polyg->NumInteriors; ib++)
+			{
+			    /* that ones are the interior rings */
+			    ring = polyg->Interiors + ib;
+			    for (iv = 0; iv < ring->Points; iv++)
+			      {
+				  /* exports Z-values - interior ring */
+				  z = 0.0;
+				  if (ring->DimensionModel == GAIA_XY_Z)
+				    {
+					gaiaGetPointXYZ (ring->Coords, iv, &x,
+							 &y, &z);
+				    }
+				  else if (ring->DimensionModel == GAIA_XY_M)
+				    {
+					gaiaGetPointXYM (ring->Coords, iv, &x,
+							 &y, &m);
+				    }
+				  else if (ring->DimensionModel == GAIA_XY_Z_M)
+				    {
+					gaiaGetPointXYZM (ring->Coords, iv, &x,
+							  &y, &z, &m);
+				    }
+				  else
+				    {
+					gaiaGetPoint (ring->Coords, iv, &x, &y);
+				    }
+				  gaiaExport64 (shp->BufShp + ix, z,
+						GAIA_LITTLE_ENDIAN,
+						endian_arch);
+				  ix += 8;
+			      }
+			}
+		      polyg = polyg->Next;
+		  }
+		if (hasM)
+		  {
+		      /* exporting the M-range [min/max] */
+		      gaiaExport64 (shp->BufShp + ix, minM, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      ix += 8;
+		      gaiaExport64 (shp->BufShp + ix, maxM, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      ix += 8;
+		      polyg = entity->Geometry->FirstPolygon;
+		      while (polyg)
+			{
+			    /* exports M-values for each ring */
+			    ring = polyg->Exterior;	/* this one is the exterior ring */
+			    for (iv = 0; iv < ring->Points; iv++)
+			      {
+				  /* exports M-values - exterior ring */
+				  m = 0.0;
+				  if (ring->DimensionModel == GAIA_XY_Z)
+				    {
+					gaiaGetPointXYZ (ring->Coords, iv, &x,
+							 &y, &z);
+				    }
+				  else if (ring->DimensionModel == GAIA_XY_M)
+				    {
+					gaiaGetPointXYM (ring->Coords, iv, &x,
+							 &y, &m);
+				    }
+				  else if (ring->DimensionModel == GAIA_XY_Z_M)
+				    {
+					gaiaGetPointXYZM (ring->Coords, iv, &x,
+							  &y, &z, &m);
+				    }
+				  else
+				    {
+					gaiaGetPoint (ring->Coords, iv, &x, &y);
+				    }
+				  gaiaExport64 (shp->BufShp + ix, m,
+						GAIA_LITTLE_ENDIAN,
+						endian_arch);
+				  ix += 8;
+			      }
+			    for (ib = 0; ib < polyg->NumInteriors; ib++)
+			      {
+				  /* that ones are the interior rings */
+				  ring = polyg->Interiors + ib;
+				  for (iv = 0; iv < ring->Points; iv++)
+				    {
+					/* exports M-values - interior ring */
+					m = 0.0;
+					if (ring->DimensionModel == GAIA_XY_Z)
+					  {
+					      gaiaGetPointXYZ (ring->Coords, iv,
+							       &x, &y, &z);
+					  }
+					else if (ring->DimensionModel ==
+						 GAIA_XY_M)
+					  {
+					      gaiaGetPointXYM (ring->Coords, iv,
+							       &x, &y, &m);
+					  }
+					else if (ring->DimensionModel ==
+						 GAIA_XY_Z_M)
+					  {
+					      gaiaGetPointXYZM (ring->Coords,
+								iv, &x, &y, &z,
+								&m);
+					  }
+					else
+					  {
+					      gaiaGetPoint (ring->Coords, iv,
+							    &x, &y);
+					  }
+					gaiaExport64 (shp->BufShp + ix, m,
+						      GAIA_LITTLE_ENDIAN,
+						      endian_arch);
+					ix += 8;
+				    }
+			      }
+			    polyg = polyg->Next;
+			}
+		  }
+		fwrite (shp->BufShp, 1, ix, shp->flShp);
+		(shp->ShpSize) += (ix / 2);
+	    }
+	  if (shp->Shape == GAIA_SHP_POLYGONM)
+	    {
+		/* this one is expected to be a POLYGON or a MULTIPOLYGON M */
+		gaiaPolygonPtr polyg;
+		gaiaRingPtr ring;
+		int ib;
+		gaiaMRangeGeometry (entity->Geometry, &minM, &maxM);
+		tot_ln = 0;
+		tot_v = 0;
+		polyg = entity->Geometry->FirstPolygon;
+		while (polyg)
+		  {
+		      /* computes # rings and total # points */
+		      gaiaSaneClockwise (polyg);	/* we must assure that exterior ring is clockwise, and interior rings are anti-clockwise */
+		      ring = polyg->Exterior;	/* this one is the exterior ring */
+		      tot_v += ring->Points;
+		      tot_ln++;
+		      for (ib = 0; ib < polyg->NumInteriors; ib++)
+			{
+			    /* that ones are the interior rings */
+			    ring = polyg->Interiors + ib;
+			    tot_v += ring->Points;
+			    tot_ln++;
+			}
+		      polyg = polyg->Next;
+		  }
+		if (!tot_ln)
+		  {
+		      strcpy (dummy,
+			      "a POLYGON is expected, but there is no POLYGON in geometry");
+		      if (shp->LastError)
+			  free (shp->LastError);
+		      len = strlen (dummy);
+		      shp->LastError = malloc (len + 1);
+		      strcpy (shp->LastError, dummy);
+		      return 0;
+		  }
+		this_size = 30 + (2 * tot_ln) + (tot_v * 12);	/* size [in 16 bits words !!!] for this SHP entity */
+		if ((this_size * 2) + 1024 > shp->ShpBfsz)
+		  {
+		      /* current buffer is too small; we need to allocate a bigger one */
+		      free (shp->BufShp);
+		      shp->ShpBfsz = (this_size * 2) + 1024;
+		      shp->BufShp = malloc (shp->ShpBfsz);
+		  }
+		/* inserting POLYGON or MULTIPOLYGON in SHX file */
+		gaiaExport32 (shp->BufShp, shp->ShpSize, GAIA_BIG_ENDIAN, endian_arch);	/* exports current SHP file position */
+		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entitiy size [in 16 bits words !!!] */
+		fwrite (shp->BufShp, 1, 8, shp->flShx);
+		(shp->ShxSize) += 4;
+		/* inserting POLYGON or MULTIPOLYGON in SHP file */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
+		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POLYGONM, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POLYGON M */
+		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
+		gaiaExport64 (shp->BufShp + 20, entity->Geometry->MinY,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport64 (shp->BufShp + 28, entity->Geometry->MaxX,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport64 (shp->BufShp + 36, entity->Geometry->MaxY,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport32 (shp->BufShp + 44, tot_ln, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports # rings in this polygon */
+		gaiaExport32 (shp->BufShp + 48, tot_v, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports total # points */
+		tot_v = 0;	/* resets points counter */
+		ix = 52;	/* sets current buffer offset */
+		polyg = entity->Geometry->FirstPolygon;
+		while (polyg)
+		  {
+		      /* exports start point index for each line */
+		      ring = polyg->Exterior;	/* this one is the exterior ring */
+		      gaiaExport32 (shp->BufShp + ix, tot_v, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      tot_v += ring->Points;
+		      ix += 4;
+		      for (ib = 0; ib < polyg->NumInteriors; ib++)
+			{
+			    /* that ones are the interior rings */
+			    ring = polyg->Interiors + ib;
+			    gaiaExport32 (shp->BufShp + ix, tot_v,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    tot_v += ring->Points;
+			    ix += 4;
+			}
+		      polyg = polyg->Next;
+		  }
+		polyg = entity->Geometry->FirstPolygon;
+		while (polyg)
+		  {
+		      /* exports points for each ring */
+		      ring = polyg->Exterior;	/* this one is the exterior ring */
+		      for (iv = 0; iv < ring->Points; iv++)
+			{
+			    /* exports a POINT [x,y] - exterior ring */
+			    if (ring->DimensionModel == GAIA_XY_Z)
+			      {
+				  gaiaGetPointXYZ (ring->Coords, iv, &x, &y,
+						   &z);
+			      }
+			    else if (ring->DimensionModel == GAIA_XY_M)
+			      {
+				  gaiaGetPointXYM (ring->Coords, iv, &x, &y,
+						   &m);
+			      }
+			    else if (ring->DimensionModel == GAIA_XY_Z_M)
+			      {
+				  gaiaGetPointXYZM (ring->Coords, iv, &x, &y,
+						    &z, &m);
+			      }
+			    else
+			      {
+				  gaiaGetPoint (ring->Coords, iv, &x, &y);
+			      }
+			    gaiaExport64 (shp->BufShp + ix, x,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    ix += 8;
+			    gaiaExport64 (shp->BufShp + ix, y,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    ix += 8;
+			}
+		      for (ib = 0; ib < polyg->NumInteriors; ib++)
+			{
+			    /* that ones are the interior rings */
+			    ring = polyg->Interiors + ib;
+			    for (iv = 0; iv < ring->Points; iv++)
+			      {
+				  /* exports a POINT [x,y] - interior ring */
+				  if (ring->DimensionModel == GAIA_XY_Z)
+				    {
+					gaiaGetPointXYZ (ring->Coords, iv, &x,
+							 &y, &z);
+				    }
+				  else if (ring->DimensionModel == GAIA_XY_M)
+				    {
+					gaiaGetPointXYM (ring->Coords, iv, &x,
+							 &y, &m);
+				    }
+				  else if (ring->DimensionModel == GAIA_XY_Z_M)
+				    {
+					gaiaGetPointXYZM (ring->Coords, iv, &x,
+							  &y, &z, &m);
+				    }
+				  else
+				    {
+					gaiaGetPoint (ring->Coords, iv, &x, &y);
+				    }
+				  gaiaExport64 (shp->BufShp + ix, x,
+						GAIA_LITTLE_ENDIAN,
+						endian_arch);
+				  ix += 8;
+				  gaiaExport64 (shp->BufShp + ix, y,
+						GAIA_LITTLE_ENDIAN,
+						endian_arch);
+				  ix += 8;
+			      }
+			}
+		      polyg = polyg->Next;
+		  }
+		/* exporting the M-range [min/max] */
+		gaiaExport64 (shp->BufShp + ix, minM, GAIA_LITTLE_ENDIAN,
+			      endian_arch);
+		ix += 8;
+		gaiaExport64 (shp->BufShp + ix, maxM, GAIA_LITTLE_ENDIAN,
+			      endian_arch);
+		ix += 8;
+		polyg = entity->Geometry->FirstPolygon;
+		while (polyg)
+		  {
+		      /* exports M-values for each ring */
+		      ring = polyg->Exterior;	/* this one is the exterior ring */
+		      for (iv = 0; iv < ring->Points; iv++)
+			{
+			    /* exports M-values - exterior ring */
+			    m = 0.0;
+			    if (ring->DimensionModel == GAIA_XY_Z)
+			      {
+				  gaiaGetPointXYZ (ring->Coords, iv, &x, &y,
+						   &z);
+			      }
+			    else if (ring->DimensionModel == GAIA_XY_M)
+			      {
+				  gaiaGetPointXYM (ring->Coords, iv, &x, &y,
+						   &m);
+			      }
+			    else if (ring->DimensionModel == GAIA_XY_Z_M)
+			      {
+				  gaiaGetPointXYZM (ring->Coords, iv, &x, &y,
+						    &z, &m);
+			      }
+			    else
+			      {
+				  gaiaGetPoint (ring->Coords, iv, &x, &y);
+			      }
+			    gaiaExport64 (shp->BufShp + ix, m,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    ix += 8;
+			}
+		      for (ib = 0; ib < polyg->NumInteriors; ib++)
+			{
+			    /* that ones are the interior rings */
+			    ring = polyg->Interiors + ib;
+			    for (iv = 0; iv < ring->Points; iv++)
+			      {
+				  /* exports M-values - interior ring */
+				  m = 0.0;
+				  if (ring->DimensionModel == GAIA_XY_Z)
+				    {
+					gaiaGetPointXYZ (ring->Coords, iv, &x,
+							 &y, &z);
+				    }
+				  else if (ring->DimensionModel == GAIA_XY_M)
+				    {
+					gaiaGetPointXYM (ring->Coords, iv, &x,
+							 &y, &m);
+				    }
+				  else if (ring->DimensionModel == GAIA_XY_Z_M)
+				    {
+					gaiaGetPointXYZM (ring->Coords, iv, &x,
+							  &y, &z, &m);
+				    }
+				  else
+				    {
+					gaiaGetPoint (ring->Coords, iv, &x, &y);
+				    }
+				  gaiaExport64 (shp->BufShp + ix, m,
+						GAIA_LITTLE_ENDIAN,
+						endian_arch);
+				  ix += 8;
+			      }
+			}
+		      polyg = polyg->Next;
+		  }
+		fwrite (shp->BufShp, 1, ix, shp->flShp);
+		(shp->ShpSize) += (ix / 2);
+	    }
+	  if (shp->Shape == GAIA_SHP_MULTIPOINT)
 	    {
 		/* this one is expected to be a MULTIPOINT */
 		gaiaPointPtr pt;
@@ -1670,7 +3560,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		/* inserting MULTIPOINT in SHP file */
 		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
-		gaiaExport32 (shp->BufShp + 8, 8, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = MULTIPOINT */
+		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_MULTIPOINT, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = MULTIPOINT */
 		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
 		gaiaExport64 (shp->BufShp + 20, entity->Geometry->MinY,
 			      GAIA_LITTLE_ENDIAN, endian_arch);
@@ -1693,7 +3583,196 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		      pt = pt->Next;
 		  }
 		fwrite (shp->BufShp, 1, ix, shp->flShp);
-		(shp->ShpSize) += (ix / 2);	/* updating current SHP file poisition [in 16 bits words !!!] */
+		(shp->ShpSize) += (ix / 2);	/* updating current SHP file position [in 16 bits words !!!] */
+	    }
+	  if (shp->Shape == GAIA_SHP_MULTIPOINTZ)
+	    {
+		/* this one is expected to be a MULTIPOINT Z */
+		gaiaPointPtr pt;
+		gaiaZRangeGeometry (entity->Geometry, &minZ, &maxZ);
+		gaiaMRangeGeometry (entity->Geometry, &minM, &maxM);
+		tot_pts = 0;
+		pt = entity->Geometry->FirstPoint;
+		while (pt)
+		  {
+		      /* computes # points */
+		      tot_pts++;
+		      pt = pt->Next;
+		  }
+		if (!tot_pts)
+		  {
+		      strcpy (dummy,
+			      "a MULTIPOINT is expected, but there is no POINT/MULTIPOINT in geometry");
+		      if (shp->LastError)
+			  free (shp->LastError);
+		      len = strlen (dummy);
+		      shp->LastError = malloc (len + 1);
+		      strcpy (shp->LastError, dummy);
+		      return 0;
+		  }
+		hasM = 0;
+		if (entity->Geometry->DimensionModel == GAIA_XY_M
+		    || entity->Geometry->DimensionModel == GAIA_XY_Z_M)
+		    hasM = 1;
+		if (hasM)
+		    this_size = 36 + (tot_pts * 16);	/* size [in 16 bits words !!!] ZM */
+		else
+		    this_size = 28 + (tot_pts * 12);	/* size [in 16 bits words !!!] Z-only */
+		if ((this_size * 2) + 1024 > shp->ShpBfsz)
+		  {
+		      /* current buffer is too small; we need to allocate a bigger one */
+		      free (shp->BufShp);
+		      shp->ShpBfsz = (this_size * 2) + 1024;
+		      shp->BufShp = malloc (shp->ShpBfsz);
+		  }
+		/* inserting MULTIPOINT in SHX file */
+		gaiaExport32 (shp->BufShp, shp->ShpSize, GAIA_BIG_ENDIAN, endian_arch);	/* exports current SHP file position */
+		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entitiy size [in 16 bits words !!!] */
+		fwrite (shp->BufShp, 1, 8, shp->flShx);
+		(shp->ShxSize) += 4;
+		/* inserting MULTIPOINT in SHP file */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
+		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_MULTIPOINTZ, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = MULTIPOINT Z */
+		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
+		gaiaExport64 (shp->BufShp + 20, entity->Geometry->MinY,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport64 (shp->BufShp + 28, entity->Geometry->MaxX,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport64 (shp->BufShp + 36, entity->Geometry->MaxY,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport32 (shp->BufShp + 44, tot_pts, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports total # points */
+		ix = 48;	/* sets current buffer offset */
+		pt = entity->Geometry->FirstPoint;
+		while (pt)
+		  {
+		      /* exports each point */
+		      gaiaExport64 (shp->BufShp + ix, pt->X, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      ix += 8;
+		      gaiaExport64 (shp->BufShp + ix, pt->Y, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      ix += 8;
+		      pt = pt->Next;
+		  }
+		/* exporting the Z-range [min/max] */
+		gaiaExport64 (shp->BufShp + ix, minZ, GAIA_LITTLE_ENDIAN,
+			      endian_arch);
+		ix += 8;
+		gaiaExport64 (shp->BufShp + ix, maxZ, GAIA_LITTLE_ENDIAN,
+			      endian_arch);
+		ix += 8;
+		pt = entity->Geometry->FirstPoint;
+		while (pt)
+		  {
+		      /* exports Z-values */
+		      gaiaExport64 (shp->BufShp + ix, pt->Z, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      ix += 8;
+		      pt = pt->Next;
+		  }
+		if (hasM)
+		  {
+		      /* exporting the M-range [min/max] */
+		      gaiaExport64 (shp->BufShp + ix, minM, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      ix += 8;
+		      gaiaExport64 (shp->BufShp + ix, maxM, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      ix += 8;
+		      pt = entity->Geometry->FirstPoint;
+		      while (pt)
+			{
+			    /* exports M-values */
+			    gaiaExport64 (shp->BufShp + ix, pt->M,
+					  GAIA_LITTLE_ENDIAN, endian_arch);
+			    ix += 8;
+			    pt = pt->Next;
+			}
+		  }
+		fwrite (shp->BufShp, 1, ix, shp->flShp);
+		(shp->ShpSize) += (ix / 2);	/* updating current SHP file position [in 16 bits words !!!] */
+	    }
+	  if (shp->Shape == GAIA_SHP_MULTIPOINTM)
+	    {
+		/* this one is expected to be a MULTIPOINT M */
+		gaiaPointPtr pt;
+		gaiaMRangeGeometry (entity->Geometry, &minM, &maxM);
+		tot_pts = 0;
+		pt = entity->Geometry->FirstPoint;
+		while (pt)
+		  {
+		      /* computes # points */
+		      tot_pts++;
+		      pt = pt->Next;
+		  }
+		if (!tot_pts)
+		  {
+		      strcpy (dummy,
+			      "a MULTIPOINT is expected, but there is no POINT/MULTIPOINT in geometry");
+		      if (shp->LastError)
+			  free (shp->LastError);
+		      len = strlen (dummy);
+		      shp->LastError = malloc (len + 1);
+		      strcpy (shp->LastError, dummy);
+		      return 0;
+		  }
+		this_size = 28 + (tot_pts * 12);	/* size [in 16 bits words !!!] for this SHP entity */
+		if ((this_size * 2) + 1024 > shp->ShpBfsz)
+		  {
+		      /* current buffer is too small; we need to allocate a bigger one */
+		      free (shp->BufShp);
+		      shp->ShpBfsz = (this_size * 2) + 1024;
+		      shp->BufShp = malloc (shp->ShpBfsz);
+		  }
+		/* inserting MULTIPOINT in SHX file */
+		gaiaExport32 (shp->BufShp, shp->ShpSize, GAIA_BIG_ENDIAN, endian_arch);	/* exports current SHP file position */
+		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entitiy size [in 16 bits words !!!] */
+		fwrite (shp->BufShp, 1, 8, shp->flShx);
+		(shp->ShxSize) += 4;
+		/* inserting MULTIPOINT in SHP file */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
+		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_MULTIPOINTM, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = MULTIPOINT M */
+		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
+		gaiaExport64 (shp->BufShp + 20, entity->Geometry->MinY,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport64 (shp->BufShp + 28, entity->Geometry->MaxX,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport64 (shp->BufShp + 36, entity->Geometry->MaxY,
+			      GAIA_LITTLE_ENDIAN, endian_arch);
+		gaiaExport32 (shp->BufShp + 44, tot_pts, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports total # points */
+		ix = 48;	/* sets current buffer offset */
+		pt = entity->Geometry->FirstPoint;
+		while (pt)
+		  {
+		      /* exports each point */
+		      gaiaExport64 (shp->BufShp + ix, pt->X, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      ix += 8;
+		      gaiaExport64 (shp->BufShp + ix, pt->Y, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      ix += 8;
+		      pt = pt->Next;
+		  }
+		/* exporting the M-range [min/max] */
+		gaiaExport64 (shp->BufShp + ix, minM, GAIA_LITTLE_ENDIAN,
+			      endian_arch);
+		ix += 8;
+		gaiaExport64 (shp->BufShp + ix, maxM, GAIA_LITTLE_ENDIAN,
+			      endian_arch);
+		ix += 8;
+		pt = entity->Geometry->FirstPoint;
+		while (pt)
+		  {
+		      /* exports M-values */
+		      gaiaExport64 (shp->BufShp + ix, pt->M, GAIA_LITTLE_ENDIAN,
+				    endian_arch);
+		      ix += 8;
+		      pt = pt->Next;
+		  }
+		fwrite (shp->BufShp, 1, ix, shp->flShp);
+		(shp->ShpSize) += (ix / 2);	/* updating current SHP file position [in 16 bits words !!!] */
 	    }
       }
 /* inserting entity in DBF file */
@@ -1807,7 +3886,10 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
     double x;
     double y;
     int polygons;
+    int ZM_size;
+    int Z_size;
     int multi = 0;
+    int hasM = 0;
     int current_row = 0;
     gaiaRingPtr ring = NULL;
     while (1)
@@ -1838,7 +3920,8 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 		shp->ShpBfsz = sz * 2;
 		shp->BufShp = malloc (sizeof (unsigned char) * shp->ShpBfsz);
 	    }
-	  if (shape == 3 || shape == 13 || shape == 23)
+	  if (shape == GAIA_SHP_POLYLINE || shape == GAIA_SHP_POLYLINEZ
+	      || shape == GAIA_SHP_POLYLINEM)
 	    {
 		/* shape polyline */
 		rd = fread (shp->BufShp, sizeof (unsigned char), 32,
@@ -1851,10 +3934,20 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 		    goto exit;
 		n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN,
 				  shp->endian_arch);
+		n1 = gaiaImport32 (shp->BufShp + 4, GAIA_LITTLE_ENDIAN,
+				   shp->endian_arch);
 		if (n > 1)
 		    multi++;
+		if (shape == GAIA_SHP_POLYLINEZ)
+		  {
+		      ZM_size = 38 + (2 * n) + (n1 * 16);	/* size [in 16 bits words !!!] ZM */
+		      Z_size = 30 + (2 * n) + (n1 * 12);	/* size [in 16 bits words !!!] Z-only */
+		      if (sz == ZM_size)
+			  hasM = 1;
+		  }
 	    }
-	  if (shape == 5 || shape == 15 || shape == 25)
+	  if (shape == GAIA_SHP_POLYGON || shape == GAIA_SHP_POLYGONZ
+	      || shape == GAIA_SHP_POLYGONM)
 	    {
 		/* shape polygon */
 		polygons = 0;
@@ -1915,6 +4008,31 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 		  }
 		if (polygons > 1)
 		    multi++;
+		if (shape == GAIA_SHP_POLYGONZ)
+		  {
+		      ZM_size = 38 + (2 * n) + (n1 * 16);	/* size [in 16 bits words !!!] ZM */
+		      Z_size = 30 + (2 * n) + (n1 * 12);	/* size [in 16 bits words !!!] Z-only */
+		      if (sz == ZM_size)
+			  hasM = 1;
+		  }
+	    }
+	  if (shape == GAIA_SHP_MULTIPOINTZ)
+	    {
+		/* shape multipoint Z */
+		rd = fread (shp->BufShp, sizeof (unsigned char), 32,
+			    shp->flShp);
+		if (rd != 32)
+		    goto exit;
+		rd = fread (shp->BufShp, sizeof (unsigned char), (sz * 2) - 36,
+			    shp->flShp);
+		if (rd != (sz * 2) - 36)
+		    goto exit;
+		n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN,
+				  shp->endian_arch);
+		ZM_size = 38 + (n * 16);	/* size [in 16 bits words !!!] ZM */
+		Z_size = 30 + (n * 12);	/* size [in 16 bits words !!!] Z-only */
+		if (sz == ZM_size)
+		    hasM = 1;
 	    }
 	  current_row++;
       }
@@ -1925,7 +4043,8 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 	free (shp->LastError);
     shp->LastError = NULL;
 /* setting the EffectiveType, as determined by this analysis */
-    if (shp->Shape == 3 || shp->Shape == 13 || shp->Shape == 23)
+    if (shp->Shape == GAIA_SHP_POLYLINE || shp->Shape == GAIA_SHP_POLYLINEZ
+	|| shp->Shape == GAIA_SHP_POLYLINEM)
       {
 	  /* SHAPE polyline */
 	  if (multi)
@@ -1933,12 +4052,21 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 	  else
 	      shp->EffectiveType = GAIA_LINESTRING;
       }
-    if (shp->Shape == 5 || shp->Shape == 15 || shp->Shape == 25)
+    if (shp->Shape == GAIA_SHP_POLYGON || shp->Shape == GAIA_SHP_POLYGONZ
+	|| shp->Shape == GAIA_SHP_POLYGONM)
       {
 	  /* SHAPE polygon */
 	  if (multi)
 	      shp->EffectiveType = GAIA_MULTIPOLYGON;
 	  else
 	      shp->EffectiveType = GAIA_POLYGON;
+      }
+    if (shp->Shape == GAIA_SHP_POLYLINEZ || shp->Shape == GAIA_SHP_POLYGONZ
+	|| shp->Shape == GAIA_SHP_MULTIPOINTZ)
+      {
+	  if (hasM)
+	      shp->EffectiveDims = GAIA_XY_Z_M;
+	  else
+	      shp->EffectiveDims = GAIA_XY_Z;
       }
 }
