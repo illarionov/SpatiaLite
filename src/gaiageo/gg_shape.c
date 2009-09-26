@@ -392,11 +392,21 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
     int dbf_recno;
     int off_dbf;
     int ind;
-    char field_name[16];
+    char field_name[2048];
     char *sys_err;
     char errMsg[1024];
-    int len;
     iconv_t iconv_ret;
+    char utf8buf[2048];
+#ifdef __MINGW32__
+    const char *pBuf;
+    int len;
+    int utf8len;
+#else /* not MINGW32 */
+    char *pBuf;
+    size_t len;
+    size_t utf8len;
+#endif
+    char *pUtf8buf;
     int endian_arch = gaiaEndianArch ();
     gaiaDbfListPtr dbf_list = NULL;
     if (charFrom && charTo)
@@ -493,6 +503,16 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
 	      goto error;
 	  memcpy (field_name, bf, 11);
 	  field_name[11] = '\0';
+	  len = strlen ((char *) field_name);
+	  utf8len = 2048;
+	  pBuf = (char *) field_name;
+	  pUtf8buf = utf8buf;
+	  if (iconv
+	      ((iconv_t) (shp->IconvObj), &pBuf, &len, &pUtf8buf,
+	       &utf8len) == (size_t) (-1))
+	      goto conversion_error;
+	  memcpy (field_name, utf8buf, 2048 - utf8len);
+	  field_name[2048 - utf8len] = '\0';
 	  gaiaAddDbfField (dbf_list, field_name, *(bf + 11), off_dbf,
 			   *(bf + 16), *(bf + 17));
 	  off_dbf += *(bf + 16);
@@ -633,6 +653,22 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
     if (fl_dbf)
 	fclose (fl_dbf);
     return;
+  conversion_error:
+/* libiconv error */
+    if (shp->LastError)
+	free (shp->LastError);
+    sprintf (errMsg, "'%s.dbf' field name: invalid character sequence", path);
+    len = strlen (errMsg);
+    shp->LastError = malloc (len + 1);
+    strcpy (shp->LastError, errMsg);
+    gaiaFreeDbfList (dbf_list);
+    if (buf_shp)
+	free (buf_shp);
+    fclose (fl_shx);
+    fclose (fl_shp);
+    if (fl_dbf)
+	fclose (fl_dbf);
+    return;
 }
 
 GAIAGEO_DECLARE void
@@ -651,13 +687,25 @@ gaiaOpenShpWrite (gaiaShapefilePtr shp, const char *path, int shape,
     gaiaDbfFieldPtr fld;
     char *sys_err;
     char errMsg[1024];
-    int len;
     short dbf_reclen = 0;
     int shp_size = 0;
     int shx_size = 0;
     unsigned short dbf_size = 0;
     iconv_t iconv_ret;
     int endian_arch = gaiaEndianArch ();
+    char buf[2048];
+    char utf8buf[2048];
+#ifdef __MINGW32__
+    const char *pBuf;
+    int len;
+    int utf8len;
+#else /* not MINGW32 */
+    char *pBuf;
+    size_t len;
+    size_t utf8len;
+#endif
+    char *pUtf8buf;
+    int defaultId = 1;
     if (charFrom && charTo)
       {
 	  iconv_ret = iconv_open (charTo, charFrom);
@@ -736,10 +784,23 @@ gaiaOpenShpWrite (gaiaShapefilePtr shp, const char *path, int shape,
       {
 	  /* exporting DBF Fields specifications */
 	  memset (buf_shp, 0, 32);
-	  if (strlen (fld->Name) > 10)
-	      memcpy (buf_shp, fld->Name, 10);
+	  strcpy (buf, fld->Name);
+	  len = strlen (buf);
+	  utf8len = 2048;
+	  pBuf = buf;
+	  pUtf8buf = utf8buf;
+	  if (iconv
+	      ((iconv_t) (shp->IconvObj), &pBuf, &len, &pUtf8buf,
+	       &utf8len) == (size_t) (-1))
+	      sprintf (buf, "FLD#%d", defaultId++);
 	  else
-	      memcpy (buf_shp, fld->Name, strlen (fld->Name));
+	    {
+		memcpy (buf, utf8buf, 2048 - utf8len);
+		buf[2048 - utf8len] = '\0';
+		if (strlen (buf) > 10)
+		    sprintf (buf, "FLD#%d", defaultId++);
+	    }
+	  memcpy (buf_shp, buf, strlen (buf));
 	  *(buf_shp + 11) = fld->Type;
 	  *(buf_shp + 16) = fld->Length;
 	  *(buf_shp + 17) = fld->Decimals;
@@ -1911,10 +1972,7 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		else if (pFld->Type == 'F')
 		  {
 		      /* FLOAT value */
-		      if (strlen ((char *) buf) != 20)
-			  gaiaSetNullValue (pFld);
-		      else
-			  gaiaSetDoubleValue (pFld, atof ((char *) buf));
+		      gaiaSetDoubleValue (pFld, atof ((char *) buf));
 		  }
 		else if (pFld->Type == 'D')
 		  {
