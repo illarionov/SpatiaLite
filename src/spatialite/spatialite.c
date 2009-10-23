@@ -713,6 +713,82 @@ fnct_AutoFDOStop (sqlite3_context * context, int argc, sqlite3_value ** argv)
     return;
 }
 
+static int
+createAdvancedMetaData (sqlite3 * sqlite)
+{
+/* creating the advanced MetaData tables */
+    char sql[1024];
+    char *errMsg = NULL;
+    int ret;
+/* creating the VIEWS_GEOMETRY_COLUMNS table */
+    strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
+    strcat (sql, "views_geometry_columns (\n");
+    strcat (sql, "view_name TEXT NOT NULL,\n");
+    strcat (sql, "view_geometry TEXT NOT NULL,\n");
+    strcat (sql, "view_rowid TEXT NOT NULL,\n");
+    strcat (sql, "f_table_name VARCHAR(256) NOT NULL,\n");
+    strcat (sql, "f_geometry_column VARCHAR(256) NOT NULL)");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	return 0;
+/* creating an UNIQUE INDEX */
+    strcpy (sql, "CREATE UNIQUE INDEX IF NOT EXISTS ");
+    strcat (sql, "idx_viewsgeocols ON views_geometry_columns\n");
+    strcat (sql, "(view_name, view_geometry)");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	return 0;
+/* creating an INDEX to join GEOMETRY_COLUMNS */
+    strcpy (sql, "CREATE INDEX IF NOT EXISTS ");
+    strcat (sql, "idx_viewsjoin ON views_geometry_columns\n");
+    strcat (sql, "(f_table_name, f_geometry_column)");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	return 0;
+/* creating the VIRTS_GEOMETRY_COLUMNS table */
+    strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
+    strcat (sql, "virts_geometry_columns (\n");
+    strcat (sql, "virt_name TEXT NOT NULL,\n");
+    strcat (sql, "virt_geometry TEXT NOT NULL,\n");
+    strcat (sql, "type VARCHAR(30) NOT NULL,\n");
+    strcat (sql, "srid INTEGER NOT NULL)");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	return 0;
+/* creating an UNIQUE INDEX */
+    strcpy (sql, "CREATE UNIQUE INDEX IF NOT EXISTS ");
+    strcat (sql, "idx_virtsgeocols ON virts_geometry_columns\n");
+    strcat (sql, "(virt_name)");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	return 0;
+/* creating an INDEX to join SPATIAL_REF_SYS */
+    strcpy (sql, "CREATE INDEX IF NOT EXISTS ");
+    strcat (sql, "idx_virtssrid ON virts_geometry_columns\n");
+    strcat (sql, "(srid)");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	return 0;
+/* creating the GEOMETRY_COLUMNS_AUTH table */
+    strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
+    strcat (sql, "geometry_columns_auth (\n");
+    strcat (sql, "f_table_name VARCHAR(256) NOT NULL,\n");
+    strcat (sql, "f_geometry_column VARCHAR(256) NOT NULL,\n");
+    strcat (sql, "read_only INTEGER NOT NULL,\n");
+    strcat (sql, "hidden INTEGER NOT NULL)");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	return 0;
+/* creating an UNIQUE INDEX */
+    strcpy (sql, "CREATE UNIQUE INDEX IF NOT EXISTS ");
+    strcat (sql, "idx_geocolsauth ON geometry_columns_auth\n");
+    strcat (sql, "(f_table_name, f_geometry_column)");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	return 0;
+    return 1;
+}
+
 static void
 fnct_CheckSpatialMetaData (sqlite3_context * context, int argc,
 			   sqlite3_value ** argv)
@@ -733,6 +809,11 @@ fnct_CheckSpatialMetaData (sqlite3_context * context, int argc,
     GAIA_UNUSED ();
     sqlite = sqlite3_context_db_handle (context);
     ret = checkSpatialMetaData (sqlite);
+    if (ret == 1)
+      {
+	  /* trying to create the advanced metadata tables */
+	  createAdvancedMetaData (sqlite);
+      }
     sqlite3_result_int (context, ret);
     return;
 }
@@ -753,7 +834,7 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     int ret;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();
-/* creating the SPATIAL_REF_SYS tables */
+/* creating the SPATIAL_REF_SYS table */
     strcpy (sql, "CREATE TABLE spatial_ref_sys (\n");
     strcat (sql, "srid INTEGER NOT NULL PRIMARY KEY,\n");
     strcat (sql, "auth_name VARCHAR(256) NOT NULL,\n");
@@ -775,7 +856,7 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
-/* creating the GEOMETRY_COLUMN tables */
+/* creating the GEOMETRY_COLUMN table */
     strcpy (sql, "CREATE TABLE geometry_columns (\n");
     strcat (sql, "f_table_name VARCHAR(256) NOT NULL,\n");
     strcat (sql, "f_geometry_column VARCHAR(256) NOT NULL,\n");
@@ -827,6 +908,8 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     strcat (sql, "WHERE geometry_columns.srid = spatial_ref_sys.srid");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
+	goto error;
+    if (!createAdvancedMetaData (sqlite))
 	goto error;
     sqlite3_result_int (context, 1);
     return;
