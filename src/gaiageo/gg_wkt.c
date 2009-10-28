@@ -5073,9 +5073,9 @@ SvgPathRelative (int dims, int points, double *coords, char **buffer, int *size,
 		gaiaGetPoint (coords, iv, &x, &y);
 	    }
 	  gaiaOutCheckBuffer (buffer, size);
-	  sprintf (buf_x, "%.*f", precision, x);
+	  sprintf (buf_x, "%.*f", precision, x - lastX);
 	  gaiaOutClean (buf_x);
-	  sprintf (buf_y, "%.*f", precision, y * -1);
+	  sprintf (buf_y, "%.*f", precision, (y - lastY) * -1);
 	  gaiaOutClean (buf_y);
 	  if (iv == 0)
 	      sprintf (buf, "M %s %s l ", buf_x, buf_y);
@@ -5126,7 +5126,7 @@ SvgPathAbsolute (int dims, int points, double *coords, char **buffer, int *size,
 	  sprintf (buf_y, "%.*f", precision, y * -1);
 	  gaiaOutClean (buf_y);
 	  if (iv == 0)
-	      sprintf (buf, "M %s %s ", buf_x, buf_y);
+	      sprintf (buf, "M %s %s L ", buf_x, buf_y);
 	  else
 	      sprintf (buf, "%s %s ", buf_x, buf_y);
 	  if (iv == points - 1 && closePath == 1)
