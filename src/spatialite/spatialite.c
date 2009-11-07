@@ -727,18 +727,18 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "view_geometry TEXT NOT NULL,\n");
     strcat (sql, "view_rowid TEXT NOT NULL,\n");
     strcat (sql, "f_table_name VARCHAR(256) NOT NULL,\n");
-    strcat (sql, "f_geometry_column VARCHAR(256) NOT NULL)");
+    strcat (sql, "f_geometry_column VARCHAR(256) NOT NULL,\n");
+    strcat (sql, "CONSTRAINT pk_geom_cols_views PRIMARY KEY ");
+    strcat (sql, "(view_name, view_geometry),\n");
+    strcat (sql, "CONSTRAINT fk_views_geom_cols FOREIGN KEY ");
+    strcat (sql, "(f_table_name, f_geometry_column) ");
+    strcat (sql, "REFERENCES geometry_columns ");
+    strcat (sql, "(f_table_name, f_geometry_column) ");
+    strcat (sql, "ON DELETE CASCADE)");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	return 0;
-/* creating an UNIQUE INDEX */
-    strcpy (sql, "CREATE UNIQUE INDEX IF NOT EXISTS ");
-    strcat (sql, "idx_viewsgeocols ON views_geometry_columns\n");
-    strcat (sql, "(view_name, view_geometry)");
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
-    if (ret != SQLITE_OK)
-	return 0;
-/* creating an INDEX to join GEOMETRY_COLUMNS */
+/* creating an INDEX supporting the GEOMETRY_COLUMNS FK */
     strcpy (sql, "CREATE INDEX IF NOT EXISTS ");
     strcat (sql, "idx_viewsjoin ON views_geometry_columns\n");
     strcat (sql, "(f_table_name, f_geometry_column)");
@@ -751,18 +751,15 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "virt_name TEXT NOT NULL,\n");
     strcat (sql, "virt_geometry TEXT NOT NULL,\n");
     strcat (sql, "type VARCHAR(30) NOT NULL,\n");
-    strcat (sql, "srid INTEGER NOT NULL)");
+    strcat (sql, "srid INTEGER NOT NULL,\n");
+    strcat (sql, "CONSTRAINT pk_geom_cols_virts PRIMARY KEY ");
+    strcat (sql, "(virt_name, virt_geometry),\n");
+    strcat (sql, "CONSTRAINT fk_vgc_srid FOREIGN KEY ");
+    strcat (sql, "(srid) REFERENCES spatial_ref_sys (srid))");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	return 0;
-/* creating an UNIQUE INDEX */
-    strcpy (sql, "CREATE UNIQUE INDEX IF NOT EXISTS ");
-    strcat (sql, "idx_virtsgeocols ON virts_geometry_columns\n");
-    strcat (sql, "(virt_name)");
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
-    if (ret != SQLITE_OK)
-	return 0;
-/* creating an INDEX to join SPATIAL_REF_SYS */
+/* creating an INDEX supporting the SPATIAL_REF_SYS FK */
     strcpy (sql, "CREATE INDEX IF NOT EXISTS ");
     strcat (sql, "idx_virtssrid ON virts_geometry_columns\n");
     strcat (sql, "(srid)");
@@ -775,14 +772,14 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "f_table_name VARCHAR(256) NOT NULL,\n");
     strcat (sql, "f_geometry_column VARCHAR(256) NOT NULL,\n");
     strcat (sql, "read_only INTEGER NOT NULL,\n");
-    strcat (sql, "hidden INTEGER NOT NULL)");
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
-    if (ret != SQLITE_OK)
-	return 0;
-/* creating an UNIQUE INDEX */
-    strcpy (sql, "CREATE UNIQUE INDEX IF NOT EXISTS ");
-    strcat (sql, "idx_geocolsauth ON geometry_columns_auth\n");
-    strcat (sql, "(f_table_name, f_geometry_column)");
+    strcat (sql, "hidden INTEGER NOT NULL,\n");
+    strcat (sql, "CONSTRAINT pk_gc_auth PRIMARY KEY ");
+    strcat (sql, "(f_table_name, f_geometry_column),\n");
+    strcat (sql, "CONSTRAINT fk_gc_auth FOREIGN KEY ");
+    strcat (sql, "(f_table_name, f_geometry_column) ");
+    strcat (sql, "REFERENCES geometry_columns ");
+    strcat (sql, "(f_table_name, f_geometry_column) ");
+    strcat (sql, "ON DELETE CASCADE)");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	return 0;
@@ -844,18 +841,6 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
-/* setting a trigger to ensure referential integrity on DELETE */
-    strcpy (sql,
-	    "CREATE TRIGGER fkd_refsys_geocols BEFORE DELETE ON spatial_ref_sys\n");
-    strcat (sql, "FOR EACH ROW BEGIN\n");
-    strcat (sql,
-	    "SELECT RAISE(ROLLBACK, 'delete on table ''spatial_ref_sys'' violates constraint: ''geometry_columns.srid''')\n");
-    strcat (sql,
-	    "WHERE (SELECT srid FROM geometry_columns WHERE srid = OLD.srid) IS NOT NULL;\n");
-    strcat (sql, "END;");
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
-    if (ret != SQLITE_OK)
-	goto error;
 /* creating the GEOMETRY_COLUMN table */
     strcpy (sql, "CREATE TABLE geometry_columns (\n");
     strcat (sql, "f_table_name VARCHAR(256) NOT NULL,\n");
@@ -863,39 +848,17 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     strcat (sql, "type VARCHAR(30) NOT NULL,\n");
     strcat (sql, "coord_dimension TEXT NOT NULL,\n");
     strcat (sql, "srid INTEGER,\n");
-    strcat (sql, "spatial_index_enabled INTEGER NOT NULL)");
+    strcat (sql, "spatial_index_enabled INTEGER NOT NULL,\n");
+    strcat (sql, "CONSTRAINT pk_geom_cols PRIMARY KEY ");
+    strcat (sql, "(f_table_name, f_geometry_column),\n");
+    strcat (sql, "CONSTRAINT fk_gc_srs FOREIGN KEY ");
+    strcat (sql, "(srid) REFERENCES spatial_ref_sys (srid))");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
-/* setting a trigger to ensure referential integrity on INSERT */
-    strcpy (sql,
-	    "CREATE TRIGGER fki_geocols_refsys BEFORE INSERT ON geometry_columns\n");
-    strcat (sql, "FOR EACH ROW BEGIN\n");
-    strcat (sql,
-	    "SELECT RAISE(ROLLBACK, 'insert on table ''geometry_columns'' violates constraint: ''spatial_ref_sys.srid''')\n");
-    strcat (sql, "WHERE  NEW.\"srid\" IS NOT NULL\n");
-    strcat (sql,
-	    "AND (SELECT srid FROM spatial_ref_sys WHERE srid = NEW.srid) IS NULL;\n");
-    strcat (sql, "END;");
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
-    if (ret != SQLITE_OK)
-	goto error;
-/* setting a trigger to ensure referential integrity on UPDATE */
-    strcpy (sql,
-	    "CREATE TRIGGER fku_geocols_refsys BEFORE UPDATE ON geometry_columns\n");
-    strcat (sql, "FOR EACH ROW BEGIN\n");
-    strcat (sql,
-	    "SELECT RAISE(ROLLBACK, 'update on table ''geometry_columns'' violates constraint: ''spatial_ref_sys.srid''')\n");
-    strcat (sql, "WHERE  NEW.srid IS NOT NULL\n");
-    strcat (sql,
-	    "AND (SELECT srid FROM spatial_ref_sys WHERE srid = NEW.srid) IS NULL;\n");
-    strcat (sql, "END;");
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
-    if (ret != SQLITE_OK)
-	goto error;
-/* creating an UNIQUE INDEX */
-    strcpy (sql, "CREATE UNIQUE INDEX idx_geocols ON geometry_columns\n");
-    strcat (sql, "(f_table_name, f_geometry_column)");
+/* creating an INDEX corresponding to the SRID FK */
+    strcpy (sql, "CREATE INDEX idx_srid_geocols ON geometry_columns\n");
+    strcat (sql, "(srid)");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
