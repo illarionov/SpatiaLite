@@ -10609,6 +10609,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_PointOnSurface, 0, 0);
     sqlite3_create_function (db, "Simplify", 2, SQLITE_ANY, 0, fnct_Simplify, 0,
 			     0);
+    sqlite3_create_function (db, "ST_Generalize", 2, SQLITE_ANY, 0,
+			     fnct_Simplify, 0, 0);
     sqlite3_create_function (db, "SimplifyPreserveTopology", 2, SQLITE_ANY, 0,
 			     fnct_SimplifyPreserveTopology, 0, 0);
     sqlite3_create_function (db, "ConvexHull", 1, SQLITE_ANY, 0,
@@ -11342,6 +11344,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_PointOnSurface, 0, 0);
     sqlite3_create_function (db, "Simplify", 2, SQLITE_ANY, 0, fnct_Simplify, 0,
 			     0);
+    sqlite3_create_function (db, "ST_Generalize", 2, SQLITE_ANY, 0,
+			     fnct_Simplify, 0, 0);
     sqlite3_create_function (db, "SimplifyPreserveTopology", 2, SQLITE_ANY, 0,
 			     fnct_SimplifyPreserveTopology, 0, 0);
     sqlite3_create_function (db, "ConvexHull", 1, SQLITE_ANY, 0,
