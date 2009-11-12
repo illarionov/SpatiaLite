@@ -61,6 +61,10 @@ struct ellipses
     double b;			/* polar radius - meters */
 };
 
+#if defined(_WIN32) || !defined(__MINGW32__)
+#define isnan	_isnan
+#endif /* not WIN32-MSVC */
+
 GAIAGEO_DECLARE int
 gaiaEllipseParams (const char *name, double *a, double *b, double *rf)
 {
