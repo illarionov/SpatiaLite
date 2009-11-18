@@ -1675,7 +1675,7 @@ vnet_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 					 strlen (cursor->solution->From->Code),
 					 SQLITE_STATIC);
 		else
-		    sqlite3_result_int (pContext, cursor->solution->From->Id);
+		    sqlite3_result_int64 (pContext, cursor->solution->From->Id);
 	    }
 	  if (column == 2)
 	    {
@@ -1685,7 +1685,7 @@ vnet_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 					 strlen (cursor->solution->To->Code),
 					 SQLITE_STATIC);
 		else
-		    sqlite3_result_int (pContext, cursor->solution->To->Id);
+		    sqlite3_result_int64 (pContext, cursor->solution->To->Id);
 	    }
 	  if (column == 3)
 	    {
