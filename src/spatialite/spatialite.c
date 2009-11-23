@@ -10229,6 +10229,126 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_MPolyFromWkb1, 0, 0);
     sqlite3_create_function (db, "MultiPolygonFromWKB", 2, SQLITE_ANY, 0,
 			     fnct_MPolyFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_GeomFromText", 1, SQLITE_ANY, 0,
+			     fnct_GeomFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_GeomFromText", 2, SQLITE_ANY, 0,
+			     fnct_GeomFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryFromText", 1, SQLITE_ANY, 0,
+			     fnct_GeomFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryFromText", 2, SQLITE_ANY, 0,
+			     fnct_GeomFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_GeomCollFromText", 1, SQLITE_ANY, 0,
+			     fnct_GeomCollFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_GeomCollFromText", 2, SQLITE_ANY, 0,
+			     fnct_GeomCollFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryCollectionFromText", 1, SQLITE_ANY,
+			     0, fnct_GeomCollFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryCollectionFromText", 2, SQLITE_ANY,
+			     0, fnct_GeomCollFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_PointFromText", 1, SQLITE_ANY, 0,
+			     fnct_PointFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_PointFromText", 2, SQLITE_ANY, 0,
+			     fnct_PointFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_LineFromText", 1, SQLITE_ANY, 0,
+			     fnct_LineFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_LineFromText", 2, SQLITE_ANY, 0,
+			     fnct_LineFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_LineStringFromText", 1, SQLITE_ANY, 0,
+			     fnct_LineFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_LineStringFromText", 2, SQLITE_ANY, 0,
+			     fnct_LineFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_PolyFromText", 1, SQLITE_ANY, 0,
+			     fnct_PolyFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_PolyFromText", 2, SQLITE_ANY, 0,
+			     fnct_PolyFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_PolygonFromText", 1, SQLITE_ANY, 0,
+			     fnct_PolyFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_PolygonFromText", 2, SQLITE_ANY, 0,
+			     fnct_PolyFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_MPointFromText", 1, SQLITE_ANY, 0,
+			     fnct_MPointFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_MPointFromText", 2, SQLITE_ANY, 0,
+			     fnct_MPointFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPointFromText", 1, SQLITE_ANY, 0,
+			     fnct_MPointFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPointFromText", 2, SQLITE_ANY, 0,
+			     fnct_MPointFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_MLineFromText", 1, SQLITE_ANY, 0,
+			     fnct_MLineFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_MLineFromText", 2, SQLITE_ANY, 0,
+			     fnct_MLineFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_MultiLineStringFromText", 1, SQLITE_ANY, 0,
+			     fnct_MLineFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_MultiLineStringFromText", 2, SQLITE_ANY, 0,
+			     fnct_MLineFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_MPolyFromText", 1, SQLITE_ANY, 0,
+			     fnct_MPolyFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_MPolyFromText", 2, SQLITE_ANY, 0,
+			     fnct_MPolyFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPolygonFromText", 1, SQLITE_ANY, 0,
+			     fnct_MPolyFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPolygonFromText", 2, SQLITE_ANY, 0,
+			     fnct_MPolyFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_GeomFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_GeomFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_GeomFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_GeomFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_GeomFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_GeomFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_GeomCollFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_GeomCollFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_GeomCollFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_GeomCollFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryCollectionFromWKB", 1, SQLITE_ANY,
+			     0, fnct_GeomCollFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryCollectionFromWKB", 2, SQLITE_ANY,
+			     0, fnct_GeomCollFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_PointFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_PointFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_PointFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_PointFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_LineFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_LineFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_LineFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_LineFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_LineStringFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_LineFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_LineStringFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_LineFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_PolyFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_PolyFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_PolyFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_PolyFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_PolygonFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_PolyFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_PolygonFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_PolyFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_MPointFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_MPointFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_MPointFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_MPointFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPointFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_MPointFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPointFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_MPointFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_MLineFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_MLineFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_MLineFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_MLineFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_MultiLineStringFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_MLineFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_MultiLineStringFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_MLineFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_MPolyFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_MPolyFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_MPolyFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_MPolyFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPolygonFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_MPolyFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPolygonFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_MPolyFromWkb2, 0, 0);
     sqlite3_create_function (db, "GeomFromFGF", 1, SQLITE_ANY, 0,
 			     fnct_GeometryFromFGF1, 0, 0);
     sqlite3_create_function (db, "GeomFromFGF", 2, SQLITE_ANY, 0,
@@ -10921,6 +11041,126 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_PolyFromWkb1, 0, 0);
     sqlite3_create_function (db, "PolygonFromWKB", 2, SQLITE_ANY, 0,
 			     fnct_PolyFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_GeomFromText", 1, SQLITE_ANY, 0,
+			     fnct_GeomFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_GeomFromText", 2, SQLITE_ANY, 0,
+			     fnct_GeomFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryFromText", 1, SQLITE_ANY, 0,
+			     fnct_GeomFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryFromText", 2, SQLITE_ANY, 0,
+			     fnct_GeomFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_GeomCollFromText", 1, SQLITE_ANY, 0,
+			     fnct_GeomCollFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_GeomCollFromText", 2, SQLITE_ANY, 0,
+			     fnct_GeomCollFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryCollectionFromText", 1, SQLITE_ANY,
+			     0, fnct_GeomCollFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryCollectionFromText", 2, SQLITE_ANY,
+			     0, fnct_GeomCollFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_PointFromText", 1, SQLITE_ANY, 0,
+			     fnct_PointFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_PointFromText", 2, SQLITE_ANY, 0,
+			     fnct_PointFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_LineFromText", 1, SQLITE_ANY, 0,
+			     fnct_LineFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_LineFromText", 2, SQLITE_ANY, 0,
+			     fnct_LineFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_LineStringFromText", 1, SQLITE_ANY, 0,
+			     fnct_LineFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_LineStringFromText", 2, SQLITE_ANY, 0,
+			     fnct_LineFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_PolyFromText", 1, SQLITE_ANY, 0,
+			     fnct_PolyFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_PolyFromText", 2, SQLITE_ANY, 0,
+			     fnct_PolyFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_PolygonFromText", 1, SQLITE_ANY, 0,
+			     fnct_PolyFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_PolygonFromText", 2, SQLITE_ANY, 0,
+			     fnct_PolyFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_MPointFromText", 1, SQLITE_ANY, 0,
+			     fnct_MPointFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_MPointFromText", 2, SQLITE_ANY, 0,
+			     fnct_MPointFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPointFromText", 1, SQLITE_ANY, 0,
+			     fnct_MPointFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPointFromText", 2, SQLITE_ANY, 0,
+			     fnct_MPointFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_MLineFromText", 1, SQLITE_ANY, 0,
+			     fnct_MLineFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_MLineFromText", 2, SQLITE_ANY, 0,
+			     fnct_MLineFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_MultiLineStringFromText", 1, SQLITE_ANY, 0,
+			     fnct_MLineFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_MultiLineStringFromText", 2, SQLITE_ANY, 0,
+			     fnct_MLineFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_MPolyFromText", 1, SQLITE_ANY, 0,
+			     fnct_MPolyFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_MPolyFromText", 2, SQLITE_ANY, 0,
+			     fnct_MPolyFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPolygonFromText", 1, SQLITE_ANY, 0,
+			     fnct_MPolyFromText1, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPolygonFromText", 2, SQLITE_ANY, 0,
+			     fnct_MPolyFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_GeomFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_GeomFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_GeomFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_GeomFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_GeomFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_GeomFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_GeomCollFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_GeomCollFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_GeomCollFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_GeomCollFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryCollectionFromWKB", 1, SQLITE_ANY,
+			     0, fnct_GeomCollFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_GeometryCollectionFromWKB", 2, SQLITE_ANY,
+			     0, fnct_GeomCollFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_PointFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_PointFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_PointFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_PointFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_LineFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_LineFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_LineFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_LineFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_LineStringFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_LineFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_LineStringFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_LineFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_PolyFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_PolyFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_PolyFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_PolyFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_PolygonFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_PolyFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_PolygonFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_PolyFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_MPointFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_MPointFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_MPointFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_MPointFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPointFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_MPointFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPointFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_MPointFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_MLineFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_MLineFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_MLineFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_MLineFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_MultiLineStringFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_MLineFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_MultiLineStringFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_MLineFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_MPolyFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_MPolyFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_MPolyFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_MPolyFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPolygonFromWKB", 1, SQLITE_ANY, 0,
+			     fnct_MPolyFromWkb1, 0, 0);
+    sqlite3_create_function (db, "ST_MultiPolygonFromWKB", 2, SQLITE_ANY, 0,
+			     fnct_MPolyFromWkb2, 0, 0);
     sqlite3_create_function (db, "GeomFromFGF", 1, SQLITE_ANY, 0,
 			     fnct_GeometryFromFGF1, 0, 0);
     sqlite3_create_function (db, "GeomFromFGF", 2, SQLITE_ANY, 0,
