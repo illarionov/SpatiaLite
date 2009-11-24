@@ -4742,6 +4742,7 @@ fnct_Envelope (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	    {
 		gaiaMbrGeometry (geo);
 		bbox = gaiaAllocGeomColl ();
+		bbox->Srid = geo->Srid;
 		polyg = gaiaAddPolygonToGeomColl (bbox, 5, 0);
 		rect = polyg->Exterior;
 		gaiaSetPoint (rect->Coords, 0, geo->MinX, geo->MinY);	/* vertex # 1 */
