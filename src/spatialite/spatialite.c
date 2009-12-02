@@ -885,7 +885,7 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 
 static int
 recoverGeomColumn (sqlite3 * sqlite, const unsigned char *table,
-		   const unsigned char *column, int xtype, int srid)
+		   const unsigned char *column, int xtype, int dims, int srid)
 {
 /* checks if TABLE.COLUMN exists and has the required features */
     int ok = 1;
@@ -929,6 +929,8 @@ recoverGeomColumn (sqlite3 * sqlite, const unsigned char *table,
 				ok = 0;
 			    else
 			      {
+				  if (geom->DimensionModel != dims)
+				      ok = 0;
 				  if (geom->Srid != srid)
 				      ok = 0;
 				  type = gaiaGeometryType (geom);
@@ -1661,7 +1663,9 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     const unsigned char *type;
     int xtype;
     int srid = -1;
+    const unsigned char *txt_dims;
     int dimension = 2;
+    int dims = -1;
     char dummy[32];
     char sql[1024];
     char *errMsg = NULL;
@@ -1705,14 +1709,33 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 	  return;
       }
     type = sqlite3_value_text (argv[3]);
-    if (sqlite3_value_type (argv[4]) != SQLITE_INTEGER)
+    if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+      {
+	  dimension = sqlite3_value_int (argv[4]);
+	  if (dimension == 2)
+	      dims = GAIA_XY;
+	  if (dimension == 3)
+	      dims = GAIA_XY_Z;
+      }
+    else if (sqlite3_value_type (argv[4]) == SQLITE_TEXT)
+      {
+	  txt_dims = sqlite3_value_text (argv[4]);
+	  if (strcasecmp ((char *) txt_dims, "XY") == 0)
+	      dims = GAIA_XY;
+	  if (strcasecmp ((char *) txt_dims, "XYZ") == 0)
+	      dims = GAIA_XY_Z;
+	  if (strcasecmp ((char *) txt_dims, "XYM") == 0)
+	      dims = GAIA_XY_M;
+	  if (strcasecmp ((char *) txt_dims, "XYZM") == 0)
+	      dims = GAIA_XY_Z_M;
+      }
+    else
       {
 	  fprintf (stderr,
-		   "RecoverGeometryColumn() error: argument 5 [dimension] is not of the Integer type\n");
+		   "RecoverGeometryColumn() error: argument 5 [dimension] is not of the Integer or Text type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
-    dimension = sqlite3_value_int (argv[4]);
     xtype = GAIA_UNKNOWN;
     if (strcasecmp ((char *) type, "POINT") == 0)
 	xtype = GAIA_POINT;
@@ -1737,10 +1760,13 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 	  sqlite3_result_int (context, 0);
 	  return;
       }
-    if (dimension != 2)
+    if (dims == GAIA_XY || dims == GAIA_XY_Z || dims == GAIA_XY_M
+	|| dims == GAIA_XY_Z_M)
+	;
+    else
       {
 	  fprintf (stderr,
-		   "RecoverGeometryColumn() error: argument 5 [dimension] current version only accepts dimension=2\n");
+		   "RecoverGeometryColumn() error: argument 5 [dimension] ILLEGAL VALUE\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -1770,7 +1796,7 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 	  sqlite3_result_int (context, 0);
 	  return;
       }
-    if (!recoverGeomColumn (sqlite, table, column, xtype, srid))
+    if (!recoverGeomColumn (sqlite, table, column, xtype, dims, srid))
       {
 	  fprintf (stderr, "RecoverGeometryColumn(): validation failed\n");
 	  sqlite3_result_int (context, 0);
@@ -1811,7 +1837,23 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 	  strcat (sql, "GEOMETRY");
 	  break;
       };
-    strcat (sql, "', 2, ");
+    strcat (sql, "', '");
+    switch (dims)
+      {
+      case GAIA_XY:
+	  strcat (sql, "XY");
+	  break;
+      case GAIA_XY_Z:
+	  strcat (sql, "XYZ");
+	  break;
+      case GAIA_XY_M:
+	  strcat (sql, "XYM");
+	  break;
+      case GAIA_XY_Z_M:
+	  strcat (sql, "XYZM");
+	  break;
+      };
+    strcat (sql, "', ");
     if (srid <= 0)
 	strcat (sql, "-1");
     else
@@ -4381,6 +4423,60 @@ fnct_Dimension (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  dim = gaiaDimension (geo);
 	  sqlite3_result_int (context, dim);
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
+fnct_CoordDimension (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ CoordDimension(BLOB encoded geometry)
+/
+/ returns:
+/ 'XY', 'XYM', 'XYZ', 'XYZM'
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    char *p_dim = NULL;
+    char *p_result = NULL;
+    gaiaGeomCollPtr geo = NULL;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  if (geo->DimensionModel == GAIA_XY)
+	      p_dim = "XY";
+	  else if (geo->DimensionModel == GAIA_XY_Z)
+	      p_dim = "XYZ";
+	  else if (geo->DimensionModel == GAIA_XY_M)
+	      p_dim = "XYM";
+	  else if (geo->DimensionModel == GAIA_XY_Z_M)
+	      p_dim = "XYZM";
+	  if (p_dim)
+	    {
+		len = strlen (p_dim);
+		p_result = malloc (len + 1);
+		strcpy (p_result, p_dim);
+	    }
+	  if (!p_result)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		len = strlen (p_result);
+		sqlite3_result_text (context, p_result, len, free);
+	    }
       }
     gaiaFreeGeomColl (geo);
 }
@@ -10388,6 +10484,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "ST_Dimension", 1, SQLITE_ANY, 0,
 			     fnct_Dimension, 0, 0);
+    sqlite3_create_function (db, "CoordDimension", 1, SQLITE_ANY, 0,
+			     fnct_CoordDimension, 0, 0);
     sqlite3_create_function (db, "GeometryType", 1, SQLITE_ANY, 0,
 			     fnct_GeometryType, 0, 0);
     sqlite3_create_function (db, "ST_GeometryType", 1, SQLITE_ANY, 0,
@@ -11200,6 +11298,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "ST_Dimension", 1, SQLITE_ANY, 0,
 			     fnct_Dimension, 0, 0);
+    sqlite3_create_function (db, "CoordDimension", 1, SQLITE_ANY, 0,
+			     fnct_CoordDimension, 0, 0);
     sqlite3_create_function (db, "GeometryType", 1, SQLITE_ANY, 0,
 			     fnct_GeometryType, 0, 0);
     sqlite3_create_function (db, "ST_GeometryType", 1, SQLITE_ANY, 0,
