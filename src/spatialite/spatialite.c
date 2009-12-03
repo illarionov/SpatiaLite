@@ -914,7 +914,7 @@ recoverGeomColumn (sqlite3 * sqlite, const unsigned char *table,
 	      break;		/* end of result set */
 	  if (ret == SQLITE_ROW)
 	    {
-		/* cecking Geometry features */
+		/* checking Geometry features */
 		geom = NULL;
 		for (i_col = 0; i_col < sqlite3_column_count (stmt); i_col++)
 		  {
@@ -1662,6 +1662,7 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     const unsigned char *column;
     const unsigned char *type;
     int xtype;
+    int xxtype;
     int srid = -1;
     const unsigned char *txt_dims;
     int dimension = 2;
@@ -1795,6 +1796,135 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 		   table);
 	  sqlite3_result_int (context, 0);
 	  return;
+      }
+/* adjusting the actucal GeometryType */
+    xxtype = xtype;
+    xtype = GAIA_UNKNOWN;
+    if (xxtype == GAIA_POINT)
+      {
+	  switch (dims)
+	    {
+	    case GAIA_XY_Z:
+		xtype = GAIA_POINTZ;
+		break;
+	    case GAIA_XY_M:
+		xtype = GAIA_POINTM;
+		break;
+	    case GAIA_XY_Z_M:
+		xtype = GAIA_POINTZM;
+		break;
+	    default:
+		xtype = GAIA_POINT;
+		break;
+	    };
+      }
+    if (xxtype == GAIA_LINESTRING)
+      {
+	  switch (dims)
+	    {
+	    case GAIA_XY_Z:
+		xtype = GAIA_LINESTRINGZ;
+		break;
+	    case GAIA_XY_M:
+		xtype = GAIA_LINESTRINGM;
+		break;
+	    case GAIA_XY_Z_M:
+		xtype = GAIA_LINESTRINGZM;
+		break;
+	    default:
+		xtype = GAIA_LINESTRING;
+		break;
+	    };
+      }
+    if (xxtype == GAIA_POLYGON)
+      {
+	  switch (dims)
+	    {
+	    case GAIA_XY_Z:
+		xtype = GAIA_POLYGONZ;
+		break;
+	    case GAIA_XY_M:
+		xtype = GAIA_POLYGONM;
+		break;
+	    case GAIA_XY_Z_M:
+		xtype = GAIA_POLYGONZM;
+		break;
+	    default:
+		xtype = GAIA_POLYGON;
+		break;
+	    };
+      }
+    if (xxtype == GAIA_MULTIPOINT)
+      {
+	  switch (dims)
+	    {
+	    case GAIA_XY_Z:
+		xtype = GAIA_MULTIPOINTZ;
+		break;
+	    case GAIA_XY_M:
+		xtype = GAIA_MULTIPOINTM;
+		break;
+	    case GAIA_XY_Z_M:
+		xtype = GAIA_MULTIPOINTZM;
+		break;
+	    default:
+		xtype = GAIA_MULTIPOINT;
+		break;
+	    };
+      }
+    if (xxtype == GAIA_MULTILINESTRING)
+      {
+	  switch (dims)
+	    {
+	    case GAIA_XY_Z:
+		xtype = GAIA_MULTILINESTRINGZ;
+		break;
+	    case GAIA_XY_M:
+		xtype = GAIA_MULTILINESTRINGM;
+		break;
+	    case GAIA_XY_Z_M:
+		xtype = GAIA_MULTILINESTRINGZM;
+		break;
+	    default:
+		xtype = GAIA_MULTILINESTRING;
+		break;
+	    };
+      }
+    if (xxtype == GAIA_MULTIPOLYGON)
+      {
+	  switch (dims)
+	    {
+	    case GAIA_XY_Z:
+		xtype = GAIA_MULTIPOLYGONZ;
+		break;
+	    case GAIA_XY_M:
+		xtype = GAIA_MULTIPOLYGONM;
+		break;
+	    case GAIA_XY_Z_M:
+		xtype = GAIA_MULTIPOLYGONZM;
+		break;
+	    default:
+		xtype = GAIA_MULTIPOLYGON;
+		break;
+	    };
+      }
+    if (xxtype == GAIA_GEOMETRYCOLLECTION)
+      {
+	  switch (dims)
+	    {
+	    case GAIA_XY_Z:
+		xtype = GAIA_GEOMETRYCOLLECTIONZ;
+		break;
+	    case GAIA_XY_M:
+		xtype = GAIA_GEOMETRYCOLLECTIONM;
+		break;
+	    case GAIA_XY_Z_M:
+		xtype = GAIA_GEOMETRYCOLLECTIONZM;
+		break;
+	    default:
+		xtype = GAIA_GEOMETRYCOLLECTION;
+		break;
+	    };
       }
     if (!recoverGeomColumn (sqlite, table, column, xtype, dims, srid))
       {
