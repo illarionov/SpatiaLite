@@ -8184,9 +8184,9 @@ geos_error (const char *fmt, ...)
     va_list ap;
     fprintf (stderr, "GEOS: ");
     va_start (ap, fmt);
-    vfprintf (stdout, fmt, ap);
+    vfprintf (stderr, fmt, ap);
     va_end (ap);
-    fprintf (stdout, "\n");
+    fprintf (stderr, "\n");
 }
 
 static void
