@@ -61,6 +61,7 @@ struct row_buffer
 /* a complete row */
     int n_cells;		/* how many cells are stored into this line */
     char **cells;		/* the cells array */
+    char *text;			/* the text-cells array */
     struct row_buffer *next;	/* pointer for linked list */
 };
 
@@ -96,7 +97,8 @@ typedef struct VirtualTextCursortStruct
 typedef VirtualTextCursor *VirtualTextCursorPtr;
 
 static void
-text_insert_row (struct text_buffer *text, char **fields, int max_cell)
+text_insert_row (struct text_buffer *text, char **fields, char *text_mark,
+		 int max_cell)
 {
 /* inserting a row into the text buffer struct */
     int i;
@@ -107,10 +109,12 @@ text_insert_row (struct text_buffer *text, char **fields, int max_cell)
     else
       {
 	  row->cells = malloc (sizeof (char *) * (max_cell + 1));
+	  row->text = malloc (sizeof (char) * (max_cell + 1));
 	  for (i = 0; i < row->n_cells; i++)
 	    {
 		/* setting cell values */
 		*(row->cells + i) = *(fields + i);
+		*(row->text + i) = *(text_mark + i);
 	    }
       }
     row->next = NULL;
@@ -148,11 +152,17 @@ text_buffer_free (struct text_buffer *text)
     row = text->first;
     while (row)
       {
-	  for (i = 0; i < row->n_cells; i++)
+	  if (row->cells)
 	    {
-		if (*(row->cells + i))
-		    free (*(row->cells + i));
+		for (i = 0; i < row->n_cells; i++)
+		  {
+		      if (*(row->cells + i))
+			  free (*(row->cells + i));
+		  }
+		free (row->cells);
 	    }
+	  if (row->text)
+	      free (row->text);
 	  row = row->next;
       }
     if (text->types)
@@ -333,9 +343,11 @@ text_parse (char *path, char *encoding, char first_line_titles,
     int fld;
     int len;
     int max_cell;
+    int is_text = 0;
     int is_string = 0;
     char last = '\0';
     char *fields[4096];
+    char text_mark[4096];
     char buffer[35536];
     char *p = buffer;
     struct text_buffer *text;
@@ -355,6 +367,7 @@ text_parse (char *path, char *encoding, char first_line_titles,
       {
 	  /* preparing an empty row */
 	  fields[fld] = NULL;
+	  text_mark[fld] = 0;
       }
 /* trying to open the text file */
     in = fopen (path, "rb");
@@ -380,10 +393,12 @@ text_parse (char *path, char *encoding, char first_line_titles,
 		  {
 		      fields[fld] = malloc (len + 1);
 		      strcpy (fields[fld], buffer);
+		      text_mark[fld] = is_text;
 		  }
 		fld++;
 		p = buffer;
 		*p = '\0';
+		is_text = 0;
 		continue;
 	    }
 	  if (c == text_separator)
@@ -393,6 +408,7 @@ text_parse (char *path, char *encoding, char first_line_titles,
 		  {
 		      is_string = 0;
 		      last = (char) c;
+		      is_text = 1;
 		  }
 		else
 		  {
@@ -422,7 +438,7 @@ text_parse (char *path, char *encoding, char first_line_titles,
 		      if (fields[fld])
 			  max_cell = fld;
 		  }
-		text_insert_row (text, fields, max_cell);
+		text_insert_row (text, fields, text_mark, max_cell);
 		for (fld = 0; fld < 4096; fld++)
 		  {
 		      /* resetting an empty row */
@@ -481,7 +497,8 @@ text_parse (char *path, char *encoding, char first_line_titles,
 	    {
 		if (*(row->cells + fld))
 		  {
-		      if (text_is_integer (*(row->cells + fld)))
+		      if (text_is_integer (*(row->cells + fld))
+			  && !(*(row->text + fld)))
 			{
 			    if (*(first_valid_row + fld))
 			      {
@@ -490,7 +507,8 @@ text_parse (char *path, char *encoding, char first_line_titles,
 			      }
 			}
 		      else if (text_is_double
-			       (*(row->cells + fld), decimal_separator))
+			       (*(row->cells + fld), decimal_separator)
+			       && !(*(row->text + fld)))
 			{
 			    if (*(first_valid_row + fld))
 			      {
