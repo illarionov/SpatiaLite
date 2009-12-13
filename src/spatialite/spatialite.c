@@ -10600,6 +10600,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_CastToGeometryCollection, 0, 0);
     sqlite3_create_function (db, "CastToMulti", 1, SQLITE_ANY, 0,
 			     fnct_CastToMulti, 0, 0);
+    sqlite3_create_function (db, "ST_Multi", 1, SQLITE_ANY, 0,
+			     fnct_CastToMulti, 0, 0);
     sqlite3_create_function (db, "CastToSingle", 1, SQLITE_ANY, 0,
 			     fnct_CastToSingle, 0, 0);
     sqlite3_create_function (db, "CastToXY", 1, SQLITE_ANY, 0, fnct_CastToXY, 0,
@@ -11050,6 +11052,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 
 /* initializing the VirtualShape  extension */
     virtualshape_extension_init (db);
+/* initializing the VirtualDbf  extension */
+    virtualdbf_extension_init (db);
 /* initializing the VirtualText extension */
     virtualtext_extension_init (db);
 /* initializing the VirtualNetwork  extension */
@@ -11072,6 +11076,7 @@ spatialite_init (int verbose)
 	  printf ("SpatiaLite version ..: %s", spatialite_version ());
 	  printf ("\tSupported Extensions:\n");
 	  printf ("\t- 'VirtualShape'\t[direct Shapefile access]\n");
+	  printf ("\t- 'VirtualDbf'\t\t[direct DBF access]\n");
 	  printf ("\t- 'VirtualText\t\t[direct CSV/TXT access]\n");
 	  printf ("\t- 'VirtualNetwork\t[Dijkstra shortest path]\n");
 	  printf ("\t- 'RTree'\t\t[Spatial Index - R*Tree]\n");
@@ -11413,6 +11418,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
     sqlite3_create_function (db, "CastToGeometryCollection", 1, SQLITE_ANY, 0,
 			     fnct_CastToGeometryCollection, 0, 0);
     sqlite3_create_function (db, "CastToMulti", 1, SQLITE_ANY, 0,
+			     fnct_CastToMulti, 0, 0);
+    sqlite3_create_function (db, "ST_Multi", 1, SQLITE_ANY, 0,
 			     fnct_CastToMulti, 0, 0);
     sqlite3_create_function (db, "CastToSingle", 1, SQLITE_ANY, 0,
 			     fnct_CastToSingle, 0, 0);
@@ -11864,6 +11871,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 
 /* initializing the VirtualShape  extension */
     virtualshape_extension_init (db);
+/* initializing the VirtualDbf  extension */
+    virtualdbf_extension_init (db);
 /* initializing the VirtualText  extension */
     virtualtext_extension_init (db);
 /* initializing the VirtualNetwork  extension */
@@ -11878,6 +11887,7 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
     printf ("SpatiaLite version ..: %s", spatialite_version ());
     printf ("\tSupported Extensions:\n");
     printf ("\t- 'VirtualShape'\t[direct Shapefile access]\n");
+    printf ("\t- 'VirtualDbf'\t\t[direct Dbf access]\n");
     printf ("\t- 'VirtualText'\t\t[direct CSV/TXT access]\n");
     printf ("\t- 'VirtualNetwork\t[Dijkstra shortest path]\n");
     printf ("\t- 'RTree'\t\t[Spatial Index - R*Tree]\n");

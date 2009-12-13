@@ -1044,10 +1044,10 @@ to_sqlite_julian_date (int year, int month, int day, double *julian)
     return 1;
 }
 
-GAIAGEO_DECLARE int
-gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
+static int
+parseDbfField (unsigned char *buf_dbf, void *iconv_obj, gaiaDbfFieldPtr pFld)
 {
-/* trying to read an entity from shapefile */
+/* parsing a generic DBF field */
     unsigned char buf[512];
     char utf8buf[2048];
 #ifdef __MINGW32__
@@ -1060,11 +1060,105 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
     size_t utf8len;
 #endif
     char *pUtf8buf;
+    int i;
+    memcpy (buf, buf_dbf + pFld->Offset + 1, pFld->Length);
+    buf[pFld->Length] = '\0';
+    if (*buf == '\0')
+	gaiaSetNullValue (pFld);
+    else
+      {
+	  if (pFld->Type == 'N')
+	    {
+		/* NUMERIC value */
+		if (pFld->Decimals > 0 || pFld->Length > 18)
+		    gaiaSetDoubleValue (pFld, atof ((char *) buf));
+		else
+		    gaiaSetIntValue (pFld, atoll ((char *) buf));
+	    }
+	  else if (pFld->Type == 'F')
+	    {
+		/* FLOAT value */
+		gaiaSetDoubleValue (pFld, atof ((char *) buf));
+	    }
+	  else if (pFld->Type == 'D')
+	    {
+		/* DATE value */
+		if (strlen ((char *) buf) != 8)
+		    gaiaSetNullValue (pFld);
+		else
+		  {
+		      /* converting into a Julian Date */
+		      double julian;
+		      char date[5];
+		      int year = 0;
+		      int month = 0;
+		      int day = 0;
+		      date[0] = buf[0];
+		      date[1] = buf[1];
+		      date[2] = buf[2];
+		      date[3] = buf[3];
+		      date[4] = '\0';
+		      year = atoi (date);
+		      date[0] = buf[4];
+		      date[1] = buf[5];
+		      date[2] = '\0';
+		      month = atoi (date);
+		      date[0] = buf[6];
+		      date[1] = buf[7];
+		      date[2] = '\0';
+		      day = atoi (date);
+		      if (to_sqlite_julian_date (year, month, day, &julian))
+			  gaiaSetDoubleValue (pFld, julian);
+		      else
+			  gaiaSetNullValue (pFld);
+		  }
+	    }
+	  else if (pFld->Type == 'L')
+	    {
+		/* LOGICAL [aka Boolean] value */
+		if (*buf == '1' || *buf == 't' || *buf == 'T'
+		    || *buf == 'Y' || *buf == 'y')
+		    gaiaSetIntValue (pFld, 1);
+		else
+		    gaiaSetIntValue (pFld, 0);
+	    }
+	  else
+	    {
+		/* CHARACTER [aka String, Text] value */
+		for (i = strlen ((char *) buf) - 1; i > 1; i--)
+		  {
+		      /* cleaning up trailing spaces */
+		      if (buf[i] == ' ')
+			  buf[i] = '\0';
+		      else
+			  break;
+		  }
+		len = strlen ((char *) buf);
+		utf8len = 2048;
+		pBuf = (char *) buf;
+		pUtf8buf = utf8buf;
+		if (iconv
+		    ((iconv_t) (iconv_obj), &pBuf, &len, &pUtf8buf,
+		     &utf8len) == (size_t) (-1))
+		    return 0;
+		memcpy (buf, utf8buf, 2048 - utf8len);
+		buf[2048 - utf8len] = '\0';
+		gaiaSetStrValue (pFld, (char *) buf);
+	    }
+      }
+    return 1;
+}
+
+GAIAGEO_DECLARE int
+gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
+{
+/* trying to read an entity from shapefile */
+    unsigned char buf[512];
+    int len;
     int rd;
     int skpos;
     int offset;
     int off_shp;
-    int i;
     int sz;
     int shape;
     double x;
@@ -1955,92 +2049,8 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
     pFld = shp->Dbf->First;
     while (pFld)
       {
-	  memcpy (buf, shp->BufDbf + pFld->Offset + 1, pFld->Length);
-	  buf[pFld->Length] = '\0';
-	  if (*buf == '\0')
-	      gaiaSetNullValue (pFld);
-	  else
-	    {
-		if (pFld->Type == 'N')
-		  {
-		      /* NUMERIC value */
-		      if (pFld->Decimals > 0 || pFld->Length > 18)
-			  gaiaSetDoubleValue (pFld, atof ((char *) buf));
-		      else
-			  gaiaSetIntValue (pFld, atoll ((char *) buf));
-		  }
-		else if (pFld->Type == 'F')
-		  {
-		      /* FLOAT value */
-		      gaiaSetDoubleValue (pFld, atof ((char *) buf));
-		  }
-		else if (pFld->Type == 'D')
-		  {
-		      /* DATE value */
-		      if (strlen ((char *) buf) != 8)
-			  gaiaSetNullValue (pFld);
-		      else
-			{
-			    /* converting into a Julian Date */
-			    double julian;
-			    char date[5];
-			    int year = 0;
-			    int month = 0;
-			    int day = 0;
-			    date[0] = buf[0];
-			    date[1] = buf[1];
-			    date[2] = buf[2];
-			    date[3] = buf[3];
-			    date[4] = '\0';
-			    year = atoi (date);
-			    date[0] = buf[4];
-			    date[1] = buf[5];
-			    date[2] = '\0';
-			    month = atoi (date);
-			    date[0] = buf[6];
-			    date[1] = buf[7];
-			    date[2] = '\0';
-			    day = atoi (date);
-			    if (to_sqlite_julian_date
-				(year, month, day, &julian))
-				gaiaSetDoubleValue (pFld, julian);
-			    else
-				gaiaSetNullValue (pFld);
-			}
-		  }
-		else if (pFld->Type == 'L')
-		  {
-		      /* LOGICAL [aka Boolean] value */
-		      if (*buf == '1' || *buf == 't' || *buf == 'T'
-			  || *buf == 'Y' || *buf == 'y')
-			  gaiaSetIntValue (pFld, 1);
-		      else
-			  gaiaSetIntValue (pFld, 0);
-		  }
-		else
-		  {
-		      /* CHARACTER [aka String, Text] value */
-		      for (i = strlen ((char *) buf) - 1; i > 1; i--)
-			{
-			    /* cleaning up trailing spaces */
-			    if (buf[i] == ' ')
-				buf[i] = '\0';
-			    else
-				break;
-			}
-		      len = strlen ((char *) buf);
-		      utf8len = 2048;
-		      pBuf = (char *) buf;
-		      pUtf8buf = utf8buf;
-		      if (iconv
-			  ((iconv_t) (shp->IconvObj), &pBuf, &len, &pUtf8buf,
-			   &utf8len) == (size_t) (-1))
-			  goto conversion_error;
-		      memcpy (buf, utf8buf, 2048 - utf8len);
-		      buf[2048 - utf8len] = '\0';
-		      gaiaSetStrValue (pFld, (char *) buf);
-		  }
-	    }
+	  if (!parseDbfField (shp->BufDbf, shp->IconvObj, pFld))
+	      goto conversion_error;
 	  pFld = pFld->Next;
       }
     if (shp->LastError)
@@ -4127,4 +4137,257 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 	  else
 	      shp->EffectiveDims = GAIA_XY_Z;
       }
+}
+
+GAIAGEO_DECLARE gaiaDbfPtr
+gaiaAllocDbf ()
+{
+/* allocates and initializes the DBF object */
+    gaiaDbfPtr dbf = malloc (sizeof (gaiaDbf));
+    dbf->endian_arch = 1;
+    dbf->Path = NULL;
+    dbf->flDbf = NULL;
+    dbf->Dbf = NULL;
+    dbf->BufDbf = NULL;
+    dbf->DbfHdsz = 0;
+    dbf->DbfReclen = 0;
+    dbf->DbfSize = 0;
+    dbf->DbfRecno = 0;
+    dbf->Valid = 0;
+    dbf->IconvObj = NULL;
+    dbf->LastError = NULL;
+    return dbf;
+}
+
+GAIAGEO_DECLARE void
+gaiaFreeDbf (gaiaDbfPtr dbf)
+{
+/* frees all memory allocations related to the DBF object */
+    if (dbf->Path)
+	free (dbf->Path);
+    if (dbf->flDbf)
+	fclose (dbf->flDbf);
+    if (dbf->Dbf)
+	gaiaFreeDbfList (dbf->Dbf);
+    if (dbf->BufDbf)
+	free (dbf->BufDbf);
+    if (dbf->IconvObj)
+	iconv_close ((iconv_t) dbf->IconvObj);
+    if (dbf->LastError)
+	free (dbf->LastError);
+    free (dbf);
+}
+
+GAIAGEO_DECLARE void
+gaiaOpenDbfRead (gaiaDbfPtr dbf, const char *path, const char *charFrom,
+		 const char *charTo)
+{
+/* trying to open the DBF and initial checkings */
+    FILE *fl_dbf = NULL;
+    int rd;
+    unsigned char bf[1024];
+    int dbf_size;
+    int dbf_reclen = 0;
+    int dbf_recno;
+    int off_dbf;
+    int ind;
+    char field_name[2048];
+    char *sys_err;
+    char errMsg[1024];
+    iconv_t iconv_ret;
+    char utf8buf[2048];
+#ifdef __MINGW32__
+    const char *pBuf;
+    int len;
+    int utf8len;
+#else /* not MINGW32 */
+    char *pBuf;
+    size_t len;
+    size_t utf8len;
+#endif
+    char *pUtf8buf;
+    int endian_arch = gaiaEndianArch ();
+    gaiaDbfListPtr dbf_list = NULL;
+    if (charFrom && charTo)
+      {
+	  iconv_ret = iconv_open (charTo, charFrom);
+	  if (iconv_ret == (iconv_t) (-1))
+	    {
+		sprintf (errMsg, "conversion from '%s' to '%s' not available\n",
+			 charFrom, charTo);
+		goto unsupported_conversion;
+	    }
+	  dbf->IconvObj = iconv_ret;
+      }
+    else
+      {
+	  sprintf (errMsg, "a NULL charset-name was passed\n");
+	  goto unsupported_conversion;
+      }
+    if (dbf->flDbf != NULL)
+      {
+	  sprintf (errMsg, "attempting to reopen an already opened DBF\n");
+	  goto unsupported_conversion;
+      }
+    fl_dbf = fopen (path, "rb");
+    if (!fl_dbf)
+      {
+	  sys_err = strerror (errno);
+	  sprintf (errMsg, "unable to open '%s' for reading: %s", path,
+		   sys_err);
+	  goto no_file;
+      }
+/* reading DBF file header */
+    rd = fread (bf, sizeof (unsigned char), 32, fl_dbf);
+    if (rd != 32)
+	goto error;
+    if (*bf != 0x03)		/* checks the DBF magic number */
+	goto error;
+    dbf_recno = gaiaImport32 (bf + 4, GAIA_LITTLE_ENDIAN, endian_arch);
+    dbf_size = gaiaImport16 (bf + 8, GAIA_LITTLE_ENDIAN, endian_arch);
+    dbf_reclen = gaiaImport16 (bf + 10, GAIA_LITTLE_ENDIAN, endian_arch);
+    dbf_size--;
+    off_dbf = 0;
+    dbf_list = gaiaAllocDbfList ();
+    for (ind = 32; ind < dbf_size; ind += 32)
+      {
+	  /* fetches DBF fields definitions */
+	  rd = fread (bf, sizeof (unsigned char), 32, fl_dbf);
+	  if (rd != 32)
+	      goto error;
+	  memcpy (field_name, bf, 11);
+	  field_name[11] = '\0';
+	  len = strlen ((char *) field_name);
+	  utf8len = 2048;
+	  pBuf = (char *) field_name;
+	  pUtf8buf = utf8buf;
+	  if (iconv
+	      ((iconv_t) (dbf->IconvObj), &pBuf, &len, &pUtf8buf,
+	       &utf8len) == (size_t) (-1))
+	      goto conversion_error;
+	  memcpy (field_name, utf8buf, 2048 - utf8len);
+	  field_name[2048 - utf8len] = '\0';
+	  gaiaAddDbfField (dbf_list, field_name, *(bf + 11), off_dbf,
+			   *(bf + 16), *(bf + 17));
+	  off_dbf += *(bf + 16);
+      }
+    if (!gaiaIsValidDbfList (dbf_list))
+      {
+	  /* invalid DBF */
+	  goto illegal_dbf;
+      }
+    len = strlen (path);
+    dbf->Path = malloc (len + 1);
+    strcpy (dbf->Path, path);
+    dbf->flDbf = fl_dbf;
+    dbf->Dbf = dbf_list;
+/* allocating DBF buffer */
+    dbf->BufDbf = malloc (sizeof (unsigned char) * dbf_reclen);
+    dbf->DbfHdsz = dbf_size + 1;
+    dbf->DbfReclen = dbf_reclen;
+    dbf->Valid = 1;
+    dbf->endian_arch = endian_arch;
+    return;
+  unsupported_conversion:
+/* illegal charset */
+    if (dbf->LastError)
+	free (dbf->LastError);
+    len = strlen (errMsg);
+    dbf->LastError = malloc (len + 1);
+    strcpy (dbf->LastError, errMsg);
+    return;
+  no_file:
+/* the DBF file can't be accessed */
+    if (dbf->LastError)
+	free (dbf->LastError);
+    len = strlen (errMsg);
+    dbf->LastError = malloc (len + 1);
+    strcpy (dbf->LastError, errMsg);
+    if (fl_dbf)
+	fclose (fl_dbf);
+    return;
+  error:
+/* the DBF is invalid or corrupted */
+    if (dbf->LastError)
+	free (dbf->LastError);
+    sprintf (errMsg, "'%s' is corrupted / has invalid format", path);
+    len = strlen (errMsg);
+    dbf->LastError = malloc (len + 1);
+    strcpy (dbf->LastError, errMsg);
+    gaiaFreeDbfList (dbf_list);
+    fclose (fl_dbf);
+    return;
+  illegal_dbf:
+/* the DBF-file contains unsupported data types */
+    if (dbf->LastError)
+	free (dbf->LastError);
+    sprintf (errMsg, "'%s' contains unsupported data types", path);
+    len = strlen (errMsg);
+    dbf->LastError = malloc (len + 1);
+    strcpy (dbf->LastError, errMsg);
+    gaiaFreeDbfList (dbf_list);
+    if (fl_dbf)
+	fclose (fl_dbf);
+    return;
+  conversion_error:
+/* libiconv error */
+    if (dbf->LastError)
+	free (dbf->LastError);
+    sprintf (errMsg, "'%s' field name: invalid character sequence", path);
+    len = strlen (errMsg);
+    dbf->LastError = malloc (len + 1);
+    strcpy (dbf->LastError, errMsg);
+    gaiaFreeDbfList (dbf_list);
+    if (fl_dbf)
+	fclose (fl_dbf);
+    return;
+}
+
+GAIAGEO_DECLARE int
+gaiaReadDbfEntity (gaiaDbfPtr dbf, int current_row)
+{
+/* trying to read an entity from DBF */
+    int rd;
+    int skpos;
+    int offset;
+    int len;
+    char errMsg[1024];
+    gaiaDbfFieldPtr pFld;
+/* positioning and reading the DBF file */
+    offset = dbf->DbfHdsz + (current_row * dbf->DbfReclen);
+    skpos = fseek (dbf->flDbf, offset, SEEK_SET);
+    if (skpos != 0)
+	goto eof;
+    rd = fread (dbf->BufDbf, sizeof (unsigned char), dbf->DbfReclen,
+		dbf->flDbf);
+    if (rd != dbf->DbfReclen)
+	goto eof;
+/* setting up the current DBF ENTITY */
+    gaiaResetDbfEntity (dbf->Dbf);
+    dbf->Dbf->RowId = current_row;
+/* fetching the DBF values */
+    pFld = dbf->Dbf->First;
+    while (pFld)
+      {
+	  if (!parseDbfField (dbf->BufDbf, dbf->IconvObj, pFld))
+	      goto conversion_error;
+	  pFld = pFld->Next;
+      }
+    if (dbf->LastError)
+	free (dbf->LastError);
+    dbf->LastError = NULL;
+    return 1;
+  eof:
+    if (dbf->LastError)
+	free (dbf->LastError);
+    dbf->LastError = NULL;
+    return 0;
+  conversion_error:
+    if (dbf->LastError)
+	free (dbf->LastError);
+    sprintf (errMsg, "Invalid character sequence");
+    len = strlen (errMsg);
+    dbf->LastError = malloc (len + 1);
+    strcpy (dbf->LastError, errMsg);
+    return 0;
 }

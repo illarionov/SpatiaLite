@@ -67,6 +67,9 @@ extern "C"
 					   char *table, char *charset, int srid,
 					   char *column, int verbose,
 					   int *rows);
+    SPATIALITE_DECLARE int load_dbf (sqlite3 * sqlite, char *shp_path,
+				     char *table, char *charset, int verbose,
+				     int *rows);
     SPATIALITE_DECLARE double math_round (double value);
     SPATIALITE_DECLARE sqlite3_int64 math_llabs (sqlite3_int64 value);
 

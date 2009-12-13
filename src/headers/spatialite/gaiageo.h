@@ -391,12 +391,30 @@ extern "C"
     } gaiaDbfList;
     typedef gaiaDbfList *gaiaDbfListPtr;
 
+    typedef struct gaiaDbfStruct
+    {
+/* DBF TYPE */
+	int endian_arch;
+	int Valid;		/* 1 = ready to process */
+	char *Path;		/* the DBF path */
+	FILE *flDbf;		/* the DBF file handle */
+	gaiaDbfListPtr Dbf;	/* the DBF attributes list */
+	unsigned char *BufDbf;	/* the DBF I/O buffer */
+	int DbfHdsz;		/* the DBF header length */
+	int DbfReclen;		/* the DBF record length */
+	int DbfSize;		/* current DBF size */
+	int DbfRecno;		/* current DBF record number */
+	void *IconvObj;		/* opaque reference to ICONV converter */
+	char *LastError;	/* last error message */
+    } gaiaDbf;
+    typedef gaiaDbf *gaiaDbfPtr;
+
     typedef struct gaiaShapefileStruct
     {
 /* SHAPEFILE TYPE */
 	int endian_arch;
 	int Valid;		/* 1 = ready to process */
-	int ReadOnly;		/* read or wite mode */
+	int ReadOnly;		/* read or write mode */
 	char *Path;		/* the shapefile abstract path [no suffixes] */
 	FILE *flShx;		/* the SHX file handle */
 	FILE *flShp;		/* the SHP file handle */
@@ -659,6 +677,13 @@ extern "C"
     GAIAGEO_DECLARE int gaiaWriteShpEntity (gaiaShapefilePtr shp,
 					    gaiaDbfListPtr entity);
     GAIAGEO_DECLARE void gaiaFlushShpHeaders (gaiaShapefilePtr shp);
+    GAIAGEO_DECLARE gaiaDbfPtr gaiaAllocDbf (void);
+    GAIAGEO_DECLARE void gaiaFreeDbf (gaiaDbfPtr dbf);
+    GAIAGEO_DECLARE void gaiaOpenDbfRead (gaiaDbfPtr dbf,
+					  const char *path,
+					  const char *charFrom,
+					  const char *charTo);
+    GAIAGEO_DECLARE int gaiaReadDbfEntity (gaiaDbfPtr shp, int current_row);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaParseWkt (const unsigned char
 						  *dirty_buffer, short type);
     GAIAGEO_DECLARE void gaiaOutWkt (gaiaGeomCollPtr geom, char **result);
@@ -752,6 +777,15 @@ extern "C"
 						    double *coords, int vert);
     GAIAGEO_DECLARE int gaiaConvertLength (double value, int unit_from,
 					   int unit_to, double *cvt);
+    GAIAGEO_DECLARE int gaiaLineGetPoint (gaiaLinestringPtr ln, int v,
+					  double *x, double *y, double *z,
+					  double *m);
+    GAIAGEO_DECLARE int gaiaLineSetPoint (gaiaLinestringPtr ln, int v, double x,
+					  double y, double z, double m);
+    GAIAGEO_DECLARE int gaiaRingGetPoint (gaiaRingPtr rng, int v, double *x,
+					  double *y, double *z, double *m);
+    GAIAGEO_DECLARE int gaiaRingSetPoint (gaiaRingPtr rng, int v, double x,
+					  double y, double z, double m);
 
 #ifndef OMIT_PROJ		/* including PROJ.4 */
 

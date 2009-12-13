@@ -196,6 +196,84 @@ gaiaFreeLinestring (gaiaLinestringPtr ptr)
       }
 }
 
+GAIAGEO_DECLARE int
+gaiaLineGetPoint (gaiaLinestringPtr ln, int v, double *x, double *y, double *z,
+		  double *m)
+{
+/* SAFE - getting coords for a vertex in LINESTRING */
+    double vx;
+    double vy;
+    double vz;
+    double vm;
+    *x = 0.0;
+    *y = 0.0;
+    *z = 0.0;
+    *m = 0.0;
+    if (!ln)
+	return 0;
+    if (v < 0 || v >= ln->Points)
+	return 0;
+    switch (ln->DimensionModel)
+      {
+      case GAIA_XY:
+	  gaiaGetPoint (ln->Coords, v, &vx, &vy);
+	  *x = vx;
+	  *y = vy;
+	  break;
+      case GAIA_XY_Z:
+	  gaiaGetPointXYZ (ln->Coords, v, &vx, &vy, &vz);
+	  *x = vx;
+	  *y = vy;
+	  *z = vz;
+	  break;
+      case GAIA_XY_M:
+	  gaiaGetPointXYM (ln->Coords, v, &vx, &vy, &vm);
+	  *x = vx;
+	  *y = vy;
+	  *m = vm;
+	  break;
+      case GAIA_XY_Z_M:
+	  gaiaGetPointXYZM (ln->Coords, v, &vx, &vy, &vz, &vm);
+	  *x = vx;
+	  *y = vy;
+	  *z = vz;
+	  *m = vm;
+	  break;
+      default:
+	  return 0;
+      };
+    return 1;
+}
+
+GAIAGEO_DECLARE int
+gaiaLineSetPoint (gaiaLinestringPtr ln, int v, double x, double y, double z,
+		  double m)
+{
+/* SAFE - setting coords for a vertex in RING */
+    if (!ln)
+	return 0;
+    if (v < 0 || v >= ln->Points)
+	return 0;
+    switch (ln->DimensionModel)
+      {
+      case GAIA_XY:
+	  gaiaSetPoint (ln->Coords, v, x, y);
+	  break;
+      case GAIA_XY_Z:
+	  gaiaSetPointXYZ (ln->Coords, v, x, y, z);
+	  break;
+      case GAIA_XY_M:
+	  gaiaSetPointXYM (ln->Coords, v, x, y, m);
+	  break;
+      case GAIA_XY_Z_M:
+	  gaiaSetPointXYZM (ln->Coords, v, x, y, z, m);
+	  break;
+      default:
+	  return 0;
+      };
+    return 1;
+}
+
 GAIAGEO_DECLARE void
 gaiaCopyLinestringCoords (gaiaLinestringPtr dst, gaiaLinestringPtr src)
 {
@@ -354,6 +432,84 @@ gaiaFreeRing (gaiaRingPtr ptr)
 	      free (ptr->Coords);
 	  free (ptr);
       }
+}
+
+GAIAGEO_DECLARE int
+gaiaRingGetPoint (gaiaRingPtr rng, int v, double *x, double *y, double *z,
+		  double *m)
+{
+/* SAFE - getting coords for a vertex in RING */
+    double vx;
+    double vy;
+    double vz;
+    double vm;
+    *x = 0.0;
+    *y = 0.0;
+    *z = 0.0;
+    *m = 0.0;
+    if (!rng)
+	return 0;
+    if (v < 0 || v >= rng->Points)
+	return 0;
+    switch (rng->DimensionModel)
+      {
+      case GAIA_XY:
+	  gaiaGetPoint (rng->Coords, v, &vx, &vy);
+	  *x = vx;
+	  *y = vy;
+	  break;
+      case GAIA_XY_Z:
+	  gaiaGetPointXYZ (rng->Coords, v, &vx, &vy, &vz);
+	  *x = vx;
+	  *y = vy;
+	  *z = vz;
+	  break;
+      case GAIA_XY_M:
+	  gaiaGetPointXYM (rng->Coords, v, &vx, &vy, &vm);
+	  *x = vx;
+	  *y = vy;
+	  *m = vm;
+	  break;
+      case GAIA_XY_Z_M:
+	  gaiaGetPointXYZM (rng->Coords, v, &vx, &vy, &vz, &vm);
+	  *x = vx;
+	  *y = vy;
+	  *z = vz;
+	  *m = vm;
+	  break;
+      default:
+	  return 0;
+      };
+    return 1;
+}
+
+GAIAGEO_DECLARE int
+gaiaRingSetPoint (gaiaRingPtr rng, int v, double x, double y, double z,
+		  double m)
+{
+/* SAFE - getting coords for a vertex in RING */
+    if (!rng)
+	return 0;
+    if (v < 0 || v >= rng->Points)
+	return 0;
+    switch (rng->DimensionModel)
+      {
+      case GAIA_XY:
+	  gaiaSetPoint (rng->Coords, v, x, y);
+	  break;
+      case GAIA_XY_Z:
+	  gaiaSetPointXYZ (rng->Coords, v, x, y, z);
+	  break;
+      case GAIA_XY_M:
+	  gaiaSetPointXYM (rng->Coords, v, x, y, m);
+	  break;
+      case GAIA_XY_Z_M:
+	  gaiaSetPointXYZM (rng->Coords, v, x, y, z, m);
+	  break;
+      default:
+	  return 0;
+      };
+    return 1;
 }
 
 GAIAGEO_DECLARE void
