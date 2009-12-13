@@ -1,0 +1,479 @@
+/*
+
+ virtualdbf.c -- SQLite3 extension [VIRTUAL TABLE accessing DBF]
+
+ version 2.4, 2009 December 12
+
+ Author: Sandro Furieri a.furieri@lqt.it
+
+ -----------------------------------------------------------------------------
+ 
+ Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ 
+ The contents of this file are subject to the Mozilla Public License Version
+ 1.1 (the "License"); you may not use this file except in compliance with
+ the License. You may obtain a copy of the License at
+ http://www.mozilla.org/MPL/
+ 
+Software distributed under the License is distributed on an "AS IS" basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+for the specific language governing rights and limitations under the
+License.
+
+The Original Code is the SpatiaLite library
+
+The Initial Developer of the Original Code is Alessandro Furieri
+ 
+Portions created by the Initial Developer are Copyright (C) 2008
+the Initial Developer. All Rights Reserved.
+
+Contributor(s):
+
+Alternatively, the contents of this file may be used under the terms of
+either the GNU General Public License Version 2 or later (the "GPL"), or
+the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+in which case the provisions of the GPL or the LGPL are applicable instead
+of those above. If you wish to allow use of your version of this file only
+under the terms of either the GPL or the LGPL, and not to allow others to
+use your version of this file under the terms of the MPL, indicate your
+decision by deleting the provisions above and replace them with the notice
+and other provisions required by the GPL or the LGPL. If you do not delete
+the provisions above, a recipient may use your version of this file under
+the terms of any one of the MPL, the GPL or the LGPL.
+ 
+*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <spatialite/sqlite3.h>
+#include <spatialite/spatialite.h>
+#include <spatialite/gaiaaux.h>
+#include <spatialite/gaiageo.h>
+
+static struct sqlite3_module my_dbf_module;
+
+typedef struct VirtualDbfStruct
+{
+/* extends the sqlite3_vtab struct */
+    const sqlite3_module *pModule;	/* ptr to sqlite module: USED INTERNALLY BY SQLITE */
+    int nRef;			/* # references: USED INTERNALLY BY SQLITE */
+    char *zErrMsg;		/* error message: USE INTERNALLY BY SQLITE */
+    sqlite3 *db;		/* the sqlite db holding the virtual table */
+    gaiaDbfPtr dbf;		/* the DBF struct */
+} VirtualDbf;
+typedef VirtualDbf *VirtualDbfPtr;
+
+typedef struct VirtualDbfCursorStruct
+{
+/* extends the sqlite3_vtab_cursor struct */
+    VirtualDbfPtr pVtab;	/* Virtual table of this cursor */
+    long current_row;		/* the current row ID */
+    int eof;			/* the EOF marker */
+} VirtualDbfCursor;
+typedef VirtualDbfCursor *VirtualDbfCursorPtr;
+
+static int
+vdbf_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
+	     sqlite3_vtab ** ppVTab, char **pzErr)
+{
+/* creates the virtual table connected to some DBF */
+    char buf[4096];
+    char field[128];
+    VirtualDbfPtr p_vt;
+    char path[2048];
+    char encoding[128];
+    const char *pEncoding = NULL;
+    int len;
+    const char *pPath = NULL;
+    gaiaDbfFieldPtr pFld;
+    int cnt;
+    int col_cnt;
+    int seed;
+    int dup;
+    int idup;
+    char dummyName[4096];
+    char **col_name = NULL;
+    if (pAux)
+	pAux = pAux;		/* unused arg warning suppression */
+/* checking for DBF PATH */
+    if (argc == 5)
+      {
+	  pPath = argv[3];
+	  len = strlen (pPath);
+	  if ((*(pPath + 0) == '\'' || *(pPath + 0) == '"')
+	      && (*(pPath + len - 1) == '\'' || *(pPath + len - 1) == '"'))
+	    {
+		/* the path is enclosed between quotes - we need to dequote it */
+		strcpy (path, pPath + 1);
+		len = strlen (path);
+		*(path + len - 1) = '\0';
+	    }
+	  else
+	      strcpy (path, pPath);
+	  pEncoding = argv[4];
+	  len = strlen (pEncoding);
+	  if ((*(pEncoding + 0) == '\'' || *(pEncoding + 0) == '"')
+	      && (*(pEncoding + len - 1) == '\''
+		  || *(pEncoding + len - 1) == '"'))
+	    {
+		/* the charset-name is enclosed between quotes - we need to dequote it */
+		strcpy (encoding, pEncoding + 1);
+		len = strlen (encoding);
+		*(encoding + len - 1) = '\0';
+	    }
+	  else
+	      strcpy (encoding, pEncoding);
+      }
+    else
+      {
+	  *pzErr =
+	      sqlite3_mprintf
+	      ("[VirtualDbf module] CREATE VIRTUAL: illegal arg list {dbf_path, encoding}");
+	  return SQLITE_ERROR;
+      }
+    p_vt = (VirtualDbfPtr) sqlite3_malloc (sizeof (VirtualDbf));
+    if (!p_vt)
+	return SQLITE_NOMEM;
+    p_vt->pModule = &my_dbf_module;
+    p_vt->nRef = 0;
+    p_vt->zErrMsg = NULL;
+    p_vt->db = db;
+    p_vt->dbf = gaiaAllocDbf ();
+/* trying to open file */
+    gaiaOpenDbfRead (p_vt->dbf, path, encoding, "UTF-8");
+    if (!(p_vt->dbf->Valid))
+      {
+	  /* something is going the wrong way; creating a stupid default table */
+	  sprintf (buf, "CREATE TABLE %s (PKUID INTEGER)", argv[1]);
+	  if (sqlite3_declare_vtab (db, buf) != SQLITE_OK)
+	    {
+		*pzErr =
+		    sqlite3_mprintf
+		    ("[VirtualDbf module] cannot build a table from DBF\n");
+		return SQLITE_ERROR;
+	    }
+	  *ppVTab = (sqlite3_vtab *) p_vt;
+	  return SQLITE_OK;
+      }
+/* preparing the COLUMNs for this VIRTUAL TABLE */
+    strcpy (buf, "CREATE TABLE ");
+    strcat (buf, argv[2]);
+    strcat (buf, " (PKUID INTEGER");
+/* checking for duplicate / illegal column names and antialising them */
+    col_cnt = 0;
+    pFld = p_vt->dbf->Dbf->First;
+    while (pFld)
+      {
+	  /* counting DBF fields */
+	  col_cnt++;
+	  pFld = pFld->Next;
+      }
+    col_name = malloc (sizeof (char *) * col_cnt);
+    cnt = 0;
+    seed = 0;
+    pFld = p_vt->dbf->Dbf->First;
+    while (pFld)
+      {
+	  sprintf (dummyName, "\"%s\"", pFld->Name);
+	  dup = 0;
+	  for (idup = 0; idup < cnt; idup++)
+	    {
+		if (strcasecmp (dummyName, *(col_name + idup)) == 0)
+		    dup = 1;
+	    }
+	  if (strcasecmp (dummyName, "PKUID") == 0)
+	      dup = 1;
+	  if (dup)
+	      sprintf (dummyName, "COL_%d", seed++);
+	  if (pFld->Type == 'N')
+	    {
+		if (pFld->Decimals > 0 || pFld->Length > 18)
+		    sprintf (field, "%s DOUBLE", dummyName);
+		else
+		    sprintf (field, "%s INTEGER", dummyName);
+	    }
+	  else if (pFld->Type == 'F')
+	      sprintf (field, "%s DOUBLE", dummyName);
+	  else
+	      sprintf (field, "%s VARCHAR(%d)", dummyName, pFld->Length);
+	  strcat (buf, ", ");
+	  strcat (buf, field);
+	  len = strlen (dummyName);
+	  *(col_name + cnt) = malloc (len + 1);
+	  strcpy (*(col_name + cnt), dummyName);
+	  cnt++;
+	  pFld = pFld->Next;
+      }
+    strcat (buf, ")");
+    if (col_name)
+      {
+	  /* releasing memory allocation for column names */
+	  for (cnt = 0; cnt < col_cnt; cnt++)
+	      free (*(col_name + cnt));
+	  free (col_name);
+      }
+    if (sqlite3_declare_vtab (db, buf) != SQLITE_OK)
+      {
+	  *pzErr =
+	      sqlite3_mprintf
+	      ("[VirtualDbf module] CREATE VIRTUAL: invalid SQL statement \"%s\"",
+	       buf);
+	  return SQLITE_ERROR;
+      }
+    *ppVTab = (sqlite3_vtab *) p_vt;
+    return SQLITE_OK;
+}
+
+static int
+vdbf_connect (sqlite3 * db, void *pAux, int argc, const char *const *argv,
+	      sqlite3_vtab ** ppVTab, char **pzErr)
+{
+/* connects the virtual table to some DBF - simply aliases vdbf_create() */
+    return vdbf_create (db, pAux, argc, argv, ppVTab, pzErr);
+}
+
+static int
+vdbf_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIndex)
+{
+/* best index selection */
+    if (pVTab || pIndex)
+	pVTab = pVTab;		/* unused arg warning suppression */
+    return SQLITE_OK;
+}
+
+static int
+vdbf_disconnect (sqlite3_vtab * pVTab)
+{
+/* disconnects the virtual table */
+    VirtualDbfPtr p_vt = (VirtualDbfPtr) pVTab;
+    if (p_vt->dbf)
+	gaiaFreeDbf (p_vt->dbf);
+    sqlite3_free (p_vt);
+    return SQLITE_OK;
+}
+
+static int
+vdbf_destroy (sqlite3_vtab * pVTab)
+{
+/* destroys the virtual table - simply aliases vdbf_disconnect() */
+    return vdbf_disconnect (pVTab);
+}
+
+static void
+vdbf_read_row (VirtualDbfCursorPtr cursor)
+{
+/* trying to read a "row" from DBF */
+    int ret;
+    if (!(cursor->pVtab->dbf->Valid))
+      {
+	  cursor->eof = 1;
+	  return;
+      }
+    ret = gaiaReadDbfEntity (cursor->pVtab->dbf, cursor->current_row);
+    if (!ret)
+      {
+	  if (!(cursor->pVtab->dbf->LastError))	/* normal DBF EOF */
+	    {
+		cursor->eof = 1;
+		return;
+	    }
+	  /* an error occurred */
+	  fprintf (stderr, "%s\n", cursor->pVtab->dbf->LastError);
+	  cursor->eof = 1;
+	  return;
+      }
+    cursor->current_row++;
+}
+
+static int
+vdbf_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
+{
+/* opening a new cursor */
+    VirtualDbfCursorPtr cursor =
+	(VirtualDbfCursorPtr) sqlite3_malloc (sizeof (VirtualDbfCursor));
+    if (cursor == NULL)
+	return SQLITE_ERROR;
+    cursor->pVtab = (VirtualDbfPtr) pVTab;
+    cursor->current_row = 0;
+    cursor->eof = 0;
+    *ppCursor = (sqlite3_vtab_cursor *) cursor;
+    vdbf_read_row (cursor);
+    return SQLITE_OK;
+}
+
+static int
+vdbf_close (sqlite3_vtab_cursor * pCursor)
+{
+/* closing the cursor */
+    sqlite3_free (pCursor);
+    return SQLITE_OK;
+}
+
+static int
+vdbf_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
+	     int argc, sqlite3_value ** argv)
+{
+/* setting up a cursor filter */
+    if (pCursor || idxNum || idxStr || argc || argv)
+	pCursor = pCursor;	/* unused arg warning suppression */
+    return SQLITE_OK;
+}
+
+static int
+vdbf_next (sqlite3_vtab_cursor * pCursor)
+{
+/* fetching a next row from cursor */
+    VirtualDbfCursorPtr cursor = (VirtualDbfCursorPtr) pCursor;
+    vdbf_read_row (cursor);
+    return SQLITE_OK;
+}
+
+static int
+vdbf_eof (sqlite3_vtab_cursor * pCursor)
+{
+/* cursor EOF */
+    VirtualDbfCursorPtr cursor = (VirtualDbfCursorPtr) pCursor;
+    return cursor->eof;
+}
+
+static int
+vdbf_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
+	     int column)
+{
+/* fetching value for the Nth column */
+    int nCol = 1;
+    gaiaDbfFieldPtr pFld;
+    VirtualDbfCursorPtr cursor = (VirtualDbfCursorPtr) pCursor;
+    if (column == 0)
+      {
+	  /* the PRIMARY KEY column */
+	  sqlite3_result_int (pContext, cursor->current_row);
+	  return SQLITE_OK;
+      }
+    pFld = cursor->pVtab->dbf->Dbf->First;
+    while (pFld)
+      {
+	  /* column values */
+	  if (nCol == column)
+	    {
+		if (!(pFld->Value))
+		    sqlite3_result_null (pContext);
+		else
+		  {
+		      switch (pFld->Value->Type)
+			{
+			case GAIA_INT_VALUE:
+			    sqlite3_result_int64 (pContext,
+						  pFld->Value->IntValue);
+			    break;
+			case GAIA_DOUBLE_VALUE:
+			    sqlite3_result_double (pContext,
+						   pFld->Value->DblValue);
+			    break;
+			case GAIA_TEXT_VALUE:
+			    sqlite3_result_text (pContext,
+						 pFld->Value->TxtValue,
+						 strlen (pFld->Value->TxtValue),
+						 SQLITE_STATIC);
+			    break;
+			default:
+			    sqlite3_result_null (pContext);
+			    break;
+			}
+		  }
+		break;
+	    }
+	  nCol++;
+	  pFld = pFld->Next;
+      }
+    return SQLITE_OK;
+}
+
+static int
+vdbf_rowid (sqlite3_vtab_cursor * pCursor, sqlite_int64 * pRowid)
+{
+/* fetching the ROWID */
+    VirtualDbfCursorPtr cursor = (VirtualDbfCursorPtr) pCursor;
+    *pRowid = cursor->current_row;
+    return SQLITE_OK;
+}
+
+static int
+vdbf_update (sqlite3_vtab * pVTab, int argc, sqlite3_value ** argv,
+	     sqlite_int64 * pRowid)
+{
+/* generic update [INSERT / UPDATE / DELETE */
+    if (pVTab || argc || argv || pRowid)
+	pVTab = pVTab;		/* unused arg warning suppression */
+    return SQLITE_READONLY;
+}
+
+static int
+vdbf_begin (sqlite3_vtab * pVTab)
+{
+/* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
+    return SQLITE_OK;
+}
+
+static int
+vdbf_sync (sqlite3_vtab * pVTab)
+{
+/* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
+    return SQLITE_OK;
+}
+
+static int
+vdbf_commit (sqlite3_vtab * pVTab)
+{
+/* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
+    return SQLITE_OK;
+}
+
+static int
+vdbf_rollback (sqlite3_vtab * pVTab)
+{
+/* BEGIN TRANSACTION */
+    if (pVTab)
+	pVTab = pVTab;		/* unused arg warning suppression */
+    return SQLITE_OK;
+}
+
+int
+sqlite3VirtualDbfInit (sqlite3 * db)
+{
+    int rc = SQLITE_OK;
+    my_dbf_module.iVersion = 1;
+    my_dbf_module.xCreate = &vdbf_create;
+    my_dbf_module.xConnect = &vdbf_connect;
+    my_dbf_module.xBestIndex = &vdbf_best_index;
+    my_dbf_module.xDisconnect = &vdbf_disconnect;
+    my_dbf_module.xDestroy = &vdbf_destroy;
+    my_dbf_module.xOpen = &vdbf_open;
+    my_dbf_module.xClose = &vdbf_close;
+    my_dbf_module.xFilter = &vdbf_filter;
+    my_dbf_module.xNext = &vdbf_next;
+    my_dbf_module.xEof = &vdbf_eof;
+    my_dbf_module.xColumn = &vdbf_column;
+    my_dbf_module.xRowid = &vdbf_rowid;
+    my_dbf_module.xUpdate = &vdbf_update;
+    my_dbf_module.xBegin = &vdbf_begin;
+    my_dbf_module.xSync = &vdbf_sync;
+    my_dbf_module.xCommit = &vdbf_commit;
+    my_dbf_module.xRollback = &vdbf_rollback;
+    my_dbf_module.xFindFunction = NULL;
+    sqlite3_create_module_v2 (db, "VirtualDbf", &my_dbf_module, NULL, 0);
+    return rc;
+}
+
+int
+virtualdbf_extension_init (sqlite3 * db)
+{
+    return sqlite3VirtualDbfInit (db);
+}
