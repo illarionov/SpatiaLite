@@ -4344,7 +4344,7 @@ gaiaOpenDbfRead (gaiaDbfPtr dbf, const char *path, const char *charFrom,
 }
 
 GAIAGEO_DECLARE int
-gaiaReadDbfEntity (gaiaDbfPtr dbf, int current_row)
+gaiaReadDbfEntity (gaiaDbfPtr dbf, int current_row, int *deleted)
 {
 /* trying to read an entity from DBF */
     int rd;
@@ -4365,6 +4365,15 @@ gaiaReadDbfEntity (gaiaDbfPtr dbf, int current_row)
 /* setting up the current DBF ENTITY */
     gaiaResetDbfEntity (dbf->Dbf);
     dbf->Dbf->RowId = current_row;
+    if (*(dbf->BufDbf) == '*')
+      {
+	  /* deleted row */
+	  *deleted = 1;
+	  if (dbf->LastError)
+	      free (dbf->LastError);
+	  dbf->LastError = NULL;
+	  return 1;
+      }
 /* fetching the DBF values */
     pFld = dbf->Dbf->First;
     while (pFld)
@@ -4376,6 +4385,7 @@ gaiaReadDbfEntity (gaiaDbfPtr dbf, int current_row)
     if (dbf->LastError)
 	free (dbf->LastError);
     dbf->LastError = NULL;
+    *deleted = 0;
     return 1;
   eof:
     if (dbf->LastError)

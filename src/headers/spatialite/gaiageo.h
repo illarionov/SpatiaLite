@@ -683,7 +683,8 @@ extern "C"
 					  const char *path,
 					  const char *charFrom,
 					  const char *charTo);
-    GAIAGEO_DECLARE int gaiaReadDbfEntity (gaiaDbfPtr shp, int current_row);
+    GAIAGEO_DECLARE int gaiaReadDbfEntity (gaiaDbfPtr shp, int current_row,
+					   int *deleted);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaParseWkt (const unsigned char
 						  *dirty_buffer, short type);
     GAIAGEO_DECLARE void gaiaOutWkt (gaiaGeomCollPtr geom, char **result);

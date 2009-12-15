@@ -261,16 +261,17 @@ vdbf_destroy (sqlite3_vtab * pVTab)
 }
 
 static void
-vdbf_read_row (VirtualDbfCursorPtr cursor)
+vdbf_read_row (VirtualDbfCursorPtr cursor, int *deleted_row)
 {
 /* trying to read a "row" from DBF */
     int ret;
+    int deleted;
     if (!(cursor->pVtab->dbf->Valid))
       {
 	  cursor->eof = 1;
 	  return;
       }
-    ret = gaiaReadDbfEntity (cursor->pVtab->dbf, cursor->current_row);
+    ret = gaiaReadDbfEntity (cursor->pVtab->dbf, cursor->current_row, &deleted);
     if (!ret)
       {
 	  if (!(cursor->pVtab->dbf->LastError))	/* normal DBF EOF */
@@ -284,12 +285,14 @@ vdbf_read_row (VirtualDbfCursorPtr cursor)
 	  return;
       }
     cursor->current_row++;
+    *deleted_row = deleted;
 }
 
 static int
 vdbf_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
 {
 /* opening a new cursor */
+    int deleted;
     VirtualDbfCursorPtr cursor =
 	(VirtualDbfCursorPtr) sqlite3_malloc (sizeof (VirtualDbfCursor));
     if (cursor == NULL)
@@ -298,7 +301,14 @@ vdbf_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
     cursor->current_row = 0;
     cursor->eof = 0;
     *ppCursor = (sqlite3_vtab_cursor *) cursor;
-    vdbf_read_row (cursor);
+    while (1)
+      {
+	  vdbf_read_row (cursor, &deleted);
+	  if (!deleted)
+	      break;
+	  if (cursor->eof)
+	      break;
+      }
     return SQLITE_OK;
 }
 
@@ -324,8 +334,16 @@ static int
 vdbf_next (sqlite3_vtab_cursor * pCursor)
 {
 /* fetching a next row from cursor */
+    int deleted;
     VirtualDbfCursorPtr cursor = (VirtualDbfCursorPtr) pCursor;
-    vdbf_read_row (cursor);
+    while (1)
+      {
+	  vdbf_read_row (cursor, &deleted);
+	  if (!deleted)
+	      break;
+	  if (cursor->eof)
+	      break;
+      }
     return SQLITE_OK;
 }
 
