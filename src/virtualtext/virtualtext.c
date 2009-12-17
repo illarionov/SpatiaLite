@@ -56,6 +56,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 struct sqlite3_module virtualtext_module;
 
+#define VTXT_ROW_BLOCK	65536
+
 struct row_buffer
 {
 /* a complete row */
@@ -65,15 +67,39 @@ struct row_buffer
     struct row_buffer *next;	/* pointer for linked list */
 };
 
+struct row_pointer
+{
+/* a row pointer */
+    off_t offset;		/* the row start offset */
+    int len;			/* the row length */
+    char start;			/* the first char of the row - signature */
+    char valid;			/* 1=valid - 0=invalid */
+    int n_cells;		/* # cells */
+};
+
+struct row_block
+{
+/* a block of row pointers */
+    int n_rows;
+    struct row_pointer rows[VTXT_ROW_BLOCK];
+    struct row_block *next;
+};
+
 struct text_buffer
 {
+    FILE *text_file;		/* the underlaying file */
+    void *toUtf8;		/* the UTF-8 ICONV converter */
+    char field_separator;
+    char text_separator;
+    char decimal_separator;
     int max_n_cells;		/* the maximun cell index */
     char **titles;		/* the column titles array */
     char *types;		/* the column types array */
     int n_rows;			/* the number of rows */
-    struct row_buffer **rows;	/* the rows array */
-    struct row_buffer *first;	/* pointers to build a linked list of rows */
-    struct row_buffer *last;
+    struct row_pointer **rows;	/* the rows array */
+    struct row_block *first;	/* pointers to build a linked list of rows */
+    struct row_block *last;
+    struct row_buffer *current_row_buffer;
 };
 
 typedef struct VirtualTextStruct
@@ -96,41 +122,77 @@ typedef struct VirtualTextCursortStruct
 } VirtualTextCursor;
 typedef VirtualTextCursor *VirtualTextCursorPtr;
 
-static void
-text_insert_row (struct text_buffer *text, char **fields, char *text_mark,
-		 int max_cell)
+static int
+text_add_block (struct text_buffer *text)
+{
+/* inserting a block of rows into the text buffer struct */
+    int i;
+    struct row_block *block = malloc (sizeof (struct row_block));
+    if (block == NULL)
+	return 0;
+    block->n_rows = 0;
+    block->next = NULL;
+/* inserting the block of rows into the linked list */
+    if (!(text->first))
+	text->first = block;
+    if (text->last)
+	text->last->next = block;
+    text->last = block;
+    return 1;
+}
+
+static struct row_pointer *
+get_row_pointer (struct text_buffer *text, long current_row)
+{
+/* retrieving a ROW POINTER struct */
+    if (!text)
+	return NULL;
+    if (!(text->rows))
+	return NULL;
+    if (current_row < 0 || current_row >= text->n_rows)
+	return NULL;
+    return *(text->rows + current_row);
+}
+
+static int
+text_insert_row (struct text_buffer *text, off_t offset, int len, char start)
 {
 /* inserting a row into the text buffer struct */
+    struct row_pointer *row;
     int i;
-    struct row_buffer *row = malloc (sizeof (struct row_buffer));
-    row->n_cells = max_cell + 1;
-    if (max_cell < 0)
-	row->cells = NULL;
-    else
+    if (text->last == NULL)
       {
-	  row->cells = malloc (sizeof (char *) * (max_cell + 1));
-	  row->text = malloc (sizeof (char) * (max_cell + 1));
-	  for (i = 0; i < row->n_cells; i++)
-	    {
-		/* setting cell values */
-		*(row->cells + i) = *(fields + i);
-		*(row->text + i) = *(text_mark + i);
-	    }
+	  if (!text_add_block (text))
+	      return 0;
       }
-    row->next = NULL;
-/* inserting the row into the linked list */
-    if (!(text->first))
-	text->first = row;
-    if (text->last)
-	text->last->next = row;
-    text->last = row;
+    if (text->last->n_rows == VTXT_ROW_BLOCK)
+      {
+	  if (!text_add_block (text))
+	      return 0;
+      }
+    row = text->last->rows + text->last->n_rows;
+    row->offset = offset;
+    row->len = len;
+    row->start = start;
+    row->valid = 0;
+    row->n_cells = 0;
+    (text->last->n_rows)++;
+    return 1;
 }
 
 static struct text_buffer *
-text_buffer_alloc ()
+text_buffer_alloc (FILE * fl, void *toUtf8, char field_separator,
+		   char text_separator, char decimal_separator)
 {
 /* allocating and initializing the text buffer struct */
     struct text_buffer *text = malloc (sizeof (struct text_buffer));
+    if (text == NULL)
+	return NULL;
+    text->text_file = fl;
+    text->toUtf8 = toUtf8;
+    text->field_separator = field_separator;
+    text->text_separator = text_separator;
+    text->decimal_separator = decimal_separator;
     text->max_n_cells = 0;
     text->titles = NULL;
     text->types = NULL;
@@ -138,7 +200,31 @@ text_buffer_alloc ()
     text->rows = NULL;
     text->first = NULL;
     text->last = NULL;
+    text->current_row_buffer = NULL;
     return text;
+}
+
+static void
+text_row_free (struct row_buffer *row)
+{
+/* memory cleanup - freeing a row buffer */
+    int i;
+    if (!row)
+	return;
+    if (row->cells)
+      {
+	  for (i = 0; i < row->n_cells; i++)
+	    {
+		if (*(row->cells + i))
+		  {
+		      free (*(row->cells + i));
+		  }
+	    }
+	  free (row->cells);
+      }
+    if (row->text)
+	free (row->text);
+    free (row);
 }
 
 static void
@@ -146,27 +232,34 @@ text_buffer_free (struct text_buffer *text)
 {
 /* memory cleanup - freeing the text buffer */
     int i;
-    struct row_buffer *row;
+    struct row_block *block;
+    struct row_block *pn;
     if (!text)
 	return;
-    row = text->first;
-    while (row)
+    block = text->first;
+    while (block)
       {
-	  if (row->cells)
-	    {
-		for (i = 0; i < row->n_cells; i++)
-		  {
-		      if (*(row->cells + i))
-			  free (*(row->cells + i));
-		  }
-		free (row->cells);
-	    }
-	  if (row->text)
-	      free (row->text);
-	  row = row->next;
+	  pn = block->next;
+	  free (block);
+	  block = pn;
       }
+    if (text->titles)
+      {
+	  for (i = 0; i < text->max_n_cells; i++)
+	    {
+		if (*(text->titles + i))
+		    free (*(text->titles + i));
+	    }
+	  free (text->titles);
+      }
+    if (text->rows)
+	free (text->rows);
     if (text->types)
 	free (text->types);
+    if (text->current_row_buffer)
+	text_row_free (text->current_row_buffer);
+    gaiaFreeUTF8Converter (text->toUtf8);
+    fclose (text->text_file);
     free (text);
 }
 
@@ -329,17 +422,57 @@ text_clean_text (char **value, void *toUtf8)
       {
 	  free (*value);
 	  *value = malloc (newlen + 1);
+	  if (*value == NULL)
+	    {
+		fprintf (stderr, "VirtualText: insufficient memory\n");
+		fflush (stderr);
+		return 1;
+	    }
 	  strcpy (*value, utf8text);
       }
     return 0;
 }
 
-static struct text_buffer *
-text_parse (char *path, char *encoding, char first_line_titles,
-	    char field_separator, char text_separator, char decimal_separator)
+static struct row_buffer *
+text_create_row (char **fields, char *text_mark, int max_cell)
 {
-/* trying to open and parse the text file */
-    int c;
+/* creating a row struct */
+    int i;
+    struct row_buffer *row = malloc (sizeof (struct row_buffer));
+    row->n_cells = max_cell;
+    if (max_cell < 0)
+	row->cells = NULL;
+    else
+      {
+	  row->cells = malloc (sizeof (char *) * (max_cell));
+	  if (row->cells == NULL)
+	    {
+		fprintf (stderr, "VirtualText: insufficient memory\n");
+		fflush (stderr);
+		return NULL;
+	    }
+	  row->text = malloc (sizeof (char) * (max_cell));
+	  if (row->text == NULL)
+	    {
+		fprintf (stderr, "VirtualText: insufficient memory\n");
+		fflush (stderr);
+		return NULL;
+	    }
+	  for (i = 0; i < row->n_cells; i++)
+	    {
+		/* setting cell values */
+		*(row->cells + i) = *(fields + i);
+		*(row->text + i) = *(text_mark + i);
+	    }
+      }
+    return row;
+}
+
+static struct row_buffer *
+text_read_row (struct text_buffer *text, struct row_pointer *ptr,
+	       int preliminary)
+{
+/* parsing a single row from the underlaying text file */
     int fld;
     int len;
     int max_cell;
@@ -350,43 +483,54 @@ text_parse (char *path, char *encoding, char first_line_titles,
     char text_mark[4096];
     char buffer[35536];
     char *p = buffer;
-    struct text_buffer *text;
-    int nrows;
-    int ncols;
-    int errs;
+    char buf_in[65536];
+    char *in = buf_in;
     struct row_buffer *row;
-    void *toUtf8;
-    int encoding_errors;
-    int ir;
-    char title[64];
-    char *first_valid_row;
-    int i;
-    char *name;
-    FILE *in;
+    int encoding_errors = 0;
+    if (fseeko (text->text_file, ptr->offset, SEEK_SET) < 0)
+      {
+	  fprintf (stderr, "VirtualText: corrupted text file\n");
+	  fflush (stderr);
+	  return NULL;
+      }
+    if (fread (buf_in, 1, ptr->len, text->text_file) != ptr->len)
+      {
+	  fprintf (stderr, "VirtualText: corrupted text file\n");
+	  fflush (stderr);
+	  return NULL;
+      }
+    if (*buf_in != ptr->start)
+      {
+	  fprintf (stderr, "VirtualText: corrupted text file\n");
+	  fflush (stderr);
+	  return NULL;
+      }
+    if (*(buf_in + ptr->len - 1) != '\n')
+      {
+	  fprintf (stderr, "VirtualText: corrupted text file\n");
+	  fflush (stderr);
+	  return NULL;
+      }
+    buf_in[ptr->len] = '\0';
     for (fld = 0; fld < 4096; fld++)
       {
 	  /* preparing an empty row */
 	  fields[fld] = NULL;
 	  text_mark[fld] = 0;
       }
-/* trying to open the text file */
-    in = fopen (path, "rb");
-    if (!in)
-	return NULL;
-    text = text_buffer_alloc ();
     fld = 0;
-    while ((c = getc (in)) != EOF)
+    while (*in != '\0')
       {
-	  /* parsing the file, one char at each time */
-	  if (c == '\r' && !is_string)
+	  /* parsing the row, one char at each time */
+	  if (*in == '\r' && !is_string)
 	    {
-		last = (char) c;
+		last = *in++;
 		continue;
 	    }
-	  if (c == field_separator && !is_string)
+	  if (*in == text->field_separator && !is_string)
 	    {
 		/* inserting a field into the fields tmp array */
-		last = (char) c;
+		last = *in;
 		*p = '\0';
 		len = strlen (buffer);
 		if (len)
@@ -399,27 +543,29 @@ text_parse (char *path, char *encoding, char first_line_titles,
 		p = buffer;
 		*p = '\0';
 		is_text = 0;
+		in++;
 		continue;
 	    }
-	  if (c == text_separator)
+	  if (*in == text->text_separator)
 	    {
 		/* found a text separator */
 		if (is_string)
 		  {
 		      is_string = 0;
-		      last = (char) c;
+		      last = *in;
 		      is_text = 1;
 		  }
 		else
 		  {
-		      if (last == text_separator)
-			  *p++ = text_separator;
+		      if (last == text->text_separator)
+			  *p++ = text->text_separator;
 		      is_string = 1;
 		  }
+		in++;
 		continue;
 	    }
-	  last = (char) c;
-	  if (c == '\n' && !is_string)
+	  last = *in;
+	  if (*in == '\n' && !is_string)
 	    {
 		/* inserting the row into the text buffer */
 		*p = '\0';
@@ -436,126 +582,305 @@ text_parse (char *path, char *encoding, char first_line_titles,
 		for (fld = 0; fld < 4096; fld++)
 		  {
 		      if (fields[fld])
-			  max_cell = fld;
+			{
+			    max_cell = fld;
+			}
 		  }
-		text_insert_row (text, fields, text_mark, max_cell);
-		for (fld = 0; fld < 4096; fld++)
+		max_cell++;
+		if (!preliminary)
 		  {
-		      /* resetting an empty row */
-		      fields[fld] = NULL;
+		      if (max_cell != ptr->n_cells)
+			{
+			    for (fld = 0; fld < 4096; fld++)
+			      {
+				  if (fields[fld])
+				      free (fields[fld]);
+			      }
+			    return NULL;
+			}
 		  }
-		fld = 0;
+		row = text_create_row (fields, text_mark, max_cell);
+		return row;
+	    }
+	  *p++ = *in++;
+      }
+    return NULL;
+}
+
+static struct text_buffer *
+text_parse (char *path, char *encoding, char first_line_titles,
+	    char field_separator, char text_separator, char decimal_separator)
+{
+/* trying to open and parse the text file */
+    int c;
+    int len;
+    int fld;
+    int is_string = 0;
+    char col_types[4096];
+    char buffer[35536];
+    char *p = buffer;
+    struct text_buffer *text;
+    int nrows;
+    int max_cols;
+    int errs;
+    struct row_block *block;
+    struct row_buffer *row;
+    void *toUtf8;
+    int ir;
+    char title[64];
+    char *first_valid_row;
+    int i;
+    char *name;
+    FILE *in;
+    off_t cur_pos = 0;
+    off_t begin_offset = 0;
+    char start;
+    int new_row = 1;
+/* trying to open the text file */
+    in = fopen (path, "rb");
+    if (!in)
+      {
+	  fprintf (stderr, "VirtualText: open error '%s'\n", path);
+	  fflush (stderr);
+	  return NULL;
+      }
+    toUtf8 = gaiaCreateUTF8Converter (encoding);
+    if (!toUtf8)
+      {
+	  fprintf (stderr, "VirtualText: illegal charset\n");
+	  fflush (stderr);
+	  return NULL;
+      }
+    text =
+	text_buffer_alloc (in, toUtf8, field_separator, text_separator,
+			   decimal_separator);
+    if (text == NULL)
+      {
+	  fprintf (stderr, "VirtualText: insufficient memory\n");
+	  fflush (stderr);
+	  return NULL;
+      }
+    while ((c = getc (in)) != EOF)
+      {
+	  /* parsing the file, one char at each time */
+	  cur_pos++;
+	  if (c == '\r' && !is_string)
+	      continue;
+	  if (new_row)
+	    {
+		/* a new row begins here */
+		new_row = 0;
+		start = (char) c;
+		begin_offset = cur_pos - 1;
+		p = buffer;
+	    }
+	  if (c == text_separator)
+	    {
+		/* found a text separator */
+		if (is_string)
+		    is_string = 0;
+		else
+		    is_string = 1;
+		continue;
+	    }
+	  if (c == '\n' && !is_string)
+	    {
+		/* inserting the row into the text buffer */
+		len = cur_pos - begin_offset;
+		if (!text_insert_row (text, begin_offset, len, start))
+		  {
+		      text_buffer_free (text);
+		      fprintf (stderr, "VirtualText: insufficient memory\n");
+		      fflush (stderr);
+		      return NULL;
+		  }
+		new_row = 1;
 		continue;
 	    }
 	  *p++ = c;
       }
-    fclose (in);
 /* checking if the text file really seems to contain a table */
     nrows = 0;
-    ncols = 0;
     errs = 0;
-    row = text->first;
-    while (row)
+    block = text->first;
+    while (block)
       {
-	  if (first_line_titles && row == text->first)
+	  for (i = 0; i < block->n_rows; i++)
 	    {
-		/* skipping first line */
-		row = row->next;
-		continue;
+		if (first_line_titles && block == text->first && i == 0)
+		  {
+		      /* skipping first line */
+		      continue;
+		  }
+		nrows++;
 	    }
-	  nrows++;
-	  if (row->n_cells > ncols)
-	      ncols = row->n_cells;
-	  row = row->next;
+	  block = block->next;
       }
-    if (nrows == 0 && ncols == 0)
+    if (nrows == 0)
+      {
+	  text_buffer_free (text);
+	  return NULL;
+      }
+/* going to check the column types */
+    first_valid_row = malloc (sizeof (char) * 4096);
+    if (first_valid_row == NULL)
+      {
+	  text_buffer_free (text);
+	  fprintf (stderr, "VirtualText: insufficient memory\n");
+	  fflush (stderr);
+	  return NULL;
+      }
+    for (fld = 0; fld < 4096; fld++)
+      {
+	  /* initally assuming any cell contains TEXT */
+	  *(col_types + fld) = VRTTXT_TEXT;
+	  *(first_valid_row + fld) = 1;
+      }
+    nrows = 0;
+    max_cols = 0;
+    block = text->first;
+    while (block)
+      {
+	  for (i = 0; i < block->n_rows; i++)
+	    {
+		row = text_read_row (text, block->rows + i, 1);
+		if (row == NULL)
+		  {
+		      text_buffer_free (text);
+		      return NULL;
+		  }
+		if (first_line_titles && block == text->first && i == 0)
+		  {
+		      /* skipping first line */
+		      for (fld = 0; fld < row->n_cells; fld++)
+			{
+			    if (*(row->cells + fld))
+			      {
+				  if (fld > max_cols)
+				      max_cols = fld;
+			      }
+			}
+		      (block->rows + i)->valid = 1;
+		      (block->rows + i)->n_cells = row->n_cells;
+		      text_row_free (row);
+		      continue;
+		  }
+		for (fld = 0; fld < row->n_cells; fld++)
+		  {
+		      if (*(row->cells + fld))
+			{
+			    if ((fld + 1) > max_cols)
+				max_cols = fld + 1;
+			    if (text_is_integer (*(row->cells + fld))
+				&& !(*(row->text + fld)))
+			      {
+				  if (*(first_valid_row + fld))
+				    {
+					*(col_types + fld) = VRTTXT_INTEGER;
+					*(first_valid_row + fld) = 0;
+				    }
+			      }
+			    else if (text_is_double
+				     (*(row->cells + fld), decimal_separator)
+				     && !(*(row->text + fld)))
+			      {
+				  if (*(first_valid_row + fld))
+				    {
+					*(col_types + fld) = VRTTXT_DOUBLE;
+					*(first_valid_row + fld) = 0;
+				    }
+				  else
+				    {
+					/* promoting an INTEGER column to be of the DOUBLE type */
+					if (*(col_types + fld) ==
+					    VRTTXT_INTEGER)
+					    *(col_types + fld) = VRTTXT_DOUBLE;
+				    }
+			      }
+			    else
+			      {
+				  /* this column is anyway of the TEXT type */
+				  *(col_types + fld) = VRTTXT_TEXT;
+				  if (*(first_valid_row + fld))
+				      *(first_valid_row + fld) = 0;
+			      }
+			}
+		  }
+		nrows++;
+		(block->rows + i)->valid = 1;
+		(block->rows + i)->n_cells = row->n_cells;
+		text_row_free (row);
+	    }
+	  block = block->next;
+      }
+    free (first_valid_row);
+    if (nrows == 0 && max_cols == 0)
       {
 	  text_buffer_free (text);
 	  return NULL;
       }
     text->n_rows = nrows;
-/* going to check the column types */
-    text->max_n_cells = ncols;
+    text->max_n_cells = max_cols;
     text->types = malloc (sizeof (char) * text->max_n_cells);
-    first_valid_row = malloc (sizeof (char) * text->max_n_cells);
-    for (fld = 0; fld < text->max_n_cells; fld++)
+    if (text->types == NULL)
       {
-	  /* initally assuming any cell contains TEXT */
-	  *(text->types + fld) = VRTTXT_TEXT;
-	  *(first_valid_row + fld) = 1;
+	  text_buffer_free (text);
+	  fprintf (stderr, "VirtualText: insufficient memory\n");
+	  fflush (stderr);
+	  return NULL;
       }
-    row = text->first;
-    while (row)
-      {
-	  if (first_line_titles && row == text->first)
-	    {
-		/* skipping first line */
-		row = row->next;
-		continue;
-	    }
-	  for (fld = 0; fld < row->n_cells; fld++)
-	    {
-		if (*(row->cells + fld))
-		  {
-		      if (text_is_integer (*(row->cells + fld))
-			  && !(*(row->text + fld)))
-			{
-			    if (*(first_valid_row + fld))
-			      {
-				  *(text->types + fld) = VRTTXT_INTEGER;
-				  *(first_valid_row + fld) = 0;
-			      }
-			}
-		      else if (text_is_double
-			       (*(row->cells + fld), decimal_separator)
-			       && !(*(row->text + fld)))
-			{
-			    if (*(first_valid_row + fld))
-			      {
-				  *(text->types + fld) = VRTTXT_DOUBLE;
-				  *(first_valid_row + fld) = 0;
-			      }
-			    else
-			      {
-				  /* promoting an INTEGER column to be of the DOUBLE type */
-				  if (*(text->types + fld) == VRTTXT_INTEGER)
-				      *(text->types + fld) = VRTTXT_DOUBLE;
-			      }
-			}
-		      else
-			{
-			    /* this column is anyway of the TEXT type */
-			    *(text->types + fld) = VRTTXT_TEXT;
-			    if (*(first_valid_row + fld))
-				*(first_valid_row + fld) = 0;
-			}
-		  }
-	    }
-	  row = row->next;
-      }
-    free (first_valid_row);
+    memcpy (text->types, col_types, text->max_n_cells);
 /* preparing the column names */
     text->titles = malloc (sizeof (char *) * text->max_n_cells);
-    if (first_line_titles)
+    if (text->titles == NULL)
       {
+	  text_buffer_free (text);
+	  fprintf (stderr, "VirtualText: insufficient memory\n");
+	  fflush (stderr);
+	  return NULL;
+      }
+    block = text->first;
+    if (first_line_titles && block)
+      {
+	  row = text_read_row (text, block->rows + 0, 0);
+	  if (row == NULL)
+	    {
+		text_buffer_free (text);
+		return NULL;
+	    }
 	  for (fld = 0; fld < text->max_n_cells; fld++)
 	    {
-		if (fld >= text->first->n_cells)
+		if (fld >= row->n_cells)
 		  {
 		      /* this column name is NULL; setting a default name */
 		      sprintf (title, "COL%03d", fld + 1);
 		      len = strlen (title);
 		      *(text->titles + fld) = malloc (len + 1);
+		      if (*(text->titles + fld) == NULL)
+			{
+			    text_buffer_free (text);
+			    fprintf (stderr,
+				     "VirtualText: insufficient memory\n");
+			    fflush (stderr);
+			    return NULL;
+			}
 		      strcpy (*(text->titles + fld), title);
 		  }
 		else
 		  {
-		      if (*(text->first->cells + fld))
+		      if (*(row->cells + fld))
 			{
-			    len = strlen (*(text->first->cells + fld));
+			    len = strlen (*(row->cells + fld));
 			    *(text->titles + fld) = malloc (len + 1);
-			    strcpy (*(text->titles + fld),
-				    *(text->first->cells + fld));
+			    if (*(text->titles + fld) == NULL)
+			      {
+				  text_buffer_free (text);
+				  fprintf (stderr,
+					   "VirtualText: insufficient memory\n");
+				  fflush (stderr);
+				  return NULL;
+			      }
+			    strcpy (*(text->titles + fld), *(row->cells + fld));
 			    name = *(text->titles + fld);
 			    for (i = 0; i < len; i++)
 			      {
@@ -574,6 +899,7 @@ text_parse (char *path, char *encoding, char first_line_titles,
 			}
 		  }
 	    }
+	  text_row_free (row);
       }
     else
       {
@@ -582,68 +908,47 @@ text_parse (char *path, char *encoding, char first_line_titles,
 		sprintf (title, "COL%03d", fld + 1);
 		len = strlen (title);
 		*(text->titles + fld) = malloc (len + 1);
+		if (*(text->titles + fld) == NULL)
+		  {
+		      text_buffer_free (text);
+		      fprintf (stderr, "VirtualText: insufficient memory\n");
+		      fflush (stderr);
+		      return NULL;
+		  }
 		strcpy (*(text->titles + fld), title);
 	    }
       }
-/* cleaning cell values when needed */
-    toUtf8 = gaiaCreateUTF8Converter (encoding);
-    if (!toUtf8)
-      {
-	  text_buffer_free (text);
-	  return NULL;
-      }
-    encoding_errors = 0;
-    row = text->first;
-    while (row)
-      {
-	  if (first_line_titles && row == text->first)
-	    {
-		/* skipping first line */
-		row = row->next;
-		continue;
-	    }
-	  for (fld = 0; fld < row->n_cells; fld++)
-	    {
-		if (*(row->cells + fld))
-		  {
-		      if (*(text->types + fld) == VRTTXT_INTEGER)
-			  text_clean_integer (*(row->cells + fld));
-		      else if (*(text->types + fld) == VRTTXT_DOUBLE)
-			  text_clean_double (*(row->cells + fld));
-		      else
-			  encoding_errors +=
-			      text_clean_text (row->cells + fld, toUtf8);
-		  }
-	    }
-	  row = row->next;
-      }
-    gaiaFreeUTF8Converter (toUtf8);
-    if (encoding_errors)
-      {
-	  text_buffer_free (text);
-	  return NULL;
-      }
 /* ok, we can now go to prepare the rows array */
-    text->rows = malloc (sizeof (struct row_buffer *) * text->n_rows);
-    ir = 0;
-    row = text->first;
-    while (row)
+    text->rows = malloc (sizeof (struct row_pointer *) * text->n_rows);
+    if (text->rows == NULL)
       {
-	  if (first_line_titles && row == text->first)
+	  text_buffer_free (text);
+	  fprintf (stderr, "VirtualText: insufficient memory\n");
+	  fflush (stderr);
+	  return NULL;
+      }
+    ir = 0;
+    block = text->first;
+    while (block)
+      {
+	  for (i = 0; i < block->n_rows; i++)
 	    {
-		/* skipping first line */
-		row = row->next;
-		continue;
+		if (first_line_titles && block == text->first && i == 0)
+		  {
+		      /* skipping first line */
+		      continue;
+		  }
+		if ((block->rows + i)->valid)
+		    *(text->rows + ir++) = block->rows + i;
 	    }
-	  *(text->rows + ir++) = row;
-	  row = row->next;
+	  block = block->next;
       }
     return text;
 }
 
 static int
-vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
-	     sqlite3_vtab ** ppVTab, char **pzErr)
+    vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
+		 sqlite3_vtab ** ppVTab, char **pzErr)
 {
 /* creates the virtual table connected to some TEXT file */
     char path[2048];
@@ -666,7 +971,7 @@ vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     char **col_name = NULL;
     VirtualTextPtr p_vt;
     if (pAux)
-	pAux = pAux;		/* unused arg warning suppression */
+	  pAux = pAux;		/* unused arg warning suppression */
 /* checking for TEXTfile PATH */
     if (argc >= 5 && argc <= 9)
       {
@@ -682,7 +987,7 @@ vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 		*(path + len - 1) = '\0';
 	    }
 	  else
-	      strcpy (path, pPath);
+	        strcpy (path, pPath);
 	  pEncoding = argv[4];
 	  len = strlen (pEncoding);
 	  if ((*(pEncoding + 0) == '\'' || *(pEncoding + 0) == '"')
@@ -743,6 +1048,8 @@ vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (!text)
       {
 	  /* something is going the wrong way; creating a stupid default table */
+	  fprintf (stderr, "VirtualText: invalid data source\n");
+	  fflush (stderr);
 	  sprintf (sql, "CREATE TABLE %s (ROWNO INTEGER)", vtable);
 	  if (sqlite3_declare_vtab (db, sql) != SQLITE_OK)
 	    {
@@ -808,15 +1115,14 @@ vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 }
 
 static int
-vtxt_connect (sqlite3 * db, void *pAux, int argc, const char *const *argv,
-	      sqlite3_vtab ** ppVTab, char **pzErr)
+    vtxt_connect (sqlite3 * db, void *pAux, int argc, const char *const *argv,
+		  sqlite3_vtab ** ppVTab, char **pzErr)
 {
 /* connects the virtual table to some shapefile - simply aliases vshp_create() */
     return vtxt_create (db, pAux, argc, argv, ppVTab, pzErr);
 }
 
-static int
-vtxt_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIndex)
+static int vtxt_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIndex)
 {
 /* best index selection */
     if (pVTab || pIndex)
@@ -824,8 +1130,7 @@ vtxt_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIndex)
     return SQLITE_OK;
 }
 
-static int
-vtxt_disconnect (sqlite3_vtab * pVTab)
+static int vtxt_disconnect (sqlite3_vtab * pVTab)
 {
 /* disconnects the virtual table */
     VirtualTextPtr p_vt = (VirtualTextPtr) pVTab;
@@ -835,17 +1140,17 @@ vtxt_disconnect (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-static int
-vtxt_destroy (sqlite3_vtab * pVTab)
+static int vtxt_destroy (sqlite3_vtab * pVTab)
 {
 /* destroys the virtual table - simply aliases vtxt_disconnect() */
     return vtxt_disconnect (pVTab);
 }
 
-static int
-vtxt_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
+static int vtxt_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
 {
 /* opening a new cursor */
+    struct text_buffer *text;
+    struct row_pointer *pRow;
     VirtualTextCursorPtr cursor =
 	(VirtualTextCursorPtr) sqlite3_malloc (sizeof (VirtualTextCursor));
     if (cursor == NULL)
@@ -854,13 +1159,30 @@ vtxt_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
     cursor->current_row = 0;
     cursor->eof = 0;
     *ppCursor = (sqlite3_vtab_cursor *) cursor;
-    if (!(cursor->pVtab->buffer))
+    text = cursor->pVtab->buffer;
+    if (!text)
 	cursor->eof = 1;
+    else
+      {
+	  if (text->current_row_buffer)
+	    {
+		text_row_free (text->current_row_buffer);
+		text->current_row_buffer = NULL;
+	    }
+	  pRow = get_row_pointer (text, cursor->current_row);
+	  if (pRow)
+	    {
+		text->current_row_buffer = text_read_row (text, pRow, 0);
+		if (text->current_row_buffer == NULL)
+		    cursor->eof = 1;
+	    }
+	  else
+	      cursor->eof = 1;
+      }
     return SQLITE_OK;
 }
 
-static int
-vtxt_close (sqlite3_vtab_cursor * pCursor)
+static int vtxt_close (sqlite3_vtab_cursor * pCursor)
 {
 /* closing the cursor */
     VirtualTextCursorPtr cursor = (VirtualTextCursorPtr) pCursor;
@@ -869,8 +1191,8 @@ vtxt_close (sqlite3_vtab_cursor * pCursor)
 }
 
 static int
-vtxt_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
-	     int argc, sqlite3_value ** argv)
+    vtxt_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
+		 int argc, sqlite3_value ** argv)
 {
 /* setting up a cursor filter */
     if (pCursor || idxNum || idxStr || argc || argv)
@@ -878,24 +1200,37 @@ vtxt_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
     return SQLITE_OK;
 }
 
-static int
-vtxt_next (sqlite3_vtab_cursor * pCursor)
+static int vtxt_next (sqlite3_vtab_cursor * pCursor)
 {
 /* fetching next row from cursor */
+    struct text_buffer *text;
+    struct row_pointer *pRow;
     VirtualTextCursorPtr cursor = (VirtualTextCursorPtr) pCursor;
-    if (!(cursor->pVtab->buffer))
-      {
-	  cursor->eof = 1;
-	  return SQLITE_OK;
-      }
-    cursor->current_row++;
-    if (cursor->current_row >= cursor->pVtab->buffer->n_rows)
+    text = cursor->pVtab->buffer;
+    if (!text)
 	cursor->eof = 1;
+    else
+      {
+	  if (text->current_row_buffer)
+	    {
+		text_row_free (text->current_row_buffer);
+		text->current_row_buffer = NULL;
+	    }
+	  cursor->current_row++;
+	  pRow = get_row_pointer (text, cursor->current_row);
+	  if (pRow)
+	    {
+		text->current_row_buffer = text_read_row (text, pRow, 0);
+		if (text->current_row_buffer == NULL)
+		    cursor->eof = 1;
+	    }
+	  else
+	      cursor->eof = 1;
+      }
     return SQLITE_OK;
 }
 
-static int
-vtxt_eof (sqlite3_vtab_cursor * pCursor)
+static int vtxt_eof (sqlite3_vtab_cursor * pCursor)
 {
 /* cursor EOF */
     VirtualTextCursorPtr cursor = (VirtualTextCursorPtr) pCursor;
@@ -903,8 +1238,8 @@ vtxt_eof (sqlite3_vtab_cursor * pCursor)
 }
 
 static int
-vtxt_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
-	     int column)
+    vtxt_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
+		 int column)
 {
 /* fetching value for the Nth column */
     struct row_buffer *row;
@@ -915,10 +1250,12 @@ vtxt_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
     if (column == 0)
       {
 	  /* the ROWNO column */
-	  sqlite3_result_int (pContext, cursor->current_row + 1);
+	  sqlite3_result_int (pContext, cursor->current_row);
 	  return SQLITE_OK;
       }
-    row = *(text->rows + cursor->current_row);
+    row = text->current_row_buffer;
+    if (row == NULL)
+	return SQLITE_ERROR;
     for (i = 0; i < text->max_n_cells; i++)
       {
 	  if (nCol == column)
@@ -937,10 +1274,21 @@ vtxt_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 						       atof (*
 							     (row->cells + i)));
 			    else
-				sqlite3_result_text (pContext,
-						     *(row->cells + i),
-						     strlen (*(row->cells + i)),
-						     SQLITE_STATIC);
+			      {
+				  if (text_clean_text
+				      (row->cells + i, text->toUtf8))
+				    {
+					fprintf (stderr,
+						 "VirtualText: encoding error\n");
+					fflush (stderr);
+				    }
+				  sqlite3_result_text (pContext,
+						       *(row->cells + i),
+						       strlen (*
+							       (row->cells +
+								i)),
+						       SQLITE_STATIC);
+			      }
 			}
 		      else
 			  sqlite3_result_null (pContext);
@@ -951,8 +1299,7 @@ vtxt_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
     return SQLITE_OK;
 }
 
-static int
-vtxt_rowid (sqlite3_vtab_cursor * pCursor, sqlite_int64 * pRowid)
+static int vtxt_rowid (sqlite3_vtab_cursor * pCursor, sqlite_int64 * pRowid)
 {
 /* fetching the ROWID */
     VirtualTextCursorPtr cursor = (VirtualTextCursorPtr) pCursor;
@@ -961,8 +1308,8 @@ vtxt_rowid (sqlite3_vtab_cursor * pCursor, sqlite_int64 * pRowid)
 }
 
 static int
-vtxt_update (sqlite3_vtab * pVTab, int argc, sqlite3_value ** argv,
-	     sqlite_int64 * pRowid)
+    vtxt_update (sqlite3_vtab * pVTab, int argc, sqlite3_value ** argv,
+		 sqlite_int64 * pRowid)
 {
 /* generic update [INSERT / UPDATE / DELETE */
     if (pVTab || argc || argv || pRowid)
@@ -970,8 +1317,7 @@ vtxt_update (sqlite3_vtab * pVTab, int argc, sqlite3_value ** argv,
     return SQLITE_READONLY;
 }
 
-static int
-vtxt_begin (sqlite3_vtab * pVTab)
+static int vtxt_begin (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
     if (pVTab)
@@ -979,8 +1325,7 @@ vtxt_begin (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-static int
-vtxt_sync (sqlite3_vtab * pVTab)
+static int vtxt_sync (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
     if (pVTab)
@@ -988,8 +1333,7 @@ vtxt_sync (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-static int
-vtxt_commit (sqlite3_vtab * pVTab)
+static int vtxt_commit (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
     if (pVTab)
@@ -997,8 +1341,7 @@ vtxt_commit (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-static int
-vtxt_rollback (sqlite3_vtab * pVTab)
+static int vtxt_rollback (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
     if (pVTab)
@@ -1006,8 +1349,7 @@ vtxt_rollback (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-int
-sqlite3VirtualTextInit (sqlite3 * db)
+int sqlite3VirtualTextInit (sqlite3 * db)
 {
     int rc = SQLITE_OK;
     virtualtext_module.iVersion = 1;
@@ -1033,8 +1375,7 @@ sqlite3VirtualTextInit (sqlite3 * db)
     return rc;
 }
 
-int
-virtualtext_extension_init (sqlite3 * db)
+int virtualtext_extension_init (sqlite3 * db)
 {
     return sqlite3VirtualTextInit (db);
 }

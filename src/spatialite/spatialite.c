@@ -11077,8 +11077,8 @@ spatialite_init (int verbose)
 	  printf ("\tSupported Extensions:\n");
 	  printf ("\t- 'VirtualShape'\t[direct Shapefile access]\n");
 	  printf ("\t- 'VirtualDbf'\t\t[direct DBF access]\n");
-	  printf ("\t- 'VirtualText\t\t[direct CSV/TXT access]\n");
-	  printf ("\t- 'VirtualNetwork\t[Dijkstra shortest path]\n");
+	  printf ("\t- 'VirtualText'\t\t[direct CSV/TXT access]\n");
+	  printf ("\t- 'VirtualNetwork'\t[Dijkstra shortest path]\n");
 	  printf ("\t- 'RTree'\t\t[Spatial Index - R*Tree]\n");
 	  printf ("\t- 'MbrCache'\t\t[Spatial Index - MBR cache]\n");
 	  printf ("\t- 'VirtualFDO'\t\t[FDO-OGR interoperability]\n");
@@ -11889,7 +11889,7 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
     printf ("\t- 'VirtualShape'\t[direct Shapefile access]\n");
     printf ("\t- 'VirtualDbf'\t\t[direct Dbf access]\n");
     printf ("\t- 'VirtualText'\t\t[direct CSV/TXT access]\n");
-    printf ("\t- 'VirtualNetwork\t[Dijkstra shortest path]\n");
+    printf ("\t- 'VirtualNetwork'\t[Dijkstra shortest path]\n");
     printf ("\t- 'RTree'\t\t[Spatial Index - R*Tree]\n");
     printf ("\t- 'MbrCache'\t\t[Spatial Index - MBR cache]\n");
     printf ("\t- 'VirtualFDO'\t\t[FDO-OGR interoperability]\n");
