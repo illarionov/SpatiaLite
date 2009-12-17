@@ -70,7 +70,7 @@ struct row_buffer
 struct row_pointer
 {
 /* a row pointer */
-    off_t offset;		/* the row start offset */
+    long offset;		/* the row start offset */
     int len;			/* the row length */
     char start;			/* the first char of the row - signature */
     char valid;			/* 1=valid - 0=invalid */
@@ -126,7 +126,6 @@ static int
 text_add_block (struct text_buffer *text)
 {
 /* inserting a block of rows into the text buffer struct */
-    int i;
     struct row_block *block = malloc (sizeof (struct row_block));
     if (block == NULL)
 	return 0;
@@ -155,11 +154,10 @@ get_row_pointer (struct text_buffer *text, long current_row)
 }
 
 static int
-text_insert_row (struct text_buffer *text, off_t offset, int len, char start)
+text_insert_row (struct text_buffer *text, long offset, int len, char start)
 {
 /* inserting a row into the text buffer struct */
     struct row_pointer *row;
-    int i;
     if (text->last == NULL)
       {
 	  if (!text_add_block (text))
@@ -486,8 +484,7 @@ text_read_row (struct text_buffer *text, struct row_pointer *ptr,
     char buf_in[65536];
     char *in = buf_in;
     struct row_buffer *row;
-    int encoding_errors = 0;
-    if (fseeko (text->text_file, ptr->offset, SEEK_SET) < 0)
+    if (fseek (text->text_file, ptr->offset, SEEK_SET) < 0)
       {
 	  fprintf (stderr, "VirtualText: corrupted text file\n");
 	  fflush (stderr);
@@ -632,8 +629,8 @@ text_parse (char *path, char *encoding, char first_line_titles,
     int i;
     char *name;
     FILE *in;
-    off_t cur_pos = 0;
-    off_t begin_offset = 0;
+    long cur_pos = 0;
+    long begin_offset = 0;
     char start;
     int new_row = 1;
 /* trying to open the text file */
@@ -947,8 +944,8 @@ text_parse (char *path, char *encoding, char first_line_titles,
 }
 
 static int
-    vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
-		 sqlite3_vtab ** ppVTab, char **pzErr)
+vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
+	     sqlite3_vtab ** ppVTab, char **pzErr)
 {
 /* creates the virtual table connected to some TEXT file */
     char path[2048];
@@ -971,7 +968,7 @@ static int
     char **col_name = NULL;
     VirtualTextPtr p_vt;
     if (pAux)
-	  pAux = pAux;		/* unused arg warning suppression */
+	pAux = pAux;		/* unused arg warning suppression */
 /* checking for TEXTfile PATH */
     if (argc >= 5 && argc <= 9)
       {
@@ -987,7 +984,7 @@ static int
 		*(path + len - 1) = '\0';
 	    }
 	  else
-	        strcpy (path, pPath);
+	      strcpy (path, pPath);
 	  pEncoding = argv[4];
 	  len = strlen (pEncoding);
 	  if ((*(pEncoding + 0) == '\'' || *(pEncoding + 0) == '"')
@@ -1115,14 +1112,15 @@ static int
 }
 
 static int
-    vtxt_connect (sqlite3 * db, void *pAux, int argc, const char *const *argv,
-		  sqlite3_vtab ** ppVTab, char **pzErr)
+vtxt_connect (sqlite3 * db, void *pAux, int argc, const char *const *argv,
+	      sqlite3_vtab ** ppVTab, char **pzErr)
 {
 /* connects the virtual table to some shapefile - simply aliases vshp_create() */
     return vtxt_create (db, pAux, argc, argv, ppVTab, pzErr);
 }
 
-static int vtxt_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIndex)
+static int
+vtxt_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIndex)
 {
 /* best index selection */
     if (pVTab || pIndex)
@@ -1130,7 +1128,8 @@ static int vtxt_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIndex)
     return SQLITE_OK;
 }
 
-static int vtxt_disconnect (sqlite3_vtab * pVTab)
+static int
+vtxt_disconnect (sqlite3_vtab * pVTab)
 {
 /* disconnects the virtual table */
     VirtualTextPtr p_vt = (VirtualTextPtr) pVTab;
@@ -1140,13 +1139,15 @@ static int vtxt_disconnect (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-static int vtxt_destroy (sqlite3_vtab * pVTab)
+static int
+vtxt_destroy (sqlite3_vtab * pVTab)
 {
 /* destroys the virtual table - simply aliases vtxt_disconnect() */
     return vtxt_disconnect (pVTab);
 }
 
-static int vtxt_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
+static int
+vtxt_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
 {
 /* opening a new cursor */
     struct text_buffer *text;
@@ -1182,7 +1183,8 @@ static int vtxt_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
     return SQLITE_OK;
 }
 
-static int vtxt_close (sqlite3_vtab_cursor * pCursor)
+static int
+vtxt_close (sqlite3_vtab_cursor * pCursor)
 {
 /* closing the cursor */
     VirtualTextCursorPtr cursor = (VirtualTextCursorPtr) pCursor;
@@ -1191,8 +1193,8 @@ static int vtxt_close (sqlite3_vtab_cursor * pCursor)
 }
 
 static int
-    vtxt_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
-		 int argc, sqlite3_value ** argv)
+vtxt_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
+	     int argc, sqlite3_value ** argv)
 {
 /* setting up a cursor filter */
     if (pCursor || idxNum || idxStr || argc || argv)
@@ -1200,7 +1202,8 @@ static int
     return SQLITE_OK;
 }
 
-static int vtxt_next (sqlite3_vtab_cursor * pCursor)
+static int
+vtxt_next (sqlite3_vtab_cursor * pCursor)
 {
 /* fetching next row from cursor */
     struct text_buffer *text;
@@ -1230,7 +1233,8 @@ static int vtxt_next (sqlite3_vtab_cursor * pCursor)
     return SQLITE_OK;
 }
 
-static int vtxt_eof (sqlite3_vtab_cursor * pCursor)
+static int
+vtxt_eof (sqlite3_vtab_cursor * pCursor)
 {
 /* cursor EOF */
     VirtualTextCursorPtr cursor = (VirtualTextCursorPtr) pCursor;
@@ -1238,13 +1242,14 @@ static int vtxt_eof (sqlite3_vtab_cursor * pCursor)
 }
 
 static int
-    vtxt_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
-		 int column)
+vtxt_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
+	     int column)
 {
 /* fetching value for the Nth column */
     struct row_buffer *row;
     int nCol = 1;
     int i;
+    char buf[4096];
     VirtualTextCursorPtr cursor = (VirtualTextCursorPtr) pCursor;
     struct text_buffer *text = cursor->pVtab->buffer;
     if (column == 0)
@@ -1267,12 +1272,17 @@ static int
 		      if (*(row->cells + i))
 			{
 			    if (*(text->types + i) == VRTTXT_INTEGER)
-				sqlite3_result_int64 (pContext,
-						      atol (*(row->cells + i)));
+			      {
+				  strcpy (buf, *(row->cells + i));
+				  text_clean_integer (buf);
+				  sqlite3_result_int64 (pContext, atol (buf));
+			      }
 			    else if (*(text->types + i) == VRTTXT_DOUBLE)
-				sqlite3_result_double (pContext,
-						       atof (*
-							     (row->cells + i)));
+			      {
+				  strcpy (buf, *(row->cells + i));
+				  text_clean_double (buf);
+				  sqlite3_result_double (pContext, atof (buf));
+			      }
 			    else
 			      {
 				  if (text_clean_text
@@ -1299,7 +1309,8 @@ static int
     return SQLITE_OK;
 }
 
-static int vtxt_rowid (sqlite3_vtab_cursor * pCursor, sqlite_int64 * pRowid)
+static int
+vtxt_rowid (sqlite3_vtab_cursor * pCursor, sqlite_int64 * pRowid)
 {
 /* fetching the ROWID */
     VirtualTextCursorPtr cursor = (VirtualTextCursorPtr) pCursor;
@@ -1308,8 +1319,8 @@ static int vtxt_rowid (sqlite3_vtab_cursor * pCursor, sqlite_int64 * pRowid)
 }
 
 static int
-    vtxt_update (sqlite3_vtab * pVTab, int argc, sqlite3_value ** argv,
-		 sqlite_int64 * pRowid)
+vtxt_update (sqlite3_vtab * pVTab, int argc, sqlite3_value ** argv,
+	     sqlite_int64 * pRowid)
 {
 /* generic update [INSERT / UPDATE / DELETE */
     if (pVTab || argc || argv || pRowid)
@@ -1317,7 +1328,8 @@ static int
     return SQLITE_READONLY;
 }
 
-static int vtxt_begin (sqlite3_vtab * pVTab)
+static int
+vtxt_begin (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
     if (pVTab)
@@ -1325,7 +1337,8 @@ static int vtxt_begin (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-static int vtxt_sync (sqlite3_vtab * pVTab)
+static int
+vtxt_sync (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
     if (pVTab)
@@ -1333,7 +1346,8 @@ static int vtxt_sync (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-static int vtxt_commit (sqlite3_vtab * pVTab)
+static int
+vtxt_commit (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
     if (pVTab)
@@ -1341,7 +1355,8 @@ static int vtxt_commit (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-static int vtxt_rollback (sqlite3_vtab * pVTab)
+static int
+vtxt_rollback (sqlite3_vtab * pVTab)
 {
 /* BEGIN TRANSACTION */
     if (pVTab)
@@ -1349,7 +1364,8 @@ static int vtxt_rollback (sqlite3_vtab * pVTab)
     return SQLITE_OK;
 }
 
-int sqlite3VirtualTextInit (sqlite3 * db)
+int
+sqlite3VirtualTextInit (sqlite3 * db)
 {
     int rc = SQLITE_OK;
     virtualtext_module.iVersion = 1;
@@ -1375,7 +1391,8 @@ int sqlite3VirtualTextInit (sqlite3 * db)
     return rc;
 }
 
-int virtualtext_extension_init (sqlite3 * db)
+int
+virtualtext_extension_init (sqlite3 * db)
 {
     return sqlite3VirtualTextInit (db);
 }
