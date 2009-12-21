@@ -8180,13 +8180,28 @@ fnct_Distance (sqlite3_context * context, int argc, sqlite3_value ** argv)
 static void
 geos_error (const char *fmt, ...)
 {
-/* reporting some GEOS warning/error */
+/* reporting some GEOS error */
     va_list ap;
-    fprintf (stderr, "GEOS: ");
+    char msg[2048];
     va_start (ap, fmt);
-    vfprintf (stderr, fmt, ap);
+    vsprintf (msg, fmt, ap);
     va_end (ap);
-    fprintf (stderr, "\n");
+    fprintf (stderr, "GEOS error: %s\n", msg);
+    gaiaSetGeosErrorMsg (msg);
+}
+
+
+static void
+geos_warning (const char *fmt, ...)
+{
+/* reporting some GEOS warning */
+    va_list ap;
+    char msg[2048];
+    va_start (ap, fmt);
+    vsprintf (msg, fmt, ap);
+    va_end (ap);
+    fprintf (stderr, "GEOS warning: %s\n", msg);
+    gaiaSetGeosWarningMsg (msg);
 }
 
 static void
@@ -10926,7 +10941,7 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 
 #ifndef OMIT_GEOS		/* including GEOS */
 
-    initGEOS (geos_error, geos_error);
+    initGEOS (geos_warning, geos_error);
     sqlite3_create_function (db, "Boundary", 1, SQLITE_ANY, 0, fnct_Boundary, 0,
 			     0);
     sqlite3_create_function (db, "ST_Boundary", 1, SQLITE_ANY, 0, fnct_Boundary,
@@ -11745,7 +11760,7 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 
 #ifndef OMIT_GEOS		/* including GEOS */
 
-    initGEOS (geos_error, geos_error);
+    initGEOS (geos_warning, geos_error);
     sqlite3_create_function (db, "Equals", 2, SQLITE_ANY, 0, fnct_Equals, 0, 0);
     sqlite3_create_function (db, "ST_Equals", 2, SQLITE_ANY, 0, fnct_Equals, 0,
 			     0);

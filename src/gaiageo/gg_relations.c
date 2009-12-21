@@ -53,6 +53,46 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/sqlite3ext.h>
 #include <spatialite/gaiageo.h>
 
+/* GLOBAL variables */
+char gaia_geos_error_msg[2048];
+char gaia_geos_warning_msg[2048];
+
+GAIAGEO_DECLARE void
+gaiaResetGeosMsg ()
+{
+/* resets the GEOS error and warning messages */
+    *gaia_geos_error_msg = '\0';
+    *gaia_geos_warning_msg = '\0';
+}
+
+GAIAGEO_DECLARE const char *
+gaiaGetGeosErrorMsg ()
+{
+/* return the latest GEOS error message */
+    return gaia_geos_error_msg;
+}
+
+GAIAGEO_DECLARE const char *
+gaiaGetGeosWarningMsg ()
+{
+/* return the latest GEOS error message */
+    return gaia_geos_warning_msg;
+}
+
+GAIAGEO_DECLARE void
+gaiaSetGeosErrorMsg (const char *msg)
+{
+/* return the latest GEOS error message */
+    strcpy (gaia_geos_error_msg, msg);
+}
+
+GAIAGEO_DECLARE void
+gaiaSetGeosWarningMsg (const char *msg)
+{
+/* return the latest GEOS error message */
+    strcpy (gaia_geos_warning_msg, msg);
+}
+
 static int
 check_point (double *coords, int points, double x, double y)
 {
@@ -681,6 +721,7 @@ gaiaIsValid (gaiaGeomCollPtr geom)
 /* checks if this GEOMETRYCOLLECTION is a valid one */
     int ret;
     GEOSGeometry *g;
+    gaiaResetGeosMsg ();
     if (!geom)
 	return -1;
     g = gaiaToGeos (geom);

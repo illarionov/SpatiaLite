@@ -800,6 +800,12 @@ extern "C"
 
 #ifndef OMIT_GEOS		/* including GEOS */
 
+    GAIAGEO_DECLARE void gaiaResetGeosMsg ();
+    GAIAGEO_DECLARE const char *gaiaGetGeosErrorMsg ();
+    GAIAGEO_DECLARE const char *gaiaGetGeosWarningMsg ();
+    GAIAGEO_DECLARE void gaiaSetGeosErrorMsg (const char *msg);
+    GAIAGEO_DECLARE void gaiaSetGeosWarningMsg (const char *msg);
+
     GAIAGEO_DECLARE int gaiaGeomCollEquals (gaiaGeomCollPtr geom1,
 					    gaiaGeomCollPtr geom2);
     GAIAGEO_DECLARE int gaiaGeomCollDisjoint (gaiaGeomCollPtr geom1,

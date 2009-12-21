@@ -490,7 +490,7 @@ text_read_row (struct text_buffer *text, struct row_pointer *ptr,
 	  fflush (stderr);
 	  return NULL;
       }
-    if (fread (buf_in, 1, ptr->len, text->text_file) != ptr->len)
+    if ((int)fread (buf_in, 1, ptr->len, text->text_file) != ptr->len)
       {
 	  fprintf (stderr, "VirtualText: corrupted text file\n");
 	  fflush (stderr);
