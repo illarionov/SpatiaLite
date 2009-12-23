@@ -3869,6 +3869,48 @@ fnct_UncompressGeometry (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_SanitizeGeometry (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
+{
+/* SQL function:
+/ SanitizeGeometry(BLOB encoded geometry)
+/
+/ returns a SANITIZED geometry [if a valid Geometry was supplied]
+/ or NULL in any other case
+/
+/ Sanitizing includes:
+/ - repeated vertices suppression
+/ - enforcing ring closure
+/
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    unsigned char *p_result = NULL;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr sanitized = NULL;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  sanitized = gaiaSanitize (geo);
+	  gaiaToSpatiaLiteBlobWkb (sanitized, &p_result, &len);
+	  sqlite3_result_blob (context, p_result, len, free);
+      }
+    gaiaFreeGeomColl (geo);
+    gaiaFreeGeomColl (sanitized);
+}
+
+static void
 cast_count (gaiaGeomCollPtr geom, int *pts, int *lns, int *pgs)
 {
 /* counting elementary geometries */
@@ -10599,6 +10641,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_CompressGeometry, 0, 0);
     sqlite3_create_function (db, "UncompressGeometry", 1, SQLITE_ANY, 0,
 			     fnct_UncompressGeometry, 0, 0);
+    sqlite3_create_function (db, "SanitizeGeometry", 1, SQLITE_ANY, 0,
+			     fnct_SanitizeGeometry, 0, 0);
     sqlite3_create_function (db, "CastToPoint", 1, SQLITE_ANY, 0,
 			     fnct_CastToPoint, 0, 0);
     sqlite3_create_function (db, "CastToLinestring", 1, SQLITE_ANY, 0,
@@ -11418,6 +11462,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_CompressGeometry, 0, 0);
     sqlite3_create_function (db, "UncompressGeometry", 1, SQLITE_ANY, 0,
 			     fnct_UncompressGeometry, 0, 0);
+    sqlite3_create_function (db, "SanitizeGeometry", 1, SQLITE_ANY, 0,
+			     fnct_SanitizeGeometry, 0, 0);
     sqlite3_create_function (db, "CastToPoint", 1, SQLITE_ANY, 0,
 			     fnct_CastToPoint, 0, 0);
     sqlite3_create_function (db, "CastToLinestring", 1, SQLITE_ANY, 0,

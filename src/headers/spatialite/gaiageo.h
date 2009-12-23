@@ -787,6 +787,7 @@ extern "C"
 					  double *y, double *z, double *m);
     GAIAGEO_DECLARE int gaiaRingSetPoint (gaiaRingPtr rng, int v, double x,
 					  double y, double z, double m);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSanitize (gaiaGeomCollPtr org);
 
 #ifndef OMIT_PROJ		/* including PROJ.4 */
 
