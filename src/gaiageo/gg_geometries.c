@@ -3647,3 +3647,49 @@ gaiaSanitize (gaiaGeomCollPtr geom)
       }
     return new_geom;
 }
+
+GAIAGEO_DECLARE int
+gaiaIsToxic (gaiaGeomCollPtr geom)
+{
+/* 
+/ identifying toxic geometries 
+/ i.e. geoms making GEOS to crash !!!
+*/
+    int ib;
+    gaiaPointPtr point;
+    gaiaLinestringPtr line;
+    gaiaPolygonPtr polyg;
+    gaiaRingPtr ring;
+    if (!geom)
+	return 0;
+    point = geom->FirstPoint;
+    while (point)
+      {
+	  /* checking POINTs */
+	  point = point->Next;
+      }
+    line = geom->FirstLinestring;
+    while (line)
+      {
+	  /* checking LINESTRINGs */
+	  if (line->Points < 2)
+	      return 1;
+	  line = line->Next;
+      }
+    polyg = geom->FirstPolygon;
+    while (polyg)
+      {
+	  /* checking POLYGONs */
+	  ring = polyg->Exterior;
+	  if (ring->Points < 4)
+	      return 1;
+	  for (ib = 0; ib < polyg->NumInteriors; ib++)
+	    {
+		ring = polyg->Interiors + ib;
+		if (ring->Points < 4)
+		    return 1;
+	    }
+	  polyg = polyg->Next;
+      }
+    return 0;
+}

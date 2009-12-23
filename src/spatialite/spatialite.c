@@ -11003,6 +11003,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     0);
     sqlite3_create_function (db, "IsValid", 1, SQLITE_ANY, 0, fnct_IsValid, 0,
 			     0);
+    sqlite3_create_function (db, "ST_IsValid", 1, SQLITE_ANY, 0, fnct_IsValid,
+			     0, 0);
     sqlite3_create_function (db, "GLength", 1, SQLITE_ANY, 0, fnct_Length, 0,
 			     0);
     sqlite3_create_function (db, "ST_Length", 1, SQLITE_ANY, 0, fnct_Length, 0,
@@ -11907,6 +11909,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     0);
     sqlite3_create_function (db, "IsValid", 1, SQLITE_ANY, 0, fnct_IsValid, 0,
 			     0);
+    sqlite3_create_function (db, "ST_IsValid", 1, SQLITE_ANY, 0, fnct_IsValid,
+			     0, 0);
     sqlite3_create_function (db, "BdPolyFromText", 1, SQLITE_ANY, 0,
 			     fnct_BdPolyFromText1, 0, 0);
     sqlite3_create_function (db, "BdPolyFromText", 2, SQLITE_ANY, 0,
