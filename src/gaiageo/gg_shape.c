@@ -201,6 +201,8 @@ gaiaFreeDbfList (gaiaDbfListPtr list)
 	  gaiaFreeDbfField (p);
 	  p = pn;
       }
+    if (list->Geometry)
+	gaiaFreeGeomColl (list->Geometry);
     free (list);
 }
 
@@ -229,10 +231,10 @@ gaiaAddDbfField (gaiaDbfListPtr list, char *name, unsigned char type,
 		 int offset, unsigned char length, unsigned char decimals)
 {
 /* inserts a Field in the DBF Fields list */
-    gaiaDbfFieldPtr p =
-	gaiaAllocDbfField (name, type, offset, length, decimals);
+    gaiaDbfFieldPtr p;
     if (!list)
 	return NULL;
+    p = gaiaAllocDbfField (name, type, offset, length, decimals);
     if (!(list->First))
 	list->First = p;
     if (list->Last)
@@ -256,8 +258,6 @@ gaiaResetDbfEntity (gaiaDbfListPtr list)
 	  p->Value = NULL;
 	  p = p->Next;
       }
-    if (list->Geometry)
-	gaiaFreeGeomColl (list->Geometry);
     list->Geometry = NULL;
 }
 
