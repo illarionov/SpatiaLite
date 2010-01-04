@@ -192,6 +192,7 @@ typedef struct VirtualNetworkStruct
     char *zErrMsg;		/* error message: USE INTERNALLY BY SQLITE */
     sqlite3 *db;		/* the sqlite db holding the virtual table */
     NetworkPtr graph;		/* the NETWORK structure */
+    DijkstraNodesPtr dijkstra;	/* the DIKJKSTRA structure */
 } VirtualNetwork;
 typedef VirtualNetwork *VirtualNetworkPtr;
 
@@ -614,7 +615,8 @@ add_arc_geometry_to_solution (SolutionPtr solution, sqlite3_int64 arc_id,
 }
 
 static void
-dijkstra_solve (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution)
+dijkstra_solve (sqlite3 * handle, NetworkPtr graph, DijkstraNodesPtr dijkstra,
+		SolutionPtr solution)
 {
 /* computing a Dijkstra Shortest Path solution */
     int cnt;
@@ -638,10 +640,8 @@ dijkstra_solve (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution)
     int how_many;
     sqlite3_stmt *stmt;
     NetworkArcPtr *shortest_path;
-    DijkstraNodesPtr dijkstra = dijkstra_init (graph);
     shortest_path =
 	dijkstra_shortest_path (dijkstra, solution->From, solution->To, &cnt);
-    dijkstra_free (dijkstra);
     if (cnt > 0)
       {
 	  /* building the solution */
@@ -1390,6 +1390,7 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
       }
     p_vt->db = db;
     p_vt->graph = graph;
+    p_vt->dijkstra = NULL;
     p_vt->pModule = &my_net_module;
     p_vt->nRef = 0;
     p_vt->zErrMsg = NULL;
@@ -1415,6 +1416,7 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  return SQLITE_ERROR;
       }
     *ppVTab = (sqlite3_vtab *) p_vt;
+    p_vt->dijkstra = dijkstra_init (p_vt->graph);
     return SQLITE_OK;
 }
 
@@ -1490,6 +1492,8 @@ vnet_disconnect (sqlite3_vtab * pVTab)
 {
 /* disconnects the virtual table */
     VirtualNetworkPtr p_vt = (VirtualNetworkPtr) pVTab;
+    if (p_vt->dijkstra)
+	dijkstra_free (p_vt->dijkstra);
     if (p_vt->graph)
 	network_free (p_vt->graph);
     sqlite3_free (p_vt);
@@ -1616,7 +1620,7 @@ vnet_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
     if (cursor->solution->From && cursor->solution->To)
       {
 	  cursor->eof = 0;
-	  dijkstra_solve (net->db, net->graph, cursor->solution);
+	  dijkstra_solve (net->db, net->graph, net->dijkstra, cursor->solution);
 	  return SQLITE_OK;
       }
     return SQLITE_OK;
