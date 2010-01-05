@@ -2519,12 +2519,54 @@ gaiaGeometryAliasType (gaiaGeomCollPtr geom)
       }
     if (n_points == 0 && n_linestrings == 0 && n_polygons == 0)
 	return GAIA_UNKNOWN;
-    if (n_points > 0 && n_linestrings == 0 && n_polygons == 0)
-	return GAIA_MULTIPOINT;
-    if (n_points == 0 && n_linestrings > 0 && n_polygons == 0)
-	return GAIA_MULTILINESTRING;
-    if (n_points == 0 && n_linestrings == 0 && n_polygons > 0)
-	return GAIA_MULTIPOLYGON;
+    if (n_points == 1 && n_linestrings == 0 && n_polygons == 0)
+      {
+	  if (geom->DeclaredType == GAIA_MULTIPOINT)
+	      return GAIA_MULTIPOINT;
+	  else if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      return GAIA_GEOMETRYCOLLECTION;
+	  else
+	      return GAIA_POINT;
+      }
+    if (n_points >= 1 && n_linestrings == 0 && n_polygons == 0)
+      {
+	  if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      return GAIA_GEOMETRYCOLLECTION;
+	  else
+	      return GAIA_MULTIPOINT;
+      }
+    if (n_points == 0 && n_linestrings == 1 && n_polygons == 0)
+      {
+	  if (geom->DeclaredType == GAIA_MULTILINESTRING)
+	      return GAIA_MULTILINESTRING;
+	  else if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      return GAIA_GEOMETRYCOLLECTION;
+	  else
+	      return GAIA_LINESTRING;
+      }
+    if (n_points == 0 && n_linestrings >= 1 && n_polygons == 0)
+      {
+	  if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      return GAIA_GEOMETRYCOLLECTION;
+	  else
+	      return GAIA_MULTILINESTRING;
+      }
+    if (n_points == 0 && n_linestrings == 0 && n_polygons == 1)
+      {
+	  if (geom->DeclaredType == GAIA_MULTIPOLYGON)
+	      return GAIA_MULTIPOLYGON;
+	  else if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      return GAIA_GEOMETRYCOLLECTION;
+	  else
+	      return GAIA_POLYGON;
+      }
+    if (n_points == 0 && n_linestrings == 0 && n_polygons >= 1)
+      {
+	  if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      return GAIA_GEOMETRYCOLLECTION;
+	  else
+	      return GAIA_MULTIPOLYGON;
+      }
     return GAIA_GEOMETRYCOLLECTION;
 }
 

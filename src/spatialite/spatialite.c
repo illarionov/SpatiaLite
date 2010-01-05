@@ -4807,6 +4807,9 @@ fnct_GeometryAliasType (sqlite3_context * context, int argc,
 / GeometryAliasType(BLOB encoded geometry)
 /
 / returns the alias-class for current geometry:
+/ 'POINT'
+/ 'LINESTRING'
+/ 'POLYGON'
 / 'MULTIPOINT'
 / 'MULTILINESTRING'
 / 'MULTIPOLYGON'
