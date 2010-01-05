@@ -165,6 +165,8 @@ typedef DijkstraNode *DijkstraNodePtr;
 typedef struct DijkstraNodes
 {
     DijkstraNodePtr Nodes;
+    NetworkArcPtr *ArcsBuffer;
+    DijkstraNodePtr *NodesBuffer;
     int Dim;
     int DimLink;
 } DijkstraNodes;
@@ -222,7 +224,9 @@ dijkstra_init (NetworkPtr graph)
 /* allocating and initializing the Dijkstra struct */
     int i;
     int j;
+    int cnt = 0;
     DijkstraNodesPtr nd;
+    DijkstraNodePtr ndn;
     NetworkNodePtr nn;
 /* allocating the main Nodes struct */
     nd = malloc (sizeof (DijkstraNodes));
@@ -230,21 +234,30 @@ dijkstra_init (NetworkPtr graph)
     nd->Nodes = malloc (sizeof (DijkstraNode) * graph->NumNodes);
     nd->Dim = graph->NumNodes;
     nd->DimLink = 0;
+
+/* pre-alloc buffer strategy - GENSCHER 2010-01-05 */
+    for (i = 0; i < graph->NumNodes; cnt += graph->Nodes[i].NumArcs, i++);
+    nd->NodesBuffer = malloc (sizeof (DijkstraNodePtr) * cnt);
+    nd->ArcsBuffer = malloc (sizeof (NetworkArcPtr) * cnt);
+
+    cnt = 0;
     for (i = 0; i < graph->NumNodes; i++)
       {
 	  /* initializing the Nodes array */
 	  nn = graph->Nodes + i;
-	  nd->Nodes[i].Id = nn->InternalIndex;
-	  nd->Nodes[i].DimTo = nn->NumArcs;
-	  nd->Nodes[i].To = malloc (sizeof (DijkstraNodePtr) * nn->NumArcs);
-	  nd->Nodes[i].Link = malloc (sizeof (NetworkArcPtr) * nn->NumArcs);
+	  ndn = nd->Nodes + i;
+	  ndn->Id = nn->InternalIndex;
+	  ndn->DimTo = nn->NumArcs;
+	  ndn->To = &(nd->NodesBuffer[cnt]);
+	  ndn->Link = &(nd->ArcsBuffer[cnt]);
+	  cnt += nn->NumArcs;
+
 	  for (j = 0; j < nn->NumArcs; j++)
 	    {
 		/*  setting the outcoming Arcs for the current Node */
 		nd->DimLink++;
-		nd->Nodes[i].To[j] =
-		    nd->Nodes + nn->Arcs[j].NodeTo->InternalIndex;
-		nd->Nodes[i].Link[j] = nn->Arcs + j;
+		ndn->To[j] = nd->Nodes + nn->Arcs[j].NodeTo->InternalIndex;
+		ndn->Link[j] = nn->Arcs + j;
 	    }
       }
     return (nd);
@@ -254,15 +267,8 @@ static void
 dijkstra_free (DijkstraNodes * e)
 {
 /* memory cleanup; freeing the Dijkstra struct */
-    int i;
-    for (i = 0; i < e->Dim; i++)
-      {
-	  if (e->Nodes[i].DimTo != 0)
-	    {
-		free (e->Nodes[i].Link);
-		free (e->Nodes[i].To);
-	    }
-      }
+    free (e->ArcsBuffer);
+    free (e->NodesBuffer);
     free (e->Nodes);
     free (e);
 }
@@ -332,6 +338,8 @@ dijkstra_shortest_path (DijkstraNodesPtr e, NetworkNodePtr pfrom,
     int i;
     int k;
     DijkstraNodePtr n;
+    DijkstraNodePtr p_to;
+    NetworkArcPtr p_link;
     int cnt;
     NetworkArcPtr *result;
     DijkstraHeapPtr h;
@@ -343,10 +351,11 @@ dijkstra_shortest_path (DijkstraNodesPtr e, NetworkNodePtr pfrom,
 /* initializing the graph */
     for (i = 0; i < e->Dim; i++)
       {
-	  e->Nodes[i].PreviousNode = NULL;
-	  e->Nodes[i].Arc = NULL;
-	  e->Nodes[i].Value = 0;
-	  e->Nodes[i].Distance = DBL_MAX;
+	  n = e->Nodes + i;
+	  n->PreviousNode = NULL;
+	  n->Arc = NULL;
+	  n->Value = 0;
+	  n->Distance = DBL_MAX;
       }
 /* pushes the From node into the Nodes list */
     e->Nodes[from].Distance = 0.0;
@@ -363,14 +372,16 @@ dijkstra_shortest_path (DijkstraNodesPtr e, NetworkNodePtr pfrom,
 	  n->Value = 1;
 	  for (i = 0; i < n->DimTo; i++)
 	    {
-		if (n->To[i]->Value == 0)
+		p_to = *(n->To + i);
+		p_link = *(n->Link + i);
+		if (p_to->Value == 0)
 		  {
-		      if (n->To[i]->Distance > n->Distance + n->Link[i]->Cost)
+		      if (p_to->Distance > n->Distance + p_link->Cost)
 			{
-			    n->To[i]->Distance = n->Distance + n->Link[i]->Cost;
-			    n->To[i]->PreviousNode = n;
-			    n->To[i]->Arc = n->Link[i];
-			    dijkstra_push (h, n->To[i]);
+			    p_to->Distance = n->Distance + p_link->Cost;
+			    p_to->PreviousNode = n;
+			    p_to->Arc = p_link;
+			    dijkstra_push (h, p_to);
 			}
 		  }
 	    }
