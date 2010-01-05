@@ -65,7 +65,8 @@ extern "C"
 					   int verbose, int *rows);
     SPATIALITE_DECLARE int load_shapefile (sqlite3 * sqlite, char *shp_path,
 					   char *table, char *charset, int srid,
-					   char *column, int verbose,
+					   char *column, int coerce2d,
+					   int compressed, int verbose,
 					   int *rows);
     SPATIALITE_DECLARE int load_dbf (sqlite3 * sqlite, char *shp_path,
 				     char *table, char *charset, int verbose,
