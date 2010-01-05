@@ -2564,8 +2564,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		      return 0;
 		  }
 		hasM = 0;
-		if (line->DimensionModel == GAIA_XY_M
-		    || line->DimensionModel == GAIA_XY_Z_M)
+		if (shp->EffectiveDims == GAIA_XY_M
+		    || shp->EffectiveDims == GAIA_XY_Z_M)
 		    hasM = 1;
 		if (hasM)
 		    this_size = 38 + (2 * tot_ln) + (tot_v * 16);	/* size [in 16 bits words !!!] ZM */
@@ -3070,8 +3070,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		      return 0;
 		  }
 		hasM = 0;
-		if (ring->DimensionModel == GAIA_XY_M
-		    || ring->DimensionModel == GAIA_XY_Z_M)
+		if (shp->EffectiveDims == GAIA_XY_M
+		    || shp->EffectiveDims == GAIA_XY_Z_M)
 		    hasM = 1;
 		if (hasM)
 		    this_size = 38 + (2 * tot_ln) + (tot_v * 16);	/* size [in 16 bits words !!!] ZM */
@@ -3679,8 +3679,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		      return 0;
 		  }
 		hasM = 0;
-		if (entity->Geometry->DimensionModel == GAIA_XY_M
-		    || entity->Geometry->DimensionModel == GAIA_XY_Z_M)
+		if (shp->EffectiveDims == GAIA_XY_M
+		    || shp->EffectiveDims == GAIA_XY_Z_M)
 		    hasM = 1;
 		if (hasM)
 		    this_size = 36 + (tot_pts * 16);	/* size [in 16 bits words !!!] ZM */
