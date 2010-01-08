@@ -158,6 +158,7 @@ extern "C"
 /* constants used for VirtualNetwork */
 #define GAIA_NET_START		0x67
 #define GAIA_NET64_START	0x68
+#define GAIA_NET64_A_STAR_START	0x69
 #define GAIA_NET_END		0x87
 #define GAIA_NET_HEADER		0xc0
 #define GAIA_NET_CODE		0xa6
@@ -169,6 +170,7 @@ extern "C"
 #define GAIA_NET_TO		0xa2
 #define GAIA_NET_GEOM		0xa3
 #define GAIA_NET_NAME		0xa4
+#define GAIA_NET_A_STAR_COEFF	0xa5
 #define GAIA_NET_BLOCK		0xed
 
 /* constants used for Coordinate Dimensions */
