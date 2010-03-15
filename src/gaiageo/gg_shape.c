@@ -2327,7 +2327,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 	  gaiaExport32 (shp->BufShp + 4, 2, GAIA_BIG_ENDIAN, endian_arch);	/* exports entitiy size [in 16 bits words !!!] */
 	  fwrite (shp->BufShp, 1, 8, shp->flShx);
 	  (shp->ShxSize) += 4;	/* updating current SHX file position [in 16 bits words !!!] */
-	  gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+	  gaiaExport32 (shp->BufShp, shp->DbfRecno + 1, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 	  gaiaExport32 (shp->BufShp + 4, 2, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
 	  gaiaExport32 (shp->BufShp + 8, GAIA_SHP_NULL, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = NULL */
 	  fwrite (shp->BufShp, 1, 12, shp->flShp);
@@ -2366,7 +2366,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		fwrite (shp->BufShp, 1, 8, shp->flShx);
 		(shp->ShxSize) += 4;	/* updating current SHX file position [in 16 bits words !!!] */
 		/* inserting POINT into SHP file */
-		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno + 1, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, 10, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
 		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POINT, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POINT */
 		gaiaExport64 (shp->BufShp + 12, pt->X, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports X coordinate */
@@ -2395,7 +2395,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		fwrite (shp->BufShp, 1, 8, shp->flShx);
 		(shp->ShxSize) += 4;	/* updating current SHX file position [in 16 bits words !!!] */
 		/* inserting POINT into SHP file */
-		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno + 1, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, 18, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
 		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POINTZ, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POINT Z */
 		gaiaExport64 (shp->BufShp + 12, pt->X, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports X coordinate */
@@ -2426,7 +2426,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		fwrite (shp->BufShp, 1, 8, shp->flShx);
 		(shp->ShxSize) += 4;	/* updating current SHX file position [in 16 bits words !!!] */
 		/* inserting POINT into SHP file */
-		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno + 1, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, 14, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
 		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POINTM, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POINT M */
 		gaiaExport64 (shp->BufShp + 12, pt->X, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports X coordinate */
@@ -2474,7 +2474,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		fwrite (shp->BufShp, 1, 8, shp->flShx);
 		(shp->ShxSize) += 4;
 		/* inserting LINESTRING or MULTILINESTRING in SHP file */
-		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno + 1, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
 		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POLYLINE, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POLYLINE */
 		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
@@ -2584,7 +2584,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		fwrite (shp->BufShp, 1, 8, shp->flShx);
 		(shp->ShxSize) += 4;
 		/* inserting LINESTRING or MULTILINESTRING in SHP file */
-		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno + 1, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
 		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POLYLINEZ, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POLYLINE Z */
 		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
@@ -2770,7 +2770,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		fwrite (shp->BufShp, 1, 8, shp->flShx);
 		(shp->ShxSize) += 4;
 		/* inserting LINESTRING or MULTILINESTRING in SHP file */
-		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno + 1, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
 		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POLYLINEM, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POLYLINE M */
 		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
@@ -2922,7 +2922,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		fwrite (shp->BufShp, 1, 8, shp->flShx);
 		(shp->ShxSize) += 4;
 		/* inserting POLYGON or MULTIPOLYGON in SHP file */
-		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno + 1, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
 		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POLYGON, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POLYGON */
 		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
@@ -3090,7 +3090,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		fwrite (shp->BufShp, 1, 8, shp->flShx);
 		(shp->ShxSize) += 4;
 		/* inserting POLYGON or MULTIPOLYGON in SHP file */
-		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno + 1, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
 		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POLYGONZ, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POLYGON Z */
 		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
@@ -3406,7 +3406,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		fwrite (shp->BufShp, 1, 8, shp->flShx);
 		(shp->ShxSize) += 4;
 		/* inserting POLYGON or MULTIPOLYGON in SHP file */
-		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno + 1, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
 		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_POLYGONM, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = POLYGON M */
 		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
@@ -3626,7 +3626,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		fwrite (shp->BufShp, 1, 8, shp->flShx);
 		(shp->ShxSize) += 4;
 		/* inserting MULTIPOINT in SHP file */
-		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno + 1, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
 		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_MULTIPOINT, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = MULTIPOINT */
 		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
@@ -3699,7 +3699,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		fwrite (shp->BufShp, 1, 8, shp->flShx);
 		(shp->ShxSize) += 4;
 		/* inserting MULTIPOINT in SHP file */
-		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno + 1, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
 		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_MULTIPOINTZ, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = MULTIPOINT Z */
 		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
@@ -3799,7 +3799,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		fwrite (shp->BufShp, 1, 8, shp->flShx);
 		(shp->ShxSize) += 4;
 		/* inserting MULTIPOINT in SHP file */
-		gaiaExport32 (shp->BufShp, shp->DbfRecno, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
+		gaiaExport32 (shp->BufShp, shp->DbfRecno + 1, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity ID */
 		gaiaExport32 (shp->BufShp + 4, this_size, GAIA_BIG_ENDIAN, endian_arch);	/* exports entity size [in 16 bits words !!!] */
 		gaiaExport32 (shp->BufShp + 8, GAIA_SHP_MULTIPOINTM, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports geometry type = MULTIPOINT M */
 		gaiaExport64 (shp->BufShp + 12, entity->Geometry->MinX, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the MBR for this geometry */
