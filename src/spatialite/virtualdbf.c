@@ -73,6 +73,25 @@ typedef struct VirtualDbfCursorStruct
 } VirtualDbfCursor;
 typedef VirtualDbfCursor *VirtualDbfCursorPtr;
 
+static void
+vdbf_double_quoted_sql (char *buf)
+{
+/* well-formatting a string to be used as an SQL name */
+    char tmp[1024];
+    char *in = tmp;
+    char *out = buf;
+    strcpy (tmp, buf);
+    *out++ = '"';
+    while (*in != '\0')
+      {
+	  if (*in == '"')
+	      *out++ = '"';
+	  *out++ = *in++;
+      }
+    *out++ = '"';
+    *out = '\0';
+}
+
 static int
 vdbf_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	     sqlite3_vtab ** ppVTab, char **pzErr)
@@ -145,7 +164,9 @@ vdbf_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (!(p_vt->dbf->Valid))
       {
 	  /* something is going the wrong way; creating a stupid default table */
-	  sprintf (buf, "CREATE TABLE %s (PKUID INTEGER)", argv[1]);
+	  strcpy (dummyName, argv[2]);
+	  vdbf_double_quoted_sql (dummyName);
+	  sprintf (buf, "CREATE TABLE %s (PKUID INTEGER)", dummyName[1]);
 	  if (sqlite3_declare_vtab (db, buf) != SQLITE_OK)
 	    {
 		*pzErr =
@@ -158,7 +179,9 @@ vdbf_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
       }
 /* preparing the COLUMNs for this VIRTUAL TABLE */
     strcpy (buf, "CREATE TABLE ");
-    strcat (buf, argv[2]);
+    strcpy (dummyName, argv[2]);
+    vdbf_double_quoted_sql (dummyName);
+    strcat (buf, dummyName);
     strcat (buf, " (PKUID INTEGER");
 /* checking for duplicate / illegal column names and antialising them */
     col_cnt = 0;
@@ -175,7 +198,8 @@ vdbf_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     pFld = p_vt->dbf->Dbf->First;
     while (pFld)
       {
-	  sprintf (dummyName, "\"%s\"", pFld->Name);
+	  sprintf (dummyName, "%s", pFld->Name);
+	  vdbf_double_quoted_sql (dummyName);
 	  dup = 0;
 	  for (idup = 0; idup < cnt; idup++)
 	    {
@@ -185,7 +209,10 @@ vdbf_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  if (strcasecmp (dummyName, "PKUID") == 0)
 	      dup = 1;
 	  if (dup)
-	      sprintf (dummyName, "COL_%d", seed++);
+	    {
+		sprintf (dummyName, "COL_%d", seed++);
+		vdbf_double_quoted_sql (dummyName);
+	    }
 	  if (pFld->Type == 'N')
 	    {
 		if (pFld->Decimals > 0 || pFld->Length > 18)

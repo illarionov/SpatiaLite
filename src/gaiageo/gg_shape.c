@@ -2309,7 +2309,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 			}
 		      if (fld->Value->Type == GAIA_DOUBLE_VALUE)
 			{
-			    sprintf (fmt, "%%1.%dlf", fld->Decimals);
+			    sprintf (fmt, "%%1.%df", fld->Decimals);
 			    sprintf (dummy, fmt, fld->Value->DblValue);
 			    if (strlen (dummy) <= fld->Length)
 				memcpy (shp->BufDbf + fld->Offset + 1, dummy,

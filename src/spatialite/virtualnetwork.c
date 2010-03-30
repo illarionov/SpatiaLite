@@ -587,6 +587,67 @@ a_star_shortest_path (RoutingNodesPtr e, NetworkNodePtr nodes,
 
 /* END of A* Shortest Path implementation */
 
+static void
+vnet_double_quoted_sql (char *buf)
+{
+/* well-formatting a string to be used as an SQL name */
+    char tmp[1024];
+    char *in = tmp;
+    char *out = buf;
+    strcpy (tmp, buf);
+    *out++ = '"';
+    while (*in != '\0')
+      {
+	  if (*in == '"')
+	      *out++ = '"';
+	  *out++ = *in++;
+      }
+    *out++ = '"';
+    *out = '\0';
+}
+
+static void
+vnet_dequote (char *buf)
+{
+/* dequoting an SQL string */
+    char tmp[1024];
+    char *in = tmp;
+    char *out = buf;
+    char strip = '\0';
+    int first = 0;
+    int len = strlen (buf);
+    if (buf[0] == '\'' && buf[len - 1] == '\'')
+	strip = '\'';
+    if (buf[0] == '"' && buf[len - 1] == '"')
+	strip = '"';
+    if (strip == '\0')
+	return;
+    strcpy (tmp, buf + 1);
+    len = strlen (tmp);
+    tmp[len - 1] = '\0';
+    while (*in != '\0')
+      {
+	  if (*in == strip)
+	    {
+		if (first)
+		  {
+		      first = 0;
+		      in++;
+		      continue;
+		  }
+		else
+		  {
+		      first = 1;
+		      *out++ = *in++;
+		      continue;
+		  }
+	    }
+	  first = 0;
+	  *out++ = *in++;
+      }
+    *out = '\0';
+}
+
 static int
 cmp_nodes_code (const void *p1, const void *p2)
 {
@@ -824,6 +885,11 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
     int block = 128;
     int how_many;
     sqlite3_stmt *stmt;
+    char xfrom[1024];
+    char xto[1024];
+    char xgeom[1024];
+    char xname[1024];
+    char xtable[1024];
     if (cnt > 0)
       {
 	  /* building the solution */
@@ -844,19 +910,34 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 	  if (graph->NameColumn)
 	    {
 		/* a Name column is defined */
+		strcpy (xfrom, graph->FromColumn);
+		vnet_double_quoted_sql (xfrom);
+		strcpy (xto, graph->ToColumn);
+		vnet_double_quoted_sql (xto);
+		strcpy (xgeom, graph->GeometryColumn);
+		vnet_double_quoted_sql (xgeom);
+		strcpy (xname, graph->NameColumn);
+		vnet_double_quoted_sql (xname);
+		strcpy (xtable, graph->TableName);
+		vnet_double_quoted_sql (xtable);
 		sprintf (sql,
-			 "SELECT ROWID, \"%s\", \"%s\", \"%s\", \"%s\" FROM \"%s\" WHERE ROWID IN (",
-			 graph->FromColumn, graph->ToColumn,
-			 graph->GeometryColumn, graph->NameColumn,
-			 graph->TableName);
+			 "SELECT ROWID, %s, %s, %s, %s FROM %s WHERE ROWID IN (",
+			 xfrom, xto, xgeom, xname, xtable);
 	    }
 	  else
 	    {
 		/* no Name column is defined */
+		strcpy (xfrom, graph->FromColumn);
+		vnet_double_quoted_sql (xfrom);
+		strcpy (xto, graph->ToColumn);
+		vnet_double_quoted_sql (xto);
+		strcpy (xgeom, graph->GeometryColumn);
+		vnet_double_quoted_sql (xgeom);
+		strcpy (xtable, graph->TableName);
+		vnet_double_quoted_sql (xtable);
 		sprintf (sql,
-			 "SELECT ROWID, \"%s\", \"%s\", \"%s\" FROM \"%s\" WHERE ROWID IN (",
-			 graph->FromColumn, graph->ToColumn,
-			 graph->GeometryColumn, graph->TableName);
+			 "SELECT ROWID, %s, %s, %s FROM %s WHERE ROWID IN (",
+			 xfrom, xto, xgeom, xtable);
 	    }
 	  for (i = 0; i < how_many; i++)
 	    {
@@ -1486,7 +1567,10 @@ load_network (sqlite3 * handle, const char *table)
     int header = 1;
     const unsigned char *blob;
     int size;
-    sprintf (sql, "SELECT \"NetworkData\" FROM \"%s\" ORDER BY \"Id\"", table);
+    char xname[1024];
+    strcpy (xname, table);
+    vnet_double_quoted_sql (xname);
+    sprintf (sql, "SELECT NetworkData FROM %s ORDER BY Id", xname);
     ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
 	goto abort;
@@ -1554,8 +1638,8 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     int i;
     int n_rows;
     int n_columns;
-    const char *vtable;
-    const char *table;
+    char vtable[1024];
+    char table[1024];
     const char *col_name;
     char **results;
     char *err_msg = NULL;
@@ -1563,14 +1647,17 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     int ok_tbl;
     int ok_id;
     int ok_data;
+    char xname[1024];
     NetworkPtr graph = NULL;
     if (pAux)
 	pAux = pAux;		/* unused arg warning suppression */
 /* checking for table_name and geo_column_name */
     if (argc == 4)
       {
-	  vtable = argv[2];
-	  table = argv[3];
+	  strcpy (vtable, argv[2]);
+	  vnet_dequote (vtable);
+	  strcpy (table, argv[3]);
+	  vnet_dequote (table);
       }
     else
       {
@@ -1584,7 +1671,9 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     ok_tbl = 0;
     ok_id = 0;
     ok_data = 0;
-    sprintf (sql, "PRAGMA table_info(\"%s\")", table);
+    strcpy (xname, table);
+    vnet_double_quoted_sql (xname);
+    sprintf (sql, "PRAGMA table_info(%s)", xname);
     ret = sqlite3_get_table (db, sql, &results, &n_rows, &n_columns, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -1639,16 +1728,18 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     p_vt->nRef = 0;
     p_vt->zErrMsg = NULL;
 /* preparing the COLUMNs for this VIRTUAL TABLE */
-    strcpy (buf, "CREATE TABLE \"");
-    strcat (buf, vtable);
-    strcat (buf, "\" (\"Algorithm\" TEXT, \"ArcRowid\" INTEGER, ");
+    strcpy (buf, "CREATE TABLE ");
+    strcpy (xname, vtable);
+    vnet_double_quoted_sql (xname);
+    strcat (buf, xname);
+    strcat (buf, " (Algorithm TEXT, ArcRowid INTEGER, ");
     if (p_vt->graph->NodeCode)
-	strcat (buf, "\"NodeFrom\" TEXT, \"NodeTo\" TEXT,");
+	strcat (buf, "NodeFrom TEXT, NodeTo TEXT,");
     else
-	strcat (buf, "\"NodeFrom\" INTEGER, \"NodeTo\" INTEGER,");
-    strcat (buf, " \"Cost\" DOUBLE, \"Geometry\" BLOB");
+	strcat (buf, "NodeFrom INTEGER, NodeTo INTEGER,");
+    strcat (buf, " Cost DOUBLE, Geometry BLOB");
     if (p_vt->graph->NameColumn)
-	strcat (buf, ", \"Name\" TEXT)");
+	strcat (buf, ", Name TEXT)");
     else
 	strcat (buf, ")");
     if (sqlite3_declare_vtab (db, buf) != SQLITE_OK)

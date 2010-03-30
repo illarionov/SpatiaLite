@@ -281,6 +281,25 @@ cache_bitmask (int x)
     return 0x00000000;
 }
 
+static void
+mbrc_double_quoted_sql (char *buf)
+{
+/* well-formatting a string to be used as an SQL name */
+    char tmp[1024];
+    char *in = tmp;
+    char *out = buf;
+    strcpy (tmp, buf);
+    *out++ = '"';
+    while (*in != '\0')
+      {
+	  if (*in == '"')
+	      *out++ = '"';
+	  *out++ = *in++;
+      }
+    *out++ = '"';
+    *out = '\0';
+}
+
 static struct mbr_cache *
 cache_alloc ()
 {
@@ -482,9 +501,15 @@ retrieving any existing entity from the main table
     int v4;
     int v5;
     struct mbr_cache *p_cache;
+    char xcolumn[1024];
+    char xtable[1024];
+    strcpy (xcolumn, column);
+    mbrc_double_quoted_sql (xcolumn);
+    strcpy (xtable, table);
+    mbrc_double_quoted_sql (xtable);
     sprintf (sql,
-	     "SELECT ROWID, MbrMinX(\"%s\"), MbrMinY(\"%s\"), MbrMaxX(\"%s\"), MbrMaxY(\"%s\") FROM \"%s\"",
-	     column, column, column, column, table);
+	     "SELECT ROWID, MbrMinX(%s), MbrMinY(%s), MbrMaxX(%s), MbrMaxY(%s) FROM %s",
+	     xcolumn, xcolumn, xcolumn, xcolumn, xtable);
     ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -837,25 +862,6 @@ cache_update_cell (struct mbr_cache_page *pp, sqlite3_int64 rowid, double minx,
     return 0;
 }
 
-static void
-mbr_double_quoted_sql (char *buf)
-{
-/* well-formatting a string to be used as an SQL name */
-    char tmp[1024];
-    char *in = tmp;
-    char *out = buf;
-    strcpy (tmp, buf);
-    *out++ = '"';
-    while (*in != '\0')
-      {
-	  if (*in == '"')
-	      *out++ = '"';
-	  *out++ = *in++;
-      }
-    *out++ = '"';
-    *out = '\0';
-}
-
 static int
 mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	     sqlite3_vtab ** ppVTab, char **pzErr)
@@ -877,7 +883,7 @@ mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     int ok_tbl;
     int ok_col;
     MbrCachePtr p_vt;
-    char xtable[1024];
+    char xname[1024];
     if (pAux)
 	pAux = pAux;		/* unused arg warning suppression */
     p_vt = (MbrCachePtr) sqlite3_malloc (sizeof (MbrCache));
@@ -915,7 +921,9 @@ mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     err = 0;
     ok_tbl = 0;
     ok_col = 0;
-    sprintf (sql, "PRAGMA table_info(\"%s\")", table);
+    strcpy (xname, table);
+    mbrc_double_quoted_sql (xname);
+    sprintf (sql, "PRAGMA table_info(%s)", xname);
     ret = sqlite3_get_table (db, sql, &results, &n_rows, &n_columns, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -941,9 +949,9 @@ mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (err)
       {
 	  /* something is going the wrong way; creating a stupid default table */
-	  strcpy (xtable, vtable);
-	  mbr_double_quoted_sql (xtable);
-	  sprintf (sql, "CREATE TABLE %s (rowid INTEGER, mbr BLOB)", xtable);
+	  strcpy (xname, vtable);
+	  mbrc_double_quoted_sql (xname);
+	  sprintf (sql, "CREATE TABLE %s (rowid INTEGER, mbr BLOB)", xname);
 	  if (sqlite3_declare_vtab (db, sql) != SQLITE_OK)
 	    {
 		*pzErr =
@@ -956,8 +964,10 @@ mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  return SQLITE_OK;
       }
     p_vt->error = 0;
-    sprintf (sql, "CREATE TABLE \"%s\" (", vtable);
-    strcat (sql, "\"rowid\" INTEGER, \"mbr\" BLOB)");
+    strcpy (xname, vtable);
+    mbrc_double_quoted_sql (xname);
+    sprintf (sql, "CREATE TABLE %s (", xname);
+    strcat (sql, "rowid INTEGER, mbr BLOB)");
     if (sqlite3_declare_vtab (db, sql) != SQLITE_OK)
       {
 	  *pzErr =

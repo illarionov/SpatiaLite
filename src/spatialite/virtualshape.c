@@ -76,6 +76,25 @@ typedef struct VirtualShapeCursorStruct
 } VirtualShapeCursor;
 typedef VirtualShapeCursor *VirtualShapeCursorPtr;
 
+static void
+vshp_double_quoted_sql (char *buf)
+{
+/* well-formatting a string to be used as an SQL name */
+    char tmp[1024];
+    char *in = tmp;
+    char *out = buf;
+    strcpy (tmp, buf);
+    *out++ = '"';
+    while (*in != '\0')
+      {
+	  if (*in == '"')
+	      *out++ = '"';
+	  *out++ = *in++;
+      }
+    *out++ = '"';
+    *out = '\0';
+}
+
 static int
 vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	     sqlite3_vtab ** ppVTab, char **pzErr)
@@ -153,8 +172,10 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (!(p_vt->Shp->Valid))
       {
 	  /* something is going the wrong way; creating a stupid default table */
+	  strcpy (dummyName, argv[2]);
+	  vshp_double_quoted_sql (dummyName);
 	  sprintf (buf, "CREATE TABLE %s (PKUID INTEGER, Geometry BLOB)",
-		   argv[1]);
+		   dummyName);
 	  if (sqlite3_declare_vtab (db, buf) != SQLITE_OK)
 	    {
 		*pzErr =
@@ -174,7 +195,9 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
       }
 /* preparing the COLUMNs for this VIRTUAL TABLE */
     strcpy (buf, "CREATE TABLE ");
-    strcat (buf, argv[2]);
+    strcpy (dummyName, argv[2]);
+    vshp_double_quoted_sql (dummyName);
+    strcat (buf, dummyName);
     strcat (buf, " (PKUID INTEGER, Geometry BLOB");
 /* checking for duplicate / illegal column names and antialising them */
     col_cnt = 0;
@@ -191,7 +214,8 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     pFld = p_vt->Shp->Dbf->First;
     while (pFld)
       {
-	  sprintf (dummyName, "\"%s\"", pFld->Name);
+	  sprintf (dummyName, "%s", pFld->Name);
+	  vshp_double_quoted_sql (dummyName);
 	  dup = 0;
 	  for (idup = 0; idup < cnt; idup++)
 	    {
@@ -203,7 +227,10 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  if (strcasecmp (dummyName, "Geometry") == 0)
 	      dup = 1;
 	  if (dup)
-	      sprintf (dummyName, "COL_%d", seed++);
+	    {
+		sprintf (dummyName, "COL_%d", seed++);
+		vshp_double_quoted_sql (dummyName);
+	    }
 	  if (pFld->Type == 'N')
 	    {
 		if (pFld->Decimals > 0 || pFld->Length > 18)
