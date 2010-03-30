@@ -58,7 +58,7 @@ extern "C"
 
 /* function prototipes */
 
-    GAIAAUX_DECLARE const char *gaiaGetLocaleCharset ();
+    GAIAAUX_DECLARE const char *gaiaGetLocaleCharset (void);
     GAIAAUX_DECLARE int gaiaConvertCharset (char **buf, const char *fromCs,
 					    const char *toCs);
     GAIAAUX_DECLARE int gaiaToUTF8 (char **buf, const char *fromCs,

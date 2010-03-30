@@ -166,7 +166,7 @@ vdbf_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  /* something is going the wrong way; creating a stupid default table */
 	  strcpy (dummyName, argv[2]);
 	  vdbf_double_quoted_sql (dummyName);
-	  sprintf (buf, "CREATE TABLE %s (PKUID INTEGER)", dummyName[1]);
+	  sprintf (buf, "CREATE TABLE %s (PKUID INTEGER)", dummyName);
 	  if (sqlite3_declare_vtab (db, buf) != SQLITE_OK)
 	    {
 		*pzErr =

@@ -1218,9 +1218,10 @@ exifExpandIFD (gaiaExifTagListPtr list, const unsigned char *blob,
     unsigned int offset;
     unsigned short items;
     unsigned short i;
-    gaiaExifTagPtr tag = list->First;
+    gaiaExifTagPtr tag;
     if (!list)
 	return;
+    tag = list->First;
     while (tag)
       {
 	  if (tag->TagId == 34665)
@@ -1251,9 +1252,10 @@ exifExpandGPS (gaiaExifTagListPtr list, const unsigned char *blob,
     unsigned int offset;
     unsigned short items;
     unsigned short i;
-    gaiaExifTagPtr tag = list->First;
+    gaiaExifTagPtr tag;
     if (!list)
 	return;
+    tag = list->First;
     while (tag)
       {
 	  if (tag->TagId == 34853)

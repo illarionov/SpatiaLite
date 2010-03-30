@@ -278,7 +278,7 @@ text_is_integer (char *value)
 	  else if (*p == '+' || *p == '-')
 	      signs++;
 	  else
-	      signs++;
+	      invalids++;
 	  p++;
       }
     if (invalids)
@@ -311,7 +311,7 @@ text_is_double (char *value, char decimal_separator)
 	  if (*p >= '0' && *p <= '9')
 	      digits++;
 	  else if (*p == '+' || *p == '-')
-	      points++;
+	      signs++;
 	  else
 	    {
 		if (decimal_separator == ',')
@@ -397,7 +397,7 @@ text_clean_text (char **value, void *toUtf8)
 {
 /* cleaning a TEXT value and converting to UTF-8 */
     char *text = *value;
-    char *utf8text;
+    char *utf8text = NULL;
     int err;
     int i;
     int oldlen = strlen (text);
@@ -412,7 +412,12 @@ text_clean_text (char **value, void *toUtf8)
       }
     utf8text = gaiaConvertToUTF8 (toUtf8, text, oldlen, &err);
     if (err)
-	return 1;
+      {
+	  /* memory cleanup: Kashif Rasul 14 Jan 2010 */
+	  if (utf8text)
+	      free (utf8text);
+	  return 1;
+      }
     newlen = strlen (utf8text);
     if (newlen <= oldlen)
 	strcpy (*value, utf8text);
@@ -422,12 +427,19 @@ text_clean_text (char **value, void *toUtf8)
 	  *value = malloc (newlen + 1);
 	  if (*value == NULL)
 	    {
+		/* memory cleanup: Kashif Rasul 14 Jan 2010 */
+		free (utf8text);
+
 		fprintf (stderr, "VirtualText: insufficient memory\n");
 		fflush (stderr);
 		return 1;
 	    }
 	  strcpy (*value, utf8text);
       }
+
+/* memory cleanup: Kashif Rasul 14 Jan 2010 */
+    free (utf8text);
+
     return 0;
 }
 
@@ -490,7 +502,7 @@ text_read_row (struct text_buffer *text, struct row_pointer *ptr,
 	  fflush (stderr);
 	  return NULL;
       }
-    if ((int)fread (buf_in, 1, ptr->len, text->text_file) != ptr->len)
+    if ((int) fread (buf_in, 1, ptr->len, text->text_file) != ptr->len)
       {
 	  fprintf (stderr, "VirtualText: corrupted text file\n");
 	  fflush (stderr);
@@ -646,6 +658,9 @@ text_parse (char *path, char *encoding, char first_line_titles,
       {
 	  fprintf (stderr, "VirtualText: illegal charset\n");
 	  fflush (stderr);
+
+	  fclose (in);		/* Kashif Rasul 14 Jan 2010 */
+
 	  return NULL;
       }
     text =
@@ -655,6 +670,9 @@ text_parse (char *path, char *encoding, char first_line_titles,
       {
 	  fprintf (stderr, "VirtualText: insufficient memory\n");
 	  fflush (stderr);
+
+	  fclose (in);		/* Kashif Rasul 14 Jan 2010 */
+
 	  return NULL;
       }
     while ((c = getc (in)) != EOF)

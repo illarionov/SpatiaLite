@@ -4262,7 +4262,7 @@ pointFromFgf (gaiaGeomCollPtr geom, int endian_arch, const unsigned char *blob,
 	  z = gaiaImport64 (ptr + 8, GAIA_LITTLE_ENDIAN, endian_arch);
 	  gaiaAddPointToGeomCollXYZ (geom, x, y, z);
       }
-    else if (type == GAIA_XY_Z_M)
+    else if (type == GAIA_XY_M)
       {
 	  /* building the POINTM */
 	  x = gaiaImport64 (ptr, GAIA_LITTLE_ENDIAN, endian_arch);

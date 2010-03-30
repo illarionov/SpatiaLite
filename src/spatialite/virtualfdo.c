@@ -373,7 +373,7 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
     char sql[4096];
     char buf[256];
     char xname[1024];
-    gaiaGeomCollPtr geom;
+    gaiaGeomCollPtr geom = NULL;
     strcpy (xname, p_vt->table);
     vfdo_double_quoted_sql (xname);
     sprintf (sql, "INSERT INTO %s ", xname);
@@ -497,7 +497,15 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
 		  }
 	    }
 	  if (geom_done)
-	      continue;
+	    {
+		if (geom)
+		  {
+		      /* memory cleanup: Kashif Rasul 14 Jan 2010 */
+		      gaiaFreeGeomColl (geom);
+		      geom = NULL;
+		  }
+		continue;
+	    }
 	  switch (sqlite3_value_type (argv[i]))
 	    {
 	    case SQLITE_INTEGER:
@@ -524,6 +532,11 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
 	    };
       }
   error:
+    if (geom)
+      {
+	  /* memory cleanup: Kashif Rasul 14 Jan 2010 */
+	  gaiaFreeGeomColl (geom);
+      }
     if (err_geom || geom_constraint_err)
       {
 	  sqlite3_finalize (stmt);

@@ -804,9 +804,9 @@ extern "C"
 
 #ifndef OMIT_GEOS		/* including GEOS */
 
-    GAIAGEO_DECLARE void gaiaResetGeosMsg ();
-    GAIAGEO_DECLARE const char *gaiaGetGeosErrorMsg ();
-    GAIAGEO_DECLARE const char *gaiaGetGeosWarningMsg ();
+    GAIAGEO_DECLARE void gaiaResetGeosMsg (void);
+    GAIAGEO_DECLARE const char *gaiaGetGeosErrorMsg (void);
+    GAIAGEO_DECLARE const char *gaiaGetGeosWarningMsg (void);
     GAIAGEO_DECLARE void gaiaSetGeosErrorMsg (const char *msg);
     GAIAGEO_DECLARE void gaiaSetGeosWarningMsg (const char *msg);
 

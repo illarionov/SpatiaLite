@@ -418,10 +418,10 @@ gaiaGeometryIntersection (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 	geo = gaiaFromGeos_XYZM (g3);
     else
 	geo = gaiaFromGeos_XY (g3);
+    GEOSGeom_destroy (g3);
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom1->Srid;
-    GEOSGeom_destroy (g3);
     return geo;
 }
 
@@ -448,21 +448,19 @@ gaiaGeometryUnion (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 	geo = gaiaFromGeos_XYZM (g3);
     else
 	geo = gaiaFromGeos_XY (g3);
+    GEOSGeom_destroy (g3);
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom1->Srid;
-    if (geo->
-	DeclaredType == GAIA_POINT && geom1->DeclaredType == GAIA_MULTIPOINT)
+    if (geo->DeclaredType == GAIA_POINT &&
+	geom1->DeclaredType == GAIA_MULTIPOINT)
 	geo->DeclaredType = GAIA_MULTIPOINT;
-    if (geo->
-	DeclaredType
-	== GAIA_LINESTRING && geom1->DeclaredType == GAIA_MULTILINESTRING)
+    if (geo->DeclaredType == GAIA_LINESTRING &&
+	geom1->DeclaredType == GAIA_MULTILINESTRING)
 	geo->DeclaredType = GAIA_MULTILINESTRING;
-    if (geo->
-	DeclaredType
-	== GAIA_POLYGON && geom1->DeclaredType == GAIA_MULTIPOLYGON)
+    if (geo->DeclaredType == GAIA_POLYGON &&
+	geom1->DeclaredType == GAIA_MULTIPOLYGON)
 	geo->DeclaredType = GAIA_MULTIPOLYGON;
-    GEOSGeom_destroy (g3);
     return geo;
 }
 
@@ -491,10 +489,10 @@ gaiaGeometryDifference (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 	geo = gaiaFromGeos_XYZM (g3);
     else
 	geo = gaiaFromGeos_XY (g3);
+    GEOSGeom_destroy (g3);
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom1->Srid;
-    GEOSGeom_destroy (g3);
     return geo;
 }
 
@@ -523,10 +521,10 @@ gaiaGeometrySymDifference (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 	geo = gaiaFromGeos_XYZM (g3);
     else
 	geo = gaiaFromGeos_XY (g3);
+    GEOSGeom_destroy (g3);
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom1->Srid;
-    GEOSGeom_destroy (g3);
     return geo;
 }
 
@@ -552,10 +550,10 @@ gaiaBoundary (gaiaGeomCollPtr geom)
 	geo = gaiaFromGeos_XYZM (g2);
     else
 	geo = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom->Srid;
-    GEOSGeom_destroy (g2);
     return geo;
 }
 
@@ -581,6 +579,7 @@ gaiaGeomCollCentroid (gaiaGeomCollPtr geom, double *x, double *y)
 	geo = gaiaFromGeos_XYZM (g2);
     else
 	geo = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
     if (geo == NULL)
 	return 0;
     if (geo->FirstPoint)
@@ -616,6 +615,7 @@ gaiaGetPointOnSurface (gaiaGeomCollPtr geom, double *x, double *y)
 	geo = gaiaFromGeos_XYZM (g2);
     else
 	geo = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
     if (geo == NULL)
 	return 0;
     if (geo->FirstPoint)
@@ -756,6 +756,7 @@ gaiaGeomCollSimplify (gaiaGeomCollPtr geom, double tolerance)
 	geo = gaiaFromGeos_XYZM (g2);
     else
 	geo = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom->Srid;
@@ -784,6 +785,7 @@ gaiaGeomCollSimplifyPreserveTopology (gaiaGeomCollPtr geom, double tolerance)
 	geo = gaiaFromGeos_XYZM (g2);
     else
 	geo = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom->Srid;
@@ -812,6 +814,7 @@ gaiaConvexHull (gaiaGeomCollPtr geom)
 	geo = gaiaFromGeos_XYZM (g2);
     else
 	geo = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom->Srid;
@@ -840,10 +843,81 @@ gaiaGeomCollBuffer (gaiaGeomCollPtr geom, double radius, int points)
 	geo = gaiaFromGeos_XYZM (g2);
     else
 	geo = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
     if (geo == NULL)
 	return NULL;
     geo->Srid = geom->Srid;
     return geo;
+}
+
+static int
+polygonize_eval_rings (gaiaRingPtr rng1, gaiaRingPtr rng2)
+{
+/* checking if two rings are identical */
+    int iv1;
+    int iv2;
+    double x1;
+    double y1;
+    double z1;
+    double m;
+    double x2;
+    double y2;
+    double z2;
+    int count = 0;
+    if (rng1->Points != rng2->Points)
+	return 0;
+    if (rng1->DimensionModel != rng2->DimensionModel)
+	return 0;
+    for (iv1 = 0; iv1 < rng1->Points; iv1++)
+      {
+	  if (rng1->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (rng1->Coords, iv1, &x1, &y1, &z1);
+	    }
+	  else if (rng1->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (rng1->Coords, iv1, &x1, &y1, &m);
+		z1 = 0.0;
+	    }
+	  else if (rng1->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (rng1->Coords, iv1, &x1, &y1, &z1, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (rng1->Coords, iv1, &x1, &y1);
+		z1 = 0.0;
+	    }
+	  for (iv2 = 0; iv2 < rng2->Points; iv2++)
+	    {
+		if (rng2->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (rng2->Coords, iv2, &x2, &y2, &z2);
+		  }
+		else if (rng2->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (rng2->Coords, iv2, &x2, &y2, &m);
+		      z2 = 0.0;
+		  }
+		else if (rng2->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (rng2->Coords, iv2, &x2, &y2, &z2, &m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (rng2->Coords, iv2, &x2, &y2);
+		      z2 = 0.0;
+		  }
+		if (x1 == x2 && y1 == y2 && z1 == z2)
+		  {
+		      count++;
+		      break;
+		  }
+	    }
+      }
+    if (count == rng1->Points)
+	return 1;
+    return 0;
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
@@ -858,6 +932,8 @@ gaiaPolygonize (gaiaGeomCollPtr geom_org, int force_multipolygon)
     gaiaLinestringPtr ln2;
     gaiaPointPtr pt;
     gaiaPolygonPtr pg;
+    gaiaPolygonPtr *polygons;
+    char *valids;
     GEOSGeometry **g_array;
     GEOSGeometry *g2;
     double x;
@@ -867,6 +943,7 @@ gaiaPolygonize (gaiaGeomCollPtr geom_org, int force_multipolygon)
     int npt;
     int nln;
     int npg;
+    int ipg;
     if (!geom_org)
 	return NULL;
     ln1 = geom_org->FirstLinestring;
@@ -929,6 +1006,10 @@ gaiaPolygonize (gaiaGeomCollPtr geom_org, int force_multipolygon)
 		  }
 	    }
 	  *(g_array + n_geoms) = gaiaToGeos (geom);
+
+	  /* memory cleanup: Kashif Rasul 14 Jan 2010 */
+	  gaiaFreeGeomColl (geom);
+
 	  n_geoms++;
 	  ln1 = ln1->Next;
       }
@@ -976,6 +1057,61 @@ gaiaPolygonize (gaiaGeomCollPtr geom_org, int force_multipolygon)
 	  gaiaFreeGeomColl (result);
 	  return NULL;
       }
+    polygons = malloc (sizeof (gaiaPolygonPtr) * npg);
+    valids = malloc (sizeof (char) * npg);
+    ipg = 0;
+    pg = result->FirstPolygon;
+    while (pg)
+      {
+	  /* identifying any INTERIOR RING corresponding to some EXTERIOR RING */
+	  gaiaRingPtr ext_rng = pg->Exterior;
+	  gaiaPolygonPtr pg2 = result->FirstPolygon;
+	  polygons[ipg] = pg;
+	  valids[ipg] = 1;
+	  while (pg2)
+	    {
+		if (pg != pg2)
+		  {
+		      gaiaRingPtr int_rng;
+		      int ib;
+		      for (ib = 0; ib < pg2->NumInteriors; ib++)
+			{
+			    int_rng = pg2->Interiors + ib;
+			    if (polygonize_eval_rings (int_rng, ext_rng))
+			      {
+				  /* marking a POLYGON to be deleted */
+				  valids[ipg] = 0;
+				  break;
+			      }
+			}
+		      if (valids[ipg] == 0)
+			  break;
+		  }
+		pg2 = pg2->Next;
+	    }
+	  ipg++;
+	  pg = pg->Next;
+      }
+/* rebuilding the POLYGONs list */
+    result->FirstPolygon = NULL;
+    result->LastPolygon = NULL;
+    for (ipg = 0; ipg < npg; ipg++)
+      {
+	  if (valids[ipg] == 0)
+	      gaiaFreePolygon (polygons[ipg]);
+	  else
+	    {
+		pg = polygons[ipg];
+		pg->Next = NULL;
+		if (result->FirstPolygon == NULL)
+		    result->FirstPolygon = pg;
+		if (result->LastPolygon != NULL)
+		    result->LastPolygon->Next = pg;
+		result->LastPolygon = pg;
+	    }
+      }
+    free (polygons);
+    free (valids);
     result->Srid = geom_org->Srid;
     if (npg == 1)
       {
