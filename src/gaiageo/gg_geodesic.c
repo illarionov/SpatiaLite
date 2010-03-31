@@ -300,7 +300,7 @@ gaiaGreatCircleTotalLength (double a, double b, int dims, double *coords,
 		gaiaGetPoint (coords, iv, &x2, &y2);
 	    }
 	  if (iv > 0)
-	      len += gaiaGreatCircleDistance (a, b, x1, y1, x2, y2);
+	      len += gaiaGreatCircleDistance (a, b, y1, x1, y2, x2);
 	  x1 = x2;
 	  y1 = y2;
       }
@@ -341,7 +341,7 @@ gaiaGeodesicTotalLength (double a, double b, double rf, int dims,
 	    }
 	  if (iv > 0)
 	    {
-		l = gaiaGeodesicDistance (a, b, rf, x1, y1, x2, y2);
+		l = gaiaGeodesicDistance (a, b, rf, y1, x1, y2, x2);
 		if (l < 0.0)
 		    return -1.0;
 		len += l;
