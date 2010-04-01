@@ -758,7 +758,7 @@ gaiaCreatePolygon (gaiaRingPtr ring)
     if (ring->DimensionModel == GAIA_XY_Z)
 	p->Exterior = gaiaAllocRingXYZ (ring->Points);
     else if (ring->DimensionModel == GAIA_XY_M)
-	p->Exterior = gaiaAllocRing (ring->Points);
+	p->Exterior = gaiaAllocRingXYM (ring->Points);
     else if (ring->DimensionModel == GAIA_XY_Z_M)
 	p->Exterior = gaiaAllocRingXYZM (ring->Points);
     else

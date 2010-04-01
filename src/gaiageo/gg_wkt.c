@@ -2448,7 +2448,7 @@ gaiaGeometryFromPointZ (gaiaPointPtr point)
 /* builds a GEOMETRY containing a POINTZ */
     gaiaGeomCollPtr geom = NULL;
     geom = gaiaAllocGeomCollXYZ ();
-    geom->DeclaredType = GAIA_POINT;
+    geom->DeclaredType = GAIA_POINTZ;
     gaiaAddPointToGeomCollXYZ (geom, point->X, point->Y, point->Z);
     gaiaFreePoint (point);
     return geom;
@@ -2460,7 +2460,7 @@ gaiaGeometryFromPointM (gaiaPointPtr point)
 /* builds a GEOMETRY containing a POINTM */
     gaiaGeomCollPtr geom = NULL;
     geom = gaiaAllocGeomCollXYM ();
-    geom->DeclaredType = GAIA_POINT;
+    geom->DeclaredType = GAIA_POINTM;
     gaiaAddPointToGeomCollXYM (geom, point->X, point->Y, point->M);
     gaiaFreePoint (point);
     return geom;
@@ -2472,7 +2472,7 @@ gaiaGeometryFromPointZM (gaiaPointPtr point)
 /* builds a GEOMETRY containing a POINTZM */
     gaiaGeomCollPtr geom = NULL;
     geom = gaiaAllocGeomCollXYZM ();
-    geom->DeclaredType = GAIA_POINTZ;
+    geom->DeclaredType = GAIA_POINTZM;
     gaiaAddPointToGeomCollXYZM (geom, point->X, point->Y, point->Z, point->M);
     gaiaFreePoint (point);
     return geom;

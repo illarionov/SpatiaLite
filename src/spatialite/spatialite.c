@@ -1092,7 +1092,16 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
 	  strcpy (tblname, results[(i * columns)]);
 	  strcpy (colname, results[(i * columns) + 1]);
 	  strcpy (col_type, results[(i * columns) + 2]);
-	  strcpy (col_srid, results[(i * columns) + 3]);
+	  /* 
+	     / Even Rouault - 3 Mar 2010 
+	     / the OGR driver wrongly inserts a NULL SRID
+	     / into GEOMETRY_COLUMNS, so we must check such
+	     / an odd condition to avoid a crash
+	   */
+	  if (results[(i * columns) + 3] == NULL)
+	      strcpy (col_srid, "-1");
+	  else
+	      strcpy (col_srid, results[(i * columns) + 3]);
 	  strcpy (col_index, results[(i * columns) + 4]);
 	  strcpy (col_dims, results[(i * columns) + 5]);
 	  srid = atoi (col_srid);
