@@ -1103,6 +1103,7 @@ gaiaAllocGeomColl ()
     p->MaxY = -DBL_MAX;
     p->DimensionModel = GAIA_XY;
     p->DeclaredType = GAIA_UNKNOWN;
+    p->Next = NULL;
     return p;
 }
 
@@ -1126,6 +1127,7 @@ gaiaAllocGeomCollXYZ ()
     p->MaxY = -DBL_MAX;
     p->DimensionModel = GAIA_XY_Z;
     p->DeclaredType = GAIA_UNKNOWN;
+    p->Next = NULL;
     return p;
 }
 
@@ -1149,6 +1151,7 @@ gaiaAllocGeomCollXYM ()
     p->MaxY = -DBL_MAX;
     p->DimensionModel = GAIA_XY_M;
     p->DeclaredType = GAIA_UNKNOWN;
+    p->Next = NULL;
     return p;
 }
 
@@ -1172,6 +1175,7 @@ gaiaAllocGeomCollXYZM ()
     p->MaxY = -DBL_MAX;
     p->DimensionModel = GAIA_XY_Z_M;
     p->DeclaredType = GAIA_UNKNOWN;
+    p->Next = NULL;
     return p;
 }
 

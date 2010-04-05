@@ -67,6 +67,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/sqlite3ext.h>
 #include <spatialite/gaiageo.h>
 
+#define SHAPEFILE_NO_DATA 1e-38
+
 GAIAGEO_DECLARE void
 gaiaFreeValue (gaiaValuePtr p)
 {
@@ -1462,6 +1464,8 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 					    shp->endian_arch);
 		      else
 			  m = 0.0;
+		      if (m < SHAPEFILE_NO_DATA)
+			  m = 0.0;
 		      if (shp->EffectiveDims == GAIA_XY_Z)
 			{
 			    gaiaSetPointXYZ (line->Coords, points, x, y, z);
@@ -1552,6 +1556,8 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 					    GAIA_LITTLE_ENDIAN,
 					    shp->endian_arch);
 		      else
+			  m = 0.0;
+		      if (m < SHAPEFILE_NO_DATA)
 			  m = 0.0;
 		      if (shp->EffectiveDims == GAIA_XY_Z)
 			{
@@ -1741,6 +1747,8 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 					    shp->endian_arch);
 		      else
 			  m = 0.0;
+		      if (m < SHAPEFILE_NO_DATA)
+			  m = 0.0;
 		      if (shp->EffectiveDims == GAIA_XY_Z)
 			{
 			    gaiaSetPointXYZ (ring->Coords, points, x, y, z);
@@ -1846,6 +1854,8 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 					    GAIA_LITTLE_ENDIAN,
 					    shp->endian_arch);
 		      m = 0.0;
+		      if (m < SHAPEFILE_NO_DATA)
+			  m = 0.0;
 		      if (shp->EffectiveDims == GAIA_XY_Z)
 			{
 			    gaiaSetPointXYZ (ring->Coords, points, x, y, 0.0);
@@ -1980,6 +1990,8 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 				      GAIA_LITTLE_ENDIAN, shp->endian_arch);
 		else
 		    m = 0.0;
+		if (m < SHAPEFILE_NO_DATA)
+		    m = 0.0;
 		if (shp->EffectiveDims == GAIA_XY_Z)
 		    gaiaAddPointToGeomCollXYZ (geom, x, y, z);
 		else if (shp->EffectiveDims == GAIA_XY_M)
@@ -2029,6 +2041,8 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		    m = gaiaImport64 (shp->BufShp + baseM + (iv * 8),
 				      GAIA_LITTLE_ENDIAN, shp->endian_arch);
 		else
+		    m = 0.0;
+		if (m < SHAPEFILE_NO_DATA)
 		    m = 0.0;
 		if (shp->EffectiveDims == GAIA_XY_Z)
 		    gaiaAddPointToGeomCollXYZ (geom, x, y, 0.0);

@@ -878,20 +878,21 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 /* creating the SPATIAL_REF_SYS table */
     strcpy (sql, "CREATE TABLE spatial_ref_sys (\n");
     strcat (sql, "srid INTEGER NOT NULL PRIMARY KEY,\n");
-    strcat (sql, "auth_name VARCHAR(256) NOT NULL,\n");
+    strcat (sql, "auth_name TEXT NOT NULL,\n");
     strcat (sql, "auth_srid INTEGER NOT NULL,\n");
-    strcat (sql, "ref_sys_name VARCHAR(256),\n");
-    strcat (sql, "proj4text VARCHAR(2048) NOT NULL)");
+    strcat (sql, "ref_sys_name TEXT,\n");
+    strcat (sql, "proj4text TEXT NOT NULL,\n");
+    strcat (sql, "srs_wkt TEXT) ");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
 /* creating the GEOMETRY_COLUMN table */
     strcpy (sql, "CREATE TABLE geometry_columns (\n");
-    strcat (sql, "f_table_name VARCHAR(256) NOT NULL,\n");
-    strcat (sql, "f_geometry_column VARCHAR(256) NOT NULL,\n");
-    strcat (sql, "type VARCHAR(30) NOT NULL,\n");
+    strcat (sql, "f_table_name TEXT NOT NULL,\n");
+    strcat (sql, "f_geometry_column TEXT NOT NULL,\n");
+    strcat (sql, "type TEXT NOT NULL,\n");
     strcat (sql, "coord_dimension TEXT NOT NULL,\n");
-    strcat (sql, "srid INTEGER,\n");
+    strcat (sql, "srid INTEGER NOT NULL,\n");
     strcat (sql, "spatial_index_enabled INTEGER NOT NULL,\n");
     strcat (sql, "CONSTRAINT pk_geom_cols PRIMARY KEY ");
     strcat (sql, "(f_table_name, f_geometry_column),\n");
@@ -902,13 +903,13 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 	goto error;
 /* creating an INDEX corresponding to the SRID FK */
     strcpy (sql, "CREATE INDEX idx_srid_geocols ON geometry_columns\n");
-    strcat (sql, "(srid)");
+    strcat (sql, "(srid) ");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
 /* creating the GEOM_COLS_REF_SYS view */
     strcpy (sql, "CREATE VIEW geom_cols_ref_sys AS\n");
-    strcat (sql, "SELECT  f_table_name, f_geometry_column, type,\n");
+    strcat (sql, "SELECT f_table_name, f_geometry_column, type,\n");
     strcat (sql, "coord_dimension, spatial_ref_sys.srid AS srid,\n");
     strcat (sql, "auth_name, auth_srid, ref_sys_name, proj4text\n");
     strcat (sql, "FROM geometry_columns, spatial_ref_sys\n");
@@ -921,7 +922,7 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     sqlite3_result_int (context, 1);
     return;
   error:
-    fprintf (stderr, "InitSpatiaMetaData() error: \"%s\"\n", errMsg);
+    fprintf (stderr, " InitSpatiaMetaData ()error:\"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -2296,8 +2297,8 @@ fnct_InitFDOSpatialMetaData (sqlite3_context * context, int argc,
 	goto error;
     sqlite3_result_int (context, 1);
     return;
-  error:
-    fprintf (stderr, "InitFDOSpatiaMetaData() error: \"%s\"\n", errMsg);
+  error:fprintf (stderr, "InitFDOSpatiaMetaData() error: \"%s\"\n",
+	     errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -5221,8 +5222,8 @@ fnct_Envelope (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
-build_filter_mbr (sqlite3_context * context, int argc, sqlite3_value ** argv,
-		  int mode)
+build_filter_mbr (sqlite3_context * context, int argc,
+		  sqlite3_value ** argv, int mode)
 {
 /* SQL functions:
 / BuildMbrFilter(double X1, double Y1, double X2, double Y2)

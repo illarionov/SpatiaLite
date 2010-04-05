@@ -113,6 +113,7 @@ do_headers (FILE * out)
     fprintf (out, "#include <float.h>\n");
     fprintf (out, "#include <locale.h>\n");
     fprintf (out, "#include <errno.h>\n\n");
+    fprintf (out, "#include <assert.h>\n\n");
     fprintf (out, "#if defined(__MINGW32__) || defined(_WIN32)\n");
     fprintf (out, "#define LIBICONV_STATIC\n");
     fprintf (out, "#include <iconv.h>\n");
@@ -329,7 +330,6 @@ main ()
     do_copy (out, "/gaiageo/", "gg_shape.c");
     do_copy (out, "/gaiageo/", "gg_transform.c");
     do_copy (out, "/gaiageo/", "gg_wkb.c");
-    do_copy (out, "/gaiageo/", "gg_wkt.c");
     do_copy (out, "/gaiageo/", "gg_geodesic.c");
     do_copy (out, "/spatialite/", "spatialite.c");
     do_copy (out, "/spatialite/", "mbrcache.c");
@@ -339,6 +339,7 @@ main ()
     do_copy (out, "/spatialite/", "virtualfdo.c");
     do_copy (out, "/virtualtext/", "virtualtext.c");
     do_copy (out, "/versioninfo/", "version.c");
+    do_copy (out, "/gaiageo/", "gg_wkt.c");
     fclose (out);
 
 /* setting up the HEADERS */

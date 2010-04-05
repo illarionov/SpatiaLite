@@ -348,6 +348,7 @@ extern "C"
 	double MaxY;		/* MBR - BBOX */
 	int DimensionModel;	/* (x,y), (x,y,z), (x,y,m) or (x,y,z,m) */
 	int DeclaredType;	/* the declared TYPE for this Geometry */
+	struct gaiaGeomCollStruct *Next;	/* Vanuatu - used for linked list */
     } gaiaGeomColl;
     typedef gaiaGeomColl *gaiaGeomCollPtr;
 

@@ -30,6 +30,9 @@ the Initial Developer. All Rights Reserved.
 Contributor(s):
 Klaus Foerster klaus.foerster@svg.cc
 
+The Vanuatu Team - University of Toronto - Supervisor:
+Greg Wilson	gvwilson@cs.toronto.ca
+
 Alternatively, the contents of this file may be used under the terms of
 either the GNU General Public License Version 2 or later (the "GPL"), or
 the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -48,3644 +51,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+#include <assert.h>
+
 #include <spatialite/sqlite3ext.h>
 #include <spatialite/gaiageo.h>
-
-typedef struct gaiaTokenStruct
-{
-/* linked list of pre-parsed tokens - used in WKT parsing */
-    int type;			/* token code */
-    double coord;		/* a coordinate [if any] */
-    struct gaiaTokenStruct *next;	/* reference to next element in linked list */
-} gaiaToken;
-typedef gaiaToken *gaiaTokenPtr;
-
-typedef struct gaiaListTokenStruct
-{
-/* 
- / a block of consecutive WKT tokens that identify a LINESTRING or RING, 
- / in the form: (1 2, 3 4, 5 6, 7 8)
- */
-    gaiaTokenPtr first;		/* reference to first element in linked list - has always to be a '(' */
-    gaiaTokenPtr last;		/* reference to last element in linked list - has always to be a ')' */
-    int points;			/* number of POINTS contained in the linkek list */
-    gaiaLinestringPtr line;	/* the LINESTRING builded after successful parsing */
-    struct gaiaListTokenStruct *next;	/* points to next element in linked list [if any] */
-} gaiaListToken;
-typedef gaiaListToken *gaiaListTokenPtr;
-
-typedef struct gaiaMultiListTokenStruct
-{
-/*
- / a group of the above token lists, that identify a POLYGON or a MULTILINESTRING
- / in the form: ((...),(...),(...))
- */
-    gaiaListTokenPtr first;	/* reference to first element in linked list - has always to be a '(' */
-    gaiaListTokenPtr last;	/* reference to last element in linked list - has always to be a ')' */
-    struct gaiaMultiListTokenStruct *next;	/* points to next element in linked list [if any] */
-} gaiaMultiListToken;
-typedef gaiaMultiListToken *gaiaMultiListTokenPtr;
-
-typedef struct gaiaMultiMultiListTokenStruct
-{
-/*
- / a group of the above token multi-lists, that identify a MULTIPOLYGON 
- / in the form: (((...),(...),(...)),((...),(...)),((...)))
- */
-    gaiaMultiListTokenPtr first;	/* reference to first element in linked list - has always to be a '(' */
-    gaiaMultiListTokenPtr last;	/* reference to last element in linked list - has always to be a ')' */
-} gaiaMultiMultiListToken;
-typedef gaiaMultiMultiListToken *gaiaMultiMultiListTokenPtr;
-
-typedef struct gaiaVarListTokenStruct
-{
-/* 
- / a multitype variable reference that may be associated to:
- / - a POINT element
- / - a LINESTRING element
- / - a POLYGON element
-*/
-    int type;			/* may be GAIA_POINT, GAIA_LINESTRING or GAIA_POLYGON */
-    void *pointer;		/* 
-				   / to be casted as *sple_multi_list_token_ptr* if type is GAIA_LINESTRING/ or as *gaiaMultiMultiListTokenPtr* if type is GAIA_POLYGON
-				 */
-    double x;			/* X,Y are valids only if type is GAIA_POINT */
-    double y;
-    double z;
-    double m;
-    struct gaiaVarListTokenStruct *next;	/* points to next element in linked list */
-} gaiaVarListToken;
-typedef gaiaVarListToken *gaiaVarListTokenPtr;
-
-typedef struct gaiaGeomCollListTokenStruct
-{
-/*
-/ a group of lists and multi-lists that identifies a GEOMETRYCOLLECTION 
-/ in the form: (ELEM(...),ELEM(...),ELEM(....))
-*/
-    gaiaVarListTokenPtr first;	/* reference to first element in linked list - has always to be a '(' */
-    gaiaVarListTokenPtr last;	/* reference to last element in linked list - has always to be a ')' */
-} gaiaGeomCollListToken;
-typedef gaiaGeomCollListToken *gaiaGeomCollListTokenPtr;
-
-static char *
-gaiaCleanWkt (const unsigned char *old)
-{
-/* cleans and normalizes the WKT encoded string before effective parsing */
-    int len;
-    char *buf;
-    char *pn;
-    int error = 0;
-    int space = 1;
-    int opened = 0;
-    int closed = 0;
-    int ok;
-    const unsigned char *po;
-    len = strlen ((char *) old);
-    if (len == 0)
-	return NULL;
-    buf = malloc (len + 1);
-    pn = buf;
-    po = old;
-    while (*po != '\0')
-      {
-	  if (*po >= '0' && *po <= '9')
-	    {
-		*pn = *po;
-		pn++;
-		space = 0;
-	    }
-	  else if (*po == '+' || *po == '-')
-	    {
-		*pn = *po;
-		pn++;
-		space = 0;
-	    }
-	  else if ((*po >= 'A' && *po <= 'Z') || (*po >= 'a' && *po <= 'z')
-		   || *po == ',' || *po == '.' || *po == '(' || *po == ')')
-	    {
-		if (pn > buf)
-		  {
-		      if (*(pn - 1) == ' ')
-			  *(pn - 1) = *po;
-		      else
-			{
-			    *pn = *po;
-			    pn++;
-			}
-		  }
-		else
-		  {
-		      *pn = *po;
-		      pn++;
-		  }
-		if (*po == '(')
-		    opened++;
-		if (*po == ')')
-		    closed++;
-		space = 1;
-	    }
-	  else if (*po == ' ' || *po == '\t' || *po == '\n' || *po == '\r')
-	    {
-		if (!space)
-		  {
-		      *pn = ' ';
-		      pn++;
-		  }
-		space = 1;
-	    }
-	  else
-	    {
-		error = 1;
-		break;
-	    }
-	  po++;
-      }
-    if (opened != closed)
-	error = 1;
-    *pn = '\0';
-    len = strlen (buf);
-    if (buf[len - 1] != ')')
-	error = 1;
-    ok = 0;
-    if (!error)
-      {
-	  if (len > 6 && strncasecmp (buf, "POINT(", 6) == 0)
-	      ok = 1;
-	  if (len > 7 && strncasecmp (buf, "POINTZ(", 7) == 0)
-	      ok = 1;
-	  if (len > 7 && strncasecmp (buf, "POINTM(", 7) == 0)
-	      ok = 1;
-	  if (len > 8 && strncasecmp (buf, "POINTZM(", 8) == 0)
-	      ok = 1;
-	  if (len > 11 && strncasecmp (buf, "LINESTRING(", 11) == 0)
-	      ok = 1;
-	  if (len > 12 && strncasecmp (buf, "LINESTRINGZ(", 12) == 0)
-	      ok = 1;
-	  if (len > 12 && strncasecmp (buf, "LINESTRINGM(", 12) == 0)
-	      ok = 1;
-	  if (len > 13 && strncasecmp (buf, "LINESTRINGZM(", 13) == 0)
-	      ok = 1;
-	  if (len > 8 && strncasecmp (buf, "POLYGON(", 8) == 0)
-	      ok = 1;
-	  if (len > 9 && strncasecmp (buf, "POLYGONZ(", 9) == 0)
-	      ok = 1;
-	  if (len > 9 && strncasecmp (buf, "POLYGONM(", 9) == 0)
-	      ok = 1;
-	  if (len > 10 && strncasecmp (buf, "POLYGONZM(", 10) == 0)
-	      ok = 1;
-	  if (len > 11 && strncasecmp (buf, "MULTIPOINT(", 11) == 0)
-	      ok = 1;
-	  if (len > 12 && strncasecmp (buf, "MULTIPOINTZ(", 12) == 0)
-	      ok = 1;
-	  if (len > 12 && strncasecmp (buf, "MULTIPOINTM(", 12) == 0)
-	      ok = 1;
-	  if (len > 13 && strncasecmp (buf, "MULTIPOINTZM(", 13) == 0)
-	      ok = 1;
-	  if (len > 16 && strncasecmp (buf, "MULTILINESTRING(", 16) == 0)
-	      ok = 1;
-	  if (len > 17 && strncasecmp (buf, "MULTILINESTRINGZ(", 17) == 0)
-	      ok = 1;
-	  if (len > 17 && strncasecmp (buf, "MULTILINESTRINGM(", 17) == 0)
-	      ok = 1;
-	  if (len > 18 && strncasecmp (buf, "MULTILINESTRINGZM(", 18) == 0)
-	      ok = 1;
-	  if (len > 13 && strncasecmp (buf, "MULTIPOLYGON(", 13) == 0)
-	      ok = 1;
-	  if (len > 14 && strncasecmp (buf, "MULTIPOLYGONZ(", 14) == 0)
-	      ok = 1;
-	  if (len > 14 && strncasecmp (buf, "MULTIPOLYGONM(", 14) == 0)
-	      ok = 1;
-	  if (len > 15 && strncasecmp (buf, "MULTIPOLYGONZM(", 15) == 0)
-	      ok = 1;
-	  if (len > 19 && strncasecmp (buf, "GEOMETRYCOLLECTION(", 19) == 0)
-	      ok = 1;
-	  if (len > 20 && strncasecmp (buf, "GEOMETRYCOLLECTIONZ(", 20) == 0)
-	      ok = 1;
-	  if (len > 20 && strncasecmp (buf, "GEOMETRYCOLLECTIONM(", 20) == 0)
-	      ok = 1;
-	  if (len > 21 && strncasecmp (buf, "GEOMETRYCOLLECTIONZM(", 21) == 0)
-	      ok = 1;
-	  if (!ok)
-	      error = 1;
-      }
-    if (error)
-      {
-	  free (buf);
-	  return NULL;
-      }
-    return buf;
-}
-
-static void
-gaiaFreeListToken (gaiaListTokenPtr p)
-{
-/* cleans all memory allocations for list token */
-    if (!p)
-	return;
-    if (p->line)
-	gaiaFreeLinestring (p->line);
-    free (p);
-}
-
-static void
-gaiaFreeMultiListToken (gaiaMultiListTokenPtr p)
-{
-/* cleans all memory allocations for multi list token */
-    gaiaListTokenPtr pt;
-    gaiaListTokenPtr ptn;
-    if (!p)
-	return;
-    pt = p->first;
-    while (pt)
-      {
-	  ptn = pt->next;
-	  gaiaFreeListToken (pt);
-	  pt = ptn;
-      }
-    free (p);
-}
-
-static void
-gaiaFreeMultiMultiListToken (gaiaMultiMultiListTokenPtr p)
-{
-/* cleans all memory allocations for multi-multi list token */
-    gaiaMultiListTokenPtr pt;
-    gaiaMultiListTokenPtr ptn;
-    if (!p)
-	return;
-    pt = p->first;
-    while (pt)
-      {
-	  ptn = pt->next;
-	  gaiaFreeMultiListToken (pt);
-	  pt = ptn;
-      }
-    free (p);
-}
-
-static void
-gaiaFreeGeomCollListToken (gaiaGeomCollListTokenPtr p)
-{
-/* cleans all memory allocations for geocoll list token */
-    gaiaVarListTokenPtr pt;
-    gaiaVarListTokenPtr ptn;
-    if (!p)
-	return;
-    pt = p->first;
-    while (pt)
-      {
-	  ptn = pt->next;
-	  if (pt->type == GAIA_LINESTRING || pt->type == GAIA_LINESTRINGZ
-	      || pt->type == GAIA_LINESTRINGM || pt->type == GAIA_LINESTRINGZM)
-	      gaiaFreeListToken ((gaiaListTokenPtr) (pt->pointer));
-	  if (pt->type == GAIA_POLYGON || pt->type == GAIA_POLYGONZ
-	      || pt->type == GAIA_POLYGONM || pt->type == GAIA_POLYGONZM)
-	      gaiaFreeMultiListToken ((gaiaMultiListTokenPtr) (pt->pointer));
-	  pt = ptn;
-      }
-    free (p);
-}
-
-static int
-gaiaParseDouble (char *token, double *coord)
-{
-/* checks if this token is a valid double */
-    int i;
-    int digits = 0;
-    int errs = 0;
-    int commas = 0;
-    int signs = 0;
-    *coord = 0.0;
-    for (i = 0; i < (int) strlen (token); i++)
-      {
-	  if (token[i] == '+' || token[i] == '-')
-	      signs++;
-	  else if (token[i] == '.')
-	      commas++;
-	  else if (token[i] >= '0' && token[i] <= '9')
-	      digits++;
-	  else
-	      errs++;
-      }
-    if (errs > 0)
-	return 0;
-    if (digits == 0)
-	return 0;
-    if (commas > 1)
-	return 0;
-    if (signs > 1)
-	return 0;
-    if (signs)
-      {
-	  switch (token[0])
-	    {
-	    case '-':
-	    case '+':
-		break;
-	    default:
-		return 0;
-	    };
-      }
-    *coord = atof (token);
-    return 1;
-}
-
-static void
-gaiaAddToken (char *token, gaiaTokenPtr * first, gaiaTokenPtr * last)
-{
-/* inserts a token at the end of the linked list */
-    double coord;
-    gaiaTokenPtr p;
-    if (strlen (token) == 0)
-	return;
-    p = malloc (sizeof (gaiaToken));
-    p->type = GAIA_UNKNOWN;
-    p->coord = 0.0;
-    if (strcasecmp (token, "POINT") == 0)
-	p->type = GAIA_POINT;
-    if (strcasecmp (token, "POINTZ") == 0)
-	p->type = GAIA_POINTZ;
-    if (strcasecmp (token, "POINTM") == 0)
-	p->type = GAIA_POINTM;
-    if (strcasecmp (token, "POINTZM") == 0)
-	p->type = GAIA_POINTZM;
-    if (strcasecmp (token, "LINESTRING") == 0)
-	p->type = GAIA_LINESTRING;
-    if (strcasecmp (token, "LINESTRINGZ") == 0)
-	p->type = GAIA_LINESTRINGZ;
-    if (strcasecmp (token, "LINESTRINGM") == 0)
-	p->type = GAIA_LINESTRINGM;
-    if (strcasecmp (token, "LINESTRINGZM") == 0)
-	p->type = GAIA_LINESTRINGZM;
-    if (strcasecmp (token, "POLYGON") == 0)
-	p->type = GAIA_POLYGON;
-    if (strcasecmp (token, "POLYGONZ") == 0)
-	p->type = GAIA_POLYGONZ;
-    if (strcasecmp (token, "POLYGONM") == 0)
-	p->type = GAIA_POLYGONM;
-    if (strcasecmp (token, "POLYGONZM") == 0)
-	p->type = GAIA_POLYGONZM;
-    if (strcasecmp (token, "MULTIPOINT") == 0)
-	p->type = GAIA_MULTIPOINT;
-    if (strcasecmp (token, "MULTIPOINTZ") == 0)
-	p->type = GAIA_MULTIPOINTZ;
-    if (strcasecmp (token, "MULTIPOINTM") == 0)
-	p->type = GAIA_MULTIPOINTM;
-    if (strcasecmp (token, "MULTIPOINTZM") == 0)
-	p->type = GAIA_MULTIPOINTZM;
-    if (strcasecmp (token, "MULTILINESTRING") == 0)
-	p->type = GAIA_MULTILINESTRING;
-    if (strcasecmp (token, "MULTILINESTRINGZ") == 0)
-	p->type = GAIA_MULTILINESTRINGZ;
-    if (strcasecmp (token, "MULTILINESTRINGM") == 0)
-	p->type = GAIA_MULTILINESTRINGM;
-    if (strcasecmp (token, "MULTILINESTRINGZM") == 0)
-	p->type = GAIA_MULTILINESTRINGZM;
-    if (strcasecmp (token, "MULTIPOLYGON") == 0)
-	p->type = GAIA_MULTIPOLYGON;
-    if (strcasecmp (token, "MULTIPOLYGONZ") == 0)
-	p->type = GAIA_MULTIPOLYGONZ;
-    if (strcasecmp (token, "MULTIPOLYGONM") == 0)
-	p->type = GAIA_MULTIPOLYGONM;
-    if (strcasecmp (token, "MULTIPOLYGONZM") == 0)
-	p->type = GAIA_MULTIPOLYGONZM;
-    if (strcasecmp (token, "GEOMETRYCOLLECTION") == 0)
-	p->type = GAIA_GEOMETRYCOLLECTION;
-    if (strcasecmp (token, "GEOMETRYCOLLECTIONZ") == 0)
-	p->type = GAIA_GEOMETRYCOLLECTIONZ;
-    if (strcasecmp (token, "GEOMETRYCOLLECTIONM") == 0)
-	p->type = GAIA_GEOMETRYCOLLECTIONM;
-    if (strcasecmp (token, "GEOMETRYCOLLECTIONZM") == 0)
-	p->type = GAIA_GEOMETRYCOLLECTIONZM;
-    if (strcmp (token, "(") == 0)
-	p->type = GAIA_OPENED;
-    if (strcmp (token, ")") == 0)
-	p->type = GAIA_CLOSED;
-    if (strcmp (token, ",") == 0)
-	p->type = GAIA_COMMA;
-    if (strcmp (token, " ") == 0)
-	p->type = GAIA_SPACE;
-    if (p->type == GAIA_UNKNOWN)
-      {
-	  if (gaiaParseDouble (token, &coord))
-	    {
-		p->type = GAIA_COORDINATE;
-		p->coord = coord;
-	    }
-      }
-    p->next = NULL;
-    if (*first == NULL)
-	*first = p;
-    if (*last != NULL)
-	(*last)->next = p;
-    *last = p;
-}
-
-static gaiaListTokenPtr
-gaiaBuildListToken (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a list of tokens representing a list in the form 
-/ (1 2, 3 4, 5 6), as required by LINESTRING, MULTIPOINT or RING 
-*/
-    gaiaListTokenPtr list = NULL;
-    gaiaTokenPtr pt;
-    int i = 0;
-    int ip = 0;
-    int err = 0;
-    int nx = 0;
-    int ny = 0;
-    int iv;
-    double x = 0.0;
-    double y = 0.0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* check if this one is a valid list of POINTS */
-	  if (i == 0)
-	    {
-		if (pt->type != GAIA_OPENED)
-		    err = 1;
-	    }
-	  else if (pt == last)
-	    {
-		if (pt->type != GAIA_CLOSED)
-		    err = 1;
-	    }
-	  else
-	    {
-		if (ip == 0)
-		  {
-		      if (pt->type != GAIA_COORDINATE)
-			  err = 1;
-		      else
-			  nx++;
-		  }
-		else if (ip == 1)
-		  {
-		      if (pt->type != GAIA_SPACE)
-			  err = 1;
-		  }
-		else if (ip == 2)
-		  {
-		      if (pt->type != GAIA_COORDINATE)
-			  err = 1;
-		      else
-			  ny++;
-		  }
-		else if (ip == 3)
-		  {
-		      if (pt->type != GAIA_COMMA)
-			  err = 1;
-		  }
-		ip++;
-		if (ip > 3)
-		    ip = 0;
-	    }
-	  i++;
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    if (nx != ny)
-	err = 1;
-    if (nx < 1)
-	err = 1;
-    if (err)
-	return NULL;
-/* ok, there is no error. finally we can build the POINTS list */
-    list = malloc (sizeof (gaiaListToken));
-    list->points = nx;
-    list->line = gaiaAllocLinestring (nx);
-    list->next = NULL;
-    iv = 0;
-    ip = 0;
-    i = 0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* sets coords for all POINTS */
-	  if (i == 0)
-	      ;
-	  else if (pt == last)
-	      ;
-	  else
-	    {
-		if (ip == 0)
-		    x = pt->coord;
-		else if (ip == 2)
-		  {
-		      y = pt->coord;
-		      gaiaSetPoint (list->line->Coords, iv, x, y);
-		      iv++;
-		  }
-		ip++;
-		if (ip > 3)
-		    ip = 0;
-	    }
-	  i++;
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    return list;
-}
-
-static gaiaListTokenPtr
-gaiaBuildListTokenZ (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a list of tokens representing a list in the form 
-/ (1 2 3, 4 5 6, 7 8 9), as required by LINESTRINGZ, MULTIPOINTZ or RINGZ 
-*/
-    gaiaListTokenPtr list = NULL;
-    gaiaTokenPtr pt;
-    int i = 0;
-    int ip = 0;
-    int err = 0;
-    int nx = 0;
-    int ny = 0;
-    int nz = 0;
-    int iv;
-    double x = 0.0;
-    double y = 0.0;
-    double z = 0.0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* check if this one is a valid list of POINTS */
-	  if (i == 0)
-	    {
-		if (pt->type != GAIA_OPENED)
-		    err = 1;
-	    }
-	  else if (pt == last)
-	    {
-		if (pt->type != GAIA_CLOSED)
-		    err = 1;
-	    }
-	  else
-	    {
-		if (ip == 0)
-		  {
-		      if (pt->type != GAIA_COORDINATE)
-			  err = 1;
-		      else
-			  nx++;
-		  }
-		else if (ip == 1)
-		  {
-		      if (pt->type != GAIA_SPACE)
-			  err = 1;
-		  }
-		else if (ip == 2)
-		  {
-		      if (pt->type != GAIA_COORDINATE)
-			  err = 1;
-		      else
-			  ny++;
-		  }
-		else if (ip == 3)
-		  {
-		      if (pt->type != GAIA_SPACE)
-			  err = 1;
-		  }
-		else if (ip == 4)
-		  {
-		      if (pt->type != GAIA_COORDINATE)
-			  err = 1;
-		      else
-			  nz++;
-		  }
-		else if (ip == 5)
-		  {
-		      if (pt->type != GAIA_COMMA)
-			  err = 1;
-		  }
-		ip++;
-		if (ip > 5)
-		    ip = 0;
-	    }
-	  i++;
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    if (nx != ny)
-	err = 1;
-    if (nx != nz)
-	err = 1;
-    if (nx < 1)
-	err = 1;
-    if (err)
-	return NULL;
-/* ok, there is no error. finally we can build the POINTS list */
-    list = malloc (sizeof (gaiaListToken));
-    list->points = nx;
-    list->line = gaiaAllocLinestringXYZ (nx);
-    list->next = NULL;
-    iv = 0;
-    ip = 0;
-    i = 0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* sets coords for all POINTS */
-	  if (i == 0)
-	      ;
-	  else if (pt == last)
-	      ;
-	  else
-	    {
-		if (ip == 0)
-		    x = pt->coord;
-		else if (ip == 2)
-		    y = pt->coord;
-		else if (ip == 4)
-		  {
-		      z = pt->coord;
-		      gaiaSetPointXYZ (list->line->Coords, iv, x, y, z);
-		      iv++;
-		  }
-		ip++;
-		if (ip > 5)
-		    ip = 0;
-	    }
-	  i++;
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    return list;
-}
-
-static gaiaListTokenPtr
-gaiaBuildListTokenM (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a list of tokens representing a list in the form 
-/ (1 2 3, 4 5 6, 7 8 9), as required by LINESTRINGM, MULTIPOINTM or RINGM 
-*/
-    gaiaListTokenPtr list = NULL;
-    gaiaTokenPtr pt;
-    int i = 0;
-    int ip = 0;
-    int err = 0;
-    int nx = 0;
-    int ny = 0;
-    int nm = 0;
-    int iv;
-    double x = 0.0;
-    double y = 0.0;
-    double m = 0.0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* check if this one is a valid list of POINTS */
-	  if (i == 0)
-	    {
-		if (pt->type != GAIA_OPENED)
-		    err = 1;
-	    }
-	  else if (pt == last)
-	    {
-		if (pt->type != GAIA_CLOSED)
-		    err = 1;
-	    }
-	  else
-	    {
-		if (ip == 0)
-		  {
-		      if (pt->type != GAIA_COORDINATE)
-			  err = 1;
-		      else
-			  nx++;
-		  }
-		else if (ip == 1)
-		  {
-		      if (pt->type != GAIA_SPACE)
-			  err = 1;
-		  }
-		else if (ip == 2)
-		  {
-		      if (pt->type != GAIA_COORDINATE)
-			  err = 1;
-		      else
-			  ny++;
-		  }
-		else if (ip == 3)
-		  {
-		      if (pt->type != GAIA_SPACE)
-			  err = 1;
-		  }
-		else if (ip == 4)
-		  {
-		      if (pt->type != GAIA_COORDINATE)
-			  err = 1;
-		      else
-			  nm++;
-		  }
-		else if (ip == 5)
-		  {
-		      if (pt->type != GAIA_COMMA)
-			  err = 1;
-		  }
-		ip++;
-		if (ip > 5)
-		    ip = 0;
-	    }
-	  i++;
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    if (nx != ny)
-	err = 1;
-    if (nx != nm)
-	err = 1;
-    if (nx < 1)
-	err = 1;
-    if (err)
-	return NULL;
-/* ok, there is no error. finally we can build the POINTS list */
-    list = malloc (sizeof (gaiaListToken));
-    list->points = nx;
-    list->line = gaiaAllocLinestringXYM (nx);
-    list->next = NULL;
-    iv = 0;
-    ip = 0;
-    i = 0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* sets coords for all POINTS */
-	  if (i == 0)
-	      ;
-	  else if (pt == last)
-	      ;
-	  else
-	    {
-		if (ip == 0)
-		    x = pt->coord;
-		else if (ip == 2)
-		    y = pt->coord;
-		else if (ip == 4)
-		  {
-		      m = pt->coord;
-		      gaiaSetPointXYM (list->line->Coords, iv, x, y, m);
-		      iv++;
-		  }
-		ip++;
-		if (ip > 5)
-		    ip = 0;
-	    }
-	  i++;
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    return list;
-}
-
-static gaiaListTokenPtr
-gaiaBuildListTokenZM (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a list of tokens representing a list in the form 
-/ (1 2 3 4, 5 6 7 8, 9 10 11 12), as required by LINESTRINGZM, MULTIPOINTZM or RINGZM 
-*/
-    gaiaListTokenPtr list = NULL;
-    gaiaTokenPtr pt;
-    int i = 0;
-    int ip = 0;
-    int err = 0;
-    int nx = 0;
-    int ny = 0;
-    int nz = 0;
-    int nm = 0;
-    int iv;
-    double x = 0.0;
-    double y = 0.0;
-    double z = 0.0;
-    double m = 0.0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* check if this one is a valid list of POINTS */
-	  if (i == 0)
-	    {
-		if (pt->type != GAIA_OPENED)
-		    err = 1;
-	    }
-	  else if (pt == last)
-	    {
-		if (pt->type != GAIA_CLOSED)
-		    err = 1;
-	    }
-	  else
-	    {
-		if (ip == 0)
-		  {
-		      if (pt->type != GAIA_COORDINATE)
-			  err = 1;
-		      else
-			  nx++;
-		  }
-		else if (ip == 1)
-		  {
-		      if (pt->type != GAIA_SPACE)
-			  err = 1;
-		  }
-		else if (ip == 2)
-		  {
-		      if (pt->type != GAIA_COORDINATE)
-			  err = 1;
-		      else
-			  ny++;
-		  }
-		else if (ip == 3)
-		  {
-		      if (pt->type != GAIA_SPACE)
-			  err = 1;
-		  }
-		else if (ip == 4)
-		  {
-		      if (pt->type != GAIA_COORDINATE)
-			  err = 1;
-		      else
-			  nz++;
-		  }
-		else if (ip == 5)
-		  {
-		      if (pt->type != GAIA_SPACE)
-			  err = 1;
-		  }
-		else if (ip == 6)
-		  {
-		      if (pt->type != GAIA_COORDINATE)
-			  err = 1;
-		      else
-			  nm++;
-		  }
-		else if (ip == 7)
-		  {
-		      if (pt->type != GAIA_COMMA)
-			  err = 1;
-		  }
-		ip++;
-		if (ip > 7)
-		    ip = 0;
-	    }
-	  i++;
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    if (nx != ny)
-	err = 1;
-    if (nx != nz)
-	err = 1;
-    if (nx != nm)
-	err = 1;
-    if (nx < 1)
-	err = 1;
-    if (err)
-	return NULL;
-/* ok, there is no error. finally we can build the POINTS list */
-    list = malloc (sizeof (gaiaListToken));
-    list->points = nx;
-    list->line = gaiaAllocLinestringXYZM (nx);
-    list->next = NULL;
-    iv = 0;
-    ip = 0;
-    i = 0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* sets coords for all POINTS */
-	  if (i == 0)
-	      ;
-	  else if (pt == last)
-	      ;
-	  else
-	    {
-		if (ip == 0)
-		    x = pt->coord;
-		else if (ip == 2)
-		    y = pt->coord;
-		else if (ip == 4)
-		    z = pt->coord;
-		else if (ip == 6)
-		  {
-		      m = pt->coord;
-		      gaiaSetPointXYZM (list->line->Coords, iv, x, y, z, m);
-		      iv++;
-		  }
-		ip++;
-		if (ip > 7)
-		    ip = 0;
-	    }
-	  i++;
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    return list;
-}
-
-static gaiaMultiListTokenPtr
-gaiaBuildMultiListToken (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a multi list of tokens representing an array of elementar lists in the form 
-/ ((...),(....),(...)), as required by MULTILINESTRING and POLYGON 
-*/
-    gaiaMultiListTokenPtr multi_list = NULL;
-    gaiaTokenPtr pt;
-    gaiaTokenPtr p_first = NULL;
-    gaiaListTokenPtr list;
-    int opened = 0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* identifies the sub-lists contained in this multi list */
-	  if (pt->type == GAIA_OPENED)
-	    {
-		opened++;
-		if (opened == 2)
-		    p_first = pt;
-	    }
-	  if (pt->type == GAIA_CLOSED)
-	    {
-		if (p_first)
-		  {
-		      list = gaiaBuildListToken (p_first, pt);
-		      if (!multi_list)
-			{
-			    multi_list = malloc (sizeof (gaiaMultiListToken));
-			    multi_list->first = NULL;
-			    multi_list->last = NULL;
-			    multi_list->next = NULL;
-			}
-		      if (multi_list->first == NULL)
-			  multi_list->first = list;
-		      if (multi_list->last != NULL)
-			  multi_list->last->next = list;
-		      multi_list->last = list;
-		      p_first = NULL;
-		  }
-		opened--;
-	    }
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    return multi_list;
-}
-
-static gaiaMultiListTokenPtr
-gaiaBuildMultiListTokenZ (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a multi list of tokens representing an array of elementar lists in the form 
-/ ((...),(....),(...)), as required by MULTILINESTRINGZ and POLYGONZ 
-*/
-    gaiaMultiListTokenPtr multi_list = NULL;
-    gaiaTokenPtr pt;
-    gaiaTokenPtr p_first = NULL;
-    gaiaListTokenPtr list;
-    int opened = 0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* identifies the sub-lists contained in this multi list */
-	  if (pt->type == GAIA_OPENED)
-	    {
-		opened++;
-		if (opened == 2)
-		    p_first = pt;
-	    }
-	  if (pt->type == GAIA_CLOSED)
-	    {
-		if (p_first)
-		  {
-		      list = gaiaBuildListTokenZ (p_first, pt);
-		      if (!multi_list)
-			{
-			    multi_list = malloc (sizeof (gaiaMultiListToken));
-			    multi_list->first = NULL;
-			    multi_list->last = NULL;
-			    multi_list->next = NULL;
-			}
-		      if (multi_list->first == NULL)
-			  multi_list->first = list;
-		      if (multi_list->last != NULL)
-			  multi_list->last->next = list;
-		      multi_list->last = list;
-		      p_first = NULL;
-		  }
-		opened--;
-	    }
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    return multi_list;
-}
-
-static gaiaMultiListTokenPtr
-gaiaBuildMultiListTokenM (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a multi list of tokens representing an array of elementar lists in the form 
-/ ((...),(....),(...)), as required by MULTILINESTRINGM and POLYGONM 
-*/
-    gaiaMultiListTokenPtr multi_list = NULL;
-    gaiaTokenPtr pt;
-    gaiaTokenPtr p_first = NULL;
-    gaiaListTokenPtr list;
-    int opened = 0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* identifies the sub-lists contained in this multi list */
-	  if (pt->type == GAIA_OPENED)
-	    {
-		opened++;
-		if (opened == 2)
-		    p_first = pt;
-	    }
-	  if (pt->type == GAIA_CLOSED)
-	    {
-		if (p_first)
-		  {
-		      list = gaiaBuildListTokenM (p_first, pt);
-		      if (!multi_list)
-			{
-			    multi_list = malloc (sizeof (gaiaMultiListToken));
-			    multi_list->first = NULL;
-			    multi_list->last = NULL;
-			    multi_list->next = NULL;
-			}
-		      if (multi_list->first == NULL)
-			  multi_list->first = list;
-		      if (multi_list->last != NULL)
-			  multi_list->last->next = list;
-		      multi_list->last = list;
-		      p_first = NULL;
-		  }
-		opened--;
-	    }
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    return multi_list;
-}
-
-static gaiaMultiListTokenPtr
-gaiaBuildMultiListTokenZM (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a multi list of tokens representing an array of elementar lists in the form 
-/ ((...),(....),(...)), as required by MULTILINESTRINGZM and POLYGONZM 
-*/
-    gaiaMultiListTokenPtr multi_list = NULL;
-    gaiaTokenPtr pt;
-    gaiaTokenPtr p_first = NULL;
-    gaiaListTokenPtr list;
-    int opened = 0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* identifies the sub-lists contained in this multi list */
-	  if (pt->type == GAIA_OPENED)
-	    {
-		opened++;
-		if (opened == 2)
-		    p_first = pt;
-	    }
-	  if (pt->type == GAIA_CLOSED)
-	    {
-		if (p_first)
-		  {
-		      list = gaiaBuildListTokenZM (p_first, pt);
-		      if (!multi_list)
-			{
-			    multi_list = malloc (sizeof (gaiaMultiListToken));
-			    multi_list->first = NULL;
-			    multi_list->last = NULL;
-			    multi_list->next = NULL;
-			}
-		      if (multi_list->first == NULL)
-			  multi_list->first = list;
-		      if (multi_list->last != NULL)
-			  multi_list->last->next = list;
-		      multi_list->last = list;
-		      p_first = NULL;
-		  }
-		opened--;
-	    }
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    return multi_list;
-}
-
-static gaiaMultiMultiListTokenPtr
-gaiaBuildMultiMultiListToken (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a multi list of tokens representing an array of complex lists 
-/ in the form (((...),(....),(...)),((...),(...)),((...))), as required by MULTIPOLYGON 
-*/
-    gaiaMultiMultiListTokenPtr multi_multi_list = NULL;
-    gaiaTokenPtr pt;
-    gaiaTokenPtr p_first = NULL;
-    gaiaMultiListTokenPtr multi_list;
-    int opened = 0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* identifies the sub-lists contained in this multi list */
-	  if (pt->type == GAIA_OPENED)
-	    {
-		opened++;
-		if (opened == 2)
-		    p_first = pt;
-	    }
-	  if (pt->type == GAIA_CLOSED)
-	    {
-		if (p_first && opened == 2)
-		  {
-		      multi_list = gaiaBuildMultiListToken (p_first, pt);
-		      if (!multi_multi_list)
-			{
-			    multi_multi_list =
-				malloc (sizeof (gaiaMultiMultiListToken));
-			    multi_multi_list->first = NULL;
-			    multi_multi_list->last = NULL;
-			}
-		      if (multi_multi_list->first == NULL)
-			  multi_multi_list->first = multi_list;
-		      if (multi_multi_list->last != NULL)
-			  multi_multi_list->last->next = multi_list;
-		      multi_multi_list->last = multi_list;
-		      p_first = NULL;
-		  }
-		opened--;
-	    }
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    return multi_multi_list;
-}
-
-static gaiaMultiMultiListTokenPtr
-gaiaBuildMultiMultiListTokenZ (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a multi list of tokens representing an array of complex lists 
-/ in the form (((...),(....),(...)),((...),(...)),((...))), as required by MULTIPOLYGONZ 
-*/
-    gaiaMultiMultiListTokenPtr multi_multi_list = NULL;
-    gaiaTokenPtr pt;
-    gaiaTokenPtr p_first = NULL;
-    gaiaMultiListTokenPtr multi_list;
-    int opened = 0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* identifies the sub-lists contained in this multi list */
-	  if (pt->type == GAIA_OPENED)
-	    {
-		opened++;
-		if (opened == 2)
-		    p_first = pt;
-	    }
-	  if (pt->type == GAIA_CLOSED)
-	    {
-		if (p_first && opened == 2)
-		  {
-		      multi_list = gaiaBuildMultiListTokenZ (p_first, pt);
-		      if (!multi_multi_list)
-			{
-			    multi_multi_list =
-				malloc (sizeof (gaiaMultiMultiListToken));
-			    multi_multi_list->first = NULL;
-			    multi_multi_list->last = NULL;
-			}
-		      if (multi_multi_list->first == NULL)
-			  multi_multi_list->first = multi_list;
-		      if (multi_multi_list->last != NULL)
-			  multi_multi_list->last->next = multi_list;
-		      multi_multi_list->last = multi_list;
-		      p_first = NULL;
-		  }
-		opened--;
-	    }
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    return multi_multi_list;
-}
-
-static gaiaMultiMultiListTokenPtr
-gaiaBuildMultiMultiListTokenM (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a multi list of tokens representing an array of complex lists 
-/ in the form (((...),(....),(...)),((...),(...)),((...))), as required by MULTIPOLYGONM 
-*/
-    gaiaMultiMultiListTokenPtr multi_multi_list = NULL;
-    gaiaTokenPtr pt;
-    gaiaTokenPtr p_first = NULL;
-    gaiaMultiListTokenPtr multi_list;
-    int opened = 0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* identifies the sub-lists contained in this multi list */
-	  if (pt->type == GAIA_OPENED)
-	    {
-		opened++;
-		if (opened == 2)
-		    p_first = pt;
-	    }
-	  if (pt->type == GAIA_CLOSED)
-	    {
-		if (p_first && opened == 2)
-		  {
-		      multi_list = gaiaBuildMultiListTokenM (p_first, pt);
-		      if (!multi_multi_list)
-			{
-			    multi_multi_list =
-				malloc (sizeof (gaiaMultiMultiListToken));
-			    multi_multi_list->first = NULL;
-			    multi_multi_list->last = NULL;
-			}
-		      if (multi_multi_list->first == NULL)
-			  multi_multi_list->first = multi_list;
-		      if (multi_multi_list->last != NULL)
-			  multi_multi_list->last->next = multi_list;
-		      multi_multi_list->last = multi_list;
-		      p_first = NULL;
-		  }
-		opened--;
-	    }
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    return multi_multi_list;
-}
-
-static gaiaMultiMultiListTokenPtr
-gaiaBuildMultiMultiListTokenZM (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a multi list of tokens representing an array of complex lists 
-/ in the form (((...),(....),(...)),((...),(...)),((...))), as required by MULTIPOLYGONZM 
-*/
-    gaiaMultiMultiListTokenPtr multi_multi_list = NULL;
-    gaiaTokenPtr pt;
-    gaiaTokenPtr p_first = NULL;
-    gaiaMultiListTokenPtr multi_list;
-    int opened = 0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* identifies the sub-lists contained in this multi list */
-	  if (pt->type == GAIA_OPENED)
-	    {
-		opened++;
-		if (opened == 2)
-		    p_first = pt;
-	    }
-	  if (pt->type == GAIA_CLOSED)
-	    {
-		if (p_first && opened == 2)
-		  {
-		      multi_list = gaiaBuildMultiListTokenZM (p_first, pt);
-		      if (!multi_multi_list)
-			{
-			    multi_multi_list =
-				malloc (sizeof (gaiaMultiMultiListToken));
-			    multi_multi_list->first = NULL;
-			    multi_multi_list->last = NULL;
-			}
-		      if (multi_multi_list->first == NULL)
-			  multi_multi_list->first = multi_list;
-		      if (multi_multi_list->last != NULL)
-			  multi_multi_list->last->next = multi_list;
-		      multi_multi_list->last = multi_list;
-		      p_first = NULL;
-		  }
-		opened--;
-	    }
-	  pt = pt->next;
-	  if (pt == last)
-	      break;
-      }
-    return multi_multi_list;
-}
-
-static gaiaGeomCollListTokenPtr
-gaiaBuildGeomCollListToken (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a variable list of tokens representing an array of entities in the form 
-/ (ELEM(),ELEM(),ELEM())  as required by GEOMETRYCOLLECTION 
-*/
-    gaiaGeomCollListTokenPtr geocoll_list = NULL;
-    gaiaTokenPtr pt;
-    gaiaTokenPtr pt2;
-    gaiaTokenPtr p_first = NULL;
-    gaiaListTokenPtr list;
-    gaiaMultiListTokenPtr multi_list;
-    gaiaVarListTokenPtr var_list;
-    int opened = 0;
-    int i;
-    int err;
-    double x = 0;
-    double y = 0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* identifies the sub-lists contained in this complex list */
-	  if (pt->type == GAIA_POINT)
-	    {
-		/* parsing a POINT list */
-		err = 0;
-		i = 0;
-		pt2 = pt->next;
-		while (pt2 != NULL)
-		  {
-		      /* check if this one is a valid POINT */
-		      switch (i)
-			{
-			case 0:
-			    if (pt2->type != GAIA_OPENED)
-				err = 1;
-			    break;
-			case 1:
-			    if (pt2->type != GAIA_COORDINATE)
-				err = 1;
-			    else
-				x = pt2->coord;
-			    break;
-			case 2:
-			    if (pt2->type != GAIA_SPACE)
-				err = 1;
-			    break;
-			case 3:
-			    if (pt2->type != GAIA_COORDINATE)
-				err = 1;
-			    else
-				y = pt2->coord;
-			    break;
-			case 4:
-			    if (pt2->type != GAIA_CLOSED)
-				err = 1;
-			    break;
-			};
-		      i++;
-		      if (i > 4)
-			  break;
-		      pt2 = pt2->next;
-		  }
-		if (err)
-		    goto error;
-		var_list = malloc (sizeof (gaiaVarListToken));
-		var_list->type = GAIA_POINT;
-		var_list->x = x;
-		var_list->y = y;
-		var_list->next = NULL;
-		if (!geocoll_list)
-		  {
-		      geocoll_list = malloc (sizeof (gaiaGeomCollListToken));
-		      geocoll_list->first = NULL;
-		      geocoll_list->last = NULL;
-		  }
-		if (geocoll_list->first == NULL)
-		    geocoll_list->first = var_list;
-		if (geocoll_list->last != NULL)
-		    geocoll_list->last->next = var_list;
-		geocoll_list->last = var_list;
-	    }
-	  else if (pt->type == GAIA_LINESTRING)
-	    {
-		/* parsing a LINESTRING list */
-		p_first = NULL;
-		pt2 = pt->next;
-		while (pt2 != NULL)
-		  {
-		      if (pt2->type == GAIA_OPENED)
-			  p_first = pt2;
-		      if (pt2->type == GAIA_CLOSED)
-			{
-			    list = gaiaBuildListToken (p_first, pt2);
-			    if (list)
-			      {
-				  var_list = malloc (sizeof (gaiaVarListToken));
-				  var_list->type = GAIA_LINESTRING;
-				  var_list->pointer = list;
-				  var_list->next = NULL;
-				  if (!geocoll_list)
-				    {
-					geocoll_list =
-					    malloc (sizeof
-						    (gaiaGeomCollListToken));
-					geocoll_list->first = NULL;
-					geocoll_list->last = NULL;
-				    }
-				  if (geocoll_list->first == NULL)
-				      geocoll_list->first = var_list;
-				  if (geocoll_list->last != NULL)
-				      geocoll_list->last->next = var_list;
-				  geocoll_list->last = var_list;
-				  break;
-			      }
-			    else
-				goto error;
-			}
-		      pt2 = pt2->next;
-		      if (pt2 == last)
-			  break;
-		  }
-	    }
-	  else if (pt->type == GAIA_POLYGON)
-	    {
-		/* parsing a POLYGON list */
-		opened = 0;
-		p_first = NULL;
-		pt2 = pt->next;
-		while (pt2 != NULL)
-		  {
-		      if (pt2->type == GAIA_OPENED)
-			{
-			    opened++;
-			    if (opened == 1)
-				p_first = pt2;
-			}
-		      if (pt2->type == GAIA_CLOSED)
-			{
-			    if (p_first && opened == 1)
-			      {
-				  multi_list =
-				      gaiaBuildMultiListToken (p_first, pt2);
-				  if (multi_list)
-				    {
-					var_list =
-					    malloc (sizeof (gaiaVarListToken));
-					var_list->type = GAIA_POLYGON;
-					var_list->pointer = multi_list;
-					var_list->next = NULL;
-					if (!geocoll_list)
-					  {
-					      geocoll_list =
-						  malloc (sizeof
-							  (gaiaGeomCollListToken));
-					      geocoll_list->first = NULL;
-					      geocoll_list->last = NULL;
-					  }
-					if (geocoll_list->first == NULL)
-					    geocoll_list->first = var_list;
-					if (geocoll_list->last != NULL)
-					    geocoll_list->last->next = var_list;
-					geocoll_list->last = var_list;
-					break;
-				    }
-				  else
-				      goto error;
-			      }
-			    opened--;
-			}
-		      pt2 = pt2->next;
-		      if (pt2 == last)
-			  break;
-		  }
-	    }
-	  pt = pt->next;
-      }
-    return geocoll_list;
-  error:
-    gaiaFreeGeomCollListToken (geocoll_list);
-    return NULL;
-}
-
-static gaiaGeomCollListTokenPtr
-gaiaBuildGeomCollListTokenZ (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a variable list of tokens representing an array of entities in the form 
-/ (ELEM(),ELEM(),ELEM())  as required by GEOMETRYCOLLECTIONZ 
-*/
-    gaiaGeomCollListTokenPtr geocoll_list = NULL;
-    gaiaTokenPtr pt;
-    gaiaTokenPtr pt2;
-    gaiaTokenPtr p_first = NULL;
-    gaiaListTokenPtr list;
-    gaiaMultiListTokenPtr multi_list;
-    gaiaVarListTokenPtr var_list;
-    int opened = 0;
-    int i;
-    int err;
-    double x = 0.0;
-    double y = 0.0;
-    double z = 0.0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* identifies the sub-lists contained in this complex list */
-	  if (pt->type == GAIA_POINTZ)
-	    {
-		/* parsing a POINT list */
-		err = 0;
-		i = 0;
-		pt2 = pt->next;
-		while (pt2 != NULL)
-		  {
-		      /* check if this one is a valid POINT */
-		      switch (i)
-			{
-			case 0:
-			    if (pt2->type != GAIA_OPENED)
-				err = 1;
-			    break;
-			case 1:
-			    if (pt2->type != GAIA_COORDINATE)
-				err = 1;
-			    else
-				x = pt2->coord;
-			    break;
-			case 2:
-			    if (pt2->type != GAIA_SPACE)
-				err = 1;
-			    break;
-			case 3:
-			    if (pt2->type != GAIA_COORDINATE)
-				err = 1;
-			    else
-				y = pt2->coord;
-			    break;
-			case 4:
-			    if (pt2->type != GAIA_SPACE)
-				err = 1;
-			    break;
-			case 5:
-			    if (pt2->type != GAIA_COORDINATE)
-				err = 1;
-			    else
-				z = pt2->coord;
-			    break;
-			case 6:
-			    if (pt2->type != GAIA_CLOSED)
-				err = 1;
-			    break;
-			};
-		      i++;
-		      if (i > 6)
-			  break;
-		      pt2 = pt2->next;
-		  }
-		if (err)
-		    goto error;
-		var_list = malloc (sizeof (gaiaVarListToken));
-		var_list->type = GAIA_POINTZ;
-		var_list->x = x;
-		var_list->y = y;
-		var_list->z = z;
-		var_list->next = NULL;
-		if (!geocoll_list)
-		  {
-		      geocoll_list = malloc (sizeof (gaiaGeomCollListToken));
-		      geocoll_list->first = NULL;
-		      geocoll_list->last = NULL;
-		  }
-		if (geocoll_list->first == NULL)
-		    geocoll_list->first = var_list;
-		if (geocoll_list->last != NULL)
-		    geocoll_list->last->next = var_list;
-		geocoll_list->last = var_list;
-	    }
-	  else if (pt->type == GAIA_LINESTRINGZ)
-	    {
-		/* parsing a LINESTRING list */
-		p_first = NULL;
-		pt2 = pt->next;
-		while (pt2 != NULL)
-		  {
-		      if (pt2->type == GAIA_OPENED)
-			  p_first = pt2;
-		      if (pt2->type == GAIA_CLOSED)
-			{
-			    list = gaiaBuildListTokenZ (p_first, pt2);
-			    if (list)
-			      {
-				  var_list = malloc (sizeof (gaiaVarListToken));
-				  var_list->type = GAIA_LINESTRINGZ;
-				  var_list->pointer = list;
-				  var_list->next = NULL;
-				  if (!geocoll_list)
-				    {
-					geocoll_list =
-					    malloc (sizeof
-						    (gaiaGeomCollListToken));
-					geocoll_list->first = NULL;
-					geocoll_list->last = NULL;
-				    }
-				  if (geocoll_list->first == NULL)
-				      geocoll_list->first = var_list;
-				  if (geocoll_list->last != NULL)
-				      geocoll_list->last->next = var_list;
-				  geocoll_list->last = var_list;
-				  break;
-			      }
-			    else
-				goto error;
-			}
-		      pt2 = pt2->next;
-		      if (pt2 == last)
-			  break;
-		  }
-	    }
-	  else if (pt->type == GAIA_POLYGONZ)
-	    {
-		/* parsing a POLYGON list */
-		opened = 0;
-		p_first = NULL;
-		pt2 = pt->next;
-		while (pt2 != NULL)
-		  {
-		      if (pt2->type == GAIA_OPENED)
-			{
-			    opened++;
-			    if (opened == 1)
-				p_first = pt2;
-			}
-		      if (pt2->type == GAIA_CLOSED)
-			{
-			    if (p_first && opened == 1)
-			      {
-				  multi_list =
-				      gaiaBuildMultiListTokenZ (p_first, pt2);
-				  if (multi_list)
-				    {
-					var_list =
-					    malloc (sizeof (gaiaVarListToken));
-					var_list->type = GAIA_POLYGONZ;
-					var_list->pointer = multi_list;
-					var_list->next = NULL;
-					if (!geocoll_list)
-					  {
-					      geocoll_list =
-						  malloc (sizeof
-							  (gaiaGeomCollListToken));
-					      geocoll_list->first = NULL;
-					      geocoll_list->last = NULL;
-					  }
-					if (geocoll_list->first == NULL)
-					    geocoll_list->first = var_list;
-					if (geocoll_list->last != NULL)
-					    geocoll_list->last->next = var_list;
-					geocoll_list->last = var_list;
-					break;
-				    }
-				  else
-				      goto error;
-			      }
-			    opened--;
-			}
-		      pt2 = pt2->next;
-		      if (pt2 == last)
-			  break;
-		  }
-	    }
-	  pt = pt->next;
-      }
-    return geocoll_list;
-  error:
-    gaiaFreeGeomCollListToken (geocoll_list);
-    return NULL;
-}
-
-static gaiaGeomCollListTokenPtr
-gaiaBuildGeomCollListTokenM (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a variable list of tokens representing an array of entities in the form 
-/ (ELEM(),ELEM(),ELEM())  as required by GEOMETRYCOLLECTIONM 
-*/
-    gaiaGeomCollListTokenPtr geocoll_list = NULL;
-    gaiaTokenPtr pt;
-    gaiaTokenPtr pt2;
-    gaiaTokenPtr p_first = NULL;
-    gaiaListTokenPtr list;
-    gaiaMultiListTokenPtr multi_list;
-    gaiaVarListTokenPtr var_list;
-    int opened = 0;
-    int i;
-    int err;
-    double x = 0.0;
-    double y = 0.0;
-    double m = 0.0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* identifies the sub-lists contained in this complex list */
-	  if (pt->type == GAIA_POINTM)
-	    {
-		/* parsing a POINT list */
-		err = 0;
-		i = 0;
-		pt2 = pt->next;
-		while (pt2 != NULL)
-		  {
-		      /* check if this one is a valid POINT */
-		      switch (i)
-			{
-			case 0:
-			    if (pt2->type != GAIA_OPENED)
-				err = 1;
-			    break;
-			case 1:
-			    if (pt2->type != GAIA_COORDINATE)
-				err = 1;
-			    else
-				x = pt2->coord;
-			    break;
-			case 2:
-			    if (pt2->type != GAIA_SPACE)
-				err = 1;
-			    break;
-			case 3:
-			    if (pt2->type != GAIA_COORDINATE)
-				err = 1;
-			    else
-				y = pt2->coord;
-			    break;
-			case 4:
-			    if (pt2->type != GAIA_SPACE)
-				err = 1;
-			    break;
-			case 5:
-			    if (pt2->type != GAIA_COORDINATE)
-				err = 1;
-			    else
-				m = pt2->coord;
-			    break;
-			case 6:
-			    if (pt2->type != GAIA_CLOSED)
-				err = 1;
-			    break;
-			};
-		      i++;
-		      if (i > 6)
-			  break;
-		      pt2 = pt2->next;
-		  }
-		if (err)
-		    goto error;
-		var_list = malloc (sizeof (gaiaVarListToken));
-		var_list->type = GAIA_POINTM;
-		var_list->x = x;
-		var_list->y = y;
-		var_list->m = m;
-		var_list->next = NULL;
-		if (!geocoll_list)
-		  {
-		      geocoll_list = malloc (sizeof (gaiaGeomCollListToken));
-		      geocoll_list->first = NULL;
-		      geocoll_list->last = NULL;
-		  }
-		if (geocoll_list->first == NULL)
-		    geocoll_list->first = var_list;
-		if (geocoll_list->last != NULL)
-		    geocoll_list->last->next = var_list;
-		geocoll_list->last = var_list;
-	    }
-	  else if (pt->type == GAIA_LINESTRINGM)
-	    {
-		/* parsing a LINESTRING list */
-		p_first = NULL;
-		pt2 = pt->next;
-		while (pt2 != NULL)
-		  {
-		      if (pt2->type == GAIA_OPENED)
-			  p_first = pt2;
-		      if (pt2->type == GAIA_CLOSED)
-			{
-			    list = gaiaBuildListTokenM (p_first, pt2);
-			    if (list)
-			      {
-				  var_list = malloc (sizeof (gaiaVarListToken));
-				  var_list->type = GAIA_LINESTRINGM;
-				  var_list->pointer = list;
-				  var_list->next = NULL;
-				  if (!geocoll_list)
-				    {
-					geocoll_list =
-					    malloc (sizeof
-						    (gaiaGeomCollListToken));
-					geocoll_list->first = NULL;
-					geocoll_list->last = NULL;
-				    }
-				  if (geocoll_list->first == NULL)
-				      geocoll_list->first = var_list;
-				  if (geocoll_list->last != NULL)
-				      geocoll_list->last->next = var_list;
-				  geocoll_list->last = var_list;
-				  break;
-			      }
-			    else
-				goto error;
-			}
-		      pt2 = pt2->next;
-		      if (pt2 == last)
-			  break;
-		  }
-	    }
-	  else if (pt->type == GAIA_POLYGONM)
-	    {
-		/* parsing a POLYGON list */
-		opened = 0;
-		p_first = NULL;
-		pt2 = pt->next;
-		while (pt2 != NULL)
-		  {
-		      if (pt2->type == GAIA_OPENED)
-			{
-			    opened++;
-			    if (opened == 1)
-				p_first = pt2;
-			}
-		      if (pt2->type == GAIA_CLOSED)
-			{
-			    if (p_first && opened == 1)
-			      {
-				  multi_list =
-				      gaiaBuildMultiListTokenM (p_first, pt2);
-				  if (multi_list)
-				    {
-					var_list =
-					    malloc (sizeof (gaiaVarListToken));
-					var_list->type = GAIA_POLYGONM;
-					var_list->pointer = multi_list;
-					var_list->next = NULL;
-					if (!geocoll_list)
-					  {
-					      geocoll_list =
-						  malloc (sizeof
-							  (gaiaGeomCollListToken));
-					      geocoll_list->first = NULL;
-					      geocoll_list->last = NULL;
-					  }
-					if (geocoll_list->first == NULL)
-					    geocoll_list->first = var_list;
-					if (geocoll_list->last != NULL)
-					    geocoll_list->last->next = var_list;
-					geocoll_list->last = var_list;
-					break;
-				    }
-				  else
-				      goto error;
-			      }
-			    opened--;
-			}
-		      pt2 = pt2->next;
-		      if (pt2 == last)
-			  break;
-		  }
-	    }
-	  pt = pt->next;
-      }
-    return geocoll_list;
-  error:
-    gaiaFreeGeomCollListToken (geocoll_list);
-    return NULL;
-}
-
-static gaiaGeomCollListTokenPtr
-gaiaBuildGeomCollListTokenZM (gaiaTokenPtr first, gaiaTokenPtr last)
-{
-/* 
-/ builds a variable list of tokens representing an array of entities in the form 
-/ (ELEM(),ELEM(),ELEM())  as required by GEOMETRYCOLLECTIONZM 
-*/
-    gaiaGeomCollListTokenPtr geocoll_list = NULL;
-    gaiaTokenPtr pt;
-    gaiaTokenPtr pt2;
-    gaiaTokenPtr p_first = NULL;
-    gaiaListTokenPtr list;
-    gaiaMultiListTokenPtr multi_list;
-    gaiaVarListTokenPtr var_list;
-    int opened = 0;
-    int i;
-    int err;
-    double x = 0.0;
-    double y = 0.0;
-    double z = 0.0;
-    double m = 0.0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* identifies the sub-lists contained in this complex list */
-	  if (pt->type == GAIA_POINTZM)
-	    {
-		/* parsing a POINT list */
-		err = 0;
-		i = 0;
-		pt2 = pt->next;
-		while (pt2 != NULL)
-		  {
-		      /* check if this one is a valid POINT */
-		      switch (i)
-			{
-			case 0:
-			    if (pt2->type != GAIA_OPENED)
-				err = 1;
-			    break;
-			case 1:
-			    if (pt2->type != GAIA_COORDINATE)
-				err = 1;
-			    else
-				x = pt2->coord;
-			    break;
-			case 2:
-			    if (pt2->type != GAIA_SPACE)
-				err = 1;
-			    break;
-			case 3:
-			    if (pt2->type != GAIA_COORDINATE)
-				err = 1;
-			    else
-				y = pt2->coord;
-			    break;
-			case 4:
-			    if (pt2->type != GAIA_SPACE)
-				err = 1;
-			    break;
-			case 5:
-			    if (pt2->type != GAIA_COORDINATE)
-				err = 1;
-			    else
-				z = pt2->coord;
-			    break;
-			case 6:
-			    if (pt2->type != GAIA_SPACE)
-				err = 1;
-			    break;
-			case 7:
-			    if (pt2->type != GAIA_COORDINATE)
-				err = 1;
-			    else
-				m = pt2->coord;
-			    break;
-			case 8:
-			    if (pt2->type != GAIA_CLOSED)
-				err = 1;
-			    break;
-			};
-		      i++;
-		      if (i > 8)
-			  break;
-		      pt2 = pt2->next;
-		  }
-		if (err)
-		    goto error;
-		var_list = malloc (sizeof (gaiaVarListToken));
-		var_list->type = GAIA_POINTZM;
-		var_list->x = x;
-		var_list->y = y;
-		var_list->z = z;
-		var_list->m = m;
-		var_list->next = NULL;
-		if (!geocoll_list)
-		  {
-		      geocoll_list = malloc (sizeof (gaiaGeomCollListToken));
-		      geocoll_list->first = NULL;
-		      geocoll_list->last = NULL;
-		  }
-		if (geocoll_list->first == NULL)
-		    geocoll_list->first = var_list;
-		if (geocoll_list->last != NULL)
-		    geocoll_list->last->next = var_list;
-		geocoll_list->last = var_list;
-	    }
-	  else if (pt->type == GAIA_LINESTRINGZM)
-	    {
-		/* parsing a LINESTRING list */
-		p_first = NULL;
-		pt2 = pt->next;
-		while (pt2 != NULL)
-		  {
-		      if (pt2->type == GAIA_OPENED)
-			  p_first = pt2;
-		      if (pt2->type == GAIA_CLOSED)
-			{
-			    list = gaiaBuildListTokenZM (p_first, pt2);
-			    if (list)
-			      {
-				  var_list = malloc (sizeof (gaiaVarListToken));
-				  var_list->type = GAIA_LINESTRINGZM;
-				  var_list->pointer = list;
-				  var_list->next = NULL;
-				  if (!geocoll_list)
-				    {
-					geocoll_list =
-					    malloc (sizeof
-						    (gaiaGeomCollListToken));
-					geocoll_list->first = NULL;
-					geocoll_list->last = NULL;
-				    }
-				  if (geocoll_list->first == NULL)
-				      geocoll_list->first = var_list;
-				  if (geocoll_list->last != NULL)
-				      geocoll_list->last->next = var_list;
-				  geocoll_list->last = var_list;
-				  break;
-			      }
-			    else
-				goto error;
-			}
-		      pt2 = pt2->next;
-		      if (pt2 == last)
-			  break;
-		  }
-	    }
-	  else if (pt->type == GAIA_POLYGONZM)
-	    {
-		/* parsing a POLYGON list */
-		opened = 0;
-		p_first = NULL;
-		pt2 = pt->next;
-		while (pt2 != NULL)
-		  {
-		      if (pt2->type == GAIA_OPENED)
-			{
-			    opened++;
-			    if (opened == 1)
-				p_first = pt2;
-			}
-		      if (pt2->type == GAIA_CLOSED)
-			{
-			    if (p_first && opened == 1)
-			      {
-				  multi_list =
-				      gaiaBuildMultiListTokenZM (p_first, pt2);
-				  if (multi_list)
-				    {
-					var_list =
-					    malloc (sizeof (gaiaVarListToken));
-					var_list->type = GAIA_POLYGONZM;
-					var_list->pointer = multi_list;
-					var_list->next = NULL;
-					if (!geocoll_list)
-					  {
-					      geocoll_list =
-						  malloc (sizeof
-							  (gaiaGeomCollListToken));
-					      geocoll_list->first = NULL;
-					      geocoll_list->last = NULL;
-					  }
-					if (geocoll_list->first == NULL)
-					    geocoll_list->first = var_list;
-					if (geocoll_list->last != NULL)
-					    geocoll_list->last->next = var_list;
-					geocoll_list->last = var_list;
-					break;
-				    }
-				  else
-				      goto error;
-			      }
-			    opened--;
-			}
-		      pt2 = pt2->next;
-		      if (pt2 == last)
-			  break;
-		  }
-	    }
-	  pt = pt->next;
-      }
-    return geocoll_list;
-  error:
-    gaiaFreeGeomCollListToken (geocoll_list);
-    return NULL;
-}
-
-static gaiaPointPtr
-gaiaBuildPoint (gaiaTokenPtr first)
-{
-/* builds a POINT, if this token's list contains a valid POINT */
-    gaiaPointPtr point = NULL;
-    gaiaTokenPtr pt = first;
-    int i = 0;
-    int err = 0;
-    double x = 0.0;
-    double y = 0.0;
-    while (pt != NULL)
-      {
-	  /* check if this one is a valid POINT */
-	  switch (i)
-	    {
-	    case 0:
-		if (pt->type != GAIA_OPENED)
-		    err = 1;
-		break;
-	    case 1:
-		if (pt->type != GAIA_COORDINATE)
-		    err = 1;
-		else
-		    x = pt->coord;
-		break;
-	    case 2:
-		if (pt->type != GAIA_SPACE)
-		    err = 1;
-		break;
-	    case 3:
-		if (pt->type != GAIA_COORDINATE)
-		    err = 1;
-		else
-		    y = pt->coord;
-		break;
-	    case 4:
-		if (pt->type != GAIA_CLOSED)
-		    err = 1;
-		break;
-	    default:
-		err = 1;
-		break;
-	    };
-	  i++;
-	  pt = pt->next;
-      }
-    if (err)
-	return NULL;
-    point = gaiaAllocPoint (x, y);
-    return point;
-}
-
-static gaiaPointPtr
-gaiaBuildPointZ (gaiaTokenPtr first)
-{
-/* builds a POINTZ, if this token's list contains a valid POINTZ */
-    gaiaPointPtr point = NULL;
-    gaiaTokenPtr pt = first;
-    int i = 0;
-    int err = 0;
-    double x = 0.0;
-    double y = 0.0;
-    double z = 0.0;
-    while (pt != NULL)
-      {
-	  /* check if this one is a valid POINTZ */
-	  switch (i)
-	    {
-	    case 0:
-		if (pt->type != GAIA_OPENED)
-		    err = 1;
-		break;
-	    case 1:
-		if (pt->type != GAIA_COORDINATE)
-		    err = 1;
-		else
-		    x = pt->coord;
-		break;
-	    case 2:
-		if (pt->type != GAIA_SPACE)
-		    err = 1;
-		break;
-	    case 3:
-		if (pt->type != GAIA_COORDINATE)
-		    err = 1;
-		else
-		    y = pt->coord;
-		break;
-	    case 4:
-		if (pt->type != GAIA_SPACE)
-		    err = 1;
-		break;
-	    case 5:
-		if (pt->type != GAIA_COORDINATE)
-		    err = 1;
-		else
-		    z = pt->coord;
-		break;
-	    case 6:
-		if (pt->type != GAIA_CLOSED)
-		    err = 1;
-		break;
-	    default:
-		err = 1;
-		break;
-	    };
-	  i++;
-	  pt = pt->next;
-      }
-    if (err)
-	return NULL;
-    point = gaiaAllocPointXYZ (x, y, z);
-    return point;
-}
-
-static gaiaPointPtr
-gaiaBuildPointM (gaiaTokenPtr first)
-{
-/* builds a POINTM, if this token's list contains a valid POINTM */
-    gaiaPointPtr point = NULL;
-    gaiaTokenPtr pt = first;
-    int i = 0;
-    int err = 0;
-    double x = 0.0;
-    double y = 0.0;
-    double m = 0.0;
-    while (pt != NULL)
-      {
-	  /* check if this one is a valid POINTM */
-	  switch (i)
-	    {
-	    case 0:
-		if (pt->type != GAIA_OPENED)
-		    err = 1;
-		break;
-	    case 1:
-		if (pt->type != GAIA_COORDINATE)
-		    err = 1;
-		else
-		    x = pt->coord;
-		break;
-	    case 2:
-		if (pt->type != GAIA_SPACE)
-		    err = 1;
-		break;
-	    case 3:
-		if (pt->type != GAIA_COORDINATE)
-		    err = 1;
-		else
-		    y = pt->coord;
-		break;
-	    case 4:
-		if (pt->type != GAIA_SPACE)
-		    err = 1;
-		break;
-	    case 5:
-		if (pt->type != GAIA_COORDINATE)
-		    err = 1;
-		else
-		    m = pt->coord;
-		break;
-	    case 6:
-		if (pt->type != GAIA_CLOSED)
-		    err = 1;
-		break;
-	    default:
-		err = 1;
-		break;
-	    };
-	  i++;
-	  pt = pt->next;
-      }
-    if (err)
-	return NULL;
-    point = gaiaAllocPointXYM (x, y, m);
-    return point;
-}
-
-static gaiaPointPtr
-gaiaBuildPointZM (gaiaTokenPtr first)
-{
-/* builds a POINTZM, if this token's list contains a valid POINTZM */
-    gaiaPointPtr point = NULL;
-    gaiaTokenPtr pt = first;
-    int i = 0;
-    int err = 0;
-    double x = 0.0;
-    double y = 0.0;
-    double z = 0.0;
-    double m = 0.0;
-    while (pt != NULL)
-      {
-	  /* check if this one is a valid POINTZM */
-	  switch (i)
-	    {
-	    case 0:
-		if (pt->type != GAIA_OPENED)
-		    err = 1;
-		break;
-	    case 1:
-		if (pt->type != GAIA_COORDINATE)
-		    err = 1;
-		else
-		    x = pt->coord;
-		break;
-	    case 2:
-		if (pt->type != GAIA_SPACE)
-		    err = 1;
-		break;
-	    case 3:
-		if (pt->type != GAIA_COORDINATE)
-		    err = 1;
-		else
-		    y = pt->coord;
-		break;
-	    case 4:
-		if (pt->type != GAIA_SPACE)
-		    err = 1;
-		break;
-	    case 5:
-		if (pt->type != GAIA_COORDINATE)
-		    err = 1;
-		else
-		    z = pt->coord;
-		break;
-	    case 6:
-		if (pt->type != GAIA_SPACE)
-		    err = 1;
-		break;
-	    case 7:
-		if (pt->type != GAIA_COORDINATE)
-		    err = 1;
-		else
-		    m = pt->coord;
-		break;
-	    case 8:
-		if (pt->type != GAIA_CLOSED)
-		    err = 1;
-		break;
-	    default:
-		err = 1;
-		break;
-	    };
-	  i++;
-	  pt = pt->next;
-      }
-    if (err)
-	return NULL;
-    point = gaiaAllocPointXYZM (x, y, z, m);
-    return point;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromPoint (gaiaPointPtr point)
-{
-/* builds a GEOMETRY containing a POINT */
-    gaiaGeomCollPtr geom = NULL;
-    geom = gaiaAllocGeomColl ();
-    geom->DeclaredType = GAIA_POINT;
-    gaiaAddPointToGeomColl (geom, point->X, point->Y);
-    gaiaFreePoint (point);
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromPointZ (gaiaPointPtr point)
-{
-/* builds a GEOMETRY containing a POINTZ */
-    gaiaGeomCollPtr geom = NULL;
-    geom = gaiaAllocGeomCollXYZ ();
-    geom->DeclaredType = GAIA_POINTZ;
-    gaiaAddPointToGeomCollXYZ (geom, point->X, point->Y, point->Z);
-    gaiaFreePoint (point);
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromPointM (gaiaPointPtr point)
-{
-/* builds a GEOMETRY containing a POINTM */
-    gaiaGeomCollPtr geom = NULL;
-    geom = gaiaAllocGeomCollXYM ();
-    geom->DeclaredType = GAIA_POINTM;
-    gaiaAddPointToGeomCollXYM (geom, point->X, point->Y, point->M);
-    gaiaFreePoint (point);
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromPointZM (gaiaPointPtr point)
-{
-/* builds a GEOMETRY containing a POINTZM */
-    gaiaGeomCollPtr geom = NULL;
-    geom = gaiaAllocGeomCollXYZM ();
-    geom->DeclaredType = GAIA_POINTZM;
-    gaiaAddPointToGeomCollXYZM (geom, point->X, point->Y, point->Z, point->M);
-    gaiaFreePoint (point);
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromLinestring (gaiaLinestringPtr line)
-{
-/* builds a GEOMETRY containing a LINESTRING */
-    gaiaGeomCollPtr geom = NULL;
-    gaiaLinestringPtr line2;
-    int iv;
-    double x;
-    double y;
-    geom = gaiaAllocGeomColl ();
-    geom->DeclaredType = GAIA_LINESTRING;
-    line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
-    for (iv = 0; iv < line2->Points; iv++)
-      {
-	  /* sets the POINTS for the exterior ring */
-	  gaiaGetPoint (line->Coords, iv, &x, &y);
-	  gaiaSetPoint (line2->Coords, iv, x, y);
-      }
-    gaiaFreeLinestring (line);
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromLinestringZ (gaiaLinestringPtr line)
-{
-/* builds a GEOMETRY containing a LINESTRINGZ */
-    gaiaGeomCollPtr geom = NULL;
-    gaiaLinestringPtr line2;
-    int iv;
-    double x;
-    double y;
-    double z;
-    geom = gaiaAllocGeomCollXYZ ();
-    geom->DeclaredType = GAIA_LINESTRING;
-    line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
-    for (iv = 0; iv < line2->Points; iv++)
-      {
-	  /* sets the POINTS for the exterior ring */
-	  gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
-	  gaiaSetPointXYZ (line2->Coords, iv, x, y, z);
-      }
-    gaiaFreeLinestring (line);
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromLinestringM (gaiaLinestringPtr line)
-{
-/* builds a GEOMETRY containing a LINESTRINGM */
-    gaiaGeomCollPtr geom = NULL;
-    gaiaLinestringPtr line2;
-    int iv;
-    double x;
-    double y;
-    double m;
-    geom = gaiaAllocGeomCollXYM ();
-    geom->DeclaredType = GAIA_LINESTRING;
-    line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
-    for (iv = 0; iv < line2->Points; iv++)
-      {
-	  /* sets the POINTS for the exterior ring */
-	  gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
-	  gaiaSetPointXYM (line2->Coords, iv, x, y, m);
-      }
-    gaiaFreeLinestring (line);
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromLinestringZM (gaiaLinestringPtr line)
-{
-/* builds a GEOMETRY containing a LINESTRINGZM */
-    gaiaGeomCollPtr geom = NULL;
-    gaiaLinestringPtr line2;
-    int iv;
-    double x;
-    double y;
-    double z;
-    double m;
-    geom = gaiaAllocGeomCollXYZM ();
-    geom->DeclaredType = GAIA_LINESTRING;
-    line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
-    for (iv = 0; iv < line2->Points; iv++)
-      {
-	  /* sets the POINTS for the exterior ring */
-	  gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
-	  gaiaSetPointXYZM (line2->Coords, iv, x, y, z, m);
-      }
-    gaiaFreeLinestring (line);
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromPolygon (gaiaMultiListTokenPtr polygon)
-{
-/* builds a GEOMETRY containing a POLYGON */
-    int iv;
-    int ib;
-    int borders = 0;
-    double x;
-    double y;
-    gaiaPolygonPtr pg;
-    gaiaRingPtr ring;
-    gaiaLinestringPtr line;
-    gaiaGeomCollPtr geom = NULL;
-    gaiaListTokenPtr pt;
-    pt = polygon->first;
-    while (pt != NULL)
-      {
-	  /* counts how many rings are in the list */
-	  borders++;
-	  pt = pt->next;
-      }
-    if (!borders)
-	return NULL;
-    geom = gaiaAllocGeomColl ();
-    geom->DeclaredType = GAIA_POLYGON;
-/* builds the polygon */
-    line = polygon->first->line;
-    pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
-    ring = pg->Exterior;
-    for (iv = 0; iv < ring->Points; iv++)
-      {
-	  /* sets the POINTS for the exterior ring */
-	  gaiaGetPoint (line->Coords, iv, &x, &y);
-	  gaiaSetPoint (ring->Coords, iv, x, y);
-      }
-    ib = 0;
-    pt = polygon->first->next;
-    while (pt != NULL)
-      {
-	  /* builds the interior rings [if any] */
-	  line = pt->line;
-	  ring = gaiaAddInteriorRing (pg, ib, line->Points);
-	  for (iv = 0; iv < ring->Points; iv++)
-	    {
-		/* sets the POINTS for some interior ring */
-		gaiaGetPoint (line->Coords, iv, &x, &y);
-		gaiaSetPoint (ring->Coords, iv, x, y);
-	    }
-	  ib++;
-	  pt = pt->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromPolygonZ (gaiaMultiListTokenPtr polygon)
-{
-/* builds a GEOMETRY containing a POLYGONZ */
-    int iv;
-    int ib;
-    int borders = 0;
-    double x;
-    double y;
-    double z;
-    gaiaPolygonPtr pg;
-    gaiaRingPtr ring;
-    gaiaLinestringPtr line;
-    gaiaGeomCollPtr geom = NULL;
-    gaiaListTokenPtr pt;
-    pt = polygon->first;
-    while (pt != NULL)
-      {
-	  /* counts how many rings are in the list */
-	  borders++;
-	  pt = pt->next;
-      }
-    if (!borders)
-	return NULL;
-    geom = gaiaAllocGeomCollXYZ ();
-    geom->DeclaredType = GAIA_POLYGON;
-/* builds the polygon */
-    line = polygon->first->line;
-    pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
-    ring = pg->Exterior;
-    for (iv = 0; iv < ring->Points; iv++)
-      {
-	  /* sets the POINTS for the exterior ring */
-	  gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
-	  gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
-      }
-    ib = 0;
-    pt = polygon->first->next;
-    while (pt != NULL)
-      {
-	  /* builds the interior rings [if any] */
-	  line = pt->line;
-	  ring = gaiaAddInteriorRing (pg, ib, line->Points);
-	  for (iv = 0; iv < ring->Points; iv++)
-	    {
-		/* sets the POINTS for some interior ring */
-		gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
-		gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
-	    }
-	  ib++;
-	  pt = pt->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromPolygonM (gaiaMultiListTokenPtr polygon)
-{
-/* builds a GEOMETRY containing a POLYGONM */
-    int iv;
-    int ib;
-    int borders = 0;
-    double x;
-    double y;
-    double m;
-    gaiaPolygonPtr pg;
-    gaiaRingPtr ring;
-    gaiaLinestringPtr line;
-    gaiaGeomCollPtr geom = NULL;
-    gaiaListTokenPtr pt;
-    pt = polygon->first;
-    while (pt != NULL)
-      {
-	  /* counts how many rings are in the list */
-	  borders++;
-	  pt = pt->next;
-      }
-    if (!borders)
-	return NULL;
-    geom = gaiaAllocGeomCollXYM ();
-    geom->DeclaredType = GAIA_POLYGON;
-/* builds the polygon */
-    line = polygon->first->line;
-    pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
-    ring = pg->Exterior;
-    for (iv = 0; iv < ring->Points; iv++)
-      {
-	  /* sets the POINTS for the exterior ring */
-	  gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
-	  gaiaSetPointXYM (ring->Coords, iv, x, y, m);
-      }
-    ib = 0;
-    pt = polygon->first->next;
-    while (pt != NULL)
-      {
-	  /* builds the interior rings [if any] */
-	  line = pt->line;
-	  ring = gaiaAddInteriorRing (pg, ib, line->Points);
-	  for (iv = 0; iv < ring->Points; iv++)
-	    {
-		/* sets the POINTS for some interior ring */
-		gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
-		gaiaSetPointXYM (ring->Coords, iv, x, y, m);
-	    }
-	  ib++;
-	  pt = pt->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromPolygonZM (gaiaMultiListTokenPtr polygon)
-{
-/* builds a GEOMETRY containing a POLYGONZM */
-    int iv;
-    int ib;
-    int borders = 0;
-    double x;
-    double y;
-    double z;
-    double m;
-    gaiaPolygonPtr pg;
-    gaiaRingPtr ring;
-    gaiaLinestringPtr line;
-    gaiaGeomCollPtr geom = NULL;
-    gaiaListTokenPtr pt;
-    pt = polygon->first;
-    while (pt != NULL)
-      {
-	  /* counts how many rings are in the list */
-	  borders++;
-	  pt = pt->next;
-      }
-    if (!borders)
-	return NULL;
-    geom = gaiaAllocGeomCollXYZM ();
-    geom->DeclaredType = GAIA_POLYGON;
-/* builds the polygon */
-    line = polygon->first->line;
-    pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
-    ring = pg->Exterior;
-    for (iv = 0; iv < ring->Points; iv++)
-      {
-	  /* sets the POINTS for the exterior ring */
-	  gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
-	  gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
-      }
-    ib = 0;
-    pt = polygon->first->next;
-    while (pt != NULL)
-      {
-	  /* builds the interior rings [if any] */
-	  line = pt->line;
-	  ring = gaiaAddInteriorRing (pg, ib, line->Points);
-	  for (iv = 0; iv < ring->Points; iv++)
-	    {
-		/* sets the POINTS for some interior ring */
-		gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
-		gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
-	    }
-	  ib++;
-	  pt = pt->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromMPoint (gaiaLinestringPtr mpoint)
-{
-/* builds a GEOMETRY containing a MULTIPOINT */
-    int ie;
-    double x;
-    double y;
-    gaiaGeomCollPtr geom = NULL;
-    geom = gaiaAllocGeomColl ();
-    geom->DeclaredType = GAIA_MULTIPOINT;
-    for (ie = 0; ie < mpoint->Points; ie++)
-      {
-	  gaiaGetPoint (mpoint->Coords, ie, &x, &y);
-	  gaiaAddPointToGeomColl (geom, x, y);
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromMPointZ (gaiaLinestringPtr mpoint)
-{
-/* builds a GEOMETRY containing a MULTIPOINTZ */
-    int ie;
-    double x;
-    double y;
-    double z;
-    gaiaGeomCollPtr geom = NULL;
-    geom = gaiaAllocGeomCollXYZ ();
-    geom->DeclaredType = GAIA_MULTIPOINT;
-    for (ie = 0; ie < mpoint->Points; ie++)
-      {
-	  gaiaGetPointXYZ (mpoint->Coords, ie, &x, &y, &z);
-	  gaiaAddPointToGeomCollXYZ (geom, x, y, z);
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromMPointM (gaiaLinestringPtr mpoint)
-{
-/* builds a GEOMETRY containing a MULTIPOINTM */
-    int ie;
-    double x;
-    double y;
-    double m;
-    gaiaGeomCollPtr geom = NULL;
-    geom = gaiaAllocGeomCollXYM ();
-    geom->DeclaredType = GAIA_MULTIPOINT;
-    for (ie = 0; ie < mpoint->Points; ie++)
-      {
-	  gaiaGetPointXYM (mpoint->Coords, ie, &x, &y, &m);
-	  gaiaAddPointToGeomCollXYM (geom, x, y, m);
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromMPointZM (gaiaLinestringPtr mpoint)
-{
-/* builds a GEOMETRY containing a MULTIPOINTZM */
-    int ie;
-    double x;
-    double y;
-    double z;
-    double m;
-    gaiaGeomCollPtr geom = NULL;
-    geom = gaiaAllocGeomCollXYZM ();
-    geom->DeclaredType = GAIA_MULTIPOINT;
-    for (ie = 0; ie < mpoint->Points; ie++)
-      {
-	  gaiaGetPointXYZM (mpoint->Coords, ie, &x, &y, &z, &m);
-	  gaiaAddPointToGeomCollXYZM (geom, x, y, z, m);
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromMLine (gaiaMultiListTokenPtr mline)
-{
-/* builds a GEOMETRY containing a MULTILINESTRING */
-    int iv;
-    int lines = 0;
-    double x;
-    double y;
-    gaiaListTokenPtr pt;
-    gaiaLinestringPtr line;
-    gaiaLinestringPtr line2;
-    gaiaGeomCollPtr geom = NULL;
-    pt = mline->first;
-    while (pt != NULL)
-      {
-/* counts how many linestrings are in the list */
-	  lines++;
-	  pt = pt->next;
-      }
-    if (!lines)
-	return NULL;
-    geom = gaiaAllocGeomColl ();
-    geom->DeclaredType = GAIA_MULTILINESTRING;
-    pt = mline->first;
-    while (pt != NULL)
-      {
-	  /* creates and initializes one linestring for each iteration */
-	  line = pt->line;
-	  line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
-	  for (iv = 0; iv < line->Points; iv++)
-	    {
-		gaiaGetPoint (line->Coords, iv, &x, &y);
-		gaiaSetPoint (line2->Coords, iv, x, y);
-	    }
-	  pt = pt->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromMLineZ (gaiaMultiListTokenPtr mline)
-{
-/* builds a GEOMETRY containing a MULTILINESTRINGZ */
-    int iv;
-    int lines = 0;
-    double x;
-    double y;
-    double z;
-    gaiaListTokenPtr pt;
-    gaiaLinestringPtr line;
-    gaiaLinestringPtr line2;
-    gaiaGeomCollPtr geom = NULL;
-    pt = mline->first;
-    while (pt != NULL)
-      {
-/* counts how many linestrings are in the list */
-	  lines++;
-	  pt = pt->next;
-      }
-    if (!lines)
-	return NULL;
-    geom = gaiaAllocGeomCollXYZ ();
-    geom->DeclaredType = GAIA_MULTILINESTRING;
-    pt = mline->first;
-    while (pt != NULL)
-      {
-	  /* creates and initializes one linestring for each iteration */
-	  line = pt->line;
-	  line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
-	  for (iv = 0; iv < line->Points; iv++)
-	    {
-		gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
-		gaiaSetPointXYZ (line2->Coords, iv, x, y, z);
-	    }
-	  pt = pt->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromMLineM (gaiaMultiListTokenPtr mline)
-{
-/* builds a GEOMETRY containing a MULTILINESTRINGM */
-    int iv;
-    int lines = 0;
-    double x;
-    double y;
-    double m;
-    gaiaListTokenPtr pt;
-    gaiaLinestringPtr line;
-    gaiaLinestringPtr line2;
-    gaiaGeomCollPtr geom = NULL;
-    pt = mline->first;
-    while (pt != NULL)
-      {
-/* counts how many linestrings are in the list */
-	  lines++;
-	  pt = pt->next;
-      }
-    if (!lines)
-	return NULL;
-    geom = gaiaAllocGeomCollXYM ();
-    geom->DeclaredType = GAIA_MULTILINESTRING;
-    pt = mline->first;
-    while (pt != NULL)
-      {
-	  /* creates and initializes one linestring for each iteration */
-	  line = pt->line;
-	  line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
-	  for (iv = 0; iv < line->Points; iv++)
-	    {
-		gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
-		gaiaSetPointXYM (line2->Coords, iv, x, y, m);
-	    }
-	  pt = pt->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromMLineZM (gaiaMultiListTokenPtr mline)
-{
-/* builds a GEOMETRY containing a MULTILINESTRINGZM */
-    int iv;
-    int lines = 0;
-    double x;
-    double y;
-    double z;
-    double m;
-    gaiaListTokenPtr pt;
-    gaiaLinestringPtr line;
-    gaiaLinestringPtr line2;
-    gaiaGeomCollPtr geom = NULL;
-    pt = mline->first;
-    while (pt != NULL)
-      {
-/* counts how many linestrings are in the list */
-	  lines++;
-	  pt = pt->next;
-      }
-    if (!lines)
-	return NULL;
-    geom = gaiaAllocGeomCollXYZM ();
-    geom->DeclaredType = GAIA_MULTILINESTRING;
-    pt = mline->first;
-    while (pt != NULL)
-      {
-	  /* creates and initializes one linestring for each iteration */
-	  line = pt->line;
-	  line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
-	  for (iv = 0; iv < line->Points; iv++)
-	    {
-		gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
-		gaiaSetPointXYZM (line2->Coords, iv, x, y, z, m);
-	    }
-	  pt = pt->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromMPoly (gaiaMultiMultiListTokenPtr mpoly)
-{
-/* builds a GEOMETRY containing a MULTIPOLYGON */
-    int iv;
-    int ib;
-    int borders;
-    int entities = 0;
-    double x;
-    double y;
-    gaiaPolygonPtr pg;
-    gaiaRingPtr ring;
-    gaiaLinestringPtr line;
-    gaiaGeomCollPtr geom = NULL;
-    gaiaMultiListTokenPtr multi;
-    gaiaListTokenPtr pt;
-    multi = mpoly->first;
-    while (multi != NULL)
-      {
-	  /* counts how many polygons are in the list */
-	  entities++;
-	  multi = multi->next;
-      }
-    if (!entities)
-	return NULL;
-/* allocates and initializes the geometry to be returned */
-    geom = gaiaAllocGeomColl ();
-    geom->DeclaredType = GAIA_MULTIPOLYGON;
-    multi = mpoly->first;
-    while (multi != NULL)
-      {
-	  borders = 0;
-	  pt = multi->first;
-	  while (pt != NULL)
-	    {
-		/* counts how many rings are in the list */
-		borders++;
-		pt = pt->next;
-	    }
-	  /* builds one polygon */
-	  line = multi->first->line;
-	  pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
-	  ring = pg->Exterior;
-	  for (iv = 0; iv < ring->Points; iv++)
-	    {
-		/* sets the POINTS for the exterior ring */
-		gaiaGetPoint (line->Coords, iv, &x, &y);
-		gaiaSetPoint (ring->Coords, iv, x, y);
-	    }
-	  ib = 0;
-	  pt = multi->first->next;
-	  while (pt != NULL)
-	    {
-		/* builds the interior rings [if any] */
-		line = pt->line;
-		ring = gaiaAddInteriorRing (pg, ib, line->Points);
-		for (iv = 0; iv < ring->Points; iv++)
-		  {
-		      /* sets the POINTS for the exterior ring */
-		      gaiaGetPoint (line->Coords, iv, &x, &y);
-		      gaiaSetPoint (ring->Coords, iv, x, y);
-		  }
-		ib++;
-		pt = pt->next;
-	    }
-	  multi = multi->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromMPolyZ (gaiaMultiMultiListTokenPtr mpoly)
-{
-/* builds a GEOMETRY containing a MULTIPOLYGONZ */
-    int iv;
-    int ib;
-    int borders;
-    int entities = 0;
-    double x;
-    double y;
-    double z;
-    gaiaPolygonPtr pg;
-    gaiaRingPtr ring;
-    gaiaLinestringPtr line;
-    gaiaGeomCollPtr geom = NULL;
-    gaiaMultiListTokenPtr multi;
-    gaiaListTokenPtr pt;
-    multi = mpoly->first;
-    while (multi != NULL)
-      {
-	  /* counts how many polygons are in the list */
-	  entities++;
-	  multi = multi->next;
-      }
-    if (!entities)
-	return NULL;
-/* allocates and initializes the geometry to be returned */
-    geom = gaiaAllocGeomCollXYZ ();
-    geom->DeclaredType = GAIA_MULTIPOLYGON;
-    multi = mpoly->first;
-    while (multi != NULL)
-      {
-	  borders = 0;
-	  pt = multi->first;
-	  while (pt != NULL)
-	    {
-		/* counts how many rings are in the list */
-		borders++;
-		pt = pt->next;
-	    }
-	  /* builds one polygon */
-	  line = multi->first->line;
-	  pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
-	  ring = pg->Exterior;
-	  for (iv = 0; iv < ring->Points; iv++)
-	    {
-		/* sets the POINTS for the exterior ring */
-		gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
-		gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
-	    }
-	  ib = 0;
-	  pt = multi->first->next;
-	  while (pt != NULL)
-	    {
-		/* builds the interior rings [if any] */
-		line = pt->line;
-		ring = gaiaAddInteriorRing (pg, ib, line->Points);
-		for (iv = 0; iv < ring->Points; iv++)
-		  {
-		      /* sets the POINTS for the exterior ring */
-		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
-		      gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
-		  }
-		ib++;
-		pt = pt->next;
-	    }
-	  multi = multi->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromMPolyM (gaiaMultiMultiListTokenPtr mpoly)
-{
-/* builds a GEOMETRY containing a MULTIPOLYGONM */
-    int iv;
-    int ib;
-    int borders;
-    int entities = 0;
-    double x;
-    double y;
-    double m;
-    gaiaPolygonPtr pg;
-    gaiaRingPtr ring;
-    gaiaLinestringPtr line;
-    gaiaGeomCollPtr geom = NULL;
-    gaiaMultiListTokenPtr multi;
-    gaiaListTokenPtr pt;
-    multi = mpoly->first;
-    while (multi != NULL)
-      {
-	  /* counts how many polygons are in the list */
-	  entities++;
-	  multi = multi->next;
-      }
-    if (!entities)
-	return NULL;
-/* allocates and initializes the geometry to be returned */
-    geom = gaiaAllocGeomCollXYM ();
-    geom->DeclaredType = GAIA_MULTIPOLYGON;
-    multi = mpoly->first;
-    while (multi != NULL)
-      {
-	  borders = 0;
-	  pt = multi->first;
-	  while (pt != NULL)
-	    {
-		/* counts how many rings are in the list */
-		borders++;
-		pt = pt->next;
-	    }
-	  /* builds one polygon */
-	  line = multi->first->line;
-	  pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
-	  ring = pg->Exterior;
-	  for (iv = 0; iv < ring->Points; iv++)
-	    {
-		/* sets the POINTS for the exterior ring */
-		gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
-		gaiaSetPointXYM (ring->Coords, iv, x, y, m);
-	    }
-	  ib = 0;
-	  pt = multi->first->next;
-	  while (pt != NULL)
-	    {
-		/* builds the interior rings [if any] */
-		line = pt->line;
-		ring = gaiaAddInteriorRing (pg, ib, line->Points);
-		for (iv = 0; iv < ring->Points; iv++)
-		  {
-		      /* sets the POINTS for the exterior ring */
-		      gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
-		      gaiaSetPointXYM (ring->Coords, iv, x, y, m);
-		  }
-		ib++;
-		pt = pt->next;
-	    }
-	  multi = multi->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromMPolyZM (gaiaMultiMultiListTokenPtr mpoly)
-{
-/* builds a GEOMETRY containing a MULTIPOLYGONZM */
-    int iv;
-    int ib;
-    int borders;
-    int entities = 0;
-    double x;
-    double y;
-    double z;
-    double m;
-    gaiaPolygonPtr pg;
-    gaiaRingPtr ring;
-    gaiaLinestringPtr line;
-    gaiaGeomCollPtr geom = NULL;
-    gaiaMultiListTokenPtr multi;
-    gaiaListTokenPtr pt;
-    multi = mpoly->first;
-    while (multi != NULL)
-      {
-	  /* counts how many polygons are in the list */
-	  entities++;
-	  multi = multi->next;
-      }
-    if (!entities)
-	return NULL;
-/* allocates and initializes the geometry to be returned */
-    geom = gaiaAllocGeomCollXYZM ();
-    geom->DeclaredType = GAIA_MULTIPOLYGON;
-    multi = mpoly->first;
-    while (multi != NULL)
-      {
-	  borders = 0;
-	  pt = multi->first;
-	  while (pt != NULL)
-	    {
-		/* counts how many rings are in the list */
-		borders++;
-		pt = pt->next;
-	    }
-	  /* builds one polygon */
-	  line = multi->first->line;
-	  pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
-	  ring = pg->Exterior;
-	  for (iv = 0; iv < ring->Points; iv++)
-	    {
-		/* sets the POINTS for the exterior ring */
-		gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
-		gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
-	    }
-	  ib = 0;
-	  pt = multi->first->next;
-	  while (pt != NULL)
-	    {
-		/* builds the interior rings [if any] */
-		line = pt->line;
-		ring = gaiaAddInteriorRing (pg, ib, line->Points);
-		for (iv = 0; iv < ring->Points; iv++)
-		  {
-		      /* sets the POINTS for the exterior ring */
-		      gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
-		      gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
-		  }
-		ib++;
-		pt = pt->next;
-	    }
-	  multi = multi->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromGeomColl (gaiaGeomCollListTokenPtr geocoll)
-{
-/* builds a GEOMETRY containing a GEOMETRYCOLLECTION */
-    int iv;
-    int ib;
-    int borders;
-    int entities = 0;
-    double x;
-    double y;
-    gaiaPolygonPtr pg;
-    gaiaRingPtr ring;
-    gaiaLinestringPtr line2;
-    gaiaLinestringPtr line;
-    gaiaGeomCollPtr geom = NULL;
-    gaiaListTokenPtr linestring;
-    gaiaMultiListTokenPtr polyg;
-    gaiaVarListTokenPtr multi;
-    gaiaListTokenPtr pt;
-    multi = geocoll->first;
-    while (multi != NULL)
-      {
-	  /* counts how many polygons are in the list */
-	  entities++;
-	  multi = multi->next;
-      }
-    if (!entities)
-	return NULL;
-/* allocates and initializes the geometry to be returned */
-    geom = gaiaAllocGeomColl ();
-    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
-    multi = geocoll->first;
-    while (multi != NULL)
-      {
-	  switch (multi->type)
-	    {
-	    case GAIA_POINT:
-		gaiaAddPointToGeomColl (geom, multi->x, multi->y);
-		break;
-	    case GAIA_LINESTRING:
-		linestring = (gaiaListTokenPtr) (multi->pointer);
-		line = linestring->line;
-		line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
-		for (iv = 0; iv < line2->Points; iv++)
-		  {
-		      /* sets the POINTS for the LINESTRING */
-		      gaiaGetPoint (line->Coords, iv, &x, &y);
-		      gaiaSetPoint (line2->Coords, iv, x, y);
-		  }
-		break;
-	    case GAIA_POLYGON:
-		polyg = multi->pointer;
-		borders = 0;
-		pt = polyg->first;
-		while (pt != NULL)
-		  {
-		      /* counts how many rings are in the list */
-		      borders++;
-		      pt = pt->next;
-		  }
-		/* builds one polygon */
-		line = polyg->first->line;
-		pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
-		ring = pg->Exterior;
-		for (iv = 0; iv < ring->Points; iv++)
-		  {
-		      /* sets the POINTS for the exterior ring */
-		      gaiaGetPoint (line->Coords, iv, &x, &y);
-		      gaiaSetPoint (ring->Coords, iv, x, y);
-		  }
-		ib = 0;
-		pt = polyg->first->next;
-		while (pt != NULL)
-		  {
-		      /* builds the interior rings [if any] */
-		      line = pt->line;
-		      ring = gaiaAddInteriorRing (pg, ib, line->Points);
-		      for (iv = 0; iv < ring->Points; iv++)
-			{
-			    /* sets the POINTS for the exterior ring */
-			    gaiaGetPoint (line->Coords, iv, &x, &y);
-			    gaiaSetPoint (ring->Coords, iv, x, y);
-			}
-		      ib++;
-		      pt = pt->next;
-		  }
-		break;
-	    };
-	  multi = multi->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromGeomCollZ (gaiaGeomCollListTokenPtr geocoll)
-{
-/* builds a GEOMETRY containing a GEOMETRYCOLLECTIONZ */
-    int iv;
-    int ib;
-    int borders;
-    int entities = 0;
-    double x;
-    double y;
-    double z;
-    gaiaPolygonPtr pg;
-    gaiaRingPtr ring;
-    gaiaLinestringPtr line2;
-    gaiaLinestringPtr line;
-    gaiaGeomCollPtr geom = NULL;
-    gaiaListTokenPtr linestring;
-    gaiaMultiListTokenPtr polyg;
-    gaiaVarListTokenPtr multi;
-    gaiaListTokenPtr pt;
-    multi = geocoll->first;
-    while (multi != NULL)
-      {
-	  /* counts how many polygons are in the list */
-	  entities++;
-	  multi = multi->next;
-      }
-    if (!entities)
-	return NULL;
-/* allocates and initializes the geometry to be returned */
-    geom = gaiaAllocGeomCollXYZ ();
-    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
-    multi = geocoll->first;
-    while (multi != NULL)
-      {
-	  switch (multi->type)
-	    {
-	    case GAIA_POINTZ:
-		gaiaAddPointToGeomCollXYZ (geom, multi->x, multi->y, multi->z);
-		break;
-	    case GAIA_LINESTRINGZ:
-		linestring = (gaiaListTokenPtr) (multi->pointer);
-		line = linestring->line;
-		line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
-		for (iv = 0; iv < line2->Points; iv++)
-		  {
-		      /* sets the POINTS for the LINESTRING */
-		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
-		      gaiaSetPointXYZ (line2->Coords, iv, x, y, z);
-		  }
-		break;
-	    case GAIA_POLYGONZ:
-		polyg = multi->pointer;
-		borders = 0;
-		pt = polyg->first;
-		while (pt != NULL)
-		  {
-		      /* counts how many rings are in the list */
-		      borders++;
-		      pt = pt->next;
-		  }
-		/* builds one polygon */
-		line = polyg->first->line;
-		pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
-		ring = pg->Exterior;
-		for (iv = 0; iv < ring->Points; iv++)
-		  {
-		      /* sets the POINTS for the exterior ring */
-		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
-		      gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
-		  }
-		ib = 0;
-		pt = polyg->first->next;
-		while (pt != NULL)
-		  {
-		      /* builds the interior rings [if any] */
-		      line = pt->line;
-		      ring = gaiaAddInteriorRing (pg, ib, line->Points);
-		      for (iv = 0; iv < ring->Points; iv++)
-			{
-			    /* sets the POINTS for the exterior ring */
-			    gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
-			    gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
-			}
-		      ib++;
-		      pt = pt->next;
-		  }
-		break;
-	    };
-	  multi = multi->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromGeomCollM (gaiaGeomCollListTokenPtr geocoll)
-{
-/* builds a GEOMETRY containing a GEOMETRYCOLLECTIONM */
-    int iv;
-    int ib;
-    int borders;
-    int entities = 0;
-    double x;
-    double y;
-    double m;
-    gaiaPolygonPtr pg;
-    gaiaRingPtr ring;
-    gaiaLinestringPtr line2;
-    gaiaLinestringPtr line;
-    gaiaGeomCollPtr geom = NULL;
-    gaiaListTokenPtr linestring;
-    gaiaMultiListTokenPtr polyg;
-    gaiaVarListTokenPtr multi;
-    gaiaListTokenPtr pt;
-    multi = geocoll->first;
-    while (multi != NULL)
-      {
-	  /* counts how many polygons are in the list */
-	  entities++;
-	  multi = multi->next;
-      }
-    if (!entities)
-	return NULL;
-/* allocates and initializes the geometry to be returned */
-    geom = gaiaAllocGeomCollXYM ();
-    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
-    multi = geocoll->first;
-    while (multi != NULL)
-      {
-	  switch (multi->type)
-	    {
-	    case GAIA_POINTM:
-		gaiaAddPointToGeomCollXYM (geom, multi->x, multi->y, multi->m);
-		break;
-	    case GAIA_LINESTRINGM:
-		linestring = (gaiaListTokenPtr) (multi->pointer);
-		line = linestring->line;
-		line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
-		for (iv = 0; iv < line2->Points; iv++)
-		  {
-		      /* sets the POINTS for the LINESTRING */
-		      gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
-		      gaiaSetPointXYM (line2->Coords, iv, x, y, m);
-		  }
-		break;
-	    case GAIA_POLYGONM:
-		polyg = multi->pointer;
-		borders = 0;
-		pt = polyg->first;
-		while (pt != NULL)
-		  {
-		      /* counts how many rings are in the list */
-		      borders++;
-		      pt = pt->next;
-		  }
-		/* builds one polygon */
-		line = polyg->first->line;
-		pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
-		ring = pg->Exterior;
-		for (iv = 0; iv < ring->Points; iv++)
-		  {
-		      /* sets the POINTS for the exterior ring */
-		      gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
-		      gaiaSetPointXYM (ring->Coords, iv, x, y, m);
-		  }
-		ib = 0;
-		pt = polyg->first->next;
-		while (pt != NULL)
-		  {
-		      /* builds the interior rings [if any] */
-		      line = pt->line;
-		      ring = gaiaAddInteriorRing (pg, ib, line->Points);
-		      for (iv = 0; iv < ring->Points; iv++)
-			{
-			    /* sets the POINTS for the exterior ring */
-			    gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
-			    gaiaSetPointXYM (ring->Coords, iv, x, y, m);
-			}
-		      ib++;
-		      pt = pt->next;
-		  }
-		break;
-	    };
-	  multi = multi->next;
-      }
-    return geom;
-}
-
-static gaiaGeomCollPtr
-gaiaGeometryFromGeomCollZM (gaiaGeomCollListTokenPtr geocoll)
-{
-/* builds a GEOMETRY containing a GEOMETRYCOLLECTIONZM */
-    int iv;
-    int ib;
-    int borders;
-    int entities = 0;
-    double x;
-    double y;
-    double z;
-    double m;
-    gaiaPolygonPtr pg;
-    gaiaRingPtr ring;
-    gaiaLinestringPtr line2;
-    gaiaLinestringPtr line;
-    gaiaGeomCollPtr geom = NULL;
-    gaiaListTokenPtr linestring;
-    gaiaMultiListTokenPtr polyg;
-    gaiaVarListTokenPtr multi;
-    gaiaListTokenPtr pt;
-    multi = geocoll->first;
-    while (multi != NULL)
-      {
-	  /* counts how many polygons are in the list */
-	  entities++;
-	  multi = multi->next;
-      }
-    if (!entities)
-	return NULL;
-/* allocates and initializes the geometry to be returned */
-    geom = gaiaAllocGeomCollXYZM ();
-    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
-    multi = geocoll->first;
-    while (multi != NULL)
-      {
-	  switch (multi->type)
-	    {
-	    case GAIA_POINTZM:
-		gaiaAddPointToGeomCollXYZM (geom, multi->x, multi->y, multi->z,
-					    multi->m);
-		break;
-	    case GAIA_LINESTRINGZM:
-		linestring = (gaiaListTokenPtr) (multi->pointer);
-		line = linestring->line;
-		line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
-		for (iv = 0; iv < line2->Points; iv++)
-		  {
-		      /* sets the POINTS for the LINESTRING */
-		      gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
-		      gaiaSetPointXYZM (line2->Coords, iv, x, y, z, m);
-		  }
-		break;
-	    case GAIA_POLYGONZM:
-		polyg = multi->pointer;
-		borders = 0;
-		pt = polyg->first;
-		while (pt != NULL)
-		  {
-		      /* counts how many rings are in the list */
-		      borders++;
-		      pt = pt->next;
-		  }
-		/* builds one polygon */
-		line = polyg->first->line;
-		pg = gaiaAddPolygonToGeomColl (geom, line->Points, borders - 1);
-		ring = pg->Exterior;
-		for (iv = 0; iv < ring->Points; iv++)
-		  {
-		      /* sets the POINTS for the exterior ring */
-		      gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
-		      gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
-		  }
-		ib = 0;
-		pt = polyg->first->next;
-		while (pt != NULL)
-		  {
-		      /* builds the interior rings [if any] */
-		      line = pt->line;
-		      ring = gaiaAddInteriorRing (pg, ib, line->Points);
-		      for (iv = 0; iv < ring->Points; iv++)
-			{
-			    /* sets the POINTS for the exterior ring */
-			    gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
-			    gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
-			}
-		      ib++;
-		      pt = pt->next;
-		  }
-		break;
-	    };
-	  multi = multi->next;
-      }
-    return geom;
-}
 
 static int
 checkValidity (gaiaGeomCollPtr geom)
@@ -3732,433 +101,6 @@ checkValidity (gaiaGeomCollPtr geom)
     if (!entities)
 	return 0;
     return 1;
-}
-
-GAIAGEO_DECLARE gaiaGeomCollPtr
-gaiaParseWkt (const unsigned char *dirty_buffer, short type)
-{
-/* tryes to build a GEOMETRY by parsing a WKT encoded string */
-    gaiaTokenPtr first = NULL;
-    gaiaTokenPtr last = NULL;
-    gaiaTokenPtr pt;
-    gaiaTokenPtr ptn;
-    char *buffer = NULL;
-    char dummy[256];
-    char *po = dummy;
-    char *p;
-    int opened;
-    int max_opened;
-    int closed;
-    gaiaListTokenPtr list_token = NULL;
-    gaiaMultiListTokenPtr multi_list_token = NULL;
-    gaiaMultiMultiListTokenPtr multi_multi_list_token = NULL;
-    gaiaGeomCollListTokenPtr geocoll_list_token = NULL;
-    gaiaPointPtr point;
-    gaiaLinestringPtr line;
-    gaiaGeomCollPtr geo = NULL;
-/* normalizing the WKT string */
-    buffer = gaiaCleanWkt (dirty_buffer);
-    if (!buffer)
-	return NULL;
-    p = buffer;
-    while (*p != '\0')
-      {
-	  /* breaking the WKT string into tokens */
-	  if (*p == '(')
-	    {
-		*po = '\0';
-		gaiaAddToken (dummy, &first, &last);
-		gaiaAddToken ("(", &first, &last);
-		po = dummy;
-		p++;
-		continue;
-	    }
-	  if (*p == ')')
-	    {
-		*po = '\0';
-		gaiaAddToken (dummy, &first, &last);
-		gaiaAddToken (")", &first, &last);
-		po = dummy;
-		p++;
-		continue;
-	    }
-	  if (*p == ' ')
-	    {
-		*po = '\0';
-		gaiaAddToken (dummy, &first, &last);
-		gaiaAddToken (" ", &first, &last);
-		po = dummy;
-		p++;
-		continue;
-	    }
-	  if (*p == ',')
-	    {
-		*po = '\0';
-		gaiaAddToken (dummy, &first, &last);
-		gaiaAddToken (",", &first, &last);
-		po = dummy;
-		p++;
-		continue;
-	    }
-	  *po++ = *p++;
-      }
-    if (first == NULL)
-	goto err;
-    max_opened = 0;
-    opened = 0;
-    closed = 0;
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* checks for absence of serious errors */
-	  if (pt->type == GAIA_UNKNOWN)
-	      goto err;
-	  if (pt->type == GAIA_OPENED)
-	    {
-		opened++;
-		if (opened > 3)
-		    goto err;
-		if (opened > max_opened)
-		    max_opened = opened;
-	    }
-	  if (pt->type == GAIA_CLOSED)
-	    {
-		closed++;
-		if (closed > opened)
-		    goto err;
-		opened--;
-		closed--;
-	    }
-	  pt = pt->next;
-      }
-    if (opened == 0 && closed == 0)
-	;
-    else
-	goto err;
-    if (type < 0)
-	;			/* no restrinction about GEOMETRY CLASS TYPE */
-    else
-      {
-	  if (first->type != type)
-	      goto err;		/* invalid CLASS TYPE for request */
-      }
-/* preparing the organized token-list structures */
-    switch (first->type)
-      {
-      case GAIA_POINT:
-      case GAIA_POINTZ:
-      case GAIA_POINTM:
-      case GAIA_POINTZM:
-	  if (max_opened != 1)
-	      goto err;
-	  break;
-      case GAIA_LINESTRING:
-	  if (max_opened != 1)
-	      goto err;
-	  list_token = gaiaBuildListToken (first->next, last);
-	  break;
-      case GAIA_LINESTRINGZ:
-	  if (max_opened != 1)
-	      goto err;
-	  list_token = gaiaBuildListTokenZ (first->next, last);
-	  break;
-      case GAIA_LINESTRINGM:
-	  if (max_opened != 1)
-	      goto err;
-	  list_token = gaiaBuildListTokenM (first->next, last);
-	  break;
-      case GAIA_LINESTRINGZM:
-	  if (max_opened != 1)
-	      goto err;
-	  list_token = gaiaBuildListTokenZM (first->next, last);
-	  break;
-      case GAIA_POLYGON:
-	  if (max_opened != 2)
-	      goto err;
-	  multi_list_token = gaiaBuildMultiListToken (first->next, last);
-	  break;
-      case GAIA_POLYGONZ:
-	  if (max_opened != 2)
-	      goto err;
-	  multi_list_token = gaiaBuildMultiListTokenZ (first->next, last);
-	  break;
-      case GAIA_POLYGONM:
-	  if (max_opened != 2)
-	      goto err;
-	  multi_list_token = gaiaBuildMultiListTokenM (first->next, last);
-	  break;
-      case GAIA_POLYGONZM:
-	  if (max_opened != 2)
-	      goto err;
-	  multi_list_token = gaiaBuildMultiListTokenZM (first->next, last);
-	  break;
-      case GAIA_MULTIPOINT:
-	  if (max_opened != 1)
-	      goto err;
-	  list_token = gaiaBuildListToken (first->next, last);
-	  break;
-      case GAIA_MULTIPOINTZ:
-	  if (max_opened != 1)
-	      goto err;
-	  list_token = gaiaBuildListTokenZ (first->next, last);
-	  break;
-      case GAIA_MULTIPOINTM:
-	  if (max_opened != 1)
-	      goto err;
-	  list_token = gaiaBuildListTokenM (first->next, last);
-	  break;
-      case GAIA_MULTIPOINTZM:
-	  if (max_opened != 1)
-	      goto err;
-	  list_token = gaiaBuildListTokenZM (first->next, last);
-	  break;
-      case GAIA_MULTILINESTRING:
-	  if (max_opened != 2)
-	      goto err;
-	  multi_list_token = gaiaBuildMultiListToken (first->next, last);
-	  break;
-      case GAIA_MULTILINESTRINGZ:
-	  if (max_opened != 2)
-	      goto err;
-	  multi_list_token = gaiaBuildMultiListTokenZ (first->next, last);
-	  break;
-      case GAIA_MULTILINESTRINGM:
-	  if (max_opened != 2)
-	      goto err;
-	  multi_list_token = gaiaBuildMultiListTokenM (first->next, last);
-	  break;
-      case GAIA_MULTILINESTRINGZM:
-	  if (max_opened != 2)
-	      goto err;
-	  multi_list_token = gaiaBuildMultiListTokenZM (first->next, last);
-	  break;
-      case GAIA_MULTIPOLYGON:
-	  if (max_opened != 3)
-	      goto err;
-	  multi_multi_list_token =
-	      gaiaBuildMultiMultiListToken (first->next, last);
-	  break;
-      case GAIA_MULTIPOLYGONZ:
-	  if (max_opened != 3)
-	      goto err;
-	  multi_multi_list_token =
-	      gaiaBuildMultiMultiListTokenZ (first->next, last);
-	  break;
-      case GAIA_MULTIPOLYGONM:
-	  if (max_opened != 3)
-	      goto err;
-	  multi_multi_list_token =
-	      gaiaBuildMultiMultiListTokenM (first->next, last);
-	  break;
-      case GAIA_MULTIPOLYGONZM:
-	  if (max_opened != 3)
-	      goto err;
-	  multi_multi_list_token =
-	      gaiaBuildMultiMultiListTokenZM (first->next, last);
-	  break;
-      case GAIA_GEOMETRYCOLLECTION:
-	  if (max_opened == 2 || max_opened == 3)
-	      ;
-	  else
-	      goto err;
-	  geocoll_list_token = gaiaBuildGeomCollListToken (first->next, last);
-	  break;
-      case GAIA_GEOMETRYCOLLECTIONZ:
-	  if (max_opened == 2 || max_opened == 3)
-	      ;
-	  else
-	      goto err;
-	  geocoll_list_token = gaiaBuildGeomCollListTokenZ (first->next, last);
-	  break;
-      case GAIA_GEOMETRYCOLLECTIONM:
-	  if (max_opened == 2 || max_opened == 3)
-	      ;
-	  else
-	      goto err;
-	  geocoll_list_token = gaiaBuildGeomCollListTokenM (first->next, last);
-	  break;
-      case GAIA_GEOMETRYCOLLECTIONZM:
-	  if (max_opened == 2 || max_opened == 3)
-	      ;
-	  else
-	      goto err;
-	  geocoll_list_token = gaiaBuildGeomCollListTokenZM (first->next, last);
-	  break;
-      }
-    switch (first->type)
-      {
-      case GAIA_POINT:
-	  point = gaiaBuildPoint (first->next);
-	  if (point)
-	      geo = gaiaGeometryFromPoint (point);
-	  break;
-      case GAIA_POINTZ:
-	  point = gaiaBuildPointZ (first->next);
-	  if (point)
-	      geo = gaiaGeometryFromPointZ (point);
-	  break;
-      case GAIA_POINTM:
-	  point = gaiaBuildPointM (first->next);
-	  if (point)
-	      geo = gaiaGeometryFromPointM (point);
-	  break;
-      case GAIA_POINTZM:
-	  point = gaiaBuildPointZM (first->next);
-	  if (point)
-	      geo = gaiaGeometryFromPointZM (point);
-	  break;
-      case GAIA_LINESTRING:
-	  line = list_token->line;
-	  if (line)
-	      geo = gaiaGeometryFromLinestring (line);
-	  list_token->line = NULL;
-	  break;
-      case GAIA_LINESTRINGZ:
-	  line = list_token->line;
-	  if (line)
-	      geo = gaiaGeometryFromLinestringZ (line);
-	  list_token->line = NULL;
-	  break;
-      case GAIA_LINESTRINGM:
-	  line = list_token->line;
-	  if (line)
-	      geo = gaiaGeometryFromLinestringM (line);
-	  list_token->line = NULL;
-	  break;
-      case GAIA_LINESTRINGZM:
-	  line = list_token->line;
-	  if (line)
-	      geo = gaiaGeometryFromLinestringZM (line);
-	  list_token->line = NULL;
-	  break;
-      case GAIA_POLYGON:
-	  if (multi_list_token)
-	      geo = gaiaGeometryFromPolygon (multi_list_token);
-	  break;
-      case GAIA_POLYGONZ:
-	  if (multi_list_token)
-	      geo = gaiaGeometryFromPolygonZ (multi_list_token);
-	  break;
-      case GAIA_POLYGONM:
-	  if (multi_list_token)
-	      geo = gaiaGeometryFromPolygonM (multi_list_token);
-	  break;
-      case GAIA_POLYGONZM:
-	  if (multi_list_token)
-	      geo = gaiaGeometryFromPolygonZM (multi_list_token);
-	  break;
-      case GAIA_MULTIPOINT:
-	  line = list_token->line;
-	  if (line)
-	      geo = gaiaGeometryFromMPoint (line);
-	  list_token->line = NULL;
-	  break;
-      case GAIA_MULTIPOINTZ:
-	  line = list_token->line;
-	  if (line)
-	      geo = gaiaGeometryFromMPointZ (line);
-	  list_token->line = NULL;
-	  break;
-      case GAIA_MULTIPOINTM:
-	  line = list_token->line;
-	  if (line)
-	      geo = gaiaGeometryFromMPointM (line);
-	  list_token->line = NULL;
-	  break;
-      case GAIA_MULTIPOINTZM:
-	  line = list_token->line;
-	  if (line)
-	      geo = gaiaGeometryFromMPointZM (line);
-	  list_token->line = NULL;
-	  break;
-      case GAIA_MULTILINESTRING:
-	  if (multi_list_token)
-	      geo = gaiaGeometryFromMLine (multi_list_token);
-	  break;
-      case GAIA_MULTILINESTRINGZ:
-	  if (multi_list_token)
-	      geo = gaiaGeometryFromMLineZ (multi_list_token);
-	  break;
-      case GAIA_MULTILINESTRINGM:
-	  if (multi_list_token)
-	      geo = gaiaGeometryFromMLineM (multi_list_token);
-	  break;
-      case GAIA_MULTILINESTRINGZM:
-	  if (multi_list_token)
-	      geo = gaiaGeometryFromMLineZM (multi_list_token);
-	  break;
-      case GAIA_MULTIPOLYGON:
-	  if (multi_multi_list_token)
-	      geo = gaiaGeometryFromMPoly (multi_multi_list_token);
-	  break;
-      case GAIA_MULTIPOLYGONZ:
-	  if (multi_multi_list_token)
-	      geo = gaiaGeometryFromMPolyZ (multi_multi_list_token);
-	  break;
-      case GAIA_MULTIPOLYGONM:
-	  if (multi_multi_list_token)
-	      geo = gaiaGeometryFromMPolyM (multi_multi_list_token);
-	  break;
-      case GAIA_MULTIPOLYGONZM:
-	  if (multi_multi_list_token)
-	      geo = gaiaGeometryFromMPolyZM (multi_multi_list_token);
-	  break;
-      case GAIA_GEOMETRYCOLLECTION:
-	  if (geocoll_list_token)
-	      geo = gaiaGeometryFromGeomColl (geocoll_list_token);
-	  break;
-      case GAIA_GEOMETRYCOLLECTIONZ:
-	  if (geocoll_list_token)
-	      geo = gaiaGeometryFromGeomCollZ (geocoll_list_token);
-	  break;
-      case GAIA_GEOMETRYCOLLECTIONM:
-	  if (geocoll_list_token)
-	      geo = gaiaGeometryFromGeomCollM (geocoll_list_token);
-	  break;
-      case GAIA_GEOMETRYCOLLECTIONZM:
-	  if (geocoll_list_token)
-	      geo = gaiaGeometryFromGeomCollZM (geocoll_list_token);
-	  break;
-      }
-    if (buffer)
-	free (buffer);
-    gaiaFreeListToken (list_token);
-    gaiaFreeMultiListToken (multi_list_token);
-    gaiaFreeMultiMultiListToken (multi_multi_list_token);
-    gaiaFreeGeomCollListToken (geocoll_list_token);
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* cleans the token's list */
-	  ptn = pt->next;
-	  free (pt);
-	  pt = ptn;
-      }
-    if (!geo)
-	return NULL;
-    if (!checkValidity (geo))
-      {
-	  gaiaFreeGeomColl (geo);
-	  return NULL;
-      }
-    gaiaMbrGeometry (geo);
-    return geo;
-  err:
-    if (buffer)
-	free (buffer);
-    gaiaFreeListToken (list_token);
-    gaiaFreeMultiListToken (multi_list_token);
-    gaiaFreeMultiMultiListToken (multi_multi_list_token);
-    gaiaFreeGeomCollListToken (geocoll_list_token);
-    pt = first;
-    while (pt != NULL)
-      {
-	  /* cleans the token's list */
-	  ptn = pt->next;
-	  free (pt);
-	  pt = ptn;
-      }
-    return NULL;
 }
 
 static void
@@ -5395,3 +1337,6278 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 }
 
 /* END of Klaus Foerster SVG implementation */
+
+
+int vanuatu_parse_error;
+
+static gaiaGeomCollPtr
+gaiaGeometryFromPoint (gaiaPointPtr point)
+{
+/* builds a GEOMETRY containing a POINT */
+    gaiaGeomCollPtr geom = NULL;
+    geom = gaiaAllocGeomColl ();
+    geom->DeclaredType = GAIA_POINT;
+    gaiaAddPointToGeomColl (geom, point->X, point->Y);
+    gaiaFreePoint (point);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromPointZ (gaiaPointPtr point)
+{
+/* builds a GEOMETRY containing a POINTZ */
+    gaiaGeomCollPtr geom = NULL;
+    geom = gaiaAllocGeomCollXYZ ();
+    geom->DeclaredType = GAIA_POINTZ;
+    gaiaAddPointToGeomCollXYZ (geom, point->X, point->Y, point->Z);
+    gaiaFreePoint (point);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromPointM (gaiaPointPtr point)
+{
+/* builds a GEOMETRY containing a POINTM */
+    gaiaGeomCollPtr geom = NULL;
+    geom = gaiaAllocGeomCollXYM ();
+    geom->DeclaredType = GAIA_POINTM;
+    gaiaAddPointToGeomCollXYM (geom, point->X, point->Y, point->M);
+    gaiaFreePoint (point);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromPointZM (gaiaPointPtr point)
+{
+/* builds a GEOMETRY containing a POINTZM */
+    gaiaGeomCollPtr geom = NULL;
+    geom = gaiaAllocGeomCollXYZM ();
+    geom->DeclaredType = GAIA_POINTZM;
+    gaiaAddPointToGeomCollXYZM (geom, point->X, point->Y, point->Z, point->M);
+    gaiaFreePoint (point);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromLinestring (gaiaLinestringPtr line)
+{
+/* builds a GEOMETRY containing a LINESTRING */
+    gaiaGeomCollPtr geom = NULL;
+    gaiaLinestringPtr line2;
+    int iv;
+    double x;
+    double y;
+    geom = gaiaAllocGeomColl ();
+    geom->DeclaredType = GAIA_LINESTRING;
+    line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
+    for (iv = 0; iv < line2->Points; iv++)
+      {
+	  /* sets the POINTS for the exterior ring */
+	  gaiaGetPoint (line->Coords, iv, &x, &y);
+	  gaiaSetPoint (line2->Coords, iv, x, y);
+      }
+    gaiaFreeLinestring (line);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromLinestringZ (gaiaLinestringPtr line)
+{
+/* builds a GEOMETRY containing a LINESTRINGZ */
+    gaiaGeomCollPtr geom = NULL;
+    gaiaLinestringPtr line2;
+    int iv;
+    double x;
+    double y;
+    double z;
+    geom = gaiaAllocGeomCollXYZ ();
+    geom->DeclaredType = GAIA_LINESTRING;
+    line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
+    for (iv = 0; iv < line2->Points; iv++)
+      {
+	  /* sets the POINTS for the exterior ring */
+	  gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+	  gaiaSetPointXYZ (line2->Coords, iv, x, y, z);
+      }
+    gaiaFreeLinestring (line);
+    return geom;
+}
+
+
+static gaiaGeomCollPtr
+gaiaGeometryFromLinestringM (gaiaLinestringPtr line)
+{
+/* builds a GEOMETRY containing a LINESTRINGM */
+    gaiaGeomCollPtr geom = NULL;
+    gaiaLinestringPtr line2;
+    int iv;
+    double x;
+    double y;
+    double m;
+    geom = gaiaAllocGeomCollXYM ();
+    geom->DeclaredType = GAIA_LINESTRING;
+    line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
+    for (iv = 0; iv < line2->Points; iv++)
+      {
+	  /* sets the POINTS for the exterior ring */
+	  gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+	  gaiaSetPointXYM (line2->Coords, iv, x, y, m);
+      }
+    gaiaFreeLinestring (line);
+    return geom;
+}
+
+static gaiaGeomCollPtr
+gaiaGeometryFromLinestringZM (gaiaLinestringPtr line)
+{
+/* builds a GEOMETRY containing a LINESTRINGZM */
+    gaiaGeomCollPtr geom = NULL;
+    gaiaLinestringPtr line2;
+    int iv;
+    double x;
+    double y;
+    double z;
+    double m;
+    geom = gaiaAllocGeomCollXYZM ();
+    geom->DeclaredType = GAIA_LINESTRING;
+    line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
+    for (iv = 0; iv < line2->Points; iv++)
+      {
+	  /* sets the POINTS for the exterior ring */
+	  gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+	  gaiaSetPointXYZM (line2->Coords, iv, x, y, z, m);
+      }
+    gaiaFreeLinestring (line);
+    return geom;
+}
+
+/******************************************************************************
+** The following code was created by Team Vanuatu of The University of Toronto.
+** It is responsible for handling the parsing of wkt expressions.  The parser
+** is built using LEMON and the cooresponding methods were written by the 
+** students.
+
+Authors:
+Ruppi Rana			ruppi.rana@gmail.com
+Dev Tanna			dev.tanna@gmail.com
+Elias Adum			elias.adum@gmail.com
+Benton Hui			benton.hui@gmail.com
+Abhayan Sundararajan		abhayan@gmail.com
+Chee-Lun Michael Stephen Cho	cheelun.cho@gmail.com
+Nikola Banovic			nikola.banovic@gmail.com
+Yong Jian			yong.jian@utoronto.ca
+
+Supervisor:
+Greg Wilson			gvwilson@cs.toronto.ca
+
+-------------------------------------------------------------------------------
+*/
+
+/* 
+ * Creates a 2D (xy) point in SpatiaLite
+ * x and y are pointers to doubles which represent the x and y coordinates of the point to be created.
+ * Returns a gaiaPointPtr representing the created point.
+ *
+ * Creates a 2D (xy) point. This is a parser helper function which is called when 2D coordinates are encountered.
+ * Parameters x and y are pointers to doubles which represent the x and y coordinates of the point to be created.
+ * Returns a gaiaPointPtr pointing to the created 2D point.
+ */
+static gaiaPointPtr
+vanuatu_point_xy (double *x, double *y)
+{
+    return gaiaAllocPoint (*x, *y);
+
+}
+
+/* 
+ * Creates a 3D (xyz) point in SpatiaLite
+ * x, y, and z are pointers to doubles which represent the x, y, and z coordinates of the point to be created.
+ * Returns a gaiaPointPtr representing the created point.
+ *
+ * Creates a 3D (xyz) point. This is a parser helper function which is called when 3D coordinates are encountered.
+ * Parameters x, y, and z are pointers to doubles which represent the x, y, and z coordinates of the point to be created.
+ * Returns a gaiaPointPtr pointing to the 3D created point.
+ */
+static gaiaPointPtr
+vanuatu_point_xyz (double *x, double *y, double *z)
+{
+    return gaiaAllocPointXYZ (*x, *y, *z);
+}
+
+/* 
+ * Creates a 2D (xy) point with an m value which is a part of the linear reference system. This is a parser helper
+ * function which is called when 2D   *coordinates with an m value are encountered.
+ * Parameters x and y are pointers to doubles which represent the x and y coordinates of the point to be created.
+ * Parameter m is a pointer to a double which represents the part of the linear reference system.
+ * Returns a gaiaPointPtr pointing to the created 2D point with an m value.
+ */
+static gaiaPointPtr
+vanuatu_point_xym (double *x, double *y, double *m)
+{
+    return gaiaAllocPointXYM (*x, *y, *m);
+}
+
+/* 
+ * Creates a 4D (xyz) point with an m value which is a part of the linear reference system. This is a parser helper
+ * function which is called when  *4Dcoordinates with an m value are encountered
+ * Parameters x, y, and z are pointers to doubles which represent the x, y, and z coordinates of the point to be created. 
+ * Parameter m is a pointer to a double which represents the part of the linear reference system.
+ * Returns a gaiaPointPtr pointing the created 4D point with an m value.
+ */
+gaiaPointPtr
+vanuatu_point_xyzm (double *x, double *y, double *z, double *m)
+{
+    return gaiaAllocPointXYZM (*x, *y, *z, *m);
+}
+
+/*
+ * Builds a geometry collection from a point. The geometry collection should contain only one element ? the point. 
+ * The correct geometry type must be *decided based on the point type. The parser should call this function when the 
+ * ?POINT? WKT expression is encountered.
+ * Parameter point is a pointer to a 2D, 3D, 2D with an m value, or 4D with an m value point.
+ * Returns a geometry collection containing the point. The geometry must have FirstPoint and LastPoint  pointing to the
+ * same place as point.  *DimensionModel must be the same as the model of the point and DimensionType must be GAIA_TYPE_POINT.
+ */
+static gaiaGeomCollPtr
+vanuatu_buildGeomFromPoint (gaiaPointPtr point)
+{
+    switch (point->DimensionModel)
+      {
+      case GAIA_XY:
+	  return gaiaGeometryFromPoint (point);
+	  break;
+      case GAIA_XY_Z:
+	  return gaiaGeometryFromPointZ (point);
+	  break;
+      case GAIA_XY_M:
+	  return gaiaGeometryFromPointM (point);
+	  break;
+      case GAIA_XY_Z_M:
+	  return gaiaGeometryFromPointZM (point);
+	  break;
+      }
+    return NULL;
+}
+
+/* 
+ * Creates a 2D (xy) linestring from a list of 2D points.
+ *
+ * Parameter first is a gaiaPointPtr to the first point in a linked list of points which define the linestring.
+ * All of the points in the list must be 2D (xy) points. There must be at least 2 points in the list.
+ *
+ * Returns a pointer to linestring containing all of the points in the list.
+ */
+static gaiaLinestringPtr
+vanuatu_linestring_xy (gaiaPointPtr first)
+{
+    gaiaPointPtr p = first;
+    int points = 0;
+    int i = 0;
+    gaiaLinestringPtr linestring;
+
+    while (first != NULL)
+      {
+	  first = first->Next;
+	  points++;
+      }
+
+    linestring = gaiaAllocLinestring (points);
+
+    first = p;
+    while (first != NULL)
+      {
+	  gaiaSetPoint (linestring->Coords, i, first->X, first->Y);
+	  first = first->Next;
+	  i++;
+      }
+
+    return linestring;
+}
+
+/* 
+ * Creates a 3D (xyz) linestring from a list of 3D points.
+ *
+ * Parameter first is a gaiaPointPtr to the first point in a linked list of points which define the linestring.
+ * All of the points in the list must be 3D (xyz) points. There must be at least 2 points in the list.
+ *
+ * Returns a pointer to linestring containing all of the points in the list.
+ */
+static gaiaLinestringPtr
+vanuatu_linestring_xyz (gaiaPointPtr first)
+{
+    gaiaPointPtr p = first;
+    int points = 0;
+    int i = 0;
+    gaiaLinestringPtr linestring;
+
+    while (first != NULL)
+      {
+	  first = first->Next;
+	  points++;
+      }
+
+    linestring = gaiaAllocLinestringXYZ (points);
+
+    first = p;
+    while (first != NULL)
+      {
+	  gaiaSetPointXYZ (linestring->Coords, i, first->X, first->Y, first->Z);
+	  first = first->Next;
+	  i++;
+      }
+
+    return linestring;
+}
+
+/* 
+ * Creates a 2D (xy) with m value linestring from a list of 2D with m value points.
+ *
+ * Parameter first is a gaiaPointPtr to the first point in a linked list of points which define the linestring.
+ * All of the points in the list must be 2D (xy) with m value points. There must be at least 2 points in the list.
+ *
+ * Returns a pointer to linestring containing all of the points in the list.
+ */
+static gaiaLinestringPtr
+vanuatu_linestring_xym (gaiaPointPtr first)
+{
+    gaiaPointPtr p = first;
+    int points = 0;
+    int i = 0;
+    gaiaLinestringPtr linestring;
+
+    while (first != NULL)
+      {
+	  first = first->Next;
+	  points++;
+      }
+
+    linestring = gaiaAllocLinestringXYM (points);
+
+    first = p;
+    while (first != NULL)
+      {
+	  gaiaSetPointXYM (linestring->Coords, i, first->X, first->Y, first->M);
+	  first = first->Next;
+	  i++;
+      }
+
+    return linestring;
+}
+
+/* 
+ * Creates a 4D (xyz) with m value linestring from a list of 4D with m value points.
+ *
+ * Parameter first is a gaiaPointPtr to the first point in a linked list of points which define the linestring.
+ * All of the points in the list must be 4D (xyz) with m value points. There must be at least 2 points in the list.
+ *
+ * Returns a pointer to linestring containing all of the points in the list.
+ */
+static gaiaLinestringPtr
+vanuatu_linestring_xyzm (gaiaPointPtr first)
+{
+    gaiaPointPtr p = first;
+    int points = 0;
+    int i = 0;
+    gaiaLinestringPtr linestring;
+
+    while (first != NULL)
+      {
+	  first = first->Next;
+	  points++;
+      }
+
+    linestring = gaiaAllocLinestringXYZM (points);
+
+    first = p;
+    while (first != NULL)
+      {
+	  gaiaSetPointXYZM (linestring->Coords, i, first->X, first->Y, first->Z,
+			    first->M);
+	  first = first->Next;
+	  i++;
+      }
+
+    return linestring;
+}
+
+/*
+ * Builds a geometry collection from a linestring.
+ */
+static gaiaGeomCollPtr
+vanuatu_buildGeomFromLinestring (gaiaLinestringPtr line)
+{
+    switch (line->DimensionModel)
+      {
+      case GAIA_XY:
+	  return gaiaGeometryFromLinestring (line);
+	  break;
+      case GAIA_XY_Z:
+	  return gaiaGeometryFromLinestringZ (line);
+	  break;
+      case GAIA_XY_M:
+	  return gaiaGeometryFromLinestringM (line);
+	  break;
+      case GAIA_XY_Z_M:
+	  return gaiaGeometryFromLinestringZM (line);
+	  break;
+      }
+    return NULL;
+}
+
+/*
+ * Helper function that determines the number of points in the linked list.
+ */
+static int
+count_points (gaiaPointPtr first)
+{
+    /* Counts the number of points in the ring. */
+    gaiaPointPtr temp = first;
+    int numpoints = 0;
+    while (temp != NULL)
+      {
+	  numpoints++;
+	  temp = temp->Next;
+      }
+    return numpoints;
+}
+
+/*
+ * Creates a 2D (xy) ring in SpatiaLite
+ *
+ * first is a gaiaPointPtr to the first point in a linked list of points which define the polygon.
+ * All of the points given to the function are 2D (xy) points. There will be at least 4 points in the list.
+ *
+ * Returns the ring defined by the points given to the function.
+ */
+static gaiaRingPtr
+vanuatu_ring_xy (gaiaPointPtr first)
+{
+    gaiaRingPtr ring = NULL;
+    int numpoints;
+    int index;
+
+    /* If no pointers are given, return. */
+    if (first == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Counts the number of points in the ring. */
+    numpoints = count_points (first);
+    if (numpoints < 4)
+      {
+	  return NULL;
+      }
+
+    /* Creates and allocates a ring structure. */
+    ring = gaiaAllocRing (numpoints);
+    if (ring == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Adds every point into the ring structure. */
+    for (index = 0; index < numpoints; index++)
+      {
+	  gaiaSetPoint (ring->Coords, index, first->X, first->Y);
+	  first = first->Next;
+      }
+
+    /* Determines whether the points are in the clockwise or counterclockwise direction. */
+    gaiaClockwise (ring);
+    return ring;
+}
+
+/*
+ * Creates a 3D (xyz) ring in SpatiaLite
+ *
+ * first is a gaiaPointPtr to the first point in a linked list of points which define the polygon.
+ * All of the points given to the function are 3D (xyz) points. There will be at least 4 points in the list.
+ *
+ * Returns the ring defined by the points given to the function.
+ */
+static gaiaRingPtr
+vanuatu_ring_xyz (gaiaPointPtr first)
+{
+    gaiaRingPtr ring = NULL;
+    int numpoints;
+    int index;
+
+    /* If no pointers are given, return. */
+    if (first == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Counts the number of points in the ring. */
+    numpoints = count_points (first);
+    if (numpoints < 4)
+      {
+	  return NULL;
+      }
+
+    /* Creates and allocates a ring structure. */
+    ring = gaiaAllocRingXYZ (numpoints);
+    if (ring == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Adds every point into the ring structure. */
+    for (index = 0; index < numpoints; index++)
+      {
+	  gaiaSetPointXYZ (ring->Coords, index, first->X, first->Y, first->Z);
+	  first = first->Next;
+      }
+
+    /* Determines whether the points are in the clockwise or counterclockwise direction. */
+    gaiaClockwise (ring);
+    return ring;
+}
+
+/*
+ * Creates a 2D (xym) ring in SpatiaLite
+ *
+ * first is a gaiaPointPtr to the first point in a linked list of points which define the polygon.
+ * All of the points given to the function are 2D (xym) points. There will be at least 4 points in the list.
+ *
+ * Returns the ring defined by the points given to the function.
+ */
+static gaiaRingPtr
+vanuatu_ring_xym (gaiaPointPtr first)
+{
+    gaiaRingPtr ring = NULL;
+    int numpoints;
+    int index;
+
+    /* If no pointers are given, return. */
+    if (first == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Counts the number of points in the ring. */
+    numpoints = count_points (first);
+    if (numpoints < 4)
+      {
+	  return NULL;
+      }
+
+    /* Creates and allocates a ring structure. */
+    ring = gaiaAllocRingXYM (numpoints);
+    if (ring == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Adds every point into the ring structure. */
+    for (index = 0; index < numpoints; index++)
+      {
+	  gaiaSetPointXYM (ring->Coords, index, first->X, first->Y, first->M);
+	  first = first->Next;
+      }
+
+    /* Determines whether the points are in the clockwise or counterclockwise direction. */
+    gaiaClockwise (ring);
+    return ring;
+}
+
+/*
+ * Creates a 3D (xyzm) ring in SpatiaLite
+ *
+ * first is a gaiaPointPtr to the first point in a linked list of points which define the polygon.
+ * All of the points given to the function are 3D (xyzm) points. There will be at least 4 points in the list.
+ *
+ * Returns the ring defined by the points given to the function.
+ */
+static gaiaRingPtr
+vanuatu_ring_xyzm (gaiaPointPtr first)
+{
+    gaiaRingPtr ring = NULL;
+    int numpoints;
+    int index;
+
+    /* If no pointers are given, return. */
+    if (first == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Counts the number of points in the ring. */
+    numpoints = count_points (first);
+    if (numpoints < 4)
+      {
+	  return NULL;
+      }
+
+    /* Creates and allocates a ring structure. */
+    ring = gaiaAllocRingXYZM (numpoints);
+    if (ring == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Adds every point into the ring structure. */
+    for (index = 0; index < numpoints; index++)
+      {
+	  gaiaSetPointXYZM (ring->Coords, index, first->X, first->Y, first->Z,
+			    first->M);
+	  first = first->Next;
+      }
+
+    /* Determines whether the points are in the clockwise or counterclockwise direction. */
+    gaiaClockwise (ring);
+    return ring;
+}
+
+/*
+ * Helper function that will create any type of polygon (xy, xym, xyz, xyzm) in SpatiaLite.
+ * 
+ * first is a gaiaRingPtr to the first ring in a linked list of rings which define the polygon.
+ * The first ring in the linked list is the external ring while the rest (if any) are internal rings.
+ * All of the rings given to the function are of the same type. There will be at least 1 ring in the list.
+ *
+ * Returns the polygon defined by the rings given to the function.
+ */
+static gaiaPolygonPtr
+polygon_any_type (gaiaRingPtr first)
+{
+    gaiaPolygonPtr polygon;
+    /* If no pointers are given, return. */
+    if (first == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Creates and allocates a polygon structure with the exterior ring. */
+    polygon = gaiaCreatePolygon (first);
+    if (polygon == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Adds all interior rings into the polygon structure. */
+    first = first->Next;
+    while (first != NULL)
+      {
+	  first->Link = polygon;
+	  gaiaAddRingToPolyg (polygon, first);
+	  if (polygon == NULL)
+	    {
+		return NULL;
+	    }
+	  first = first->Next;
+      }
+
+    return polygon;
+}
+
+/* 
+ * Creates a 2D (xy) polygon in SpatiaLite
+ *
+ * first is a gaiaRingPtr to the first ring in a linked list of rings which define the polygon.
+ * The first ring in the linked list is the external ring while the rest (if any) are internal rings.
+ * All of the rings given to the function are 2D (xy) rings. There will be at least 1 ring in the list.
+ *
+ * Returns the polygon defined by the rings given to the function.
+ */
+static gaiaPolygonPtr
+vanuatu_polygon_xy (gaiaRingPtr first)
+{
+    return polygon_any_type (first);
+}
+
+/* 
+ * Creates a 3D (xyz) polygon in SpatiaLite
+ *
+ * first is a gaiaRingPtr to the first ring in a linked list of rings which define the polygon.
+ * The first ring in the linked list is the external ring while the rest (if any) are internal rings.
+ * All of the rings given to the function are 3D (xyz) rings. There will be at least 1 ring in the list.
+ *
+ * Returns the polygon defined by the rings given to the function.
+ */
+static gaiaPolygonPtr
+vanuatu_polygon_xyz (gaiaRingPtr first)
+{
+    return polygon_any_type (first);
+}
+
+/* 
+ * Creates a 2D (xym) polygon in SpatiaLite
+ *
+ * first is a gaiaRingPtr to the first ring in a linked list of rings which define the polygon.
+ * The first ring in the linked list is the external ring while the rest (if any) are internal rings.
+ * All of the rings given to the function are 2D (xym) rings. There will be at least 1 ring in the list.
+ *
+ * Returns the polygon defined by the rings given to the function.
+ */
+static gaiaPolygonPtr
+vanuatu_polygon_xym (gaiaRingPtr first)
+{
+    return polygon_any_type (first);
+}
+
+/* 
+ * Creates a 3D (xyzm) polygon in SpatiaLite
+ *
+ * first is a gaiaRingPtr to the first ring in a linked list of rings which define the polygon.
+ * The first ring in the linked list is the external ring while the rest (if any) are internal rings.
+ * All of the rings given to the function are 3D (xyzm) rings. There will be at least 1 ring in the list.
+ *
+ * Returns the polygon defined by the rings given to the function.
+ */
+static gaiaPolygonPtr
+vanuatu_polygon_xyzm (gaiaRingPtr first)
+{
+    return polygon_any_type (first);
+}
+
+/*
+ * Builds a geometry collection from a polygon.
+ * NOTE: This function may already be implemented in the SpatiaLite code base. If it is, make sure that we
+ *              can use it (ie. it doesn't use any other variables or anything else set by Sandro's parser). If you find
+ *              that we can use an existing function then ignore this one.
+ */
+static gaiaGeomCollPtr
+buildGeomFromPolygon (gaiaPolygonPtr polygon)
+{
+    gaiaGeomCollPtr geom = NULL;
+
+    /* If no pointers are given, return. */
+    if (polygon == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Creates and allocates a geometry collection containing a multipoint. */
+    switch (polygon->DimensionModel)
+      {
+      case GAIA_XY:
+	  geom = gaiaAllocGeomColl ();
+	  break;
+      case GAIA_XY_Z:
+	  geom = gaiaAllocGeomCollXYZ ();
+	  break;
+      case GAIA_XY_M:
+	  geom = gaiaAllocGeomCollXYM ();
+	  break;
+      case GAIA_XY_Z_M:
+	  geom = gaiaAllocGeomCollXYZM ();
+	  break;
+      }
+    if (geom == NULL)
+      {
+	  return NULL;
+      }
+    geom->DeclaredType = GAIA_POLYGON;
+
+    /* Stores the location of the first and last polygons in the linked list. */
+    geom->FirstPolygon = polygon;
+    while (polygon != NULL)
+      {
+	  geom->LastPolygon = polygon;
+	  polygon = polygon->Next;
+      }
+    return geom;
+}
+
+/* 
+ * Creates a 2D (xy) multipoint object in SpatiaLite
+ *
+ * first is a gaiaPointPtr to the first point in a linked list of points.
+ * All of the points given to the function are 2D (xy) points. There will be at least 1 point in the list.
+ *
+ * Returns a geometry collection containing the created multipoint object.
+ */
+static gaiaGeomCollPtr
+vanuatu_multipoint_xy (gaiaPointPtr first)
+{
+    gaiaGeomCollPtr geom = NULL;
+
+    /* If no pointers are given, return. */
+    if (first == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Creates and allocates a geometry collection containing a multipoint. */
+    geom = gaiaAllocGeomColl ();
+    if (geom == NULL)
+      {
+	  return NULL;
+      }
+    geom->DeclaredType = GAIA_MULTIPOINT;
+
+    /* For every 2D (xy) point, add it to the geometry collection. */
+    while (first != NULL)
+      {
+	  gaiaAddPointToGeomColl (geom, first->X, first->Y);
+	  if (geom == NULL)
+	    {
+		return NULL;
+	    }
+	  first = first->Next;
+      }
+    return geom;
+}
+
+/* 
+ * Creates a 3D (xyz) multipoint object in SpatiaLite
+ *
+ * first is a gaiaPointPtr to the first point in a linked list of points.
+ * All of the points given to the function are 3D (xyz) points. There will be at least 1 point in the list.
+ *
+ * Returns a geometry collection containing the created multipoint object.
+ */
+static gaiaGeomCollPtr
+vanuatu_multipoint_xyz (gaiaPointPtr first)
+{
+    gaiaGeomCollPtr geom = NULL;
+
+    /* If no pointers are given, return. */
+    if (first == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Creates and allocates a geometry collection containing a multipoint. */
+    geom = gaiaAllocGeomCollXYZ ();
+    if (geom == NULL)
+      {
+	  return NULL;
+      }
+    geom->DeclaredType = GAIA_MULTIPOINT;
+
+    /* For every 3D (xyz) point, add it to the geometry collection. */
+    while (first != NULL)
+      {
+	  gaiaAddPointToGeomCollXYZ (geom, first->X, first->Y, first->Z);
+	  if (geom == NULL)
+	    {
+		return NULL;
+	    }
+	  first = first->Next;
+      }
+    return geom;
+}
+
+/* 
+ * Creates a 2D (xym) multipoint object in SpatiaLite
+ *
+ * first is a gaiaPointPtr to the first point in a linked list of points.
+ * All of the points given to the function are 2D (xym) points. There will be at least 1 point in the list.
+ *
+ * Returns a geometry collection containing the created multipoint object.
+ */
+static gaiaGeomCollPtr
+vanuatu_multipoint_xym (gaiaPointPtr first)
+{
+    gaiaGeomCollPtr geom = NULL;
+
+    /* If no pointers are given, return. */
+    if (first == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Creates and allocates a geometry collection containing a multipoint. */
+    geom = gaiaAllocGeomCollXYM ();
+    if (geom == NULL)
+      {
+	  return NULL;
+      }
+    geom->DeclaredType = GAIA_MULTIPOINT;
+
+    /* For every 2D (xym) point, add it to the geometry collection. */
+    while (first != NULL)
+      {
+	  gaiaAddPointToGeomCollXYM (geom, first->X, first->Y, first->M);
+	  if (geom == NULL)
+	    {
+		return NULL;
+	    }
+	  first = first->Next;
+      }
+    return geom;
+}
+
+/* 
+ * Creates a 3D (xyzm) multipoint object in SpatiaLite
+ *
+ * first is a gaiaPointPtr to the first point in a linked list of points which define the linestring.
+ * All of the points given to the function are 3D (xyzm) points. There will be at least 1 point in the list.
+ *
+ * Returns a geometry collection containing the created multipoint object.
+ */
+static gaiaGeomCollPtr
+vanuatu_multipoint_xyzm (gaiaPointPtr first)
+{
+    gaiaGeomCollPtr geom = NULL;
+
+    /* If no pointers are given, return. */
+    if (first == NULL)
+      {
+	  return NULL;
+      }
+
+    /* Creates and allocates a geometry collection containing a multipoint. */
+    geom = gaiaAllocGeomCollXYZM ();
+    if (geom == NULL)
+      {
+	  return NULL;
+      }
+    geom->DeclaredType = GAIA_MULTIPOINT;
+
+    /* For every 3D (xyzm) point, add it to the geometry collection. */
+    while (first != NULL)
+      {
+	  gaiaAddPointToGeomCollXYZM (geom, first->X, first->Y, first->Z,
+				      first->M);
+	  if (geom == NULL)
+	    {
+		return NULL;
+	    }
+	  first = first->Next;
+      }
+    return geom;
+}
+
+/*
+ * Creates a geometry collection containing 2D (xy) linestrings.
+ * Parameter first is a gaiaLinestringPtr to the first linestring in a linked list of linestrings which should be added to the
+ * collection. All of the *linestrings in the list must be 2D (xy) linestrings. There must be at least 1 linestring in the list.
+ * Returns a pointer to the created geometry collection of 2D linestrings. The geometry must have FirstLinestring pointing to the
+ * first linestring in the list pointed by first and LastLinestring pointing to the last element of the same list. DimensionModel
+ * must be GAIA_XY and DimensionType must be *GAIA_TYPE_LINESTRING.
+ */
+
+static gaiaGeomCollPtr
+vanuatu_multilinestring_xy (gaiaLinestringPtr first)
+{
+    gaiaLinestringPtr new_line;
+    gaiaGeomCollPtr a = gaiaAllocGeomColl ();
+    a->DeclaredType = GAIA_MULTILINESTRING;
+    a->DimensionModel = GAIA_XY;
+
+    while (first)
+      {
+	  new_line = gaiaAddLinestringToGeomColl (a, first->Points);
+	  gaiaCopyLinestringCoords (new_line, first);
+	  first = first->Next;
+      }
+
+    return a;
+}
+
+/* 
+ * Returns a geometry collection containing the created multilinestring object (?).
+ * Creates a geometry collection containing 3D (xyz) linestrings.
+ * Parameter first is a gaiaLinestringPtr to the first linestring in a linked list of linestrings which should be added to the
+ * collection. All of the *linestrings in the list must be 3D (xyz) linestrings. There must be at least 1 linestring in the list.
+ * Returns a pointer to the created geometry collection of 3D linestrings. The geometry must have FirstLinestring pointing to the
+ * first linestring in the *list pointed by first and LastLinestring pointing to the last element of the same list. DimensionModel
+ * must be GAIA_XYZ and DimensionType must be *GAIA_TYPE_LINESTRING.
+ */
+static gaiaGeomCollPtr
+vanuatu_multilinestring_xyz (gaiaLinestringPtr first)
+{
+    gaiaLinestringPtr new_line;
+    gaiaGeomCollPtr a = gaiaAllocGeomCollXYZ ();
+    a->DeclaredType = GAIA_MULTILINESTRING;
+    a->DimensionModel = GAIA_XY_Z;
+
+    while (first)
+      {
+	  new_line = gaiaAddLinestringToGeomColl (a, first->Points);
+	  gaiaCopyLinestringCoords (new_line, first);
+	  first = first->Next;
+      }
+    return a;
+}
+
+/* 
+ * Creates a geometry collection containing 2D (xy) with m value linestrings.
+ * Parameter first is a gaiaLinestringPtr to the first linestring in a linked list of linestrings which should be added to the
+ * collection. All of the  *linestrings in the list must be 2D (xy) with m value linestrings. There must be at least 1 linestring 
+ * in the list.
+ * Returns a pointer to the created geometry collection of 2D with m value linestrings. The geometry must have FirstLinestring
+ * pointing to the first *linestring in the list pointed by first and LastLinestring pointing to the last element of the same list. 
+ * DimensionModel must be GAIA_XYM and *DimensionType must be GAIA_TYPE_LINESTRING.
+ */
+static gaiaGeomCollPtr
+vanuatu_multilinestring_xym (gaiaLinestringPtr first)
+{
+    gaiaLinestringPtr new_line;
+    gaiaGeomCollPtr a = gaiaAllocGeomCollXYM ();
+    a->DeclaredType = GAIA_MULTILINESTRING;
+    a->DimensionModel = GAIA_XY_M;
+
+    while (first)
+      {
+	  new_line = gaiaAddLinestringToGeomColl (a, first->Points);
+	  gaiaCopyLinestringCoords (new_line, first);
+	  first = first->Next;
+      }
+
+    return a;
+}
+
+/* 
+ * Creates a geometry collection containing 4D (xyz) with m value linestrings.
+ * Parameter first is a gaiaLinestringPtr to the first linestring in a linked list of linestrings which should be added to the
+ * collection. All of the *linestrings in the list must be 4D (xyz) with m value linestrings. There must be at least 1 linestring
+ * in the list.
+ * Returns a pointer to the created geometry collection of 4D with m value linestrings. The geometry must have FirstLinestring
+ * pointing to the first *linestring in the list pointed by first and LastLinestring pointing to the last element of the same list. 
+ * DimensionModel must be GAIA_XYZM and *DimensionType must be GAIA_TYPE_LINESTRING.
+ */
+static gaiaGeomCollPtr
+vanuatu_multilinestring_xyzm (gaiaLinestringPtr first)
+{
+    gaiaLinestringPtr new_line;
+    gaiaGeomCollPtr a = gaiaAllocGeomCollXYZM ();
+    a->DeclaredType = GAIA_MULTILINESTRING;
+    a->DimensionModel = GAIA_XY_Z_M;
+
+    while (first)
+      {
+	  new_line = gaiaAddLinestringToGeomColl (a, first->Points);
+	  gaiaCopyLinestringCoords (new_line, first);
+	  first = first->Next;
+      }
+    return a;
+}
+
+/* 
+ * Creates a geometry collection containing 2D (xy) polygons.
+ *
+ * Parameter first is a gaiaPolygonPtr to the first polygon in a linked list of polygons which should 
+ * be added to the collection. All of the polygons in the list must be 2D (xy) polygons. There must be 
+ * at least 1 polygon in the list.
+ *
+ * Returns a pointer to the created geometry collection of 2D polygons. The geometry must have 
+ * FirstPolygon pointing to the first polygon in the list pointed by first and LastPolygon pointing 
+ * to the last element of the same list. DimensionModel must be GAIA_XY and DimensionType must 
+ * be GAIA_TYPE_POLYGON.
+ *
+ */
+static gaiaGeomCollPtr
+vanuatu_multipolygon_xy (gaiaPolygonPtr first)
+{
+
+    int i = 0;
+    gaiaPolygonPtr new_polyg;
+    gaiaRingPtr i_ring;
+    gaiaRingPtr o_ring;
+    gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
+
+    geom->DeclaredType = GAIA_MULTIPOLYGON;
+
+    while (first)
+      {
+	  i_ring = first->Exterior;
+	  new_polyg =
+	      gaiaAddPolygonToGeomColl (geom, i_ring->Points,
+					first->NumInteriors);
+	  o_ring = new_polyg->Exterior;
+	  gaiaCopyRingCoords (o_ring, i_ring);
+
+	  for (i = 0; i < new_polyg->NumInteriors; i++)
+	    {
+		i_ring = first->Interiors + i;
+		o_ring = gaiaAddInteriorRing (new_polyg, i, i_ring->Points);
+		gaiaCopyRingCoords (o_ring, i_ring);
+	    }
+
+	  first = first->Next;
+      }
+
+    return geom;
+}
+
+/* 
+ * Creates a geometry collection containing 3D (xyz) polygons.
+ *
+ * Parameter first is a gaiaPolygonPtr to the first polygon in a linked list of polygons which should be 
+ * added to the collection. All of the polygons in the list must be 3D (xyz) polygons. There must be at
+ * least 1 polygon in the list.
+ *
+ * Returns a pointer to the created geometry collection of 3D polygons. The geometry must have 
+ * FirstPolygon pointing to the first polygon in the list pointed by first and LastPolygon pointing to 
+ * the last element of the same list. DimensionModel must be GAIA_XYZ and DimensionType must 
+ * be GAIA_TYPE_POLYGON.
+ *
+ */
+static gaiaGeomCollPtr
+vanuatu_multipolygon_xyz (gaiaPolygonPtr first)
+{
+
+    int i = 0;
+    gaiaPolygonPtr new_polyg;
+    gaiaRingPtr i_ring;
+    gaiaRingPtr o_ring;
+    gaiaGeomCollPtr geom = gaiaAllocGeomCollXYZ ();
+
+    geom->DeclaredType = GAIA_MULTIPOLYGON;
+
+    while (first)
+      {
+	  i_ring = first->Exterior;
+	  new_polyg =
+	      gaiaAddPolygonToGeomColl (geom, i_ring->Points,
+					first->NumInteriors);
+	  o_ring = new_polyg->Exterior;
+	  gaiaCopyRingCoords (o_ring, i_ring);
+
+	  for (i = 0; i < new_polyg->NumInteriors; i++)
+	    {
+		i_ring = first->Interiors + i;
+		o_ring = gaiaAddInteriorRing (new_polyg, i, i_ring->Points);
+		gaiaCopyRingCoords (o_ring, i_ring);
+	    }
+
+	  first = first->Next;
+      }
+
+    return geom;
+}
+
+/* 
+ * Creates a geometry collection containing 2D (xy) with m value polygons.
+ *
+ * Parameter first is a gaiaPolygonPtr to the first polygon in a linked list of polygons which should
+ * be added to the collection. All of the polygons in the list must be 2D (xy) with m value polygons.
+ * There must be at least 1 polygon in the list.
+ *
+ * Returns a pointer to the created geometry collection of 2D with m value polygons. The geometry 
+ * must have FirstPolygon pointing to the first polygon in the list pointed by first and LastPolygon 
+ * pointing to the last element of the same list. DimensionModel must be GAIA_XYM and DimensionType 
+ * must be GAIA_TYPE_POLYGON.
+ *
+ */
+static gaiaGeomCollPtr
+vanuatu_multipolygon_xym (gaiaPolygonPtr first)
+{
+
+    int i = 0;
+    gaiaPolygonPtr new_polyg;
+    gaiaRingPtr i_ring;
+    gaiaRingPtr o_ring;
+    gaiaGeomCollPtr geom = gaiaAllocGeomCollXYM ();
+
+    geom->DeclaredType = GAIA_MULTIPOLYGON;
+
+    while (first)
+      {
+	  i_ring = first->Exterior;
+	  new_polyg =
+	      gaiaAddPolygonToGeomColl (geom, i_ring->Points,
+					first->NumInteriors);
+	  o_ring = new_polyg->Exterior;
+	  gaiaCopyRingCoords (o_ring, i_ring);
+
+	  for (i = 0; i < new_polyg->NumInteriors; i++)
+	    {
+		i_ring = first->Interiors + i;
+		o_ring = gaiaAddInteriorRing (new_polyg, i, i_ring->Points);
+		gaiaCopyRingCoords (o_ring, i_ring);
+	    }
+
+	  first = first->Next;
+      }
+
+    return geom;
+}
+
+/*
+ * Creates a geometry collection containing 4D (xyz) with m value polygons.
+ *
+ * Parameter first is a gaiaPolygonPtr to the first polygon in a linked list of polygons which should be 
+ * added to the collection. All of the polygons in the list must be 4D (xyz) with m value polygons. 
+ * There must be at least 1 polygon in the list.
+ *
+ * Returns a pointer to the created geometry collection of 4D with m value polygons. The geometry must 
+ * have FirstPolygon pointing to the first polygon in the list pointed by first and LastPolygon pointing 
+//  * to the last element of the same list. DimensionModel must be GAIA_XYZM and DimensionType must 
+ * be GAIA_TYPE_POLYGON.
+ *
+ */
+static gaiaGeomCollPtr
+vanuatu_multipolygon_xyzm (gaiaPolygonPtr first)
+{
+
+    int i = 0;
+    gaiaPolygonPtr new_polyg;
+    gaiaRingPtr i_ring;
+    gaiaRingPtr o_ring;
+    gaiaGeomCollPtr geom = gaiaAllocGeomCollXYZM ();
+
+    geom->DeclaredType = GAIA_MULTIPOLYGON;
+
+    while (first)
+      {
+	  i_ring = first->Exterior;
+	  new_polyg =
+	      gaiaAddPolygonToGeomColl (geom, i_ring->Points,
+					first->NumInteriors);
+	  o_ring = new_polyg->Exterior;
+	  gaiaCopyRingCoords (o_ring, i_ring);
+
+	  for (i = 0; i < new_polyg->NumInteriors; i++)
+	    {
+		i_ring = first->Interiors + i;
+		o_ring = gaiaAddInteriorRing (new_polyg, i, i_ring->Points);
+		gaiaCopyRingCoords (o_ring, i_ring);
+	    }
+
+	  first = first->Next;
+      }
+
+    return geom;
+}
+
+/* 
+ * Creates a 2D (xy) geometry collection in SpatiaLite
+ *
+ * first is the first geometry collection in a linked list of geometry collections.
+ * Each geometry collection represents a single type of object (eg. one could be a POINT, 
+ * another could be a LINESTRING, another could be a MULTILINESTRING, etc.).
+ *
+ * The type of object represented by any geometry collection is stored in the declaredType 
+ * field of its struct. For example, if first->declaredType = GAIA_POINT, then first represents a point.
+ * If first->declaredType = GAIA_MULTIPOINT, then first represents a multipoint.
+ *
+ * NOTE: geometry collections cannot contain other geometry collections (have to confirm this 
+ * with Sandro).
+ *
+ * The goal of this function is to take the information from all of the structs in the linked list and 
+ * return one geomColl struct containing all of that information.
+ *
+ * The integers used for 'declaredType' are defined in gaiageo.h. In this function, the only values 
+ * contained in 'declaredType' that will be encountered will be:
+ *
+ *	GAIA_POINT, GAIA_LINESTRING, GAIA_POLYGON, 
+ *	GAIA_MULTIPOINT, GAIA_MULTILINESTRING, GAIA_MULTIPOLYGON
+ */
+static gaiaGeomCollPtr
+vanuatu_geomColl_xy (gaiaGeomCollPtr first)
+{
+    gaiaGeomCollPtr geom = NULL;
+    gaiaGeomCollPtr curr = first;
+    gaiaPointPtr currPoint = NULL;
+    gaiaLinestringPtr currLine = NULL;
+    gaiaPolygonPtr currPolygon = NULL;
+
+    geom = gaiaAllocGeomColl ();
+    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+    geom->DimensionModel = GAIA_XY;
+
+    switch (curr->DeclaredType)
+      {
+      case GAIA_POINT:
+	  geom->FirstPoint = curr->FirstPoint;
+	  geom->LastPoint = curr->LastPoint;
+	  currPoint = curr->FirstPoint;
+	  break;
+      case GAIA_LINESTRING:
+	  geom->FirstLinestring = curr->FirstLinestring;
+	  geom->LastLinestring = curr->LastLinestring;
+	  currLine = curr->FirstLinestring;
+	  break;
+      case GAIA_POLYGON:
+	  geom->FirstPolygon = curr->FirstPolygon;
+	  geom->LastPolygon = curr->LastPolygon;
+	  currPolygon = curr->FirstPolygon;
+	  break;
+      }
+
+
+    while (curr->Next != NULL)
+      {
+	  curr = curr->Next;
+	  switch (curr->DeclaredType)
+	    {
+	    case GAIA_POINT:
+		if (currPoint == NULL)
+		  {
+		      geom->FirstPoint = curr->FirstPoint;
+		  }
+		else
+		    currPoint->Next = curr->FirstPoint;
+		geom->LastPoint = curr->LastPoint;
+		currPoint = curr->LastPoint;
+		break;
+	    case GAIA_LINESTRING:
+		if (currLine == NULL)
+		  {
+		      geom->FirstLinestring = curr->FirstLinestring;
+		  }
+		else
+		    currLine->Next = curr->FirstLinestring;
+		geom->LastLinestring = curr->LastLinestring;
+		currLine = curr->LastLinestring;
+		break;
+	    case GAIA_POLYGON:
+		if (currPolygon == NULL)
+		  {
+		      geom->FirstPolygon = curr->FirstPolygon;
+		  }
+		else
+		    currPolygon->Next = curr->FirstPolygon;
+		geom->LastPolygon = curr->LastPolygon;
+		currPolygon = curr->LastPolygon;
+		break;
+	    }
+      }
+
+    return geom;
+}
+
+/*
+ * See geomColl_xy for description.
+ *
+ * The only difference between this function and geomColl_xy is that the 'declaredType' field of the structs
+ * in the linked list for this function will only contain the following types:
+ *
+ *	GAIA_POINTZ, GAIA_LINESTRINGZ, GAIA_POLYGONZ,
+ * 	GAIA_MULTIPOINTZ, GAIA_MULTILINESTRINGZ, GAIA_MULTIPOLYGONZ
+ */
+static gaiaGeomCollPtr
+vanuatu_geomColl_xyz (gaiaGeomCollPtr first)
+{
+    gaiaGeomCollPtr geom = NULL;
+    gaiaGeomCollPtr curr = first;
+    gaiaPointPtr currPoint = NULL;
+    gaiaLinestringPtr currLine = NULL;
+    gaiaPolygonPtr currPolygon = NULL;
+
+    geom = gaiaAllocGeomColl ();
+    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+    geom->DimensionModel = GAIA_XY_Z;
+
+    switch (curr->DeclaredType)
+      {
+      case GAIA_POINT:
+	  geom->FirstPoint = curr->FirstPoint;
+	  geom->LastPoint = curr->LastPoint;
+	  currPoint = curr->FirstPoint;
+	  break;
+      case GAIA_LINESTRING:
+	  geom->FirstLinestring = curr->FirstLinestring;
+	  geom->LastLinestring = curr->LastLinestring;
+	  currLine = curr->FirstLinestring;
+	  break;
+      case GAIA_POLYGON:
+	  geom->FirstPolygon = curr->FirstPolygon;
+	  geom->LastPolygon = curr->LastPolygon;
+	  currPolygon = curr->FirstPolygon;
+	  break;
+      }
+
+
+    while (curr->Next != NULL)
+      {
+	  curr = curr->Next;
+	  switch (curr->DeclaredType)
+	    {
+	    case GAIA_POINT:
+		if (currPoint == NULL)
+		  {
+		      geom->FirstPoint = curr->FirstPoint;
+		  }
+		else
+		    currPoint->Next = curr->FirstPoint;
+		geom->LastPoint = curr->LastPoint;
+		currPoint = curr->LastPoint;
+		break;
+	    case GAIA_LINESTRING:
+		if (currLine == NULL)
+		  {
+		      geom->FirstLinestring = curr->FirstLinestring;
+		  }
+		else
+		    currLine->Next = curr->FirstLinestring;
+		geom->LastLinestring = curr->LastLinestring;
+		currLine = curr->LastLinestring;
+		break;
+	    case GAIA_POLYGON:
+		if (currPolygon == NULL)
+		  {
+		      geom->FirstPolygon = curr->FirstPolygon;
+		  }
+		else
+		    currPolygon->Next = curr->FirstPolygon;
+		geom->LastPolygon = curr->LastPolygon;
+		currPolygon = curr->LastPolygon;
+		break;
+	    }
+      }
+
+    return geom;
+}
+
+/*
+ * See geomColl_xy for description.
+ *
+ * The only difference between this function and geomColl_xy is that the 'declaredType' field of the structs
+ * in the linked list for this function will only contain the following types:
+ *
+ *	GAIA_POINTM, GAIA_LINESTRINGM, GAIA_POLYGONM,
+ * 	GAIA_MULTIPOINTM, GAIA_MULTILINESTRINGM, GAIA_MULTIPOLYGONM
+ */
+static gaiaGeomCollPtr
+vanuatu_geomColl_xym (gaiaGeomCollPtr first)
+{
+
+    gaiaGeomCollPtr geom = NULL;
+    gaiaGeomCollPtr curr = first;
+    gaiaPointPtr currPoint = NULL;
+    gaiaLinestringPtr currLine = NULL;
+    gaiaPolygonPtr currPolygon = NULL;
+
+    geom = gaiaAllocGeomColl ();
+    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+    geom->DimensionModel = GAIA_XY_M;
+
+    switch (curr->DeclaredType)
+      {
+      case GAIA_POINT:
+	  geom->FirstPoint = curr->FirstPoint;
+	  geom->LastPoint = curr->LastPoint;
+	  currPoint = curr->FirstPoint;
+	  break;
+      case GAIA_LINESTRING:
+	  geom->FirstLinestring = curr->FirstLinestring;
+	  geom->LastLinestring = curr->LastLinestring;
+	  currLine = curr->FirstLinestring;
+	  break;
+      case GAIA_POLYGON:
+	  geom->FirstPolygon = curr->FirstPolygon;
+	  geom->LastPolygon = curr->LastPolygon;
+	  currPolygon = curr->FirstPolygon;
+	  break;
+      }
+
+
+    while (curr->Next != NULL)
+      {
+	  curr = curr->Next;
+	  switch (curr->DeclaredType)
+	    {
+	    case GAIA_POINT:
+		if (currPoint == NULL)
+		  {
+		      geom->FirstPoint = curr->FirstPoint;
+		  }
+		else
+		    currPoint->Next = curr->FirstPoint;
+		geom->LastPoint = curr->LastPoint;
+		currPoint = curr->LastPoint;
+		break;
+	    case GAIA_LINESTRING:
+		if (currLine == NULL)
+		  {
+		      geom->FirstLinestring = curr->FirstLinestring;
+		  }
+		else
+		    currLine->Next = curr->FirstLinestring;
+		geom->LastLinestring = curr->LastLinestring;
+		currLine = curr->LastLinestring;
+		break;
+	    case GAIA_POLYGON:
+		if (currPolygon == NULL)
+		  {
+		      geom->FirstPolygon = curr->FirstPolygon;
+		  }
+		else
+		    currPolygon->Next = curr->FirstPolygon;
+		geom->LastPolygon = curr->LastPolygon;
+		currPolygon = curr->LastPolygon;
+		break;
+	    }
+      }
+
+    return geom;
+}
+
+/*
+ * See geomColl_xy for description.
+ *
+ * The only difference between this function and geomColl_xy is that the 'declaredType' field of the structs
+ * in the linked list for this function will only contain the following types:
+ *
+ *	GAIA_POINTZM, GAIA_LINESTRINGZM, GAIA_POLYGONZM,
+ * 	GAIA_MULTIPOINTZM, GAIA_MULTILINESTRINGZM, GAIA_MULTIPOLYGONZM
+ */
+static gaiaGeomCollPtr
+vanuatu_geomColl_xyzm (gaiaGeomCollPtr first)
+{
+    gaiaGeomCollPtr geom = NULL;
+    gaiaGeomCollPtr curr = first;
+    gaiaPointPtr currPoint = NULL;
+    gaiaLinestringPtr currLine = NULL;
+    gaiaPolygonPtr currPolygon = NULL;
+
+    geom = gaiaAllocGeomColl ();
+    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+    geom->DimensionModel = GAIA_XY_Z_M;
+
+    switch (curr->DeclaredType)
+      {
+      case GAIA_POINTZ:
+	  geom->FirstPoint = curr->FirstPoint;
+	  geom->LastPoint = curr->LastPoint;
+	  currPoint = curr->FirstPoint;
+	  break;
+      case GAIA_LINESTRING:
+	  geom->FirstLinestring = curr->FirstLinestring;
+	  geom->LastLinestring = curr->LastLinestring;
+	  currLine = curr->FirstLinestring;
+	  break;
+      case GAIA_POLYGON:
+	  geom->FirstPolygon = curr->FirstPolygon;
+	  geom->LastPolygon = curr->LastPolygon;
+	  currPolygon = curr->FirstPolygon;
+	  break;
+      }
+
+
+    while (curr->Next != NULL)
+      {
+	  curr = curr->Next;
+	  switch (curr->DeclaredType)
+	    {
+	    case GAIA_POINTZ:
+		if (currPoint == NULL)
+		  {
+		      geom->FirstPoint = curr->FirstPoint;
+		  }
+		else
+		    currPoint->Next = curr->FirstPoint;
+		geom->LastPoint = curr->LastPoint;
+		currPoint = curr->LastPoint;
+		break;
+	    case GAIA_LINESTRING:
+		if (currLine == NULL)
+		  {
+		      geom->FirstLinestring = curr->FirstLinestring;
+		  }
+		else
+		    currLine->Next = curr->FirstLinestring;
+		geom->LastLinestring = curr->LastLinestring;
+		currLine = curr->LastLinestring;
+		break;
+	    case GAIA_POLYGON:
+		if (currPolygon == NULL)
+		  {
+		      geom->FirstPolygon = curr->FirstPolygon;
+		  }
+		else
+		    currPolygon->Next = curr->FirstPolygon;
+		geom->LastPolygon = curr->LastPolygon;
+		currPolygon = curr->LastPolygon;
+		break;
+	    }
+      }
+
+    return geom;
+}
+
+
+
+
+
+
+
+
+/*
+ VANUATU_LEMON_H_START - LEMON generated header starts here 
+*/
+
+#define VANUATU_NEWLINE                 1
+#define VANUATU_POINT                   2
+#define VANUATU_OPEN_BRACKET            3
+#define VANUATU_CLOSE_BRACKET           4
+#define VANUATU_POINT_M                 5
+#define VANUATU_POINT_Z                 6
+#define VANUATU_POINT_ZM                7
+#define VANUATU_NUM                     8
+#define VANUATU_COMMA                   9
+#define VANUATU_LINESTRING             10
+#define VANUATU_LINESTRING_M           11
+#define VANUATU_LINESTRING_Z           12
+#define VANUATU_LINESTRING_ZM          13
+#define VANUATU_POLYGON                14
+#define VANUATU_POLYGON_M              15
+#define VANUATU_POLYGON_Z              16
+#define VANUATU_POLYGON_ZM             17
+#define VANUATU_MULTIPOINT             18
+#define VANUATU_MULTIPOINT_M           19
+#define VANUATU_MULTIPOINT_Z           20
+#define VANUATU_MULTIPOINT_ZM          21
+#define VANUATU_MULTILINESTRING        22
+#define VANUATU_MULTILINESTRING_M      23
+#define VANUATU_MULTILINESTRING_Z      24
+#define VANUATU_MULTILINESTRING_ZM     25
+#define VANUATU_MULTIPOLYGON           26
+#define VANUATU_MULTIPOLYGON_M         27
+#define VANUATU_MULTIPOLYGON_Z         28
+#define VANUATU_MULTIPOLYGON_ZM        29
+#define VANUATU_GEOMETRYCOLLECTION     30
+#define VANUATU_GEOMETRYCOLLECTION_M   31
+#define VANUATU_GEOMETRYCOLLECTION_Z   32
+#define VANUATU_GEOMETRYCOLLECTION_ZM  33
+
+/*
+ VANUATU_LEMON_H_END - LEMON generated header ends here 
+*/
+
+
+
+
+
+
+
+
+
+#ifndef YYSTYPE
+typedef union
+{
+    double dval;
+    struct symtab *symp;
+} yystype;
+# define YYSTYPE yystype
+# define YYSTYPE_IS_TRIVIAL 1
+#endif
+
+
+/* extern YYSTYPE yylval; */
+YYSTYPE yylval;
+
+/*
+** CAVEAT: there is an incompatibility between LEMON and FLEX
+** this macro resolves the issue
+*/
+#define yy_accept	yy_lemon_accept
+
+
+
+
+
+
+
+
+
+
+/*
+ VANUATU_LEMON_START - LEMON generated header starts here 
+*/
+
+/* Driver template for the LEMON parser generator.
+** The author disclaims copyright to this source code.
+*/
+/* First off, code is included that follows the "include" declaration
+** in the input grammar file. */
+#include <stdio.h>
+
+/* Next is all token values, in a form suitable for use by makeheaders.
+** This section will be null unless lemon is run with the -m switch.
+*/
+/* 
+** These constants (all generated automatically by the parser generator)
+** specify the various kinds of tokens (terminals) that the parser
+** understands. 
+**
+** Each symbol here is a terminal symbol in the grammar.
+*/
+/* Make sure the INTERFACE macro is defined.
+*/
+#ifndef INTERFACE
+# define INTERFACE 1
+#endif
+/* The next thing included is series of defines which control
+** various aspects of the generated parser.
+**    YYCODETYPE         is the data type used for storing terminal
+**                       and nonterminal numbers.  "unsigned char" is
+**                       used if there are fewer than 250 terminals
+**                       and nonterminals.  "int" is used otherwise.
+**    YYNOCODE           is a number of type YYCODETYPE which corresponds
+**                       to no legal terminal or nonterminal number.  This
+**                       number is used to fill in empty slots of the hash 
+**                       table.
+**    YYFALLBACK         If defined, this indicates that one or more tokens
+**                       have fall-back values which should be used if the
+**                       original value of the token will not parse.
+**    YYACTIONTYPE       is the data type used for storing terminal
+**                       and nonterminal numbers.  "unsigned char" is
+**                       used if there are fewer than 250 rules and
+**                       states combined.  "int" is used otherwise.
+**    ParseTOKENTYPE     is the data type used for minor tokens given 
+**                       directly to the parser from the tokenizer.
+**    YYMINORTYPE        is the data type used for all minor tokens.
+**                       This is typically a union of many types, one of
+**                       which is ParseTOKENTYPE.  The entry in the union
+**                       for base tokens is called "yy0".
+**    YYSTACKDEPTH       is the maximum depth of the parser's stack.  If
+**                       zero the stack is dynamically sized using realloc()
+**    ParseARG_SDECL     A static variable declaration for the %extra_argument
+**    ParseARG_PDECL     A parameter declaration for the %extra_argument
+**    ParseARG_STORE     Code to store %extra_argument into yypParser
+**    ParseARG_FETCH     Code to extract %extra_argument from yypParser
+**    YYNSTATE           the combined number of states.
+**    YYNRULE            the number of rules in the grammar
+**    YYERRORSYMBOL      is the code number of the error symbol.  If not
+**                       defined, then do no error processing.
+*/
+#define YYCODETYPE unsigned char
+#define YYNOCODE 125
+#define YYACTIONTYPE unsigned short int
+#define ParseTOKENTYPE void *
+typedef union
+{
+    int yyinit;
+    ParseTOKENTYPE yy0;
+} YYMINORTYPE;
+#ifndef YYSTACKDEPTH
+#define YYSTACKDEPTH 1000000
+#endif
+#define ParseARG_SDECL  gaiaGeomCollPtr *result ;
+#define ParseARG_PDECL , gaiaGeomCollPtr *result
+#define ParseARG_FETCH  gaiaGeomCollPtr *result  = yypParser->result
+#define ParseARG_STORE yypParser->result  = result
+#define YYNSTATE 358
+#define YYNRULE 153
+#define YY_NO_ACTION      (YYNSTATE+YYNRULE+2)
+#define YY_ACCEPT_ACTION  (YYNSTATE+YYNRULE+1)
+#define YY_ERROR_ACTION   (YYNSTATE+YYNRULE)
+
+/* The yyzerominor constant is used to initialize instances of
+** YYMINORTYPE objects to zero. */
+static const YYMINORTYPE yyzerominor = { 0 };
+
+/* Define the yytestcase() macro to be a no-op if is not already defined
+** otherwise.
+**
+** Applications can choose to define yytestcase() in the %include section
+** to a macro that can assist in verifying code coverage.  For production
+** code the yytestcase() macro should be turned off.  But it is useful
+** for testing.
+*/
+#ifndef yytestcase
+# define yytestcase(X)
+#endif
+
+
+/* Next are the tables used to determine what action to take based on the
+** current state and lookahead token.  These tables are used to implement
+** functions that take a state number and lookahead value and return an
+** action integer.  
+**
+** Suppose the action integer is N.  Then the action is determined as
+** follows
+**
+**   0 <= N < YYNSTATE                  Shift N.  That is, push the lookahead
+**                                      token onto the stack and goto state N.
+**
+**   YYNSTATE <= N < YYNSTATE+YYNRULE   Reduce by rule N-YYNSTATE.
+**
+**   N == YYNSTATE+YYNRULE              A syntax error has occurred.
+**
+**   N == YYNSTATE+YYNRULE+1            The parser accepts its input.
+**
+**   N == YYNSTATE+YYNRULE+2            No such action.  Denotes unused
+**                                      slots in the yy_action[] table.
+**
+** The action table is constructed as a single large table named yy_action[].
+** Given state S and lookahead X, the action is computed as
+**
+**      yy_action[ yy_shift_ofst[S] + X ]
+**
+** If the index value yy_shift_ofst[S]+X is out of range or if the value
+** yy_lookahead[yy_shift_ofst[S]+X] is not equal to X or if yy_shift_ofst[S]
+** is equal to YY_SHIFT_USE_DFLT, it means that the action is not in the table
+** and that yy_default[S] should be used instead.  
+**
+** The formula above is for computing the action when the lookahead is
+** a terminal symbol.  If the lookahead is a non-terminal (as occurs after
+** a reduce action) then the yy_reduce_ofst[] array is used in place of
+** the yy_shift_ofst[] array and YY_REDUCE_USE_DFLT is used in place of
+** YY_SHIFT_USE_DFLT.
+**
+** The following are the tables generated in this section:
+**
+**  yy_action[]        A single table containing all actions.
+**  yy_lookahead[]     A table containing the lookahead for each entry in
+**                     yy_action.  Used to detect hash collisions.
+**  yy_shift_ofst[]    For each state, the offset into yy_action for
+**                     shifting terminals.
+**  yy_reduce_ofst[]   For each state, the offset into yy_action for
+**                     shifting non-terminals after a reduce.
+**  yy_default[]       Default action for each state.
+*/
+static const YYACTIONTYPE yy_action[] = {
+    /*     0 */ 166, 228, 229, 230, 231, 232, 233, 234, 235, 236,
+    /*    10 */ 237, 238, 239, 240, 241, 242, 243, 244, 245, 246,
+    /*    20 */ 247, 248, 249, 250, 251, 252, 253, 254, 255, 256,
+    /*    30 */ 257, 258, 259, 260, 358, 263, 167, 512, 1, 169,
+    /*    40 */ 171, 173, 174, 51, 54, 57, 60, 63, 66, 72,
+    /*    50 */ 78, 84, 90, 92, 94, 96, 98, 103, 108, 113,
+    /*    60 */ 118, 123, 128, 133, 138, 145, 152, 159, 167, 139,
+    /*    70 */ 143, 144, 140, 141, 142, 169, 54, 146, 150, 151,
+    /*    80 */ 66, 57, 147, 148, 149, 72, 171, 153, 157, 158,
+    /*    90 */ 170, 262, 60, 47, 173, 270, 78, 154, 155, 156,
+    /*   100 */ 63, 172, 273, 49, 84, 160, 164, 165, 48, 161,
+    /*   110 */ 162, 163, 14, 168, 175, 55, 176, 46, 46, 46,
+    /*   120 */ 56, 265, 177, 58, 46, 47, 47, 59, 50, 179,
+    /*   130 */ 47, 49, 61, 62, 49, 49, 181, 51, 64, 51,
+    /*   140 */ 184, 65, 51, 185, 46, 186, 70, 46, 189, 46,
+    /*   150 */ 46, 47, 267, 190, 191, 76, 47, 47, 47, 194,
+    /*   160 */ 52, 49, 195, 196, 49, 49, 82, 53, 49, 199,
+    /*   170 */ 51, 200, 51, 201, 51, 88, 51, 91, 95, 93,
+    /*   180 */ 49, 46, 47, 269, 97, 51, 16, 271, 17, 19,
+    /*   190 */ 178, 274, 20, 22, 276, 180, 277, 23, 279, 25,
+    /*   200 */ 182, 280, 67, 282, 26, 69, 187, 73, 68, 286,
+    /*   210 */ 30, 75, 183, 71, 192, 285, 79, 74, 290, 188,
+    /*   220 */ 289, 77, 34, 81, 197, 80, 85, 193, 83, 294,
+    /*   230 */ 38, 293, 202, 86, 87, 198, 297, 89, 42, 203,
+    /*   240 */ 298, 43, 300, 204, 44, 302, 205, 45, 304, 206,
+    /*   250 */ 99, 306, 100, 102, 101, 104, 207, 309, 308, 105,
+    /*   260 */ 106, 109, 208, 107, 311, 110, 312, 209, 111, 112,
+    /*   270 */ 114, 314, 315, 116, 115, 117, 119, 120, 210, 121,
+    /*   280 */ 124, 317, 122, 318, 126, 125, 129, 131, 211, 130,
+    /*   290 */ 321, 320, 132, 127, 134, 136, 2, 135, 3, 212,
+    /*   300 */ 4, 323, 137, 5, 6, 324, 8, 7, 9, 227,
+    /*   310 */ 10, 213, 513, 261, 11, 15, 264, 12, 13, 326,
+    /*   320 */ 327, 266, 268, 272, 275, 18, 214, 329, 278, 281,
+    /*   330 */ 21, 24, 330, 283, 513, 27, 28, 215, 332, 29,
+    /*   340 */ 333, 334, 216, 337, 217, 284, 287, 31, 32, 218,
+    /*   350 */ 339, 340, 341, 219, 220, 344, 221, 33, 346, 288,
+    /*   360 */ 291, 347, 348, 35, 222, 223, 36, 351, 37, 224,
+    /*   370 */ 292, 295, 353, 354, 39, 513, 355, 225, 226, 40,
+    /*   380 */ 41, 296, 299, 301, 303, 305, 307, 310, 313, 316,
+    /*   390 */ 319, 322, 325, 328, 331, 335, 336, 338, 342, 343,
+    /*   400 */ 345, 349, 350, 352, 356, 357,
+};
+static const YYCODETYPE yy_lookahead[] = {
+    /*     0 */ 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
+    /*    10 */ 47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
+    /*    20 */ 57, 58, 59, 60, 61, 62, 63, 64, 65, 66,
+    /*    30 */ 67, 68, 69, 70, 0, 8, 2, 35, 36, 5,
+    /*    40 */ 6, 7, 74, 75, 10, 11, 12, 13, 14, 15,
+    /*    50 */ 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+    /*    60 */ 26, 27, 28, 29, 30, 31, 32, 33, 2, 43,
+    /*    70 */ 44, 45, 43, 44, 45, 5, 10, 57, 58, 59,
+    /*    80 */ 14, 11, 57, 58, 59, 15, 6, 50, 51, 52,
+    /*    90 */ 72, 75, 12, 75, 7, 80, 16, 50, 51, 52,
+    /*   100 */ 13, 73, 81, 75, 17, 64, 65, 66, 75, 64,
+    /*   110 */ 65, 66, 3, 71, 71, 71, 76, 75, 75, 75,
+    /*   120 */ 71, 75, 72, 72, 75, 75, 75, 72, 75, 73,
+    /*   130 */ 75, 75, 73, 73, 75, 75, 74, 75, 74, 75,
+    /*   140 */ 71, 74, 75, 71, 75, 71, 71, 75, 72, 75,
+    /*   150 */ 75, 75, 75, 72, 72, 72, 75, 75, 75, 73,
+    /*   160 */ 75, 75, 73, 73, 75, 75, 73, 75, 75, 74,
+    /*   170 */ 75, 74, 75, 74, 75, 74, 75, 71, 73, 72,
+    /*   180 */ 75, 75, 75, 75, 74, 75, 9, 76, 3, 9,
+    /*   190 */ 77, 77, 3, 9, 82, 78, 78, 3, 83, 9,
+    /*   200 */ 79, 79, 3, 84, 3, 9, 76, 3, 88, 85,
+    /*   210 */ 3, 9, 89, 88, 77, 89, 3, 90, 86, 91,
+    /*   220 */ 91, 90, 3, 9, 78, 92, 3, 93, 92, 87,
+    /*   230 */ 3, 93, 79, 94, 9, 95, 95, 94, 3, 76,
+    /*   240 */ 96, 3, 97, 77, 3, 98, 78, 3, 99, 79,
+    /*   250 */ 3, 100, 80, 80, 9, 3, 104, 101, 104, 81,
+    /*   260 */ 9, 3, 105, 81, 105, 82, 102, 106, 9, 82,
+    /*   270 */ 3, 106, 103, 9, 83, 83, 3, 84, 107, 9,
+    /*   280 */ 3, 107, 84, 108, 9, 85, 3, 9, 112, 86,
+    /*   290 */ 109, 112, 86, 85, 3, 9, 3, 87, 9, 113,
+    /*   300 */ 3, 113, 87, 9, 3, 110, 3, 9, 9, 1,
+    /*   310 */ 3, 114, 124, 4, 3, 9, 4, 3, 3, 114,
+    /*   320 */ 111, 4, 4, 4, 4, 9, 115, 115, 4, 4,
+    /*   330 */ 9, 9, 116, 4, 124, 9, 9, 120, 120, 9,
+    /*   340 */ 120, 120, 120, 117, 120, 4, 4, 9, 9, 121,
+    /*   350 */ 121, 121, 121, 121, 121, 118, 122, 9, 122, 4,
+    /*   360 */ 4, 122, 122, 9, 122, 122, 9, 119, 9, 123,
+    /*   370 */ 4, 4, 123, 123, 9, 124, 123, 123, 123, 9,
+    /*   380 */ 9, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    /*   390 */ 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    /*   400 */ 4, 4, 4, 4, 4, 4,
+};
+
+#define YY_SHIFT_USE_DFLT (-1)
+#define YY_SHIFT_MAX 226
+static const short yy_shift_ofst[] = {
+    /*     0 */ -1, 34, 66, 66, 70, 70, 80, 80, 87, 87,
+    /*    10 */ 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+    /*    20 */ 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+    /*    30 */ 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+    /*    40 */ 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
+    /*    50 */ 27, 27, 27, 27, 109, 177, 177, 185, 180, 180,
+    /*    60 */ 189, 184, 184, 194, 190, 190, 199, 201, 196, 201,
+    /*    70 */ 177, 196, 204, 207, 202, 207, 180, 202, 213, 219,
+    /*    80 */ 214, 219, 184, 214, 223, 227, 225, 227, 190, 225,
+    /*    90 */ 235, 177, 238, 180, 241, 184, 244, 190, 247, 109,
+    /*   100 */ 245, 109, 245, 252, 185, 251, 185, 251, 258, 189,
+    /*   110 */ 259, 189, 259, 267, 194, 264, 194, 264, 273, 199,
+    /*   120 */ 270, 199, 270, 277, 204, 275, 204, 275, 283, 213,
+    /*   130 */ 278, 213, 278, 291, 223, 286, 223, 286, 293, 289,
+    /*   140 */ 289, 289, 289, 289, 289, 297, 294, 294, 294, 294,
+    /*   150 */ 294, 294, 301, 298, 298, 298, 298, 298, 298, 303,
+    /*   160 */ 299, 299, 299, 299, 299, 299, 308, 307, 309, 311,
+    /*   170 */ 312, 314, 317, 315, 318, 306, 319, 316, 320, 321,
+    /*   180 */ 324, 322, 325, 329, 326, 327, 330, 341, 342, 338,
+    /*   190 */ 339, 348, 355, 356, 354, 357, 359, 366, 367, 365,
+    /*   200 */ 370, 371, 377, 378, 379, 380, 381, 382, 383, 384,
+    /*   210 */ 385, 386, 387, 388, 389, 390, 391, 392, 393, 394,
+    /*   220 */ 395, 396, 397, 398, 399, 400, 401,
+};
+
+#define YY_REDUCE_USE_DFLT (-38)
+#define YY_REDUCE_MAX 165
+static const short yy_reduce_ofst[] = {
+    /*     0 */ 2, -37, 26, 29, 20, 25, 37, 47, 41, 45,
+    /*    10 */ 42, 18, 28, -32, 43, 44, 49, 50, 51, 55,
+    /*    20 */ 56, 59, 60, 62, 64, 67, 69, 72, 74, 75,
+    /*    30 */ 76, 81, 82, 83, 86, 89, 90, 93, 95, 97,
+    /*    40 */ 99, 101, 106, 107, 105, 110, 16, 33, 46, 53,
+    /*    50 */ 77, 85, 92, 108, 15, 40, 111, 21, 113, 114,
+    /*    60 */ 112, 117, 118, 115, 121, 122, 119, 120, 123, 125,
+    /*    70 */ 130, 126, 124, 127, 128, 131, 137, 129, 132, 133,
+    /*    80 */ 134, 136, 146, 138, 142, 139, 140, 143, 153, 141,
+    /*    90 */ 144, 163, 145, 166, 147, 168, 149, 170, 151, 172,
+    /*   100 */ 152, 173, 154, 156, 178, 157, 182, 159, 164, 183,
+    /*   110 */ 161, 187, 165, 169, 191, 171, 192, 174, 175, 193,
+    /*   120 */ 176, 198, 179, 181, 200, 186, 208, 188, 195, 203,
+    /*   130 */ 197, 206, 205, 209, 210, 211, 215, 212, 216, 217,
+    /*   140 */ 218, 220, 221, 222, 224, 226, 228, 229, 230, 231,
+    /*   150 */ 232, 233, 237, 234, 236, 239, 240, 242, 243, 248,
+    /*   160 */ 246, 249, 250, 253, 254, 255,
+};
+static const YYACTIONTYPE yy_default[] = {
+    /*     0 */ 359, 511, 511, 511, 511, 511, 511, 511, 511, 511,
+    /*    10 */ 511, 511, 511, 511, 511, 511, 511, 511, 511, 511,
+    /*    20 */ 511, 511, 511, 511, 511, 511, 511, 511, 511, 511,
+    /*    30 */ 511, 511, 511, 511, 511, 511, 511, 511, 511, 511,
+    /*    40 */ 511, 511, 511, 511, 511, 511, 511, 511, 511, 511,
+    /*    50 */ 511, 511, 511, 511, 511, 403, 403, 511, 405, 405,
+    /*    60 */ 511, 407, 407, 511, 409, 409, 511, 511, 428, 511,
+    /*    70 */ 403, 428, 511, 511, 431, 511, 405, 431, 511, 511,
+    /*    80 */ 434, 511, 407, 434, 511, 511, 437, 511, 409, 437,
+    /*    90 */ 511, 403, 511, 405, 511, 407, 511, 409, 511, 511,
+    /*   100 */ 452, 511, 452, 511, 511, 455, 511, 455, 511, 511,
+    /*   110 */ 458, 511, 458, 511, 511, 461, 511, 461, 511, 511,
+    /*   120 */ 468, 511, 468, 511, 511, 471, 511, 471, 511, 511,
+    /*   130 */ 474, 511, 474, 511, 511, 477, 511, 477, 511, 486,
+    /*   140 */ 486, 486, 486, 486, 486, 511, 493, 493, 493, 493,
+    /*   150 */ 493, 493, 511, 500, 500, 500, 500, 500, 500, 511,
+    /*   160 */ 507, 507, 507, 507, 507, 507, 511, 511, 511, 511,
+    /*   170 */ 511, 511, 511, 511, 511, 511, 511, 511, 511, 511,
+    /*   180 */ 511, 511, 511, 511, 511, 511, 511, 511, 511, 511,
+    /*   190 */ 511, 511, 511, 511, 511, 511, 511, 511, 511, 511,
+    /*   200 */ 511, 511, 511, 511, 511, 511, 511, 511, 511, 511,
+    /*   210 */ 511, 511, 511, 511, 511, 511, 511, 511, 511, 511,
+    /*   220 */ 511, 511, 511, 511, 511, 511, 511, 360, 361, 362,
+    /*   230 */ 363, 364, 365, 366, 367, 368, 369, 370, 371, 372,
+    /*   240 */ 373, 374, 375, 376, 377, 378, 379, 380, 381, 382,
+    /*   250 */ 383, 384, 385, 386, 387, 388, 389, 390, 391, 392,
+    /*   260 */ 393, 394, 398, 402, 395, 399, 396, 400, 397, 401,
+    /*   270 */ 411, 404, 415, 412, 406, 416, 413, 408, 417, 414,
+    /*   280 */ 410, 418, 419, 423, 427, 429, 420, 424, 430, 432,
+    /*   290 */ 421, 425, 433, 435, 422, 426, 436, 438, 439, 443,
+    /*   300 */ 440, 444, 441, 445, 442, 446, 447, 451, 453, 448,
+    /*   310 */ 454, 456, 449, 457, 459, 450, 460, 462, 463, 467,
+    /*   320 */ 469, 464, 470, 472, 465, 473, 475, 466, 476, 478,
+    /*   330 */ 479, 483, 487, 488, 489, 484, 485, 480, 490, 494,
+    /*   340 */ 495, 496, 491, 492, 481, 497, 501, 502, 503, 498,
+    /*   350 */ 499, 482, 504, 508, 509, 510, 505, 506,
+};
+
+#define YY_SZ_ACTTAB (int)(sizeof(yy_action)/sizeof(yy_action[0]))
+
+/* The next table maps tokens into fallback tokens.  If a construct
+** like the following:
+** 
+**      %fallback ID X Y Z.
+**
+** appears in the grammar, then ID becomes a fallback token for X, Y,
+** and Z.  Whenever one of the tokens X, Y, or Z is input to the parser
+** but it does not parse, the type of the token is changed to ID and
+** the parse is retried before an error is thrown.
+*/
+#ifdef YYFALLBACK
+static const YYCODETYPE yyFallback[] = {
+};
+#endif /* YYFALLBACK */
+
+/* The following structure represents a single element of the
+** parser's stack.  Information stored includes:
+**
+**   +  The state number for the parser at this level of the stack.
+**
+**   +  The value of the token stored at this level of the stack.
+**      (In other words, the "major" token.)
+**
+**   +  The semantic value stored at this level of the stack.  This is
+**      the information used by the action routines in the grammar.
+**      It is sometimes called the "minor" token.
+*/
+struct yyStackEntry
+{
+    YYACTIONTYPE stateno;	/* The state-number */
+    YYCODETYPE major;		/* The major token value.  This is the code
+				 ** number for the token at this stack level */
+    YYMINORTYPE minor;		/* The user-supplied minor token value.  This
+				 ** is the value of the token  */
+};
+typedef struct yyStackEntry yyStackEntry;
+
+/* The state of the parser is completely contained in an instance of
+** the following structure */
+struct yyParser
+{
+    int yyidx;			/* Index of top element in stack */
+#ifdef YYTRACKMAXSTACKDEPTH
+    int yyidxMax;		/* Maximum value of yyidx */
+#endif
+    int yyerrcnt;		/* Shifts left before out of the error */
+      ParseARG_SDECL		/* A place to hold %extra_argument */
+#if YYSTACKDEPTH<=0
+    int yystksz;		/* Current side of the stack */
+    yyStackEntry *yystack;	/* The parser's stack */
+#else
+      yyStackEntry yystack[YYSTACKDEPTH];	/* The parser's stack */
+#endif
+};
+typedef struct yyParser yyParser;
+
+#ifndef NDEBUG
+#include <stdio.h>
+static FILE *yyTraceFILE = 0;
+static char *yyTracePrompt = 0;
+#endif /* NDEBUG */
+
+#ifndef NDEBUG
+/* 
+** Turn parser tracing on by giving a stream to which to write the trace
+** and a prompt to preface each trace message.  Tracing is turned off
+** by making either argument NULL 
+**
+** Inputs:
+** <ul>
+** <li> A FILE* to which trace output should be written.
+**      If NULL, then tracing is turned off.
+** <li> A prefix string written at the beginning of every
+**      line of trace output.  If NULL, then tracing is
+**      turned off.
+** </ul>
+**
+** Outputs:
+** None.
+*/
+void
+ParseTrace (FILE * TraceFILE, char *zTracePrompt)
+{
+    yyTraceFILE = TraceFILE;
+    yyTracePrompt = zTracePrompt;
+    if (yyTraceFILE == 0)
+	yyTracePrompt = 0;
+    else if (yyTracePrompt == 0)
+	yyTraceFILE = 0;
+}
+#endif /* NDEBUG */
+
+#ifndef NDEBUG
+/* For tracing shifts, the names of all terminals and nonterminals
+** are required.  The following table supplies these names */
+static const char *const yyTokenName[] = {
+    "$", "VANUATU_NEWLINE", "VANUATU_POINT", "VANUATU_OPEN_BRACKET",
+    "VANUATU_CLOSE_BRACKET", "VANUATU_POINT_M", "VANUATU_POINT_Z",
+    "VANUATU_POINT_ZM",
+    "VANUATU_NUM", "VANUATU_COMMA", "VANUATU_LINESTRING",
+    "VANUATU_LINESTRING_M",
+    "VANUATU_LINESTRING_Z", "VANUATU_LINESTRING_ZM", "VANUATU_POLYGON",
+    "VANUATU_POLYGON_M",
+    "VANUATU_POLYGON_Z", "VANUATU_POLYGON_ZM", "VANUATU_MULTIPOINT",
+    "VANUATU_MULTIPOINT_M",
+    "VANUATU_MULTIPOINT_Z", "VANUATU_MULTIPOINT_ZM", "VANUATU_MULTILINESTRING",
+    "VANUATU_MULTILINESTRING_M",
+    "VANUATU_MULTILINESTRING_Z", "VANUATU_MULTILINESTRING_ZM",
+    "VANUATU_MULTIPOLYGON", "VANUATU_MULTIPOLYGON_M",
+    "VANUATU_MULTIPOLYGON_Z", "VANUATU_MULTIPOLYGON_ZM",
+    "VANUATU_GEOMETRYCOLLECTION", "VANUATU_GEOMETRYCOLLECTION_M",
+    "VANUATU_GEOMETRYCOLLECTION_Z", "VANUATU_GEOMETRYCOLLECTION_ZM", "error",
+    "main",
+    "in", "state", "program", "geo_text",
+    "geo_textz", "geo_textm", "geo_textzm", "point",
+    "linestring", "polygon", "multipoint", "multilinestring",
+    "multipolygon", "geocoll", "pointz", "linestringz",
+    "polygonz", "multipointz", "multilinestringz", "multipolygonz",
+    "geocollz", "pointm", "linestringm", "polygonm",
+    "multipointm", "multilinestringm", "multipolygonm", "geocollm",
+    "pointzm", "linestringzm", "polygonzm", "multipointzm",
+    "multilinestringzm", "multipolygonzm", "geocollzm", "point_coordxy",
+    "point_coordxym", "point_coordxyz", "point_coordxyzm", "coord",
+    "extra_pointsxy", "extra_pointsxym", "extra_pointsxyz", "extra_pointsxyzm",
+    "linestring_text", "linestring_textm", "linestring_textz",
+    "linestring_textzm",
+    "polygon_text", "polygon_textm", "polygon_textz", "polygon_textzm",
+    "ring", "extra_rings", "ringm", "extra_ringsm",
+    "ringz", "extra_ringsz", "ringzm", "extra_ringszm",
+    "multipoint_text", "multipoint_textm", "multipoint_textz",
+    "multipoint_textzm",
+    "multilinestring_text", "multilinestring_textm", "multilinestring_textz",
+    "multilinestring_textzm",
+    "multilinestring_text2", "multilinestring_textm2", "multilinestring_textz2",
+    "multilinestring_textzm2",
+    "multipolygon_text", "multipolygon_textm", "multipolygon_textz",
+    "multipolygon_textzm",
+    "multipolygon_text2", "multipolygon_textm2", "multipolygon_textz2",
+    "multipolygon_textzm2",
+    "geocoll_text", "geocoll_textm", "geocoll_textz", "geocoll_textzm",
+    "geocoll_text2", "geocoll_textm2", "geocoll_textz2", "geocoll_textzm2",
+};
+#endif /* NDEBUG */
+
+#ifndef NDEBUG
+/* For tracing reduce actions, the names of all rules are required.
+*/
+static const char *const yyRuleName[] = {
+    /*   0 */ "main ::= in",
+    /*   1 */ "in ::=",
+    /*   2 */ "in ::= in state VANUATU_NEWLINE",
+    /*   3 */ "state ::= program",
+    /*   4 */ "program ::= geo_text",
+    /*   5 */ "program ::= geo_textz",
+    /*   6 */ "program ::= geo_textm",
+    /*   7 */ "program ::= geo_textzm",
+    /*   8 */ "geo_text ::= point",
+    /*   9 */ "geo_text ::= linestring",
+    /*  10 */ "geo_text ::= polygon",
+    /*  11 */ "geo_text ::= multipoint",
+    /*  12 */ "geo_text ::= multilinestring",
+    /*  13 */ "geo_text ::= multipolygon",
+    /*  14 */ "geo_text ::= geocoll",
+    /*  15 */ "geo_textz ::= pointz",
+    /*  16 */ "geo_textz ::= linestringz",
+    /*  17 */ "geo_textz ::= polygonz",
+    /*  18 */ "geo_textz ::= multipointz",
+    /*  19 */ "geo_textz ::= multilinestringz",
+    /*  20 */ "geo_textz ::= multipolygonz",
+    /*  21 */ "geo_textz ::= geocollz",
+    /*  22 */ "geo_textm ::= pointm",
+    /*  23 */ "geo_textm ::= linestringm",
+    /*  24 */ "geo_textm ::= polygonm",
+    /*  25 */ "geo_textm ::= multipointm",
+    /*  26 */ "geo_textm ::= multilinestringm",
+    /*  27 */ "geo_textm ::= multipolygonm",
+    /*  28 */ "geo_textm ::= geocollm",
+    /*  29 */ "geo_textzm ::= pointzm",
+    /*  30 */ "geo_textzm ::= linestringzm",
+    /*  31 */ "geo_textzm ::= polygonzm",
+    /*  32 */ "geo_textzm ::= multipointzm",
+    /*  33 */ "geo_textzm ::= multilinestringzm",
+    /*  34 */ "geo_textzm ::= multipolygonzm",
+    /*  35 */ "geo_textzm ::= geocollzm",
+    /*  36 */
+    "point ::= VANUATU_POINT VANUATU_OPEN_BRACKET point_coordxy VANUATU_CLOSE_BRACKET",
+    /*  37 */
+    "pointm ::= VANUATU_POINT_M VANUATU_OPEN_BRACKET point_coordxym VANUATU_CLOSE_BRACKET",
+    /*  38 */
+    "pointz ::= VANUATU_POINT_Z VANUATU_OPEN_BRACKET point_coordxyz VANUATU_CLOSE_BRACKET",
+    /*  39 */
+    "pointzm ::= VANUATU_POINT_ZM VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_CLOSE_BRACKET",
+    /*  40 */ "point_coordxy ::= coord coord",
+    /*  41 */ "point_coordxym ::= coord coord coord",
+    /*  42 */ "point_coordxyz ::= coord coord coord",
+    /*  43 */ "point_coordxyzm ::= coord coord coord coord",
+    /*  44 */ "coord ::= VANUATU_NUM",
+    /*  45 */ "extra_pointsxy ::=",
+    /*  46 */ "extra_pointsxy ::= VANUATU_COMMA point_coordxy extra_pointsxy",
+    /*  47 */ "extra_pointsxym ::=",
+    /*  48 */
+    "extra_pointsxym ::= VANUATU_COMMA point_coordxym extra_pointsxym",
+    /*  49 */ "extra_pointsxyz ::=",
+    /*  50 */
+    "extra_pointsxyz ::= VANUATU_COMMA point_coordxyz extra_pointsxyz",
+    /*  51 */ "extra_pointsxyzm ::=",
+    /*  52 */
+    "extra_pointsxyzm ::= VANUATU_COMMA point_coordxyzm extra_pointsxyzm",
+    /*  53 */ "linestring ::= VANUATU_LINESTRING linestring_text",
+    /*  54 */ "linestringm ::= VANUATU_LINESTRING_M linestring_textm",
+    /*  55 */ "linestringz ::= VANUATU_LINESTRING_Z linestring_textz",
+    /*  56 */ "linestringzm ::= VANUATU_LINESTRING_ZM linestring_textzm",
+    /*  57 */
+    "linestring_text ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET",
+    /*  58 */
+    "linestring_textm ::= VANUATU_OPEN_BRACKET point_coordxym VANUATU_COMMA point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET",
+    /*  59 */
+    "linestring_textz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET",
+    /*  60 */
+    "linestring_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET",
+    /*  61 */ "polygon ::= VANUATU_POLYGON polygon_text",
+    /*  62 */ "polygonm ::= VANUATU_POLYGON_M polygon_textm",
+    /*  63 */ "polygonz ::= VANUATU_POLYGON_Z polygon_textz",
+    /*  64 */ "polygonzm ::= VANUATU_POLYGON_ZM polygon_textzm",
+    /*  65 */
+    "polygon_text ::= VANUATU_OPEN_BRACKET ring extra_rings VANUATU_CLOSE_BRACKET",
+    /*  66 */
+    "polygon_textm ::= VANUATU_OPEN_BRACKET ringm extra_ringsm VANUATU_CLOSE_BRACKET",
+    /*  67 */
+    "polygon_textz ::= VANUATU_OPEN_BRACKET ringz extra_ringsz VANUATU_CLOSE_BRACKET",
+    /*  68 */
+    "polygon_textzm ::= VANUATU_OPEN_BRACKET ringzm extra_ringszm VANUATU_CLOSE_BRACKET",
+    /*  69 */
+    "ring ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET",
+    /*  70 */ "extra_rings ::=",
+    /*  71 */ "extra_rings ::= VANUATU_COMMA ring extra_rings",
+    /*  72 */
+    "ringm ::= VANUATU_OPEN_BRACKET point_coordxym VANUATU_COMMA point_coordxym VANUATU_COMMA point_coordxym VANUATU_COMMA point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET",
+    /*  73 */ "extra_ringsm ::=",
+    /*  74 */ "extra_ringsm ::= VANUATU_COMMA ringm extra_ringsm",
+    /*  75 */
+    "ringz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET",
+    /*  76 */ "extra_ringsz ::=",
+    /*  77 */ "extra_ringsz ::= VANUATU_COMMA ringz extra_ringsz",
+    /*  78 */
+    "ringzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET",
+    /*  79 */ "extra_ringszm ::=",
+    /*  80 */ "extra_ringszm ::= VANUATU_COMMA ringzm extra_ringszm",
+    /*  81 */ "multipoint ::= VANUATU_MULTIPOINT multipoint_text",
+    /*  82 */ "multipointm ::= VANUATU_MULTIPOINT_M multipoint_textm",
+    /*  83 */ "multipointz ::= VANUATU_MULTIPOINT_Z multipoint_textz",
+    /*  84 */ "multipointzm ::= VANUATU_MULTIPOINT_ZM multipoint_textzm",
+    /*  85 */
+    "multipoint_text ::= VANUATU_OPEN_BRACKET point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET",
+    /*  86 */
+    "multipoint_textm ::= VANUATU_OPEN_BRACKET point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET",
+    /*  87 */
+    "multipoint_textz ::= VANUATU_OPEN_BRACKET point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET",
+    /*  88 */
+    "multipoint_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET",
+    /*  89 */
+    "multilinestring ::= VANUATU_MULTILINESTRING multilinestring_text",
+    /*  90 */
+    "multilinestringm ::= VANUATU_MULTILINESTRING_M multilinestring_textm",
+    /*  91 */
+    "multilinestringz ::= VANUATU_MULTILINESTRING_Z multilinestring_textz",
+    /*  92 */
+    "multilinestringzm ::= VANUATU_MULTILINESTRING_ZM multilinestring_textzm",
+    /*  93 */
+    "multilinestring_text ::= VANUATU_OPEN_BRACKET linestring_text multilinestring_text2 VANUATU_CLOSE_BRACKET",
+    /*  94 */ "multilinestring_text2 ::=",
+    /*  95 */
+    "multilinestring_text2 ::= VANUATU_COMMA linestring_text multilinestring_text2",
+    /*  96 */
+    "multilinestring_textm ::= VANUATU_OPEN_BRACKET linestring_textm multilinestring_textm2 VANUATU_CLOSE_BRACKET",
+    /*  97 */ "multilinestring_textm2 ::=",
+    /*  98 */
+    "multilinestring_textm2 ::= VANUATU_COMMA linestring_textm multilinestring_textm2",
+    /*  99 */
+    "multilinestring_textz ::= VANUATU_OPEN_BRACKET linestring_textz multilinestring_textz2 VANUATU_CLOSE_BRACKET",
+    /* 100 */ "multilinestring_textz2 ::=",
+    /* 101 */
+    "multilinestring_textz2 ::= VANUATU_COMMA linestring_textz multilinestring_textz2",
+    /* 102 */
+    "multilinestring_textzm ::= VANUATU_OPEN_BRACKET linestring_textzm multilinestring_textzm2 VANUATU_CLOSE_BRACKET",
+    /* 103 */ "multilinestring_textzm2 ::=",
+    /* 104 */
+    "multilinestring_textzm2 ::= VANUATU_COMMA linestring_textzm multilinestring_textzm2",
+    /* 105 */ "multipolygon ::= VANUATU_MULTIPOLYGON multipolygon_text",
+    /* 106 */ "multipolygonm ::= VANUATU_MULTIPOLYGON_M multipolygon_textm",
+    /* 107 */ "multipolygonz ::= VANUATU_MULTIPOLYGON_Z multipolygon_textz",
+    /* 108 */ "multipolygonzm ::= VANUATU_MULTIPOLYGON_ZM multipolygon_textzm",
+    /* 109 */
+    "multipolygon_text ::= VANUATU_OPEN_BRACKET polygon_text multipolygon_text2 VANUATU_CLOSE_BRACKET",
+    /* 110 */ "multipolygon_text2 ::=",
+    /* 111 */
+    "multipolygon_text2 ::= VANUATU_COMMA polygon_text multipolygon_text2",
+    /* 112 */
+    "multipolygon_textm ::= VANUATU_OPEN_BRACKET polygon_textm multipolygon_textm2 VANUATU_CLOSE_BRACKET",
+    /* 113 */ "multipolygon_textm2 ::=",
+    /* 114 */
+    "multipolygon_textm2 ::= VANUATU_COMMA polygon_textm multipolygon_textm2",
+    /* 115 */
+    "multipolygon_textz ::= VANUATU_OPEN_BRACKET polygon_textz multipolygon_textz2 VANUATU_CLOSE_BRACKET",
+    /* 116 */ "multipolygon_textz2 ::=",
+    /* 117 */
+    "multipolygon_textz2 ::= VANUATU_COMMA polygon_textz multipolygon_textz2",
+    /* 118 */
+    "multipolygon_textzm ::= VANUATU_OPEN_BRACKET polygon_textzm multipolygon_textzm2 VANUATU_CLOSE_BRACKET",
+    /* 119 */ "multipolygon_textzm2 ::=",
+    /* 120 */
+    "multipolygon_textzm2 ::= VANUATU_COMMA polygon_textzm multipolygon_textzm2",
+    /* 121 */ "geocoll ::= VANUATU_GEOMETRYCOLLECTION geocoll_text",
+    /* 122 */ "geocollm ::= VANUATU_GEOMETRYCOLLECTION_M geocoll_textm",
+    /* 123 */ "geocollz ::= VANUATU_GEOMETRYCOLLECTION_Z geocoll_textz",
+    /* 124 */ "geocollzm ::= VANUATU_GEOMETRYCOLLECTION_ZM geocoll_textzm",
+    /* 125 */
+    "geocoll_text ::= VANUATU_OPEN_BRACKET point geocoll_text2 VANUATU_CLOSE_BRACKET",
+    /* 126 */
+    "geocoll_text ::= VANUATU_OPEN_BRACKET linestring geocoll_text2 VANUATU_CLOSE_BRACKET",
+    /* 127 */
+    "geocoll_text ::= VANUATU_OPEN_BRACKET polygon geocoll_text2 VANUATU_CLOSE_BRACKET",
+    /* 128 */ "geocoll_text2 ::=",
+    /* 129 */ "geocoll_text2 ::= VANUATU_COMMA point geocoll_text2",
+    /* 130 */ "geocoll_text2 ::= VANUATU_COMMA linestring geocoll_text2",
+    /* 131 */ "geocoll_text2 ::= VANUATU_COMMA polygon geocoll_text2",
+    /* 132 */
+    "geocoll_textm ::= VANUATU_OPEN_BRACKET pointm geocoll_textm2 VANUATU_CLOSE_BRACKET",
+    /* 133 */
+    "geocoll_textm ::= VANUATU_OPEN_BRACKET linestringm geocoll_textm2 VANUATU_CLOSE_BRACKET",
+    /* 134 */
+    "geocoll_textm ::= VANUATU_OPEN_BRACKET polygonm geocoll_textm2 VANUATU_CLOSE_BRACKET",
+    /* 135 */ "geocoll_textm2 ::=",
+    /* 136 */ "geocoll_textm2 ::= VANUATU_COMMA pointm geocoll_textm2",
+    /* 137 */ "geocoll_textm2 ::= VANUATU_COMMA linestringm geocoll_textm2",
+    /* 138 */ "geocoll_textm2 ::= VANUATU_COMMA polygonm geocoll_textm2",
+    /* 139 */
+    "geocoll_textz ::= VANUATU_OPEN_BRACKET pointz geocoll_textz2 VANUATU_CLOSE_BRACKET",
+    /* 140 */
+    "geocoll_textz ::= VANUATU_OPEN_BRACKET linestringz geocoll_textz2 VANUATU_CLOSE_BRACKET",
+    /* 141 */
+    "geocoll_textz ::= VANUATU_OPEN_BRACKET polygonz geocoll_textz2 VANUATU_CLOSE_BRACKET",
+    /* 142 */ "geocoll_textz2 ::=",
+    /* 143 */ "geocoll_textz2 ::= VANUATU_COMMA pointz geocoll_textz2",
+    /* 144 */ "geocoll_textz2 ::= VANUATU_COMMA linestringz geocoll_textz2",
+    /* 145 */ "geocoll_textz2 ::= VANUATU_COMMA polygonz geocoll_textz2",
+    /* 146 */
+    "geocoll_textzm ::= VANUATU_OPEN_BRACKET pointzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
+    /* 147 */
+    "geocoll_textzm ::= VANUATU_OPEN_BRACKET linestringzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
+    /* 148 */
+    "geocoll_textzm ::= VANUATU_OPEN_BRACKET polygonzm geocoll_textzm2 VANUATU_CLOSE_BRACKET",
+    /* 149 */ "geocoll_textzm2 ::=",
+    /* 150 */ "geocoll_textzm2 ::= VANUATU_COMMA pointzm geocoll_textzm2",
+    /* 151 */ "geocoll_textzm2 ::= VANUATU_COMMA linestringzm geocoll_textzm2",
+    /* 152 */ "geocoll_textzm2 ::= VANUATU_COMMA polygonzm geocoll_textzm2",
+};
+#endif /* NDEBUG */
+
+
+#if YYSTACKDEPTH<=0
+/*
+** Try to increase the size of the parser stack.
+*/
+static void
+yyGrowStack (yyParser * p)
+{
+    int newSize;
+    yyStackEntry *pNew;
+
+    newSize = p->yystksz * 2 + 100;
+    pNew = realloc (p->yystack, newSize * sizeof (pNew[0]));
+    if (pNew)
+      {
+	  p->yystack = pNew;
+	  p->yystksz = newSize;
+#ifndef NDEBUG
+	  if (yyTraceFILE)
+	    {
+		fprintf (yyTraceFILE, "%sStack grows to %d entries!\n",
+			 yyTracePrompt, p->yystksz);
+	    }
+#endif
+      }
+}
+#endif
+
+/* 
+** This function allocates a new parser.
+** The only argument is a pointer to a function which works like
+** malloc.
+**
+** Inputs:
+** A pointer to the function used to allocate memory.
+**
+** Outputs:
+** A pointer to a parser.  This pointer is used in subsequent calls
+** to Parse and ParseFree.
+*/
+void *
+ParseAlloc (void *(*mallocProc) (size_t))
+{
+    yyParser *pParser;
+    pParser = (yyParser *) (*mallocProc) ((size_t) sizeof (yyParser));
+    if (pParser)
+      {
+	  pParser->yyidx = -1;
+#ifdef YYTRACKMAXSTACKDEPTH
+	  pParser->yyidxMax = 0;
+#endif
+#if YYSTACKDEPTH<=0
+	  pParser->yystack = NULL;
+	  pParser->yystksz = 0;
+	  yyGrowStack (pParser);
+#endif
+      }
+    return pParser;
+}
+
+/* The following function deletes the value associated with a
+** symbol.  The symbol can be either a terminal or nonterminal.
+** "yymajor" is the symbol code, and "yypminor" is a pointer to
+** the value.
+*/
+static void
+yy_destructor (yyParser * yypParser,	/* The parser */
+	       YYCODETYPE yymajor,	/* Type code for object to destroy */
+	       YYMINORTYPE * yypminor	/* The object to be destroyed */
+    )
+{
+    ParseARG_FETCH;
+    switch (yymajor)
+      {
+	  /* Here is inserted the actions which take place when a
+	   ** terminal or non-terminal is destroyed.  This can happen
+	   ** when the symbol is popped from the stack during a
+	   ** reduce or during error processing or when a parser is 
+	   ** being destroyed before it is finished parsing.
+	   **
+	   ** Note: during a reduce, the only symbols destroyed are those
+	   ** which appear on the RHS of the rule, but which are not used
+	   ** inside the C code.
+	   */
+      default:
+	  break;		/* If no destructor action specified: do nothing */
+      }
+}
+
+/*
+** Pop the parser's stack once.
+**
+** If there is a destructor routine associated with the token which
+** is popped from the stack, then call it.
+**
+** Return the major token number for the symbol popped.
+*/
+static int
+yy_pop_parser_stack (yyParser * pParser)
+{
+    YYCODETYPE yymajor;
+    yyStackEntry *yytos = &pParser->yystack[pParser->yyidx];
+
+    if (pParser->yyidx < 0)
+	return 0;
+#ifndef NDEBUG
+    if (yyTraceFILE && pParser->yyidx >= 0)
+      {
+	  fprintf (yyTraceFILE, "%sPopping %s\n",
+		   yyTracePrompt, yyTokenName[yytos->major]);
+      }
+#endif
+    yymajor = yytos->major;
+    yy_destructor (pParser, yymajor, &yytos->minor);
+    pParser->yyidx--;
+    return yymajor;
+}
+
+/* 
+** Deallocate and destroy a parser.  Destructors are all called for
+** all stack elements before shutting the parser down.
+**
+** Inputs:
+** <ul>
+** <li>  A pointer to the parser.  This should be a pointer
+**       obtained from ParseAlloc.
+** <li>  A pointer to a function used to reclaim memory obtained
+**       from malloc.
+** </ul>
+*/
+void
+ParseFree (void *p,		/* The parser to be deleted */
+	   void (*freeProc) (void *)	/* Function used to reclaim memory */
+    )
+{
+    yyParser *pParser = (yyParser *) p;
+    if (pParser == 0)
+	return;
+    while (pParser->yyidx >= 0)
+	yy_pop_parser_stack (pParser);
+#if YYSTACKDEPTH<=0
+    free (pParser->yystack);
+#endif
+    (*freeProc) ((void *) pParser);
+}
+
+/*
+** Return the peak depth of the stack for a parser.
+*/
+#ifdef YYTRACKMAXSTACKDEPTH
+int
+ParseStackPeak (void *p)
+{
+    yyParser *pParser = (yyParser *) p;
+    return pParser->yyidxMax;
+}
+#endif
+
+/*
+** Find the appropriate action for a parser given the terminal
+** look-ahead token iLookAhead.
+**
+** If the look-ahead token is YYNOCODE, then check to see if the action is
+** independent of the look-ahead.  If it is, return the action, otherwise
+** return YY_NO_ACTION.
+*/
+static int
+yy_find_shift_action (yyParser * pParser,	/* The parser */
+		      YYCODETYPE iLookAhead	/* The look-ahead token */
+    )
+{
+    int i;
+    int stateno = pParser->yystack[pParser->yyidx].stateno;
+
+    if (stateno > YY_SHIFT_MAX
+	|| (i = yy_shift_ofst[stateno]) == YY_SHIFT_USE_DFLT)
+      {
+	  return yy_default[stateno];
+      }
+    assert (iLookAhead != YYNOCODE);
+    i += iLookAhead;
+    if (i < 0 || i >= YY_SZ_ACTTAB || yy_lookahead[i] != iLookAhead)
+      {
+	  if (iLookAhead > 0)
+	    {
+#ifdef YYFALLBACK
+		YYCODETYPE iFallback;	/* Fallback token */
+		if (iLookAhead < sizeof (yyFallback) / sizeof (yyFallback[0])
+		    && (iFallback = yyFallback[iLookAhead]) != 0)
+		  {
+#ifndef NDEBUG
+		      if (yyTraceFILE)
+			{
+			    fprintf (yyTraceFILE, "%sFALLBACK %s => %s\n",
+				     yyTracePrompt, yyTokenName[iLookAhead],
+				     yyTokenName[iFallback]);
+			}
+#endif
+		      return yy_find_shift_action (pParser, iFallback);
+		  }
+#endif
+#ifdef YYWILDCARD
+		{
+		    int j = i - iLookAhead + YYWILDCARD;
+		    if (j >= 0 && j < YY_SZ_ACTTAB
+			&& yy_lookahead[j] == YYWILDCARD)
+		      {
+#ifndef NDEBUG
+			  if (yyTraceFILE)
+			    {
+				fprintf (yyTraceFILE, "%sWILDCARD %s => %s\n",
+					 yyTracePrompt, yyTokenName[iLookAhead],
+					 yyTokenName[YYWILDCARD]);
+			    }
+#endif /* NDEBUG */
+			  return yy_action[j];
+		      }
+		}
+#endif /* YYWILDCARD */
+	    }
+	  return yy_default[stateno];
+      }
+    else
+      {
+	  return yy_action[i];
+      }
+}
+
+/*
+** Find the appropriate action for a parser given the non-terminal
+** look-ahead token iLookAhead.
+**
+** If the look-ahead token is YYNOCODE, then check to see if the action is
+** independent of the look-ahead.  If it is, return the action, otherwise
+** return YY_NO_ACTION.
+*/
+static int
+yy_find_reduce_action (int stateno,	/* Current state number */
+		       YYCODETYPE iLookAhead	/* The look-ahead token */
+    )
+{
+    int i;
+#ifdef YYERRORSYMBOL
+    if (stateno > YY_REDUCE_MAX)
+      {
+	  return yy_default[stateno];
+      }
+#else
+    assert (stateno <= YY_REDUCE_MAX);
+#endif
+    i = yy_reduce_ofst[stateno];
+    assert (i != YY_REDUCE_USE_DFLT);
+    assert (iLookAhead != YYNOCODE);
+    i += iLookAhead;
+#ifdef YYERRORSYMBOL
+    if (i < 0 || i >= YY_SZ_ACTTAB || yy_lookahead[i] != iLookAhead)
+      {
+	  return yy_default[stateno];
+      }
+#else
+    assert (i >= 0 && i < YY_SZ_ACTTAB);
+    assert (yy_lookahead[i] == iLookAhead);
+#endif
+    return yy_action[i];
+}
+
+/*
+** The following routine is called if the stack overflows.
+*/
+static void
+yyStackOverflow (yyParser * yypParser, YYMINORTYPE * yypMinor)
+{
+    ParseARG_FETCH;
+    yypParser->yyidx--;
+#ifndef NDEBUG
+    if (yyTraceFILE)
+      {
+	  fprintf (yyTraceFILE, "%sStack Overflow!\n", yyTracePrompt);
+      }
+#endif
+    while (yypParser->yyidx >= 0)
+	yy_pop_parser_stack (yypParser);
+    /* Here code is inserted which will execute if the parser
+     ** stack every overflows */
+
+    fprintf (stderr, "Giving up.  Parser stack overflow\n");
+    ParseARG_STORE;		/* Suppress warning about unused %extra_argument var */
+}
+
+/*
+** Perform a shift action.
+*/
+static void
+yy_shift (yyParser * yypParser,	/* The parser to be shifted */
+	  int yyNewState,	/* The new state to shift in */
+	  int yyMajor,		/* The major token to shift in */
+	  YYMINORTYPE * yypMinor	/* Pointer to the minor token to shift in */
+    )
+{
+    yyStackEntry *yytos;
+    yypParser->yyidx++;
+#ifdef YYTRACKMAXSTACKDEPTH
+    if (yypParser->yyidx > yypParser->yyidxMax)
+      {
+	  yypParser->yyidxMax = yypParser->yyidx;
+      }
+#endif
+#if YYSTACKDEPTH>0
+    if (yypParser->yyidx >= YYSTACKDEPTH)
+      {
+	  yyStackOverflow (yypParser, yypMinor);
+	  return;
+      }
+#else
+    if (yypParser->yyidx >= yypParser->yystksz)
+      {
+	  yyGrowStack (yypParser);
+	  if (yypParser->yyidx >= yypParser->yystksz)
+	    {
+		yyStackOverflow (yypParser, yypMinor);
+		return;
+	    }
+      }
+#endif
+    yytos = &yypParser->yystack[yypParser->yyidx];
+    yytos->stateno = (YYACTIONTYPE) yyNewState;
+    yytos->major = (YYCODETYPE) yyMajor;
+    yytos->minor = *yypMinor;
+#ifndef NDEBUG
+    if (yyTraceFILE && yypParser->yyidx > 0)
+      {
+	  int i;
+	  fprintf (yyTraceFILE, "%sShift %d\n", yyTracePrompt, yyNewState);
+	  fprintf (yyTraceFILE, "%sStack:", yyTracePrompt);
+	  for (i = 1; i <= yypParser->yyidx; i++)
+	      fprintf (yyTraceFILE, " %s",
+		       yyTokenName[yypParser->yystack[i].major]);
+	  fprintf (yyTraceFILE, "\n");
+      }
+#endif
+}
+
+/* The following table contains information about every rule that
+** is used during the reduce.
+*/
+static const struct
+{
+    YYCODETYPE lhs;		/* Symbol on the left-hand side of the rule */
+    unsigned char nrhs;		/* Number of right-hand side symbols in the rule */
+} yyRuleInfo[] =
+{
+    {
+    35, 1},
+    {
+    36, 0},
+    {
+    36, 3},
+    {
+    37, 1},
+    {
+    38, 1},
+    {
+    38, 1},
+    {
+    38, 1},
+    {
+    38, 1},
+    {
+    39, 1},
+    {
+    39, 1},
+    {
+    39, 1},
+    {
+    39, 1},
+    {
+    39, 1},
+    {
+    39, 1},
+    {
+    39, 1},
+    {
+    40, 1},
+    {
+    40, 1},
+    {
+    40, 1},
+    {
+    40, 1},
+    {
+    40, 1},
+    {
+    40, 1},
+    {
+    40, 1},
+    {
+    41, 1},
+    {
+    41, 1},
+    {
+    41, 1},
+    {
+    41, 1},
+    {
+    41, 1},
+    {
+    41, 1},
+    {
+    41, 1},
+    {
+    42, 1},
+    {
+    42, 1},
+    {
+    42, 1},
+    {
+    42, 1},
+    {
+    42, 1},
+    {
+    42, 1},
+    {
+    42, 1},
+    {
+    43, 4},
+    {
+    57, 4},
+    {
+    50, 4},
+    {
+    64, 4},
+    {
+    71, 2},
+    {
+    72, 3},
+    {
+    73, 3},
+    {
+    74, 4},
+    {
+    75, 1},
+    {
+    76, 0},
+    {
+    76, 3},
+    {
+    77, 0},
+    {
+    77, 3},
+    {
+    78, 0},
+    {
+    78, 3},
+    {
+    79, 0},
+    {
+    79, 3},
+    {
+    44, 2},
+    {
+    58, 2},
+    {
+    51, 2},
+    {
+    65, 2},
+    {
+    80, 6},
+    {
+    81, 6},
+    {
+    82, 6},
+    {
+    83, 6},
+    {
+    45, 2},
+    {
+    59, 2},
+    {
+    52, 2},
+    {
+    66, 2},
+    {
+    84, 4},
+    {
+    85, 4},
+    {
+    86, 4},
+    {
+    87, 4},
+    {
+    88, 10},
+    {
+    89, 0},
+    {
+    89, 3},
+    {
+    90, 10},
+    {
+    91, 0},
+    {
+    91, 3},
+    {
+    92, 10},
+    {
+    93, 0},
+    {
+    93, 3},
+    {
+    94, 10},
+    {
+    95, 0},
+    {
+    95, 3},
+    {
+    46, 2},
+    {
+    60, 2},
+    {
+    53, 2},
+    {
+    67, 2},
+    {
+    96, 4},
+    {
+    97, 4},
+    {
+    98, 4},
+    {
+    99, 4},
+    {
+    47, 2},
+    {
+    61, 2},
+    {
+    54, 2},
+    {
+    68, 2},
+    {
+    100, 4},
+    {
+    104, 0},
+    {
+    104, 3},
+    {
+    101, 4},
+    {
+    105, 0},
+    {
+    105, 3},
+    {
+    102, 4},
+    {
+    106, 0},
+    {
+    106, 3},
+    {
+    103, 4},
+    {
+    107, 0},
+    {
+    107, 3},
+    {
+    48, 2},
+    {
+    62, 2},
+    {
+    55, 2},
+    {
+    69, 2},
+    {
+    108, 4},
+    {
+    112, 0},
+    {
+    112, 3},
+    {
+    109, 4},
+    {
+    113, 0},
+    {
+    113, 3},
+    {
+    110, 4},
+    {
+    114, 0},
+    {
+    114, 3},
+    {
+    111, 4},
+    {
+    115, 0},
+    {
+    115, 3},
+    {
+    49, 2},
+    {
+    63, 2},
+    {
+    56, 2},
+    {
+    70, 2},
+    {
+    116, 4},
+    {
+    116, 4},
+    {
+    116, 4},
+    {
+    120, 0},
+    {
+    120, 3},
+    {
+    120, 3},
+    {
+    120, 3},
+    {
+    117, 4},
+    {
+    117, 4},
+    {
+    117, 4},
+    {
+    121, 0},
+    {
+    121, 3},
+    {
+    121, 3},
+    {
+    121, 3},
+    {
+    118, 4},
+    {
+    118, 4},
+    {
+    118, 4},
+    {
+    122, 0},
+    {
+    122, 3},
+    {
+    122, 3},
+    {
+    122, 3},
+    {
+    119, 4},
+    {
+    119, 4},
+    {
+    119, 4},
+    {
+    123, 0},
+    {
+    123, 3},
+    {
+    123, 3},
+    {
+123, 3},};
+
+static void yy_accept (yyParser *);	/* Forward Declaration */
+
+/*
+** Perform a reduce action and the shift that must immediately
+** follow the reduce.
+*/
+static void
+yy_reduce (yyParser * yypParser,	/* The parser */
+	   int yyruleno		/* Number of the rule by which to reduce */
+    )
+{
+    int yygoto;			/* The next state */
+    int yyact;			/* The next action */
+    YYMINORTYPE yygotominor;	/* The LHS of the rule reduced */
+    yyStackEntry *yymsp;	/* The top of the parser's stack */
+    int yysize;			/* Amount to pop the stack */
+    ParseARG_FETCH;
+    yymsp = &yypParser->yystack[yypParser->yyidx];
+#ifndef NDEBUG
+    if (yyTraceFILE && yyruleno >= 0
+	&& yyruleno < (int) (sizeof (yyRuleName) / sizeof (yyRuleName[0])))
+      {
+	  fprintf (yyTraceFILE, "%sReduce [%s].\n", yyTracePrompt,
+		   yyRuleName[yyruleno]);
+      }
+#endif /* NDEBUG */
+
+    /* Silence complaints from purify about yygotominor being uninitialized
+     ** in some cases when it is copied into the stack after the following
+     ** switch.  yygotominor is uninitialized when a rule reduces that does
+     ** not set the value of its left-hand side nonterminal.  Leaving the
+     ** value of the nonterminal uninitialized is utterly harmless as long
+     ** as the value is never used.  So really the only thing this code
+     ** accomplishes is to quieten purify.  
+     **
+     ** 2007-01-16:  The wireshark project (www.wireshark.org) reports that
+     ** without this code, their parser segfaults.  I'm not sure what there
+     ** parser is doing to make this happen.  This is the second bug report
+     ** from wireshark this week.  Clearly they are stressing Lemon in ways
+     ** that it has not been previously stressed...  (SQLite ticket #2172)
+     */
+    /*memset(&yygotominor, 0, sizeof(yygotominor)); */
+    yygotominor = yyzerominor;
+
+
+    switch (yyruleno)
+      {
+	  /* Beginning here are the reduction cases.  A typical example
+	   ** follows:
+	   **   case 0:
+	   **  #line <lineno> <grammarfile>
+	   **     { ... }           // User supplied code
+	   **  #line <lineno> <thisfile>
+	   **     break;
+	   */
+      case 8:			/* geo_text ::= point */
+      case 9:			/* geo_text ::= linestring */
+	  yytestcase (yyruleno == 9);
+      case 10:			/* geo_text ::= polygon */
+	  yytestcase (yyruleno == 10);
+      case 11:			/* geo_text ::= multipoint */
+	  yytestcase (yyruleno == 11);
+      case 12:			/* geo_text ::= multilinestring */
+	  yytestcase (yyruleno == 12);
+      case 13:			/* geo_text ::= multipolygon */
+	  yytestcase (yyruleno == 13);
+      case 14:			/* geo_text ::= geocoll */
+	  yytestcase (yyruleno == 14);
+      case 15:			/* geo_textz ::= pointz */
+	  yytestcase (yyruleno == 15);
+      case 16:			/* geo_textz ::= linestringz */
+	  yytestcase (yyruleno == 16);
+      case 17:			/* geo_textz ::= polygonz */
+	  yytestcase (yyruleno == 17);
+      case 18:			/* geo_textz ::= multipointz */
+	  yytestcase (yyruleno == 18);
+      case 19:			/* geo_textz ::= multilinestringz */
+	  yytestcase (yyruleno == 19);
+      case 20:			/* geo_textz ::= multipolygonz */
+	  yytestcase (yyruleno == 20);
+      case 21:			/* geo_textz ::= geocollz */
+	  yytestcase (yyruleno == 21);
+      case 22:			/* geo_textm ::= pointm */
+	  yytestcase (yyruleno == 22);
+      case 23:			/* geo_textm ::= linestringm */
+	  yytestcase (yyruleno == 23);
+      case 24:			/* geo_textm ::= polygonm */
+	  yytestcase (yyruleno == 24);
+      case 25:			/* geo_textm ::= multipointm */
+	  yytestcase (yyruleno == 25);
+      case 26:			/* geo_textm ::= multilinestringm */
+	  yytestcase (yyruleno == 26);
+      case 27:			/* geo_textm ::= multipolygonm */
+	  yytestcase (yyruleno == 27);
+      case 28:			/* geo_textm ::= geocollm */
+	  yytestcase (yyruleno == 28);
+      case 29:			/* geo_textzm ::= pointzm */
+	  yytestcase (yyruleno == 29);
+      case 30:			/* geo_textzm ::= linestringzm */
+	  yytestcase (yyruleno == 30);
+      case 31:			/* geo_textzm ::= polygonzm */
+	  yytestcase (yyruleno == 31);
+      case 32:			/* geo_textzm ::= multipointzm */
+	  yytestcase (yyruleno == 32);
+      case 33:			/* geo_textzm ::= multilinestringzm */
+	  yytestcase (yyruleno == 33);
+      case 34:			/* geo_textzm ::= multipolygonzm */
+	  yytestcase (yyruleno == 34);
+      case 35:			/* geo_textzm ::= geocollzm */
+	  yytestcase (yyruleno == 35);
+	  {
+	      *result = yymsp[0].minor.yy0;
+	  }
+	  break;
+      case 36:			/* point ::= VANUATU_POINT VANUATU_OPEN_BRACKET point_coordxy VANUATU_CLOSE_BRACKET */
+	  {
+	      yygotominor.yy0 =
+		  vanuatu_buildGeomFromPoint ((gaiaPointPtr) yymsp[-1].minor.
+					      yy0);
+	  }
+	  break;
+      case 37:			/* pointm ::= VANUATU_POINT_M VANUATU_OPEN_BRACKET point_coordxym VANUATU_CLOSE_BRACKET */
+      case 38:			/* pointz ::= VANUATU_POINT_Z VANUATU_OPEN_BRACKET point_coordxyz VANUATU_CLOSE_BRACKET */
+	  yytestcase (yyruleno == 38);
+      case 39:			/* pointzm ::= VANUATU_POINT_ZM VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_CLOSE_BRACKET */
+	  yytestcase (yyruleno == 39);
+	  {
+	      yygotominor.yy0 =
+		  vanuatu_buildGeomFromPoint ((gaiaPointPtr) yymsp[-1].minor.
+					      yy0);
+	  }
+	  break;
+      case 40:			/* point_coordxy ::= coord coord */
+	  {
+	      yygotominor.yy0 =
+		  (void *) vanuatu_point_xy ((double *) yymsp[-1].minor.yy0,
+					     (double *) yymsp[0].minor.yy0);
+	  }
+	  break;
+      case 41:			/* point_coordxym ::= coord coord coord */
+	  {
+	      yygotominor.yy0 =
+		  (void *) vanuatu_point_xym ((double *) yymsp[-2].minor.yy0,
+					      (double *) yymsp[-1].minor.yy0,
+					      (double *) yymsp[0].minor.yy0);
+	  }
+	  break;
+      case 42:			/* point_coordxyz ::= coord coord coord */
+	  {
+	      yygotominor.yy0 =
+		  (void *) vanuatu_point_xyz ((double *) yymsp[-2].minor.yy0,
+					      (double *) yymsp[-1].minor.yy0,
+					      (double *) yymsp[0].minor.yy0);
+	  }
+	  break;
+      case 43:			/* point_coordxyzm ::= coord coord coord coord */
+	  {
+	      yygotominor.yy0 =
+		  (void *) vanuatu_point_xyzm ((double *) yymsp[-3].minor.yy0,
+					       (double *) yymsp[-2].minor.yy0,
+					       (double *) yymsp[-1].minor.yy0,
+					       (double *) yymsp[0].minor.yy0);
+	  }
+	  break;
+      case 44:			/* coord ::= VANUATU_NUM */
+      case 81:			/* multipoint ::= VANUATU_MULTIPOINT multipoint_text */
+	  yytestcase (yyruleno == 81);
+      case 82:			/* multipointm ::= VANUATU_MULTIPOINT_M multipoint_textm */
+	  yytestcase (yyruleno == 82);
+      case 83:			/* multipointz ::= VANUATU_MULTIPOINT_Z multipoint_textz */
+	  yytestcase (yyruleno == 83);
+      case 84:			/* multipointzm ::= VANUATU_MULTIPOINT_ZM multipoint_textzm */
+	  yytestcase (yyruleno == 84);
+      case 89:			/* multilinestring ::= VANUATU_MULTILINESTRING multilinestring_text */
+	  yytestcase (yyruleno == 89);
+      case 90:			/* multilinestringm ::= VANUATU_MULTILINESTRING_M multilinestring_textm */
+	  yytestcase (yyruleno == 90);
+      case 91:			/* multilinestringz ::= VANUATU_MULTILINESTRING_Z multilinestring_textz */
+	  yytestcase (yyruleno == 91);
+      case 92:			/* multilinestringzm ::= VANUATU_MULTILINESTRING_ZM multilinestring_textzm */
+	  yytestcase (yyruleno == 92);
+      case 105:		/* multipolygon ::= VANUATU_MULTIPOLYGON multipolygon_text */
+	  yytestcase (yyruleno == 105);
+      case 106:		/* multipolygonm ::= VANUATU_MULTIPOLYGON_M multipolygon_textm */
+	  yytestcase (yyruleno == 106);
+      case 107:		/* multipolygonz ::= VANUATU_MULTIPOLYGON_Z multipolygon_textz */
+	  yytestcase (yyruleno == 107);
+      case 108:		/* multipolygonzm ::= VANUATU_MULTIPOLYGON_ZM multipolygon_textzm */
+	  yytestcase (yyruleno == 108);
+      case 121:		/* geocoll ::= VANUATU_GEOMETRYCOLLECTION geocoll_text */
+	  yytestcase (yyruleno == 121);
+      case 122:		/* geocollm ::= VANUATU_GEOMETRYCOLLECTION_M geocoll_textm */
+	  yytestcase (yyruleno == 122);
+      case 123:		/* geocollz ::= VANUATU_GEOMETRYCOLLECTION_Z geocoll_textz */
+	  yytestcase (yyruleno == 123);
+      case 124:		/* geocollzm ::= VANUATU_GEOMETRYCOLLECTION_ZM geocoll_textzm */
+	  yytestcase (yyruleno == 124);
+	  {
+	      yygotominor.yy0 = yymsp[0].minor.yy0;
+	  }
+	  break;
+      case 45:			/* extra_pointsxy ::= */
+      case 47:			/* extra_pointsxym ::= */
+	  yytestcase (yyruleno == 47);
+      case 49:			/* extra_pointsxyz ::= */
+	  yytestcase (yyruleno == 49);
+      case 51:			/* extra_pointsxyzm ::= */
+	  yytestcase (yyruleno == 51);
+      case 70:			/* extra_rings ::= */
+	  yytestcase (yyruleno == 70);
+      case 73:			/* extra_ringsm ::= */
+	  yytestcase (yyruleno == 73);
+      case 76:			/* extra_ringsz ::= */
+	  yytestcase (yyruleno == 76);
+      case 79:			/* extra_ringszm ::= */
+	  yytestcase (yyruleno == 79);
+      case 94:			/* multilinestring_text2 ::= */
+	  yytestcase (yyruleno == 94);
+      case 97:			/* multilinestring_textm2 ::= */
+	  yytestcase (yyruleno == 97);
+      case 100:		/* multilinestring_textz2 ::= */
+	  yytestcase (yyruleno == 100);
+      case 103:		/* multilinestring_textzm2 ::= */
+	  yytestcase (yyruleno == 103);
+      case 110:		/* multipolygon_text2 ::= */
+	  yytestcase (yyruleno == 110);
+      case 113:		/* multipolygon_textm2 ::= */
+	  yytestcase (yyruleno == 113);
+      case 116:		/* multipolygon_textz2 ::= */
+	  yytestcase (yyruleno == 116);
+      case 119:		/* multipolygon_textzm2 ::= */
+	  yytestcase (yyruleno == 119);
+      case 128:		/* geocoll_text2 ::= */
+	  yytestcase (yyruleno == 128);
+      case 135:		/* geocoll_textm2 ::= */
+	  yytestcase (yyruleno == 135);
+      case 142:		/* geocoll_textz2 ::= */
+	  yytestcase (yyruleno == 142);
+      case 149:		/* geocoll_textzm2 ::= */
+	  yytestcase (yyruleno == 149);
+	  {
+	      yygotominor.yy0 = NULL;
+	  }
+	  break;
+      case 46:			/* extra_pointsxy ::= VANUATU_COMMA point_coordxy extra_pointsxy */
+      case 48:			/* extra_pointsxym ::= VANUATU_COMMA point_coordxym extra_pointsxym */
+	  yytestcase (yyruleno == 48);
+      case 50:			/* extra_pointsxyz ::= VANUATU_COMMA point_coordxyz extra_pointsxyz */
+	  yytestcase (yyruleno == 50);
+      case 52:			/* extra_pointsxyzm ::= VANUATU_COMMA point_coordxyzm extra_pointsxyzm */
+	  yytestcase (yyruleno == 52);
+	  {
+	      ((gaiaPointPtr) yymsp[-1].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[0].minor.yy0;
+	      yygotominor.yy0 = yymsp[-1].minor.yy0;
+	  }
+	  break;
+      case 53:			/* linestring ::= VANUATU_LINESTRING linestring_text */
+      case 54:			/* linestringm ::= VANUATU_LINESTRING_M linestring_textm */
+	  yytestcase (yyruleno == 54);
+      case 55:			/* linestringz ::= VANUATU_LINESTRING_Z linestring_textz */
+	  yytestcase (yyruleno == 55);
+      case 56:			/* linestringzm ::= VANUATU_LINESTRING_ZM linestring_textzm */
+	  yytestcase (yyruleno == 56);
+	  {
+	      yygotominor.yy0 =
+		  vanuatu_buildGeomFromLinestring ((gaiaLinestringPtr) yymsp[0].
+						   minor.yy0);
+	  }
+	  break;
+      case 57:			/* linestring_text ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-1].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-2].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_linestring_xy ((gaiaPointPtr) yymsp[-4].
+						  minor.yy0);
+	  }
+	  break;
+      case 58:			/* linestring_textm ::= VANUATU_OPEN_BRACKET point_coordxym VANUATU_COMMA point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-1].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-2].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_linestring_xym ((gaiaPointPtr) yymsp[-4].
+						   minor.yy0);
+	  }
+	  break;
+      case 59:			/* linestring_textz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-1].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-2].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_linestring_xyz ((gaiaPointPtr) yymsp[-4].
+						   minor.yy0);
+	  }
+	  break;
+      case 60:			/* linestring_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-1].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-2].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_linestring_xyzm ((gaiaPointPtr) yymsp[-4].
+						    minor.yy0);
+	  }
+	  break;
+      case 61:			/* polygon ::= VANUATU_POLYGON polygon_text */
+      case 62:			/* polygonm ::= VANUATU_POLYGON_M polygon_textm */
+	  yytestcase (yyruleno == 62);
+      case 63:			/* polygonz ::= VANUATU_POLYGON_Z polygon_textz */
+	  yytestcase (yyruleno == 63);
+      case 64:			/* polygonzm ::= VANUATU_POLYGON_ZM polygon_textzm */
+	  yytestcase (yyruleno == 64);
+	  {
+	      yygotominor.yy0 =
+		  buildGeomFromPolygon ((gaiaPolygonPtr) yymsp[0].minor.yy0);
+	  }
+	  break;
+      case 65:			/* polygon_text ::= VANUATU_OPEN_BRACKET ring extra_rings VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaRingPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_polygon_xy ((gaiaRingPtr) yymsp[-2].minor.
+					       yy0);
+	  }
+	  break;
+      case 66:			/* polygon_textm ::= VANUATU_OPEN_BRACKET ringm extra_ringsm VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaRingPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_polygon_xym ((gaiaRingPtr) yymsp[-2].minor.
+						yy0);
+	  }
+	  break;
+      case 67:			/* polygon_textz ::= VANUATU_OPEN_BRACKET ringz extra_ringsz VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaRingPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_polygon_xyz ((gaiaRingPtr) yymsp[-2].minor.
+						yy0);
+	  }
+	  break;
+      case 68:			/* polygon_textzm ::= VANUATU_OPEN_BRACKET ringzm extra_ringszm VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaRingPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_polygon_xyzm ((gaiaRingPtr) yymsp[-2].minor.
+						 yy0);
+	  }
+	  break;
+      case 69:			/* ring ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPointPtr) yymsp[-8].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-6].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-6].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-4].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-2].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_ring_xy ((gaiaPointPtr) yymsp[-8].minor.yy0);
+	  }
+	  break;
+      case 71:			/* extra_rings ::= VANUATU_COMMA ring extra_rings */
+      case 74:			/* extra_ringsm ::= VANUATU_COMMA ringm extra_ringsm */
+	  yytestcase (yyruleno == 74);
+      case 77:			/* extra_ringsz ::= VANUATU_COMMA ringz extra_ringsz */
+	  yytestcase (yyruleno == 77);
+      case 80:			/* extra_ringszm ::= VANUATU_COMMA ringzm extra_ringszm */
+	  yytestcase (yyruleno == 80);
+	  {
+	      ((gaiaRingPtr) yymsp[-1].minor.yy0)->Next =
+		  (gaiaRingPtr) yymsp[0].minor.yy0;
+	      yygotominor.yy0 = yymsp[-1].minor.yy0;
+	  }
+	  break;
+      case 72:			/* ringm ::= VANUATU_OPEN_BRACKET point_coordxym VANUATU_COMMA point_coordxym VANUATU_COMMA point_coordxym VANUATU_COMMA point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPointPtr) yymsp[-8].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-6].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-6].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-4].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-2].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_ring_xym ((gaiaPointPtr) yymsp[-8].minor.
+					     yy0);
+	  }
+	  break;
+      case 75:			/* ringz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPointPtr) yymsp[-8].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-6].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-6].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-4].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-2].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_ring_xyz ((gaiaPointPtr) yymsp[-8].minor.
+					     yy0);
+	  }
+	  break;
+      case 78:			/* ringzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPointPtr) yymsp[-8].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-6].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-6].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-4].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-2].minor.yy0;
+	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_ring_xyzm ((gaiaPointPtr) yymsp[-8].minor.
+					      yy0);
+	  }
+	  break;
+      case 85:			/* multipoint_text ::= VANUATU_OPEN_BRACKET point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_multipoint_xy ((gaiaPointPtr) yymsp[-2].
+						  minor.yy0);
+	  }
+	  break;
+      case 86:			/* multipoint_textm ::= VANUATU_OPEN_BRACKET point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_multipoint_xym ((gaiaPointPtr) yymsp[-2].
+						   minor.yy0);
+	  }
+	  break;
+      case 87:			/* multipoint_textz ::= VANUATU_OPEN_BRACKET point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_multipoint_xyz ((gaiaPointPtr) yymsp[-2].
+						   minor.yy0);
+	  }
+	  break;
+      case 88:			/* multipoint_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPointPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_multipoint_xyzm ((gaiaPointPtr) yymsp[-2].
+						    minor.yy0);
+	  }
+	  break;
+      case 93:			/* multilinestring_text ::= VANUATU_OPEN_BRACKET linestring_text multilinestring_text2 VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaLinestringPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaLinestringPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_multilinestring_xy ((gaiaLinestringPtr)
+						       yymsp[-2].minor.yy0);
+	  }
+	  break;
+      case 95:			/* multilinestring_text2 ::= VANUATU_COMMA linestring_text multilinestring_text2 */
+      case 98:			/* multilinestring_textm2 ::= VANUATU_COMMA linestring_textm multilinestring_textm2 */
+	  yytestcase (yyruleno == 98);
+      case 101:		/* multilinestring_textz2 ::= VANUATU_COMMA linestring_textz multilinestring_textz2 */
+	  yytestcase (yyruleno == 101);
+      case 104:		/* multilinestring_textzm2 ::= VANUATU_COMMA linestring_textzm multilinestring_textzm2 */
+	  yytestcase (yyruleno == 104);
+	  {
+	      ((gaiaLinestringPtr) yymsp[-1].minor.yy0)->Next =
+		  (gaiaLinestringPtr) yymsp[0].minor.yy0;
+	      yygotominor.yy0 = yymsp[-1].minor.yy0;
+	  }
+	  break;
+      case 96:			/* multilinestring_textm ::= VANUATU_OPEN_BRACKET linestring_textm multilinestring_textm2 VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaLinestringPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaLinestringPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_multilinestring_xym ((gaiaLinestringPtr)
+							yymsp[-2].minor.yy0);
+	  }
+	  break;
+      case 99:			/* multilinestring_textz ::= VANUATU_OPEN_BRACKET linestring_textz multilinestring_textz2 VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaLinestringPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaLinestringPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_multilinestring_xyz ((gaiaLinestringPtr)
+							yymsp[-2].minor.yy0);
+	  }
+	  break;
+      case 102:		/* multilinestring_textzm ::= VANUATU_OPEN_BRACKET linestring_textzm multilinestring_textzm2 VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaLinestringPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaLinestringPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_multilinestring_xyzm ((gaiaLinestringPtr)
+							 yymsp[-2].minor.yy0);
+	  }
+	  break;
+      case 109:		/* multipolygon_text ::= VANUATU_OPEN_BRACKET polygon_text multipolygon_text2 VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPolygonPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_multipolygon_xy ((gaiaPolygonPtr) yymsp[-2].
+						    minor.yy0);
+	  }
+	  break;
+      case 111:		/* multipolygon_text2 ::= VANUATU_COMMA polygon_text multipolygon_text2 */
+      case 114:		/* multipolygon_textm2 ::= VANUATU_COMMA polygon_textm multipolygon_textm2 */
+	  yytestcase (yyruleno == 114);
+      case 117:		/* multipolygon_textz2 ::= VANUATU_COMMA polygon_textz multipolygon_textz2 */
+	  yytestcase (yyruleno == 117);
+      case 120:		/* multipolygon_textzm2 ::= VANUATU_COMMA polygon_textzm multipolygon_textzm2 */
+	  yytestcase (yyruleno == 120);
+	  {
+	      ((gaiaPolygonPtr) yymsp[-1].minor.yy0)->Next =
+		  (gaiaPolygonPtr) yymsp[0].minor.yy0;
+	      yygotominor.yy0 = yymsp[-1].minor.yy0;
+	  }
+	  break;
+      case 112:		/* multipolygon_textm ::= VANUATU_OPEN_BRACKET polygon_textm multipolygon_textm2 VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPolygonPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_multipolygon_xym ((gaiaPolygonPtr) yymsp[-2].
+						     minor.yy0);
+	  }
+	  break;
+      case 115:		/* multipolygon_textz ::= VANUATU_OPEN_BRACKET polygon_textz multipolygon_textz2 VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPolygonPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_multipolygon_xyz ((gaiaPolygonPtr) yymsp[-2].
+						     minor.yy0);
+	  }
+	  break;
+      case 118:		/* multipolygon_textzm ::= VANUATU_OPEN_BRACKET polygon_textzm multipolygon_textzm2 VANUATU_CLOSE_BRACKET */
+	  {
+	      ((gaiaPolygonPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_multipolygon_xyzm ((gaiaPolygonPtr)
+						      yymsp[-2].minor.yy0);
+	  }
+	  break;
+      case 125:		/* geocoll_text ::= VANUATU_OPEN_BRACKET point geocoll_text2 VANUATU_CLOSE_BRACKET */
+      case 126:		/* geocoll_text ::= VANUATU_OPEN_BRACKET linestring geocoll_text2 VANUATU_CLOSE_BRACKET */
+	  yytestcase (yyruleno == 126);
+      case 127:		/* geocoll_text ::= VANUATU_OPEN_BRACKET polygon geocoll_text2 VANUATU_CLOSE_BRACKET */
+	  yytestcase (yyruleno == 127);
+	  {
+	      ((gaiaGeomCollPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_geomColl_xy ((gaiaGeomCollPtr) yymsp[-2].
+						minor.yy0);
+	  }
+	  break;
+      case 129:		/* geocoll_text2 ::= VANUATU_COMMA point geocoll_text2 */
+      case 130:		/* geocoll_text2 ::= VANUATU_COMMA linestring geocoll_text2 */
+	  yytestcase (yyruleno == 130);
+      case 131:		/* geocoll_text2 ::= VANUATU_COMMA polygon geocoll_text2 */
+	  yytestcase (yyruleno == 131);
+      case 136:		/* geocoll_textm2 ::= VANUATU_COMMA pointm geocoll_textm2 */
+	  yytestcase (yyruleno == 136);
+      case 137:		/* geocoll_textm2 ::= VANUATU_COMMA linestringm geocoll_textm2 */
+	  yytestcase (yyruleno == 137);
+      case 138:		/* geocoll_textm2 ::= VANUATU_COMMA polygonm geocoll_textm2 */
+	  yytestcase (yyruleno == 138);
+      case 143:		/* geocoll_textz2 ::= VANUATU_COMMA pointz geocoll_textz2 */
+	  yytestcase (yyruleno == 143);
+      case 144:		/* geocoll_textz2 ::= VANUATU_COMMA linestringz geocoll_textz2 */
+	  yytestcase (yyruleno == 144);
+      case 145:		/* geocoll_textz2 ::= VANUATU_COMMA polygonz geocoll_textz2 */
+	  yytestcase (yyruleno == 145);
+      case 150:		/* geocoll_textzm2 ::= VANUATU_COMMA pointzm geocoll_textzm2 */
+	  yytestcase (yyruleno == 150);
+      case 151:		/* geocoll_textzm2 ::= VANUATU_COMMA linestringzm geocoll_textzm2 */
+	  yytestcase (yyruleno == 151);
+      case 152:		/* geocoll_textzm2 ::= VANUATU_COMMA polygonzm geocoll_textzm2 */
+	  yytestcase (yyruleno == 152);
+	  {
+	      ((gaiaGeomCollPtr) yymsp[-1].minor.yy0)->Next =
+		  (gaiaGeomCollPtr) yymsp[0].minor.yy0;
+	      yygotominor.yy0 = yymsp[-1].minor.yy0;
+	  }
+	  break;
+      case 132:		/* geocoll_textm ::= VANUATU_OPEN_BRACKET pointm geocoll_textm2 VANUATU_CLOSE_BRACKET */
+      case 133:		/* geocoll_textm ::= VANUATU_OPEN_BRACKET linestringm geocoll_textm2 VANUATU_CLOSE_BRACKET */
+	  yytestcase (yyruleno == 133);
+      case 134:		/* geocoll_textm ::= VANUATU_OPEN_BRACKET polygonm geocoll_textm2 VANUATU_CLOSE_BRACKET */
+	  yytestcase (yyruleno == 134);
+	  {
+	      ((gaiaGeomCollPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_geomColl_xym ((gaiaGeomCollPtr) yymsp[-2].
+						 minor.yy0);
+	  }
+	  break;
+      case 139:		/* geocoll_textz ::= VANUATU_OPEN_BRACKET pointz geocoll_textz2 VANUATU_CLOSE_BRACKET */
+      case 140:		/* geocoll_textz ::= VANUATU_OPEN_BRACKET linestringz geocoll_textz2 VANUATU_CLOSE_BRACKET */
+	  yytestcase (yyruleno == 140);
+      case 141:		/* geocoll_textz ::= VANUATU_OPEN_BRACKET polygonz geocoll_textz2 VANUATU_CLOSE_BRACKET */
+	  yytestcase (yyruleno == 141);
+	  {
+	      ((gaiaGeomCollPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_geomColl_xyz ((gaiaGeomCollPtr) yymsp[-2].
+						 minor.yy0);
+	  }
+	  break;
+      case 146:		/* geocoll_textzm ::= VANUATU_OPEN_BRACKET pointzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */
+      case 147:		/* geocoll_textzm ::= VANUATU_OPEN_BRACKET linestringzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */
+	  yytestcase (yyruleno == 147);
+      case 148:		/* geocoll_textzm ::= VANUATU_OPEN_BRACKET polygonzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */
+	  yytestcase (yyruleno == 148);
+	  {
+	      ((gaiaGeomCollPtr) yymsp[-2].minor.yy0)->Next =
+		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
+	      yygotominor.yy0 =
+		  (void *) vanuatu_geomColl_xyzm ((gaiaGeomCollPtr) yymsp[-2].
+						  minor.yy0);
+	  }
+	  break;
+      default:
+	  /* (0) main ::= in */ yytestcase (yyruleno == 0);
+	  /* (1) in ::= */ yytestcase (yyruleno == 1);
+	  /* (2) in ::= in state VANUATU_NEWLINE */ yytestcase (yyruleno == 2);
+	  /* (3) state ::= program */ yytestcase (yyruleno == 3);
+	  /* (4) program ::= geo_text */ yytestcase (yyruleno == 4);
+	  /* (5) program ::= geo_textz */ yytestcase (yyruleno == 5);
+	  /* (6) program ::= geo_textm */ yytestcase (yyruleno == 6);
+	  /* (7) program ::= geo_textzm */ yytestcase (yyruleno == 7);
+	  break;
+      };
+    yygoto = yyRuleInfo[yyruleno].lhs;
+    yysize = yyRuleInfo[yyruleno].nrhs;
+    yypParser->yyidx -= yysize;
+    yyact = yy_find_reduce_action (yymsp[-yysize].stateno, (YYCODETYPE) yygoto);
+    if (yyact < YYNSTATE)
+      {
+#ifdef NDEBUG
+	  /* If we are not debugging and the reduce action popped at least
+	   ** one element off the stack, then we can push the new element back
+	   ** onto the stack here, and skip the stack overflow test in yy_shift().
+	   ** That gives a significant speed improvement. */
+	  if (yysize)
+	    {
+		yypParser->yyidx++;
+		yymsp -= yysize - 1;
+		yymsp->stateno = (YYACTIONTYPE) yyact;
+		yymsp->major = (YYCODETYPE) yygoto;
+		yymsp->minor = yygotominor;
+	    }
+	  else
+#endif
+	    {
+		yy_shift (yypParser, yyact, yygoto, &yygotominor);
+	    }
+      }
+    else
+      {
+	  assert (yyact == YYNSTATE + YYNRULE + 1);
+	  yy_accept (yypParser);
+      }
+}
+
+/*
+** The following code executes when the parse fails
+*/
+#ifndef YYNOERRORRECOVERY
+static void
+yy_parse_failed (yyParser * yypParser	/* The parser */
+    )
+{
+    ParseARG_FETCH;
+#ifndef NDEBUG
+    if (yyTraceFILE)
+      {
+	  fprintf (yyTraceFILE, "%sFail!\n", yyTracePrompt);
+      }
+#endif
+    while (yypParser->yyidx >= 0)
+	yy_pop_parser_stack (yypParser);
+    /* Here code is inserted which will be executed whenever the
+     ** parser fails */
+    ParseARG_STORE;		/* Suppress warning about unused %extra_argument variable */
+}
+#endif /* YYNOERRORRECOVERY */
+
+/*
+** The following code executes when a syntax error first occurs.
+*/
+static void
+yy_syntax_error (yyParser * yypParser,	/* The parser */
+		 int yymajor,	/* The major type of the error token */
+		 YYMINORTYPE yyminor	/* The minor type of the error token */
+    )
+{
+    ParseARG_FETCH;
+#define TOKEN (yyminor.yy0)
+
+/* 
+** Sandro Furieri 2010 Apr 4
+** when the LEMON parser encounters an error
+** then this global variable is set 
+*/
+    vanuatu_parse_error = 1;
+    *result = NULL;
+    ParseARG_STORE;		/* Suppress warning about unused %extra_argument variable */
+}
+
+/*
+** The following is executed when the parser accepts
+*/
+static void
+yy_accept (yyParser * yypParser	/* The parser */
+    )
+{
+    ParseARG_FETCH;
+#ifndef NDEBUG
+    if (yyTraceFILE)
+      {
+	  fprintf (yyTraceFILE, "%sAccept!\n", yyTracePrompt);
+      }
+#endif
+    while (yypParser->yyidx >= 0)
+	yy_pop_parser_stack (yypParser);
+    /* Here code is inserted which will be executed whenever the
+     ** parser accepts */
+    ParseARG_STORE;		/* Suppress warning about unused %extra_argument variable */
+}
+
+/* The main parser program.
+** The first argument is a pointer to a structure obtained from
+** "ParseAlloc" which describes the current state of the parser.
+** The second argument is the major token number.  The third is
+** the minor token.  The fourth optional argument is whatever the
+** user wants (and specified in the grammar) and is available for
+** use by the action routines.
+**
+** Inputs:
+** <ul>
+** <li> A pointer to the parser (an opaque structure.)
+** <li> The major token number.
+** <li> The minor token number.
+** <li> An option argument of a grammar-specified type.
+** </ul>
+**
+** Outputs:
+** None.
+*/
+void
+Parse (void *yyp,		/* The parser */
+       int yymajor,		/* The major token code number */
+       ParseTOKENTYPE yyminor	/* The value for the token */
+       ParseARG_PDECL		/* Optional %extra_argument parameter */
+    )
+{
+    YYMINORTYPE yyminorunion;
+    int yyact;			/* The parser action. */
+    int yyendofinput;		/* True if we are at the end of input */
+#ifdef YYERRORSYMBOL
+    int yyerrorhit = 0;		/* True if yymajor has invoked an error */
+#endif
+    yyParser *yypParser;	/* The parser */
+
+    /* (re)initialize the parser, if necessary */
+    yypParser = (yyParser *) yyp;
+    if (yypParser->yyidx < 0)
+      {
+#if YYSTACKDEPTH<=0
+	  if (yypParser->yystksz <= 0)
+	    {
+		/*memset(&yyminorunion, 0, sizeof(yyminorunion)); */
+		yyminorunion = yyzerominor;
+		yyStackOverflow (yypParser, &yyminorunion);
+		return;
+	    }
+#endif
+	  yypParser->yyidx = 0;
+	  yypParser->yyerrcnt = -1;
+	  yypParser->yystack[0].stateno = 0;
+	  yypParser->yystack[0].major = 0;
+      }
+    yyminorunion.yy0 = yyminor;
+    yyendofinput = (yymajor == 0);
+    ParseARG_STORE;
+
+#ifndef NDEBUG
+    if (yyTraceFILE)
+      {
+	  fprintf (yyTraceFILE, "%sInput %s\n", yyTracePrompt,
+		   yyTokenName[yymajor]);
+      }
+#endif
+
+    do
+      {
+	  yyact = yy_find_shift_action (yypParser, (YYCODETYPE) yymajor);
+	  if (yyact < YYNSTATE)
+	    {
+		assert (!yyendofinput);	/* Impossible to shift the $ token */
+		yy_shift (yypParser, yyact, yymajor, &yyminorunion);
+		yypParser->yyerrcnt--;
+		yymajor = YYNOCODE;
+	    }
+	  else if (yyact < YYNSTATE + YYNRULE)
+	    {
+		yy_reduce (yypParser, yyact - YYNSTATE);
+	    }
+	  else
+	    {
+		assert (yyact == YY_ERROR_ACTION);
+#ifdef YYERRORSYMBOL
+		int yymx;
+#endif
+#ifndef NDEBUG
+		if (yyTraceFILE)
+		  {
+		      fprintf (yyTraceFILE, "%sSyntax Error!\n", yyTracePrompt);
+		  }
+#endif
+#ifdef YYERRORSYMBOL
+		/* A syntax error has occurred.
+		 ** The response to an error depends upon whether or not the
+		 ** grammar defines an error token "ERROR".  
+		 **
+		 ** This is what we do if the grammar does define ERROR:
+		 **
+		 **  * Call the %syntax_error function.
+		 **
+		 **  * Begin popping the stack until we enter a state where
+		 **    it is legal to shift the error symbol, then shift
+		 **    the error symbol.
+		 **
+		 **  * Set the error count to three.
+		 **
+		 **  * Begin accepting and shifting new tokens.  No new error
+		 **    processing will occur until three tokens have been
+		 **    shifted successfully.
+		 **
+		 */
+		if (yypParser->yyerrcnt < 0)
+		  {
+		      yy_syntax_error (yypParser, yymajor, yyminorunion);
+		  }
+		yymx = yypParser->yystack[yypParser->yyidx].major;
+		if (yymx == YYERRORSYMBOL || yyerrorhit)
+		  {
+#ifndef NDEBUG
+		      if (yyTraceFILE)
+			{
+			    fprintf (yyTraceFILE, "%sDiscard input token %s\n",
+				     yyTracePrompt, yyTokenName[yymajor]);
+			}
+#endif
+		      yy_destructor (yypParser, (YYCODETYPE) yymajor,
+				     &yyminorunion);
+		      yymajor = YYNOCODE;
+		  }
+		else
+		  {
+		      while (yypParser->yyidx >= 0 &&
+			     yymx != YYERRORSYMBOL &&
+			     (yyact =
+			      yy_find_reduce_action (yypParser->
+						     yystack[yypParser->yyidx].
+						     stateno,
+						     YYERRORSYMBOL)) >=
+			     YYNSTATE)
+			{
+			    yy_pop_parser_stack (yypParser);
+			}
+		      if (yypParser->yyidx < 0 || yymajor == 0)
+			{
+			    yy_destructor (yypParser, (YYCODETYPE) yymajor,
+					   &yyminorunion);
+			    yy_parse_failed (yypParser);
+			    yymajor = YYNOCODE;
+			}
+		      else if (yymx != YYERRORSYMBOL)
+			{
+			    YYMINORTYPE u2;
+			    u2.YYERRSYMDT = 0;
+			    yy_shift (yypParser, yyact, YYERRORSYMBOL, &u2);
+			}
+		  }
+		yypParser->yyerrcnt = 3;
+		yyerrorhit = 1;
+#elif defined(YYNOERRORRECOVERY)
+		/* If the YYNOERRORRECOVERY macro is defined, then do not attempt to
+		 ** do any kind of error recovery.  Instead, simply invoke the syntax
+		 ** error routine and continue going as if nothing had happened.
+		 **
+		 ** Applications can set this macro (for example inside %include) if
+		 ** they intend to abandon the parse upon the first syntax error seen.
+		 */
+		yy_syntax_error (yypParser, yymajor, yyminorunion);
+		yy_destructor (yypParser, (YYCODETYPE) yymajor, &yyminorunion);
+		yymajor = YYNOCODE;
+
+#else /* YYERRORSYMBOL is not defined */
+		/* This is what we do if the grammar does not define ERROR:
+		 **
+		 **  * Report an error message, and throw away the input token.
+		 **
+		 **  * If the input token is $, then fail the parse.
+		 **
+		 ** As before, subsequent error messages are suppressed until
+		 ** three input tokens have been successfully shifted.
+		 */
+		if (yypParser->yyerrcnt <= 0)
+		  {
+		      yy_syntax_error (yypParser, yymajor, yyminorunion);
+		  }
+		yypParser->yyerrcnt = 3;
+		yy_destructor (yypParser, (YYCODETYPE) yymajor, &yyminorunion);
+		if (yyendofinput)
+		  {
+		      yy_parse_failed (yypParser);
+		  }
+		yymajor = YYNOCODE;
+#endif
+	    }
+      }
+    while (yymajor != YYNOCODE && yypParser->yyidx >= 0);
+    return;
+}
+
+/*
+ VANUATU_LEMON_END - LEMON generated code ends here 
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+** CAVEAT: there is an incompatibility between LEMON and FLEX
+** this macro resolves the issue
+*/
+#undef yy_accept
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+ VANUATU_FLEX_START - FLEX generated code starts here 
+*/
+
+#line 3 "lex.yy.c"
+
+#define  YY_INT_ALIGNED short int
+
+/* A lexical scanner generated by flex */
+
+#define FLEX_SCANNER
+#define YY_FLEX_MAJOR_VERSION 2
+#define YY_FLEX_MINOR_VERSION 5
+#define YY_FLEX_SUBMINOR_VERSION 34
+#if YY_FLEX_SUBMINOR_VERSION > 0
+#define FLEX_BETA
+#endif
+
+/* First, we deal with  platform-specific or compiler-specific issues. */
+
+/* begin standard C headers. */
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <stdlib.h>
+
+/* end standard C headers. */
+
+/* flex integer type definitions */
+
+#ifndef FLEXINT_H
+#define FLEXINT_H
+
+/* C99 systems have <inttypes.h>. Non-C99 systems may or may not. */
+
+#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+
+/* C99 says to define __STDC_LIMIT_MACROS before including stdint.h,
+ * if you want the limit (max/min) macros for int types. 
+ */
+#ifndef __STDC_LIMIT_MACROS
+#define __STDC_LIMIT_MACROS 1
+#endif
+
+#include <inttypes.h>
+typedef int8_t flex_int8_t;
+typedef uint8_t flex_uint8_t;
+typedef int16_t flex_int16_t;
+typedef uint16_t flex_uint16_t;
+typedef int32_t flex_int32_t;
+typedef uint32_t flex_uint32_t;
+#else
+typedef signed char flex_int8_t;
+typedef short int flex_int16_t;
+typedef int flex_int32_t;
+typedef unsigned char flex_uint8_t;
+typedef unsigned short int flex_uint16_t;
+typedef unsigned int flex_uint32_t;
+#endif /* ! C99 */
+
+/* Limits of integral types. */
+#ifndef INT8_MIN
+#define INT8_MIN               (-128)
+#endif
+#ifndef INT16_MIN
+#define INT16_MIN              (-32767-1)
+#endif
+#ifndef INT32_MIN
+#define INT32_MIN              (-2147483647-1)
+#endif
+#ifndef INT8_MAX
+#define INT8_MAX               (127)
+#endif
+#ifndef INT16_MAX
+#define INT16_MAX              (32767)
+#endif
+#ifndef INT32_MAX
+#define INT32_MAX              (2147483647)
+#endif
+#ifndef UINT8_MAX
+#define UINT8_MAX              (255U)
+#endif
+#ifndef UINT16_MAX
+#define UINT16_MAX             (65535U)
+#endif
+#ifndef UINT32_MAX
+#define UINT32_MAX             (4294967295U)
+#endif
+
+#endif /* ! FLEXINT_H */
+
+#ifdef __cplusplus
+
+/* The "const" storage-class-modifier is valid. */
+#define YY_USE_CONST
+
+#else /* ! __cplusplus */
+
+/* C99 requires __STDC__ to be defined as 1. */
+#if defined (__STDC__)
+
+#define YY_USE_CONST
+
+#endif /* defined (__STDC__) */
+#endif /* ! __cplusplus */
+
+#ifdef YY_USE_CONST
+#define yyconst const
+#else
+#define yyconst
+#endif
+
+/* Returned upon end-of-file. */
+#define YY_NULL 0
+
+/* Promotes a possibly negative, possibly signed char to an unsigned
+ * integer for use as an array index.  If the signed char is negative,
+ * we want to instead treat it as an 8-bit unsigned char, hence the
+ * double cast.
+ */
+#define YY_SC_TO_UI(c) ((unsigned int) (unsigned char) c)
+
+/* Enter a start condition.  This macro really ought to take a parameter,
+ * but we do it the disgusting crufty way forced on us by the ()-less
+ * definition of BEGIN.
+ */
+#define BEGIN (yy_start) = 1 + 2 *
+
+/* Translate the current start state into a value that can be later handed
+ * to BEGIN to return to the state.  The YYSTATE alias is for lex
+ * compatibility.
+ */
+#define YY_START (((yy_start) - 1) / 2)
+#define YYSTATE YY_START
+
+/* Action number for EOF rule of a given start state. */
+#define YY_STATE_EOF(state) (YY_END_OF_BUFFER + state + 1)
+
+/* Special action meaning "start processing a new file". */
+#define YY_NEW_FILE yyrestart(yyin  )
+
+#define YY_END_OF_BUFFER_CHAR 0
+
+/* Size of default input buffer. */
+#ifndef YY_BUF_SIZE
+#define YY_BUF_SIZE 16384
+#endif
+
+/* The state buf must be large enough to hold one state per character in the main buffer.
+ */
+#define YY_STATE_BUF_SIZE   ((YY_BUF_SIZE + 2) * sizeof(yy_state_type))
+
+#ifndef YY_TYPEDEF_YY_BUFFER_STATE
+#define YY_TYPEDEF_YY_BUFFER_STATE
+typedef struct yy_buffer_state *YY_BUFFER_STATE;
+#endif
+
+extern int yyleng;
+
+extern FILE *yyin, *yyout;
+
+#define EOB_ACT_CONTINUE_SCAN 0
+#define EOB_ACT_END_OF_FILE 1
+#define EOB_ACT_LAST_MATCH 2
+
+#define YY_LESS_LINENO(n)
+
+/* Return all but the first "n" matched characters back to the input stream. */
+#define yyless(n) \
+	do \
+		{ \
+		/* Undo effects of setting up yytext. */ \
+        int yyless_macro_arg = (n); \
+        YY_LESS_LINENO(yyless_macro_arg);\
+		*yy_cp = (yy_hold_char); \
+		YY_RESTORE_YY_MORE_OFFSET \
+		(yy_c_buf_p) = yy_cp = yy_bp + yyless_macro_arg - YY_MORE_ADJ; \
+		YY_DO_BEFORE_ACTION; /* set up yytext again */ \
+		} \
+	while ( 0 )
+
+#define unput(c) yyunput( c, (yytext_ptr)  )
+
+/* The following is because we cannot portably get our hands on size_t
+ * (without autoconf's help, which isn't available because we want
+ * flex-generated scanners to compile on their own).
+ * Given that the standard has decreed that size_t exists since 1989,
+ * I guess we can afford to depend on it. Manoj.
+ */
+
+#ifndef YY_TYPEDEF_YY_SIZE_T
+#define YY_TYPEDEF_YY_SIZE_T
+typedef size_t yy_size_t;
+#endif
+
+#ifndef YY_STRUCT_YY_BUFFER_STATE
+#define YY_STRUCT_YY_BUFFER_STATE
+struct yy_buffer_state
+{
+    FILE *yy_input_file;
+
+    char *yy_ch_buf;		/* input buffer */
+    char *yy_buf_pos;		/* current position in input buffer */
+
+    /* Size of input buffer in bytes, not including room for EOB
+     * characters.
+     */
+    yy_size_t yy_buf_size;
+
+    /* Number of characters read into yy_ch_buf, not including EOB
+     * characters.
+     */
+    int yy_n_chars;
+
+    /* Whether we "own" the buffer - i.e., we know we created it,
+     * and can realloc() it to grow it, and should free() it to
+     * delete it.
+     */
+    int yy_is_our_buffer;
+
+    /* Whether this is an "interactive" input source; if so, and
+     * if we're using stdio for input, then we want to use getc()
+     * instead of fread(), to make sure we stop fetching input after
+     * each newline.
+     */
+    int yy_is_interactive;
+
+    /* Whether we're considered to be at the beginning of a line.
+     * If so, '^' rules will be active on the next match, otherwise
+     * not.
+     */
+    int yy_at_bol;
+
+    int yy_bs_lineno; /**< The line count. */
+    int yy_bs_column; /**< The column count. */
+
+    /* Whether to try to fill the input buffer when we reach the
+     * end of it.
+     */
+    int yy_fill_buffer;
+
+    int yy_buffer_status;
+
+#define YY_BUFFER_NEW 0
+#define YY_BUFFER_NORMAL 1
+    /* When an EOF's been seen but there's still some text to process
+     * then we mark the buffer as YY_EOF_PENDING, to indicate that we
+     * shouldn't try reading from the input source any more.  We might
+     * still have a bunch of tokens to match, though, because of
+     * possible backing-up.
+     *
+     * When we actually see the EOF, we change the status to "new"
+     * (via yyrestart()), so that the user can continue scanning by
+     * just pointing yyin at a new input file.
+     */
+#define YY_BUFFER_EOF_PENDING 2
+
+};
+#endif /* !YY_STRUCT_YY_BUFFER_STATE */
+
+/* Stack of input buffers. */
+static size_t yy_buffer_stack_top = 0; /**< index of top of stack. */
+static size_t yy_buffer_stack_max = 0; /**< capacity of stack. */
+static YY_BUFFER_STATE *yy_buffer_stack = 0;  /**< Stack as an array. */
+
+/* We provide macros for accessing buffer states in case in the
+ * future we want to put the buffer states in a more general
+ * "scanner state".
+ *
+ * Returns the top of the stack, or NULL.
+ */
+#define YY_CURRENT_BUFFER ( (yy_buffer_stack) \
+                          ? (yy_buffer_stack)[(yy_buffer_stack_top)] \
+                          : NULL)
+
+/* Same as previous macro, but useful when we know that the buffer stack is not
+ * NULL or when we need an lvalue. For internal use only.
+ */
+#define YY_CURRENT_BUFFER_LVALUE (yy_buffer_stack)[(yy_buffer_stack_top)]
+
+/* yy_hold_char holds the character lost when yytext is formed. */
+static char yy_hold_char;
+static int yy_n_chars;		/* number of characters read into yy_ch_buf */
+int yyleng;
+
+/* Points to current character in buffer. */
+static char *yy_c_buf_p = (char *) 0;
+static int yy_init = 0;		/* whether we need to initialize */
+static int yy_start = 0;	/* start state number */
+
+/* Flag which is used to allow yywrap()'s to do buffer switches
+ * instead of setting up a fresh yyin.  A bit of a hack ...
+ */
+static int yy_did_buffer_switch_on_eof;
+
+void yyrestart (FILE * input_file);
+void yy_switch_to_buffer (YY_BUFFER_STATE new_buffer);
+YY_BUFFER_STATE yy_create_buffer (FILE * file, int size);
+void yy_delete_buffer (YY_BUFFER_STATE b);
+void yy_flush_buffer (YY_BUFFER_STATE b);
+void yypush_buffer_state (YY_BUFFER_STATE new_buffer);
+void yypop_buffer_state (void);
+
+static void yyensure_buffer_stack (void);
+static void yy_load_buffer_state (void);
+static void yy_init_buffer (YY_BUFFER_STATE b, FILE * file);
+
+#define YY_FLUSH_BUFFER yy_flush_buffer(YY_CURRENT_BUFFER )
+
+YY_BUFFER_STATE yy_scan_buffer (char *base, yy_size_t size);
+YY_BUFFER_STATE yy_scan_string (yyconst char *yy_str);
+YY_BUFFER_STATE yy_scan_bytes (yyconst char *bytes, int len);
+
+void *yyalloc (yy_size_t);
+void *yyrealloc (void *, yy_size_t);
+void yyfree (void *);
+
+#define yy_new_buffer yy_create_buffer
+
+#define yy_set_interactive(is_interactive) \
+	{ \
+	if ( ! YY_CURRENT_BUFFER ){ \
+        yyensure_buffer_stack (); \
+		YY_CURRENT_BUFFER_LVALUE =    \
+            yy_create_buffer(yyin,YY_BUF_SIZE ); \
+	} \
+	YY_CURRENT_BUFFER_LVALUE->yy_is_interactive = is_interactive; \
+	}
+
+#define yy_set_bol(at_bol) \
+	{ \
+	if ( ! YY_CURRENT_BUFFER ){\
+        yyensure_buffer_stack (); \
+		YY_CURRENT_BUFFER_LVALUE =    \
+            yy_create_buffer(yyin,YY_BUF_SIZE ); \
+	} \
+	YY_CURRENT_BUFFER_LVALUE->yy_at_bol = at_bol; \
+	}
+
+#define YY_AT_BOL() (YY_CURRENT_BUFFER_LVALUE->yy_at_bol)
+
+/* Begin user sect3 */
+
+typedef unsigned char YY_CHAR;
+
+FILE *yyin = (FILE *) 0, *yyout = (FILE *) 0;
+
+typedef int yy_state_type;
+
+extern int yylineno;
+
+int yylineno = 1;
+
+extern char *yytext;
+#define yytext_ptr yytext
+
+static yy_state_type yy_get_previous_state (void);
+static yy_state_type yy_try_NUL_trans (yy_state_type current_state);
+static int yy_get_next_buffer (void);
+static void yy_fatal_error (yyconst char msg[]);
+
+/* Done after the current pattern has been matched and before the
+ * corresponding action - sets up yytext.
+ */
+#define YY_DO_BEFORE_ACTION \
+	(yytext_ptr) = yy_bp; \
+	yyleng = (size_t) (yy_cp - yy_bp); \
+	(yy_hold_char) = *yy_cp; \
+	*yy_cp = '\0'; \
+	(yy_c_buf_p) = yy_cp;
+
+#define YY_NUM_RULES 36
+#define YY_END_OF_BUFFER 37
+/* This struct is not used in this scanner,
+   but its presence is necessary. */
+struct yy_trans_info
+{
+    flex_int32_t yy_verify;
+    flex_int32_t yy_nxt;
+};
+static yyconst flex_int16_t yy_accept[109] = { 0,
+    0, 0, 37, 35, 33, 34, 3, 4, 2, 35,
+    35, 1, 35, 35, 35, 35, 1, 1, 0, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 5, 0, 0,
+    0, 0, 0, 0, 7, 6, 0, 0, 0, 0,
+    0, 8, 13, 0, 0, 0, 0, 0, 0, 15,
+    14, 0, 0, 0, 0, 0, 16, 0, 9, 0,
+    17, 0, 0, 0, 11, 10, 0, 0, 19, 18,
+    0, 0, 12, 0, 20, 25, 0, 0, 0, 27,
+    26, 0, 0, 28, 0, 21, 0, 0, 23, 22,
+
+    0, 24, 29, 0, 31, 30, 32, 0
+};
+
+static yyconst flex_int32_t yy_ec[256] = { 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 2, 3,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 4, 1, 1, 1, 1, 1, 1, 1, 5,
+    6, 1, 1, 7, 8, 9, 1, 10, 10, 10,
+    10, 10, 10, 10, 10, 10, 10, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 11, 1, 12, 1,
+    13, 1, 14, 1, 1, 15, 16, 17, 18, 19,
+    1, 20, 21, 22, 23, 1, 1, 1, 24, 25,
+    1, 1, 1, 1, 1, 1, 1, 1, 26, 1,
+
+    27, 1, 28, 1, 29, 1, 1, 30, 31, 32,
+    33, 34, 1, 35, 36, 37, 38, 1, 1, 1,
+    39, 40, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1
+};
+
+static yyconst flex_int32_t yy_meta[41] = { 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+};
+
+static yyconst flex_int16_t yy_base[109] = { 0,
+    0, 0, 199, 267, 267, 267, 267, 267, 267, 157,
+    154, 32, 31, 30, 22, 28, 107, 82, 73, 38,
+    31, 33, 36, 38, 38, 43, 34, 40, 38, 51,
+    52, 60, 53, 63, 57, 58, 66, 82, 64, 64,
+    67, 79, 83, 87, 267, 88, 88, 82, 95, 93,
+    100, 267, 107, 115, 111, 119, 116, 110, 119, 267,
+    120, 119, 126, 119, 120, 132, 267, 138, 154, 134,
+    157, 144, 148, 149, 267, 150, 149, 167, 267, 156,
+    158, 164, 267, 172, 267, 189, 184, 179, 184, 267,
+    186, 181, 191, 267, 192, 209, 190, 206, 267, 196,
+
+    209, 267, 226, 219, 267, 212, 267, 267
+};
+
+static yyconst flex_int16_t yy_def[109] = { 0,
+    108, 1, 108, 108, 108, 108, 108, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+
+    108, 108, 108, 108, 108, 108, 108, 0
+};
+
+static yyconst flex_int16_t yy_nxt[308] = { 0,
+    4, 5, 6, 5, 7, 8, 9, 10, 11, 12,
+    4, 4, 13, 4, 14, 15, 4, 4, 16, 4,
+    4, 4, 4, 4, 4, 4, 4, 13, 4, 14,
+    15, 4, 4, 16, 4, 4, 4, 4, 4, 4,
+    19, 20, 21, 22, 23, 24, 19, 20, 25, 26,
+    27, 28, 29, 30, 31, 32, 33, 21, 22, 23,
+    24, 34, 35, 25, 26, 27, 28, 29, 30, 31,
+    32, 33, 36, 37, 38, 39, 34, 35, 40, 41,
+    42, 47, 18, 48, 43, 44, 49, 36, 37, 38,
+    39, 18, 50, 40, 41, 42, 47, 45, 48, 43,
+
+    51, 49, 45, 52, 53, 54, 46, 50, 55, 56,
+    59, 46, 45, 57, 58, 51, 17, 45, 52, 53,
+    54, 46, 60, 55, 56, 62, 46, 63, 57, 58,
+    64, 61, 65, 66, 60, 67, 68, 60, 69, 70,
+    62, 71, 63, 61, 72, 64, 61, 65, 66, 60,
+    67, 68, 73, 69, 70, 77, 71, 74, 61, 72,
+    78, 81, 82, 18, 75, 83, 17, 73, 84, 75,
+    77, 85, 79, 76, 86, 87, 81, 82, 76, 75,
+    83, 80, 79, 84, 75, 88, 85, 79, 76, 86,
+    87, 80, 89, 76, 92, 93, 80, 79, 108, 90,
+
+    88, 94, 95, 96, 90, 97, 80, 101, 91, 92,
+    93, 102, 98, 91, 90, 108, 94, 95, 96, 90,
+    97, 99, 101, 91, 99, 103, 102, 107, 91, 104,
+    100, 108, 108, 100, 105, 108, 99, 108, 108, 99,
+    103, 105, 107, 106, 108, 100, 108, 108, 100, 105,
+    106, 108, 108, 108, 108, 108, 105, 108, 106, 108,
+    108, 108, 108, 108, 108, 106, 3, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+
+    108, 108, 108, 108, 108, 108, 108
+};
+
+static yyconst flex_int16_t yy_chk[308] = { 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    12, 12, 13, 14, 15, 16, 20, 20, 21, 22,
+    23, 24, 24, 25, 26, 27, 28, 13, 14, 15,
+    16, 29, 30, 21, 22, 23, 24, 24, 25, 26,
+    27, 28, 31, 32, 33, 34, 29, 30, 35, 36,
+    37, 39, 19, 40, 37, 38, 41, 31, 32, 33,
+    34, 18, 42, 35, 36, 37, 39, 38, 40, 37,
+
+    43, 41, 44, 46, 47, 48, 38, 42, 49, 50,
+    53, 44, 38, 51, 51, 43, 17, 44, 46, 47,
+    48, 38, 53, 49, 50, 54, 44, 55, 51, 51,
+    56, 53, 57, 58, 59, 61, 62, 53, 63, 64,
+    54, 65, 55, 59, 66, 56, 53, 57, 58, 59,
+    61, 62, 68, 63, 64, 70, 65, 69, 59, 66,
+    71, 72, 73, 11, 74, 76, 10, 68, 77, 69,
+    70, 80, 71, 74, 81, 82, 72, 73, 69, 74,
+    76, 71, 78, 77, 69, 84, 80, 71, 74, 81,
+    82, 78, 86, 69, 87, 88, 71, 78, 3, 89,
+
+    84, 91, 92, 93, 86, 95, 78, 97, 89, 87,
+    88, 100, 96, 86, 89, 0, 91, 92, 93, 86,
+    95, 98, 97, 89, 96, 101, 100, 106, 86, 103,
+    98, 0, 0, 96, 104, 0, 98, 0, 0, 96,
+    101, 103, 106, 104, 0, 98, 0, 0, 96, 104,
+    103, 0, 0, 0, 0, 0, 103, 0, 104, 0,
+    0, 0, 0, 0, 0, 103, 108, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+    108, 108, 108, 108, 108, 108, 108, 108, 108, 108,
+
+    108, 108, 108, 108, 108, 108, 108
+};
+
+static yy_state_type yy_last_accepting_state;
+static char *yy_last_accepting_cpos;
+
+extern int yy_flex_debug;
+int yy_flex_debug = 0;
+
+/* The intent behind this definition is that it'll catch
+ * any uses of REJECT which flex missed.
+ */
+#define REJECT reject_used_but_not_detected
+#define yymore() yymore_used_but_not_detected
+#define YY_MORE_ADJ 0
+#define YY_RESTORE_YY_MORE_OFFSET
+char *yytext;
+/* 
+ vanuatuLexer.l -- Vanuatu WKT parser - FLEX config
+  
+ version 2.4, 2010 April 2
+
+ Author: Sandro Furieri a.furieri@lqt.it
+
+ ------------------------------------------------------------------------------
+ 
+ Version: MPL 1.1/GPL 2.0/LGPL 2.1
+ 
+ The contents of this file are subject to the Mozilla Public License Version
+ 1.1 (the "License"); you may not use this file except in compliance with
+ the License. You may obtain a copy of the License at
+ http://www.mozilla.org/MPL/
+ 
+Software distributed under the License is distributed on an "AS IS" basis,
+WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+for the specific language governing rights and limitations under the
+License.
+
+The Original Code is the SpatiaLite library
+
+The Initial Developer of the Original Code is Alessandro Furieri
+ 
+Portions created by the Initial Developer are Copyright (C) 2008
+the Initial Developer. All Rights Reserved.
+
+Contributor(s):
+The Vanuatu Team - University of Toronto
+
+Alternatively, the contents of this file may be used under the terms of
+either the GNU General Public License Version 2 or later (the "GPL"), or
+the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
+in which case the provisions of the GPL or the LGPL are applicable instead
+of those above. If you wish to allow use of your version of this file only
+under the terms of either the GPL or the LGPL, and not to allow others to
+use your version of this file under the terms of the MPL, indicate your
+decision by deleting the provisions above and replace them with the notice
+and other provisions required by the GPL or the LGPL. If you do not delete
+the provisions above, a recipient may use your version of this file under
+the terms of any one of the MPL, the GPL or the LGPL.
+ 
+*/
+/******************************************************************************
+** The following code was created by Team Vanuatu of The University of Toronto.
+
+Authors:
+Ruppi Rana			ruppi.rana@gmail.com
+Dev Tanna			dev.tanna@gmail.com
+Elias Adum			elias.adum@gmail.com
+Benton Hui			benton.hui@gmail.com
+Abhayan Sundararajan		abhayan@gmail.com
+Chee-Lun Michael Stephen Cho	cheelun.cho@gmail.com
+Nikola Banovic			nikola.banovic@gmail.com
+Yong Jian			yong.jian@utoronto.ca
+
+Supervisor:
+Greg Wilson			gvwilson@cs.toronto.ca
+
+-------------------------------------------------------------------------------
+*/
+
+/* For debugging purposes */
+int line = 1, col = 1;
+
+/**
+*  The main string-token matcher.
+*  The lower case part is probably not needed.  We should really be converting 
+*  The string to all uppercase/lowercase to make it case iNsEnSiTiVe.
+*  What Flex will do is, For the input string, beginning from the front, Flex
+*  will try to match with any of the defined tokens from below.  Flex will 
+*  then match the string of longest length.  Suppose the string is: POINT ZM,
+*  Flex would match both POINT Z and POINT ZM, but since POINT ZM is the longer
+*  of the two tokens, FLEX will match POINT ZM.
+*/
+
+#define INITIAL 0
+
+#ifndef YY_NO_UNISTD_H
+/* Special case for "unistd.h", since it is non-ANSI. We include it way
+ * down here because we want the user's section 1 to have been scanned first.
+ * The user has a chance to override it with an option.
+ */
+#include <unistd.h>
+#endif
+
+#ifndef YY_EXTRA_TYPE
+#define YY_EXTRA_TYPE void *
+#endif
+
+static int yy_init_globals (void);
+
+/* Macros after this point can all be overridden by user definitions in
+ * section 1.
+ */
+
+#ifndef YY_SKIP_YYWRAP
+#ifdef __cplusplus
+extern "C" int yywrap (void);
+#else
+extern int yywrap (void);
+#endif
+#endif
+
+static void yyunput (int c, char *buf_ptr);
+
+#ifndef yytext_ptr
+static void yy_flex_strncpy (char *, yyconst char *, int);
+#endif
+
+#ifdef YY_NEED_STRLEN
+static int yy_flex_strlen (yyconst char *);
+#endif
+
+#ifndef YY_NO_INPUT
+
+#ifdef __cplusplus
+static int yyinput (void);
+#else
+static int input (void);
+#endif
+
+#endif
+
+/* Amount of stuff to slurp up with each read. */
+#ifndef YY_READ_BUF_SIZE
+#define YY_READ_BUF_SIZE 8192
+#endif
+
+/* Copy whatever the last rule matched to the standard output. */
+#ifndef ECHO
+/* This used to be an fputs(), but since the string might contain NUL's,
+ * we now use fwrite().
+ */
+#define ECHO fwrite( yytext, yyleng, 1, yyout )
+#endif
+
+/* Gets input and stuffs it into "buf".  number of characters read, or YY_NULL,
+ * is returned in "result".
+ */
+#ifndef YY_INPUT
+#define YY_INPUT(buf,result,max_size) \
+	if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) \
+		{ \
+		int c = '*'; \
+		int n; \
+		for ( n = 0; n < max_size && \
+			     (c = getc( yyin )) != EOF && c != '\n'; ++n ) \
+			buf[n] = (char) c; \
+		if ( c == '\n' ) \
+			buf[n++] = (char) c; \
+		if ( c == EOF && ferror( yyin ) ) \
+			YY_FATAL_ERROR( "input in flex scanner failed" ); \
+		result = n; \
+		} \
+	else \
+		{ \
+		errno=0; \
+		while ( (result = fread(buf, 1, max_size, yyin))==0 && ferror(yyin)) \
+			{ \
+			if( errno != EINTR) \
+				{ \
+				YY_FATAL_ERROR( "input in flex scanner failed" ); \
+				break; \
+				} \
+			errno=0; \
+			clearerr(yyin); \
+			} \
+		}\
+\
+
+#endif
+
+/* No semi-colon after return; correct usage is to write "yyterminate();" -
+ * we don't want an extra ';' after the "return" because that will cause
+ * some compilers to complain about unreachable statements.
+ */
+#ifndef yyterminate
+#define yyterminate() return YY_NULL
+#endif
+
+/* Number of entries by which start-condition stack grows. */
+#ifndef YY_START_STACK_INCR
+#define YY_START_STACK_INCR 25
+#endif
+
+/* Report a fatal error. */
+#ifndef YY_FATAL_ERROR
+#define YY_FATAL_ERROR(msg) yy_fatal_error( msg )
+#endif
+
+/* end tables serialization structures and prototypes */
+
+/* Default declaration of generated scanner - a define so the user can
+ * easily add parameters.
+ */
+#ifndef YY_DECL
+#define YY_DECL_IS_OURS 1
+
+extern int yylex (void);
+
+#define YY_DECL int yylex (void)
+#endif /* !YY_DECL */
+
+/* Code executed at the beginning of each rule, after yytext and yyleng
+ * have been set up.
+ */
+#ifndef YY_USER_ACTION
+#define YY_USER_ACTION
+#endif
+
+/* Code executed at the end of each rule. */
+#ifndef YY_BREAK
+#define YY_BREAK break;
+#endif
+
+#define YY_RULE_SETUP \
+	YY_USER_ACTION
+
+/** The main scanner function which does all the work.
+ */
+YY_DECL
+{
+    register yy_state_type yy_current_state;
+    register char *yy_cp, *yy_bp;
+    register int yy_act;
+
+    if (!(yy_init))
+      {
+	  (yy_init) = 1;
+
+#ifdef YY_USER_INIT
+	  YY_USER_INIT;
+#endif
+
+	  if (!(yy_start))
+	      (yy_start) = 1;	/* first start state */
+
+	  if (!yyin)
+	      yyin = stdin;
+
+	  if (!yyout)
+	      yyout = stdout;
+
+	  if (!YY_CURRENT_BUFFER)
+	    {
+		yyensure_buffer_stack ();
+		YY_CURRENT_BUFFER_LVALUE = yy_create_buffer (yyin, YY_BUF_SIZE);
+	    }
+
+	  yy_load_buffer_state ();
+      }
+
+    while (1)			/* loops until end-of-file is reached */
+      {
+	  yy_cp = (yy_c_buf_p);
+
+	  /* Support of yytext. */
+	  *yy_cp = (yy_hold_char);
+
+	  /* yy_bp points to the position in yy_ch_buf of the start of
+	   * the current run.
+	   */
+	  yy_bp = yy_cp;
+
+	  yy_current_state = (yy_start);
+	yy_match:
+	  do
+	    {
+		register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI (*yy_cp)];
+		if (yy_accept[yy_current_state])
+		  {
+		      (yy_last_accepting_state) = yy_current_state;
+		      (yy_last_accepting_cpos) = yy_cp;
+		  }
+		while (yy_chk[yy_base[yy_current_state] + yy_c] !=
+		       yy_current_state)
+		  {
+		      yy_current_state = (int) yy_def[yy_current_state];
+		      if (yy_current_state >= 109)
+			  yy_c = yy_meta[(unsigned int) yy_c];
+		  }
+		yy_current_state =
+		    yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+		++yy_cp;
+	    }
+	  while (yy_base[yy_current_state] != 267);
+
+	yy_find_action:
+	  yy_act = yy_accept[yy_current_state];
+	  if (yy_act == 0)
+	    {			/* have to back up */
+		yy_cp = (yy_last_accepting_cpos);
+		yy_current_state = (yy_last_accepting_state);
+		yy_act = yy_accept[yy_current_state];
+	    }
+
+	  YY_DO_BEFORE_ACTION;
+
+	do_action:		/* This label is used only to access EOF actions. */
+
+	  switch (yy_act)
+	    {			/* beginning of action switch */
+	    case 0:		/* must back up */
+		/* undo the effects of YY_DO_BEFORE_ACTION */
+		*yy_cp = (yy_hold_char);
+		yy_cp = (yy_last_accepting_cpos);
+		yy_current_state = (yy_last_accepting_state);
+		goto yy_find_action;
+
+	    case 1:
+		YY_RULE_SETUP
+		{
+		    col += (int) strlen (yytext);
+		    yylval.dval = atof (yytext);
+		    return VANUATU_NUM;
+		}
+		YY_BREAK case 2:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_COMMA;
+		}
+		YY_BREAK case 3:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_OPEN_BRACKET;
+		}
+		YY_BREAK case 4:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_CLOSE_BRACKET;
+		}
+		YY_BREAK case 5:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POINT;
+		}
+		YY_BREAK case 6:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POINT_Z;
+		}
+		YY_BREAK case 7:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POINT_M;
+		}
+		YY_BREAK case 8:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POINT_ZM;
+		}
+		YY_BREAK case 9:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_LINESTRING;
+		}
+		YY_BREAK case 10:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_LINESTRING_Z;
+		}
+		YY_BREAK case 11:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_LINESTRING_M;
+		}
+		YY_BREAK case 12:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_LINESTRING_ZM;
+		}
+		YY_BREAK case 13:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POLYGON;
+		}
+		YY_BREAK case 14:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POLYGON_Z;
+		}
+		YY_BREAK case 15:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POLYGON_M;
+		}
+		YY_BREAK case 16:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POLYGON_ZM;
+		}
+		YY_BREAK case 17:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOINT;
+		}
+		YY_BREAK case 18:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOINT_Z;
+		}
+		YY_BREAK case 19:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOINT_M;
+		}
+		YY_BREAK case 20:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOINT_ZM;
+		}
+		YY_BREAK case 21:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTILINESTRING;
+		}
+		YY_BREAK case 22:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTILINESTRING_Z;
+		}
+		YY_BREAK case 23:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTILINESTRING_M;
+		}
+		YY_BREAK case 24:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTILINESTRING_ZM;
+		}
+		YY_BREAK case 25:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOLYGON;
+		}
+		YY_BREAK case 26:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOLYGON_Z;
+		}
+		YY_BREAK case 27:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOLYGON_M;
+		}
+		YY_BREAK case 28:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOLYGON_ZM;
+		}
+		YY_BREAK case 29:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_GEOMETRYCOLLECTION;
+		}
+		YY_BREAK case 30:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_GEOMETRYCOLLECTION_Z;
+		}
+		YY_BREAK case 31:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_GEOMETRYCOLLECTION_M;
+		}
+		YY_BREAK case 32:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_GEOMETRYCOLLECTION_ZM;
+		}
+		YY_BREAK case 33:YY_RULE_SETUP
+		{
+		    col += (int) strlen (yytext);
+		}		/* ignore but count white space */
+		YY_BREAK case 34:
+/* rule 34 can match eol */
+		  YY_RULE_SETUP
+		{
+		    col = 0;
+		    ++line;
+		    return VANUATU_NEWLINE;
+		}
+		YY_BREAK case 35:YY_RULE_SETUP
+		{
+		    col += (int) strlen (yytext);
+		    return -1;
+		}
+		YY_BREAK case 36:YY_RULE_SETUP ECHO;
+		YY_BREAK case YY_STATE_EOF (INITIAL):yyterminate ();
+
+	    case YY_END_OF_BUFFER:
+		{
+		    /* Amount of text matched not including the EOB char. */
+		    int yy_amount_of_matched_text =
+			(int) (yy_cp - (yytext_ptr)) - 1;
+
+		    /* Undo the effects of YY_DO_BEFORE_ACTION. */
+		    *yy_cp = (yy_hold_char);
+		    YY_RESTORE_YY_MORE_OFFSET
+			if (YY_CURRENT_BUFFER_LVALUE->yy_buffer_status ==
+			    YY_BUFFER_NEW)
+		      {
+			  /* We're scanning a new file or input source.  It's
+			   * possible that this happened because the user
+			   * just pointed yyin at a new source and called
+			   * yylex().  If so, then we have to assure
+			   * consistency between YY_CURRENT_BUFFER and our
+			   * globals.  Here is the right place to do so, because
+			   * this is the first action (other than possibly a
+			   * back-up) that will match for the new input source.
+			   */
+			  (yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
+			  YY_CURRENT_BUFFER_LVALUE->yy_input_file = yyin;
+			  YY_CURRENT_BUFFER_LVALUE->yy_buffer_status =
+			      YY_BUFFER_NORMAL;
+		      }
+
+		    /* Note that here we test for yy_c_buf_p "<=" to the position
+		     * of the first EOB in the buffer, since yy_c_buf_p will
+		     * already have been incremented past the NUL character
+		     * (since all states make transitions on EOB to the
+		     * end-of-buffer state).  Contrast this with the test
+		     * in input().
+		     */
+		    if ((yy_c_buf_p) <=
+			&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)])
+		      {		/* This was really a NUL. */
+			  yy_state_type yy_next_state;
+
+			  (yy_c_buf_p) =
+			      (yytext_ptr) + yy_amount_of_matched_text;
+
+			  yy_current_state = yy_get_previous_state ();
+
+			  /* Okay, we're now positioned to make the NUL
+			   * transition.  We couldn't have
+			   * yy_get_previous_state() go ahead and do it
+			   * for us because it doesn't know how to deal
+			   * with the possibility of jamming (and we don't
+			   * want to build jamming into it because then it
+			   * will run more slowly).
+			   */
+
+			  yy_next_state = yy_try_NUL_trans (yy_current_state);
+
+			  yy_bp = (yytext_ptr) + YY_MORE_ADJ;
+
+			  if (yy_next_state)
+			    {
+				/* Consume the NUL. */
+				yy_cp = ++(yy_c_buf_p);
+				yy_current_state = yy_next_state;
+				goto yy_match;
+			    }
+
+			  else
+			    {
+				yy_cp = (yy_c_buf_p);
+				goto yy_find_action;
+			    }
+		      }
+
+		    else
+			switch (yy_get_next_buffer ())
+			  {
+			  case EOB_ACT_END_OF_FILE:
+			      {
+				  (yy_did_buffer_switch_on_eof) = 0;
+
+				  if (yywrap ())
+				    {
+					/* Note: because we've taken care in
+					 * yy_get_next_buffer() to have set up
+					 * yytext, we can now set up
+					 * yy_c_buf_p so that if some total
+					 * hoser (like flex itself) wants to
+					 * call the scanner after we return the
+					 * YY_NULL, it'll still work - another
+					 * YY_NULL will get returned.
+					 */
+					(yy_c_buf_p) =
+					    (yytext_ptr) + YY_MORE_ADJ;
+
+					yy_act = YY_STATE_EOF (YY_START);
+					goto do_action;
+				    }
+
+				  else
+				    {
+					if (!(yy_did_buffer_switch_on_eof))
+					    YY_NEW_FILE;
+				    }
+				  break;
+			      }
+
+			  case EOB_ACT_CONTINUE_SCAN:
+			      (yy_c_buf_p) =
+				  (yytext_ptr) + yy_amount_of_matched_text;
+
+			      yy_current_state = yy_get_previous_state ();
+
+			      yy_cp = (yy_c_buf_p);
+			      yy_bp = (yytext_ptr) + YY_MORE_ADJ;
+			      goto yy_match;
+
+			  case EOB_ACT_LAST_MATCH:
+			      (yy_c_buf_p) =
+				  &YY_CURRENT_BUFFER_LVALUE->
+				  yy_ch_buf[(yy_n_chars)];
+
+			      yy_current_state = yy_get_previous_state ();
+
+			      yy_cp = (yy_c_buf_p);
+			      yy_bp = (yytext_ptr) + YY_MORE_ADJ;
+			      goto yy_find_action;
+			  }
+		    break;
+		}
+
+	    default:
+		YY_FATAL_ERROR
+		    ("fatal flex scanner internal error--no action found");
+	    }			/* end of action switch */
+      }				/* end of scanning one token */
+}				/* end of yylex */
+
+/* yy_get_next_buffer - try to read in a new buffer
+ *
+ * Returns a code representing an action:
+ *	EOB_ACT_LAST_MATCH -
+ *	EOB_ACT_CONTINUE_SCAN - continue scanning from current position
+ *	EOB_ACT_END_OF_FILE - end of file
+ */
+static int
+yy_get_next_buffer (void)
+{
+    register char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
+    register char *source = (yytext_ptr);
+    register int number_to_move, i;
+    int ret_val;
+
+    if ((yy_c_buf_p) > &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1])
+	YY_FATAL_ERROR
+	    ("fatal flex scanner internal error--end of buffer missed");
+
+    if (YY_CURRENT_BUFFER_LVALUE->yy_fill_buffer == 0)
+      {				/* Don't try to fill the buffer, so this is an EOF. */
+	  if ((yy_c_buf_p) - (yytext_ptr) - YY_MORE_ADJ == 1)
+	    {
+		/* We matched a single character, the EOB, so
+		 * treat this as a final EOF.
+		 */
+		return EOB_ACT_END_OF_FILE;
+	    }
+
+	  else
+	    {
+		/* We matched some text prior to the EOB, first
+		 * process it.
+		 */
+		return EOB_ACT_LAST_MATCH;
+	    }
+      }
+
+    /* Try to read more data. */
+
+    /* First move last chars to start of buffer. */
+    number_to_move = (int) ((yy_c_buf_p) - (yytext_ptr)) - 1;
+
+    for (i = 0; i < number_to_move; ++i)
+	*(dest++) = *(source++);
+
+    if (YY_CURRENT_BUFFER_LVALUE->yy_buffer_status == YY_BUFFER_EOF_PENDING)
+	/* don't do the read, it's not guaranteed to return an EOF,
+	 * just force an EOF
+	 */
+	YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars) = 0;
+
+    else
+      {
+	  int num_to_read =
+	      YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1;
+
+	  while (num_to_read <= 0)
+	    {			/* Not enough room in the buffer - grow it. */
+
+		/* just a shorter name for the current buffer */
+		YY_BUFFER_STATE b = YY_CURRENT_BUFFER;
+
+		int yy_c_buf_p_offset = (int) ((yy_c_buf_p) - b->yy_ch_buf);
+
+		if (b->yy_is_our_buffer)
+		  {
+		      int new_size = b->yy_buf_size * 2;
+
+		      if (new_size <= 0)
+			  b->yy_buf_size += b->yy_buf_size / 8;
+		      else
+			  b->yy_buf_size *= 2;
+
+		      b->yy_ch_buf = (char *)
+			  /* Include room in for 2 EOB chars. */
+			  yyrealloc ((void *) b->yy_ch_buf, b->yy_buf_size + 2);
+		  }
+		else
+		    /* Can't grow it, we don't own it. */
+		    b->yy_ch_buf = 0;
+
+		if (!b->yy_ch_buf)
+		    YY_FATAL_ERROR
+			("fatal error - scanner input buffer overflow");
+
+		(yy_c_buf_p) = &b->yy_ch_buf[yy_c_buf_p_offset];
+
+		num_to_read = YY_CURRENT_BUFFER_LVALUE->yy_buf_size -
+		    number_to_move - 1;
+
+	    }
+
+	  if (num_to_read > YY_READ_BUF_SIZE)
+	      num_to_read = YY_READ_BUF_SIZE;
+
+	  /* Read in more data. */
+	  YY_INPUT ((&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move]),
+		    (yy_n_chars), (size_t) num_to_read);
+
+	  YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
+      }
+
+    if ((yy_n_chars) == 0)
+      {
+	  if (number_to_move == YY_MORE_ADJ)
+	    {
+		ret_val = EOB_ACT_END_OF_FILE;
+		yyrestart (yyin);
+	    }
+
+	  else
+	    {
+		ret_val = EOB_ACT_LAST_MATCH;
+		YY_CURRENT_BUFFER_LVALUE->yy_buffer_status =
+		    YY_BUFFER_EOF_PENDING;
+	    }
+      }
+
+    else
+	ret_val = EOB_ACT_CONTINUE_SCAN;
+
+    if ((yy_size_t) ((yy_n_chars) + number_to_move) >
+	YY_CURRENT_BUFFER_LVALUE->yy_buf_size)
+      {
+	  /* Extend the array by 50%, plus the number we really need. */
+	  yy_size_t new_size =
+	      (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
+	  YY_CURRENT_BUFFER_LVALUE->yy_ch_buf =
+	      (char *) yyrealloc ((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,
+				  new_size);
+	  if (!YY_CURRENT_BUFFER_LVALUE->yy_ch_buf)
+	      YY_FATAL_ERROR ("out of dynamic memory in yy_get_next_buffer()");
+      }
+
+    (yy_n_chars) += number_to_move;
+    YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] = YY_END_OF_BUFFER_CHAR;
+    YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1] =
+	YY_END_OF_BUFFER_CHAR;
+
+    (yytext_ptr) = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[0];
+
+    return ret_val;
+}
+
+/* yy_get_previous_state - get the state just before the EOB char was reached */
+
+static yy_state_type
+yy_get_previous_state (void)
+{
+    register yy_state_type yy_current_state;
+    register char *yy_cp;
+
+    yy_current_state = (yy_start);
+
+    for (yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (yy_c_buf_p); ++yy_cp)
+      {
+	  register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI (*yy_cp)] : 1);
+	  if (yy_accept[yy_current_state])
+	    {
+		(yy_last_accepting_state) = yy_current_state;
+		(yy_last_accepting_cpos) = yy_cp;
+	    }
+	  while (yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state)
+	    {
+		yy_current_state = (int) yy_def[yy_current_state];
+		if (yy_current_state >= 109)
+		    yy_c = yy_meta[(unsigned int) yy_c];
+	    }
+	  yy_current_state =
+	      yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+      }
+
+    return yy_current_state;
+}
+
+/* yy_try_NUL_trans - try to make a transition on the NUL character
+ *
+ * synopsis
+ *	next_state = yy_try_NUL_trans( current_state );
+ */
+static yy_state_type
+yy_try_NUL_trans (yy_state_type yy_current_state)
+{
+    register int yy_is_jam;
+    register char *yy_cp = (yy_c_buf_p);
+
+    register YY_CHAR yy_c = 1;
+    if (yy_accept[yy_current_state])
+      {
+	  (yy_last_accepting_state) = yy_current_state;
+	  (yy_last_accepting_cpos) = yy_cp;
+      }
+    while (yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state)
+      {
+	  yy_current_state = (int) yy_def[yy_current_state];
+	  if (yy_current_state >= 109)
+	      yy_c = yy_meta[(unsigned int) yy_c];
+      }
+    yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+    yy_is_jam = (yy_current_state == 108);
+
+    return yy_is_jam ? 0 : yy_current_state;
+}
+
+static void
+yyunput (int c, register char *yy_bp)
+{
+    register char *yy_cp;
+
+    yy_cp = (yy_c_buf_p);
+
+    /* undo effects of setting up yytext */
+    *yy_cp = (yy_hold_char);
+
+    if (yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2)
+      {				/* need to shift things up to make room */
+	  /* +2 for EOB chars. */
+	  register int number_to_move = (yy_n_chars) + 2;
+	  register char *dest =
+	      &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[YY_CURRENT_BUFFER_LVALUE->
+						   yy_buf_size + 2];
+	  register char *source =
+	      &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move];
+
+	  while (source > YY_CURRENT_BUFFER_LVALUE->yy_ch_buf)
+	      *--dest = *--source;
+
+	  yy_cp += (int) (dest - source);
+	  yy_bp += (int) (dest - source);
+	  YY_CURRENT_BUFFER_LVALUE->yy_n_chars =
+	      (yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_buf_size;
+
+	  if (yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2)
+	      YY_FATAL_ERROR ("flex scanner push-back overflow");
+      }
+
+    *--yy_cp = (char) c;
+
+    (yytext_ptr) = yy_bp;
+    (yy_hold_char) = *yy_cp;
+    (yy_c_buf_p) = yy_cp;
+}
+
+#ifndef YY_NO_INPUT
+#ifdef __cplusplus
+static int
+yyinput (void)
+#else
+static int
+input (void)
+#endif
+{
+    int c;
+
+    *(yy_c_buf_p) = (yy_hold_char);
+
+    if (*(yy_c_buf_p) == YY_END_OF_BUFFER_CHAR)
+      {
+	  /* yy_c_buf_p now points to the character we want to return.
+	   * If this occurs *before* the EOB characters, then it's a
+	   * valid NUL; if not, then we've hit the end of the buffer.
+	   */
+	  if ((yy_c_buf_p) < &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)])
+	      /* This was really a NUL. */
+	      *(yy_c_buf_p) = '\0';
+
+	  else
+	    {			/* need more input */
+		int offset = (yy_c_buf_p) - (yytext_ptr);
+		++(yy_c_buf_p);
+
+		switch (yy_get_next_buffer ())
+		  {
+		  case EOB_ACT_LAST_MATCH:
+		      /* This happens because yy_g_n_b()
+		       * sees that we've accumulated a
+		       * token and flags that we need to
+		       * try matching the token before
+		       * proceeding.  But for input(),
+		       * there's no matching to consider.
+		       * So convert the EOB_ACT_LAST_MATCH
+		       * to EOB_ACT_END_OF_FILE.
+		       */
+
+		      /* Reset buffer status. */
+		      yyrestart (yyin);
+
+		   /*FALLTHROUGH*/ case EOB_ACT_END_OF_FILE:
+		      {
+			  if (yywrap ())
+			      return EOF;
+
+			  if (!(yy_did_buffer_switch_on_eof))
+			      YY_NEW_FILE;
+#ifdef __cplusplus
+			  return yyinput ();
+#else
+			  return input ();
+#endif
+		      }
+
+		  case EOB_ACT_CONTINUE_SCAN:
+		      (yy_c_buf_p) = (yytext_ptr) + offset;
+		      break;
+		  }
+	    }
+      }
+
+    c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
+    *(yy_c_buf_p) = '\0';	/* preserve yytext */
+    (yy_hold_char) = *++(yy_c_buf_p);
+
+    return c;
+}
+#endif /* ifndef YY_NO_INPUT */
+
+/** Immediately switch to a different input stream.
+ * @param input_file A readable stream.
+ * 
+ * @note This function does not reset the start condition to @c INITIAL .
+ */
+void
+yyrestart (FILE * input_file)
+{
+
+    if (!YY_CURRENT_BUFFER)
+      {
+	  yyensure_buffer_stack ();
+	  YY_CURRENT_BUFFER_LVALUE = yy_create_buffer (yyin, YY_BUF_SIZE);
+      }
+
+    yy_init_buffer (YY_CURRENT_BUFFER, input_file);
+    yy_load_buffer_state ();
+}
+
+/** Switch to a different input buffer.
+ * @param new_buffer The new input buffer.
+ * 
+ */
+void
+yy_switch_to_buffer (YY_BUFFER_STATE new_buffer)
+{
+
+    /* TODO. We should be able to replace this entire function body
+     * with
+     *              yypop_buffer_state();
+     *              yypush_buffer_state(new_buffer);
+     */
+    yyensure_buffer_stack ();
+    if (YY_CURRENT_BUFFER == new_buffer)
+	return;
+
+    if (YY_CURRENT_BUFFER)
+      {
+	  /* Flush out information for old buffer. */
+	  *(yy_c_buf_p) = (yy_hold_char);
+	  YY_CURRENT_BUFFER_LVALUE->yy_buf_pos = (yy_c_buf_p);
+	  YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
+      }
+
+    YY_CURRENT_BUFFER_LVALUE = new_buffer;
+    yy_load_buffer_state ();
+
+    /* We don't actually know whether we did this switch during
+     * EOF (yywrap()) processing, but the only time this flag
+     * is looked at is after yywrap() is called, so it's safe
+     * to go ahead and always set it.
+     */
+    (yy_did_buffer_switch_on_eof) = 1;
+}
+
+static void
+yy_load_buffer_state (void)
+{
+    (yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
+    (yytext_ptr) = (yy_c_buf_p) = YY_CURRENT_BUFFER_LVALUE->yy_buf_pos;
+    yyin = YY_CURRENT_BUFFER_LVALUE->yy_input_file;
+    (yy_hold_char) = *(yy_c_buf_p);
+}
+
+/** Allocate and initialize an input buffer state.
+ * @param file A readable stream.
+ * @param size The character buffer size in bytes. When in doubt, use @c YY_BUF_SIZE.
+ * 
+ * @return the allocated buffer state.
+ */
+YY_BUFFER_STATE
+yy_create_buffer (FILE * file, int size)
+{
+    YY_BUFFER_STATE b;
+
+    b = (YY_BUFFER_STATE) yyalloc (sizeof (struct yy_buffer_state));
+    if (!b)
+	YY_FATAL_ERROR ("out of dynamic memory in yy_create_buffer()");
+
+    b->yy_buf_size = size;
+
+    /* yy_ch_buf has to be 2 characters longer than the size given because
+     * we need to put in 2 end-of-buffer characters.
+     */
+    b->yy_ch_buf = (char *) yyalloc (b->yy_buf_size + 2);
+    if (!b->yy_ch_buf)
+	YY_FATAL_ERROR ("out of dynamic memory in yy_create_buffer()");
+
+    b->yy_is_our_buffer = 1;
+
+    yy_init_buffer (b, file);
+
+    return b;
+}
+
+/** Destroy the buffer.
+ * @param b a buffer created with yy_create_buffer()
+ * 
+ */
+void
+yy_delete_buffer (YY_BUFFER_STATE b)
+{
+
+    if (!b)
+	return;
+
+    if (b == YY_CURRENT_BUFFER)	/* Not sure if we should pop here. */
+	YY_CURRENT_BUFFER_LVALUE = (YY_BUFFER_STATE) 0;
+
+    if (b->yy_is_our_buffer)
+	yyfree ((void *) b->yy_ch_buf);
+
+    yyfree ((void *) b);
+}
+
+#ifndef __cplusplus
+extern int isatty (int);
+#endif /* __cplusplus */
+
+/* Initializes or reinitializes a buffer.
+ * This function is sometimes called more than once on the same buffer,
+ * such as during a yyrestart() or at EOF.
+ */
+static void
+yy_init_buffer (YY_BUFFER_STATE b, FILE * file)
+{
+    int oerrno = errno;
+
+    yy_flush_buffer (b);
+
+    b->yy_input_file = file;
+    b->yy_fill_buffer = 1;
+
+    /* If b is the current buffer, then yy_init_buffer was _probably_
+     * called from yyrestart() or through yy_get_next_buffer.
+     * In that case, we don't want to reset the lineno or column.
+     */
+    if (b != YY_CURRENT_BUFFER)
+      {
+	  b->yy_bs_lineno = 1;
+	  b->yy_bs_column = 0;
+      }
+
+    b->yy_is_interactive = file ? (isatty (fileno (file)) > 0) : 0;
+
+    errno = oerrno;
+}
+
+/** Discard all buffered characters. On the next scan, YY_INPUT will be called.
+ * @param b the buffer state to be flushed, usually @c YY_CURRENT_BUFFER.
+ * 
+ */
+void
+yy_flush_buffer (YY_BUFFER_STATE b)
+{
+    if (!b)
+	return;
+
+    b->yy_n_chars = 0;
+
+    /* We always need two end-of-buffer characters.  The first causes
+     * a transition to the end-of-buffer state.  The second causes
+     * a jam in that state.
+     */
+    b->yy_ch_buf[0] = YY_END_OF_BUFFER_CHAR;
+    b->yy_ch_buf[1] = YY_END_OF_BUFFER_CHAR;
+
+    b->yy_buf_pos = &b->yy_ch_buf[0];
+
+    b->yy_at_bol = 1;
+    b->yy_buffer_status = YY_BUFFER_NEW;
+
+    if (b == YY_CURRENT_BUFFER)
+	yy_load_buffer_state ();
+}
+
+/** Pushes the new state onto the stack. The new state becomes
+ *  the current state. This function will allocate the stack
+ *  if necessary.
+ *  @param new_buffer The new state.
+ *  
+ */
+void
+yypush_buffer_state (YY_BUFFER_STATE new_buffer)
+{
+    if (new_buffer == NULL)
+	return;
+
+    yyensure_buffer_stack ();
+
+    /* This block is copied from yy_switch_to_buffer. */
+    if (YY_CURRENT_BUFFER)
+      {
+	  /* Flush out information for old buffer. */
+	  *(yy_c_buf_p) = (yy_hold_char);
+	  YY_CURRENT_BUFFER_LVALUE->yy_buf_pos = (yy_c_buf_p);
+	  YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
+      }
+
+    /* Only push if top exists. Otherwise, replace top. */
+    if (YY_CURRENT_BUFFER)
+	(yy_buffer_stack_top)++;
+    YY_CURRENT_BUFFER_LVALUE = new_buffer;
+
+    /* copied from yy_switch_to_buffer. */
+    yy_load_buffer_state ();
+    (yy_did_buffer_switch_on_eof) = 1;
+}
+
+/** Removes and deletes the top of the stack, if present.
+ *  The next element becomes the new top.
+ *  
+ */
+void
+yypop_buffer_state (void)
+{
+    if (!YY_CURRENT_BUFFER)
+	return;
+
+    yy_delete_buffer (YY_CURRENT_BUFFER);
+    YY_CURRENT_BUFFER_LVALUE = NULL;
+    if ((yy_buffer_stack_top) > 0)
+	--(yy_buffer_stack_top);
+
+    if (YY_CURRENT_BUFFER)
+      {
+	  yy_load_buffer_state ();
+	  (yy_did_buffer_switch_on_eof) = 1;
+      }
+}
+
+/* Allocates the stack if it does not exist.
+ *  Guarantees space for at least one push.
+ */
+static void
+yyensure_buffer_stack (void)
+{
+    int num_to_alloc;
+
+    if (!(yy_buffer_stack))
+      {
+
+	  /* First allocation is just for 2 elements, since we don't know if this
+	   * scanner will even need a stack. We use 2 instead of 1 to avoid an
+	   * immediate realloc on the next call.
+	   */
+	  num_to_alloc = 1;
+	  (yy_buffer_stack) = (struct yy_buffer_state **) yyalloc
+	      (num_to_alloc * sizeof (struct yy_buffer_state *));
+	  if (!(yy_buffer_stack))
+	      YY_FATAL_ERROR
+		  ("out of dynamic memory in yyensure_buffer_stack()");
+
+	  memset ((yy_buffer_stack), 0,
+		  num_to_alloc * sizeof (struct yy_buffer_state *));
+
+	  (yy_buffer_stack_max) = num_to_alloc;
+	  (yy_buffer_stack_top) = 0;
+	  return;
+      }
+
+    if ((yy_buffer_stack_top) >= ((yy_buffer_stack_max)) - 1)
+      {
+
+	  /* Increase the buffer to prepare for a possible push. */
+	  int grow_size = 8 /* arbitrary grow size */ ;
+
+	  num_to_alloc = (yy_buffer_stack_max) + grow_size;
+	  (yy_buffer_stack) = (struct yy_buffer_state **) yyrealloc
+	      ((yy_buffer_stack),
+	       num_to_alloc * sizeof (struct yy_buffer_state *));
+	  if (!(yy_buffer_stack))
+	      YY_FATAL_ERROR
+		  ("out of dynamic memory in yyensure_buffer_stack()");
+
+	  /* zero only the new slots. */
+	  memset ((yy_buffer_stack) + (yy_buffer_stack_max), 0,
+		  grow_size * sizeof (struct yy_buffer_state *));
+	  (yy_buffer_stack_max) = num_to_alloc;
+      }
+}
+
+/** Setup the input buffer state to scan directly from a user-specified character buffer.
+ * @param base the character buffer
+ * @param size the size in bytes of the character buffer
+ * 
+ * @return the newly allocated buffer state object. 
+ */
+YY_BUFFER_STATE
+yy_scan_buffer (char *base, yy_size_t size)
+{
+    YY_BUFFER_STATE b;
+
+    if (size < 2 ||
+	base[size - 2] != YY_END_OF_BUFFER_CHAR ||
+	base[size - 1] != YY_END_OF_BUFFER_CHAR)
+	/* They forgot to leave room for the EOB's. */
+	return 0;
+
+    b = (YY_BUFFER_STATE) yyalloc (sizeof (struct yy_buffer_state));
+    if (!b)
+	YY_FATAL_ERROR ("out of dynamic memory in yy_scan_buffer()");
+
+    b->yy_buf_size = size - 2;	/* "- 2" to take care of EOB's */
+    b->yy_buf_pos = b->yy_ch_buf = base;
+    b->yy_is_our_buffer = 0;
+    b->yy_input_file = 0;
+    b->yy_n_chars = b->yy_buf_size;
+    b->yy_is_interactive = 0;
+    b->yy_at_bol = 1;
+    b->yy_fill_buffer = 0;
+    b->yy_buffer_status = YY_BUFFER_NEW;
+
+    yy_switch_to_buffer (b);
+
+    return b;
+}
+
+/** Setup the input buffer state to scan a string. The next call to yylex() will
+ * scan from a @e copy of @a str.
+ * @param yystr a NUL-terminated string to scan
+ * 
+ * @return the newly allocated buffer state object.
+ * @note If you want to scan bytes that may contain NUL values, then use
+ *       yy_scan_bytes() instead.
+ */
+YY_BUFFER_STATE
+yy_scan_string (yyconst char *yystr)
+{
+
+    return yy_scan_bytes (yystr, strlen (yystr));
+}
+
+/** Setup the input buffer state to scan the given bytes. The next call to yylex() will
+ * scan from a @e copy of @a bytes.
+ * @param bytes the byte buffer to scan
+ * @param len the number of bytes in the buffer pointed to by @a bytes.
+ * 
+ * @return the newly allocated buffer state object.
+ */
+YY_BUFFER_STATE
+yy_scan_bytes (yyconst char *yybytes, int _yybytes_len)
+{
+    YY_BUFFER_STATE b;
+    char *buf;
+    yy_size_t n;
+    int i;
+
+    /* Get memory for full buffer, including space for trailing EOB's. */
+    n = _yybytes_len + 2;
+    buf = (char *) yyalloc (n);
+    if (!buf)
+	YY_FATAL_ERROR ("out of dynamic memory in yy_scan_bytes()");
+
+    for (i = 0; i < _yybytes_len; ++i)
+	buf[i] = yybytes[i];
+
+    buf[_yybytes_len] = buf[_yybytes_len + 1] = YY_END_OF_BUFFER_CHAR;
+
+    b = yy_scan_buffer (buf, n);
+    if (!b)
+	YY_FATAL_ERROR ("bad buffer in yy_scan_bytes()");
+
+    /* It's okay to grow etc. this buffer, and we should throw it
+     * away when we're done.
+     */
+    b->yy_is_our_buffer = 1;
+
+    return b;
+}
+
+#ifndef YY_EXIT_FAILURE
+#define YY_EXIT_FAILURE 2
+#endif
+
+static void
+yy_fatal_error (yyconst char *msg)
+{
+    (void) fprintf (stderr, "%s\n", msg);
+    exit (YY_EXIT_FAILURE);
+}
+
+/* Redefine yyless() so it works in section 3 code. */
+
+#undef yyless
+#define yyless(n) \
+	do \
+		{ \
+		/* Undo effects of setting up yytext. */ \
+        int yyless_macro_arg = (n); \
+        YY_LESS_LINENO(yyless_macro_arg);\
+		yytext[yyleng] = (yy_hold_char); \
+		(yy_c_buf_p) = yytext + yyless_macro_arg; \
+		(yy_hold_char) = *(yy_c_buf_p); \
+		*(yy_c_buf_p) = '\0'; \
+		yyleng = yyless_macro_arg; \
+		} \
+	while ( 0 )
+
+/* Accessor  methods (get/set functions) to struct members. */
+
+/** Get the current line number.
+ * 
+ */
+int
+yyget_lineno (void)
+{
+
+    return yylineno;
+}
+
+/** Get the input stream.
+ * 
+ */
+FILE *
+yyget_in (void)
+{
+    return yyin;
+}
+
+/** Get the output stream.
+ * 
+ */
+FILE *
+yyget_out (void)
+{
+    return yyout;
+}
+
+/** Get the length of the current token.
+ * 
+ */
+int
+yyget_leng (void)
+{
+    return yyleng;
+}
+
+/** Get the current token.
+ * 
+ */
+
+char *
+yyget_text (void)
+{
+    return yytext;
+}
+
+/** Set the current line number.
+ * @param line_number
+ * 
+ */
+void
+yyset_lineno (int line_number)
+{
+
+    yylineno = line_number;
+}
+
+/** Set the input stream. This does not discard the current
+ * input buffer.
+ * @param in_str A readable stream.
+ * 
+ * @see yy_switch_to_buffer
+ */
+void
+yyset_in (FILE * in_str)
+{
+    yyin = in_str;
+}
+
+void
+yyset_out (FILE * out_str)
+{
+    yyout = out_str;
+}
+
+int
+yyget_debug (void)
+{
+    return yy_flex_debug;
+}
+
+void
+yyset_debug (int bdebug)
+{
+    yy_flex_debug = bdebug;
+}
+
+static int
+yy_init_globals (void)
+{
+    /* Initialization is the same as for the non-reentrant scanner.
+     * This function is called from yylex_destroy(), so don't allocate here.
+     */
+
+    (yy_buffer_stack) = 0;
+    (yy_buffer_stack_top) = 0;
+    (yy_buffer_stack_max) = 0;
+    (yy_c_buf_p) = (char *) 0;
+    (yy_init) = 0;
+    (yy_start) = 0;
+
+/* Defined in main.c */
+#ifdef YY_STDINIT
+    yyin = stdin;
+    yyout = stdout;
+#else
+    yyin = (FILE *) 0;
+    yyout = (FILE *) 0;
+#endif
+
+    /* For future reference: Set errno on error, since we are called by
+     * yylex_init()
+     */
+    return 0;
+}
+
+/* yylex_destroy is for both reentrant and non-reentrant scanners. */
+int
+yylex_destroy (void)
+{
+
+    /* Pop the buffer stack, destroying each element. */
+    while (YY_CURRENT_BUFFER)
+      {
+	  yy_delete_buffer (YY_CURRENT_BUFFER);
+	  YY_CURRENT_BUFFER_LVALUE = NULL;
+	  yypop_buffer_state ();
+      }
+
+    /* Destroy the stack itself. */
+    yyfree ((yy_buffer_stack));
+    (yy_buffer_stack) = NULL;
+
+    /* Reset the globals. This is important in a non-reentrant scanner so the next time
+     * yylex() is called, initialization will occur. */
+    yy_init_globals ();
+
+    return 0;
+}
+
+/*
+ * Internal utility routines.
+ */
+
+#ifndef yytext_ptr
+static void
+yy_flex_strncpy (char *s1, yyconst char *s2, int n)
+{
+    register int i;
+    for (i = 0; i < n; ++i)
+	s1[i] = s2[i];
+}
+#endif
+
+#ifdef YY_NEED_STRLEN
+static int
+yy_flex_strlen (yyconst char *s)
+{
+    register int n;
+    for (n = 0; s[n]; ++n)
+	;
+
+    return n;
+}
+#endif
+
+void *
+yyalloc (yy_size_t size)
+{
+    return (void *) malloc (size);
+}
+
+void *
+yyrealloc (void *ptr, yy_size_t size)
+{
+    /* The cast to (char *) in the following accommodates both
+     * implementations that use char* generic pointers, and those
+     * that use void* generic pointers.  It works with the latter
+     * because both ANSI C and C++ allow castless assignment from
+     * any pointer type to void*, and deal with argument conversions
+     * as though doing an assignment.
+     */
+    return (void *) realloc ((char *) ptr, size);
+}
+
+void
+yyfree (void *ptr)
+{
+    free ((char *) ptr);	/* see yyrealloc() for (char *) cast */
+}
+
+#define YYTABLES_NAME "yytables"
+
+/**
+ * reset the line and column count
+ *
+ *
+ */
+void
+reset_lexer (void)
+{
+
+    line = 1;
+    col = 1;
+
+}
+
+/**
+ * yyerror() is invoked when the lexer or the parser encounter
+ * an error. The error message is passed via *s
+ *
+ *
+ */
+void
+yyerror (char *s)
+{
+    printf ("error: %s at line: %d col: %d\n", s, line, col);
+
+}
+
+int
+yywrap (void)
+{
+    return 1;
+}
+
+/* 
+ VANUATU_FLEX_END - FLEX generated code ends here 
+*/
+
+
+
+
+
+
+
+
+
+/*
+** This is a linked-list struct to store all the values for each token.
+** All tokens will have a value of 0, except tokens denoted as NUM.
+** NUM tokens are geometry coordinates and will contain the floating
+** point number.
+*/
+typedef struct gaiaFlexTokenStruct
+{
+    double value;
+    struct gaiaFlexTokenStruct *Next;
+} gaiaFlexToken;
+
+/*
+** Function to clean up the linked-list of token values.
+*/
+static int
+vanuatu_cleanup (gaiaFlexToken * token)
+{
+    if (token == NULL)
+      {
+	  return 0;
+      }
+    else
+      {
+	  if (token->Next != NULL)
+	    {
+		vanuatu_cleanup (token->Next);
+	    }
+	  free (token);
+	  return 0;
+      }
+}
+
+gaiaGeomCollPtr
+gaiaParseWkt (const unsigned char *dirty_buffer, short type)
+{
+    void *pParser = ParseAlloc (malloc);
+    /* Linked-list of token values */
+    gaiaFlexToken *tokens = malloc (sizeof (gaiaFlexToken));
+    /* Pointer to the head of the list */
+    gaiaFlexToken *head = malloc (sizeof (gaiaFlexToken));
+    int yv;
+    gaiaGeomCollPtr result = NULL;
+    head = tokens;
+
+    /*
+     ** Sandro Furieri 2010 Apr 4
+     ** unsetting the parser error flag
+     */
+    vanuatu_parse_error = 0;
+
+    yy_scan_string ((char *) dirty_buffer);
+
+    /*
+       / Keep tokenizing until we reach the end
+       / yylex() will return the next matching Token for us.
+     */
+    while ((yv = yylex ()) != 0)
+      {
+	  if (yv == -1)
+	    {
+		return NULL;
+	    }
+	  tokens->Next = malloc (sizeof (gaiaFlexToken));
+	  /*
+	     /yylval is a global variable from FLEX.
+	     /yylval is defined in vanuatuLexglobal.h
+	   */
+	  tokens->Next->value = yylval.dval;
+	  /* Pass the token to the wkt parser created from lemon */
+	  Parse (pParser, yv, &(tokens->Next->value), &result);
+	  tokens = tokens->Next;
+      }
+    /* This denotes the end of a line as well as the end of the parser */
+    Parse (pParser, VANUATU_NEWLINE, 0, &result);
+    ParseFree (pParser, free);
+
+    /* Assigning the token as the end to avoid seg faults while cleaning */
+    tokens->Next = NULL;
+    vanuatu_cleanup (head);
+
+    /*
+     ** Sandro Furieri 2010 Apr 4
+     ** checking if any parsing error was encountered 
+     */
+    if (vanuatu_parse_error)
+      {
+	  if (result)
+	      gaiaFreeGeomColl (result);
+	  return NULL;
+      }
+
+    /*
+     ** Sandro Furieri 2010 Apr 4
+     ** final checkup for validity
+     */
+    if (!result)
+	return NULL;
+    if (!checkValidity (result))
+      {
+	  gaiaFreeGeomColl (result);
+	  return NULL;
+      }
+    if (type < 0)
+	;			/* no restrinction about GEOMETRY CLASS TYPE */
+    else
+      {
+	  if (result->DeclaredType != type)
+	    {
+		/* invalid CLASS TYPE for request */
+		gaiaFreeGeomColl (result);
+		return NULL;
+	    }
+      }
+
+    gaiaMbrGeometry (result);
+
+    return result;
+}
+
+/******************************************************************************
+** This is the end of the code that was created by Team Vanuatu 
+** of The University of Toronto.
+
+Authors:
+Ruppi Rana			ruppi.rana@gmail.com
+Dev Tanna			dev.tanna@gmail.com
+Elias Adum			elias.adum@gmail.com
+Benton Hui			benton.hui@gmail.com
+Abhayan Sundararajan		abhayan@gmail.com
+Chee-Lun Michael Stephen Cho	cheelun.cho@gmail.com
+Nikola Banovic			nikola.banovic@gmail.com
+Yong Jian			yong.jian@utoronto.ca
+
+Supervisor:
+Greg Wilson			gvwilson@cs.toronto.ca
+
+-------------------------------------------------------------------------------
+*/
