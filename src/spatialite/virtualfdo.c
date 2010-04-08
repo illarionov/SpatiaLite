@@ -191,7 +191,7 @@ vfdo_dequote (char *buf)
 }
 
 static SqliteValuePtr
-value_alloc ()
+value_alloc (void)
 {
 /* allocates and initialites a Value multitype */
     SqliteValuePtr p = malloc (sizeof (SqliteValue));
@@ -1320,7 +1320,7 @@ vfdo_update (sqlite3_vtab * pVTab, int argc, sqlite3_value ** argv,
 	     sqlite_int64 * pRowid)
 {
 /* generic update [INSERT / UPDATE / DELETE */
-    sqlite3_int64 rowid;
+    sqlite3_int64 rowid = 0;
     int ret;
     VirtualFDOPtr p_vt = (VirtualFDOPtr) pVTab;
     if (argc == 1)

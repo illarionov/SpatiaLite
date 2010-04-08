@@ -274,8 +274,8 @@ gaiaGreatCircleTotalLength (double a, double b, int dims, double *coords,
 {
 /* computing the GreatCircle total length for some Linestring/Ring */
     int iv;
-    double x1;
-    double y1;
+    double x1 = 0.0;
+    double y1 = 0.0;
     double x2;
     double y2;
     double z;
@@ -313,8 +313,8 @@ gaiaGeodesicTotalLength (double a, double b, double rf, int dims,
 {
 /* computing the Geodesic total length for some Linestring/Ring */
     int iv;
-    double x1;
-    double y1;
+    double x1 = 0.0;
+    double y1 = 0.0;
     double x2;
     double y2;
     double z;

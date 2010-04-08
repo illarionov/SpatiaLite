@@ -2012,6 +2012,7 @@ gaiaZRangeLinestring (gaiaLinestringPtr line, double *min, double *max)
     for (iv = 0; iv < line->Points; iv++)
       {
 	  z = 0.0;
+	  m = 0.0;
 	  if (line->DimensionModel == GAIA_XY_Z)
 	    {
 		gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
@@ -2049,6 +2050,7 @@ gaiaZRangeRing (gaiaRingPtr rng, double *min, double *max)
     for (iv = 0; iv < rng->Points; iv++)
       {
 	  z = 0.0;
+	  m = 0.0;
 	  if (rng->DimensionModel == GAIA_XY_Z)
 	    {
 		gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
@@ -3132,18 +3134,18 @@ gaiaSanitize (gaiaGeomCollPtr geom)
 */
     int iv;
     int ib;
-    double x;
-    double y;
-    double z;
-    double m;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    double m = 0.0;
     double first_x;
     double first_y;
     double first_z;
     double first_m;
-    double last_x;
-    double last_y;
-    double last_z;
-    double last_m;
+    double last_x = 0.0;
+    double last_y = 0.0;
+    double last_z = 0.0;
+    double last_m = 0.0;
     int points;
     gaiaPointPtr point;
     gaiaLinestringPtr line;

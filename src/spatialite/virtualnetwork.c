@@ -782,7 +782,7 @@ reset_solution (SolutionPtr solution)
 }
 
 static SolutionPtr
-alloc_solution ()
+alloc_solution (void)
 {
 /* allocates and initializes the current solution */
     SolutionPtr p = malloc (sizeof (Solution));
@@ -1275,7 +1275,7 @@ network_init (const unsigned char *blob, int size)
     const char *from;
     const char *to;
     const char *geom;
-    const char *name;
+    const char *name = NULL;
     double a_star_coeff = 1.0;
     int len;
     const unsigned char *ptr;
@@ -1640,7 +1640,7 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     int n_columns;
     char vtable[1024];
     char table[1024];
-    const char *col_name;
+    const char *col_name = NULL;
     char **results;
     char *err_msg = NULL;
     char sql[4096];

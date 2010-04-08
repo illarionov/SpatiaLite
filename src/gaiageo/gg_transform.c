@@ -539,8 +539,8 @@ gaiaReflectCoords (gaiaGeomCollPtr geom, int x_axis, int y_axis)
     int iv;
     double x;
     double y;
-    double z;
-    double m;
+    double z = 0.0;
+    double m = 0.0;
     gaiaPointPtr point;
     gaiaPolygonPtr polyg;
     gaiaLinestringPtr line;
@@ -893,11 +893,11 @@ gaiaTransform (gaiaGeomCollPtr org, char *proj_from, char *proj_to)
     double *xx;
     double *yy;
     double *zz;
-    double *mm;
+    double *mm = NULL;
     double x;
     double y;
-    double z;
-    double m;
+    double z = 0.0;
+    double m = 0.0;
     int error = 0;
     int from_angle;
     int to_angle;

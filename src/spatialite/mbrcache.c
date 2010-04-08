@@ -301,7 +301,7 @@ mbrc_double_quoted_sql (char *buf)
 }
 
 static struct mbr_cache *
-cache_alloc ()
+cache_alloc (void)
 {
 /* allocates and initializes an empty cache struct */
     struct mbr_cache *p = malloc (sizeof (struct mbr_cache));
@@ -312,7 +312,7 @@ cache_alloc ()
 }
 
 static struct mbr_cache_page *
-cache_page_alloc ()
+cache_page_alloc (void)
 {
 /* allocates and initializes a cache page */
     int i;

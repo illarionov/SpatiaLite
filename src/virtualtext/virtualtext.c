@@ -643,7 +643,7 @@ text_parse (char *path, char *encoding, char first_line_titles,
     FILE *in;
     long cur_pos = 0;
     long begin_offset = 0;
-    char start;
+    char start = '\0';
     int new_row = 1;
 /* trying to open the text file */
     in = fopen (path, "rb");

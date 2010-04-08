@@ -73,6 +73,7 @@ extern "C"
 				     int *rows);
     SPATIALITE_DECLARE double math_round (double value);
     SPATIALITE_DECLARE sqlite3_int64 math_llabs (sqlite3_int64 value);
+    SPATIALITE_DECLARE void spatial_ref_sys_init (sqlite3 * sqlite);
 
 #ifdef __cplusplus
 }
