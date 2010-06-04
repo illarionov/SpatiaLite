@@ -1293,7 +1293,13 @@ vtxt_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 			      {
 				  strcpy (buf, *(row->cells + i));
 				  text_clean_integer (buf);
-				  sqlite3_result_int64 (pContext, atol (buf));
+#if defined(_WIN32) || defined(__MINGW32__)
+/* CAVEAT - M$ runtime has non-standard functions for 64 bits */
+				  sqlite3_result_int64 (pContext,
+							_atoi64 (buf));
+#else
+				  sqlite3_result_int64 (pContext, atoll (buf));
+#endif
 			      }
 			    else if (*(text->types + i) == VRTTXT_DOUBLE)
 			      {
