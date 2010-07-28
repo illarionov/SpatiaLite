@@ -401,13 +401,11 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
     char utf8buf[2048];
 #ifdef __MINGW32__
     const char *pBuf;
-    int len;
-    int utf8len;
 #else /* not MINGW32 */
     char *pBuf;
+#endif
     size_t len;
     size_t utf8len;
-#endif
     char *pUtf8buf;
     int endian_arch = gaiaEndianArch ();
     gaiaDbfListPtr dbf_list = NULL;
@@ -699,13 +697,11 @@ gaiaOpenShpWrite (gaiaShapefilePtr shp, const char *path, int shape,
     char utf8buf[2048];
 #ifdef __MINGW32__
     const char *pBuf;
-    int len;
-    int utf8len;
 #else /* not MINGW32 */
     char *pBuf;
+#endif
     size_t len;
     size_t utf8len;
-#endif
     char *pUtf8buf;
     int defaultId = 1;
     if (charFrom && charTo)
@@ -1054,13 +1050,11 @@ parseDbfField (unsigned char *buf_dbf, void *iconv_obj, gaiaDbfFieldPtr pFld)
     char utf8buf[2048];
 #ifdef __MINGW32__
     const char *pBuf;
-    int len;
-    int utf8len;
 #else /* not MINGW32 */
     char *pBuf;
+#endif
     size_t len;
     size_t utf8len;
-#endif
     char *pUtf8buf;
     int i;
     memcpy (buf, buf_dbf + pFld->Offset + 1, pFld->Length);
@@ -2235,13 +2229,11 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
     double maxM;
 #ifdef __MINGW32__
     const char *pBuf;
-    int len;
-    int utf8len;
 #else /* not MINGW32 */
     char *pBuf;
+#endif
     size_t len;
     size_t utf8len;
-#endif
     char *pUtf8buf;
     char buf[512];
     char utf8buf[2048];
@@ -4212,13 +4204,11 @@ gaiaOpenDbfRead (gaiaDbfPtr dbf, const char *path, const char *charFrom,
     char utf8buf[2048];
 #ifdef __MINGW32__
     const char *pBuf;
-    int len;
-    int utf8len;
 #else /* not MINGW32 */
     char *pBuf;
+#endif
     size_t len;
     size_t utf8len;
-#endif
     char *pUtf8buf;
     int endian_arch = gaiaEndianArch ();
     gaiaDbfListPtr dbf_list = NULL;

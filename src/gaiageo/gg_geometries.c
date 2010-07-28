@@ -823,8 +823,17 @@ gaiaCloneGeomColl (gaiaGeomCollPtr geom)
     while (point)
       {
 	  /* copying POINTs */
-	  gaiaAddPointToGeomCollXYZM (new_geom, point->X, point->Y, point->Z,
-				      point->M);
+	  if (geom->DimensionModel == GAIA_XY_Z)
+	      gaiaAddPointToGeomCollXYZ (new_geom, point->X, point->Y,
+					 point->Z);
+	  else if (geom->DimensionModel == GAIA_XY_M)
+	      gaiaAddPointToGeomCollXYM (new_geom, point->X, point->Y,
+					 point->M);
+	  else if (geom->DimensionModel == GAIA_XY_Z_M)
+	      gaiaAddPointToGeomCollXYZM (new_geom, point->X, point->Y,
+					  point->Z, point->M);
+	  else
+	      gaiaAddPointToGeomColl (new_geom, point->X, point->Y);
 	  point = point->Next;
       }
     line = geom->FirstLinestring;
