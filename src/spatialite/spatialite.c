@@ -1601,7 +1601,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
     if (xtype == GAIA_UNKNOWN)
       {
 	  fprintf (stderr,
-		   "AddGeometryColumn() error: argument 3 [geometry_type] has an illegal value\n");
+		   "AddGeometryColumn() error: argument 4 [geometry_type] has an illegal value\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -1874,7 +1874,7 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     if (xtype == GAIA_UNKNOWN)
       {
 	  fprintf (stderr,
-		   "RecoverGeometryColumn() error: argument 3 [geometry_type] has an illegal value\n");
+		   "RecoverGeometryColumn() error: argument 4 [geometry_type] has an illegal value\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }

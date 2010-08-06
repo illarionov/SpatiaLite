@@ -393,7 +393,7 @@ text_clean_double (char *value)
 }
 
 static int
-text_clean_text (char **value, void *toUtf8)
+text_clean_text (char **value, void *toUtf8, char text_separator)
 {
 /* cleaning a TEXT value and converting to UTF-8 */
     char *text = *value;
@@ -434,7 +434,15 @@ text_clean_text (char **value, void *toUtf8)
 		fflush (stderr);
 		return 1;
 	    }
-	  strcpy (*value, utf8text);
+	  if (utf8text[0] == text_separator
+	      && utf8text[newlen - 1] == text_separator)
+	    {
+/* avoiding to insert the enclosing quotes */
+		utf8text[newlen - 1] = '\0';
+		strcpy (*value, utf8text);
+	    }
+	  else
+	      strcpy (*value, utf8text);
       }
 
 /* memory cleanup: Kashif Rasul 14 Jan 2010 */
@@ -487,7 +495,6 @@ text_read_row (struct text_buffer *text, struct row_pointer *ptr,
     int len;
     int max_cell;
     int is_text = 0;
-    int is_string = 0;
     char last = '\0';
     char *fields[4096];
     char text_mark[4096];
@@ -531,12 +538,12 @@ text_read_row (struct text_buffer *text, struct row_pointer *ptr,
     while (*in != '\0')
       {
 	  /* parsing the row, one char at each time */
-	  if (*in == '\r' && !is_string)
+	  if (*in == '\r')
 	    {
 		last = *in++;
 		continue;
 	    }
-	  if (*in == text->field_separator && !is_string)
+	  if (*in == text->field_separator)
 	    {
 		/* inserting a field into the fields tmp array */
 		last = *in;
@@ -555,26 +562,8 @@ text_read_row (struct text_buffer *text, struct row_pointer *ptr,
 		in++;
 		continue;
 	    }
-	  if (*in == text->text_separator)
-	    {
-		/* found a text separator */
-		if (is_string)
-		  {
-		      is_string = 0;
-		      last = *in;
-		      is_text = 1;
-		  }
-		else
-		  {
-		      if (last == text->text_separator)
-			  *p++ = text->text_separator;
-		      is_string = 1;
-		  }
-		in++;
-		continue;
-	    }
 	  last = *in;
-	  if (*in == '\n' && !is_string)
+	  if (*in == '\n')
 	    {
 		/* inserting the row into the text buffer */
 		*p = '\0';
@@ -624,7 +613,6 @@ text_parse (char *path, char *encoding, char first_line_titles,
     int c;
     int len;
     int fld;
-    int is_string = 0;
     char col_types[4096];
     char buffer[35536];
     char *p = buffer;
@@ -679,7 +667,7 @@ text_parse (char *path, char *encoding, char first_line_titles,
       {
 	  /* parsing the file, one char at each time */
 	  cur_pos++;
-	  if (c == '\r' && !is_string)
+	  if (c == '\r')
 	      continue;
 	  if (new_row)
 	    {
@@ -689,16 +677,7 @@ text_parse (char *path, char *encoding, char first_line_titles,
 		begin_offset = cur_pos - 1;
 		p = buffer;
 	    }
-	  if (c == text_separator)
-	    {
-		/* found a text separator */
-		if (is_string)
-		    is_string = 0;
-		else
-		    is_string = 1;
-		continue;
-	    }
-	  if (c == '\n' && !is_string)
+	  if (c == '\n')
 	    {
 		/* inserting the row into the text buffer */
 		len = cur_pos - begin_offset;
@@ -1310,7 +1289,8 @@ vtxt_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 			    else
 			      {
 				  if (text_clean_text
-				      (row->cells + i, text->toUtf8))
+				      (row->cells + i, text->toUtf8,
+				       text->text_separator))
 				    {
 					fprintf (stderr,
 						 "VirtualText: encoding error\n");
