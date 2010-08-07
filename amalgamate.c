@@ -340,6 +340,7 @@ main ()
     do_copy (out, "/virtualtext/", "virtualtext.c");
     do_copy (out, "/versioninfo/", "version.c");
     do_copy (out, "/gaiageo/", "gg_wkt.c");
+    do_copy (out, "/srsinit/", "srs_init.c");
     fclose (out);
 
 /* setting up the HEADERS */
