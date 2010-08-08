@@ -19058,7 +19058,7 @@ spatial_ref_sys_count (sqlite3 * handle)
 }
 
 SPATIALITE_DECLARE void
-spatial_ref_sys_init (sqlite3 * handle)
+spatial_ref_sys_init (sqlite3 * handle, int verbose)
 {
 /* populating the EPSG dataset into the SPATIAL_REF_SYS table */
     if (!exists_spatial_ref_sys (handle))
@@ -19080,8 +19080,9 @@ spatial_ref_sys_init (sqlite3 * handle)
       }
     if (populate_spatial_ref_sys (handle))
       {
-	  fprintf (stderr,
-		   "OK: the SPATIAL_REF_SYS table was succesfully populated\n");
+	  if (verbose)
+	      fprintf (stderr,
+		       "OK: the SPATIAL_REF_SYS table was succesfully populated\n");
 	  return;
       }
 }
