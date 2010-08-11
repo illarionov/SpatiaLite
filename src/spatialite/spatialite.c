@@ -10560,7 +10560,7 @@ blob_guess (sqlite3_context * context, int argc, sqlite3_value ** argv,
 /* SQL function:
 / IsGifBlob(BLOB encoded image)
 / IsPngBlob, IsJpegBlob, IsExifBlob, IsExifGpsBlob, IsTiffBlob,
-/ IsWaveletBlob, IsZipBlob, IsPdfBlob,IsGeometryBlob
+/ IsZipBlob, IsPdfBlob,IsGeometryBlob
 /
 / returns:
 / 1 if the required BLOB_TYPE is TRUE
@@ -10598,14 +10598,6 @@ blob_guess (sqlite3_context * context, int argc, sqlite3_value ** argv,
     if (request == GAIA_PDF_BLOB)
       {
 	  if (blob_type == GAIA_PDF_BLOB)
-	      sqlite3_result_int (context, 1);
-	  else
-	      sqlite3_result_int (context, 0);
-	  return;
-      }
-    if (request == GAIA_WAVELET_BLOB)
-      {
-	  if (blob_type == GAIA_WAVELET_BLOB)
 	      sqlite3_result_int (context, 1);
 	  else
 	      sqlite3_result_int (context, 0);
@@ -10688,12 +10680,6 @@ static void
 fnct_IsPdfBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     blob_guess (context, argc, argv, GAIA_PDF_BLOB);
-}
-
-static void
-fnct_IsWaveletBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
-{
-    blob_guess (context, argc, argv, GAIA_WAVELET_BLOB);
 }
 
 static void
@@ -11682,8 +11668,6 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "IsPdfBlob", 1, SQLITE_ANY, 0, fnct_IsPdfBlob,
 			     0, 0);
-    sqlite3_create_function (db, "IsWaveletBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsWaveletBlob, 0, 0);
     sqlite3_create_function (db, "IsTiffBlob", 1, SQLITE_ANY, 0,
 			     fnct_IsTiffBlob, 0, 0);
     sqlite3_create_function (db, "IsGifBlob", 1, SQLITE_ANY, 0, fnct_IsGifBlob,
@@ -12521,8 +12505,6 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "IsPdfBlob", 1, SQLITE_ANY, 0, fnct_IsPdfBlob,
 			     0, 0);
-    sqlite3_create_function (db, "IsWaveletBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsWaveletBlob, 0, 0);
     sqlite3_create_function (db, "IsTiffBlob", 1, SQLITE_ANY, 0,
 			     fnct_IsTiffBlob, 0, 0);
     sqlite3_create_function (db, "IsGifBlob", 1, SQLITE_ANY, 0, fnct_IsGifBlob,

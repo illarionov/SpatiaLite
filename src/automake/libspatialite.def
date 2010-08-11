@@ -9,6 +9,7 @@ gaiaAddPointToGeomCollXYZ
 gaiaAddPointToGeomCollXYZM
 gaiaAddPolygonToGeomColl
 gaiaAddRingToPolyg
+gaiaAllocDbf
 gaiaAllocDbfField
 gaiaAllocDbfList
 gaiaAllocDynamicLine
@@ -101,7 +102,7 @@ gaiaExport64
 gaiaExportF32
 gaiaExportI64
 gaiaFlushShpHeaders
-gaiaFree
+gaiaFreeDbf
 gaiaFreeDbfField
 gaiaFreeDbfList
 gaiaFreeDynamicLine
@@ -203,6 +204,7 @@ gaiaMbrsWithin
 gaiaMeasureArea
 gaiaMeasureLength
 gaiaMinDistance
+gaiaOpenDbfRead
 gaiaOpenShpRead
 gaiaOpenShpWrite
 gaiaOutSvg
@@ -213,6 +215,7 @@ gaiaPolygonEquals
 gaiaPolygonize
 gaiaPrependPointToDynamicLine
 gaiaRadsToDegs
+gaiaReadDbfEntity
 gaiaReadShpEntity
 gaiaReflectCoords
 gaiaResetDbfEntity
@@ -242,6 +245,7 @@ gaiaZRangeRing
 math_llabs
 math_round
 spatialite_init
+spatial_ref_sys_init
 spatialite_version
 sqlite3_aggregate_context
 sqlite3_aggregate_count
