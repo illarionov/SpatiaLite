@@ -68,34 +68,6 @@ AC_SUBST(OMIT_MATHSQL_FLAGS)
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
-#   --with-proj-include
-#
-AC_ARG_WITH(proj-include,
-  [  --with-proj-include=DIR search for PROJ.4 headers in DIR],
-  proj_include="$withval", proj_include="")
-if test "$proj_include" == "" ; then
-  PROJ_INCLUDE=""
-else
-  PROJ_INCLUDE="-I$proj_include"
-fi
-AC_SUBST(PROJ_INCLUDE)
-#-----------------------------------------------------------------------
-
-#-----------------------------------------------------------------------
-#   --with-proj-lib
-#
-AC_ARG_WITH(proj-lib,
-  [  --with-proj-lib=DIR     search for PROJ.4 lib in DIR],
-  proj_lib="$withval", proj_lib="")
-if test "$proj_lib" == "" ; then
-  PROJ_LIB_LA="/usr/local/lib/libproj.la"
-else
-  PROJ_LIB_LA="$proj_lib/libproj.la"
-fi
-AC_SUBST(PROJ_LIB_LA)
-#-----------------------------------------------------------------------
-
-#-----------------------------------------------------------------------
 #   --enable-proj
 #
 AC_ARG_ENABLE(proj, [AS_HELP_STRING(
@@ -105,41 +77,8 @@ if test x"$enable_proj" != "xno"; then
   OMIT_PROJ_FLAGS=
 else
   OMIT_PROJ_FLAGS=-DOMIT_PROJ
-  PROJ_LIB_LA=
-  AC_SUBST(PROJ_LIB_LA)
 fi
 AC_SUBST(OMIT_PROJ_FLAGS)
-#-----------------------------------------------------------------------
-
-#-----------------------------------------------------------------------
-#   --with-geos-include
-#
-AC_ARG_WITH(geos-include,
-  [  --with-geos-include=DIR search for GEOS headers in DIR],
-  geos_include="$withval", geos_include="")
-if test "$geos_include" == "" ; then
-  GEOS_INCLUDE=""
-else
-  GEOS_INCLUDE="-I$geos_include"
-fi
-AC_SUBST(GEOS_INCLUDE)
-#-----------------------------------------------------------------------
-
-#-----------------------------------------------------------------------
-#   --with-geos-lib
-#
-AC_ARG_WITH(geos-lib,
-  [  --with-geos-lib=DIR     search for GEOS lib in DIR],
-  geos_lib="$withval", geos_lib="")
-if test "$geos_lib" == "" ; then
-  GEOS_LIB_CLA="/usr/local/lib/libgeos_c.la"
-  GEOS_LIB_LA="/usr/local/lib/libgeos.la"
-else
-  GEOS_LIB_CLA="$geos_lib/libgeos_c.la"
-  GEOS_LIB_LA="$geos_lib/libgeos.la"
-fi
-AC_SUBST(GEOS_LIB_CLA)
-AC_SUBST(GEOS_LIB_LA)
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
@@ -152,10 +91,6 @@ if test x"$enable_geos" != "xno"; then
   OMIT_GEOS_FLAGS=
 else
   OMIT_GEOS_FLAGS=-DOMIT_GEOS
-  GEOS_LIB_CLA=
-  GEOS_LIB_LA=
-  AC_SUBST(GEOS_LIB_CLA)
-  AC_SUBST(GEOS_LIB_LA)
 fi
 AC_SUBST(OMIT_GEOS_FLAGS)
 #-----------------------------------------------------------------------
