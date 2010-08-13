@@ -933,7 +933,7 @@ main ()
 	  fprintf (stderr, "Error opening amalgamation/nmake.opt\n");
 	  return 1;
       }
-    do_copy_plain (out, "/automake/libspatialite.def");
+    do_copy_plain (out, "/automake/nmake.opt");
     out = fopen ("amalgamation/libspatialite.def", "wb");
     if (!out)
       {
