@@ -75,6 +75,8 @@ AC_ARG_ENABLE(proj, [AS_HELP_STRING(
   [], [proj=yes])
 if test x"$enable_proj" != "xno"; then
   OMIT_PROJ_FLAGS=
+  AC_CHECK_HEADERS(proj_api.h,, [AC_MSG_ERROR([cannot find proj_api.h, bailing out])])
+  AC_CHECK_LIB(proj,pj_init_plus,,AC_MSG_ERROR(['libproj' is required but it doesn't seems to be installed on this system.]),-lm)
 else
   OMIT_PROJ_FLAGS=-DOMIT_PROJ
 fi
@@ -89,6 +91,8 @@ AC_ARG_ENABLE(geos, [AS_HELP_STRING(
   [], [geos=yes])
 if test x"$enable_geos" != "xno"; then
   OMIT_GEOS_FLAGS=
+  AC_CHECK_HEADERS(geos_c.h,, [AC_MSG_ERROR([cannot find geos_c.h, bailing out])])
+  AC_CHECK_LIB(geos_c,GEOSTopologyPreserveSimplify,,AC_MSG_ERROR(['libgeos_c' is required but it doesn't seems to be installed on this system.]),-lm -lgeos)
 else
   OMIT_GEOS_FLAGS=-DOMIT_GEOS
 fi

@@ -11,8 +11,15 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <stdlib.h>
 
 #define PREFIX	"./src"
+
+struct masked_keyword
+{
+    char *keyword;
+    struct masked_keyword *next;
+};
 
 static void
 do_auto_sh (FILE * out)
@@ -30,9 +37,10 @@ do_auto_sh (FILE * out)
 }
 
 static void
-do_headers (FILE * out)
+do_headers (FILE * out, struct masked_keyword *first)
 {
 /* prepares the headers for SpatiaLite-Amalgamation */
+    struct masked_keyword *p;
     char now[64];
     time_t now_time;
     struct tm *tmp;
@@ -81,6 +89,8 @@ do_headers (FILE * out)
     fprintf (out, "Contributor(s):\n");
     fprintf (out, "Klaus Foerster klaus.foerster@svg.cc\n");
     fprintf (out, "Luigi Costalli luigi.costalli@gmail.com\n");
+    fprintf (out, "The Vanuatu Team - University of Toronto\n");
+    fprintf (out, "\tSupervisor: Greg Wilson gwilson@cs.toronto.ca\n");
     fprintf (out, "\n");
     fprintf (out,
 	     "Alternatively, the contents of this file may be used under the terms of\n");
@@ -144,6 +154,21 @@ do_headers (FILE * out)
     fprintf (out, "#define strncasecmp\t_strnicmp\n");
     fprintf (out, "#define atoll\t_atoi64\n");
     fprintf (out, "#endif /* not WIN32 */\n\n");
+    fprintf (out, "/*\n** alias MACROs to avoid any potential collision\n");
+    fprintf (out, "** for linker symbols declared into the sqlite3 code\n");
+    fprintf (out, "** internally embedded into SpatiaLite\n*/\n");
+    p = first;
+    while (p)
+      {
+	  char alias[1024];
+	  strcpy (alias, p->keyword);
+	  alias[0] = 'S';
+	  alias[1] = 'P';
+	  alias[2] = 'L';
+	  fprintf (out, "#define %s %s\n", p->keyword, alias);
+	  p = p->next;
+      }
+    fprintf (out, "/* end SpatiaLite/sqlite3 alias macros */\n\n");
 }
 
 static void
@@ -157,12 +182,41 @@ do_note (FILE * out, const char *file, int mode)
 }
 
 static void
-do_sqlite3_dll (FILE * out)
+do_sqlite3_dll (FILE * out, struct masked_keyword *first)
 {
 /* inserting #ifdef to build a Windows DLL */
+    struct masked_keyword *p;
     fprintf (out, "#ifdef DLL_EXPORT\n");
     fprintf (out, "#define SQLITE_API __declspec(dllexport)\n");
     fprintf (out, "#else\n#define SQLITE_API\n#endif\n\n");
+    fprintf (out, "/*\n** the following macros ensure that the sqlite3\n");
+    fprintf (out, "** code internally embedded in SpatiaLite never defines\n");
+    fprintf (out, "** any linker symbol potentially conflicting with\n");
+    fprintf (out, "** an external sqlite3 library\n*/\n");
+    p = first;
+    while (p)
+      {
+	  char alias[1024];
+	  strcpy (alias, p->keyword);
+	  if (strcmp (alias, "sqlite3_column_database_name") == 0 ||
+	      strcmp (alias, "sqlite3_column_database_name16") == 0 ||
+	      strcmp (alias, "sqlite3_column_table_name") == 0 ||
+	      strcmp (alias, "sqlite3_column_table_name16") == 0 ||
+	      strcmp (alias, "sqlite3_column_origin_name") == 0 ||
+	      strcmp (alias, "sqlite3_column_origin_name16") == 0 ||
+	      strcmp (alias, "sqlite3_table_column_metadata") == 0)
+	    {
+/* avoiding to define METADATA symbols (usually disabled) */
+		p = p->next;
+		continue;
+	    }
+	  alias[0] = 'S';
+	  alias[1] = 'P';
+	  alias[2] = 'L';
+	  fprintf (out, "#define %s %s\n", p->keyword, alias);
+	  p = p->next;
+      }
+    fprintf (out, "/* End SpatiaLite alias-MACROs */\n\n");
 }
 
 static int
@@ -232,8 +286,7 @@ do_copy (FILE * out, const char *basedir, const char *file)
 static void
 do_copy_sqlite (FILE * out, const char *basedir, const char *file)
 {
-
-/* copy the sqlite3.h untouched*/
+/* copy the sqlite3.h header */
     char input[1024];
     char row[256];
     char *p = row;
@@ -282,6 +335,327 @@ do_copy_plain (FILE * out, const char *file)
 }
 
 static void
+feed_export_keywords (char *row, struct masked_keyword **first,
+		      struct masked_keyword **last)
+{
+    struct masked_keyword *p;
+    char kw[1024];
+    int len;
+    int i;
+    int skip = 0;
+    int pos;
+    int end = (int) strlen (row);
+    for (i = 0; i < end; i++)
+      {
+	  if (row[i] == ' ' || row[i] == '\t')
+	      skip++;
+	  else
+	      break;
+      }
+    if (strncmp (row + skip, "SPATIALITE_DECLARE ", 19) == 0)
+	skip += 19;
+    else if (strncmp (row + skip, "GAIAAUX_DECLARE ", 16) == 0)
+	skip += 16;
+    else if (strncmp (row + skip, "GAIAEXIF_DECLARE ", 17) == 0)
+	skip += 17;
+    else if (strncmp (row + skip, "GAIAGEO_DECLARE ", 16) == 0)
+	skip += 16;
+    else
+	return;
+
+    if (strncmp (row + skip, "const char *", 12) == 0)
+	pos = skip + 12;
+    else if (strncmp (row + skip, "unsigned char ", 14) == 0)
+	pos = skip + 14;
+    else if (strncmp (row + skip, "unsigned short ", 15) == 0)
+	pos = skip + 15;
+    else if (strncmp (row + skip, "unsigned int ", 13) == 0)
+	pos = skip + 13;
+    else if (strncmp (row + skip, "char *", 6) == 0)
+	pos = skip + 6;
+    else if (strncmp (row + skip, "void *", 6) == 0)
+	pos = skip + 6;
+    else if (strncmp (row + skip, "void ", 5) == 0)
+	pos = skip + 5;
+    else if (strncmp (row + skip, "int ", 4) == 0)
+	pos = skip + 4;
+    else if (strncmp (row + skip, "double ", 7) == 0)
+	pos = skip + 7;
+    else if (strncmp (row + skip, "float ", 6) == 0)
+	pos = skip + 6;
+    else if (strncmp (row + skip, "short ", 6) == 0)
+	pos = skip + 6;
+    else if (strncmp (row + skip, "sqlite3_int64 ", 14) == 0)
+	pos = skip + 14;
+    else if (strncmp (row + skip, "gaiaPointPtr ", 13) == 0)
+	pos = skip + 13;
+    else if (strncmp (row + skip, "gaiaLinestringPtr ", 18) == 0)
+	pos = skip + 18;
+    else if (strncmp (row + skip, "gaiaPolygonPtr ", 15) == 0)
+	pos = skip + 15;
+    else if (strncmp (row + skip, "gaiaRingPtr ", 12) == 0)
+	pos = skip + 12;
+    else if (strncmp (row + skip, "gaiaGeomCollPtr ", 16) == 0)
+	pos = skip + 16;
+    else if (strncmp (row + skip, "gaiaDynamicLinePtr ", 19) == 0)
+	pos = skip + 19;
+    else if (strncmp (row + skip, "gaiaDbfFieldPtr ", 16) == 0)
+	pos = skip + 16;
+    else if (strncmp (row + skip, "gaiaValuePtr ", 13) == 0)
+	pos = skip + 13;
+    else if (strncmp (row + skip, "gaiaExifTagListPtr ", 19) == 0)
+	pos = skip + 19;
+    else if (strncmp (row + skip, "gaiaExifTagPtr ", 15) == 0)
+	pos = skip + 15;
+    else
+	return;
+
+    for (i = pos; i < end; i++)
+      {
+	  if (row[i] == ' ' || row[i] == '(' || row[i] == '[' || row[i] == ';')
+	    {
+		end = i;
+		break;
+	    }
+      }
+    len = end - pos;
+    memcpy (kw, row + pos, len);
+    kw[len] = '\0';
+    p = *first;
+    while (p)
+      {
+	  if (strcmp (p->keyword, kw) == 0)
+	      return;
+	  p = p->next;
+      }
+    p = malloc (sizeof (struct masked_keyword));
+    p->keyword = malloc (len + 1);
+    strcpy (p->keyword, kw);
+    p->next = NULL;
+    if (*first == NULL)
+	*first = p;
+    if (*last != NULL)
+	(*last)->next = p;
+    *last = p;
+}
+
+static void
+do_copy_export (FILE * out, const char *file, struct masked_keyword **first,
+		struct masked_keyword **last)
+{
+/* copy a source AS IS */
+    char input[1024];
+    char row[1024];
+    char *p = row;
+    int c;
+    strcpy (input, PREFIX);
+    strcat (input, file);
+    FILE *in = fopen (input, "r");
+    if (!in)
+      {
+	  fprintf (stderr, "Error opening %s\n", input);
+	  return;
+      }
+    while ((c = getc (in)) != EOF)
+      {
+	  if (c == '\n')
+	    {
+		*p = '\0';
+		feed_export_keywords (row, first, last);
+		fprintf (out, "%s\n", row);
+		p = row;
+		continue;
+	    }
+	  else
+	      *p++ = c;
+      }
+    fclose (in);
+}
+
+static void
+do_copy_header (FILE * out, const char *file, struct masked_keyword *first)
+{
+/* copy a source AS IS */
+    struct masked_keyword *p;
+    char input[1024];
+    int c;
+    strcpy (input, PREFIX);
+    strcat (input, file);
+    FILE *in = fopen (input, "r");
+    if (!in)
+      {
+	  fprintf (stderr, "Error opening %s\n", input);
+	  return;
+      }
+    fprintf (out, "/*\n** alias MACROs to avoid any potential collision\n");
+    fprintf (out, "** for linker symbols declared into the sqlite3 code\n");
+    fprintf (out, "** internally embedded into SpatiaLite\n*/\n");
+    p = first;
+    while (p)
+      {
+	  char alias[1024];
+	  strcpy (alias, p->keyword);
+	  alias[0] = 'S';
+	  alias[1] = 'P';
+	  alias[2] = 'L';
+	  fprintf (out, "#define %s %s\n", p->keyword, alias);
+	  p = p->next;
+      }
+    fprintf (out, "/* end SpatiaLite/sqlite3 alias macros */\n\n");
+    while ((c = getc (in)) != EOF)
+	putc (c, out);
+    fclose (in);
+}
+
+static void
+feed_masked_keywords (char *row, int pos, struct masked_keyword **first,
+		      struct masked_keyword **last)
+{
+    struct masked_keyword *p;
+    char kw[1024];
+    int len;
+    int i;
+    int end = (int) strlen (row);
+    for (i = pos; i < end; i++)
+      {
+	  if (row[i] == ' ' || row[i] == '(' || row[i] == '[' || row[i] == ';')
+	    {
+		end = i;
+		break;
+	    }
+      }
+    len = end - pos;
+    memcpy (kw, row + pos, len);
+    kw[len] = '\0';
+    p = *first;
+    while (p)
+      {
+	  if (strcmp (p->keyword, kw) == 0)
+	      return;
+	  p = p->next;
+      }
+    p = malloc (sizeof (struct masked_keyword));
+    p->keyword = malloc (len + 1);
+    strcpy (p->keyword, kw);
+    p->next = NULL;
+    if (*first == NULL)
+	*first = p;
+    if (*last != NULL)
+	(*last)->next = p;
+    *last = p;
+}
+
+static void
+prepare_masked (const char *file, struct masked_keyword **first,
+		struct masked_keyword **last)
+{
+/* feeding the ALIAS-macros */
+    char input[1024];
+    char row[1024];
+    char *p = row;
+    int c;
+    strcpy (input, PREFIX);
+    strcat (input, file);
+    FILE *in = fopen (input, "r");
+    if (!in)
+      {
+	  fprintf (stderr, "Error opening %s\n", input);
+	  return;
+      }
+    while ((c = getc (in)) != EOF)
+      {
+	  if (c == '\n')
+	    {
+		*p = '\0';
+		if (strncmp (row, "SQLITE_API int ", 15) == 0)
+		    feed_masked_keywords (row, 15, first, last);
+		else if (strncmp (row, "SQLITE_API double ", 18) == 0)
+		    feed_masked_keywords (row, 18, first, last);
+		else if (strncmp (row, "SQLITE_API void *", 17) == 0)
+		    feed_masked_keywords (row, 17, first, last);
+		else if (strncmp (row, "SQLITE_API void ", 16) == 0)
+		    feed_masked_keywords (row, 16, first, last);
+		else if (strncmp (row, "SQLITE_API char *", 17) == 0)
+		    feed_masked_keywords (row, 17, first, last);
+		else if (strncmp (row, "SQLITE_API const void *", 23) == 0)
+		    feed_masked_keywords (row, 23, first, last);
+		else if (strncmp (row, "SQLITE_API const char *", 23) == 0)
+		    feed_masked_keywords (row, 23, first, last);
+		else if (strncmp (row, "SQLITE_API const char ", 22) == 0)
+		    feed_masked_keywords (row, 22, first, last);
+		else if (strncmp (row, "SQLITE_API const unsigned char *", 32)
+			 == 0)
+		    feed_masked_keywords (row, 32, first, last);
+		else if (strncmp (row, "SQLITE_API sqlite3_int64 ", 25) == 0)
+		    feed_masked_keywords (row, 25, first, last);
+		else if (strncmp (row, "SQLITE_API sqlite3_value *", 26) == 0)
+		    feed_masked_keywords (row, 26, first, last);
+		else if (strncmp (row, "SQLITE_API sqlite3_backup *", 27) == 0)
+		    feed_masked_keywords (row, 27, first, last);
+		else if (strncmp (row, "SQLITE_API sqlite3_mutex *", 26) == 0)
+		    feed_masked_keywords (row, 26, first, last);
+		else if (strncmp (row, "SQLITE_API sqlite3_stmt *", 25) == 0)
+		    feed_masked_keywords (row, 25, first, last);
+		else if (strncmp (row, "SQLITE_API sqlite3_vfs *", 24) == 0)
+		    feed_masked_keywords (row, 24, first, last);
+		else if (strncmp (row, "SQLITE_API sqlite3 *", 20) == 0)
+		    feed_masked_keywords (row, 20, first, last);
+		p = row;
+		continue;
+	    }
+	  else
+	      *p++ = c;
+      }
+    fclose (in);
+}
+
+static void
+do_copy_ext (FILE * out, const char *basedir, const char *file)
+{
+/* copy the sqlite3ext.h header */
+    char input[1024];
+    char row[1024];
+    char *p = row;
+    int c;
+    strcpy (input, PREFIX);
+    strcat (input, basedir);
+    strcat (input, file);
+    FILE *in = fopen (input, "r");
+    if (!in)
+      {
+	  fprintf (stderr, "Error opening %s\n", input);
+	  return;
+      }
+    do_note (out, file, 0);
+    while ((c = getc (in)) != EOF)
+      {
+	  if (c == '\n')
+	    {
+		*p = '\0';
+		if (strlen (row) > 16)
+		  {
+		      if (strncmp (row, "#define sqlite3_", 16) == 0)
+			{
+			    row[8] = 'S';
+			    row[9] = 'P';
+			    row[10] = 'L';
+			}
+		  }
+		if (strcmp (row, "#include \"sqlite3.h\"") == 0)
+		    fprintf (out, "/* %s */\n", row);
+		else
+		    fprintf (out, "%s\n", row);
+		p = row;
+		continue;
+	    }
+	  else
+	      *p++ = c;
+      }
+    fclose (in);
+    do_note (out, file, 1);
+}
+
+static void
 do_makefile (FILE * out)
 {
 /* generating the Makefile.am for headers */
@@ -295,24 +669,91 @@ do_makefile (FILE * out)
     fprintf (out, "\tspatialite/spatialite.h\n");
 }
 
+static void
+do_output_dll_defs (FILE * out, struct masked_keyword *first,
+		    struct masked_keyword *first_defn)
+{
+    fprintf (out, "LIBRARY spatialite.dll\r\n");
+    fprintf (out, "EXPORTS\r\n");
+/*exporting symbols not found by automatic search */
+    fprintf (out, "gaiaAddLinestringToGeomColl\r\n");
+    fprintf (out, "gaiaAppendPointToDynamicLine\r\n");
+    fprintf (out, "gaiaPrependPointToDynamicLine\r\n");
+    fprintf (out, "gaiaReverseDynamicLine\r\n");
+    fprintf (out, "gaiaDynamicLineSplitBefore\r\n");
+    fprintf (out, "gaiaDynamicLineSplitAfter\r\n");
+    fprintf (out, "gaiaDynamicLineJoinAfter\r\n");
+    fprintf (out, "gaiaDynamicLineJoinBefore\r\n");
+    fprintf (out, "gaiaGeomCollSimplifyPreserveTopology");
+    struct masked_keyword *p = first_defn;
+    while (p)
+      {
+/* SpatiaLite Symbols */
+	  fprintf (out, "%s\r\n", p->keyword);
+	  p = p->next;
+      }
+    p = first;
+    while (p)
+      {
+/* SQLite Symbols */
+	  char alias[1024];
+	  strcpy (alias, p->keyword);
+	  alias[0] = 'S';
+	  alias[1] = 'P';
+	  alias[2] = 'L';
+	  fprintf (out, "%s\r\n", alias);
+	  p = p->next;
+      }
+}
+
+static void
+free_masked_keywords (struct masked_keyword *first,
+		      struct masked_keyword *first_defn)
+{
+    struct masked_keyword *p = first;
+    struct masked_keyword *pn;
+    while (p)
+      {
+/* freeing masked keywords */
+	  pn = p->next;
+	  free (p->keyword);
+	  free (p);
+	  p = pn;
+      }
+    p = first_defn;
+    while (p)
+      {
+/* freeing export keyworks */
+	  pn = p->next;
+	  free (p->keyword);
+	  free (p);
+	  p = pn;
+      }
+}
+
 int
 main ()
 {
+    struct masked_keyword *first = NULL;
+    struct masked_keyword *last = NULL;
+    struct masked_keyword *first_def = NULL;
+    struct masked_keyword *last_def = NULL;
 
 /* produces the AMALGAMATION */
     mkdir ("amalgamation", 0777);
     mkdir ("amalgamation/headers", 0777);
     mkdir ("amalgamation/headers/spatialite", 0777);
 /* amalgamating SpatiaLite */
+    prepare_masked ("/sqlite3/sqlite3.c", &first, &last);
     FILE *out = fopen ("amalgamation/spatialite.c", "wb");
     if (!out)
       {
 	  fprintf (stderr, "Error opening amalgamation/amalgamation.c\n");
 	  return 1;
       }
-    do_headers (out);
+    do_headers (out, first);
     do_copy_sqlite (out, "/headers/spatialite/", "sqlite3.h");
-    do_copy (out, "/headers/spatialite/", "sqlite3ext.h");
+    do_copy_ext (out, "/headers/spatialite/", "sqlite3ext.h");
     do_copy (out, "/headers/", "spatialite.h");
     do_copy (out, "/headers/", "spatialite.h");
     do_copy (out, "/headers/spatialite/", "gaiaaux.h");
@@ -351,7 +792,7 @@ main ()
 		   "Error opening amalgamation/headers/spatialite/sqlite3.h\n");
 	  return 1;
       }
-    do_copy_plain (out, "/headers/spatialite/sqlite3.h");
+    do_copy_header (out, "/headers/spatialite/sqlite3.h", first);
     fclose (out);
     out = fopen ("amalgamation/headers/spatialite/sqlite3ext.h", "wb");
     if (!out)
@@ -360,7 +801,7 @@ main ()
 		   "Error opening amalgamation/headers/spatialite/sqlite3.h\n");
 	  return 1;
       }
-    do_copy_plain (out, "/headers/spatialite/sqlite3ext.h");
+    do_copy_header (out, "/headers/spatialite/sqlite3ext.h", first);
     fclose (out);
     out = fopen ("amalgamation/sqlite3.c", "wb");
     if (!out)
@@ -368,7 +809,8 @@ main ()
 	  fprintf (stderr, "Error opening amalgamation/sqlite3.c\n");
 	  return 1;
       }
-    do_sqlite3_dll (out);
+    do_sqlite3_dll (out, first);
+    prepare_masked ("/sqlite3/sqlite3.c", &first, &last);
     do_copy_plain (out, "/sqlite3/sqlite3.c");
     fclose (out);
     out = fopen ("amalgamation/headers/spatialite/gaiaaux.h", "wb");
@@ -378,7 +820,8 @@ main ()
 		   "Error opening amalgamation/headers/spatialite/gaiaaux.h\n");
 	  return 1;
       }
-    do_copy_plain (out, "/headers/spatialite/gaiaaux.h");
+    do_copy_export (out, "/headers/spatialite/gaiaaux.h", &first_def,
+		    &last_def);
     fclose (out);
     out = fopen ("amalgamation/headers/spatialite/gaiageo.h", "wb");
     if (!out)
@@ -387,7 +830,8 @@ main ()
 		   "Error opening amalgamation/headers/spatialite/gaiageo.h\n");
 	  return 1;
       }
-    do_copy_plain (out, "/headers/spatialite/gaiageo.h");
+    do_copy_export (out, "/headers/spatialite/gaiageo.h", &first_def,
+		    &last_def);
     fclose (out);
     out = fopen ("amalgamation/headers/spatialite/gaiaexif.h", "wb");
     if (!out)
@@ -396,7 +840,8 @@ main ()
 		   "Error opening amalgamation/headers/spatialite/gaiaexif.h\n");
 	  return 1;
       }
-    do_copy_plain (out, "/headers/spatialite/gaiaexif.h");
+    do_copy_export (out, "/headers/spatialite/gaiaexif.h", &first_def,
+		    &last_def);
     fclose (out);
     out = fopen ("amalgamation/headers/spatialite/spatialite.h", "wb");
     if (!out)
@@ -405,7 +850,8 @@ main ()
 		   "Error opening amalgamation/headers/spatialite/spatialite.h\n");
 	  return 1;
       }
-    do_copy_plain (out, "/headers/spatialite/spatialite.h");
+    do_copy_export (out, "/headers/spatialite/spatialite.h", &first_def,
+		    &last_def);
     fclose (out);
     out = fopen ("amalgamation/headers/spatialite.h", "wb");
     if (!out)
@@ -413,7 +859,7 @@ main ()
 	  fprintf (stderr, "Error opening amalgamation/headers/spatialite.h\n");
 	  return 1;
       }
-    do_copy_plain (out, "/headers/spatialite.h");
+    do_copy_export (out, "/headers/spatialite.h", &first_def, &last_def);
     fclose (out);
     out = fopen ("amalgamation/headers/Makefile.am", "wb");
     if (!out)
@@ -487,8 +933,7 @@ main ()
 	  fprintf (stderr, "Error opening amalgamation/nmake.opt\n");
 	  return 1;
       }
-    do_copy_plain (out, "/automake/nmake.opt");
-    fclose (out);
+    do_copy_plain (out, "/automake/libspatialite.def");
     out = fopen ("amalgamation/libspatialite.def", "wb");
     if (!out)
       {
@@ -496,6 +941,14 @@ main ()
 	  return 1;
       }
     do_copy_plain (out, "/automake/libspatialite.def");
+    fclose (out);
+    out = fopen ("amalgamation/libspatialite.def-update", "wb");
+    if (!out)
+      {
+	  fprintf (stderr, "Error opening amalgamation/libspatialite.def\n");
+	  return 1;
+      }
+    do_output_dll_defs (out, first, first_def);
     fclose (out);
     out = fopen ("amalgamation/spatialite.pc.in", "wb");
     if (!out)
@@ -513,5 +966,6 @@ main ()
       }
     do_auto_sh (out);
     fclose (out);
+    free_masked_keywords (first, first_def);
     return 0;
 }
