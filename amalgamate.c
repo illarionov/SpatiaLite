@@ -527,6 +527,14 @@ feed_masked_keywords (char *row, int pos, struct masked_keyword **first,
     len = end - pos;
     memcpy (kw, row + pos, len);
     kw[len] = '\0';
+
+/*
+** caveat: this symbol is abdolutely required by loadable extension modules 
+** and must *never* be masked
+*/
+if (strcmp(kw, "sqlite3_extension_init") == 0)
+return;
+
     p = *first;
     while (p)
       {
