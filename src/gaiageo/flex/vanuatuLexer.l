@@ -80,7 +80,7 @@ int line = 1, col = 1;
 *  of the two tokens, FLEX will match POINT ZM.
 */
 %%
--?[0-9]+|[0-9]*\.[0-9]+    					{ col += (int) strlen(yytext);  yylval.dval = atof(yytext); return VANUATU_NUM; }
+-?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*       	{ col += (int) strlen(yytext);  yylval.dval = atof(yytext); return VANUATU_NUM; }
 ","										{ yylval.dval = 0; return VANUATU_COMMA; }
 "("										{ yylval.dval = 0; return VANUATU_OPEN_BRACKET; }
 ")"										{ yylval.dval = 0; return VANUATU_CLOSE_BRACKET; }
