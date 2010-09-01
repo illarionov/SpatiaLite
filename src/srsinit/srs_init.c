@@ -9932,12 +9932,12 @@ populate_spatial_ref_sys (sqlite3 * handle)
 		""},
 	{
 	4178, "epsg", 4178, "Pulkovo 1942(83)",
-		"+proj=longlat +ellps=krass +no_defs",
+		"+proj=longlat +ellps=krass +towgs84=24,-123,-94,0.02,-0.25,-0.13,1.1 +no_defs",
 		"GEOGCS[\"Pulkovo 1942(83)\",DATUM[\"Pulkovo_1942_83\",SPHEROID[\"Krassowsky 1940\",6378245,298.3,AUTHORITY[\"EPSG\",\"7024\"]],AUTHORITY[\"EPSG\",\"6178\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.01745329251994328,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4178\"]]",
 		""},
 	{
 	4179, "epsg", 4179, "Pulkovo 1942(58)",
-		"+proj=longlat +ellps=krass +no_defs",
+		"+proj=longlat +ellps=krass +towgs84=33.4,-146.6,-76.3,-0.359,-0.053,0.844,-0.84 +no_defs",
 		"GEOGCS[\"Pulkovo 1942(58)\",DATUM[\"Pulkovo_1942_58\",SPHEROID[\"Krassowsky 1940\",6378245,298.3,AUTHORITY[\"EPSG\",\"7024\"]],AUTHORITY[\"EPSG\",\"6179\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.01745329251994328,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4179\"]]",
 		""},
 	{
