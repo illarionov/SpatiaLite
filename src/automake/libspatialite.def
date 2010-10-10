@@ -438,4 +438,4 @@ SPLite3_transfer_bindings
 SPLite3_profile
 SPLite3_global_recover
 SPLite3_thread_cleanup
-SPLite3_extension_init
+sqlite3_extension_init
