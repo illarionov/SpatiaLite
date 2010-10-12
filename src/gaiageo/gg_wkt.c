@@ -1517,7 +1517,6 @@ static gaiaPointPtr
 vanuatu_point_xy (double *x, double *y)
 {
     return gaiaAllocPoint (*x, *y);
-
 }
 
 /* 
@@ -1602,23 +1601,26 @@ static gaiaLinestringPtr
 vanuatu_linestring_xy (gaiaPointPtr first)
 {
     gaiaPointPtr p = first;
+    gaiaPointPtr p_n;
     int points = 0;
     int i = 0;
     gaiaLinestringPtr linestring;
 
-    while (first != NULL)
+    while (p != NULL)
       {
-	  first = first->Next;
+	  p = p->Next;
 	  points++;
       }
 
     linestring = gaiaAllocLinestring (points);
 
-    first = p;
-    while (first != NULL)
+    p = first;
+    while (p != NULL)
       {
-	  gaiaSetPoint (linestring->Coords, i, first->X, first->Y);
-	  first = first->Next;
+	  gaiaSetPoint (linestring->Coords, i, p->X, p->Y);
+	  p_n = p->Next;
+	  gaiaFreePoint (p);
+	  p = p_n;
 	  i++;
       }
 
@@ -1637,23 +1639,26 @@ static gaiaLinestringPtr
 vanuatu_linestring_xyz (gaiaPointPtr first)
 {
     gaiaPointPtr p = first;
+    gaiaPointPtr p_n;
     int points = 0;
     int i = 0;
     gaiaLinestringPtr linestring;
 
-    while (first != NULL)
+    while (p != NULL)
       {
-	  first = first->Next;
+	  p = p->Next;
 	  points++;
       }
 
     linestring = gaiaAllocLinestringXYZ (points);
 
-    first = p;
-    while (first != NULL)
+    p = first;
+    while (p != NULL)
       {
-	  gaiaSetPointXYZ (linestring->Coords, i, first->X, first->Y, first->Z);
-	  first = first->Next;
+	  gaiaSetPointXYZ (linestring->Coords, i, p->X, p->Y, p->Z);
+	  p_n = p->Next;
+	  gaiaFreePoint (p);
+	  p = p_n;
 	  i++;
       }
 
@@ -1672,23 +1677,26 @@ static gaiaLinestringPtr
 vanuatu_linestring_xym (gaiaPointPtr first)
 {
     gaiaPointPtr p = first;
+    gaiaPointPtr p_n;
     int points = 0;
     int i = 0;
     gaiaLinestringPtr linestring;
 
-    while (first != NULL)
+    while (p != NULL)
       {
-	  first = first->Next;
+	  p = p->Next;
 	  points++;
       }
 
     linestring = gaiaAllocLinestringXYM (points);
 
-    first = p;
-    while (first != NULL)
+    p = first;
+    while (p != NULL)
       {
-	  gaiaSetPointXYM (linestring->Coords, i, first->X, first->Y, first->M);
-	  first = first->Next;
+	  gaiaSetPointXYM (linestring->Coords, i, p->X, p->Y, p->M);
+	  p_n = p->Next;
+	  gaiaFreePoint (p);
+	  p = p_n;
 	  i++;
       }
 
@@ -1707,24 +1715,26 @@ static gaiaLinestringPtr
 vanuatu_linestring_xyzm (gaiaPointPtr first)
 {
     gaiaPointPtr p = first;
+    gaiaPointPtr p_n;
     int points = 0;
     int i = 0;
     gaiaLinestringPtr linestring;
 
-    while (first != NULL)
+    while (p != NULL)
       {
-	  first = first->Next;
+	  p = p->Next;
 	  points++;
       }
 
     linestring = gaiaAllocLinestringXYZM (points);
 
-    first = p;
-    while (first != NULL)
+    p = first;
+    while (p != NULL)
       {
-	  gaiaSetPointXYZM (linestring->Coords, i, first->X, first->Y, first->Z,
-			    first->M);
-	  first = first->Next;
+	  gaiaSetPointXYZM (linestring->Coords, i, p->X, p->Y, p->Z, p->M);
+	  p_n = p->Next;
+	  gaiaFreePoint (p);
+	  p = p_n;
 	  i++;
       }
 
@@ -1762,12 +1772,12 @@ static int
 count_points (gaiaPointPtr first)
 {
     /* Counts the number of points in the ring. */
-    gaiaPointPtr temp = first;
+    gaiaPointPtr p = first;
     int numpoints = 0;
-    while (temp != NULL)
+    while (p != NULL)
       {
 	  numpoints++;
-	  temp = temp->Next;
+	  p = p->Next;
       }
     return numpoints;
 }
@@ -1783,39 +1793,36 @@ count_points (gaiaPointPtr first)
 static gaiaRingPtr
 vanuatu_ring_xy (gaiaPointPtr first)
 {
+    gaiaPointPtr p = first;
+    gaiaPointPtr p_n;
     gaiaRingPtr ring = NULL;
     int numpoints;
     int index;
 
     /* If no pointers are given, return. */
     if (first == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Counts the number of points in the ring. */
     numpoints = count_points (first);
     if (numpoints < 4)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Creates and allocates a ring structure. */
     ring = gaiaAllocRing (numpoints);
     if (ring == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Adds every point into the ring structure. */
+    p = first;
     for (index = 0; index < numpoints; index++)
       {
-	  gaiaSetPoint (ring->Coords, index, first->X, first->Y);
-	  first = first->Next;
+	  gaiaSetPoint (ring->Coords, index, p->X, p->Y);
+	  p_n = p->Next;
+	  gaiaFreePoint (p);
+	  p = p_n;
       }
 
-    /* Determines whether the points are in the clockwise or counterclockwise direction. */
-    gaiaClockwise (ring);
     return ring;
 }
 
@@ -1830,39 +1837,36 @@ vanuatu_ring_xy (gaiaPointPtr first)
 static gaiaRingPtr
 vanuatu_ring_xyz (gaiaPointPtr first)
 {
+    gaiaPointPtr p = first;
+    gaiaPointPtr p_n;
     gaiaRingPtr ring = NULL;
     int numpoints;
     int index;
 
     /* If no pointers are given, return. */
     if (first == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Counts the number of points in the ring. */
     numpoints = count_points (first);
     if (numpoints < 4)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Creates and allocates a ring structure. */
     ring = gaiaAllocRingXYZ (numpoints);
     if (ring == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Adds every point into the ring structure. */
+    p = first;
     for (index = 0; index < numpoints; index++)
       {
-	  gaiaSetPointXYZ (ring->Coords, index, first->X, first->Y, first->Z);
-	  first = first->Next;
+	  gaiaSetPointXYZ (ring->Coords, index, p->X, p->Y, p->Z);
+	  p_n = p->Next;
+	  gaiaFreePoint (p);
+	  p = p_n;
       }
 
-    /* Determines whether the points are in the clockwise or counterclockwise direction. */
-    gaiaClockwise (ring);
     return ring;
 }
 
@@ -1877,39 +1881,36 @@ vanuatu_ring_xyz (gaiaPointPtr first)
 static gaiaRingPtr
 vanuatu_ring_xym (gaiaPointPtr first)
 {
+    gaiaPointPtr p = first;
+    gaiaPointPtr p_n;
     gaiaRingPtr ring = NULL;
     int numpoints;
     int index;
 
     /* If no pointers are given, return. */
     if (first == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Counts the number of points in the ring. */
     numpoints = count_points (first);
     if (numpoints < 4)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Creates and allocates a ring structure. */
     ring = gaiaAllocRingXYM (numpoints);
     if (ring == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Adds every point into the ring structure. */
+    p = first;
     for (index = 0; index < numpoints; index++)
       {
-	  gaiaSetPointXYM (ring->Coords, index, first->X, first->Y, first->M);
-	  first = first->Next;
+	  gaiaSetPointXYM (ring->Coords, index, p->X, p->Y, p->M);
+	  p_n = p->Next;
+	  gaiaFreePoint (p);
+	  p = p_n;
       }
 
-    /* Determines whether the points are in the clockwise or counterclockwise direction. */
-    gaiaClockwise (ring);
     return ring;
 }
 
@@ -1924,40 +1925,36 @@ vanuatu_ring_xym (gaiaPointPtr first)
 static gaiaRingPtr
 vanuatu_ring_xyzm (gaiaPointPtr first)
 {
+    gaiaPointPtr p = first;
+    gaiaPointPtr p_n;
     gaiaRingPtr ring = NULL;
     int numpoints;
     int index;
 
     /* If no pointers are given, return. */
     if (first == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Counts the number of points in the ring. */
     numpoints = count_points (first);
     if (numpoints < 4)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Creates and allocates a ring structure. */
     ring = gaiaAllocRingXYZM (numpoints);
     if (ring == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Adds every point into the ring structure. */
+    p = first;
     for (index = 0; index < numpoints; index++)
       {
-	  gaiaSetPointXYZM (ring->Coords, index, first->X, first->Y, first->Z,
-			    first->M);
-	  first = first->Next;
+	  gaiaSetPointXYZM (ring->Coords, index, p->X, p->Y, p->Z, p->M);
+	  p_n = p->Next;
+	  gaiaFreePoint (p);
+	  p = p_n;
       }
 
-    /* Determines whether the points are in the clockwise or counterclockwise direction. */
-    gaiaClockwise (ring);
     return ring;
 }
 
@@ -1973,31 +1970,28 @@ vanuatu_ring_xyzm (gaiaPointPtr first)
 static gaiaPolygonPtr
 polygon_any_type (gaiaRingPtr first)
 {
+    gaiaRingPtr p;
+    gaiaRingPtr p_n;
     gaiaPolygonPtr polygon;
     /* If no pointers are given, return. */
     if (first == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Creates and allocates a polygon structure with the exterior ring. */
     polygon = gaiaCreatePolygon (first);
     if (polygon == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Adds all interior rings into the polygon structure. */
-    first = first->Next;
-    while (first != NULL)
+    p = first;
+    while (p != NULL)
       {
-	  first->Link = polygon;
-	  gaiaAddRingToPolyg (polygon, first);
-	  if (polygon == NULL)
-	    {
-		return NULL;
-	    }
-	  first = first->Next;
+	  p_n = p->Next;
+	  if (p == first)
+	      gaiaFreeRing (p);
+	  else
+	      gaiaAddRingToPolyg (polygon, p);
+	  p = p_n;
       }
 
     return polygon;
@@ -2123,31 +2117,27 @@ buildGeomFromPolygon (gaiaPolygonPtr polygon)
 static gaiaGeomCollPtr
 vanuatu_multipoint_xy (gaiaPointPtr first)
 {
+    gaiaPointPtr p = first;
+    gaiaPointPtr p_n;
     gaiaGeomCollPtr geom = NULL;
 
     /* If no pointers are given, return. */
     if (first == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Creates and allocates a geometry collection containing a multipoint. */
     geom = gaiaAllocGeomColl ();
     if (geom == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
     geom->DeclaredType = GAIA_MULTIPOINT;
 
     /* For every 2D (xy) point, add it to the geometry collection. */
-    while (first != NULL)
+    while (p != NULL)
       {
-	  gaiaAddPointToGeomColl (geom, first->X, first->Y);
-	  if (geom == NULL)
-	    {
-		return NULL;
-	    }
-	  first = first->Next;
+	  gaiaAddPointToGeomColl (geom, p->X, p->Y);
+	  p_n = p->Next;
+	  gaiaFreePoint (p);
+	  p = p_n;
       }
     return geom;
 }
@@ -2163,31 +2153,27 @@ vanuatu_multipoint_xy (gaiaPointPtr first)
 static gaiaGeomCollPtr
 vanuatu_multipoint_xyz (gaiaPointPtr first)
 {
+    gaiaPointPtr p = first;
+    gaiaPointPtr p_n;
     gaiaGeomCollPtr geom = NULL;
 
     /* If no pointers are given, return. */
     if (first == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Creates and allocates a geometry collection containing a multipoint. */
     geom = gaiaAllocGeomCollXYZ ();
     if (geom == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
     geom->DeclaredType = GAIA_MULTIPOINT;
 
     /* For every 3D (xyz) point, add it to the geometry collection. */
-    while (first != NULL)
+    while (p != NULL)
       {
-	  gaiaAddPointToGeomCollXYZ (geom, first->X, first->Y, first->Z);
-	  if (geom == NULL)
-	    {
-		return NULL;
-	    }
-	  first = first->Next;
+	  gaiaAddPointToGeomCollXYZ (geom, p->X, p->Y, p->Z);
+	  p_n = p->Next;
+	  gaiaFreePoint (p);
+	  p = p_n;
       }
     return geom;
 }
@@ -2203,31 +2189,27 @@ vanuatu_multipoint_xyz (gaiaPointPtr first)
 static gaiaGeomCollPtr
 vanuatu_multipoint_xym (gaiaPointPtr first)
 {
+    gaiaPointPtr p = first;
+    gaiaPointPtr p_n;
     gaiaGeomCollPtr geom = NULL;
 
     /* If no pointers are given, return. */
     if (first == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Creates and allocates a geometry collection containing a multipoint. */
     geom = gaiaAllocGeomCollXYM ();
     if (geom == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
     geom->DeclaredType = GAIA_MULTIPOINT;
 
     /* For every 2D (xym) point, add it to the geometry collection. */
-    while (first != NULL)
+    while (p != NULL)
       {
-	  gaiaAddPointToGeomCollXYM (geom, first->X, first->Y, first->M);
-	  if (geom == NULL)
-	    {
-		return NULL;
-	    }
-	  first = first->Next;
+	  gaiaAddPointToGeomCollXYM (geom, p->X, p->Y, p->M);
+	  p_n = p->Next;
+	  gaiaFreePoint (p);
+	  p = p_n;
       }
     return geom;
 }
@@ -2243,32 +2225,27 @@ vanuatu_multipoint_xym (gaiaPointPtr first)
 static gaiaGeomCollPtr
 vanuatu_multipoint_xyzm (gaiaPointPtr first)
 {
+    gaiaPointPtr p = first;
+    gaiaPointPtr p_n;
     gaiaGeomCollPtr geom = NULL;
 
     /* If no pointers are given, return. */
     if (first == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
 
     /* Creates and allocates a geometry collection containing a multipoint. */
     geom = gaiaAllocGeomCollXYZM ();
     if (geom == NULL)
-      {
-	  return NULL;
-      }
+	return NULL;
     geom->DeclaredType = GAIA_MULTIPOINT;
 
     /* For every 3D (xyzm) point, add it to the geometry collection. */
-    while (first != NULL)
+    while (p != NULL)
       {
-	  gaiaAddPointToGeomCollXYZM (geom, first->X, first->Y, first->Z,
-				      first->M);
-	  if (geom == NULL)
-	    {
-		return NULL;
-	    }
-	  first = first->Next;
+	  gaiaAddPointToGeomCollXYZM (geom, p->X, p->Y, p->Z, p->M);
+	  p_n = p->Next;
+	  gaiaFreePoint (p);
+	  p = p_n;
       }
     return geom;
 }
@@ -2285,16 +2262,20 @@ vanuatu_multipoint_xyzm (gaiaPointPtr first)
 static gaiaGeomCollPtr
 vanuatu_multilinestring_xy (gaiaLinestringPtr first)
 {
+    gaiaLinestringPtr p = first;
+    gaiaLinestringPtr p_n;
     gaiaLinestringPtr new_line;
     gaiaGeomCollPtr a = gaiaAllocGeomColl ();
     a->DeclaredType = GAIA_MULTILINESTRING;
     a->DimensionModel = GAIA_XY;
 
-    while (first)
+    while (p)
       {
-	  new_line = gaiaAddLinestringToGeomColl (a, first->Points);
-	  gaiaCopyLinestringCoords (new_line, first);
-	  first = first->Next;
+	  new_line = gaiaAddLinestringToGeomColl (a, p->Points);
+	  gaiaCopyLinestringCoords (new_line, p);
+	  p_n = p->Next;
+	  gaiaFreeLinestring (p);
+	  p = p_n;
       }
 
     return a;
@@ -2312,16 +2293,20 @@ vanuatu_multilinestring_xy (gaiaLinestringPtr first)
 static gaiaGeomCollPtr
 vanuatu_multilinestring_xyz (gaiaLinestringPtr first)
 {
+    gaiaLinestringPtr p = first;
+    gaiaLinestringPtr p_n;
     gaiaLinestringPtr new_line;
     gaiaGeomCollPtr a = gaiaAllocGeomCollXYZ ();
     a->DeclaredType = GAIA_MULTILINESTRING;
     a->DimensionModel = GAIA_XY_Z;
 
-    while (first)
+    while (p)
       {
-	  new_line = gaiaAddLinestringToGeomColl (a, first->Points);
-	  gaiaCopyLinestringCoords (new_line, first);
-	  first = first->Next;
+	  new_line = gaiaAddLinestringToGeomColl (a, p->Points);
+	  gaiaCopyLinestringCoords (new_line, p);
+	  p_n = p->Next;
+	  gaiaFreeLinestring (p);
+	  p = p_n;
       }
     return a;
 }
@@ -2338,16 +2323,20 @@ vanuatu_multilinestring_xyz (gaiaLinestringPtr first)
 static gaiaGeomCollPtr
 vanuatu_multilinestring_xym (gaiaLinestringPtr first)
 {
+    gaiaLinestringPtr p = first;
+    gaiaLinestringPtr p_n;
     gaiaLinestringPtr new_line;
     gaiaGeomCollPtr a = gaiaAllocGeomCollXYM ();
     a->DeclaredType = GAIA_MULTILINESTRING;
     a->DimensionModel = GAIA_XY_M;
 
-    while (first)
+    while (p)
       {
-	  new_line = gaiaAddLinestringToGeomColl (a, first->Points);
-	  gaiaCopyLinestringCoords (new_line, first);
-	  first = first->Next;
+	  new_line = gaiaAddLinestringToGeomColl (a, p->Points);
+	  gaiaCopyLinestringCoords (new_line, p);
+	  p_n = p->Next;
+	  gaiaFreeLinestring (p);
+	  p = p_n;
       }
 
     return a;
@@ -2365,16 +2354,20 @@ vanuatu_multilinestring_xym (gaiaLinestringPtr first)
 static gaiaGeomCollPtr
 vanuatu_multilinestring_xyzm (gaiaLinestringPtr first)
 {
+    gaiaLinestringPtr p = first;
+    gaiaLinestringPtr p_n;
     gaiaLinestringPtr new_line;
     gaiaGeomCollPtr a = gaiaAllocGeomCollXYZM ();
     a->DeclaredType = GAIA_MULTILINESTRING;
     a->DimensionModel = GAIA_XY_Z_M;
 
-    while (first)
+    while (p)
       {
-	  new_line = gaiaAddLinestringToGeomColl (a, first->Points);
-	  gaiaCopyLinestringCoords (new_line, first);
-	  first = first->Next;
+	  new_line = gaiaAddLinestringToGeomColl (a, p->Points);
+	  gaiaCopyLinestringCoords (new_line, p);
+	  p_n = p->Next;
+	  gaiaFreeLinestring (p);
+	  p = p_n;
       }
     return a;
 }
@@ -2395,7 +2388,8 @@ vanuatu_multilinestring_xyzm (gaiaLinestringPtr first)
 static gaiaGeomCollPtr
 vanuatu_multipolygon_xy (gaiaPolygonPtr first)
 {
-
+    gaiaPolygonPtr p = first;
+    gaiaPolygonPtr p_n;
     int i = 0;
     gaiaPolygonPtr new_polyg;
     gaiaRingPtr i_ring;
@@ -2404,23 +2398,24 @@ vanuatu_multipolygon_xy (gaiaPolygonPtr first)
 
     geom->DeclaredType = GAIA_MULTIPOLYGON;
 
-    while (first)
+    while (p)
       {
-	  i_ring = first->Exterior;
+	  i_ring = p->Exterior;
 	  new_polyg =
-	      gaiaAddPolygonToGeomColl (geom, i_ring->Points,
-					first->NumInteriors);
+	      gaiaAddPolygonToGeomColl (geom, i_ring->Points, p->NumInteriors);
 	  o_ring = new_polyg->Exterior;
 	  gaiaCopyRingCoords (o_ring, i_ring);
 
 	  for (i = 0; i < new_polyg->NumInteriors; i++)
 	    {
-		i_ring = first->Interiors + i;
+		i_ring = p->Interiors + i;
 		o_ring = gaiaAddInteriorRing (new_polyg, i, i_ring->Points);
 		gaiaCopyRingCoords (o_ring, i_ring);
 	    }
 
-	  first = first->Next;
+	  p_n = p->Next;
+	  gaiaFreePolygon (p);
+	  p = p_n;
       }
 
     return geom;
@@ -2442,7 +2437,8 @@ vanuatu_multipolygon_xy (gaiaPolygonPtr first)
 static gaiaGeomCollPtr
 vanuatu_multipolygon_xyz (gaiaPolygonPtr first)
 {
-
+    gaiaPolygonPtr p = first;
+    gaiaPolygonPtr p_n;
     int i = 0;
     gaiaPolygonPtr new_polyg;
     gaiaRingPtr i_ring;
@@ -2451,23 +2447,24 @@ vanuatu_multipolygon_xyz (gaiaPolygonPtr first)
 
     geom->DeclaredType = GAIA_MULTIPOLYGON;
 
-    while (first)
+    while (p)
       {
-	  i_ring = first->Exterior;
+	  i_ring = p->Exterior;
 	  new_polyg =
-	      gaiaAddPolygonToGeomColl (geom, i_ring->Points,
-					first->NumInteriors);
+	      gaiaAddPolygonToGeomColl (geom, i_ring->Points, p->NumInteriors);
 	  o_ring = new_polyg->Exterior;
 	  gaiaCopyRingCoords (o_ring, i_ring);
 
 	  for (i = 0; i < new_polyg->NumInteriors; i++)
 	    {
-		i_ring = first->Interiors + i;
+		i_ring = p->Interiors + i;
 		o_ring = gaiaAddInteriorRing (new_polyg, i, i_ring->Points);
 		gaiaCopyRingCoords (o_ring, i_ring);
 	    }
 
-	  first = first->Next;
+	  p_n = p->Next;
+	  gaiaFreePolygon (p);
+	  p = p_n;
       }
 
     return geom;
@@ -2489,7 +2486,8 @@ vanuatu_multipolygon_xyz (gaiaPolygonPtr first)
 static gaiaGeomCollPtr
 vanuatu_multipolygon_xym (gaiaPolygonPtr first)
 {
-
+    gaiaPolygonPtr p = first;
+    gaiaPolygonPtr p_n;
     int i = 0;
     gaiaPolygonPtr new_polyg;
     gaiaRingPtr i_ring;
@@ -2498,23 +2496,24 @@ vanuatu_multipolygon_xym (gaiaPolygonPtr first)
 
     geom->DeclaredType = GAIA_MULTIPOLYGON;
 
-    while (first)
+    while (p)
       {
-	  i_ring = first->Exterior;
+	  i_ring = p->Exterior;
 	  new_polyg =
-	      gaiaAddPolygonToGeomColl (geom, i_ring->Points,
-					first->NumInteriors);
+	      gaiaAddPolygonToGeomColl (geom, i_ring->Points, p->NumInteriors);
 	  o_ring = new_polyg->Exterior;
 	  gaiaCopyRingCoords (o_ring, i_ring);
 
 	  for (i = 0; i < new_polyg->NumInteriors; i++)
 	    {
-		i_ring = first->Interiors + i;
+		i_ring = p->Interiors + i;
 		o_ring = gaiaAddInteriorRing (new_polyg, i, i_ring->Points);
 		gaiaCopyRingCoords (o_ring, i_ring);
 	    }
 
-	  first = first->Next;
+	  p_n = p->Next;
+	  gaiaFreePolygon (p);
+	  p = p_n;
       }
 
     return geom;
@@ -2536,7 +2535,8 @@ vanuatu_multipolygon_xym (gaiaPolygonPtr first)
 static gaiaGeomCollPtr
 vanuatu_multipolygon_xyzm (gaiaPolygonPtr first)
 {
-
+    gaiaPolygonPtr p = first;
+    gaiaPolygonPtr p_n;
     int i = 0;
     gaiaPolygonPtr new_polyg;
     gaiaRingPtr i_ring;
@@ -2545,30 +2545,95 @@ vanuatu_multipolygon_xyzm (gaiaPolygonPtr first)
 
     geom->DeclaredType = GAIA_MULTIPOLYGON;
 
-    while (first)
+    while (p)
       {
-	  i_ring = first->Exterior;
+	  i_ring = p->Exterior;
 	  new_polyg =
-	      gaiaAddPolygonToGeomColl (geom, i_ring->Points,
-					first->NumInteriors);
+	      gaiaAddPolygonToGeomColl (geom, i_ring->Points, p->NumInteriors);
 	  o_ring = new_polyg->Exterior;
 	  gaiaCopyRingCoords (o_ring, i_ring);
 
 	  for (i = 0; i < new_polyg->NumInteriors; i++)
 	    {
-		i_ring = first->Interiors + i;
+		i_ring = p->Interiors + i;
 		o_ring = gaiaAddInteriorRing (new_polyg, i, i_ring->Points);
 		gaiaCopyRingCoords (o_ring, i_ring);
 	    }
 
-	  first = first->Next;
+	  p_n = p->Next;
+	  gaiaFreePolygon (p);
+	  p = p_n;
       }
 
     return geom;
 }
 
+static void
+vanuatu_geomColl_common (gaiaGeomCollPtr org, gaiaGeomCollPtr dst)
+{
 /* 
- * Creates a 2D (xy) geometry collection in SpatiaLite
+/ helper function: xfers entities between the Origin and Destination 
+/ Sandro Furieri: 2010 October 12
+*/
+    gaiaGeomCollPtr p = org;
+    gaiaGeomCollPtr p_n;
+    gaiaPointPtr pt;
+    gaiaPointPtr pt_n;
+    gaiaLinestringPtr ln;
+    gaiaLinestringPtr ln_n;
+    gaiaPolygonPtr pg;
+    gaiaPolygonPtr pg_n;
+    while (p)
+      {
+	  pt = p->FirstPoint;
+	  while (pt)
+	    {
+		pt_n = pt->Next;
+		pt->Next = NULL;
+		if (dst->FirstPoint == NULL)
+		    dst->FirstPoint = pt;
+		if (dst->LastPoint != NULL)
+		    dst->LastPoint->Next = pt;
+		dst->LastPoint = pt;
+		pt = pt_n;
+	    }
+	  ln = p->FirstLinestring;
+	  while (ln)
+	    {
+		ln_n = ln->Next;
+		ln->Next = NULL;
+		if (dst->FirstLinestring == NULL)
+		    dst->FirstLinestring = ln;
+		if (dst->LastLinestring != NULL)
+		    dst->LastLinestring->Next = ln;
+		dst->LastLinestring = ln;
+		ln = ln_n;
+	    }
+	  pg = p->FirstPolygon;
+	  while (pg)
+	    {
+		pg_n = pg->Next;
+		pg->Next = NULL;
+		if (dst->FirstPolygon == NULL)
+		    dst->FirstPolygon = pg;
+		if (dst->LastPolygon != NULL)
+		    dst->LastPolygon->Next = pg;
+		dst->LastPolygon = pg;
+		pg = pg_n;
+	    }
+	  p_n = p->Next;
+	  p->FirstPoint = NULL;
+	  p->LastPoint = NULL;
+	  p->FirstLinestring = NULL;
+	  p->LastLinestring = NULL;
+	  p->FirstPolygon = NULL;
+	  p->LastPolygon = NULL;
+	  gaiaFreeGeomColl (p);
+	  p = p_n;
+      }
+}
+
+/* Creates a 2D (xy) geometry collection in SpatiaLite
  *
  * first is the first geometry collection in a linked list of geometry collections.
  * Each geometry collection represents a single type of object (eg. one could be a POINT, 
@@ -2593,74 +2658,12 @@ vanuatu_multipolygon_xyzm (gaiaPolygonPtr first)
 static gaiaGeomCollPtr
 vanuatu_geomColl_xy (gaiaGeomCollPtr first)
 {
-    gaiaGeomCollPtr geom = NULL;
-    gaiaGeomCollPtr curr = first;
-    gaiaPointPtr currPoint = NULL;
-    gaiaLinestringPtr currLine = NULL;
-    gaiaPolygonPtr currPolygon = NULL;
-
-    geom = gaiaAllocGeomColl ();
+    gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
+    if (geom == NULL)
+	return NULL;
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     geom->DimensionModel = GAIA_XY;
-
-    switch (curr->DeclaredType)
-      {
-      case GAIA_POINT:
-	  geom->FirstPoint = curr->FirstPoint;
-	  geom->LastPoint = curr->LastPoint;
-	  currPoint = curr->FirstPoint;
-	  break;
-      case GAIA_LINESTRING:
-	  geom->FirstLinestring = curr->FirstLinestring;
-	  geom->LastLinestring = curr->LastLinestring;
-	  currLine = curr->FirstLinestring;
-	  break;
-      case GAIA_POLYGON:
-	  geom->FirstPolygon = curr->FirstPolygon;
-	  geom->LastPolygon = curr->LastPolygon;
-	  currPolygon = curr->FirstPolygon;
-	  break;
-      }
-
-
-    while (curr->Next != NULL)
-      {
-	  curr = curr->Next;
-	  switch (curr->DeclaredType)
-	    {
-	    case GAIA_POINT:
-		if (currPoint == NULL)
-		  {
-		      geom->FirstPoint = curr->FirstPoint;
-		  }
-		else
-		    currPoint->Next = curr->FirstPoint;
-		geom->LastPoint = curr->LastPoint;
-		currPoint = curr->LastPoint;
-		break;
-	    case GAIA_LINESTRING:
-		if (currLine == NULL)
-		  {
-		      geom->FirstLinestring = curr->FirstLinestring;
-		  }
-		else
-		    currLine->Next = curr->FirstLinestring;
-		geom->LastLinestring = curr->LastLinestring;
-		currLine = curr->LastLinestring;
-		break;
-	    case GAIA_POLYGON:
-		if (currPolygon == NULL)
-		  {
-		      geom->FirstPolygon = curr->FirstPolygon;
-		  }
-		else
-		    currPolygon->Next = curr->FirstPolygon;
-		geom->LastPolygon = curr->LastPolygon;
-		currPolygon = curr->LastPolygon;
-		break;
-	    }
-      }
-
+    vanuatu_geomColl_common (first, geom);
     return geom;
 }
 
@@ -2676,74 +2679,12 @@ vanuatu_geomColl_xy (gaiaGeomCollPtr first)
 static gaiaGeomCollPtr
 vanuatu_geomColl_xyz (gaiaGeomCollPtr first)
 {
-    gaiaGeomCollPtr geom = NULL;
-    gaiaGeomCollPtr curr = first;
-    gaiaPointPtr currPoint = NULL;
-    gaiaLinestringPtr currLine = NULL;
-    gaiaPolygonPtr currPolygon = NULL;
-
-    geom = gaiaAllocGeomColl ();
+    gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
+    if (geom == NULL)
+	return NULL;
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     geom->DimensionModel = GAIA_XY_Z;
-
-    switch (curr->DeclaredType)
-      {
-      case GAIA_POINT:
-	  geom->FirstPoint = curr->FirstPoint;
-	  geom->LastPoint = curr->LastPoint;
-	  currPoint = curr->FirstPoint;
-	  break;
-      case GAIA_LINESTRING:
-	  geom->FirstLinestring = curr->FirstLinestring;
-	  geom->LastLinestring = curr->LastLinestring;
-	  currLine = curr->FirstLinestring;
-	  break;
-      case GAIA_POLYGON:
-	  geom->FirstPolygon = curr->FirstPolygon;
-	  geom->LastPolygon = curr->LastPolygon;
-	  currPolygon = curr->FirstPolygon;
-	  break;
-      }
-
-
-    while (curr->Next != NULL)
-      {
-	  curr = curr->Next;
-	  switch (curr->DeclaredType)
-	    {
-	    case GAIA_POINT:
-		if (currPoint == NULL)
-		  {
-		      geom->FirstPoint = curr->FirstPoint;
-		  }
-		else
-		    currPoint->Next = curr->FirstPoint;
-		geom->LastPoint = curr->LastPoint;
-		currPoint = curr->LastPoint;
-		break;
-	    case GAIA_LINESTRING:
-		if (currLine == NULL)
-		  {
-		      geom->FirstLinestring = curr->FirstLinestring;
-		  }
-		else
-		    currLine->Next = curr->FirstLinestring;
-		geom->LastLinestring = curr->LastLinestring;
-		currLine = curr->LastLinestring;
-		break;
-	    case GAIA_POLYGON:
-		if (currPolygon == NULL)
-		  {
-		      geom->FirstPolygon = curr->FirstPolygon;
-		  }
-		else
-		    currPolygon->Next = curr->FirstPolygon;
-		geom->LastPolygon = curr->LastPolygon;
-		currPolygon = curr->LastPolygon;
-		break;
-	    }
-      }
-
+    vanuatu_geomColl_common (first, geom);
     return geom;
 }
 
@@ -2759,75 +2700,12 @@ vanuatu_geomColl_xyz (gaiaGeomCollPtr first)
 static gaiaGeomCollPtr
 vanuatu_geomColl_xym (gaiaGeomCollPtr first)
 {
-
-    gaiaGeomCollPtr geom = NULL;
-    gaiaGeomCollPtr curr = first;
-    gaiaPointPtr currPoint = NULL;
-    gaiaLinestringPtr currLine = NULL;
-    gaiaPolygonPtr currPolygon = NULL;
-
-    geom = gaiaAllocGeomColl ();
+    gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
+    if (geom == NULL)
+	return NULL;
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     geom->DimensionModel = GAIA_XY_M;
-
-    switch (curr->DeclaredType)
-      {
-      case GAIA_POINT:
-	  geom->FirstPoint = curr->FirstPoint;
-	  geom->LastPoint = curr->LastPoint;
-	  currPoint = curr->FirstPoint;
-	  break;
-      case GAIA_LINESTRING:
-	  geom->FirstLinestring = curr->FirstLinestring;
-	  geom->LastLinestring = curr->LastLinestring;
-	  currLine = curr->FirstLinestring;
-	  break;
-      case GAIA_POLYGON:
-	  geom->FirstPolygon = curr->FirstPolygon;
-	  geom->LastPolygon = curr->LastPolygon;
-	  currPolygon = curr->FirstPolygon;
-	  break;
-      }
-
-
-    while (curr->Next != NULL)
-      {
-	  curr = curr->Next;
-	  switch (curr->DeclaredType)
-	    {
-	    case GAIA_POINT:
-		if (currPoint == NULL)
-		  {
-		      geom->FirstPoint = curr->FirstPoint;
-		  }
-		else
-		    currPoint->Next = curr->FirstPoint;
-		geom->LastPoint = curr->LastPoint;
-		currPoint = curr->LastPoint;
-		break;
-	    case GAIA_LINESTRING:
-		if (currLine == NULL)
-		  {
-		      geom->FirstLinestring = curr->FirstLinestring;
-		  }
-		else
-		    currLine->Next = curr->FirstLinestring;
-		geom->LastLinestring = curr->LastLinestring;
-		currLine = curr->LastLinestring;
-		break;
-	    case GAIA_POLYGON:
-		if (currPolygon == NULL)
-		  {
-		      geom->FirstPolygon = curr->FirstPolygon;
-		  }
-		else
-		    currPolygon->Next = curr->FirstPolygon;
-		geom->LastPolygon = curr->LastPolygon;
-		currPolygon = curr->LastPolygon;
-		break;
-	    }
-      }
-
+    vanuatu_geomColl_common (first, geom);
     return geom;
 }
 
@@ -2843,74 +2721,12 @@ vanuatu_geomColl_xym (gaiaGeomCollPtr first)
 static gaiaGeomCollPtr
 vanuatu_geomColl_xyzm (gaiaGeomCollPtr first)
 {
-    gaiaGeomCollPtr geom = NULL;
-    gaiaGeomCollPtr curr = first;
-    gaiaPointPtr currPoint = NULL;
-    gaiaLinestringPtr currLine = NULL;
-    gaiaPolygonPtr currPolygon = NULL;
-
-    geom = gaiaAllocGeomColl ();
+    gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
+    if (geom == NULL)
+	return NULL;
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     geom->DimensionModel = GAIA_XY_Z_M;
-
-    switch (curr->DeclaredType)
-      {
-      case GAIA_POINTZ:
-	  geom->FirstPoint = curr->FirstPoint;
-	  geom->LastPoint = curr->LastPoint;
-	  currPoint = curr->FirstPoint;
-	  break;
-      case GAIA_LINESTRING:
-	  geom->FirstLinestring = curr->FirstLinestring;
-	  geom->LastLinestring = curr->LastLinestring;
-	  currLine = curr->FirstLinestring;
-	  break;
-      case GAIA_POLYGON:
-	  geom->FirstPolygon = curr->FirstPolygon;
-	  geom->LastPolygon = curr->LastPolygon;
-	  currPolygon = curr->FirstPolygon;
-	  break;
-      }
-
-
-    while (curr->Next != NULL)
-      {
-	  curr = curr->Next;
-	  switch (curr->DeclaredType)
-	    {
-	    case GAIA_POINTZ:
-		if (currPoint == NULL)
-		  {
-		      geom->FirstPoint = curr->FirstPoint;
-		  }
-		else
-		    currPoint->Next = curr->FirstPoint;
-		geom->LastPoint = curr->LastPoint;
-		currPoint = curr->LastPoint;
-		break;
-	    case GAIA_LINESTRING:
-		if (currLine == NULL)
-		  {
-		      geom->FirstLinestring = curr->FirstLinestring;
-		  }
-		else
-		    currLine->Next = curr->FirstLinestring;
-		geom->LastLinestring = curr->LastLinestring;
-		currLine = curr->LastLinestring;
-		break;
-	    case GAIA_POLYGON:
-		if (currPolygon == NULL)
-		  {
-		      geom->FirstPolygon = curr->FirstPolygon;
-		  }
-		else
-		    currPolygon->Next = curr->FirstPolygon;
-		geom->LastPolygon = curr->LastPolygon;
-		currPolygon = curr->LastPolygon;
-		break;
-	    }
-      }
-
+    vanuatu_geomColl_common (first, geom);
     return geom;
 }
 
@@ -3189,6 +3005,7 @@ static const YYACTIONTYPE yy_action[] = {
     /*   390 */ 319, 322, 325, 328, 331, 335, 336, 338, 342, 343,
     /*   400 */ 345, 349, 350, 352, 356, 357,
 };
+
 static const YYCODETYPE yy_lookahead[] = {
     /*     0 */ 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
     /*    10 */ 47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
@@ -3282,6 +3099,7 @@ static const short yy_reduce_ofst[] = {
     /*   150 */ 232, 233, 237, 234, 236, 239, 240, 242, 243, 248,
     /*   160 */ 246, 249, 250, 253, 254, 255,
 };
+
 static const YYACTIONTYPE yy_default[] = {
     /*     0 */ 359, 511, 511, 511, 511, 511, 511, 511, 511, 511,
     /*    10 */ 511, 511, 511, 511, 511, 511, 511, 511, 511, 511,
@@ -3825,6 +3643,7 @@ ParseFree (void *p,		/* The parser to be deleted */
 #if YYSTACKDEPTH<=0
     free (pParser->yystack);
 #endif
+    yylex_destroy ();
     (*freeProc) ((void *) pParser);
 }
 
@@ -4457,8 +4276,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
       case 36:			/* point ::= VANUATU_POINT VANUATU_OPEN_BRACKET point_coordxy VANUATU_CLOSE_BRACKET */
 	  {
 	      yygotominor.yy0 =
-		  vanuatu_buildGeomFromPoint ((gaiaPointPtr) yymsp[-1].minor.
-					      yy0);
+		  vanuatu_buildGeomFromPoint ((gaiaPointPtr) yymsp[-1].
+					      minor.yy0);
 	  }
 	  break;
       case 37:			/* pointm ::= VANUATU_POINT_M VANUATU_OPEN_BRACKET point_coordxym VANUATU_CLOSE_BRACKET */
@@ -4468,8 +4287,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	  yytestcase (yyruleno == 39);
 	  {
 	      yygotominor.yy0 =
-		  vanuatu_buildGeomFromPoint ((gaiaPointPtr) yymsp[-1].minor.
-					      yy0);
+		  vanuatu_buildGeomFromPoint ((gaiaPointPtr) yymsp[-1].
+					      minor.yy0);
 	  }
 	  break;
       case 40:			/* point_coordxy ::= coord coord */
@@ -4606,8 +4425,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	  yytestcase (yyruleno == 56);
 	  {
 	      yygotominor.yy0 =
-		  vanuatu_buildGeomFromLinestring ((gaiaLinestringPtr) yymsp[0].
-						   minor.yy0);
+		  vanuatu_buildGeomFromLinestring ((gaiaLinestringPtr)
+						   yymsp[0].minor.yy0);
 	  }
 	  break;
       case 57:			/* linestring_text ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
@@ -4617,8 +4436,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
 		  (gaiaPointPtr) yymsp[-2].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_linestring_xy ((gaiaPointPtr) yymsp[-4].
-						  minor.yy0);
+		  (void *) vanuatu_linestring_xy ((gaiaPointPtr)
+						  yymsp[-4].minor.yy0);
 	  }
 	  break;
       case 58:			/* linestring_textm ::= VANUATU_OPEN_BRACKET point_coordxym VANUATU_COMMA point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET */
@@ -4628,8 +4447,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
 		  (gaiaPointPtr) yymsp[-2].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_linestring_xym ((gaiaPointPtr) yymsp[-4].
-						   minor.yy0);
+		  (void *) vanuatu_linestring_xym ((gaiaPointPtr)
+						   yymsp[-4].minor.yy0);
 	  }
 	  break;
       case 59:			/* linestring_textz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
@@ -4639,8 +4458,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
 		  (gaiaPointPtr) yymsp[-2].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_linestring_xyz ((gaiaPointPtr) yymsp[-4].
-						   minor.yy0);
+		  (void *) vanuatu_linestring_xyz ((gaiaPointPtr)
+						   yymsp[-4].minor.yy0);
 	  }
 	  break;
       case 60:			/* linestring_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
@@ -4650,8 +4469,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
 		  (gaiaPointPtr) yymsp[-2].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_linestring_xyzm ((gaiaPointPtr) yymsp[-4].
-						    minor.yy0);
+		  (void *) vanuatu_linestring_xyzm ((gaiaPointPtr)
+						    yymsp[-4].minor.yy0);
 	  }
 	  break;
       case 61:			/* polygon ::= VANUATU_POLYGON polygon_text */
@@ -4671,8 +4490,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_polygon_xy ((gaiaRingPtr) yymsp[-2].minor.
-					       yy0);
+		  (void *) vanuatu_polygon_xy ((gaiaRingPtr) yymsp[-2].
+					       minor.yy0);
 	  }
 	  break;
       case 66:			/* polygon_textm ::= VANUATU_OPEN_BRACKET ringm extra_ringsm VANUATU_CLOSE_BRACKET */
@@ -4680,8 +4499,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_polygon_xym ((gaiaRingPtr) yymsp[-2].minor.
-						yy0);
+		  (void *) vanuatu_polygon_xym ((gaiaRingPtr) yymsp[-2].
+						minor.yy0);
 	  }
 	  break;
       case 67:			/* polygon_textz ::= VANUATU_OPEN_BRACKET ringz extra_ringsz VANUATU_CLOSE_BRACKET */
@@ -4689,8 +4508,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_polygon_xyz ((gaiaRingPtr) yymsp[-2].minor.
-						yy0);
+		  (void *) vanuatu_polygon_xyz ((gaiaRingPtr) yymsp[-2].
+						minor.yy0);
 	  }
 	  break;
       case 68:			/* polygon_textzm ::= VANUATU_OPEN_BRACKET ringzm extra_ringszm VANUATU_CLOSE_BRACKET */
@@ -4698,8 +4517,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_polygon_xyzm ((gaiaRingPtr) yymsp[-2].minor.
-						 yy0);
+		  (void *) vanuatu_polygon_xyzm ((gaiaRingPtr) yymsp[-2].
+						 minor.yy0);
 	  }
 	  break;
       case 69:			/* ring ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
@@ -4740,8 +4559,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_ring_xym ((gaiaPointPtr) yymsp[-8].minor.
-					     yy0);
+		  (void *) vanuatu_ring_xym ((gaiaPointPtr) yymsp[-8].
+					     minor.yy0);
 	  }
 	  break;
       case 75:			/* ringz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
@@ -4755,8 +4574,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_ring_xyz ((gaiaPointPtr) yymsp[-8].minor.
-					     yy0);
+		  (void *) vanuatu_ring_xyz ((gaiaPointPtr) yymsp[-8].
+					     minor.yy0);
 	  }
 	  break;
       case 78:			/* ringzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
@@ -4770,8 +4589,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_ring_xyzm ((gaiaPointPtr) yymsp[-8].minor.
-					      yy0);
+		  (void *) vanuatu_ring_xyzm ((gaiaPointPtr) yymsp[-8].
+					      minor.yy0);
 	  }
 	  break;
       case 85:			/* multipoint_text ::= VANUATU_OPEN_BRACKET point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
@@ -4779,8 +4598,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_multipoint_xy ((gaiaPointPtr) yymsp[-2].
-						  minor.yy0);
+		  (void *) vanuatu_multipoint_xy ((gaiaPointPtr)
+						  yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 86:			/* multipoint_textm ::= VANUATU_OPEN_BRACKET point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET */
@@ -4788,8 +4607,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_multipoint_xym ((gaiaPointPtr) yymsp[-2].
-						   minor.yy0);
+		  (void *) vanuatu_multipoint_xym ((gaiaPointPtr)
+						   yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 87:			/* multipoint_textz ::= VANUATU_OPEN_BRACKET point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
@@ -4797,8 +4616,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_multipoint_xyz ((gaiaPointPtr) yymsp[-2].
-						   minor.yy0);
+		  (void *) vanuatu_multipoint_xyz ((gaiaPointPtr)
+						   yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 88:			/* multipoint_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
@@ -4806,8 +4625,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_multipoint_xyzm ((gaiaPointPtr) yymsp[-2].
-						    minor.yy0);
+		  (void *) vanuatu_multipoint_xyzm ((gaiaPointPtr)
+						    yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 93:			/* multilinestring_text ::= VANUATU_OPEN_BRACKET linestring_text multilinestring_text2 VANUATU_CLOSE_BRACKET */
@@ -4864,8 +4683,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPolygonPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_multipolygon_xy ((gaiaPolygonPtr) yymsp[-2].
-						    minor.yy0);
+		  (void *) vanuatu_multipolygon_xy ((gaiaPolygonPtr)
+						    yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 111:		/* multipolygon_text2 ::= VANUATU_COMMA polygon_text multipolygon_text2 */
@@ -4886,8 +4705,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPolygonPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_multipolygon_xym ((gaiaPolygonPtr) yymsp[-2].
-						     minor.yy0);
+		  (void *) vanuatu_multipolygon_xym ((gaiaPolygonPtr)
+						     yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 115:		/* multipolygon_textz ::= VANUATU_OPEN_BRACKET polygon_textz multipolygon_textz2 VANUATU_CLOSE_BRACKET */
@@ -4895,8 +4714,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPolygonPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_multipolygon_xyz ((gaiaPolygonPtr) yymsp[-2].
-						     minor.yy0);
+		  (void *) vanuatu_multipolygon_xyz ((gaiaPolygonPtr)
+						     yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 118:		/* multipolygon_textzm ::= VANUATU_OPEN_BRACKET polygon_textzm multipolygon_textzm2 VANUATU_CLOSE_BRACKET */
@@ -4917,8 +4736,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaGeomCollPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_geomColl_xy ((gaiaGeomCollPtr) yymsp[-2].
-						minor.yy0);
+		  (void *) vanuatu_geomColl_xy ((gaiaGeomCollPtr)
+						yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 129:		/* geocoll_text2 ::= VANUATU_COMMA point geocoll_text2 */
@@ -4959,8 +4778,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaGeomCollPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_geomColl_xym ((gaiaGeomCollPtr) yymsp[-2].
-						 minor.yy0);
+		  (void *) vanuatu_geomColl_xym ((gaiaGeomCollPtr)
+						 yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 139:		/* geocoll_textz ::= VANUATU_OPEN_BRACKET pointz geocoll_textz2 VANUATU_CLOSE_BRACKET */
@@ -4972,8 +4791,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaGeomCollPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_geomColl_xyz ((gaiaGeomCollPtr) yymsp[-2].
-						 minor.yy0);
+		  (void *) vanuatu_geomColl_xyz ((gaiaGeomCollPtr)
+						 yymsp[-2].minor.yy0);
 	  }
 	  break;
       case 146:		/* geocoll_textzm ::= VANUATU_OPEN_BRACKET pointzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */
@@ -4985,8 +4804,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaGeomCollPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_geomColl_xyzm ((gaiaGeomCollPtr) yymsp[-2].
-						  minor.yy0);
+		  (void *) vanuatu_geomColl_xyzm ((gaiaGeomCollPtr)
+						  yymsp[-2].minor.yy0);
 	  }
 	  break;
       default:
@@ -5231,9 +5050,8 @@ Parse (void *yyp,		/* The parser */
 		      while (yypParser->yyidx >= 0 &&
 			     yymx != YYERRORSYMBOL &&
 			     (yyact =
-			      yy_find_reduce_action (yypParser->
-						     yystack[yypParser->yyidx].
-						     stateno,
+			      yy_find_reduce_action (yypParser->yystack
+						     [yypParser->yyidx].stateno,
 						     YYERRORSYMBOL)) >=
 			     YYNSTATE)
 			{
@@ -5392,7 +5210,7 @@ typedef uint32_t flex_uint32_t;
 typedef signed char flex_int8_t;
 typedef short int flex_int16_t;
 typedef int flex_int32_t;
-typedef unsigned char flex_uint8_t; 
+typedef unsigned char flex_uint8_t;
 typedef unsigned short int flex_uint16_t;
 typedef unsigned int flex_uint32_t;
 
@@ -5434,15 +5252,15 @@ typedef unsigned int flex_uint32_t;
 /* The "const" storage-class-modifier is valid. */
 #define YY_USE_CONST
 
-#else	/* ! __cplusplus */
+#else /* ! __cplusplus */
 
 /* C99 requires __STDC__ to be defined as 1. */
 #if defined (__STDC__)
 
 #define YY_USE_CONST
 
-#endif	/* defined (__STDC__) */
-#endif	/* ! __cplusplus */
+#endif /* defined (__STDC__) */
+#endif /* ! __cplusplus */
 
 #ifdef YY_USE_CONST
 #define yyconst const
@@ -5511,8 +5329,8 @@ extern FILE *yyin, *yyout;
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
 
-    #define YY_LESS_LINENO(n)
-    
+#define YY_LESS_LINENO(n)
+
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
 	do \
@@ -5537,72 +5355,72 @@ typedef size_t yy_size_t;
 #ifndef YY_STRUCT_YY_BUFFER_STATE
 #define YY_STRUCT_YY_BUFFER_STATE
 struct yy_buffer_state
-	{
-	FILE *yy_input_file;
+{
+    FILE *yy_input_file;
 
-	char *yy_ch_buf;		/* input buffer */
-	char *yy_buf_pos;		/* current position in input buffer */
+    char *yy_ch_buf;		/* input buffer */
+    char *yy_buf_pos;		/* current position in input buffer */
 
-	/* Size of input buffer in bytes, not including room for EOB
-	 * characters.
-	 */
-	yy_size_t yy_buf_size;
+    /* Size of input buffer in bytes, not including room for EOB
+     * characters.
+     */
+    yy_size_t yy_buf_size;
 
-	/* Number of characters read into yy_ch_buf, not including EOB
-	 * characters.
-	 */
-	int yy_n_chars;
+    /* Number of characters read into yy_ch_buf, not including EOB
+     * characters.
+     */
+    int yy_n_chars;
 
-	/* Whether we "own" the buffer - i.e., we know we created it,
-	 * and can realloc() it to grow it, and should free() it to
-	 * delete it.
-	 */
-	int yy_is_our_buffer;
+    /* Whether we "own" the buffer - i.e., we know we created it,
+     * and can realloc() it to grow it, and should free() it to
+     * delete it.
+     */
+    int yy_is_our_buffer;
 
-	/* Whether this is an "interactive" input source; if so, and
-	 * if we're using stdio for input, then we want to use getc()
-	 * instead of fread(), to make sure we stop fetching input after
-	 * each newline.
-	 */
-	int yy_is_interactive;
+    /* Whether this is an "interactive" input source; if so, and
+     * if we're using stdio for input, then we want to use getc()
+     * instead of fread(), to make sure we stop fetching input after
+     * each newline.
+     */
+    int yy_is_interactive;
 
-	/* Whether we're considered to be at the beginning of a line.
-	 * If so, '^' rules will be active on the next match, otherwise
-	 * not.
-	 */
-	int yy_at_bol;
+    /* Whether we're considered to be at the beginning of a line.
+     * If so, '^' rules will be active on the next match, otherwise
+     * not.
+     */
+    int yy_at_bol;
 
     int yy_bs_lineno; /**< The line count. */
     int yy_bs_column; /**< The column count. */
-    
-	/* Whether to try to fill the input buffer when we reach the
-	 * end of it.
-	 */
-	int yy_fill_buffer;
 
-	int yy_buffer_status;
+    /* Whether to try to fill the input buffer when we reach the
+     * end of it.
+     */
+    int yy_fill_buffer;
+
+    int yy_buffer_status;
 
 #define YY_BUFFER_NEW 0
 #define YY_BUFFER_NORMAL 1
-	/* When an EOF's been seen but there's still some text to process
-	 * then we mark the buffer as YY_EOF_PENDING, to indicate that we
-	 * shouldn't try reading from the input source any more.  We might
-	 * still have a bunch of tokens to match, though, because of
-	 * possible backing-up.
-	 *
-	 * When we actually see the EOF, we change the status to "new"
-	 * (via yyrestart()), so that the user can continue scanning by
-	 * just pointing yyin at a new input file.
-	 */
+    /* When an EOF's been seen but there's still some text to process
+     * then we mark the buffer as YY_EOF_PENDING, to indicate that we
+     * shouldn't try reading from the input source any more.  We might
+     * still have a bunch of tokens to match, though, because of
+     * possible backing-up.
+     *
+     * When we actually see the EOF, we change the status to "new"
+     * (via yyrestart()), so that the user can continue scanning by
+     * just pointing yyin at a new input file.
+     */
 #define YY_BUFFER_EOF_PENDING 2
 
-	};
+};
 #endif /* !YY_STRUCT_YY_BUFFER_STATE */
 
 /* Stack of input buffers. */
 static size_t yy_buffer_stack_top = 0; /**< index of top of stack. */
 static size_t yy_buffer_stack_max = 0; /**< capacity of stack. */
-static YY_BUFFER_STATE * yy_buffer_stack = 0; /**< Stack as an array. */
+static YY_BUFFER_STATE *yy_buffer_stack = 0;  /**< Stack as an array. */
 
 /* We provide macros for accessing buffer states in case in the
  * future we want to put the buffer states in a more general
@@ -5634,27 +5452,27 @@ static int yy_start = 0;	/* start state number */
  */
 static int yy_did_buffer_switch_on_eof;
 
-void yyrestart (FILE *input_file  );
-void yy_switch_to_buffer (YY_BUFFER_STATE new_buffer  );
-YY_BUFFER_STATE yy_create_buffer (FILE *file,int size  );
-void yy_delete_buffer (YY_BUFFER_STATE b  );
-void yy_flush_buffer (YY_BUFFER_STATE b  );
-void yypush_buffer_state (YY_BUFFER_STATE new_buffer  );
-void yypop_buffer_state (void );
+void yyrestart (FILE * input_file);
+void yy_switch_to_buffer (YY_BUFFER_STATE new_buffer);
+YY_BUFFER_STATE yy_create_buffer (FILE * file, int size);
+void yy_delete_buffer (YY_BUFFER_STATE b);
+void yy_flush_buffer (YY_BUFFER_STATE b);
+void yypush_buffer_state (YY_BUFFER_STATE new_buffer);
+void yypop_buffer_state (void);
 
-static void yyensure_buffer_stack (void );
-static void yy_load_buffer_state (void );
-static void yy_init_buffer (YY_BUFFER_STATE b,FILE *file  );
+static void yyensure_buffer_stack (void);
+static void yy_load_buffer_state (void);
+static void yy_init_buffer (YY_BUFFER_STATE b, FILE * file);
 
 #define YY_FLUSH_BUFFER yy_flush_buffer(YY_CURRENT_BUFFER )
 
-YY_BUFFER_STATE yy_scan_buffer (char *base,yy_size_t size  );
-YY_BUFFER_STATE yy_scan_string (yyconst char *yy_str  );
-YY_BUFFER_STATE yy_scan_bytes (yyconst char *bytes,int len  );
+YY_BUFFER_STATE yy_scan_buffer (char *base, yy_size_t size);
+YY_BUFFER_STATE yy_scan_string (yyconst char *yy_str);
+YY_BUFFER_STATE yy_scan_bytes (yyconst char *bytes, int len);
 
-void *yyalloc (yy_size_t  );
-void *yyrealloc (void *,yy_size_t  );
-void yyfree (void *  );
+void *yyalloc (yy_size_t);
+void *yyrealloc (void *, yy_size_t);
+void yyfree (void *);
 
 #define yy_new_buffer yy_create_buffer
 
@@ -5695,10 +5513,10 @@ int yylineno = 1;
 extern char *yytext;
 #define yytext_ptr yytext
 
-static yy_state_type yy_get_previous_state (void );
-static yy_state_type yy_try_NUL_trans (yy_state_type current_state  );
-static int yy_get_next_buffer (void );
-static void yy_fatal_error (yyconst char msg[]  );
+static yy_state_type yy_get_previous_state (void);
+static yy_state_type yy_try_NUL_trans (yy_state_type current_state);
+static int yy_get_next_buffer (void);
+static void yy_fatal_error (yyconst char msg[]);
 
 /* Done after the current pattern has been matched and before the
  * corresponding action - sets up yytext.
@@ -5715,179 +5533,172 @@ static void yy_fatal_error (yyconst char msg[]  );
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
-	{
-	flex_int32_t yy_verify;
-	flex_int32_t yy_nxt;
-	};
-static yyconst flex_int16_t yy_accept[114] =
-    {   0,
-        0,    0,   37,   35,   33,   34,    3,    4,   35,    2,
-       35,    1,   35,   35,   35,   35,    1,    1,    1,    1,
-        0,    0,    0,    0,    1,    1,    1,    0,    0,    0,
-        0,    0,    1,    1,    0,    0,    0,    0,    0,    0,
-        0,    0,    5,    0,    0,    0,    0,    0,    0,    7,
-        6,    0,    0,    0,    0,    0,    8,   13,    0,    0,
-        0,    0,    0,    0,   15,   14,    0,    0,    0,    0,
-        0,   16,    0,    9,    0,   17,    0,    0,    0,   11,
-       10,    0,    0,   19,   18,    0,    0,   12,    0,   20,
-       25,    0,    0,    0,   27,   26,    0,    0,   28,    0,
+{
+    flex_int32_t yy_verify;
+    flex_int32_t yy_nxt;
+};
+static yyconst flex_int16_t yy_accept[114] = { 0,
+    0, 0, 37, 35, 33, 34, 3, 4, 35, 2,
+    35, 1, 35, 35, 35, 35, 1, 1, 1, 1,
+    0, 0, 0, 0, 1, 1, 1, 0, 0, 0,
+    0, 0, 1, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 5, 0, 0, 0, 0, 0, 0, 7,
+    6, 0, 0, 0, 0, 0, 8, 13, 0, 0,
+    0, 0, 0, 0, 15, 14, 0, 0, 0, 0,
+    0, 16, 0, 9, 0, 17, 0, 0, 0, 11,
+    10, 0, 0, 19, 18, 0, 0, 12, 0, 20,
+    25, 0, 0, 0, 27, 26, 0, 0, 28, 0,
 
-       21,    0,    0,   23,   22,    0,   24,   29,    0,   31,
-       30,   32,    0
-    } ;
+    21, 0, 0, 23, 22, 0, 24, 29, 0, 31,
+    30, 32, 0
+};
 
-static yyconst flex_int32_t yy_ec[256] =
-    {   0,
-        1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    4,    1,    1,    1,    1,    1,    1,    1,    5,
-        6,    1,    7,    8,    9,   10,    1,   11,   11,   11,
-       11,   11,   11,   11,   11,   11,   11,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,   12,    1,   13,    1,
-       14,    1,   15,    1,    1,   16,   17,   18,   19,   20,
-        1,   21,   22,   23,   24,    1,    1,    1,   25,   26,
-        1,    1,    1,    1,    1,    1,    1,    1,   27,    1,
+static yyconst flex_int32_t yy_ec[256] = { 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 2, 3,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 4, 1, 1, 1, 1, 1, 1, 1, 5,
+    6, 1, 7, 8, 9, 10, 1, 11, 11, 11,
+    11, 11, 11, 11, 11, 11, 11, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 12, 1, 13, 1,
+    14, 1, 15, 1, 1, 16, 17, 18, 19, 20,
+    1, 21, 22, 23, 24, 1, 1, 1, 25, 26,
+    1, 1, 1, 1, 1, 1, 1, 1, 27, 1,
 
-       28,    1,   29,    1,   30,    1,    1,   31,   32,   33,
-       34,   35,    1,   36,   37,   38,   39,    1,    1,    1,
-       40,   41,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+    28, 1, 29, 1, 30, 1, 1, 31, 32, 33,
+    34, 35, 1, 36, 37, 38, 39, 1, 1, 1,
+    40, 41, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1
-    } ;
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1
+};
 
-static yyconst flex_int32_t yy_meta[42] =
-    {   0,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1
-    } ;
+static yyconst flex_int32_t yy_meta[42] = { 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1
+};
 
-static yyconst flex_int16_t yy_base[114] =
-    {   0,
-        0,    0,  246,  270,  270,  270,  270,  270,  230,  270,
-      228,   32,   31,   30,   22,   28,   38,   40,  227,   42,
-       35,   37,   40,   42,  226,  159,  123,   46,   51,   42,
-       48,   42,   84,   75,   55,   52,   60,   53,   63,   61,
-       62,   77,   84,   68,   73,   75,   83,   84,   88,  270,
-       87,   88,   82,  100,   99,  108,  270,  123,  114,  110,
-      118,  115,  110,  119,  270,  120,  123,  130,  125,  130,
-      140,  270,  140,  157,  135,  159,  146,  150,  158,  270,
-      150,  151,  160,  270,  161,  161,  175,  270,  180,  270,
-      192,  185,  184,  187,  270,  188,  183,  193,  270,  193,
+static yyconst flex_int16_t yy_base[114] = { 0,
+    0, 0, 246, 270, 270, 270, 270, 270, 230, 270,
+    228, 32, 31, 30, 22, 28, 38, 40, 227, 42,
+    35, 37, 40, 42, 226, 159, 123, 46, 51, 42,
+    48, 42, 84, 75, 55, 52, 60, 53, 63, 61,
+    62, 77, 84, 68, 73, 75, 83, 84, 88, 270,
+    87, 88, 82, 100, 99, 108, 270, 123, 114, 110,
+    118, 115, 110, 119, 270, 120, 123, 130, 125, 130,
+    140, 270, 140, 157, 135, 159, 146, 150, 158, 270,
+    150, 151, 160, 270, 161, 161, 175, 270, 180, 270,
+    192, 185, 184, 187, 270, 188, 183, 193, 270, 193,
 
-      210,  192,  199,  270,  198,  211,  270,  228,  217,  270,
-      218,  270,  270
-    } ;
+    210, 192, 199, 270, 198, 211, 270, 228, 217, 270,
+    218, 270, 270
+};
 
-static yyconst flex_int16_t yy_def[114] =
-    {   0,
-      113,    1,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
+static yyconst flex_int16_t yy_def[114] = { 0,
+    113, 1, 113, 113, 113, 113, 113, 113, 113, 113,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
 
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,    0
-    } ;
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113, 113, 0
+};
 
-static yyconst flex_int16_t yy_nxt[312] =
-    {   0,
-        4,    5,    6,    5,    7,    8,    9,   10,   11,    4,
-       12,    4,    4,   13,    4,   14,   15,    4,    4,   16,
-        4,    4,    4,    4,    4,    4,    4,    4,   13,    4,
-       14,   15,    4,    4,   16,    4,    4,    4,    4,    4,
-        4,   19,   20,   21,   22,   23,   24,   25,   17,   26,
-       18,   19,   20,   28,   29,   30,   31,   32,   21,   22,
-       23,   24,   35,   36,   37,   38,   39,   40,   28,   29,
-       30,   31,   32,   41,   42,   43,   44,   35,   36,   37,
-       38,   39,   40,   45,   46,   34,   52,   49,   41,   42,
-       43,   44,   47,   53,   33,   54,   48,   55,   45,   46,
+static yyconst flex_int16_t yy_nxt[312] = { 0,
+    4, 5, 6, 5, 7, 8, 9, 10, 11, 4,
+    12, 4, 4, 13, 4, 14, 15, 4, 4, 16,
+    4, 4, 4, 4, 4, 4, 4, 4, 13, 4,
+    14, 15, 4, 4, 16, 4, 4, 4, 4, 4,
+    4, 19, 20, 21, 22, 23, 24, 25, 17, 26,
+    18, 19, 20, 28, 29, 30, 31, 32, 21, 22,
+    23, 24, 35, 36, 37, 38, 39, 40, 28, 29,
+    30, 31, 32, 41, 42, 43, 44, 35, 36, 37,
+    38, 39, 40, 45, 46, 34, 52, 49, 41, 42,
+    43, 44, 47, 53, 33, 54, 48, 55, 45, 46,
 
-       50,   52,   56,   57,   50,   58,   59,   47,   53,   51,
-       54,   48,   55,   51,   60,   50,   61,   56,   57,   50,
-       58,   59,   62,   63,   51,   67,   64,   68,   51,   60,
-       69,   61,   70,   27,   71,   65,   72,   62,   63,   65,
-       67,   73,   68,   74,   66,   69,   75,   70,   66,   71,
-       65,   72,   76,   77,   65,   78,   73,   82,   74,   66,
-       79,   75,   83,   66,   86,   87,   88,   76,   77,   34,
-       78,   89,   82,   80,   80,   84,   84,   90,   91,   86,
-       87,   88,   81,   81,   85,   85,   89,   92,   80,   80,
-       84,   84,   90,   91,   93,   94,   97,   81,   81,   85,
+    50, 52, 56, 57, 50, 58, 59, 47, 53, 51,
+    54, 48, 55, 51, 60, 50, 61, 56, 57, 50,
+    58, 59, 62, 63, 51, 67, 64, 68, 51, 60,
+    69, 61, 70, 27, 71, 65, 72, 62, 63, 65,
+    67, 73, 68, 74, 66, 69, 75, 70, 66, 71,
+    65, 72, 76, 77, 65, 78, 73, 82, 74, 66,
+    79, 75, 83, 66, 86, 87, 88, 76, 77, 34,
+    78, 89, 82, 80, 80, 84, 84, 90, 91, 86,
+    87, 88, 81, 81, 85, 85, 89, 92, 80, 80,
+    84, 84, 90, 91, 93, 94, 97, 81, 81, 85,
 
-       85,   98,   92,   95,   99,  100,  101,  102,   95,   93,
-      106,   97,   96,  103,  107,  104,   98,   96,   95,   99,
-      100,  101,  102,   95,  105,  106,  104,   96,  108,  107,
-      104,  109,   96,  110,  112,  105,   33,   27,   18,  105,
-       17,  104,  111,  108,  110,  113,  113,  113,  110,  112,
-      105,  113,  113,  111,  113,  113,  113,  111,  113,  110,
-      113,  113,  113,  113,  113,  113,  113,  113,  111,    3,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
+    85, 98, 92, 95, 99, 100, 101, 102, 95, 93,
+    106, 97, 96, 103, 107, 104, 98, 96, 95, 99,
+    100, 101, 102, 95, 105, 106, 104, 96, 108, 107,
+    104, 109, 96, 110, 112, 105, 33, 27, 18, 105,
+    17, 104, 111, 108, 110, 113, 113, 113, 110, 112,
+    105, 113, 113, 111, 113, 113, 113, 111, 113, 110,
+    113, 113, 113, 113, 113, 113, 113, 113, 111, 3,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
 
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113
-    } ;
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113
+};
 
-static yyconst flex_int16_t yy_chk[312] =
-    {   0,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,   12,   12,   13,   14,   15,   16,   17,   17,   18,
-       18,   20,   20,   21,   22,   23,   24,   24,   13,   14,
-       15,   16,   28,   29,   30,   31,   32,   35,   21,   22,
-       23,   24,   24,   36,   37,   38,   39,   28,   29,   30,
-       31,   32,   35,   40,   41,   34,   44,   43,   36,   37,
-       38,   39,   42,   45,   33,   46,   42,   47,   40,   41,
+static yyconst flex_int16_t yy_chk[312] = { 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 12, 12, 13, 14, 15, 16, 17, 17, 18,
+    18, 20, 20, 21, 22, 23, 24, 24, 13, 14,
+    15, 16, 28, 29, 30, 31, 32, 35, 21, 22,
+    23, 24, 24, 36, 37, 38, 39, 28, 29, 30,
+    31, 32, 35, 40, 41, 34, 44, 43, 36, 37,
+    38, 39, 42, 45, 33, 46, 42, 47, 40, 41,
 
-       43,   44,   48,   51,   49,   52,   53,   42,   45,   43,
-       46,   42,   47,   49,   54,   43,   55,   48,   51,   49,
-       52,   53,   56,   56,   43,   59,   58,   60,   49,   54,
-       61,   55,   62,   27,   63,   64,   66,   56,   56,   58,
-       59,   67,   60,   68,   64,   61,   69,   62,   58,   63,
-       64,   66,   70,   71,   58,   73,   67,   75,   68,   64,
-       74,   69,   76,   58,   77,   78,   81,   70,   71,   26,
-       73,   82,   75,   74,   79,   76,   83,   85,   86,   77,
-       78,   81,   74,   79,   76,   83,   82,   87,   74,   79,
-       76,   83,   85,   86,   89,   91,   92,   74,   79,   76,
+    43, 44, 48, 51, 49, 52, 53, 42, 45, 43,
+    46, 42, 47, 49, 54, 43, 55, 48, 51, 49,
+    52, 53, 56, 56, 43, 59, 58, 60, 49, 54,
+    61, 55, 62, 27, 63, 64, 66, 56, 56, 58,
+    59, 67, 60, 68, 64, 61, 69, 62, 58, 63,
+    64, 66, 70, 71, 58, 73, 67, 75, 68, 64,
+    74, 69, 76, 58, 77, 78, 81, 70, 71, 26,
+    73, 82, 75, 74, 79, 76, 83, 85, 86, 77,
+    78, 81, 74, 79, 76, 83, 82, 87, 74, 79,
+    76, 83, 85, 86, 89, 91, 92, 74, 79, 76,
 
-       83,   93,   87,   94,   96,   97,   98,  100,   91,   89,
-      102,   92,   94,  101,  105,  103,   93,   91,   94,   96,
-       97,   98,  100,   91,  103,  102,  101,   94,  106,  105,
-      103,  108,   91,  109,  111,  101,   25,   19,   11,  103,
-        9,  101,  109,  106,  108,    3,    0,    0,  109,  111,
-      101,    0,    0,  108,    0,    0,    0,  109,    0,  108,
-        0,    0,    0,    0,    0,    0,    0,    0,  108,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
+    83, 93, 87, 94, 96, 97, 98, 100, 91, 89,
+    102, 92, 94, 101, 105, 103, 93, 91, 94, 96,
+    97, 98, 100, 91, 103, 102, 101, 94, 106, 105,
+    103, 108, 91, 109, 111, 101, 25, 19, 11, 103,
+    9, 101, 109, 106, 108, 3, 0, 0, 109, 111,
+    101, 0, 0, 108, 0, 0, 0, 109, 0, 108,
+    0, 0, 0, 0, 0, 0, 0, 0, 108, 113,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
 
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113
-    } ;
+    113, 113, 113, 113, 113, 113, 113, 113, 113, 113,
+    113
+};
 
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
@@ -5994,36 +5805,36 @@ int line = 1, col = 1;
 #define YY_EXTRA_TYPE void *
 #endif
 
-static int yy_init_globals (void );
+static int yy_init_globals (void);
 
 /* Accessor methods to globals.
    These are made visible to non-reentrant scanners for convenience. */
 
-int yylex_destroy (void );
+int yylex_destroy (void);
 
-int yyget_debug (void );
+int yyget_debug (void);
 
-void yyset_debug (int debug_flag  );
+void yyset_debug (int debug_flag);
 
-YY_EXTRA_TYPE yyget_extra (void );
+YY_EXTRA_TYPE yyget_extra (void);
 
-void yyset_extra (YY_EXTRA_TYPE user_defined  );
+void yyset_extra (YY_EXTRA_TYPE user_defined);
 
-FILE *yyget_in (void );
+FILE *yyget_in (void);
 
-void yyset_in  (FILE * in_str  );
+void yyset_in (FILE * in_str);
 
-FILE *yyget_out (void );
+FILE *yyget_out (void);
 
-void yyset_out  (FILE * out_str  );
+void yyset_out (FILE * out_str);
 
-int yyget_leng (void );
+int yyget_leng (void);
 
-char *yyget_text (void );
+char *yyget_text (void);
 
-int yyget_lineno (void );
+int yyget_lineno (void);
 
-void yyset_lineno (int line_number  );
+void yyset_lineno (int line_number);
 
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -6031,28 +5842,28 @@ void yyset_lineno (int line_number  );
 
 #ifndef YY_SKIP_YYWRAP
 #ifdef __cplusplus
-extern "C" int yywrap (void );
+extern "C" int yywrap (void);
 #else
-extern int yywrap (void );
+extern int yywrap (void);
 #endif
 #endif
 
-    static void yyunput (int c,char *buf_ptr  );
-    
+static void yyunput (int c, char *buf_ptr);
+
 #ifndef yytext_ptr
-static void yy_flex_strncpy (char *,yyconst char *,int );
+static void yy_flex_strncpy (char *, yyconst char *, int);
 #endif
 
 #ifdef YY_NEED_STRLEN
-static int yy_flex_strlen (yyconst char * );
+static int yy_flex_strlen (yyconst char *);
 #endif
 
 #ifndef YY_NO_INPUT
 
 #ifdef __cplusplus
-static int yyinput (void );
+static int yyinput (void);
 #else
-static int input (void );
+static int input (void);
 #endif
 
 #endif
@@ -6161,315 +5972,356 @@ extern int yylex (void);
  */
 YY_DECL
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp, *yy_bp;
-	register int yy_act;
-    
-	if ( !(yy_init) )
-		{
-		(yy_init) = 1;
+    register yy_state_type yy_current_state;
+    register char *yy_cp, *yy_bp;
+    register int yy_act;
+
+    if (!(yy_init))
+      {
+	  (yy_init) = 1;
 
 #ifdef YY_USER_INIT
-		YY_USER_INIT;
+	  YY_USER_INIT;
 #endif
 
-		if ( ! (yy_start) )
-			(yy_start) = 1;	/* first start state */
+	  if (!(yy_start))
+	      (yy_start) = 1;	/* first start state */
 
-		if ( ! yyin )
-			yyin = stdin;
+	  if (!yyin)
+	      yyin = stdin;
 
-		if ( ! yyout )
-			yyout = stdout;
+	  if (!yyout)
+	      yyout = stdout;
 
-		if ( ! YY_CURRENT_BUFFER ) {
-			yyensure_buffer_stack ();
-			YY_CURRENT_BUFFER_LVALUE =
-				yy_create_buffer(yyin,YY_BUF_SIZE );
-		}
+	  if (!YY_CURRENT_BUFFER)
+	    {
+		yyensure_buffer_stack ();
+		YY_CURRENT_BUFFER_LVALUE = yy_create_buffer (yyin, YY_BUF_SIZE);
+	    }
 
-		yy_load_buffer_state( );
-		}
+	  yy_load_buffer_state ();
+      }
 
-	while ( 1 )		/* loops until end-of-file is reached */
-		{
-		yy_cp = (yy_c_buf_p);
+    while (1)			/* loops until end-of-file is reached */
+      {
+	  yy_cp = (yy_c_buf_p);
 
-		/* Support of yytext. */
-		*yy_cp = (yy_hold_char);
+	  /* Support of yytext. */
+	  *yy_cp = (yy_hold_char);
 
-		/* yy_bp points to the position in yy_ch_buf of the start of
-		 * the current run.
-		 */
-		yy_bp = yy_cp;
+	  /* yy_bp points to the position in yy_ch_buf of the start of
+	   * the current run.
+	   */
+	  yy_bp = yy_cp;
 
-		yy_current_state = (yy_start);
-yy_match:
-		do
-			{
-			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
-			if ( yy_accept[yy_current_state] )
-				{
-				(yy_last_accepting_state) = yy_current_state;
-				(yy_last_accepting_cpos) = yy_cp;
-				}
-			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
-				{
-				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 114 )
-					yy_c = yy_meta[(unsigned int) yy_c];
-				}
-			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-			++yy_cp;
-			}
-		while ( yy_base[yy_current_state] != 270 );
+	  yy_current_state = (yy_start);
+	yy_match:
+	  do
+	    {
+		register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI (*yy_cp)];
+		if (yy_accept[yy_current_state])
+		  {
+		      (yy_last_accepting_state) = yy_current_state;
+		      (yy_last_accepting_cpos) = yy_cp;
+		  }
+		while (yy_chk[yy_base[yy_current_state] + yy_c] !=
+		       yy_current_state)
+		  {
+		      yy_current_state = (int) yy_def[yy_current_state];
+		      if (yy_current_state >= 114)
+			  yy_c = yy_meta[(unsigned int) yy_c];
+		  }
+		yy_current_state =
+		    yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+		++yy_cp;
+	    }
+	  while (yy_base[yy_current_state] != 270);
 
-yy_find_action:
+	yy_find_action:
+	  yy_act = yy_accept[yy_current_state];
+	  if (yy_act == 0)
+	    {			/* have to back up */
+		yy_cp = (yy_last_accepting_cpos);
+		yy_current_state = (yy_last_accepting_state);
 		yy_act = yy_accept[yy_current_state];
-		if ( yy_act == 0 )
-			{ /* have to back up */
-			yy_cp = (yy_last_accepting_cpos);
-			yy_current_state = (yy_last_accepting_state);
-			yy_act = yy_accept[yy_current_state];
-			}
+	    }
 
-		YY_DO_BEFORE_ACTION;
+	  YY_DO_BEFORE_ACTION;
 
-do_action:	/* This label is used only to access EOF actions. */
+	do_action:		/* This label is used only to access EOF actions. */
 
-		switch ( yy_act )
-	{ /* beginning of action switch */
-			case 0: /* must back up */
-			/* undo the effects of YY_DO_BEFORE_ACTION */
-			*yy_cp = (yy_hold_char);
-			yy_cp = (yy_last_accepting_cpos);
-			yy_current_state = (yy_last_accepting_state);
-			goto yy_find_action;
-
-case 1:
-YY_RULE_SETUP
-{ col += (int) strlen(yytext);  yylval.dval = atof(yytext); return VANUATU_NUM; }
-	YY_BREAK
-case 2:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_COMMA; }
-	YY_BREAK
-case 3:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_OPEN_BRACKET; }
-	YY_BREAK
-case 4:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_CLOSE_BRACKET; }
-	YY_BREAK
-case 5:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_POINT; }
-	YY_BREAK
-case 6:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_POINT_Z; }
-	YY_BREAK
-case 7:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_POINT_M; }
-	YY_BREAK
-case 8:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_POINT_ZM; }
-	YY_BREAK
-case 9:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_LINESTRING; }
-	YY_BREAK
-case 10:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_LINESTRING_Z; }
-	YY_BREAK
-case 11:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_LINESTRING_M; }
-	YY_BREAK
-case 12:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_LINESTRING_ZM; }
-	YY_BREAK
-case 13:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_POLYGON; }
-	YY_BREAK
-case 14:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_POLYGON_Z; }
-	YY_BREAK
-case 15:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_POLYGON_M; }
-	YY_BREAK
-case 16:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_POLYGON_ZM; }
-	YY_BREAK
-case 17:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_MULTIPOINT; }
-	YY_BREAK
-case 18:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_MULTIPOINT_Z; }
-	YY_BREAK
-case 19:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_MULTIPOINT_M; }
-	YY_BREAK
-case 20:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_MULTIPOINT_ZM; }
-	YY_BREAK
-case 21:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_MULTILINESTRING; }
-	YY_BREAK
-case 22:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_MULTILINESTRING_Z; }
-	YY_BREAK
-case 23:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_MULTILINESTRING_M; }
-	YY_BREAK
-case 24:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_MULTILINESTRING_ZM; }	
-	YY_BREAK
-case 25:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_MULTIPOLYGON; }
-	YY_BREAK
-case 26:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_MULTIPOLYGON_Z; }
-	YY_BREAK
-case 27:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_MULTIPOLYGON_M; }
-	YY_BREAK
-case 28:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_MULTIPOLYGON_ZM; }
-	YY_BREAK
-case 29:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_GEOMETRYCOLLECTION; }
-	YY_BREAK
-case 30:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_Z; }
-	YY_BREAK
-case 31:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_M; }
-	YY_BREAK
-case 32:
-YY_RULE_SETUP
-{ yylval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_ZM; }
-	YY_BREAK
-case 33:
-YY_RULE_SETUP
-{ col += (int) strlen(yytext); }               /* ignore but count white space */
-	YY_BREAK
-case 34:
-/* rule 34 can match eol */
-YY_RULE_SETUP
-{ col = 0; ++line; return VANUATU_NEWLINE; }
-	YY_BREAK
-case 35:
-YY_RULE_SETUP
-{ col += (int) strlen(yytext); return -1; }
-	YY_BREAK
-case 36:
-YY_RULE_SETUP
-ECHO;
-	YY_BREAK
-case YY_STATE_EOF(INITIAL):
-	yyterminate();
-
-	case YY_END_OF_BUFFER:
-		{
-		/* Amount of text matched not including the EOB char. */
-		int yy_amount_of_matched_text = (int) (yy_cp - (yytext_ptr)) - 1;
-
-		/* Undo the effects of YY_DO_BEFORE_ACTION. */
+	  switch (yy_act)
+	    {			/* beginning of action switch */
+	    case 0:		/* must back up */
+		/* undo the effects of YY_DO_BEFORE_ACTION */
 		*yy_cp = (yy_hold_char);
-		YY_RESTORE_YY_MORE_OFFSET
+		yy_cp = (yy_last_accepting_cpos);
+		yy_current_state = (yy_last_accepting_state);
+		goto yy_find_action;
 
-		if ( YY_CURRENT_BUFFER_LVALUE->yy_buffer_status == YY_BUFFER_NEW )
-			{
-			/* We're scanning a new file or input source.  It's
-			 * possible that this happened because the user
-			 * just pointed yyin at a new source and called
-			 * yylex().  If so, then we have to assure
-			 * consistency between YY_CURRENT_BUFFER and our
-			 * globals.  Here is the right place to do so, because
-			 * this is the first action (other than possibly a
-			 * back-up) that will match for the new input source.
-			 */
-			(yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
-			YY_CURRENT_BUFFER_LVALUE->yy_input_file = yyin;
-			YY_CURRENT_BUFFER_LVALUE->yy_buffer_status = YY_BUFFER_NORMAL;
-			}
+	    case 1:
+		YY_RULE_SETUP
+		{
+		    col += (int) strlen (yytext);
+		    yylval.dval = atof (yytext);
+		    return VANUATU_NUM;
+		}
+		YY_BREAK case 2:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_COMMA;
+		}
+		YY_BREAK case 3:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_OPEN_BRACKET;
+		}
+		YY_BREAK case 4:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_CLOSE_BRACKET;
+		}
+		YY_BREAK case 5:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POINT;
+		}
+		YY_BREAK case 6:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POINT_Z;
+		}
+		YY_BREAK case 7:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POINT_M;
+		}
+		YY_BREAK case 8:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POINT_ZM;
+		}
+		YY_BREAK case 9:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_LINESTRING;
+		}
+		YY_BREAK case 10:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_LINESTRING_Z;
+		}
+		YY_BREAK case 11:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_LINESTRING_M;
+		}
+		YY_BREAK case 12:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_LINESTRING_ZM;
+		}
+		YY_BREAK case 13:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POLYGON;
+		}
+		YY_BREAK case 14:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POLYGON_Z;
+		}
+		YY_BREAK case 15:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POLYGON_M;
+		}
+		YY_BREAK case 16:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_POLYGON_ZM;
+		}
+		YY_BREAK case 17:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOINT;
+		}
+		YY_BREAK case 18:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOINT_Z;
+		}
+		YY_BREAK case 19:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOINT_M;
+		}
+		YY_BREAK case 20:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOINT_ZM;
+		}
+		YY_BREAK case 21:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTILINESTRING;
+		}
+		YY_BREAK case 22:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTILINESTRING_Z;
+		}
+		YY_BREAK case 23:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTILINESTRING_M;
+		}
+		YY_BREAK case 24:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTILINESTRING_ZM;
+		}
+		YY_BREAK case 25:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOLYGON;
+		}
+		YY_BREAK case 26:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOLYGON_Z;
+		}
+		YY_BREAK case 27:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOLYGON_M;
+		}
+		YY_BREAK case 28:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_MULTIPOLYGON_ZM;
+		}
+		YY_BREAK case 29:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_GEOMETRYCOLLECTION;
+		}
+		YY_BREAK case 30:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_GEOMETRYCOLLECTION_Z;
+		}
+		YY_BREAK case 31:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_GEOMETRYCOLLECTION_M;
+		}
+		YY_BREAK case 32:YY_RULE_SETUP
+		{
+		    yylval.dval = 0;
+		    return VANUATU_GEOMETRYCOLLECTION_ZM;
+		}
+		YY_BREAK case 33:YY_RULE_SETUP
+		{
+		    col += (int) strlen (yytext);
+		}		/* ignore but count white space */
+		YY_BREAK case 34:
+/* rule 34 can match eol */
+		  YY_RULE_SETUP
+		{
+		    col = 0;
+		    ++line;
+		    return VANUATU_NEWLINE;
+		}
+		YY_BREAK case 35:YY_RULE_SETUP
+		{
+		    col += (int) strlen (yytext);
+		    return -1;
+		}
+		YY_BREAK case 36:YY_RULE_SETUP ECHO;
+		YY_BREAK case YY_STATE_EOF (INITIAL):yyterminate ();
 
-		/* Note that here we test for yy_c_buf_p "<=" to the position
-		 * of the first EOB in the buffer, since yy_c_buf_p will
-		 * already have been incremented past the NUL character
-		 * (since all states make transitions on EOB to the
-		 * end-of-buffer state).  Contrast this with the test
-		 * in input().
-		 */
-		if ( (yy_c_buf_p) <= &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] )
-			{ /* This was really a NUL. */
-			yy_state_type yy_next_state;
+	    case YY_END_OF_BUFFER:
+		{
+		    /* Amount of text matched not including the EOB char. */
+		    int yy_amount_of_matched_text =
+			(int) (yy_cp - (yytext_ptr)) - 1;
 
-			(yy_c_buf_p) = (yytext_ptr) + yy_amount_of_matched_text;
+		    /* Undo the effects of YY_DO_BEFORE_ACTION. */
+		    *yy_cp = (yy_hold_char);
+		    YY_RESTORE_YY_MORE_OFFSET
+			if (YY_CURRENT_BUFFER_LVALUE->yy_buffer_status ==
+			    YY_BUFFER_NEW)
+		      {
+			  /* We're scanning a new file or input source.  It's
+			   * possible that this happened because the user
+			   * just pointed yyin at a new source and called
+			   * yylex().  If so, then we have to assure
+			   * consistency between YY_CURRENT_BUFFER and our
+			   * globals.  Here is the right place to do so, because
+			   * this is the first action (other than possibly a
+			   * back-up) that will match for the new input source.
+			   */
+			  (yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
+			  YY_CURRENT_BUFFER_LVALUE->yy_input_file = yyin;
+			  YY_CURRENT_BUFFER_LVALUE->yy_buffer_status =
+			      YY_BUFFER_NORMAL;
+		      }
 
-			yy_current_state = yy_get_previous_state(  );
+		    /* Note that here we test for yy_c_buf_p "<=" to the position
+		     * of the first EOB in the buffer, since yy_c_buf_p will
+		     * already have been incremented past the NUL character
+		     * (since all states make transitions on EOB to the
+		     * end-of-buffer state).  Contrast this with the test
+		     * in input().
+		     */
+		    if ((yy_c_buf_p) <=
+			&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)])
+		      {		/* This was really a NUL. */
+			  yy_state_type yy_next_state;
 
-			/* Okay, we're now positioned to make the NUL
-			 * transition.  We couldn't have
-			 * yy_get_previous_state() go ahead and do it
-			 * for us because it doesn't know how to deal
-			 * with the possibility of jamming (and we don't
-			 * want to build jamming into it because then it
-			 * will run more slowly).
-			 */
+			  (yy_c_buf_p) =
+			      (yytext_ptr) + yy_amount_of_matched_text;
 
-			yy_next_state = yy_try_NUL_trans( yy_current_state );
+			  yy_current_state = yy_get_previous_state ();
 
-			yy_bp = (yytext_ptr) + YY_MORE_ADJ;
+			  /* Okay, we're now positioned to make the NUL
+			   * transition.  We couldn't have
+			   * yy_get_previous_state() go ahead and do it
+			   * for us because it doesn't know how to deal
+			   * with the possibility of jamming (and we don't
+			   * want to build jamming into it because then it
+			   * will run more slowly).
+			   */
 
-			if ( yy_next_state )
-				{
+			  yy_next_state = yy_try_NUL_trans (yy_current_state);
+
+			  yy_bp = (yytext_ptr) + YY_MORE_ADJ;
+
+			  if (yy_next_state)
+			    {
 				/* Consume the NUL. */
 				yy_cp = ++(yy_c_buf_p);
 				yy_current_state = yy_next_state;
 				goto yy_match;
-				}
+			    }
 
-			else
-				{
+			  else
+			    {
 				yy_cp = (yy_c_buf_p);
 				goto yy_find_action;
-				}
-			}
+			    }
+		      }
 
-		else switch ( yy_get_next_buffer(  ) )
-			{
-			case EOB_ACT_END_OF_FILE:
-				{
-				(yy_did_buffer_switch_on_eof) = 0;
+		    else
+			switch (yy_get_next_buffer ())
+			  {
+			  case EOB_ACT_END_OF_FILE:
+			      {
+				  (yy_did_buffer_switch_on_eof) = 0;
 
-				if ( yywrap( ) )
-					{
+				  if (yywrap ())
+				    {
 					/* Note: because we've taken care in
 					 * yy_get_next_buffer() to have set up
 					 * yytext, we can now set up
@@ -6479,49 +6331,51 @@ case YY_STATE_EOF(INITIAL):
 					 * YY_NULL, it'll still work - another
 					 * YY_NULL will get returned.
 					 */
-					(yy_c_buf_p) = (yytext_ptr) + YY_MORE_ADJ;
+					(yy_c_buf_p) =
+					    (yytext_ptr) + YY_MORE_ADJ;
 
-					yy_act = YY_STATE_EOF(YY_START);
+					yy_act = YY_STATE_EOF (YY_START);
 					goto do_action;
-					}
+				    }
 
-				else
-					{
-					if ( ! (yy_did_buffer_switch_on_eof) )
-						YY_NEW_FILE;
-					}
-				break;
-				}
+				  else
+				    {
+					if (!(yy_did_buffer_switch_on_eof))
+					    YY_NEW_FILE;
+				    }
+				  break;
+			      }
 
-			case EOB_ACT_CONTINUE_SCAN:
-				(yy_c_buf_p) =
-					(yytext_ptr) + yy_amount_of_matched_text;
+			  case EOB_ACT_CONTINUE_SCAN:
+			      (yy_c_buf_p) =
+				  (yytext_ptr) + yy_amount_of_matched_text;
 
-				yy_current_state = yy_get_previous_state(  );
+			      yy_current_state = yy_get_previous_state ();
 
-				yy_cp = (yy_c_buf_p);
-				yy_bp = (yytext_ptr) + YY_MORE_ADJ;
-				goto yy_match;
+			      yy_cp = (yy_c_buf_p);
+			      yy_bp = (yytext_ptr) + YY_MORE_ADJ;
+			      goto yy_match;
 
-			case EOB_ACT_LAST_MATCH:
-				(yy_c_buf_p) =
-				&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)];
+			  case EOB_ACT_LAST_MATCH:
+			      (yy_c_buf_p) =
+				  &YY_CURRENT_BUFFER_LVALUE->
+				  yy_ch_buf[(yy_n_chars)];
 
-				yy_current_state = yy_get_previous_state(  );
+			      yy_current_state = yy_get_previous_state ();
 
-				yy_cp = (yy_c_buf_p);
-				yy_bp = (yytext_ptr) + YY_MORE_ADJ;
-				goto yy_find_action;
-			}
-		break;
+			      yy_cp = (yy_c_buf_p);
+			      yy_bp = (yytext_ptr) + YY_MORE_ADJ;
+			      goto yy_find_action;
+			  }
+		    break;
 		}
 
-	default:
-		YY_FATAL_ERROR(
-			"fatal flex scanner internal error--no action found" );
-	} /* end of action switch */
-		} /* end of scanning one token */
-} /* end of yylex */
+	    default:
+		YY_FATAL_ERROR
+		    ("fatal flex scanner internal error--no action found");
+	    }			/* end of action switch */
+      }				/* end of scanning one token */
+}				/* end of yylex */
 
 /* yy_get_next_buffer - try to read in a new buffer
  *
@@ -6530,165 +6384,173 @@ case YY_STATE_EOF(INITIAL):
  *	EOB_ACT_CONTINUE_SCAN - continue scanning from current position
  *	EOB_ACT_END_OF_FILE - end of file
  */
-static int yy_get_next_buffer (void)
+static int
+yy_get_next_buffer (void)
 {
-    	register char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
-	register char *source = (yytext_ptr);
-	register int number_to_move, i;
-	int ret_val;
+    register char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
+    register char *source = (yytext_ptr);
+    register int number_to_move, i;
+    int ret_val;
 
-	if ( (yy_c_buf_p) > &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1] )
-		YY_FATAL_ERROR(
-		"fatal flex scanner internal error--end of buffer missed" );
+    if ((yy_c_buf_p) > &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1])
+	YY_FATAL_ERROR
+	    ("fatal flex scanner internal error--end of buffer missed");
 
-	if ( YY_CURRENT_BUFFER_LVALUE->yy_fill_buffer == 0 )
-		{ /* Don't try to fill the buffer, so this is an EOF. */
-		if ( (yy_c_buf_p) - (yytext_ptr) - YY_MORE_ADJ == 1 )
-			{
-			/* We matched a single character, the EOB, so
-			 * treat this as a final EOF.
-			 */
-			return EOB_ACT_END_OF_FILE;
-			}
-
-		else
-			{
-			/* We matched some text prior to the EOB, first
-			 * process it.
-			 */
-			return EOB_ACT_LAST_MATCH;
-			}
-		}
-
-	/* Try to read more data. */
-
-	/* First move last chars to start of buffer. */
-	number_to_move = (int) ((yy_c_buf_p) - (yytext_ptr)) - 1;
-
-	for ( i = 0; i < number_to_move; ++i )
-		*(dest++) = *(source++);
-
-	if ( YY_CURRENT_BUFFER_LVALUE->yy_buffer_status == YY_BUFFER_EOF_PENDING )
-		/* don't do the read, it's not guaranteed to return an EOF,
-		 * just force an EOF
+    if (YY_CURRENT_BUFFER_LVALUE->yy_fill_buffer == 0)
+      {				/* Don't try to fill the buffer, so this is an EOF. */
+	  if ((yy_c_buf_p) - (yytext_ptr) - YY_MORE_ADJ == 1)
+	    {
+		/* We matched a single character, the EOB, so
+		 * treat this as a final EOF.
 		 */
-		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars) = 0;
+		return EOB_ACT_END_OF_FILE;
+	    }
 
-	else
-		{
-			int num_to_read =
-			YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1;
+	  else
+	    {
+		/* We matched some text prior to the EOB, first
+		 * process it.
+		 */
+		return EOB_ACT_LAST_MATCH;
+	    }
+      }
 
-		while ( num_to_read <= 0 )
-			{ /* Not enough room in the buffer - grow it. */
+    /* Try to read more data. */
 
-			/* just a shorter name for the current buffer */
-			YY_BUFFER_STATE b = YY_CURRENT_BUFFER;
+    /* First move last chars to start of buffer. */
+    number_to_move = (int) ((yy_c_buf_p) - (yytext_ptr)) - 1;
 
-			int yy_c_buf_p_offset =
-				(int) ((yy_c_buf_p) - b->yy_ch_buf);
+    for (i = 0; i < number_to_move; ++i)
+	*(dest++) = *(source++);
 
-			if ( b->yy_is_our_buffer )
-				{
-				int new_size = b->yy_buf_size * 2;
+    if (YY_CURRENT_BUFFER_LVALUE->yy_buffer_status == YY_BUFFER_EOF_PENDING)
+	/* don't do the read, it's not guaranteed to return an EOF,
+	 * just force an EOF
+	 */
+	YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars) = 0;
 
-				if ( new_size <= 0 )
-					b->yy_buf_size += b->yy_buf_size / 8;
-				else
-					b->yy_buf_size *= 2;
+    else
+      {
+	  int num_to_read =
+	      YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1;
 
-				b->yy_ch_buf = (char *)
-					/* Include room in for 2 EOB chars. */
-					yyrealloc((void *) b->yy_ch_buf,b->yy_buf_size + 2  );
-				}
-			else
-				/* Can't grow it, we don't own it. */
-				b->yy_ch_buf = 0;
+	  while (num_to_read <= 0)
+	    {			/* Not enough room in the buffer - grow it. */
 
-			if ( ! b->yy_ch_buf )
-				YY_FATAL_ERROR(
-				"fatal error - scanner input buffer overflow" );
+		/* just a shorter name for the current buffer */
+		YY_BUFFER_STATE b = YY_CURRENT_BUFFER;
 
-			(yy_c_buf_p) = &b->yy_ch_buf[yy_c_buf_p_offset];
+		int yy_c_buf_p_offset = (int) ((yy_c_buf_p) - b->yy_ch_buf);
 
-			num_to_read = YY_CURRENT_BUFFER_LVALUE->yy_buf_size -
-						number_to_move - 1;
+		if (b->yy_is_our_buffer)
+		  {
+		      int new_size = b->yy_buf_size * 2;
 
-			}
+		      if (new_size <= 0)
+			  b->yy_buf_size += b->yy_buf_size / 8;
+		      else
+			  b->yy_buf_size *= 2;
 
-		if ( num_to_read > YY_READ_BUF_SIZE )
-			num_to_read = YY_READ_BUF_SIZE;
-
-		/* Read in more data. */
-		YY_INPUT( (&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move]),
-			(yy_n_chars), (size_t) num_to_read );
-
-		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
-		}
-
-	if ( (yy_n_chars) == 0 )
-		{
-		if ( number_to_move == YY_MORE_ADJ )
-			{
-			ret_val = EOB_ACT_END_OF_FILE;
-			yyrestart(yyin  );
-			}
-
+		      b->yy_ch_buf = (char *)
+			  /* Include room in for 2 EOB chars. */
+			  yyrealloc ((void *) b->yy_ch_buf, b->yy_buf_size + 2);
+		  }
 		else
-			{
-			ret_val = EOB_ACT_LAST_MATCH;
-			YY_CURRENT_BUFFER_LVALUE->yy_buffer_status =
-				YY_BUFFER_EOF_PENDING;
-			}
-		}
+		    /* Can't grow it, we don't own it. */
+		    b->yy_ch_buf = 0;
 
-	else
-		ret_val = EOB_ACT_CONTINUE_SCAN;
+		if (!b->yy_ch_buf)
+		    YY_FATAL_ERROR
+			("fatal error - scanner input buffer overflow");
 
-	if ((yy_size_t) ((yy_n_chars) + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
-		/* Extend the array by 50%, plus the number we really need. */
-		yy_size_t new_size = (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
-		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) yyrealloc((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,new_size  );
-		if ( ! YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
-			YY_FATAL_ERROR( "out of dynamic memory in yy_get_next_buffer()" );
-	}
+		(yy_c_buf_p) = &b->yy_ch_buf[yy_c_buf_p_offset];
 
-	(yy_n_chars) += number_to_move;
-	YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] = YY_END_OF_BUFFER_CHAR;
-	YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1] = YY_END_OF_BUFFER_CHAR;
+		num_to_read = YY_CURRENT_BUFFER_LVALUE->yy_buf_size -
+		    number_to_move - 1;
 
-	(yytext_ptr) = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[0];
+	    }
 
-	return ret_val;
+	  if (num_to_read > YY_READ_BUF_SIZE)
+	      num_to_read = YY_READ_BUF_SIZE;
+
+	  /* Read in more data. */
+	  YY_INPUT ((&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move]),
+		    (yy_n_chars), (size_t) num_to_read);
+
+	  YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
+      }
+
+    if ((yy_n_chars) == 0)
+      {
+	  if (number_to_move == YY_MORE_ADJ)
+	    {
+		ret_val = EOB_ACT_END_OF_FILE;
+		yyrestart (yyin);
+	    }
+
+	  else
+	    {
+		ret_val = EOB_ACT_LAST_MATCH;
+		YY_CURRENT_BUFFER_LVALUE->yy_buffer_status =
+		    YY_BUFFER_EOF_PENDING;
+	    }
+      }
+
+    else
+	ret_val = EOB_ACT_CONTINUE_SCAN;
+
+    if ((yy_size_t) ((yy_n_chars) + number_to_move) >
+	YY_CURRENT_BUFFER_LVALUE->yy_buf_size)
+      {
+	  /* Extend the array by 50%, plus the number we really need. */
+	  yy_size_t new_size =
+	      (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
+	  YY_CURRENT_BUFFER_LVALUE->yy_ch_buf =
+	      (char *) yyrealloc ((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,
+				  new_size);
+	  if (!YY_CURRENT_BUFFER_LVALUE->yy_ch_buf)
+	      YY_FATAL_ERROR ("out of dynamic memory in yy_get_next_buffer()");
+      }
+
+    (yy_n_chars) += number_to_move;
+    YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] = YY_END_OF_BUFFER_CHAR;
+    YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1] =
+	YY_END_OF_BUFFER_CHAR;
+
+    (yytext_ptr) = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[0];
+
+    return ret_val;
 }
 
 /* yy_get_previous_state - get the state just before the EOB char was reached */
 
-    static yy_state_type yy_get_previous_state (void)
+static yy_state_type
+yy_get_previous_state (void)
 {
-	register yy_state_type yy_current_state;
-	register char *yy_cp;
-    
-	yy_current_state = (yy_start);
+    register yy_state_type yy_current_state;
+    register char *yy_cp;
 
-	for ( yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (yy_c_buf_p); ++yy_cp )
-		{
-		register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
-		if ( yy_accept[yy_current_state] )
-			{
-			(yy_last_accepting_state) = yy_current_state;
-			(yy_last_accepting_cpos) = yy_cp;
-			}
-		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
-			{
-			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 114 )
-				yy_c = yy_meta[(unsigned int) yy_c];
-			}
-		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-		}
+    yy_current_state = (yy_start);
 
-	return yy_current_state;
+    for (yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (yy_c_buf_p); ++yy_cp)
+      {
+	  register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI (*yy_cp)] : 1);
+	  if (yy_accept[yy_current_state])
+	    {
+		(yy_last_accepting_state) = yy_current_state;
+		(yy_last_accepting_cpos) = yy_cp;
+	    }
+	  while (yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state)
+	    {
+		yy_current_state = (int) yy_def[yy_current_state];
+		if (yy_current_state >= 114)
+		    yy_c = yy_meta[(unsigned int) yy_c];
+	    }
+	  yy_current_state =
+	      yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+      }
+
+    return yy_current_state;
 }
 
 /* yy_try_NUL_trans - try to make a transition on the NUL character
@@ -6696,199 +6558,204 @@ static int yy_get_next_buffer (void)
  * synopsis
  *	next_state = yy_try_NUL_trans( current_state );
  */
-    static yy_state_type yy_try_NUL_trans  (yy_state_type yy_current_state )
+static yy_state_type
+yy_try_NUL_trans (yy_state_type yy_current_state)
 {
-	register int yy_is_jam;
-    	register char *yy_cp = (yy_c_buf_p);
+    register int yy_is_jam;
+    register char *yy_cp = (yy_c_buf_p);
 
-	register YY_CHAR yy_c = 1;
-	if ( yy_accept[yy_current_state] )
-		{
-		(yy_last_accepting_state) = yy_current_state;
-		(yy_last_accepting_cpos) = yy_cp;
-		}
-	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
-		{
-		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 114 )
-			yy_c = yy_meta[(unsigned int) yy_c];
-		}
-	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-	yy_is_jam = (yy_current_state == 113);
+    register YY_CHAR yy_c = 1;
+    if (yy_accept[yy_current_state])
+      {
+	  (yy_last_accepting_state) = yy_current_state;
+	  (yy_last_accepting_cpos) = yy_cp;
+      }
+    while (yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state)
+      {
+	  yy_current_state = (int) yy_def[yy_current_state];
+	  if (yy_current_state >= 114)
+	      yy_c = yy_meta[(unsigned int) yy_c];
+      }
+    yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+    yy_is_jam = (yy_current_state == 113);
 
-	return yy_is_jam ? 0 : yy_current_state;
+    return yy_is_jam ? 0 : yy_current_state;
 }
 
-    static void yyunput (int c, register char * yy_bp )
+static void
+yyunput (int c, register char *yy_bp)
 {
-	register char *yy_cp;
-    
+    register char *yy_cp;
+
     yy_cp = (yy_c_buf_p);
 
-	/* undo effects of setting up yytext */
-	*yy_cp = (yy_hold_char);
+    /* undo effects of setting up yytext */
+    *yy_cp = (yy_hold_char);
 
-	if ( yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2 )
-		{ /* need to shift things up to make room */
-		/* +2 for EOB chars. */
-		register int number_to_move = (yy_n_chars) + 2;
-		register char *dest = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[
-					YY_CURRENT_BUFFER_LVALUE->yy_buf_size + 2];
-		register char *source =
-				&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move];
+    if (yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2)
+      {				/* need to shift things up to make room */
+	  /* +2 for EOB chars. */
+	  register int number_to_move = (yy_n_chars) + 2;
+	  register char *dest =
+	      &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[YY_CURRENT_BUFFER_LVALUE->
+						   yy_buf_size + 2];
+	  register char *source =
+	      &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move];
 
-		while ( source > YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
-			*--dest = *--source;
+	  while (source > YY_CURRENT_BUFFER_LVALUE->yy_ch_buf)
+	      *--dest = *--source;
 
-		yy_cp += (int) (dest - source);
-		yy_bp += (int) (dest - source);
-		YY_CURRENT_BUFFER_LVALUE->yy_n_chars =
-			(yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_buf_size;
+	  yy_cp += (int) (dest - source);
+	  yy_bp += (int) (dest - source);
+	  YY_CURRENT_BUFFER_LVALUE->yy_n_chars =
+	      (yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_buf_size;
 
-		if ( yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2 )
-			YY_FATAL_ERROR( "flex scanner push-back overflow" );
-		}
+	  if (yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2)
+	      YY_FATAL_ERROR ("flex scanner push-back overflow");
+      }
 
-	*--yy_cp = (char) c;
+    *--yy_cp = (char) c;
 
-	(yytext_ptr) = yy_bp;
-	(yy_hold_char) = *yy_cp;
-	(yy_c_buf_p) = yy_cp;
+    (yytext_ptr) = yy_bp;
+    (yy_hold_char) = *yy_cp;
+    (yy_c_buf_p) = yy_cp;
 }
 
 #ifndef YY_NO_INPUT
 #ifdef __cplusplus
-    static int yyinput (void)
+static int
+yyinput (void)
 #else
-    static int input  (void)
+static int
+input (void)
 #endif
-
 {
-	int c;
-    
-	*(yy_c_buf_p) = (yy_hold_char);
+    int c;
 
-	if ( *(yy_c_buf_p) == YY_END_OF_BUFFER_CHAR )
-		{
-		/* yy_c_buf_p now points to the character we want to return.
-		 * If this occurs *before* the EOB characters, then it's a
-		 * valid NUL; if not, then we've hit the end of the buffer.
-		 */
-		if ( (yy_c_buf_p) < &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] )
-			/* This was really a NUL. */
-			*(yy_c_buf_p) = '\0';
+    *(yy_c_buf_p) = (yy_hold_char);
 
-		else
-			{ /* need more input */
-			int offset = (yy_c_buf_p) - (yytext_ptr);
-			++(yy_c_buf_p);
+    if (*(yy_c_buf_p) == YY_END_OF_BUFFER_CHAR)
+      {
+	  /* yy_c_buf_p now points to the character we want to return.
+	   * If this occurs *before* the EOB characters, then it's a
+	   * valid NUL; if not, then we've hit the end of the buffer.
+	   */
+	  if ((yy_c_buf_p) < &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)])
+	      /* This was really a NUL. */
+	      *(yy_c_buf_p) = '\0';
 
-			switch ( yy_get_next_buffer(  ) )
-				{
-				case EOB_ACT_LAST_MATCH:
-					/* This happens because yy_g_n_b()
-					 * sees that we've accumulated a
-					 * token and flags that we need to
-					 * try matching the token before
-					 * proceeding.  But for input(),
-					 * there's no matching to consider.
-					 * So convert the EOB_ACT_LAST_MATCH
-					 * to EOB_ACT_END_OF_FILE.
-					 */
+	  else
+	    {			/* need more input */
+		int offset = (yy_c_buf_p) - (yytext_ptr);
+		++(yy_c_buf_p);
 
-					/* Reset buffer status. */
-					yyrestart(yyin );
+		switch (yy_get_next_buffer ())
+		  {
+		  case EOB_ACT_LAST_MATCH:
+		      /* This happens because yy_g_n_b()
+		       * sees that we've accumulated a
+		       * token and flags that we need to
+		       * try matching the token before
+		       * proceeding.  But for input(),
+		       * there's no matching to consider.
+		       * So convert the EOB_ACT_LAST_MATCH
+		       * to EOB_ACT_END_OF_FILE.
+		       */
 
-					/*FALLTHROUGH*/
+		      /* Reset buffer status. */
+		      yyrestart (yyin);
 
-				case EOB_ACT_END_OF_FILE:
-					{
-					if ( yywrap( ) )
-						return EOF;
+		   /*FALLTHROUGH*/ case EOB_ACT_END_OF_FILE:
+		      {
+			  if (yywrap ())
+			      return EOF;
 
-					if ( ! (yy_did_buffer_switch_on_eof) )
-						YY_NEW_FILE;
+			  if (!(yy_did_buffer_switch_on_eof))
+			      YY_NEW_FILE;
 #ifdef __cplusplus
-					return yyinput();
+			  return yyinput ();
 #else
-					return input();
+			  return input ();
 #endif
-					}
+		      }
 
-				case EOB_ACT_CONTINUE_SCAN:
-					(yy_c_buf_p) = (yytext_ptr) + offset;
-					break;
-				}
-			}
-		}
+		  case EOB_ACT_CONTINUE_SCAN:
+		      (yy_c_buf_p) = (yytext_ptr) + offset;
+		      break;
+		  }
+	    }
+      }
 
-	c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
-	*(yy_c_buf_p) = '\0';	/* preserve yytext */
-	(yy_hold_char) = *++(yy_c_buf_p);
+    c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
+    *(yy_c_buf_p) = '\0';	/* preserve yytext */
+    (yy_hold_char) = *++(yy_c_buf_p);
 
-	return c;
+    return c;
 }
-#endif	/* ifndef YY_NO_INPUT */
+#endif /* ifndef YY_NO_INPUT */
 
 /** Immediately switch to a different input stream.
  * @param input_file A readable stream.
  * 
  * @note This function does not reset the start condition to @c INITIAL .
  */
-    void yyrestart  (FILE * input_file )
+void
+yyrestart (FILE * input_file)
 {
-    
-	if ( ! YY_CURRENT_BUFFER ){
-        yyensure_buffer_stack ();
-		YY_CURRENT_BUFFER_LVALUE =
-            yy_create_buffer(yyin,YY_BUF_SIZE );
-	}
 
-	yy_init_buffer(YY_CURRENT_BUFFER,input_file );
-	yy_load_buffer_state( );
+    if (!YY_CURRENT_BUFFER)
+      {
+	  yyensure_buffer_stack ();
+	  YY_CURRENT_BUFFER_LVALUE = yy_create_buffer (yyin, YY_BUF_SIZE);
+      }
+
+    yy_init_buffer (YY_CURRENT_BUFFER, input_file);
+    yy_load_buffer_state ();
 }
 
 /** Switch to a different input buffer.
  * @param new_buffer The new input buffer.
  * 
  */
-    void yy_switch_to_buffer  (YY_BUFFER_STATE  new_buffer )
+void
+yy_switch_to_buffer (YY_BUFFER_STATE new_buffer)
 {
-    
-	/* TODO. We should be able to replace this entire function body
-	 * with
-	 *		yypop_buffer_state();
-	 *		yypush_buffer_state(new_buffer);
+
+    /* TODO. We should be able to replace this entire function body
+     * with
+     *              yypop_buffer_state();
+     *              yypush_buffer_state(new_buffer);
      */
-	yyensure_buffer_stack ();
-	if ( YY_CURRENT_BUFFER == new_buffer )
-		return;
+    yyensure_buffer_stack ();
+    if (YY_CURRENT_BUFFER == new_buffer)
+	return;
 
-	if ( YY_CURRENT_BUFFER )
-		{
-		/* Flush out information for old buffer. */
-		*(yy_c_buf_p) = (yy_hold_char);
-		YY_CURRENT_BUFFER_LVALUE->yy_buf_pos = (yy_c_buf_p);
-		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
-		}
+    if (YY_CURRENT_BUFFER)
+      {
+	  /* Flush out information for old buffer. */
+	  *(yy_c_buf_p) = (yy_hold_char);
+	  YY_CURRENT_BUFFER_LVALUE->yy_buf_pos = (yy_c_buf_p);
+	  YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
+      }
 
-	YY_CURRENT_BUFFER_LVALUE = new_buffer;
-	yy_load_buffer_state( );
+    YY_CURRENT_BUFFER_LVALUE = new_buffer;
+    yy_load_buffer_state ();
 
-	/* We don't actually know whether we did this switch during
-	 * EOF (yywrap()) processing, but the only time this flag
-	 * is looked at is after yywrap() is called, so it's safe
-	 * to go ahead and always set it.
-	 */
-	(yy_did_buffer_switch_on_eof) = 1;
+    /* We don't actually know whether we did this switch during
+     * EOF (yywrap()) processing, but the only time this flag
+     * is looked at is after yywrap() is called, so it's safe
+     * to go ahead and always set it.
+     */
+    (yy_did_buffer_switch_on_eof) = 1;
 }
 
-static void yy_load_buffer_state  (void)
+static void
+yy_load_buffer_state (void)
 {
-    	(yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
-	(yytext_ptr) = (yy_c_buf_p) = YY_CURRENT_BUFFER_LVALUE->yy_buf_pos;
-	yyin = YY_CURRENT_BUFFER_LVALUE->yy_input_file;
-	(yy_hold_char) = *(yy_c_buf_p);
+    (yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
+    (yytext_ptr) = (yy_c_buf_p) = YY_CURRENT_BUFFER_LVALUE->yy_buf_pos;
+    yyin = YY_CURRENT_BUFFER_LVALUE->yy_input_file;
+    (yy_hold_char) = *(yy_c_buf_p);
 }
 
 /** Allocate and initialize an input buffer state.
@@ -6897,106 +6764,110 @@ static void yy_load_buffer_state  (void)
  * 
  * @return the allocated buffer state.
  */
-    YY_BUFFER_STATE yy_create_buffer  (FILE * file, int  size )
+YY_BUFFER_STATE
+yy_create_buffer (FILE * file, int size)
 {
-	YY_BUFFER_STATE b;
-    
-	b = (YY_BUFFER_STATE) yyalloc(sizeof( struct yy_buffer_state )  );
-	if ( ! b )
-		YY_FATAL_ERROR( "out of dynamic memory in yy_create_buffer()" );
+    YY_BUFFER_STATE b;
 
-	b->yy_buf_size = size;
+    b = (YY_BUFFER_STATE) yyalloc (sizeof (struct yy_buffer_state));
+    if (!b)
+	YY_FATAL_ERROR ("out of dynamic memory in yy_create_buffer()");
 
-	/* yy_ch_buf has to be 2 characters longer than the size given because
-	 * we need to put in 2 end-of-buffer characters.
-	 */
-	b->yy_ch_buf = (char *) yyalloc(b->yy_buf_size + 2  );
-	if ( ! b->yy_ch_buf )
-		YY_FATAL_ERROR( "out of dynamic memory in yy_create_buffer()" );
+    b->yy_buf_size = size;
 
-	b->yy_is_our_buffer = 1;
+    /* yy_ch_buf has to be 2 characters longer than the size given because
+     * we need to put in 2 end-of-buffer characters.
+     */
+    b->yy_ch_buf = (char *) yyalloc (b->yy_buf_size + 2);
+    if (!b->yy_ch_buf)
+	YY_FATAL_ERROR ("out of dynamic memory in yy_create_buffer()");
 
-	yy_init_buffer(b,file );
+    b->yy_is_our_buffer = 1;
 
-	return b;
+    yy_init_buffer (b, file);
+
+    return b;
 }
 
 /** Destroy the buffer.
  * @param b a buffer created with yy_create_buffer()
  * 
  */
-    void yy_delete_buffer (YY_BUFFER_STATE  b )
+void
+yy_delete_buffer (YY_BUFFER_STATE b)
 {
-    
-	if ( ! b )
-		return;
 
-	if ( b == YY_CURRENT_BUFFER ) /* Not sure if we should pop here. */
-		YY_CURRENT_BUFFER_LVALUE = (YY_BUFFER_STATE) 0;
+    if (!b)
+	return;
 
-	if ( b->yy_is_our_buffer )
-		yyfree((void *) b->yy_ch_buf  );
+    if (b == YY_CURRENT_BUFFER)	/* Not sure if we should pop here. */
+	YY_CURRENT_BUFFER_LVALUE = (YY_BUFFER_STATE) 0;
 
-	yyfree((void *) b  );
+    if (b->yy_is_our_buffer)
+	yyfree ((void *) b->yy_ch_buf);
+
+    yyfree ((void *) b);
 }
 
 #ifndef __cplusplus
-extern int isatty (int );
+extern int isatty (int);
 #endif /* __cplusplus */
-    
+
 /* Initializes or reinitializes a buffer.
  * This function is sometimes called more than once on the same buffer,
  * such as during a yyrestart() or at EOF.
  */
-    static void yy_init_buffer  (YY_BUFFER_STATE  b, FILE * file )
-
+static void
+yy_init_buffer (YY_BUFFER_STATE b, FILE * file)
 {
-	int oerrno = errno;
-    
-	yy_flush_buffer(b );
+    int oerrno = errno;
 
-	b->yy_input_file = file;
-	b->yy_fill_buffer = 1;
+    yy_flush_buffer (b);
+
+    b->yy_input_file = file;
+    b->yy_fill_buffer = 1;
 
     /* If b is the current buffer, then yy_init_buffer was _probably_
      * called from yyrestart() or through yy_get_next_buffer.
      * In that case, we don't want to reset the lineno or column.
      */
-    if (b != YY_CURRENT_BUFFER){
-        b->yy_bs_lineno = 1;
-        b->yy_bs_column = 0;
-    }
+    if (b != YY_CURRENT_BUFFER)
+      {
+	  b->yy_bs_lineno = 1;
+	  b->yy_bs_column = 0;
+      }
 
-        b->yy_is_interactive = file ? (isatty( fileno(file) ) > 0) : 0;
-    
-	errno = oerrno;
+    b->yy_is_interactive = file ? (isatty (fileno (file)) > 0) : 0;
+
+    errno = oerrno;
 }
 
 /** Discard all buffered characters. On the next scan, YY_INPUT will be called.
  * @param b the buffer state to be flushed, usually @c YY_CURRENT_BUFFER.
  * 
  */
-    void yy_flush_buffer (YY_BUFFER_STATE  b )
+void
+yy_flush_buffer (YY_BUFFER_STATE b)
 {
-    	if ( ! b )
-		return;
+    if (!b)
+	return;
 
-	b->yy_n_chars = 0;
+    b->yy_n_chars = 0;
 
-	/* We always need two end-of-buffer characters.  The first causes
-	 * a transition to the end-of-buffer state.  The second causes
-	 * a jam in that state.
-	 */
-	b->yy_ch_buf[0] = YY_END_OF_BUFFER_CHAR;
-	b->yy_ch_buf[1] = YY_END_OF_BUFFER_CHAR;
+    /* We always need two end-of-buffer characters.  The first causes
+     * a transition to the end-of-buffer state.  The second causes
+     * a jam in that state.
+     */
+    b->yy_ch_buf[0] = YY_END_OF_BUFFER_CHAR;
+    b->yy_ch_buf[1] = YY_END_OF_BUFFER_CHAR;
 
-	b->yy_buf_pos = &b->yy_ch_buf[0];
+    b->yy_buf_pos = &b->yy_ch_buf[0];
 
-	b->yy_at_bol = 1;
-	b->yy_buffer_status = YY_BUFFER_NEW;
+    b->yy_at_bol = 1;
+    b->yy_buffer_status = YY_BUFFER_NEW;
 
-	if ( b == YY_CURRENT_BUFFER )
-		yy_load_buffer_state( );
+    if (b == YY_CURRENT_BUFFER)
+	yy_load_buffer_state ();
 }
 
 /** Pushes the new state onto the stack. The new state becomes
@@ -7005,96 +6876,104 @@ extern int isatty (int );
  *  @param new_buffer The new state.
  *  
  */
-void yypush_buffer_state (YY_BUFFER_STATE new_buffer )
+void
+yypush_buffer_state (YY_BUFFER_STATE new_buffer)
 {
-    	if (new_buffer == NULL)
-		return;
+    if (new_buffer == NULL)
+	return;
 
-	yyensure_buffer_stack();
+    yyensure_buffer_stack ();
 
-	/* This block is copied from yy_switch_to_buffer. */
-	if ( YY_CURRENT_BUFFER )
-		{
-		/* Flush out information for old buffer. */
-		*(yy_c_buf_p) = (yy_hold_char);
-		YY_CURRENT_BUFFER_LVALUE->yy_buf_pos = (yy_c_buf_p);
-		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
-		}
+    /* This block is copied from yy_switch_to_buffer. */
+    if (YY_CURRENT_BUFFER)
+      {
+	  /* Flush out information for old buffer. */
+	  *(yy_c_buf_p) = (yy_hold_char);
+	  YY_CURRENT_BUFFER_LVALUE->yy_buf_pos = (yy_c_buf_p);
+	  YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
+      }
 
-	/* Only push if top exists. Otherwise, replace top. */
-	if (YY_CURRENT_BUFFER)
-		(yy_buffer_stack_top)++;
-	YY_CURRENT_BUFFER_LVALUE = new_buffer;
+    /* Only push if top exists. Otherwise, replace top. */
+    if (YY_CURRENT_BUFFER)
+	(yy_buffer_stack_top)++;
+    YY_CURRENT_BUFFER_LVALUE = new_buffer;
 
-	/* copied from yy_switch_to_buffer. */
-	yy_load_buffer_state( );
-	(yy_did_buffer_switch_on_eof) = 1;
+    /* copied from yy_switch_to_buffer. */
+    yy_load_buffer_state ();
+    (yy_did_buffer_switch_on_eof) = 1;
 }
 
 /** Removes and deletes the top of the stack, if present.
  *  The next element becomes the new top.
  *  
  */
-void yypop_buffer_state (void)
+void
+yypop_buffer_state (void)
 {
-    	if (!YY_CURRENT_BUFFER)
-		return;
+    if (!YY_CURRENT_BUFFER)
+	return;
 
-	yy_delete_buffer(YY_CURRENT_BUFFER );
-	YY_CURRENT_BUFFER_LVALUE = NULL;
-	if ((yy_buffer_stack_top) > 0)
-		--(yy_buffer_stack_top);
+    yy_delete_buffer (YY_CURRENT_BUFFER);
+    YY_CURRENT_BUFFER_LVALUE = NULL;
+    if ((yy_buffer_stack_top) > 0)
+	--(yy_buffer_stack_top);
 
-	if (YY_CURRENT_BUFFER) {
-		yy_load_buffer_state( );
-		(yy_did_buffer_switch_on_eof) = 1;
-	}
+    if (YY_CURRENT_BUFFER)
+      {
+	  yy_load_buffer_state ();
+	  (yy_did_buffer_switch_on_eof) = 1;
+      }
 }
 
 /* Allocates the stack if it does not exist.
  *  Guarantees space for at least one push.
  */
-static void yyensure_buffer_stack (void)
+static void
+yyensure_buffer_stack (void)
 {
-	int num_to_alloc;
-    
-	if (!(yy_buffer_stack)) {
+    int num_to_alloc;
 
-		/* First allocation is just for 2 elements, since we don't know if this
-		 * scanner will even need a stack. We use 2 instead of 1 to avoid an
-		 * immediate realloc on the next call.
-         */
-		num_to_alloc = 1;
-		(yy_buffer_stack) = (struct yy_buffer_state**)yyalloc
-								(num_to_alloc * sizeof(struct yy_buffer_state*)
-								);
-		if ( ! (yy_buffer_stack) )
-			YY_FATAL_ERROR( "out of dynamic memory in yyensure_buffer_stack()" );
-								  
-		memset((yy_buffer_stack), 0, num_to_alloc * sizeof(struct yy_buffer_state*));
-				
-		(yy_buffer_stack_max) = num_to_alloc;
-		(yy_buffer_stack_top) = 0;
-		return;
-	}
+    if (!(yy_buffer_stack))
+      {
 
-	if ((yy_buffer_stack_top) >= ((yy_buffer_stack_max)) - 1){
+	  /* First allocation is just for 2 elements, since we don't know if this
+	   * scanner will even need a stack. We use 2 instead of 1 to avoid an
+	   * immediate realloc on the next call.
+	   */
+	  num_to_alloc = 1;
+	  (yy_buffer_stack) = (struct yy_buffer_state **) yyalloc
+	      (num_to_alloc * sizeof (struct yy_buffer_state *));
+	  if (!(yy_buffer_stack))
+	      YY_FATAL_ERROR
+		  ("out of dynamic memory in yyensure_buffer_stack()");
 
-		/* Increase the buffer to prepare for a possible push. */
-		int grow_size = 8 /* arbitrary grow size */;
+	  memset ((yy_buffer_stack), 0,
+		  num_to_alloc * sizeof (struct yy_buffer_state *));
 
-		num_to_alloc = (yy_buffer_stack_max) + grow_size;
-		(yy_buffer_stack) = (struct yy_buffer_state**)yyrealloc
-								((yy_buffer_stack),
-								num_to_alloc * sizeof(struct yy_buffer_state*)
-								);
-		if ( ! (yy_buffer_stack) )
-			YY_FATAL_ERROR( "out of dynamic memory in yyensure_buffer_stack()" );
+	  (yy_buffer_stack_max) = num_to_alloc;
+	  (yy_buffer_stack_top) = 0;
+	  return;
+      }
 
-		/* zero only the new slots.*/
-		memset((yy_buffer_stack) + (yy_buffer_stack_max), 0, grow_size * sizeof(struct yy_buffer_state*));
-		(yy_buffer_stack_max) = num_to_alloc;
-	}
+    if ((yy_buffer_stack_top) >= ((yy_buffer_stack_max)) - 1)
+      {
+
+	  /* Increase the buffer to prepare for a possible push. */
+	  int grow_size = 8 /* arbitrary grow size */ ;
+
+	  num_to_alloc = (yy_buffer_stack_max) + grow_size;
+	  (yy_buffer_stack) = (struct yy_buffer_state **) yyrealloc
+	      ((yy_buffer_stack),
+	       num_to_alloc * sizeof (struct yy_buffer_state *));
+	  if (!(yy_buffer_stack))
+	      YY_FATAL_ERROR
+		  ("out of dynamic memory in yyensure_buffer_stack()");
+
+	  /* zero only the new slots. */
+	  memset ((yy_buffer_stack) + (yy_buffer_stack_max), 0,
+		  grow_size * sizeof (struct yy_buffer_state *));
+	  (yy_buffer_stack_max) = num_to_alloc;
+      }
 }
 
 /** Setup the input buffer state to scan directly from a user-specified character buffer.
@@ -7103,33 +6982,34 @@ static void yyensure_buffer_stack (void)
  * 
  * @return the newly allocated buffer state object. 
  */
-YY_BUFFER_STATE yy_scan_buffer  (char * base, yy_size_t  size )
+YY_BUFFER_STATE
+yy_scan_buffer (char *base, yy_size_t size)
 {
-	YY_BUFFER_STATE b;
-    
-	if ( size < 2 ||
-	     base[size-2] != YY_END_OF_BUFFER_CHAR ||
-	     base[size-1] != YY_END_OF_BUFFER_CHAR )
-		/* They forgot to leave room for the EOB's. */
-		return 0;
+    YY_BUFFER_STATE b;
 
-	b = (YY_BUFFER_STATE) yyalloc(sizeof( struct yy_buffer_state )  );
-	if ( ! b )
-		YY_FATAL_ERROR( "out of dynamic memory in yy_scan_buffer()" );
+    if (size < 2 ||
+	base[size - 2] != YY_END_OF_BUFFER_CHAR ||
+	base[size - 1] != YY_END_OF_BUFFER_CHAR)
+	/* They forgot to leave room for the EOB's. */
+	return 0;
 
-	b->yy_buf_size = size - 2;	/* "- 2" to take care of EOB's */
-	b->yy_buf_pos = b->yy_ch_buf = base;
-	b->yy_is_our_buffer = 0;
-	b->yy_input_file = 0;
-	b->yy_n_chars = b->yy_buf_size;
-	b->yy_is_interactive = 0;
-	b->yy_at_bol = 1;
-	b->yy_fill_buffer = 0;
-	b->yy_buffer_status = YY_BUFFER_NEW;
+    b = (YY_BUFFER_STATE) yyalloc (sizeof (struct yy_buffer_state));
+    if (!b)
+	YY_FATAL_ERROR ("out of dynamic memory in yy_scan_buffer()");
 
-	yy_switch_to_buffer(b  );
+    b->yy_buf_size = size - 2;	/* "- 2" to take care of EOB's */
+    b->yy_buf_pos = b->yy_ch_buf = base;
+    b->yy_is_our_buffer = 0;
+    b->yy_input_file = 0;
+    b->yy_n_chars = b->yy_buf_size;
+    b->yy_is_interactive = 0;
+    b->yy_at_bol = 1;
+    b->yy_fill_buffer = 0;
+    b->yy_buffer_status = YY_BUFFER_NEW;
 
-	return b;
+    yy_switch_to_buffer (b);
+
+    return b;
 }
 
 /** Setup the input buffer state to scan a string. The next call to yylex() will
@@ -7140,10 +7020,11 @@ YY_BUFFER_STATE yy_scan_buffer  (char * base, yy_size_t  size )
  * @note If you want to scan bytes that may contain NUL values, then use
  *       yy_scan_bytes() instead.
  */
-YY_BUFFER_STATE yy_scan_string (yyconst char * yystr )
+YY_BUFFER_STATE
+yy_scan_string (yyconst char *yystr)
 {
-    
-	return yy_scan_bytes(yystr,strlen(yystr) );
+
+    return yy_scan_bytes (yystr, strlen (yystr));
 }
 
 /** Setup the input buffer state to scan the given bytes. The next call to yylex() will
@@ -7153,44 +7034,46 @@ YY_BUFFER_STATE yy_scan_string (yyconst char * yystr )
  * 
  * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE yy_scan_bytes  (yyconst char * yybytes, int  _yybytes_len )
+YY_BUFFER_STATE
+yy_scan_bytes (yyconst char *yybytes, int _yybytes_len)
 {
-	YY_BUFFER_STATE b;
-	char *buf;
-	yy_size_t n;
-	int i;
-    
-	/* Get memory for full buffer, including space for trailing EOB's. */
-	n = _yybytes_len + 2;
-	buf = (char *) yyalloc(n  );
-	if ( ! buf )
-		YY_FATAL_ERROR( "out of dynamic memory in yy_scan_bytes()" );
+    YY_BUFFER_STATE b;
+    char *buf;
+    yy_size_t n;
+    int i;
 
-	for ( i = 0; i < _yybytes_len; ++i )
-		buf[i] = yybytes[i];
+    /* Get memory for full buffer, including space for trailing EOB's. */
+    n = _yybytes_len + 2;
+    buf = (char *) yyalloc (n);
+    if (!buf)
+	YY_FATAL_ERROR ("out of dynamic memory in yy_scan_bytes()");
 
-	buf[_yybytes_len] = buf[_yybytes_len+1] = YY_END_OF_BUFFER_CHAR;
+    for (i = 0; i < _yybytes_len; ++i)
+	buf[i] = yybytes[i];
 
-	b = yy_scan_buffer(buf,n );
-	if ( ! b )
-		YY_FATAL_ERROR( "bad buffer in yy_scan_bytes()" );
+    buf[_yybytes_len] = buf[_yybytes_len + 1] = YY_END_OF_BUFFER_CHAR;
 
-	/* It's okay to grow etc. this buffer, and we should throw it
-	 * away when we're done.
-	 */
-	b->yy_is_our_buffer = 1;
+    b = yy_scan_buffer (buf, n);
+    if (!b)
+	YY_FATAL_ERROR ("bad buffer in yy_scan_bytes()");
 
-	return b;
+    /* It's okay to grow etc. this buffer, and we should throw it
+     * away when we're done.
+     */
+    b->yy_is_our_buffer = 1;
+
+    return b;
 }
 
 #ifndef YY_EXIT_FAILURE
 #define YY_EXIT_FAILURE 2
 #endif
 
-static void yy_fatal_error (yyconst char* msg )
+static void
+yy_fatal_error (yyconst char *msg)
 {
-    	(void) fprintf( stderr, "%s\n", msg );
-	exit( YY_EXIT_FAILURE );
+    (void) fprintf (stderr, "%s\n", msg);
+    exit (YY_EXIT_FAILURE);
 }
 
 /* Redefine yyless() so it works in section 3 code. */
@@ -7215,52 +7098,58 @@ static void yy_fatal_error (yyconst char* msg )
 /** Get the current line number.
  * 
  */
-int yyget_lineno  (void)
+int
+yyget_lineno (void)
 {
-        
+
     return yylineno;
 }
 
 /** Get the input stream.
  * 
  */
-FILE *yyget_in  (void)
+FILE *
+yyget_in (void)
 {
-        return yyin;
+    return yyin;
 }
 
 /** Get the output stream.
  * 
  */
-FILE *yyget_out  (void)
+FILE *
+yyget_out (void)
 {
-        return yyout;
+    return yyout;
 }
 
 /** Get the length of the current token.
  * 
  */
-int yyget_leng  (void)
+int
+yyget_leng (void)
 {
-        return yyleng;
+    return yyleng;
 }
 
 /** Get the current token.
  * 
  */
 
-char *yyget_text  (void)
+char *
+yyget_text (void)
 {
-        return yytext;
+    return yytext;
 }
 
 /** Set the current line number.
  * @param line_number
  * 
  */
-void yyset_lineno (int  line_number )
+void
+yyset_lineno (int line_number)
 {
-    
+
     yylineno = line_number;
 }
 
@@ -7270,29 +7159,34 @@ void yyset_lineno (int  line_number )
  * 
  * @see yy_switch_to_buffer
  */
-void yyset_in (FILE *  in_str )
+void
+yyset_in (FILE * in_str)
 {
-        yyin = in_str ;
+    yyin = in_str;
 }
 
-void yyset_out (FILE *  out_str )
+void
+yyset_out (FILE * out_str)
 {
-        yyout = out_str ;
+    yyout = out_str;
 }
 
-int yyget_debug  (void)
+int
+yyget_debug (void)
 {
-        return yy_flex_debug;
+    return yy_flex_debug;
 }
 
-void yyset_debug (int  bdebug )
+void
+yyset_debug (int bdebug)
 {
-        yy_flex_debug = bdebug ;
+    yy_flex_debug = bdebug;
 }
 
-static int yy_init_globals (void)
+static int
+yy_init_globals (void)
 {
-        /* Initialization is the same as for the non-reentrant scanner.
+    /* Initialization is the same as for the non-reentrant scanner.
      * This function is called from yylex_destroy(), so don't allocate here.
      */
 
@@ -7319,23 +7213,25 @@ static int yy_init_globals (void)
 }
 
 /* yylex_destroy is for both reentrant and non-reentrant scanners. */
-int yylex_destroy  (void)
+int
+yylex_destroy (void)
 {
-    
-    /* Pop the buffer stack, destroying each element. */
-	while(YY_CURRENT_BUFFER){
-		yy_delete_buffer(YY_CURRENT_BUFFER  );
-		YY_CURRENT_BUFFER_LVALUE = NULL;
-		yypop_buffer_state();
-	}
 
-	/* Destroy the stack itself. */
-	yyfree((yy_buffer_stack) );
-	(yy_buffer_stack) = NULL;
+    /* Pop the buffer stack, destroying each element. */
+    while (YY_CURRENT_BUFFER)
+      {
+	  yy_delete_buffer (YY_CURRENT_BUFFER);
+	  YY_CURRENT_BUFFER_LVALUE = NULL;
+	  yypop_buffer_state ();
+      }
+
+    /* Destroy the stack itself. */
+    yyfree ((yy_buffer_stack));
+    (yy_buffer_stack) = NULL;
 
     /* Reset the globals. This is important in a non-reentrant scanner so the next time
      * yylex() is called, initialization will occur. */
-    yy_init_globals( );
+    yy_init_globals ();
 
     return 0;
 }
@@ -7345,45 +7241,50 @@ int yylex_destroy  (void)
  */
 
 #ifndef yytext_ptr
-static void yy_flex_strncpy (char* s1, yyconst char * s2, int n )
+static void
+yy_flex_strncpy (char *s1, yyconst char *s2, int n)
 {
-	register int i;
-	for ( i = 0; i < n; ++i )
-		s1[i] = s2[i];
+    register int i;
+    for (i = 0; i < n; ++i)
+	s1[i] = s2[i];
 }
 #endif
 
 #ifdef YY_NEED_STRLEN
-static int yy_flex_strlen (yyconst char * s )
+static int
+yy_flex_strlen (yyconst char *s)
 {
-	register int n;
-	for ( n = 0; s[n]; ++n )
-		;
+    register int n;
+    for (n = 0; s[n]; ++n)
+	;
 
-	return n;
+    return n;
 }
 #endif
 
-void *yyalloc (yy_size_t  size )
+void *
+yyalloc (yy_size_t size)
 {
-	return (void *) malloc( size );
+    return (void *) malloc (size);
 }
 
-void *yyrealloc  (void * ptr, yy_size_t  size )
+void *
+yyrealloc (void *ptr, yy_size_t size)
 {
-	/* The cast to (char *) in the following accommodates both
-	 * implementations that use char* generic pointers, and those
-	 * that use void* generic pointers.  It works with the latter
-	 * because both ANSI C and C++ allow castless assignment from
-	 * any pointer type to void*, and deal with argument conversions
-	 * as though doing an assignment.
-	 */
-	return (void *) realloc( (char *) ptr, size );
+    /* The cast to (char *) in the following accommodates both
+     * implementations that use char* generic pointers, and those
+     * that use void* generic pointers.  It works with the latter
+     * because both ANSI C and C++ allow castless assignment from
+     * any pointer type to void*, and deal with argument conversions
+     * as though doing an assignment.
+     */
+    return (void *) realloc ((char *) ptr, size);
 }
 
-void yyfree (void * ptr )
+void
+yyfree (void *ptr)
 {
-	free( (char *) ptr );	/* see yyrealloc() for (char *) cast */
+    free ((char *) ptr);	/* see yyrealloc() for (char *) cast */
 }
 
 #define YYTABLES_NAME "yytables"
@@ -7393,11 +7294,12 @@ void yyfree (void * ptr )
  *
  *
  */
-void reset_lexer(void)
+void
+reset_lexer (void)
 {
 
-  line = 1;
-  col  = 1;
+    line = 1;
+    col = 1;
 
 }
 
@@ -7407,15 +7309,17 @@ void reset_lexer(void)
  *
  *
  */
-void yyerror(char *s)
+void
+yyerror (char *s)
 {
-  printf("error: %s at line: %d col: %d\n",s,line,col);
+    printf ("error: %s at line: %d col: %d\n", s, line, col);
 
 }
 
-int yywrap(void)
+int
+yywrap (void)
 {
-  return 1;
+    return 1;
 }
 
 /******************************************************************************
@@ -7468,19 +7372,18 @@ typedef struct gaiaFlexTokenStruct
 static int
 vanuatu_cleanup (gaiaFlexToken * token)
 {
+    gaiaFlexToken *ptok;
+    gaiaFlexToken *ptok_n;
     if (token == NULL)
+	return 0;
+    ptok = token;
+    while (ptok)
       {
-	  return 0;
+	  ptok_n = ptok->Next;
+	  free (ptok);
+	  ptok = ptok_n;
       }
-    else
-      {
-	  if (token->Next != NULL)
-	    {
-		vanuatu_cleanup (token->Next);
-	    }
-	  free (token);
-	  return 0;
-      }
+    return 0;
 }
 
 gaiaGeomCollPtr
@@ -7490,10 +7393,9 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
     /* Linked-list of token values */
     gaiaFlexToken *tokens = malloc (sizeof (gaiaFlexToken));
     /* Pointer to the head of the list */
-    gaiaFlexToken *head = malloc (sizeof (gaiaFlexToken));
+    gaiaFlexToken *head = tokens;
     int yv;
     gaiaGeomCollPtr result = NULL;
-    head = tokens;
 
     /*
      ** Sandro Furieri 2010 Apr 4
