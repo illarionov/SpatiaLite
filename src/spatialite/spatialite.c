@@ -59,6 +59,15 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #define GAIA_UNUSED() if (argc || argv) argc = argc;
 
+struct gaia_rtree_mbr
+{
+/* a struct used by R*Tree GeometryCallback functions */
+    double minx;
+    double miny;
+    double maxx;
+    double maxy;
+};
+
 static SQLITE_EXTENSION_INIT1 struct spatial_index_str
 {
 /* a struct to implement a linked list of spatial-indexes */
@@ -450,6 +459,86 @@ fnct_GeometryConstraints (sqlite3_context * context, int argc,
 		    ret = 0;
 	    }
 	  sqlite3_result_int (context, ret);
+      }
+}
+
+static void
+fnct_RTreeAlign (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ RTreeAlign(RTree-table-name, PKID-value, BLOBencoded geometry)
+/
+/ attempts to update the associated R*Tree, returning:
+/
+/ -1 - if some invalid arg was passed
+/ 1 - succesfull update
+/ 0 - update failure
+/
+*/
+    unsigned char *p_blob = NULL;
+    int n_bytes = 0;
+    sqlite3_int64 pkid;
+    const unsigned char *rtree_table;
+    gaiaGeomCollPtr geom = NULL;
+    int ret;
+    char sql[4192];
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	rtree_table = sqlite3_value_text (argv[0]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	pkid = sqlite3_value_int64 (argv[1]);
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_BLOB
+	|| sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	;
+    else
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_BLOB)
+      {
+	  p_blob = (unsigned char *) sqlite3_value_blob (argv[2]);
+	  n_bytes = sqlite3_value_bytes (argv[2]);
+	  geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+      }
+
+    if (geom == NULL)
+      {
+	  /* NULL geometry: nothing to do */
+	  sqlite3_result_int (context, 1);
+      }
+    else
+      {
+	  /* INSERTing into the R*Tree */
+#if defined(_WIN32) || defined(__MINGW32__)
+/* CAVEAT: M$ rutime doesn't supports %lld for 64 bits */
+	  sprintf (sql, "INSERT INTO %s (pkid, xmin, ymin, xmax, ymax) "
+		   "VALUES (%I64d, %1.12f, %1.12f, %1.12f, %1.12f)",
+		   rtree_table, pkid, geom->MinX, geom->MinY, geom->MaxX,
+		   geom->MaxY);
+#else
+	  sprintf (sql, "INSERT INTO %s (pkid, xmin, ymin, xmax, ymax) "
+		   "VALUES (%lld, %1.12f, %1.12f, %1.12f, %1.12f)",
+		   rtree_table, pkid, geom->MinX, geom->MinY, geom->MaxX,
+		   geom->MaxY);
+#endif
+	  gaiaFreeGeomColl (geom);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  if (ret != SQLITE_OK)
+	      sqlite3_result_int (context, 0);
+	  else
+	      sqlite3_result_int (context, 1);
       }
 }
 
@@ -1028,6 +1117,8 @@ buildSpatialIndex (sqlite3 * sqlite, const unsigned char *table, char *col_name)
 	     "SELECT ROWID, MbrMinX(%s), MbrMaxX(%s), MbrMinY(%s), MbrMaxY(%s) FROM %s",
 	     xname, xname, xname, xname, xtable);
     strcat (sql, sql2);
+    sprintf (sql2, " WHERE MbrMinX(%s) IS NOT NULL", xname);
+    strcat (sql, sql2);
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
       {
@@ -1259,17 +1350,11 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
 		sprintf (trigger, "CREATE TRIGGER %s AFTER INSERT ON %s\n",
 			 xname, xtable);
 		strcat (trigger, "FOR EACH ROW BEGIN\n");
-		sprintf (dummy,
-			 "INSERT INTO %s (pkid, xmin, xmax, ymin, ymax) VALUES (NEW.ROWID,\n",
+		sprintf (dummy, "DELETE FROM %s WHERE pkid=NEW.ROWID;\n",
 			 xindex);
 		strcat (trigger, dummy);
-		sprintf (dummy, "MbrMinX(NEW.%s), ", xcolname);
-		strcat (trigger, dummy);
-		sprintf (dummy, "MbrMaxX(NEW.%s), ", xcolname);
-		strcat (trigger, dummy);
-		sprintf (dummy, "MbrMinY(NEW.%s), ", xcolname);
-		strcat (trigger, dummy);
-		sprintf (dummy, "MbrMaxY(NEW.%s));\n", xcolname);
+		sprintf (dummy, "SELECT RTreeAlign('%s', NEW.ROWID, NEW.%s);",
+			 xindex, xcolname);
 		strcat (trigger, dummy);
 		strcat (trigger, "END;");
 		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
@@ -1291,17 +1376,12 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
 		sprintf (trigger, "CREATE TRIGGER %s AFTER UPDATE ON %s\n",
 			 xname, xtable);
 		strcat (trigger, "FOR EACH ROW BEGIN\n");
-		sprintf (dummy, "UPDATE %s SET ", xindex);
+		sprintf (dummy, "DELETE FROM %s WHERE pkid=NEW.ROWID;\n",
+			 xindex);
 		strcat (trigger, dummy);
-		sprintf (dummy, "xmin = MbrMinX(NEW.%s), ", xcolname);
+		sprintf (dummy, "SELECT RTreeAlign('%s', NEW.ROWID, NEW.%s);",
+			 xindex, xcolname);
 		strcat (trigger, dummy);
-		sprintf (dummy, "xmax = MbrMaxX(NEW.%s), ", xcolname);
-		strcat (trigger, dummy);
-		sprintf (dummy, "ymin = MbrMinY(NEW.%s), ", xcolname);
-		strcat (trigger, dummy);
-		sprintf (dummy, "ymax = MbrMaxY(NEW.%s)\n", xcolname);
-		strcat (trigger, dummy);
-		strcat (trigger, "WHERE pkid = NEW.ROWID;\n");
 		strcat (trigger, "END;");
 		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
 		if (ret != SQLITE_OK)
@@ -5711,6 +5791,208 @@ fnct_MbrMaxY (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
 	sqlite3_result_double (context, coord);
+}
+
+static void
+gaia_mbr_del (void *p)
+{
+/* freeing data used by R*Tree Geometry Callback */
+    sqlite3_free (p);
+}
+
+static int
+fnct_RTreeWithin (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
+		  int *pRes)
+{
+/* R*Tree Geometry callback function:
+/ ... MATCH RTreeWithin(double x1, double y1, double x2, double y2)
+*/
+    struct gaia_rtree_mbr *mbr;
+    double xmin;
+    double xmax;
+    double ymin;
+    double ymax;
+
+    if (p->pUser == 0)
+      {
+	  /* first call: we must check args and then initialize the MBR struct */
+	  if (nCoord != 4)
+	      return SQLITE_ERROR;
+	  if (p->nParam != 4)
+	      return SQLITE_ERROR;
+	  mbr = (struct gaia_rtree_mbr *) (p->pUser =
+					   sqlite3_malloc (sizeof
+							   (struct
+							    gaia_rtree_mbr)));
+	  if (!mbr)
+	      return SQLITE_NOMEM;
+	  p->xDelUser = gaia_mbr_del;
+	  xmin = p->aParam[0];
+	  ymin = p->aParam[1];
+	  xmax = p->aParam[2];
+	  ymax = p->aParam[3];
+	  if (xmin > xmax)
+	    {
+		xmin = p->aParam[2];
+		xmax = p->aParam[0];
+	    }
+	  if (ymin > ymax)
+	    {
+		ymin = p->aParam[3];
+		ymax = p->aParam[1];
+	    }
+	  mbr->minx = xmin;
+	  mbr->miny = ymin;
+	  mbr->maxx = xmax;
+	  mbr->maxy = ymax;
+      }
+
+    mbr = (struct gaia_rtree_mbr *) (p->pUser);
+    xmin = aCoord[0];
+    xmax = aCoord[1];
+    ymin = aCoord[2];
+    ymax = aCoord[3];
+    *pRes = 1;
+/* evaluating Within relationship */
+    if (xmin < mbr->minx)
+	*pRes = 0;
+    if (xmax > mbr->maxx)
+	*pRes = 0;
+    if (ymin < mbr->miny)
+	*pRes = 0;
+    if (ymax > mbr->maxy)
+	*pRes = 0;
+    return SQLITE_OK;
+}
+
+static int
+fnct_RTreeContains (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
+		    int *pRes)
+{
+/* R*Tree Geometry callback function:
+/ ... MATCH RTreeContains(double x1, double y1, double x2, double y2)
+*/
+    struct gaia_rtree_mbr *mbr;
+    double xmin;
+    double xmax;
+    double ymin;
+    double ymax;
+
+    if (p->pUser == 0)
+      {
+	  /* first call: we must check args and then initialize the MBR struct */
+	  if (nCoord != 4)
+	      return SQLITE_ERROR;
+	  if (p->nParam != 4)
+	      return SQLITE_ERROR;
+	  mbr = (struct gaia_rtree_mbr *) (p->pUser =
+					   sqlite3_malloc (sizeof
+							   (struct
+							    gaia_rtree_mbr)));
+	  if (!mbr)
+	      return SQLITE_NOMEM;
+	  p->xDelUser = gaia_mbr_del;
+	  xmin = p->aParam[0];
+	  ymin = p->aParam[1];
+	  xmax = p->aParam[2];
+	  ymax = p->aParam[3];
+	  if (xmin > xmax)
+	    {
+		xmin = p->aParam[2];
+		xmax = p->aParam[0];
+	    }
+	  if (ymin > ymax)
+	    {
+		ymin = p->aParam[3];
+		ymax = p->aParam[1];
+	    }
+	  mbr->minx = xmin;
+	  mbr->miny = ymin;
+	  mbr->maxx = xmax;
+	  mbr->maxy = ymax;
+      }
+
+    mbr = (struct gaia_rtree_mbr *) (p->pUser);
+    xmin = aCoord[0];
+    xmax = aCoord[1];
+    ymin = aCoord[2];
+    ymax = aCoord[3];
+    *pRes = 1;
+/* evaluating Contains relationship */
+    if (mbr->minx < xmin)
+	*pRes = 0;
+    if (mbr->maxx > xmax)
+	*pRes = 0;
+    if (mbr->miny < ymin)
+	*pRes = 0;
+    if (mbr->maxy > ymax)
+	*pRes = 0;
+    return SQLITE_OK;
+}
+
+static int
+fnct_RTreeIntersects (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
+		      int *pRes)
+{
+/* R*Tree Geometry callback function:
+/ ... MATCH RTreeIntersects(double x1, double y1, double x2, double y2)
+*/
+    struct gaia_rtree_mbr *mbr;
+    double xmin;
+    double xmax;
+    double ymin;
+    double ymax;
+
+    if (p->pUser == 0)
+      {
+	  /* first call: we must check args and then initialize the MBR struct */
+	  if (nCoord != 4)
+	      return SQLITE_ERROR;
+	  if (p->nParam != 4)
+	      return SQLITE_ERROR;
+	  mbr = (struct gaia_rtree_mbr *) (p->pUser =
+					   sqlite3_malloc (sizeof
+							   (struct
+							    gaia_rtree_mbr)));
+	  if (!mbr)
+	      return SQLITE_NOMEM;
+	  p->xDelUser = gaia_mbr_del;
+	  xmin = p->aParam[0];
+	  ymin = p->aParam[1];
+	  xmax = p->aParam[2];
+	  ymax = p->aParam[3];
+	  if (xmin > xmax)
+	    {
+		xmin = p->aParam[2];
+		xmax = p->aParam[0];
+	    }
+	  if (ymin > ymax)
+	    {
+		ymin = p->aParam[3];
+		ymax = p->aParam[1];
+	    }
+	  mbr->minx = xmin;
+	  mbr->miny = ymin;
+	  mbr->maxx = xmax;
+	  mbr->maxy = ymax;
+      }
+
+    mbr = (struct gaia_rtree_mbr *) (p->pUser);
+    xmin = aCoord[0];
+    xmax = aCoord[1];
+    ymin = aCoord[2];
+    ymax = aCoord[3];
+    *pRes = 1;
+/* evaluating Intersects relationship */
+    if (xmin > mbr->maxx)
+	*pRes = 0;
+    if (xmax < mbr->minx)
+	*pRes = 0;
+    if (ymin > mbr->maxy)
+	*pRes = 0;
+    if (ymax < mbr->miny)
+	*pRes = 0;
+    return SQLITE_OK;
 }
 
 static void
@@ -10793,8 +11075,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -10878,8 +11159,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -10888,8 +11168,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -11202,6 +11481,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_GeometryConstraints, 0, 0);
     sqlite3_create_function (db, "GeometryConstraints", 4, SQLITE_ANY, 0,
 			     fnct_GeometryConstraints, 0, 0);
+    sqlite3_create_function (db, "RTreeAlign", 3, SQLITE_ANY, 0,
+			     fnct_RTreeAlign, 0, 0);
     sqlite3_create_function (db, "CheckSpatialMetaData", 0, SQLITE_ANY, 0,
 			     fnct_CheckSpatialMetaData, 0, 0);
     sqlite3_create_function (db, "AutoFDOStart", 0, SQLITE_ANY, 0,
@@ -11660,6 +11941,11 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_FilterMbrIntersects, 0, 0);
     sqlite3_create_function (db, "BuildRings", 1, SQLITE_ANY, 0,
 			     fnct_BuildRings, 0, 0);
+    sqlite3_rtree_geometry_callback (db, "RTreeWithin", fnct_RTreeWithin, 0);
+    sqlite3_rtree_geometry_callback (db, "RTreeContains", fnct_RTreeContains,
+				     0);
+    sqlite3_rtree_geometry_callback (db, "RTreeIntersects",
+				     fnct_RTreeIntersects, 0);
 
 /* some BLOB/JPEG/EXIF functions */
     sqlite3_create_function (db, "IsGeometryBlob", 1, SQLITE_ANY, 0,
@@ -12039,6 +12325,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_GeometryConstraints, 0, 0);
     sqlite3_create_function (db, "GeometryConstraints", 4, SQLITE_ANY, 0,
 			     fnct_GeometryConstraints, 0, 0);
+    sqlite3_create_function (db, "RTreeAlign", 3, SQLITE_ANY, 0,
+			     fnct_RTreeAlign, 0, 0);
     sqlite3_create_function (db, "CheckSpatialMetaData", 0, SQLITE_ANY, 0,
 			     fnct_CheckSpatialMetaData, 0, 0);
     sqlite3_create_function (db, "AutoFDOStart", 0, SQLITE_ANY, 0,
@@ -12497,6 +12785,11 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_FilterMbrIntersects, 0, 0);
     sqlite3_create_function (db, "BuildRings", 1, SQLITE_ANY, 0,
 			     fnct_BuildRings, 0, 0);
+    sqlite3_rtree_geometry_callback (db, "RTreeWithin", fnct_RTreeWithin, 0);
+    sqlite3_rtree_geometry_callback (db, "RTreeContains", fnct_RTreeContains,
+				     0);
+    sqlite3_rtree_geometry_callback (db, "RTreeIntersects",
+				     fnct_RTreeIntersects, 0);
 
 /* some BLOB/JPEG/EXIF functions */
     sqlite3_create_function (db, "IsGeometryBlob", 1, SQLITE_ANY, 0,

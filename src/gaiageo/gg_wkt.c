@@ -3618,35 +3618,6 @@ yy_pop_parser_stack (yyParser * pParser)
     return yymajor;
 }
 
-/* 
-** Deallocate and destroy a parser.  Destructors are all called for
-** all stack elements before shutting the parser down.
-**
-** Inputs:
-** <ul>
-** <li>  A pointer to the parser.  This should be a pointer
-**       obtained from ParseAlloc.
-** <li>  A pointer to a function used to reclaim memory obtained
-**       from malloc.
-** </ul>
-*/
-void
-ParseFree (void *p,		/* The parser to be deleted */
-	   void (*freeProc) (void *)	/* Function used to reclaim memory */
-    )
-{
-    yyParser *pParser = (yyParser *) p;
-    if (pParser == 0)
-	return;
-    while (pParser->yyidx >= 0)
-	yy_pop_parser_stack (pParser);
-#if YYSTACKDEPTH<=0
-    free (pParser->yystack);
-#endif
-    yylex_destroy ();
-    (*freeProc) ((void *) pParser);
-}
-
 /*
 ** Return the peak depth of the stack for a parser.
 */
@@ -7384,6 +7355,35 @@ vanuatu_cleanup (gaiaFlexToken * token)
 	  ptok = ptok_n;
       }
     return 0;
+}
+
+/* 
+** Deallocate and destroy a parser.  Destructors are all called for
+** all stack elements before shutting the parser down.
+**
+** Inputs:
+** <ul>
+** <li>  A pointer to the parser.  This should be a pointer
+**       obtained from ParseAlloc.
+** <li>  A pointer to a function used to reclaim memory obtained
+**       from malloc.
+** </ul>
+*/
+void
+ParseFree (void *p,		/* The parser to be deleted */
+	   void (*freeProc) (void *)	/* Function used to reclaim memory */
+    )
+{
+    yyParser *pParser = (yyParser *) p;
+    if (pParser == 0)
+	return;
+    while (pParser->yyidx >= 0)
+	yy_pop_parser_stack (pParser);
+#if YYSTACKDEPTH<=0
+    free (pParser->yystack);
+#endif
+    yylex_destroy ();
+    (*freeProc) ((void *) pParser);
 }
 
 gaiaGeomCollPtr
