@@ -105,11 +105,11 @@ gaiaShiftCoords (gaiaGeomCollPtr geom, double shift_x, double shift_y)
 		  {
 		      gaiaSetPointXYZ (line->Coords, iv, x, y, z);
 		  }
-		else if (line->DimensionModel == GAIA_XY_Z)
+		else if (line->DimensionModel == GAIA_XY_M)
 		  {
 		      gaiaSetPointXYM (line->Coords, iv, x, y, m);
 		  }
-		else if (line->DimensionModel == GAIA_XY_Z)
+		else if (line->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      gaiaSetPointXYZM (line->Coords, iv, x, y, z, m);
 		  }
@@ -150,11 +150,11 @@ gaiaShiftCoords (gaiaGeomCollPtr geom, double shift_x, double shift_y)
 		  {
 		      gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
 		  }
-		else if (ring->DimensionModel == GAIA_XY_Z)
+		else if (ring->DimensionModel == GAIA_XY_M)
 		  {
 		      gaiaSetPointXYM (ring->Coords, iv, x, y, m);
 		  }
-		else if (ring->DimensionModel == GAIA_XY_Z)
+		else if (ring->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
 		  }
@@ -191,11 +191,11 @@ gaiaShiftCoords (gaiaGeomCollPtr geom, double shift_x, double shift_y)
 			{
 			    gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
 			}
-		      else if (ring->DimensionModel == GAIA_XY_Z)
+		      else if (ring->DimensionModel == GAIA_XY_M)
 			{
 			    gaiaSetPointXYM (ring->Coords, iv, x, y, m);
 			}
-		      else if (ring->DimensionModel == GAIA_XY_Z)
+		      else if (ring->DimensionModel == GAIA_XY_Z_M)
 			{
 			    gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
 			}
@@ -262,11 +262,11 @@ gaiaScaleCoords (gaiaGeomCollPtr geom, double scale_x, double scale_y)
 		  {
 		      gaiaSetPointXYZ (line->Coords, iv, x, y, z);
 		  }
-		else if (line->DimensionModel == GAIA_XY_Z)
+		else if (line->DimensionModel == GAIA_XY_M)
 		  {
 		      gaiaSetPointXYM (line->Coords, iv, x, y, m);
 		  }
-		else if (line->DimensionModel == GAIA_XY_Z)
+		else if (line->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      gaiaSetPointXYZM (line->Coords, iv, x, y, z, m);
 		  }
@@ -307,11 +307,11 @@ gaiaScaleCoords (gaiaGeomCollPtr geom, double scale_x, double scale_y)
 		  {
 		      gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
 		  }
-		else if (ring->DimensionModel == GAIA_XY_Z)
+		else if (ring->DimensionModel == GAIA_XY_M)
 		  {
 		      gaiaSetPointXYM (ring->Coords, iv, x, y, m);
 		  }
-		else if (ring->DimensionModel == GAIA_XY_Z)
+		else if (ring->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
 		  }
@@ -348,11 +348,11 @@ gaiaScaleCoords (gaiaGeomCollPtr geom, double scale_x, double scale_y)
 			{
 			    gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
 			}
-		      else if (ring->DimensionModel == GAIA_XY_Z)
+		      else if (ring->DimensionModel == GAIA_XY_M)
 			{
 			    gaiaSetPointXYM (ring->Coords, iv, x, y, m);
 			}
-		      else if (ring->DimensionModel == GAIA_XY_Z)
+		      else if (ring->DimensionModel == GAIA_XY_Z_M)
 			{
 			    gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
 			}
@@ -426,11 +426,11 @@ gaiaRotateCoords (gaiaGeomCollPtr geom, double angle)
 		  {
 		      gaiaSetPointXYZ (line->Coords, iv, nx, ny, z);
 		  }
-		else if (line->DimensionModel == GAIA_XY_Z)
+		else if (line->DimensionModel == GAIA_XY_M)
 		  {
 		      gaiaSetPointXYM (line->Coords, iv, nx, ny, m);
 		  }
-		else if (line->DimensionModel == GAIA_XY_Z)
+		else if (line->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      gaiaSetPointXYZM (line->Coords, iv, nx, ny, z, m);
 		  }
@@ -471,11 +471,11 @@ gaiaRotateCoords (gaiaGeomCollPtr geom, double angle)
 		  {
 		      gaiaSetPointXYZ (ring->Coords, iv, nx, ny, z);
 		  }
-		else if (ring->DimensionModel == GAIA_XY_Z)
+		else if (ring->DimensionModel == GAIA_XY_M)
 		  {
 		      gaiaSetPointXYM (ring->Coords, iv, nx, ny, m);
 		  }
-		else if (ring->DimensionModel == GAIA_XY_Z)
+		else if (ring->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      gaiaSetPointXYZM (ring->Coords, iv, nx, ny, z, m);
 		  }
@@ -512,11 +512,11 @@ gaiaRotateCoords (gaiaGeomCollPtr geom, double angle)
 			{
 			    gaiaSetPointXYZ (ring->Coords, iv, nx, ny, z);
 			}
-		      else if (ring->DimensionModel == GAIA_XY_Z)
+		      else if (ring->DimensionModel == GAIA_XY_M)
 			{
 			    gaiaSetPointXYM (ring->Coords, iv, nx, ny, m);
 			}
-		      else if (ring->DimensionModel == GAIA_XY_Z)
+		      else if (ring->DimensionModel == GAIA_XY_Z_M)
 			{
 			    gaiaSetPointXYZM (ring->Coords, iv, nx, ny, z, m);
 			}
@@ -587,11 +587,11 @@ gaiaReflectCoords (gaiaGeomCollPtr geom, int x_axis, int y_axis)
 		  {
 		      gaiaSetPointXYZ (line->Coords, iv, x, y, z);
 		  }
-		else if (line->DimensionModel == GAIA_XY_Z)
+		else if (line->DimensionModel == GAIA_XY_M)
 		  {
 		      gaiaSetPointXYM (line->Coords, iv, x, y, m);
 		  }
-		else if (line->DimensionModel == GAIA_XY_Z)
+		else if (line->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      gaiaSetPointXYZM (line->Coords, iv, x, y, z, m);
 		  }
@@ -634,11 +634,11 @@ gaiaReflectCoords (gaiaGeomCollPtr geom, int x_axis, int y_axis)
 		  {
 		      gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
 		  }
-		else if (ring->DimensionModel == GAIA_XY_Z)
+		else if (ring->DimensionModel == GAIA_XY_M)
 		  {
 		      gaiaSetPointXYM (ring->Coords, iv, x, y, m);
 		  }
-		else if (ring->DimensionModel == GAIA_XY_Z)
+		else if (ring->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
 		  }
@@ -677,11 +677,11 @@ gaiaReflectCoords (gaiaGeomCollPtr geom, int x_axis, int y_axis)
 			{
 			    gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
 			}
-		      else if (ring->DimensionModel == GAIA_XY_Z)
+		      else if (ring->DimensionModel == GAIA_XY_M)
 			{
 			    gaiaSetPointXYM (ring->Coords, iv, x, y, m);
 			}
-		      else if (ring->DimensionModel == GAIA_XY_Z)
+		      else if (ring->DimensionModel == GAIA_XY_Z_M)
 			{
 			    gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
 			}
@@ -751,11 +751,11 @@ gaiaSwapCoords (gaiaGeomCollPtr geom)
 		  {
 		      gaiaSetPointXYZ (line->Coords, iv, x, y, z);
 		  }
-		else if (line->DimensionModel == GAIA_XY_Z)
+		else if (line->DimensionModel == GAIA_XY_M)
 		  {
 		      gaiaSetPointXYM (line->Coords, iv, x, y, m);
 		  }
-		else if (line->DimensionModel == GAIA_XY_Z)
+		else if (line->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      gaiaSetPointXYZM (line->Coords, iv, x, y, z, m);
 		  }
@@ -797,11 +797,11 @@ gaiaSwapCoords (gaiaGeomCollPtr geom)
 		  {
 		      gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
 		  }
-		else if (ring->DimensionModel == GAIA_XY_Z)
+		else if (ring->DimensionModel == GAIA_XY_M)
 		  {
 		      gaiaSetPointXYM (ring->Coords, iv, x, y, m);
 		  }
-		else if (ring->DimensionModel == GAIA_XY_Z)
+		else if (ring->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
 		  }
@@ -839,11 +839,11 @@ gaiaSwapCoords (gaiaGeomCollPtr geom)
 			{
 			    gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
 			}
-		      else if (ring->DimensionModel == GAIA_XY_Z)
+		      else if (ring->DimensionModel == GAIA_XY_M)
 			{
 			    gaiaSetPointXYM (ring->Coords, iv, x, y, m);
 			}
-		      else if (ring->DimensionModel == GAIA_XY_Z)
+		      else if (ring->DimensionModel == GAIA_XY_Z_M)
 			{
 			    gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
 			}

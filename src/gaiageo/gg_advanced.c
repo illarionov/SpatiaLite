@@ -629,7 +629,7 @@ appendRingLine (gaiaDynamicLinePtr dyn, gaiaLinestringPtr line, int reverse)
 		  {
 		      gaiaGetPointXYM (line->Coords, i, &x, &y, &m);
 		  }
-		else if (line->DimensionModel == GAIA_XY_Z)
+		else if (line->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      gaiaGetPointXYZM (line->Coords, i, &x, &y, &z, &m);
 		  }
@@ -653,7 +653,7 @@ appendRingLine (gaiaDynamicLinePtr dyn, gaiaLinestringPtr line, int reverse)
 		  {
 		      gaiaGetPointXYM (line->Coords, i, &x, &y, &m);
 		  }
-		else if (line->DimensionModel == GAIA_XY_Z)
+		else if (line->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      gaiaGetPointXYZM (line->Coords, i, &x, &y, &z, &m);
 		  }
@@ -688,7 +688,7 @@ prependRingLine (gaiaDynamicLinePtr dyn, gaiaLinestringPtr line, int reverse)
 		  {
 		      gaiaGetPointXYM (line->Coords, i, &x, &y, &m);
 		  }
-		else if (line->DimensionModel == GAIA_XY_Z)
+		else if (line->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      gaiaGetPointXYZM (line->Coords, i, &x, &y, &z, &m);
 		  }
@@ -712,7 +712,7 @@ prependRingLine (gaiaDynamicLinePtr dyn, gaiaLinestringPtr line, int reverse)
 		  {
 		      gaiaGetPointXYM (line->Coords, i, &x, &y, &m);
 		  }
-		else if (line->DimensionModel == GAIA_XY_Z)
+		else if (line->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      gaiaGetPointXYZM (line->Coords, i, &x, &y, &z, &m);
 		  }
@@ -795,7 +795,7 @@ gaiaBuildRings (gaiaGeomCollPtr line_geom)
 			    gaiaGetPointXYM (pre->Line->Coords, 0, &x0, &y0,
 					     &m);
 			}
-		      else if (pre->Line->DimensionModel == GAIA_XY_Z)
+		      else if (pre->Line->DimensionModel == GAIA_XY_Z_M)
 			{
 			    gaiaGetPointXYZM (pre->Line->Coords, 0, &x0, &y0,
 					      &z, &m);
@@ -816,7 +816,7 @@ gaiaBuildRings (gaiaGeomCollPtr line_geom)
 					     pre->Line->Points - 1, &xn, &yn,
 					     &m);
 			}
-		      else if (pre->Line->DimensionModel == GAIA_XY_Z)
+		      else if (pre->Line->DimensionModel == GAIA_XY_Z_M)
 			{
 			    gaiaGetPointXYZM (pre->Line->Coords,
 					      pre->Line->Points - 1, &xn, &yn,

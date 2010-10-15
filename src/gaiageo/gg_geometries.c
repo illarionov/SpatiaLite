@@ -579,7 +579,7 @@ gaiaCloneRing (gaiaRingPtr ring)
     if (ring->DimensionModel == GAIA_XY_Z)
 	new_ring = gaiaAllocRingXYZ (ring->Points);
     else if (ring->DimensionModel == GAIA_XY_M)
-	new_ring = gaiaAllocRing (ring->Points);
+	new_ring = gaiaAllocRingXYM (ring->Points);
     else if (ring->DimensionModel == GAIA_XY_Z_M)
 	new_ring = gaiaAllocRingXYZM (ring->Points);
     else

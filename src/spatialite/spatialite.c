@@ -6521,13 +6521,13 @@ fnct_InteriorRingN (sqlite3_context * context, int argc, sqlite3_value ** argv)
 						   &z);
 				  gaiaSetPointXYZ (line->Coords, iv, x, y, z);
 			      }
-			    else if (ring->DimensionModel == GAIA_XY_Z)
+			    else if (ring->DimensionModel == GAIA_XY_M)
 			      {
 				  gaiaGetPointXYM (ring->Coords, iv, &x, &y,
 						   &m);
 				  gaiaSetPointXYM (line->Coords, iv, x, y, m);
 			      }
-			    else if (ring->DimensionModel == GAIA_XY_Z)
+			    else if (ring->DimensionModel == GAIA_XY_Z_M)
 			      {
 				  gaiaGetPointXYZM (ring->Coords, iv, &x, &y,
 						    &z, &m);
