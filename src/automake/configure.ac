@@ -76,7 +76,7 @@ AC_ARG_ENABLE(proj, [AS_HELP_STRING(
 if test x"$enable_proj" != "xno"; then
   OMIT_PROJ_FLAGS=
   AC_CHECK_HEADERS(proj_api.h,, [AC_MSG_ERROR([cannot find proj_api.h, bailing out])])
-  AC_CHECK_LIB(proj,pj_init_plus,,AC_MSG_ERROR(['libproj' is required but it doesn't seems to be installed on this system.]),-lm)
+  AC_SEARCH_LIBS(pj_init_plus,proj,,AC_MSG_ERROR(['libproj' is required but it doesn't seems to be installed on this system.]),-lm)
 else
   OMIT_PROJ_FLAGS=-DOMIT_PROJ
 fi
@@ -92,11 +92,42 @@ AC_ARG_ENABLE(geos, [AS_HELP_STRING(
 if test x"$enable_geos" != "xno"; then
   OMIT_GEOS_FLAGS=
   AC_CHECK_HEADERS(geos_c.h,, [AC_MSG_ERROR([cannot find geos_c.h, bailing out])])
-  AC_CHECK_LIB(geos_c,GEOSTopologyPreserveSimplify,,AC_MSG_ERROR(['libgeos_c' is required but it doesn't seems to be installed on this system.]),-lm -lgeos)
+  AC_SEARCH_LIBS(GEOSTopologyPreserveSimplify,geos_c,,AC_MSG_ERROR(['libgeos_c' is required but it doesn't seems to be installed on this system.]),-lm -lgeos)
 else
   OMIT_GEOS_FLAGS=-DOMIT_GEOS
 fi
 AC_SUBST(OMIT_GEOS_FLAGS)
+
+#-----------------------------------------------------------------------
+#   --enable-iconv
+#
+AC_ARG_ENABLE(iconv, [AS_HELP_STRING(
+  [--enable-iconv], [enables ICONV inclusion [default=yes]])],
+  [], [geos=yes])
+if test x"$enable_iconv" != "xno"; then
+  OMIT_ICONV_FLAGS=
+  AC_CHECK_HEADERS(iconv.h,, [AC_MSG_ERROR([cannot find iconv.h, bailing out])])
+# on some systems "iconv()" lives in libc. On others it lives in libiconv
+#  on older systems "libiconv()" lives in libiconv
+  AC_SEARCH_LIBS(iconv,iconv,,
+    AC_SEARCH_LIBS(libiconv,iconv,,AC_MSG_ERROR(['libiconv' is required but it doesn't seems to be installed on this system.]),))
+else
+  OMIT_ICONV_FLAGS=-DOMIT_ICONV
+fi
+AC_SUBST(OMIT_ICONV_FLAGS)
+
+#-----------------------------------------------------------------------
+#   --enable-epsg
+#
+AC_ARG_ENABLE(epsg, [AS_HELP_STRING(
+  [--enable-epsg], [enables full EPSG dataset support [default=yes]])],
+  [], [epsg=yes])
+if test x"$enable_epsg" != "xno"; then
+  OMIT_EPSG_FLAGS=
+else
+  OMIT_EPSG_FLAGS=-DOMIT_EPSG
+fi
+AC_SUBST(OMIT_EPSG_FLAGS)
 #-----------------------------------------------------------------------
 
 # Checking for MinGW

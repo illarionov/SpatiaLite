@@ -51,6 +51,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/gaiaaux.h>
 #include <spatialite/gaiageo.h>
 
+#if OMIT_ICONV == 0     /* if ICONV is disabled no DBF support is available */
+
 static struct sqlite3_module my_dbf_module;
 
 typedef struct VirtualDbfStruct
@@ -522,3 +524,6 @@ virtualdbf_extension_init (sqlite3 * db)
 {
     return sqlite3VirtualDbfInit (db);
 }
+
+#endif  /* ICONV enabled/disabled */
+

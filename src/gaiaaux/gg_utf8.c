@@ -48,6 +48,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <string.h>
 #include <errno.h>
 
+#if OMIT_ICONV == 0     /* ICONV is absolutely required */
+
 #if defined(__MINGW32__) || defined(_WIN32)
 #define LIBICONV_STATIC
 #include <iconv.h>
@@ -164,3 +166,6 @@ gaiaConvertToUTF8 (void *cvtCS, const char *buf, int buflen, int *err)
     utf8buf[maxlen - utf8len] = '\0';
     return utf8buf;
 }
+
+#endif  /* ICONV enabled/disabled */
+

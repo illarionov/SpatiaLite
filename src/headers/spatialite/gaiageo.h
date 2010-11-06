@@ -693,6 +693,11 @@ extern "C"
     GAIAGEO_DECLARE void gaiaOutWkt (gaiaGeomCollPtr geom, char **result);
     GAIAGEO_DECLARE void gaiaOutSvg (gaiaGeomCollPtr geom, char **result,
 				     int relative, int precision);
+    GAIAGEO_DECLARE void gaiaOutBareKml (gaiaGeomCollPtr geom, char **result);
+    GAIAGEO_DECLARE void gaiaOutFullKml (const char *name, const char *desc,
+					 gaiaGeomCollPtr geom, char **result);
+    GAIAGEO_DECLARE void gaiaOutGml (int version, int precision,
+				     gaiaGeomCollPtr geom, char **result);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaFromFgf (const unsigned char *blob,
 						 unsigned int size);
     GAIAGEO_DECLARE void gaiaToFgf (gaiaGeomCollPtr geom,

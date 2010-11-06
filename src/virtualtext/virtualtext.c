@@ -54,6 +54,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define VRTTXT_INTEGER	2
 #define VRTTXT_DOUBLE	3
 
+#if OMIT_ICONV == 0     /* if ICONV is disabled no TXT support is available */
+
 struct sqlite3_module virtualtext_module;
 
 #define VTXT_ROW_BLOCK	65536
@@ -1400,3 +1402,6 @@ virtualtext_extension_init (sqlite3 * db)
 {
     return sqlite3VirtualTextInit (db);
 }
+
+#endif  /* ICONV enabled/disabled */
+

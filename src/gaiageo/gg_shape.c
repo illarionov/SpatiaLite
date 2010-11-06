@@ -50,6 +50,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <float.h>
 #include <errno.h>
 
+#if OMIT_ICONV == 0	/* if ICONV is disabled no SHP support is available */
+
 #ifdef __MINGW32__
 #define LIBICONV_STATIC
 #include <iconv.h>
@@ -4405,3 +4407,6 @@ gaiaReadDbfEntity (gaiaDbfPtr dbf, int current_row, int *deleted)
     strcpy (dbf->LastError, errMsg);
     return 0;
 }
+
+#endif	/* ICONV enabled/disabled */
+

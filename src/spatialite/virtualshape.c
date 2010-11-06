@@ -51,6 +51,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/gaiaaux.h>
 #include <spatialite/gaiageo.h>
 
+#if OMIT_ICONV == 0     /* if ICONV is disabled no SHP support is available */
+
 static struct sqlite3_module my_shape_module;
 
 typedef struct VirtualShapeStruct
@@ -554,3 +556,6 @@ virtualshape_extension_init (sqlite3 * db)
 {
     return sqlite3VirtualShapeInit (db);
 }
+
+#endif  /* ICONV enabled/disabled */
+
