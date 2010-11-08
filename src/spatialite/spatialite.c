@@ -3269,7 +3269,7 @@ fnct_AsText (sqlite3_context * context, int argc, sqlite3_value ** argv)
     unsigned char *p_blob;
     int n_bytes;
     int len;
-    char *p_result = NULL;
+    gaiaOutBuffer out_buf;
     gaiaGeomCollPtr geo = NULL;
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
@@ -3284,16 +3284,19 @@ fnct_AsText (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
-	  gaiaOutWkt (geo, &p_result);
-	  if (!p_result)
+	  gaiaOutBufferInitialize (&out_buf);
+	  gaiaOutWkt (&out_buf, geo);
+	  if (out_buf.Error || out_buf.Buffer == NULL)
 	      sqlite3_result_null (context);
 	  else
 	    {
-		len = strlen (p_result);
-		sqlite3_result_text (context, p_result, len, free);
+		len = out_buf.WriteOffset;
+		sqlite3_result_text (context, out_buf.Buffer, len, free);
+		out_buf.Buffer = NULL;
 	    }
       }
     gaiaFreeGeomColl (geo);
+    gaiaOutBufferReset (&out_buf);
 }
 
 /*
@@ -3318,7 +3321,7 @@ fnct_AsSvg (sqlite3_context * context, int argc, sqlite3_value ** argv,
     unsigned char *p_blob;
     int n_bytes;
     int len;
-    char *p_result = NULL;
+    gaiaOutBuffer out_buf;
     gaiaGeomCollPtr geo = NULL;
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
@@ -3344,16 +3347,19 @@ fnct_AsSvg (sqlite3_context * context, int argc, sqlite3_value ** argv,
 	  if (precision < 0)
 	      precision = 0;
 	  /* produce SVG-notation - actual work is done in gaiageo/gg_wkt.c */
-	  gaiaOutSvg (geo, &p_result, relative, precision);
-	  if (!p_result)
+	  gaiaOutBufferInitialize (&out_buf);
+	  gaiaOutSvg (&out_buf, geo, relative, precision);
+	  if (out_buf.Error || out_buf.Buffer == NULL)
 	      sqlite3_result_null (context);
 	  else
 	    {
-		len = strlen (p_result);
-		sqlite3_result_text (context, p_result, len, free);
+		len = out_buf.WriteOffset;
+		sqlite3_result_text (context, out_buf.Buffer, len, free);
+		out_buf.Buffer = NULL;
 	    }
       }
     gaiaFreeGeomColl (geo);
+    gaiaOutBufferReset (&out_buf);
 }
 
 static void
@@ -3421,7 +3427,7 @@ static void
 fnct_AsKml1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ AsKml(BLOB encoded geometry)
+/ AsKml(BLOB encoded geometry [, Integer precision])
 /
 / returns the corresponding 'bare geom' KML representation 
 / or NULL if any error is encountered
@@ -3429,11 +3435,12 @@ fnct_AsKml1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     unsigned char *p_blob;
     int n_bytes;
     int len;
-    char *p_result = NULL;
+    gaiaOutBuffer out_buf;
     gaiaGeomCollPtr geo = NULL;
     gaiaGeomCollPtr geo_wgs84;
     char proj_from[2048];
     char proj_to[2048];
+    int precision = 15;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
@@ -3443,6 +3450,16 @@ fnct_AsKml1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
+    if (argc == 2)
+      {
+	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	      precision = sqlite3_value_int (argv[1]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
 	sqlite3_result_null (context);
@@ -3471,24 +3488,27 @@ fnct_AsKml1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		geo = geo_wgs84;
 	    }
 	  /* produce KML-notation - actual work is done in gaiageo/gg_wkt.c */
-	  gaiaOutBareKml (geo, &p_result);
-	  if (!p_result)
+	  gaiaOutBufferInitialize (&out_buf);
+	  gaiaOutBareKml (&out_buf, geo, precision);
+	  if (out_buf.Error || out_buf.Buffer == NULL)
 	      sqlite3_result_null (context);
 	  else
 	    {
-		len = strlen (p_result);
-		sqlite3_result_text (context, p_result, len, free);
+		len = out_buf.WriteOffset;
+		sqlite3_result_text (context, out_buf.Buffer, len, free);
+		out_buf.Buffer = NULL;
 	    }
       }
   stop:
     gaiaFreeGeomColl (geo);
+    gaiaOutBufferReset (&out_buf);
 }
 
 static void
 fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ AsKml(Anything name, Anything description, BLOB encoded geometry)
+/ AsKml(Anything name, Anything description, BLOB encoded geometry [, Integer precision])
 /
 / returns the corresponding 'full' KML representation 
 / or NULL if any error is encountered
@@ -3496,7 +3516,7 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     unsigned char *p_blob;
     int n_bytes;
     int len;
-    char *p_result = NULL;
+    gaiaOutBuffer out_buf;
     gaiaGeomCollPtr geo = NULL;
     gaiaGeomCollPtr geo_wgs84;
     sqlite3_int64 int_value;
@@ -3508,6 +3528,7 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     char dummy[128];
     char proj_from[2048];
     char proj_to[2048];
+    int precision = 15;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();
     switch (sqlite3_value_type (argv[0]))
@@ -3591,6 +3612,16 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[2]);
     n_bytes = sqlite3_value_bytes (argv[2]);
+    if (argc == 4)
+      {
+	  if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	      precision = sqlite3_value_int (argv[3]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
 	sqlite3_result_null (context);
@@ -3619,13 +3650,15 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		geo = geo_wgs84;
 	    }
 	  /* produce KML-notation - actual work is done in gaiageo/gg_wkt.c */
-	  gaiaOutFullKml (name, desc, geo, &p_result);
-	  if (!p_result)
+	  gaiaOutBufferInitialize (&out_buf);
+	  gaiaOutFullKml (&out_buf, name, desc, geo, precision);
+	  if (out_buf.Error || out_buf.Buffer == NULL)
 	      sqlite3_result_null (context);
 	  else
 	    {
-		len = strlen (p_result);
-		sqlite3_result_text (context, p_result, len, free);
+		len = out_buf.WriteOffset;
+		sqlite3_result_text (context, out_buf.Buffer, len, free);
+		out_buf.Buffer = NULL;
 	    }
       }
   stop:
@@ -3634,6 +3667,7 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	free (name_malloc);
     if (desc_malloc)
 	free (desc_malloc);
+    gaiaOutBufferReset (&out_buf);
 }
 
 static void
@@ -3647,7 +3681,7 @@ fnct_AsKml (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / returns the corresponding KML representation 
 / or NULL if any error is encountered
 */
-    if (argc == 3)
+    if (argc == 3 || argc == 4)
 	fnct_AsKml3 (context, argc, argv);
     else
 	fnct_AsKml1 (context, argc, argv);
@@ -3677,7 +3711,7 @@ fnct_AsGml (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int len;
     int version = 2;
     int precision = 15;
-    char *p_result = NULL;
+    gaiaOutBuffer out_buf;
     gaiaGeomCollPtr geo = NULL;
     GAIA_UNUSED ();
     if (argc == 3)
@@ -3742,16 +3776,19 @@ fnct_AsGml (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  /* produce GML-notation - actual work is done in gaiageo/gg_wkt.c */
-	  gaiaOutGml (version, precision, geo, &p_result);
-	  if (!p_result)
+	  gaiaOutBufferInitialize (&out_buf);
+	  gaiaOutGml (&out_buf, version, precision, geo);
+	  if (out_buf.Error || out_buf.Buffer == NULL)
 	      sqlite3_result_null (context);
 	  else
 	    {
-		len = strlen (p_result);
-		sqlite3_result_text (context, p_result, len, free);
+		len = out_buf.WriteOffset;
+		sqlite3_result_text (context, out_buf.Buffer, len, free);
+		out_buf.Buffer = NULL;
 	    }
       }
     gaiaFreeGeomColl (geo);
+    gaiaOutBufferReset (&out_buf);
 }
 
 static void
@@ -12036,7 +12073,9 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
     sqlite3_create_function (db, "AsSvg", 2, SQLITE_ANY, 0, fnct_AsSvg2, 0, 0);
     sqlite3_create_function (db, "AsSvg", 3, SQLITE_ANY, 0, fnct_AsSvg3, 0, 0);
     sqlite3_create_function (db, "AsKml", 1, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
+    sqlite3_create_function (db, "AsKml", 2, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
     sqlite3_create_function (db, "AsKml", 3, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
+    sqlite3_create_function (db, "AsKml", 4, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
     sqlite3_create_function (db, "AsGml", 1, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
     sqlite3_create_function (db, "AsGml", 2, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
     sqlite3_create_function (db, "AsGml", 3, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
@@ -12894,7 +12933,9 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
     sqlite3_create_function (db, "AsSvg", 2, SQLITE_ANY, 0, fnct_AsSvg2, 0, 0);
     sqlite3_create_function (db, "AsSvg", 3, SQLITE_ANY, 0, fnct_AsSvg3, 0, 0);
     sqlite3_create_function (db, "AsKml", 1, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
+    sqlite3_create_function (db, "AsKml", 2, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
     sqlite3_create_function (db, "AsKml", 3, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
+    sqlite3_create_function (db, "AsKml", 4, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
     sqlite3_create_function (db, "AsGml", 1, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
     sqlite3_create_function (db, "AsGml", 2, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
     sqlite3_create_function (db, "AsGml", 3, SQLITE_ANY, 0, fnct_AsGml, 0, 0);

@@ -119,52 +119,86 @@ gaiaOutClean (char *buffer)
 	buffer[i] = '\0';
 }
 
-static void
-gaiaOutCheckBuffer (char **buffer, int *size)
+GAIAGEO_DECLARE void
+gaiaOutBufferInitialize (gaiaOutBufferPtr buf)
 {
-/* checks if the receiving buffer has enough free room, and in case reallocates it */
-    char *old = *buffer;
-    int len = strlen (*buffer);
-    if ((*size - len) < 1024)
+/* initializing a dynamically growing output buffer */
+    buf->Buffer = NULL;
+    buf->WriteOffset = 0;
+    buf->BufferSize = 0;
+    buf->Error = 0;
+}
+
+GAIAGEO_DECLARE void
+gaiaOutBufferReset (gaiaOutBufferPtr buf)
+{
+/* cleaning a dynamically growing output buffer */
+    if (buf->Buffer)
+	free (buf->Buffer);
+    buf->Buffer = NULL;
+    buf->WriteOffset = 0;
+    buf->BufferSize = 0;
+    buf->Error = 0;
+}
+
+GAIAGEO_DECLARE void
+gaiaAppendToOutBuffer (gaiaOutBufferPtr buf, const char *text)
+{
+/* appending a text string */
+    int len = strlen (text);
+    int free_size = buf->BufferSize - buf->WriteOffset;
+    if ((len + 1) > free_size)
       {
-	  *size += 4096;
-	  *buffer = realloc (old, *size);
+	  /* we must allocate a bigger buffer */
+	  int new_size;
+	  char *new_buf;
+	  if (buf->BufferSize == 0)
+	      new_size = 1024;
+	  else if (buf->BufferSize <= 4196)
+	      new_size = buf->BufferSize + (len + 1) + 4196;
+	  else if (buf->BufferSize <= 65536)
+	      new_size = buf->BufferSize + (len + 1) + 65536;
+	  else
+	      new_size = buf->BufferSize + (len + 1) + (1024 * 1024);
+	  new_buf = malloc (new_size);
+	  if (!new_buf)
+	    {
+		buf->Error = 1;
+		return;
+	    }
+	  memcpy (new_buf, buf->Buffer, buf->WriteOffset);
+	  if (buf->Buffer)
+	      free (buf->Buffer);
+	  buf->Buffer = new_buf;
+	  buf->BufferSize = new_size;
       }
+    strcpy (buf->Buffer + buf->WriteOffset, text);
+    buf->WriteOffset += len;
 }
 
 static void
-gaiaOutText (char *text, char **buffer, int *size)
-{
-/* formats a WKT generic text */
-    gaiaOutCheckBuffer (buffer, size);
-    strcat (*buffer, text);
-}
-
-static void
-gaiaOutPoint (gaiaPointPtr point, char **buffer, int *size)
+gaiaOutPoint (gaiaOutBufferPtr out_buf, gaiaPointPtr point)
 {
 /* formats a WKT POINT */
     char buf_x[128];
     char buf_y[128];
     char buf[256];
-    gaiaOutCheckBuffer (buffer, size);
     sprintf (buf_x, "%1.6f", point->X);
     gaiaOutClean (buf_x);
     sprintf (buf_y, "%1.6f", point->Y);
     gaiaOutClean (buf_y);
     sprintf (buf, "%s %s", buf_x, buf_y);
-    strcat (*buffer, buf);
+    gaiaAppendToOutBuffer (out_buf, buf);
 }
 
 static void
-gaiaOutPointZ (gaiaPointPtr point, char **buffer, int *size)
+gaiaOutPointZ (gaiaOutBufferPtr out_buf, gaiaPointPtr point)
 {
 /* formats a WKT POINTZ */
     char buf_x[128];
     char buf_y[128];
     char buf_z[128];
     char buf[512];
-    gaiaOutCheckBuffer (buffer, size);
     sprintf (buf_x, "%1.6f", point->X);
     gaiaOutClean (buf_x);
     sprintf (buf_y, "%1.6f", point->Y);
@@ -172,18 +206,17 @@ gaiaOutPointZ (gaiaPointPtr point, char **buffer, int *size)
     sprintf (buf_z, "%1.6f", point->Z);
     gaiaOutClean (buf_z);
     sprintf (buf, "%s %s %s", buf_x, buf_y, buf_z);
-    strcat (*buffer, buf);
+    gaiaAppendToOutBuffer (out_buf, buf);
 }
 
 static void
-gaiaOutPointM (gaiaPointPtr point, char **buffer, int *size)
+gaiaOutPointM (gaiaOutBufferPtr out_buf, gaiaPointPtr point)
 {
 /* formats a WKT POINTM */
     char buf_x[128];
     char buf_y[128];
     char buf_m[128];
     char buf[512];
-    gaiaOutCheckBuffer (buffer, size);
     sprintf (buf_x, "%1.6f", point->X);
     gaiaOutClean (buf_x);
     sprintf (buf_y, "%1.6f", point->Y);
@@ -191,11 +224,11 @@ gaiaOutPointM (gaiaPointPtr point, char **buffer, int *size)
     sprintf (buf_m, "%1.6f", point->M);
     gaiaOutClean (buf_m);
     sprintf (buf, "%s %s %s", buf_x, buf_y, buf_m);
-    strcat (*buffer, buf);
+    gaiaAppendToOutBuffer (out_buf, buf);
 }
 
 static void
-gaiaOutPointZM (gaiaPointPtr point, char **buffer, int *size)
+gaiaOutPointZM (gaiaOutBufferPtr out_buf, gaiaPointPtr point)
 {
 /* formats a WKT POINTZM */
     char buf_x[128];
@@ -203,7 +236,6 @@ gaiaOutPointZM (gaiaPointPtr point, char **buffer, int *size)
     char buf_z[128];
     char buf_m[128];
     char buf[1024];
-    gaiaOutCheckBuffer (buffer, size);
     sprintf (buf_x, "%1.6f", point->X);
     gaiaOutClean (buf_x);
     sprintf (buf_y, "%1.6f", point->Y);
@@ -213,11 +245,11 @@ gaiaOutPointZM (gaiaPointPtr point, char **buffer, int *size)
     sprintf (buf_m, "%1.6f", point->M);
     gaiaOutClean (buf_m);
     sprintf (buf, "%s %s %s %s", buf_x, buf_y, buf_z, buf_m);
-    strcat (*buffer, buf);
+    gaiaAppendToOutBuffer (out_buf, buf);
 }
 
 static void
-gaiaOutLinestring (gaiaLinestringPtr line, char **buffer, int *size)
+gaiaOutLinestring (gaiaOutBufferPtr out_buf, gaiaLinestringPtr line)
 {
 /* formats a WKT LINESTRING */
     char buf_x[128];
@@ -229,7 +261,6 @@ gaiaOutLinestring (gaiaLinestringPtr line, char **buffer, int *size)
     for (iv = 0; iv < line->Points; iv++)
       {
 	  gaiaGetPoint (line->Coords, iv, &x, &y);
-	  gaiaOutCheckBuffer (buffer, size);
 	  sprintf (buf_x, "%1.6f", x);
 	  gaiaOutClean (buf_x);
 	  sprintf (buf_y, "%1.6f", y);
@@ -238,12 +269,12 @@ gaiaOutLinestring (gaiaLinestringPtr line, char **buffer, int *size)
 	      sprintf (buf, ", %s %s", buf_x, buf_y);
 	  else
 	      sprintf (buf, "%s %s", buf_x, buf_y);
-	  strcat (*buffer, buf);
+	  gaiaAppendToOutBuffer (out_buf, buf);
       }
 }
 
 static void
-gaiaOutLinestringZ (gaiaLinestringPtr line, char **buffer, int *size)
+gaiaOutLinestringZ (gaiaOutBufferPtr out_buf, gaiaLinestringPtr line)
 {
 /* formats a WKT LINESTRINGZ */
     char buf_x[128];
@@ -257,7 +288,6 @@ gaiaOutLinestringZ (gaiaLinestringPtr line, char **buffer, int *size)
     for (iv = 0; iv < line->Points; iv++)
       {
 	  gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
-	  gaiaOutCheckBuffer (buffer, size);
 	  sprintf (buf_x, "%1.6f", x);
 	  gaiaOutClean (buf_x);
 	  sprintf (buf_y, "%1.6f", y);
@@ -268,12 +298,12 @@ gaiaOutLinestringZ (gaiaLinestringPtr line, char **buffer, int *size)
 	      sprintf (buf, ", %s %s %s", buf_x, buf_y, buf_z);
 	  else
 	      sprintf (buf, "%s %s %s", buf_x, buf_y, buf_z);
-	  strcat (*buffer, buf);
+	  gaiaAppendToOutBuffer (out_buf, buf);
       }
 }
 
 static void
-gaiaOutLinestringM (gaiaLinestringPtr line, char **buffer, int *size)
+gaiaOutLinestringM (gaiaOutBufferPtr out_buf, gaiaLinestringPtr line)
 {
 /* formats a WKT LINESTRINGM */
     char buf_x[128];
@@ -287,7 +317,6 @@ gaiaOutLinestringM (gaiaLinestringPtr line, char **buffer, int *size)
     for (iv = 0; iv < line->Points; iv++)
       {
 	  gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
-	  gaiaOutCheckBuffer (buffer, size);
 	  sprintf (buf_x, "%1.6f", x);
 	  gaiaOutClean (buf_x);
 	  sprintf (buf_y, "%1.6f", y);
@@ -298,12 +327,12 @@ gaiaOutLinestringM (gaiaLinestringPtr line, char **buffer, int *size)
 	      sprintf (buf, ", %s %s %s", buf_x, buf_y, buf_m);
 	  else
 	      sprintf (buf, "%s %s %s", buf_x, buf_y, buf_m);
-	  strcat (*buffer, buf);
+	  gaiaAppendToOutBuffer (out_buf, buf);
       }
 }
 
 static void
-gaiaOutLinestringZM (gaiaLinestringPtr line, char **buffer, int *size)
+gaiaOutLinestringZM (gaiaOutBufferPtr out_buf, gaiaLinestringPtr line)
 {
 /* formats a WKT LINESTRINGZM */
     char buf_x[128];
@@ -319,7 +348,6 @@ gaiaOutLinestringZM (gaiaLinestringPtr line, char **buffer, int *size)
     for (iv = 0; iv < line->Points; iv++)
       {
 	  gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
-	  gaiaOutCheckBuffer (buffer, size);
 	  sprintf (buf_x, "%1.6f", x);
 	  gaiaOutClean (buf_x);
 	  sprintf (buf_y, "%1.6f", y);
@@ -332,12 +360,12 @@ gaiaOutLinestringZM (gaiaLinestringPtr line, char **buffer, int *size)
 	      sprintf (buf, ", %s %s %s %s", buf_x, buf_y, buf_z, buf_m);
 	  else
 	      sprintf (buf, "%s %s %s %s", buf_x, buf_y, buf_z, buf_m);
-	  strcat (*buffer, buf);
+	  gaiaAppendToOutBuffer (out_buf, buf);
       }
 }
 
 static void
-gaiaOutPolygon (gaiaPolygonPtr polyg, char **buffer, int *size)
+gaiaOutPolygon (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polyg)
 {
 /* formats a WKT POLYGON */
     char buf_x[128];
@@ -351,7 +379,6 @@ gaiaOutPolygon (gaiaPolygonPtr polyg, char **buffer, int *size)
     for (iv = 0; iv < ring->Points; iv++)
       {
 	  gaiaGetPoint (ring->Coords, iv, &x, &y);
-	  gaiaOutCheckBuffer (buffer, size);
 	  sprintf (buf_x, "%1.6f", x);
 	  gaiaOutClean (buf_x);
 	  sprintf (buf_y, "%1.6f", y);
@@ -362,7 +389,7 @@ gaiaOutPolygon (gaiaPolygonPtr polyg, char **buffer, int *size)
 	      sprintf (buf, ", %s %s)", buf_x, buf_y);
 	  else
 	      sprintf (buf, ", %s %s", buf_x, buf_y);
-	  strcat (*buffer, buf);
+	  gaiaAppendToOutBuffer (out_buf, buf);
       }
     for (ib = 0; ib < polyg->NumInteriors; ib++)
       {
@@ -370,7 +397,6 @@ gaiaOutPolygon (gaiaPolygonPtr polyg, char **buffer, int *size)
 	  for (iv = 0; iv < ring->Points; iv++)
 	    {
 		gaiaGetPoint (ring->Coords, iv, &x, &y);
-		gaiaOutCheckBuffer (buffer, size);
 		sprintf (buf_x, "%1.6f", x);
 		gaiaOutClean (buf_x);
 		sprintf (buf_y, "%1.6f", y);
@@ -381,13 +407,13 @@ gaiaOutPolygon (gaiaPolygonPtr polyg, char **buffer, int *size)
 		    sprintf (buf, ", %s %s)", buf_x, buf_y);
 		else
 		    sprintf (buf, ", %s %s", buf_x, buf_y);
-		strcat (*buffer, buf);
+		gaiaAppendToOutBuffer (out_buf, buf);
 	    }
       }
 }
 
 static void
-gaiaOutPolygonZ (gaiaPolygonPtr polyg, char **buffer, int *size)
+gaiaOutPolygonZ (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polyg)
 {
 /* formats a WKT POLYGONZ */
     char buf_x[128];
@@ -403,7 +429,6 @@ gaiaOutPolygonZ (gaiaPolygonPtr polyg, char **buffer, int *size)
     for (iv = 0; iv < ring->Points; iv++)
       {
 	  gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);
-	  gaiaOutCheckBuffer (buffer, size);
 	  sprintf (buf_x, "%1.6f", x);
 	  gaiaOutClean (buf_x);
 	  sprintf (buf_y, "%1.6f", y);
@@ -416,7 +441,7 @@ gaiaOutPolygonZ (gaiaPolygonPtr polyg, char **buffer, int *size)
 	      sprintf (buf, ", %s %s %s)", buf_x, buf_y, buf_z);
 	  else
 	      sprintf (buf, ", %s %s %s", buf_x, buf_y, buf_z);
-	  strcat (*buffer, buf);
+	  gaiaAppendToOutBuffer (out_buf, buf);
       }
     for (ib = 0; ib < polyg->NumInteriors; ib++)
       {
@@ -424,7 +449,6 @@ gaiaOutPolygonZ (gaiaPolygonPtr polyg, char **buffer, int *size)
 	  for (iv = 0; iv < ring->Points; iv++)
 	    {
 		gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);
-		gaiaOutCheckBuffer (buffer, size);
 		sprintf (buf_x, "%1.6f", x);
 		gaiaOutClean (buf_x);
 		sprintf (buf_y, "%1.6f", y);
@@ -437,13 +461,13 @@ gaiaOutPolygonZ (gaiaPolygonPtr polyg, char **buffer, int *size)
 		    sprintf (buf, ", %s %s %s)", buf_x, buf_y, buf_z);
 		else
 		    sprintf (buf, ", %s %s %s", buf_x, buf_y, buf_z);
-		strcat (*buffer, buf);
+		gaiaAppendToOutBuffer (out_buf, buf);
 	    }
       }
 }
 
 static void
-gaiaOutPolygonM (gaiaPolygonPtr polyg, char **buffer, int *size)
+gaiaOutPolygonM (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polyg)
 {
 /* formats a WKT POLYGONM */
     char buf_x[128];
@@ -459,7 +483,6 @@ gaiaOutPolygonM (gaiaPolygonPtr polyg, char **buffer, int *size)
     for (iv = 0; iv < ring->Points; iv++)
       {
 	  gaiaGetPointXYM (ring->Coords, iv, &x, &y, &m);
-	  gaiaOutCheckBuffer (buffer, size);
 	  sprintf (buf_x, "%1.6f", x);
 	  gaiaOutClean (buf_x);
 	  sprintf (buf_y, "%1.6f", y);
@@ -472,7 +495,7 @@ gaiaOutPolygonM (gaiaPolygonPtr polyg, char **buffer, int *size)
 	      sprintf (buf, ", %s %s %s)", buf_x, buf_y, buf_m);
 	  else
 	      sprintf (buf, ", %s %s %s", buf_x, buf_y, buf_m);
-	  strcat (*buffer, buf);
+	  gaiaAppendToOutBuffer (out_buf, buf);
       }
     for (ib = 0; ib < polyg->NumInteriors; ib++)
       {
@@ -480,7 +503,6 @@ gaiaOutPolygonM (gaiaPolygonPtr polyg, char **buffer, int *size)
 	  for (iv = 0; iv < ring->Points; iv++)
 	    {
 		gaiaGetPointXYM (ring->Coords, iv, &x, &y, &m);
-		gaiaOutCheckBuffer (buffer, size);
 		sprintf (buf_x, "%1.6f", x);
 		gaiaOutClean (buf_x);
 		sprintf (buf_y, "%1.6f", y);
@@ -493,13 +515,13 @@ gaiaOutPolygonM (gaiaPolygonPtr polyg, char **buffer, int *size)
 		    sprintf (buf, ", %s %s %s)", buf_x, buf_y, buf_m);
 		else
 		    sprintf (buf, ", %s %s %s", buf_x, buf_y, buf_m);
-		strcat (*buffer, buf);
+		gaiaAppendToOutBuffer (out_buf, buf);
 	    }
       }
 }
 
 static void
-gaiaOutPolygonZM (gaiaPolygonPtr polyg, char **buffer, int *size)
+gaiaOutPolygonZM (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polyg)
 {
 /* formats a WKT POLYGONZM */
     char buf_x[128];
@@ -517,7 +539,6 @@ gaiaOutPolygonZM (gaiaPolygonPtr polyg, char **buffer, int *size)
     for (iv = 0; iv < ring->Points; iv++)
       {
 	  gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
-	  gaiaOutCheckBuffer (buffer, size);
 	  sprintf (buf_x, "%1.6f", x);
 	  gaiaOutClean (buf_x);
 	  sprintf (buf_y, "%1.6f", y);
@@ -532,7 +553,7 @@ gaiaOutPolygonZM (gaiaPolygonPtr polyg, char **buffer, int *size)
 	      sprintf (buf, ", %s %s %s %s)", buf_x, buf_y, buf_z, buf_m);
 	  else
 	      sprintf (buf, ", %s %s %s %s", buf_x, buf_y, buf_z, buf_m);
-	  strcat (*buffer, buf);
+	  gaiaAppendToOutBuffer (out_buf, buf);
       }
     for (ib = 0; ib < polyg->NumInteriors; ib++)
       {
@@ -540,7 +561,6 @@ gaiaOutPolygonZM (gaiaPolygonPtr polyg, char **buffer, int *size)
 	  for (iv = 0; iv < ring->Points; iv++)
 	    {
 		gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
-		gaiaOutCheckBuffer (buffer, size);
 		sprintf (buf_x, "%1.6f", x);
 		gaiaOutClean (buf_x);
 		sprintf (buf_y, "%1.6f", y);
@@ -555,19 +575,15 @@ gaiaOutPolygonZM (gaiaPolygonPtr polyg, char **buffer, int *size)
 		    sprintf (buf, ", %s %s %s %s)", buf_x, buf_y, buf_z, buf_m);
 		else
 		    sprintf (buf, ", %s %s %s %s", buf_x, buf_y, buf_z, buf_m);
-		strcat (*buffer, buf);
+		gaiaAppendToOutBuffer (out_buf, buf);
 	    }
       }
 }
 
 GAIAGEO_DECLARE void
-gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
+gaiaOutWkt (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
 {
-/* 
-/ prints the WKT representation of current geometry
-/ *result* returns the decoded WKT or NULL if any error is encountered
-*/
-    int txt_size = 1024;
+/* prints the WKT representation of current geometry */
     int pts = 0;
     int lns = 0;
     int pgs = 0;
@@ -575,12 +591,7 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
     gaiaLinestringPtr line;
     gaiaPolygonPtr polyg;
     if (!geom)
-      {
-	  *result = NULL;
-	  return;
-      }
-    *result = malloc (txt_size);
-    memset (*result, '\0', txt_size);
+	return;
     point = geom->FirstPoint;
     while (point)
       {
@@ -614,28 +625,28 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
 		if (point->DimensionModel == GAIA_XY_Z)
 		  {
 		      /* processing POINTZ */
-		      strcpy (*result, "POINT Z(");
-		      gaiaOutPointZ (point, result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, "POINT Z(");
+		      gaiaOutPointZ (out_buf, point);
 		  }
 		else if (point->DimensionModel == GAIA_XY_M)
 		  {
 		      /* processing POINTM */
-		      strcpy (*result, "POINT M(");
-		      gaiaOutPointM (point, result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, "POINT M(");
+		      gaiaOutPointM (out_buf, point);
 		  }
 		else if (point->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      /* processing POINTZM */
-		      strcpy (*result, "POINT ZM(");
-		      gaiaOutPointZM (point, result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, "POINT ZM(");
+		      gaiaOutPointZM (out_buf, point);
 		  }
 		else
 		  {
 		      /* processing POINT */
-		      strcpy (*result, "POINT(");
-		      gaiaOutPoint (point, result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, "POINT(");
+		      gaiaOutPoint (out_buf, point);
 		  }
-		gaiaOutText (")", result, &txt_size);
+		gaiaAppendToOutBuffer (out_buf, ")");
 		point = point->Next;
 	    }
 	  line = geom->FirstLinestring;
@@ -644,28 +655,28 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
 		if (line->DimensionModel == GAIA_XY_Z)
 		  {
 		      /* processing LINESTRINGZ */
-		      strcpy (*result, "LINESTRING Z(");
-		      gaiaOutLinestringZ (line, result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, "LINESTRING Z(");
+		      gaiaOutLinestringZ (out_buf, line);
 		  }
 		else if (line->DimensionModel == GAIA_XY_M)
 		  {
 		      /* processing LINESTRINGM */
-		      strcpy (*result, "LINESTRING M(");
-		      gaiaOutLinestringM (line, result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, "LINESTRING M(");
+		      gaiaOutLinestringM (out_buf, line);
 		  }
 		else if (line->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      /* processing LINESTRINGZM */
-		      strcpy (*result, "LINESTRING ZM(");
-		      gaiaOutLinestringZM (line, result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, "LINESTRING ZM(");
+		      gaiaOutLinestringZM (out_buf, line);
 		  }
 		else
 		  {
 		      /* processing LINESTRING */
-		      strcpy (*result, "LINESTRING(");
-		      gaiaOutLinestring (line, result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, "LINESTRING(");
+		      gaiaOutLinestring (out_buf, line);
 		  }
-		gaiaOutText (")", result, &txt_size);
+		gaiaAppendToOutBuffer (out_buf, ")");
 		line = line->Next;
 	    }
 	  polyg = geom->FirstPolygon;
@@ -674,28 +685,28 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
 		if (polyg->DimensionModel == GAIA_XY_Z)
 		  {
 		      /* processing POLYGONZ */
-		      strcpy (*result, "POLYGON Z(");
-		      gaiaOutPolygonZ (polyg, result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, "POLYGON Z(");
+		      gaiaOutPolygonZ (out_buf, polyg);
 		  }
 		else if (polyg->DimensionModel == GAIA_XY_M)
 		  {
 		      /* processing POLYGONM */
-		      strcpy (*result, "POLYGON M(");
-		      gaiaOutPolygonM (polyg, result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, "POLYGON M(");
+		      gaiaOutPolygonM (out_buf, polyg);
 		  }
 		else if (polyg->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      /* processing POLYGONZM */
-		      strcpy (*result, "POLYGON ZM(");
-		      gaiaOutPolygonZM (polyg, result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, "POLYGON ZM(");
+		      gaiaOutPolygonZM (out_buf, polyg);
 		  }
 		else
 		  {
 		      /* processing POLYGON */
-		      strcpy (*result, "POLYGON(");
-		      gaiaOutPolygon (polyg, result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, "POLYGON(");
+		      gaiaOutPolygon (out_buf, polyg);
 		  }
-		gaiaOutText (")", result, &txt_size);
+		gaiaAppendToOutBuffer (out_buf, ")");
 		polyg = polyg->Next;
 	    }
       }
@@ -707,170 +718,170 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
 	    {
 		/* some kind of MULTIPOINT */
 		if (geom->DimensionModel == GAIA_XY_Z)
-		    strcpy (*result, "MULTIPOINT Z(");
+		    gaiaAppendToOutBuffer (out_buf, "MULTIPOINT Z(");
 		else if (geom->DimensionModel == GAIA_XY_M)
-		    strcpy (*result, "MULTIPOINT M(");
+		    gaiaAppendToOutBuffer (out_buf, "MULTIPOINT M(");
 		else if (geom->DimensionModel == GAIA_XY_Z_M)
-		    strcpy (*result, "MULTIPOINT ZM(");
+		    gaiaAppendToOutBuffer (out_buf, "MULTIPOINT ZM(");
 		else
-		    strcpy (*result, "MULTIPOINT(");
+		    gaiaAppendToOutBuffer (out_buf, "MULTIPOINT(");
 		point = geom->FirstPoint;
 		while (point)
 		  {
 		      if (point->DimensionModel == GAIA_XY_Z)
 			{
 			    if (point != geom->FirstPoint)
-				gaiaOutText (", ", result, &txt_size);
-			    gaiaOutPointZ (point, result, &txt_size);
+				gaiaAppendToOutBuffer (out_buf, ", ");
+			    gaiaOutPointZ (out_buf, point);
 			}
 		      else if (point->DimensionModel == GAIA_XY_M)
 			{
 			    if (point != geom->FirstPoint)
-				gaiaOutText (", ", result, &txt_size);
-			    gaiaOutPointM (point, result, &txt_size);
+				gaiaAppendToOutBuffer (out_buf, ", ");
+			    gaiaOutPointM (out_buf, point);
 			}
 		      else if (point->DimensionModel == GAIA_XY_Z_M)
 			{
 			    if (point != geom->FirstPoint)
-				gaiaOutText (", ", result, &txt_size);
-			    gaiaOutPointZM (point, result, &txt_size);
+				gaiaAppendToOutBuffer (out_buf, ", ");
+			    gaiaOutPointZM (out_buf, point);
 			}
 		      else
 			{
 			    if (point != geom->FirstPoint)
-				gaiaOutText (", ", result, &txt_size);
-			    gaiaOutPoint (point, result, &txt_size);
+				gaiaAppendToOutBuffer (out_buf, ", ");
+			    gaiaOutPoint (out_buf, point);
 			}
 		      point = point->Next;
 		  }
-		gaiaOutText (")", result, &txt_size);
+		gaiaAppendToOutBuffer (out_buf, ")");
 	    }
 	  else if (pts == 0 && lns > 0 && pgs == 0
 		   && geom->DeclaredType == GAIA_MULTILINESTRING)
 	    {
 		/* some kind of MULTILINESTRING */
 		if (geom->DimensionModel == GAIA_XY_Z)
-		    strcpy (*result, "MULTILINESTRING Z(");
+		    gaiaAppendToOutBuffer (out_buf, "MULTILINESTRING Z(");
 		else if (geom->DimensionModel == GAIA_XY_M)
-		    strcpy (*result, "MULTILINESTRING M(");
+		    gaiaAppendToOutBuffer (out_buf, "MULTILINESTRING M(");
 		else if (geom->DimensionModel == GAIA_XY_Z_M)
-		    strcpy (*result, "MULTILINESTRING ZM(");
+		    gaiaAppendToOutBuffer (out_buf, "MULTILINESTRING ZM(");
 		else
-		    strcpy (*result, "MULTILINESTRING(");
+		    gaiaAppendToOutBuffer (out_buf, "MULTILINESTRING(");
 		line = geom->FirstLinestring;
 		while (line)
 		  {
 		      if (line != geom->FirstLinestring)
-			  gaiaOutText (", (", result, &txt_size);
+			  gaiaAppendToOutBuffer (out_buf, ", (");
 		      else
-			  gaiaOutText ("(", result, &txt_size);
+			  gaiaAppendToOutBuffer (out_buf, "(");
 		      if (line->DimensionModel == GAIA_XY_Z)
 			{
-			    gaiaOutLinestringZ (line, result, &txt_size);
-			    gaiaOutText (")", result, &txt_size);
+			    gaiaOutLinestringZ (out_buf, line);
+			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      else if (line->DimensionModel == GAIA_XY_M)
 			{
-			    gaiaOutLinestringM (line, result, &txt_size);
-			    gaiaOutText (")", result, &txt_size);
+			    gaiaOutLinestringM (out_buf, line);
+			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      else if (line->DimensionModel == GAIA_XY_Z_M)
 			{
-			    gaiaOutLinestringZM (line, result, &txt_size);
-			    gaiaOutText (")", result, &txt_size);
+			    gaiaOutLinestringZM (out_buf, line);
+			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      else
 			{
-			    gaiaOutLinestring (line, result, &txt_size);
-			    gaiaOutText (")", result, &txt_size);
+			    gaiaOutLinestring (out_buf, line);
+			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      line = line->Next;
 		  }
-		gaiaOutText (")", result, &txt_size);
+		gaiaAppendToOutBuffer (out_buf, ")");
 	    }
 	  else if (pts == 0 && lns == 0 && pgs > 0
 		   && geom->DeclaredType == GAIA_MULTIPOLYGON)
 	    {
 		/* some kind of MULTIPOLYGON */
 		if (geom->DimensionModel == GAIA_XY_Z)
-		    strcpy (*result, "MULTIPOLYGON Z(");
+		    gaiaAppendToOutBuffer (out_buf, "MULTIPOLYGON Z(");
 		else if (geom->DimensionModel == GAIA_XY_M)
-		    strcpy (*result, "MULTIPOLYGON M(");
+		    gaiaAppendToOutBuffer (out_buf, "MULTIPOLYGON M(");
 		else if (geom->DimensionModel == GAIA_XY_Z_M)
-		    strcpy (*result, "MULTIPOLYGON ZM(");
+		    gaiaAppendToOutBuffer (out_buf, "MULTIPOLYGON ZM(");
 		else
-		    strcpy (*result, "MULTIPOLYGON(");
+		    gaiaAppendToOutBuffer (out_buf, "MULTIPOLYGON(");
 		polyg = geom->FirstPolygon;
 		while (polyg)
 		  {
 		      if (polyg != geom->FirstPolygon)
-			  gaiaOutText (", (", result, &txt_size);
+			  gaiaAppendToOutBuffer (out_buf, ", (");
 		      else
-			  gaiaOutText ("(", result, &txt_size);
+			  gaiaAppendToOutBuffer (out_buf, "(");
 		      if (polyg->DimensionModel == GAIA_XY_Z)
 			{
-			    gaiaOutPolygonZ (polyg, result, &txt_size);
-			    gaiaOutText (")", result, &txt_size);
+			    gaiaOutPolygonZ (out_buf, polyg);
+			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      else if (polyg->DimensionModel == GAIA_XY_M)
 			{
-			    gaiaOutPolygonM (polyg, result, &txt_size);
-			    gaiaOutText (")", result, &txt_size);
+			    gaiaOutPolygonM (out_buf, polyg);
+			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      else if (polyg->DimensionModel == GAIA_XY_Z_M)
 			{
-			    gaiaOutPolygonZM (polyg, result, &txt_size);
-			    gaiaOutText (")", result, &txt_size);
+			    gaiaOutPolygonZM (out_buf, polyg);
+			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      else
 			{
-			    gaiaOutPolygon (polyg, result, &txt_size);
-			    gaiaOutText (")", result, &txt_size);
+			    gaiaOutPolygon (out_buf, polyg);
+			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      polyg = polyg->Next;
 		  }
-		gaiaOutText (")", result, &txt_size);
+		gaiaAppendToOutBuffer (out_buf, ")");
 	    }
 	  else
 	    {
 		/* some kind of GEOMETRYCOLLECTION */
 		int ie = 0;
 		if (geom->DimensionModel == GAIA_XY_Z)
-		    strcpy (*result, "GEOMETRYCOLLECTION Z(");
+		    gaiaAppendToOutBuffer (out_buf, "GEOMETRYCOLLECTION Z(");
 		else if (geom->DimensionModel == GAIA_XY_M)
-		    strcpy (*result, "GEOMETRYCOLLECTION M(");
+		    gaiaAppendToOutBuffer (out_buf, "GEOMETRYCOLLECTION M(");
 		else if (geom->DimensionModel == GAIA_XY_Z_M)
-		    strcpy (*result, "GEOMETRYCOLLECTION ZM(");
+		    gaiaAppendToOutBuffer (out_buf, "GEOMETRYCOLLECTION ZM(");
 		else
-		    strcpy (*result, "GEOMETRYCOLLECTION(");
+		    gaiaAppendToOutBuffer (out_buf, "GEOMETRYCOLLECTION(");
 		point = geom->FirstPoint;
 		while (point)
 		  {
 		      /* processing POINTs */
 		      if (ie > 0)
-			  gaiaOutText (", ", result, &txt_size);
+			  gaiaAppendToOutBuffer (out_buf, ", ");
 		      ie++;
 		      if (point->DimensionModel == GAIA_XY_Z)
 			{
-			    strcat (*result, "POINT Z(");
-			    gaiaOutPointZ (point, result, &txt_size);
+			    gaiaAppendToOutBuffer (out_buf, "POINT Z(");
+			    gaiaOutPointZ (out_buf, point);
 			}
 		      else if (point->DimensionModel == GAIA_XY_M)
 			{
-			    strcat (*result, "POINT M(");
-			    gaiaOutPointM (point, result, &txt_size);
+			    gaiaAppendToOutBuffer (out_buf, "POINT M(");
+			    gaiaOutPointM (out_buf, point);
 			}
 		      else if (point->DimensionModel == GAIA_XY_Z_M)
 			{
-			    strcat (*result, "POINT ZM(");
-			    gaiaOutPointZM (point, result, &txt_size);
+			    gaiaAppendToOutBuffer (out_buf, "POINT ZM(");
+			    gaiaOutPointZM (out_buf, point);
 			}
 		      else
 			{
-			    strcat (*result, "POINT(");
-			    gaiaOutPoint (point, result, &txt_size);
+			    gaiaAppendToOutBuffer (out_buf, "POINT(");
+			    gaiaOutPoint (out_buf, point);
 			}
-		      gaiaOutText (")", result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, ")");
 		      point = point->Next;
 		  }
 		line = geom->FirstLinestring;
@@ -878,29 +889,29 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
 		  {
 		      /* processing LINESTRINGs */
 		      if (ie > 0)
-			  gaiaOutText (", ", result, &txt_size);
+			  gaiaAppendToOutBuffer (out_buf, ", ");
 		      ie++;
 		      if (line->DimensionModel == GAIA_XY_Z)
 			{
-			    strcat (*result, "LINESTRING Z(");
-			    gaiaOutLinestringZ (line, result, &txt_size);
+			    gaiaAppendToOutBuffer (out_buf, "LINESTRING Z(");
+			    gaiaOutLinestringZ (out_buf, line);
 			}
 		      else if (line->DimensionModel == GAIA_XY_M)
 			{
-			    strcat (*result, "LINESTRING M(");
-			    gaiaOutLinestringM (line, result, &txt_size);
+			    gaiaAppendToOutBuffer (out_buf, "LINESTRING M(");
+			    gaiaOutLinestringM (out_buf, line);
 			}
 		      else if (line->DimensionModel == GAIA_XY_Z_M)
 			{
-			    strcat (*result, "LINESTRING ZM(");
-			    gaiaOutLinestringZM (line, result, &txt_size);
+			    gaiaAppendToOutBuffer (out_buf, "LINESTRING ZM(");
+			    gaiaOutLinestringZM (out_buf, line);
 			}
 		      else
 			{
-			    strcat (*result, "LINESTRING(");
-			    gaiaOutLinestring (line, result, &txt_size);
+			    gaiaAppendToOutBuffer (out_buf, "LINESTRING(");
+			    gaiaOutLinestring (out_buf, line);
 			}
-		      gaiaOutText (")", result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, ")");
 		      line = line->Next;
 		  }
 		polyg = geom->FirstPolygon;
@@ -908,32 +919,32 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
 		  {
 		      /* processing POLYGONs */
 		      if (ie > 0)
-			  gaiaOutText (", ", result, &txt_size);
+			  gaiaAppendToOutBuffer (out_buf, ", ");
 		      ie++;
 		      if (polyg->DimensionModel == GAIA_XY_Z)
 			{
-			    strcat (*result, "POLYGON Z(");
-			    gaiaOutPolygonZ (polyg, result, &txt_size);
+			    gaiaAppendToOutBuffer (out_buf, "POLYGON Z(");
+			    gaiaOutPolygonZ (out_buf, polyg);
 			}
 		      else if (polyg->DimensionModel == GAIA_XY_M)
 			{
-			    strcat (*result, "POLYGON M(");
-			    gaiaOutPolygonM (polyg, result, &txt_size);
+			    gaiaAppendToOutBuffer (out_buf, "POLYGON M(");
+			    gaiaOutPolygonM (out_buf, polyg);
 			}
 		      else if (polyg->DimensionModel == GAIA_XY_Z_M)
 			{
-			    strcat (*result, "POLYGON ZM(");
-			    gaiaOutPolygonZM (polyg, result, &txt_size);
+			    gaiaAppendToOutBuffer (out_buf, "POLYGON ZM(");
+			    gaiaOutPolygonZM (out_buf, polyg);
 			}
 		      else
 			{
-			    strcat (*result, "POLYGON(");
-			    gaiaOutPolygon (polyg, result, &txt_size);
+			    gaiaAppendToOutBuffer (out_buf, "POLYGON(");
+			    gaiaOutPolygon (out_buf, polyg);
 			}
-		      gaiaOutText (")", result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, ")");
 		      polyg = polyg->Next;
 		  }
-		gaiaOutText (")", result, &txt_size);
+		gaiaAppendToOutBuffer (out_buf, ")");
 	    }
       }
 }
@@ -950,39 +961,37 @@ gaiaOutWkt (gaiaGeomCollPtr geom, char **result)
  */
 
 static void
-SvgCoords (gaiaPointPtr point, char **buffer, int *size, int precision)
+SvgCoords (gaiaOutBufferPtr out_buf, gaiaPointPtr point, int precision)
 {
 /* formats POINT as SVG-attributes x,y */
     char buf_x[128];
     char buf_y[128];
     char buf[256];
-    gaiaOutCheckBuffer (buffer, size);
     sprintf (buf_x, "%.*f", precision, point->X);
     gaiaOutClean (buf_x);
     sprintf (buf_y, "%.*f", precision, point->Y * -1);
     gaiaOutClean (buf_y);
     sprintf (buf, "x=\"%s\" y=\"%s\"", buf_x, buf_y);
-    strcat (*buffer, buf);
+    gaiaAppendToOutBuffer (out_buf, buf);
 }
 
 static void
-SvgCircle (gaiaPointPtr point, char **buffer, int *size, int precision)
+SvgCircle (gaiaOutBufferPtr out_buf, gaiaPointPtr point, int precision)
 {
 /* formats POINT as SVG-attributes cx,cy */
     char buf_x[128];
     char buf_y[128];
     char buf[256];
-    gaiaOutCheckBuffer (buffer, size);
     sprintf (buf_x, "%.*f", precision, point->X);
     gaiaOutClean (buf_x);
     sprintf (buf_y, "%.*f", precision, point->Y * -1);
     gaiaOutClean (buf_y);
     sprintf (buf, "cx=\"%s\" cy=\"%s\"", buf_x, buf_y);
-    strcat (*buffer, buf);
+    gaiaAppendToOutBuffer (out_buf, buf);
 }
 
 static void
-SvgPathRelative (int dims, int points, double *coords, char **buffer, int *size,
+SvgPathRelative (gaiaOutBufferPtr out_buf, int dims, int points, double *coords,
 		 int precision, int closePath)
 {
 /* formats LINESTRING as SVG-path d-attribute with relative coordinate moves */
@@ -1014,7 +1023,6 @@ SvgPathRelative (int dims, int points, double *coords, char **buffer, int *size,
 	    {
 		gaiaGetPoint (coords, iv, &x, &y);
 	    }
-	  gaiaOutCheckBuffer (buffer, size);
 	  sprintf (buf_x, "%.*f", precision, x - lastX);
 	  gaiaOutClean (buf_x);
 	  sprintf (buf_y, "%.*f", precision, (y - lastY) * -1);
@@ -1027,12 +1035,12 @@ SvgPathRelative (int dims, int points, double *coords, char **buffer, int *size,
 	  lastY = y;
 	  if (iv == points - 1 && closePath == 1)
 	      sprintf (buf, "z ");
-	  strcat (*buffer, buf);
+	  gaiaAppendToOutBuffer (out_buf, buf);
       }
 }
 
 static void
-SvgPathAbsolute (int dims, int points, double *coords, char **buffer, int *size,
+SvgPathAbsolute (gaiaOutBufferPtr out_buf, int dims, int points, double *coords,
 		 int precision, int closePath)
 {
 /* formats LINESTRING as SVG-path d-attribute with relative coordinate moves */
@@ -1062,7 +1070,6 @@ SvgPathAbsolute (int dims, int points, double *coords, char **buffer, int *size,
 	    {
 		gaiaGetPoint (coords, iv, &x, &y);
 	    }
-	  gaiaOutCheckBuffer (buffer, size);
 	  sprintf (buf_x, "%.*f", precision, x);
 	  gaiaOutClean (buf_x);
 	  sprintf (buf_y, "%.*f", precision, y * -1);
@@ -1073,18 +1080,15 @@ SvgPathAbsolute (int dims, int points, double *coords, char **buffer, int *size,
 	      sprintf (buf, "%s %s ", buf_x, buf_y);
 	  if (iv == points - 1 && closePath == 1)
 	      sprintf (buf, "z ");
-	  strcat (*buffer, buf);
+	  gaiaAppendToOutBuffer (out_buf, buf);
       }
 }
 
 GAIAGEO_DECLARE void
-gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
+gaiaOutSvg (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom, int relative,
+	    int precision)
 {
-/*
-/ prints the SVG representation of current geometry
-/ *result* returns the encoded SVG or NULL if any error is encountered
-*/
-    int txt_size = 1024;
+/* prints the SVG representation of current geometry */
     int pts = 0;
     int lns = 0;
     int pgs = 0;
@@ -1094,12 +1098,7 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
     gaiaPolygonPtr polyg;
     gaiaRingPtr ring;
     if (!geom)
-      {
-	  *result = NULL;
-	  return;
-      }
-    *result = malloc (txt_size);
-    memset (*result, '\0', txt_size);
+	return;
     point = geom->FirstPoint;
     while (point)
       {
@@ -1130,9 +1129,9 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 	    {
 		/* processing POINT */
 		if (relative == 1)
-		    SvgCoords (point, result, &txt_size, precision);
+		    SvgCoords (out_buf, point, precision);
 		else
-		    SvgCircle (point, result, &txt_size, precision);
+		    SvgCircle (out_buf, point, precision);
 		point = point->Next;
 	    }
 	  line = geom->FirstLinestring;
@@ -1140,13 +1139,11 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 	    {
 		/* processing LINESTRING */
 		if (relative == 1)
-		    SvgPathRelative (line->DimensionModel, line->Points,
-				     line->Coords, result, &txt_size, precision,
-				     0);
+		    SvgPathRelative (out_buf, line->DimensionModel,
+				     line->Points, line->Coords, precision, 0);
 		else
-		    SvgPathAbsolute (line->DimensionModel, line->Points,
-				     line->Coords, result, &txt_size, precision,
-				     0);
+		    SvgPathAbsolute (out_buf, line->DimensionModel,
+				     line->Points, line->Coords, precision, 0);
 		line = line->Next;
 	    }
 	  polyg = geom->FirstPolygon;
@@ -1156,27 +1153,27 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		ring = polyg->Exterior;
 		if (relative == 1)
 		  {
-		      SvgPathRelative (ring->DimensionModel, ring->Points,
-				       ring->Coords, result, &txt_size,
-				       precision, 1);
+		      SvgPathRelative (out_buf, ring->DimensionModel,
+				       ring->Points, ring->Coords, precision,
+				       1);
 		      for (ib = 0; ib < polyg->NumInteriors; ib++)
 			{
 			    ring = polyg->Interiors + ib;
-			    SvgPathRelative (ring->DimensionModel, ring->Points,
-					     ring->Coords, result, &txt_size,
+			    SvgPathRelative (out_buf, ring->DimensionModel,
+					     ring->Points, ring->Coords,
 					     precision, 1);
 			}
 		  }
 		else
 		  {
-		      SvgPathAbsolute (ring->DimensionModel, ring->Points,
-				       ring->Coords, result, &txt_size,
-				       precision, 1);
+		      SvgPathAbsolute (out_buf, ring->DimensionModel,
+				       ring->Points, ring->Coords, precision,
+				       1);
 		      for (ib = 0; ib < polyg->NumInteriors; ib++)
 			{
 			    ring = polyg->Interiors + ib;
-			    SvgPathAbsolute (ring->DimensionModel, ring->Points,
-					     ring->Coords, result, &txt_size,
+			    SvgPathAbsolute (out_buf, ring->DimensionModel,
+					     ring->Points, ring->Coords,
 					     precision, 1);
 			}
 		  }
@@ -1194,11 +1191,11 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		  {
 		      /* processing POINTs */
 		      if (point != geom->FirstPoint)
-			  gaiaOutText (",", result, &txt_size);
+			  gaiaAppendToOutBuffer (out_buf, ",");
 		      if (relative == 1)
-			  SvgCoords (point, result, &txt_size, precision);
+			  SvgCoords (out_buf, point, precision);
 		      else
-			  SvgCircle (point, result, &txt_size, precision);
+			  SvgCircle (out_buf, point, precision);
 		      point = point->Next;
 		  }
 	    }
@@ -1210,12 +1207,12 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		  {
 		      /* processing LINESTRINGs */
 		      if (relative == 1)
-			  SvgPathRelative (line->DimensionModel, line->Points,
-					   line->Coords, result, &txt_size,
+			  SvgPathRelative (out_buf, line->DimensionModel,
+					   line->Points, line->Coords,
 					   precision, 0);
 		      else
-			  SvgPathAbsolute (line->DimensionModel, line->Points,
-					   line->Coords, result, &txt_size,
+			  SvgPathAbsolute (out_buf, line->DimensionModel,
+					   line->Points, line->Coords,
 					   precision, 0);
 		      line = line->Next;
 		  }
@@ -1230,30 +1227,30 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		      ring = polyg->Exterior;
 		      if (relative == 1)
 			{
-			    SvgPathRelative (ring->DimensionModel, ring->Points,
-					     ring->Coords, result, &txt_size,
+			    SvgPathRelative (out_buf, ring->DimensionModel,
+					     ring->Points, ring->Coords,
 					     precision, 1);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
 			      {
 				  ring = polyg->Interiors + ib;
-				  SvgPathRelative (ring->DimensionModel,
+				  SvgPathRelative (out_buf,
+						   ring->DimensionModel,
 						   ring->Points, ring->Coords,
-						   result, &txt_size, precision,
-						   1);
+						   precision, 1);
 			      }
 			}
 		      else
 			{
-			    SvgPathAbsolute (ring->DimensionModel, ring->Points,
-					     ring->Coords, result, &txt_size,
+			    SvgPathAbsolute (out_buf, ring->DimensionModel,
+					     ring->Points, ring->Coords,
 					     precision, 1);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
 			      {
 				  ring = polyg->Interiors + ib;
-				  SvgPathAbsolute (ring->DimensionModel,
+				  SvgPathAbsolute (out_buf,
+						   ring->DimensionModel,
 						   ring->Points, ring->Coords,
-						   result, &txt_size, precision,
-						   1);
+						   precision, 1);
 			      }
 			}
 		      polyg = polyg->Next;
@@ -1269,13 +1266,13 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		      /* processing POINTs */
 		      if (ie > 0)
 			{
-			    gaiaOutText (";", result, &txt_size);
+			    gaiaAppendToOutBuffer (out_buf, ";");
 			}
 		      ie++;
 		      if (relative == 1)
-			  SvgCoords (point, result, &txt_size, precision);
+			  SvgCoords (out_buf, point, precision);
 		      else
-			  SvgCircle (point, result, &txt_size, precision);
+			  SvgCircle (out_buf, point, precision);
 		      point = point->Next;
 		  }
 		line = geom->FirstLinestring;
@@ -1283,15 +1280,15 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		  {
 		      /* processing LINESTRINGs */
 		      if (ie > 0)
-			  gaiaOutText (";", result, &txt_size);
+			  gaiaAppendToOutBuffer (out_buf, ";");
 		      ie++;
 		      if (relative == 1)
-			  SvgPathRelative (line->DimensionModel, line->Points,
-					   line->Coords, result, &txt_size,
+			  SvgPathRelative (out_buf, line->DimensionModel,
+					   line->Points, line->Coords,
 					   precision, 0);
 		      else
-			  SvgPathAbsolute (line->DimensionModel, line->Points,
-					   line->Coords, result, &txt_size,
+			  SvgPathAbsolute (out_buf, line->DimensionModel,
+					   line->Points, line->Coords,
 					   precision, 0);
 		      line = line->Next;
 		  }
@@ -1304,30 +1301,30 @@ gaiaOutSvg (gaiaGeomCollPtr geom, char **result, int relative, int precision)
 		      ring = polyg->Exterior;
 		      if (relative == 1)
 			{
-			    SvgPathRelative (ring->DimensionModel, ring->Points,
-					     ring->Coords, result, &txt_size,
+			    SvgPathRelative (out_buf, ring->DimensionModel,
+					     ring->Points, ring->Coords,
 					     precision, 1);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
 			      {
 				  ring = polyg->Interiors + ib;
-				  SvgPathRelative (ring->DimensionModel,
+				  SvgPathRelative (out_buf,
+						   ring->DimensionModel,
 						   ring->Points, ring->Coords,
-						   result, &txt_size, precision,
-						   1);
+						   precision, 1);
 			      }
 			}
 		      else
 			{
-			    SvgPathAbsolute (ring->DimensionModel, ring->Points,
-					     ring->Coords, result, &txt_size,
+			    SvgPathAbsolute (out_buf, ring->DimensionModel,
+					     ring->Points, ring->Coords,
 					     precision, 1);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
 			      {
 				  ring = polyg->Interiors + ib;
-				  SvgPathAbsolute (ring->DimensionModel,
+				  SvgPathAbsolute (out_buf,
+						   ring->DimensionModel,
 						   ring->Points, ring->Coords,
-						   result, &txt_size, precision,
-						   1);
+						   precision, 1);
 			      }
 			}
 		      polyg = polyg->Next;
@@ -1393,78 +1390,62 @@ XmlClean (const char *string)
 }
 
 static void
-out_bare_kml_point (gaiaPointPtr point, char **buffer, int *size)
+out_bare_kml_point (gaiaOutBufferPtr out_buf, gaiaPointPtr point, int precision)
 {
 /* formats POINT as 'bare' KML [x,y] */
     char buf_x[128];
     char buf_y[128];
     char buf[256];
-    gaiaOutCheckBuffer (buffer, size);
-    sprintf (buf_x, "%1.8f", point->X);
+    sprintf (buf_x, "%.*f", precision, point->X);
     gaiaOutClean (buf_x);
-    sprintf (buf_y, "%1.8f", point->Y);
+    sprintf (buf_y, "%.*f", precision, point->Y);
     gaiaOutClean (buf_y);
-    strcpy (buf, "\t\t<Point>\n\t\t\t<coordinates>");
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
+    gaiaAppendToOutBuffer (out_buf, "<Point><coordinates>");
     sprintf (buf, "%s,%s", buf_x, buf_y);
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
-    strcpy (buf, "</coordinates>\n\t\t</Point>\n");
-    strcat (*buffer, buf);
+    gaiaAppendToOutBuffer (out_buf, buf);
+    gaiaAppendToOutBuffer (out_buf, "</coordinates></Point>");
 }
 
 static void
-out_full_kml_point (const char *name, const char *desc, gaiaPointPtr point,
-		    char **buffer, int *size)
+out_full_kml_point (gaiaOutBufferPtr out_buf, const char *name,
+		    const char *desc, gaiaPointPtr point, int precision)
 {
 /* formats POINT as 'full' KML [x,y] */
     char buf_x[128];
     char buf_y[128];
     char buf[256];
     char *xml_clean;
-    gaiaOutCheckBuffer (buffer, size);
-    sprintf (buf_x, "%1.8f", point->X);
+    sprintf (buf_x, "%.*f", precision, point->X);
     gaiaOutClean (buf_x);
-    sprintf (buf_y, "%1.8f", point->Y);
+    sprintf (buf_y, "%.*f", precision, point->Y);
     gaiaOutClean (buf_y);
-    strcpy (buf, "\t<Placemark>\n\t\t<name>");
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
+    gaiaAppendToOutBuffer (out_buf, "<Placemark><name>");
     xml_clean = XmlClean (name);
     if (xml_clean)
       {
-	  strcat (*buffer, xml_clean);
+	  gaiaAppendToOutBuffer (out_buf, xml_clean);
 	  free (xml_clean);
       }
     else
-	strcat (*buffer, " ");
-    gaiaOutCheckBuffer (buffer, size);
-    strcpy (buf, "</name>\n\t\t<description>");
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
+	gaiaAppendToOutBuffer (out_buf, " ");
+    gaiaAppendToOutBuffer (out_buf, "</name><description>");
     xml_clean = XmlClean (desc);
     if (xml_clean)
       {
-	  strcat (*buffer, xml_clean);
+	  gaiaAppendToOutBuffer (out_buf, xml_clean);
 	  free (xml_clean);
       }
     else
-	strcat (*buffer, " ");
-    gaiaOutCheckBuffer (buffer, size);
-    strcpy (buf, "</description>\n\t\t<Point>\n\t\t\t<coordinates>");
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
+	gaiaAppendToOutBuffer (out_buf, " ");
+    gaiaAppendToOutBuffer (out_buf, "</description><Point><coordinates>");
     sprintf (buf, "%s,%s", buf_x, buf_y);
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
-    strcpy (buf, "</coordinates>\n\t\t</Point>\n\t</Placemark>\n");
-    strcat (*buffer, buf);
+    gaiaAppendToOutBuffer (out_buf, buf);
+    gaiaAppendToOutBuffer (out_buf, "</coordinates></Point></Placemark>");
 }
 
 static void
-out_bare_kml_linestring (int dims, int points, double *coords, char **buffer,
-			 int *size)
+out_bare_kml_linestring (gaiaOutBuffer * out_buf, int dims, int points,
+			 double *coords, int precision)
 {
 /* formats LINESTRING as 'bare' KML [x,y] */
     char buf_x[128];
@@ -1475,10 +1456,7 @@ out_bare_kml_linestring (int dims, int points, double *coords, char **buffer,
     double y;
     double z;
     double m;
-    gaiaOutCheckBuffer (buffer, size);
-    strcpy (buf, "\t\t<LineString>\n\t\t\t<coordinates>\n");
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
+    gaiaAppendToOutBuffer (out_buf, "<LineString><coordinates>");
     for (iv = 0; iv < points; iv++)
       {
 	  /* exporting vertices */
@@ -1498,21 +1476,23 @@ out_bare_kml_linestring (int dims, int points, double *coords, char **buffer,
 	    {
 		gaiaGetPoint (coords, iv, &x, &y);
 	    }
-	  sprintf (buf_x, "%1.8f", x);
+	  sprintf (buf_x, "%.*f", precision, x);
 	  gaiaOutClean (buf_x);
-	  sprintf (buf_y, "%1.8f", y);
+	  sprintf (buf_y, "%.*f", precision, y);
 	  gaiaOutClean (buf_y);
-	  sprintf (buf, "\t\t\t\t%s,%s\n", buf_x, buf_y);
-	  strcat (*buffer, buf);
-	  gaiaOutCheckBuffer (buffer, size);
+	  if (iv == 0)
+	      sprintf (buf, "%s,%s", buf_x, buf_y);
+	  else
+	      sprintf (buf, " %s,%s", buf_x, buf_y);
+	  gaiaAppendToOutBuffer (out_buf, buf);
       }
-    strcpy (buf, "\t\t\t</coordinates>\n\t\t</LineString>\n");
-    strcat (*buffer, buf);
+    gaiaAppendToOutBuffer (out_buf, "</coordinates></LineString>");
 }
 
 static void
-out_full_kml_linestring (const char *name, const char *desc, int dims,
-			 int points, double *coords, char **buffer, int *size)
+out_full_kml_linestring (gaiaOutBufferPtr out_buf, const char *name,
+			 const char *desc, int dims, int points, double *coords,
+			 int precision)
 {
 /* formats LINESTRING as 'full' KML [x,y] */
     char buf_x[128];
@@ -1524,34 +1504,25 @@ out_full_kml_linestring (const char *name, const char *desc, int dims,
     double y;
     double z;
     double m;
-    gaiaOutCheckBuffer (buffer, size);
-    strcpy (buf, "\t<Placemark>\n\t\t<name>");
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
+    gaiaAppendToOutBuffer (out_buf, "<Placemark><name>");
     xml_clean = XmlClean (name);
     if (xml_clean)
       {
-	  strcat (*buffer, xml_clean);
+	  gaiaAppendToOutBuffer (out_buf, xml_clean);
 	  free (xml_clean);
       }
     else
-	strcat (*buffer, " ");
-    gaiaOutCheckBuffer (buffer, size);
-    strcpy (buf, "</name>\n\t\t<description>");
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
+	gaiaAppendToOutBuffer (out_buf, " ");
+    gaiaAppendToOutBuffer (out_buf, "</name><description>");
     xml_clean = XmlClean (desc);
     if (xml_clean)
       {
-	  strcat (*buffer, xml_clean);
+	  gaiaAppendToOutBuffer (out_buf, xml_clean);
 	  free (xml_clean);
       }
     else
-	strcat (*buffer, " ");
-    gaiaOutCheckBuffer (buffer, size);
-    strcpy (buf, "</description>\n\t\t<LineString>\n\t\t\t<coordinates>\n");
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
+	gaiaAppendToOutBuffer (out_buf, " ");
+    gaiaAppendToOutBuffer (out_buf, "</description><LineString><coordinates>");
     for (iv = 0; iv < points; iv++)
       {
 	  /* exporting vertices */
@@ -1571,22 +1542,24 @@ out_full_kml_linestring (const char *name, const char *desc, int dims,
 	    {
 		gaiaGetPoint (coords, iv, &x, &y);
 	    }
-	  sprintf (buf_x, "%1.8f", x);
+	  sprintf (buf_x, "%.*f", precision, x);
 	  gaiaOutClean (buf_x);
-	  sprintf (buf_y, "%1.8f", y);
+	  sprintf (buf_y, "%.*f", precision, y);
 	  gaiaOutClean (buf_y);
-	  sprintf (buf, "\t\t\t\t%s,%s\n", buf_x, buf_y);
-	  strcat (*buffer, buf);
-	  gaiaOutCheckBuffer (buffer, size);
+	  if (iv == 0)
+	      sprintf (buf, "%s,%s", buf_x, buf_y);
+	  else
+	      sprintf (buf, " %s,%s", buf_x, buf_y);
+	  gaiaAppendToOutBuffer (out_buf, buf);
       }
-    strcpy (buf, "\t\t\t</coordinates>\n\t\t</LineString>\n\t</Placemark>\n");
-    strcat (*buffer, buf);
+    gaiaAppendToOutBuffer (out_buf, "</coordinates></LineString></Placemark>");
 }
 
 static void
-out_bare_kml_polygon (gaiaPolygonPtr polygon, char **buffer, int *size)
+out_bare_kml_polygon (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polygon,
+		      int precision)
 {
-/* formats LINESTRING as 'bare' KML [x,y] */
+/* formats POLYGON as 'bare' KML [x,y] */
     char buf_x[128];
     char buf_y[128];
     char buf[256];
@@ -1597,12 +1570,9 @@ out_bare_kml_polygon (gaiaPolygonPtr polygon, char **buffer, int *size)
     double y;
     double z;
     double m;
-    gaiaOutCheckBuffer (buffer, size);
-    strcpy (buf, "\t\t<Polygon>\n\t\t\t");
-    strcat (buf,
-	    "<outerBoundaryIs>\n\t\t\t\t<LinearRing>\n\t\t\t\t\t<coordinates>\n");
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
+    gaiaAppendToOutBuffer (out_buf, "<Polygon>");
+    gaiaAppendToOutBuffer (out_buf,
+			   "<outerBoundaryIs><LinearRing><coordinates>");
     ring = polygon->Exterior;
     for (iv = 0; iv < ring->Points; iv++)
       {
@@ -1623,26 +1593,24 @@ out_bare_kml_polygon (gaiaPolygonPtr polygon, char **buffer, int *size)
 	    {
 		gaiaGetPoint (ring->Coords, iv, &x, &y);
 	    }
-	  sprintf (buf_x, "%1.8f", x);
+	  sprintf (buf_x, "%.*f", precision, x);
 	  gaiaOutClean (buf_x);
-	  sprintf (buf_y, "%1.8f", y);
+	  sprintf (buf_y, "%.*f", precision, y);
 	  gaiaOutClean (buf_y);
-	  sprintf (buf, "\t\t\t\t\t\t%s,%s\n", buf_x, buf_y);
-	  strcat (*buffer, buf);
-	  gaiaOutCheckBuffer (buffer, size);
+	  if (iv == 0)
+	      sprintf (buf, "%s,%s", buf_x, buf_y);
+	  else
+	      sprintf (buf, " %s,%s", buf_x, buf_y);
+	  gaiaAppendToOutBuffer (out_buf, buf);
       }
-    strcpy (buf,
-	    "\t\t\t\t\t</coordinates>\n\t\t\t\t</LinearRing>\n\t\t\t</outerBoundaryIs>\n");
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
+    gaiaAppendToOutBuffer (out_buf,
+			   "</coordinates></LinearRing></outerBoundaryIs>");
     for (ib = 0; ib < polygon->NumInteriors; ib++)
       {
 	  /* interior rings */
 	  ring = polygon->Interiors + ib;
-	  strcpy (buf,
-		  "\t\t\t<innerBoundaryIs>\n\t\t\t\t<LinearRing>\n\t\t\t\t\t<coordinates>\n");
-	  strcat (*buffer, buf);
-	  gaiaOutCheckBuffer (buffer, size);
+	  gaiaAppendToOutBuffer (out_buf,
+				 "<innerBoundaryIs><LinearRing><coordinates>");
 	  for (iv = 0; iv < ring->Points; iv++)
 	    {
 		/* exporting vertices [Interior Ring] */
@@ -1662,28 +1630,28 @@ out_bare_kml_polygon (gaiaPolygonPtr polygon, char **buffer, int *size)
 		  {
 		      gaiaGetPoint (ring->Coords, iv, &x, &y);
 		  }
-		sprintf (buf_x, "%1.8f", x);
+		sprintf (buf_x, "%.*f", precision, x);
 		gaiaOutClean (buf_x);
-		sprintf (buf_y, "%1.8f", y);
+		sprintf (buf_y, "%.*f", precision, y);
 		gaiaOutClean (buf_y);
-		sprintf (buf, "\t\t\t\t\t\t%s,%s\n", buf_x, buf_y);
-		strcat (*buffer, buf);
-		gaiaOutCheckBuffer (buffer, size);
+		if (iv == 0)
+		    sprintf (buf, "%s,%s", buf_x, buf_y);
+		else
+		    sprintf (buf, " %s,%s", buf_x, buf_y);
+		gaiaAppendToOutBuffer (out_buf, buf);
 	    }
-	  strcpy (buf,
-		  "\t\t\t\t\t</coordinates>\n\t\t\t\t</LinearRing>\n\t\t\t</innerBoundaryIs>\n");
-	  strcat (*buffer, buf);
-	  gaiaOutCheckBuffer (buffer, size);
+	  gaiaAppendToOutBuffer (out_buf,
+				 "</coordinates></LinearRing></innerBoundaryIs>");
       }
-    strcpy (buf, "\t\t</Polygon>\n");
-    strcat (*buffer, buf);
+    strcpy (buf, "</Polygon>");
+    gaiaAppendToOutBuffer (out_buf, buf);
 }
 
 static void
-out_full_kml_polygon (const char *name, const char *desc,
-		      gaiaPolygonPtr polygon, char **buffer, int *size)
+out_full_kml_polygon (gaiaOutBufferPtr out_buf, const char *name,
+		      const char *desc, gaiaPolygonPtr polygon, int precision)
 {
-/* formats LINESTRING as 'full' KML [x,y] */
+/* formats POLYGON as 'full' KML [x,y] */
     char buf_x[128];
     char buf_y[128];
     char buf[256];
@@ -1695,36 +1663,27 @@ out_full_kml_polygon (const char *name, const char *desc,
     double y;
     double z;
     double m;
-    gaiaOutCheckBuffer (buffer, size);
-    strcpy (buf, "\t<Placemark>\n\t\t<name>");
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
+    gaiaAppendToOutBuffer (out_buf, "<Placemark><name>");
     xml_clean = XmlClean (name);
     if (xml_clean)
       {
-	  strcat (*buffer, xml_clean);
+	  gaiaAppendToOutBuffer (out_buf, xml_clean);
 	  free (xml_clean);
       }
     else
-	strcat (*buffer, " ");
-    gaiaOutCheckBuffer (buffer, size);
-    strcpy (buf, "</name>\n\t\t<description>");
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
+	gaiaAppendToOutBuffer (out_buf, " ");
+    gaiaAppendToOutBuffer (out_buf, "</name><description>");
     xml_clean = XmlClean (desc);
     if (xml_clean)
       {
-	  strcat (*buffer, xml_clean);
+	  gaiaAppendToOutBuffer (out_buf, xml_clean);
 	  free (xml_clean);
       }
     else
-	strcat (*buffer, " ");
-    gaiaOutCheckBuffer (buffer, size);
-    strcpy (buf, "</description>\n\t\t<Polygon>\n\t\t\t");
-    strcat (buf,
-	    "<outerBoundaryIs>\n\t\t\t\t<LinearRing>\n\t\t\t\t\t<coordinates>\n");
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
+	gaiaAppendToOutBuffer (out_buf, " ");
+    gaiaAppendToOutBuffer (out_buf, "</description><Polygon>");
+    gaiaAppendToOutBuffer (out_buf,
+			   "<outerBoundaryIs><LinearRing><coordinates>");
     ring = polygon->Exterior;
     for (iv = 0; iv < ring->Points; iv++)
       {
@@ -1745,26 +1704,24 @@ out_full_kml_polygon (const char *name, const char *desc,
 	    {
 		gaiaGetPoint (ring->Coords, iv, &x, &y);
 	    }
-	  sprintf (buf_x, "%1.8f", x);
+	  sprintf (buf_x, "%.*f", precision, x);
 	  gaiaOutClean (buf_x);
-	  sprintf (buf_y, "%1.8f", y);
+	  sprintf (buf_y, "%.*f", precision, y);
 	  gaiaOutClean (buf_y);
-	  sprintf (buf, "\t\t\t\t\t\t%s,%s\n", buf_x, buf_y);
-	  strcat (*buffer, buf);
-	  gaiaOutCheckBuffer (buffer, size);
+	  if (iv == 0)
+	      sprintf (buf, "%s,%s", buf_x, buf_y);
+	  else
+	      sprintf (buf, " %s,%s", buf_x, buf_y);
+	  gaiaAppendToOutBuffer (out_buf, buf);
       }
-    strcpy (buf,
-	    "\t\t\t\t\t</coordinates>\n\t\t\t\t</LinearRing>\n\t\t\t</outerBoundaryIs>\n");
-    strcat (*buffer, buf);
-    gaiaOutCheckBuffer (buffer, size);
+    gaiaAppendToOutBuffer (out_buf,
+			   "</coordinates></LinearRing></outerBoundaryIs>");
     for (ib = 0; ib < polygon->NumInteriors; ib++)
       {
 	  /* interior rings */
 	  ring = polygon->Interiors + ib;
-	  strcpy (buf,
-		  "\t\t\t<innerBoundaryIs>\n\t\t\t\t<LinearRing>\n\t\t\t\t\t<coordinates>\n");
-	  strcat (*buffer, buf);
-	  gaiaOutCheckBuffer (buffer, size);
+	  gaiaAppendToOutBuffer (out_buf,
+				 "<innerBoundaryIs><LinearRing><coordinates>");
 	  for (iv = 0; iv < ring->Points; iv++)
 	    {
 		/* exporting vertices [Interior Ring] */
@@ -1784,117 +1741,101 @@ out_full_kml_polygon (const char *name, const char *desc,
 		  {
 		      gaiaGetPoint (ring->Coords, iv, &x, &y);
 		  }
-		sprintf (buf_x, "%1.8f", x);
+		sprintf (buf_x, "%.*f", precision, x);
 		gaiaOutClean (buf_x);
-		sprintf (buf_y, "%1.8f", y);
+		sprintf (buf_y, "%.*f", precision, y);
 		gaiaOutClean (buf_y);
-		sprintf (buf, "\t\t\t\t\t\t%s,%s\n", buf_x, buf_y);
-		strcat (*buffer, buf);
-		gaiaOutCheckBuffer (buffer, size);
+		if (iv == 0)
+		    sprintf (buf, "%s,%s", buf_x, buf_y);
+		else
+		    sprintf (buf, " %s,%s", buf_x, buf_y);
+		gaiaAppendToOutBuffer (out_buf, buf);
 	    }
-	  strcpy (buf,
-		  "\t\t\t\t\t</coordinates>\n\t\t\t\t</LinearRing>\n\t\t\t</innerBoundaryIs>\n");
-	  strcat (*buffer, buf);
-	  gaiaOutCheckBuffer (buffer, size);
+	  gaiaAppendToOutBuffer (out_buf,
+				 "</coordinates></LinearRing></innerBoundaryIs>");
       }
-    strcpy (buf, "\t\t</Polygon>\n\t</Placemark>\n");
-    strcat (*buffer, buf);
+    gaiaAppendToOutBuffer (out_buf, "</Polygon></Placemark>");
 }
 
 GAIAGEO_DECLARE void
-gaiaOutFullKml (const char *name, const char *desc, gaiaGeomCollPtr geom,
-		char **result)
+gaiaOutFullKml (gaiaOutBufferPtr out_buf, const char *name, const char *desc,
+		gaiaGeomCollPtr geom, int precision)
 {
-/*
-/ prints the 'full' KML representation of current geometry
-/ *result* returns the encoded KML or NULL if any error is encountered
-*/
-    int txt_size = 1024;
+/* prints the 'full' KML representation of current geometry */
     gaiaPointPtr point;
     gaiaLinestringPtr line;
     gaiaPolygonPtr polyg;
     if (!geom)
-      {
-	  *result = NULL;
-	  return;
-      }
-    *result = malloc (txt_size);
-    memset (*result, '\0', txt_size);
+	return;
+    if (precision > 18)
+	precision = 18;
     point = geom->FirstPoint;
     while (point)
       {
 	  /* processing POINT */
-	  out_full_kml_point (name, desc, point, result, &txt_size);
+	  out_full_kml_point (out_buf, name, desc, point, precision);
 	  point = point->Next;
       }
     line = geom->FirstLinestring;
     while (line)
       {
 	  /* processing LINESTRING */
-	  out_full_kml_linestring (name, desc, line->DimensionModel,
-				   line->Points, line->Coords, result,
-				   &txt_size);
+	  out_full_kml_linestring (out_buf, name, desc, line->DimensionModel,
+				   line->Points, line->Coords, precision);
 	  line = line->Next;
       }
     polyg = geom->FirstPolygon;
     while (polyg)
       {
 	  /* processing POLYGON */
-	  out_full_kml_polygon (name, desc, polyg, result, &txt_size);
+	  out_full_kml_polygon (out_buf, name, desc, polyg, precision);
 	  polyg = polyg->Next;
       }
 }
 
 GAIAGEO_DECLARE void
-gaiaOutBareKml (gaiaGeomCollPtr geom, char **result)
+gaiaOutBareKml (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom, int precision)
 {
-/*
-/ prints the 'bare' KML representation of current geometry
-/ *result* returns the encoded KML or NULL if any error is encountered
-*/
-    int txt_size = 1024;
+/* prints the 'bare' KML representation of current geometry */
     gaiaPointPtr point;
     gaiaLinestringPtr line;
     gaiaPolygonPtr polyg;
     if (!geom)
-      {
-	  *result = NULL;
-	  return;
-      }
-    *result = malloc (txt_size);
-    memset (*result, '\0', txt_size);
+	return;
+    if (precision > 18)
+	precision = 18;
     point = geom->FirstPoint;
     while (point)
       {
 	  /* processing POINT */
-	  out_bare_kml_point (point, result, &txt_size);
+	  out_bare_kml_point (out_buf, point, precision);
 	  point = point->Next;
       }
     line = geom->FirstLinestring;
     while (line)
       {
 	  /* processing LINESTRING */
-	  out_bare_kml_linestring (line->DimensionModel, line->Points,
-				   line->Coords, result, &txt_size);
+	  out_bare_kml_linestring (out_buf, line->DimensionModel, line->Points,
+				   line->Coords, precision);
 	  line = line->Next;
       }
     polyg = geom->FirstPolygon;
     while (polyg)
       {
 	  /* processing POLYGON */
-	  out_bare_kml_polygon (polyg, result, &txt_size);
+	  out_bare_kml_polygon (out_buf, polyg, precision);
 	  polyg = polyg->Next;
       }
 }
 
 GAIAGEO_DECLARE void
-gaiaOutGml (int version, int precision, gaiaGeomCollPtr geom, char **result)
+gaiaOutGml (gaiaOutBufferPtr out_buf, int version, int precision,
+	    gaiaGeomCollPtr geom)
 {
 /*
 / prints the GML representation of current geometry
 / *result* returns the encoded GML or NULL if any error is encountered
 */
-    int txt_size = 1024;
     gaiaPointPtr point;
     gaiaLinestringPtr line;
     gaiaPolygonPtr polyg;
@@ -1912,14 +1853,9 @@ gaiaOutGml (int version, int precision, gaiaGeomCollPtr geom, char **result)
     char buf_y[128];
     char buf_z[128];
     if (!geom)
-      {
-	  *result = NULL;
-	  return;
-      }
+	return;
     if (precision > 18)
 	precision = 18;
-    *result = malloc (txt_size);
-    memset (*result, '\0', txt_size);
 
     switch (geom->DeclaredType)
       {
@@ -1930,49 +1866,45 @@ gaiaOutGml (int version, int precision, gaiaGeomCollPtr geom, char **result)
 	  is_multi = 0;
 	  break;
       case GAIA_MULTIPOINT:
-	  sprintf (buf, "\t\t\t<gml:MultiPoint SrsName=\"EPSG::%d\">\n",
-		   geom->Srid);
+	  sprintf (buf, "<gml:MultiPoint SrsName=\"EPSG::%d\">", geom->Srid);
 	  break;
       case GAIA_MULTILINESTRING:
 	  if (version == 3)
-	      sprintf (buf, "\t\t\t<gml:MultiCurve SrsName=\"EPSG::%d\">\n",
+	      sprintf (buf, "<gml:MultiCurve SrsName=\"EPSG::%d\">",
 		       geom->Srid);
 	  else
 	      sprintf (buf,
-		       "\t\t\t<gml:MultiLineString SrsName=\"EPSG::%d\">\n",
+		       "<gml:MultiLineString SrsName=\"EPSG::%d\">",
 		       geom->Srid);
 	  break;
       case GAIA_MULTIPOLYGON:
 	  if (version == 3)
-	      sprintf (buf, "\t\t\t<gml:MultiSurface SrsName=\"EPSG::%d\">\n",
+	      sprintf (buf, "<gml:MultiSurface SrsName=\"EPSG::%d\">",
 		       geom->Srid);
 	  else
-	      sprintf (buf, "\t\t\t<gml:MultiPolygon SrsName=\"EPSG::%d\">\n",
+	      sprintf (buf, "<gml:MultiPolygon SrsName=\"EPSG::%d\">",
 		       geom->Srid);
 	  break;
       default:
-	  sprintf (buf, "\t\t\t<gml:MultiGeometry SrsName=\"EPSG::%d\">\n",
-		   geom->Srid);
+	  sprintf (buf, "<gml:MultiGeometry SrsName=\"EPSG::%d\">", geom->Srid);
 	  break;
       };
-    strcat (*result, buf);
-    gaiaOutCheckBuffer (result, &txt_size);
+    gaiaAppendToOutBuffer (out_buf, buf);
     point = geom->FirstPoint;
     while (point)
       {
 	  /* processing POINT */
 	  if (is_multi)
 	    {
-		strcpy (buf, "\t\t\t\t<gml:pointMember>\n");
-		strcat (buf, "\t\t\t\t\t<gml:Point>");
+		strcpy (buf, "<gml:pointMember>");
+		strcat (buf, "<gml:Point>");
 	    }
 	  else
-	      sprintf (buf, "\t\t\t<gml:Point SrsName=\"EPSG::%d\">",
-		       geom->Srid);
+	      sprintf (buf, "<gml:Point SrsName=\"EPSG::%d\">", geom->Srid);
 	  if (version == 3)
 	      strcat (buf, "<gml:pos>");
 	  else
-	      strcat (buf, "<gml:coordinates>");
+	      strcat (buf, "<gml:coordinates decimal=\".\" cs=\",\" ts=\" \">");
 	  sprintf (buf_x, "%.*f", precision, point->X);
 	  gaiaOutClean (buf_x);
 	  sprintf (buf_y, "%.*f", precision, point->Y);
@@ -2020,13 +1952,12 @@ gaiaOutGml (int version, int precision, gaiaGeomCollPtr geom, char **result)
 	      strcat (buf, "</gml:coordinates>");
 	  if (is_multi)
 	    {
-		strcat (buf, "</gml:Point>\n");
-		strcat (buf, "\t\t\t\t</gml:pointMember>\n");
+		strcat (buf, "</gml:Point>");
+		strcat (buf, "</gml:pointMember>");
 	    }
 	  else
-	      strcat (buf, "</gml:Point>\n");
-	  strcat (*result, buf);
-	  gaiaOutCheckBuffer (result, &txt_size);
+	      strcat (buf, "</gml:Point>");
+	  gaiaAppendToOutBuffer (out_buf, buf);
 	  point = point->Next;
       }
     line = geom->FirstLinestring;
@@ -2037,28 +1968,29 @@ gaiaOutGml (int version, int precision, gaiaGeomCollPtr geom, char **result)
 	    {
 		if (version == 3)
 		  {
-		      strcpy (buf, "\t\t\t\t<gml:curveMember>\n");
-		      strcat (buf, "\t\t\t\t\t<gml:LineString>\n");
-		      strcat (buf, "\t\t\t\t\t\t<gml:posList>\n");
+		      strcpy (buf, "<gml:curveMember>");
+		      strcat (buf, "<gml:LineString>");
+		      strcat (buf, "<gml:posList>");
 		  }
 		else
 		  {
-		      strcpy (buf, "\t\t\t\t<gml:lineStringMember>\n");
-		      strcat (buf, "\t\t\t\t\t<gml:LineString>\n");
-		      strcat (buf, "\t\t\t\t\t\t<gml:coordinates>\n");
+		      strcpy (buf, "<gml:lineStringMember>");
+		      strcat (buf, "<gml:LineString>");
+		      strcat (buf,
+			      "<gml:coordinates decimal=\".\" cs=\",\" ts=\" \">");
 		  }
 	    }
 	  else
 	    {
-		sprintf (buf, "\t\t\t<gml:LineString SrsName=\"EPSG::%d\">\n",
+		sprintf (buf, "<gml:LineString SrsName=\"EPSG::%d\">",
 			 geom->Srid);
 		if (version == 3)
-		    strcat (buf, "\t\t\t<gml:posList>\n");
+		    strcat (buf, "<gml:posList>");
 		else
-		    strcat (buf, "\t\t\t<gml:coordinates>\n");
+		    strcat (buf,
+			    "<gml:coordinates decimal=\".\" cs=\",\" ts=\" \">");
 	    }
-	  strcat (*result, buf);
-	  gaiaOutCheckBuffer (result, &txt_size);
+	  gaiaAppendToOutBuffer (out_buf, buf);
 	  for (iv = 0; iv < line->Points; iv++)
 	    {
 		/* exporting vertices */
@@ -2081,10 +2013,10 @@ gaiaOutGml (int version, int precision, gaiaGeomCollPtr geom, char **result)
 		  {
 		      gaiaGetPoint (line->Coords, iv, &x, &y);
 		  }
-		if (is_multi)
-		    strcpy (buf, "\t\t\t\t\t\t\t");
+		if (iv == 0)
+		    *buf = '\0';
 		else
-		    strcpy (buf, "\t\t\t\t");
+		    strcpy (buf, " ");
 		if (has_z)
 		  {
 		      sprintf (buf_x, "%.*f", precision, x);
@@ -2129,35 +2061,32 @@ gaiaOutGml (int version, int precision, gaiaGeomCollPtr geom, char **result)
 			    strcat (buf, buf_y);
 			}
 		  }
-		strcat (buf, "\n");
-		strcat (*result, buf);
-		gaiaOutCheckBuffer (result, &txt_size);
+		gaiaAppendToOutBuffer (out_buf, buf);
 	    }
 	  if (is_multi)
 	    {
 		if (version == 3)
 		  {
-		      strcpy (buf, "\t\t\t\t\t\t</gml:posList>\n");
-		      strcat (buf, "\t\t\t\t\t</gml:LineString>\n");
-		      strcat (buf, "\t\t\t\t</gml:curveMember>\n");
+		      strcpy (buf, "</gml:posList>");
+		      strcat (buf, "</gml:LineString>");
+		      strcat (buf, "</gml:curveMember>");
 		  }
 		else
 		  {
-		      strcpy (buf, "\t\t\t\t\t\t</gml:coordinates>\n");
-		      strcat (buf, "\t\t\t\t\t</gml:LineString>\n");
-		      strcat (buf, "\t\t\t\t</gml:lineStringMember>\n");
+		      strcpy (buf, "</gml:coordinates>");
+		      strcat (buf, "</gml:LineString>");
+		      strcat (buf, "</gml:lineStringMember>");
 		  }
 	    }
 	  else
 	    {
 		if (version == 3)
-		    strcpy (buf, "\t\t\t</gml:posList>\n");
+		    strcpy (buf, "</gml:posList>");
 		else
-		    strcpy (buf, "\t\t\t</gml:coordinates>\n");
-		strcat (buf, "\t\t\t</gml:LineString>\n");
+		    strcpy (buf, "</gml:coordinates>");
+		strcat (buf, "</gml:LineString>");
 	    }
-	  strcat (*result, buf);
-	  gaiaOutCheckBuffer (result, &txt_size);
+	  gaiaAppendToOutBuffer (out_buf, buf);
 	  line = line->Next;
       }
     polyg = geom->FirstPolygon;
@@ -2168,40 +2097,40 @@ gaiaOutGml (int version, int precision, gaiaGeomCollPtr geom, char **result)
 	    {
 		if (version == 3)
 		  {
-		      strcpy (buf, "\t\t\t\t<gml:surfaceMember>\n");
-		      strcat (buf, "\t\t\t\t\t<gml:Polygon>\n");
-		      strcat (buf, "\t\t\t\t\t\t<gml:exterior>\n");
-		      strcat (buf, "\t\t\t\t\t\t\t<gml:LinearRing>\n");
-		      strcat (buf, "\t\t\t\t\t\t\t\t<gml:posList>\n");
+		      strcpy (buf, "<gml:surfaceMember>");
+		      strcat (buf, "<gml:Polygon>");
+		      strcat (buf, "<gml:exterior>");
+		      strcat (buf, "<gml:LinearRing>");
+		      strcat (buf, "<gml:posList>");
 		  }
 		else
 		  {
-		      strcpy (buf, "\t\t\t\t<gml:polygonMember>\n");
-		      strcat (buf, "\t\t\t\t\t<gml:Polygon>\n");
-		      strcat (buf, "\t\t\t\t\t\t<gml:outerBoundaryIs>\n");
-		      strcat (buf, "\t\t\t\t\t\t\t<gml:LinearRing>\n");
-		      strcat (buf, "\t\t\t\t\t\t\t\t<gml:coordinates>\n");
+		      strcpy (buf, "<gml:polygonMember>");
+		      strcat (buf, "<gml:Polygon>");
+		      strcat (buf, "<gml:outerBoundaryIs>");
+		      strcat (buf, "<gml:LinearRing>");
+		      strcat (buf,
+			      "<gml:coordinates decimal=\".\" cs=\",\" ts=\" \">");
 		  }
 	    }
 	  else
 	    {
-		sprintf (buf, "\t\t\t<gml:Polygon SrsName=\"EPSG::%d\">\n",
-			 geom->Srid);
+		sprintf (buf, "<gml:Polygon SrsName=\"EPSG::%d\">", geom->Srid);
 		if (version == 3)
 		  {
-		      strcat (buf, "\t\t\t\t<gml:exterior>\n");
-		      strcat (buf, "\t\t\t\t\t<gml:LinearRing>\n");
-		      strcat (buf, "\t\t\t\t\t\t<gml:posList>\n");
+		      strcat (buf, "<gml:exterior>");
+		      strcat (buf, "<gml:LinearRing>");
+		      strcat (buf, "<gml:posList>");
 		  }
 		else
 		  {
-		      strcat (buf, "\t\t\t\t<gml:outerBoundaryIs>\n");
-		      strcat (buf, "\t\t\t\t\t<gml:LinearRing>\n");
-		      strcat (buf, "\t\t\t\t\t\t<gml:coordinates>\n");
+		      strcat (buf, "<gml:outerBoundaryIs>");
+		      strcat (buf, "<gml:LinearRing>");
+		      strcat (buf,
+			      "<gml:coordinates decimal=\".\" cs=\",\" ts=\" \">");
 		  }
 	    }
-	  strcat (*result, buf);
-	  gaiaOutCheckBuffer (result, &txt_size);
+	  gaiaAppendToOutBuffer (out_buf, buf);
 	  ring = polyg->Exterior;
 	  for (iv = 0; iv < ring->Points; iv++)
 	    {
@@ -2225,10 +2154,10 @@ gaiaOutGml (int version, int precision, gaiaGeomCollPtr geom, char **result)
 		  {
 		      gaiaGetPoint (ring->Coords, iv, &x, &y);
 		  }
-		if (is_multi)
-		    strcpy (buf, "\t\t\t\t\t\t\t\t\t");
+		if (iv == 0)
+		    *buf = '\0';
 		else
-		    strcpy (buf, "\t\t\t\t\t\t\t");
+		    strcpy (buf, " ");
 		if (has_z)
 		  {
 		      sprintf (buf_x, "%.*f", precision, x);
@@ -2273,43 +2202,40 @@ gaiaOutGml (int version, int precision, gaiaGeomCollPtr geom, char **result)
 			    strcat (buf, buf_y);
 			}
 		  }
-		strcat (buf, "\n");
-		strcat (*result, buf);
-		gaiaOutCheckBuffer (result, &txt_size);
+		gaiaAppendToOutBuffer (out_buf, buf);
 	    }
 	  /* closing the Exterior Ring */
 	  if (is_multi)
 	    {
 		if (version == 3)
 		  {
-		      strcpy (buf, "\t\t\t\t\t\t\t\t</gml:posList>\n");
-		      strcat (buf, "\t\t\t\t\t\t\t</gml:LinearRing>\n");
-		      strcat (buf, "\t\t\t\t\t\t</gml:exterior>\n");
+		      strcpy (buf, "</gml:posList>");
+		      strcat (buf, "</gml:LinearRing>");
+		      strcat (buf, "</gml:exterior>");
 		  }
 		else
 		  {
-		      strcpy (buf, "\t\t\t\t\t\t\t\t</gml:coordinates>\n");
-		      strcat (buf, "\t\t\t\t\t\t\t</gml:LinearRing>\n");
-		      strcat (buf, "\t\t\t\t\t\t</gml:outerBoundaryIs>\n");
+		      strcpy (buf, "</gml:coordinates>");
+		      strcat (buf, "</gml:LinearRing>");
+		      strcat (buf, "</gml:outerBoundaryIs>");
 		  }
 	    }
 	  else
 	    {
 		if (version == 3)
 		  {
-		      strcpy (buf, "\t\t\t\t\t\t</gml:posList>\n");
-		      strcat (buf, "\t\t\t\t\t</gml:LinearRing>\n");
-		      strcat (buf, "\t\t\t\t</gml:exterior>\n");
+		      strcpy (buf, "</gml:posList>");
+		      strcat (buf, "</gml:LinearRing>");
+		      strcat (buf, "</gml:exterior>");
 		  }
 		else
 		  {
-		      strcpy (buf, "\t\t\t\t\t\t</gml:coordinates>\n");
-		      strcat (buf, "\t\t\t\t\t</gml:LinearRing>\n");
-		      strcat (buf, "\t\t\t\t</gml:outerBoundaryIs>\n");
+		      strcpy (buf, "</gml:coordinates>");
+		      strcat (buf, "</gml:LinearRing>");
+		      strcat (buf, "</gml:outerBoundaryIs>");
 		  }
 	    }
-	  strcat (*result, buf);
-	  gaiaOutCheckBuffer (result, &txt_size);
+	  gaiaAppendToOutBuffer (out_buf, buf);
 	  for (ib = 0; ib < polyg->NumInteriors; ib++)
 	    {
 		/* interior rings */
@@ -2318,34 +2244,35 @@ gaiaOutGml (int version, int precision, gaiaGeomCollPtr geom, char **result)
 		  {
 		      if (version == 3)
 			{
-			    strcpy (buf, "\t\t\t\t\t\t<gml:interior>\n");
-			    strcat (buf, "\t\t\t\t\t\t\t<gml:LinearRing>\n");
-			    strcat (buf, "\t\t\t\t\t\t\t\t<gml:posList>\n");
+			    strcpy (buf, "<gml:interior>");
+			    strcat (buf, "<gml:LinearRing>");
+			    strcat (buf, "<gml:posList>");
 			}
 		      else
 			{
-			    strcpy (buf, "\t\t\t\t\t\t<gml:innerBoundaryIs>\n");
-			    strcat (buf, "\t\t\t\t\t\t\t<gml:LinearRing>\n");
-			    strcat (buf, "\t\t\t\t\t\t\t\t<gml:coordinates>\n");
+			    strcpy (buf, "<gml:innerBoundaryIs>");
+			    strcat (buf, "<gml:LinearRing>");
+			    strcat (buf,
+				    "<gml:coordinates decimal=\".\" cs=\",\" ts=\" \">");
 			}
 		  }
 		else
 		  {
 		      if (version == 3)
 			{
-			    strcpy (buf, "\t\t\t\t<gml:interior>\n");
-			    strcat (buf, "\t\t\t\t\t<gml:LinearRing>\n");
-			    strcat (buf, "\t\t\t\t\t\t<gml:posList>\n");
+			    strcpy (buf, "<gml:interior>");
+			    strcat (buf, "<gml:LinearRing>");
+			    strcat (buf, "<gml:posList>");
 			}
 		      else
 			{
-			    strcpy (buf, "\t\t\t\t<gml:innerBoundaryIs>\n");
-			    strcat (buf, "\t\t\t\t\t<gml:LinearRing>\n");
-			    strcat (buf, "\t\t\t\t\t\t<gml:coordinates>\n");
+			    strcpy (buf, "<gml:innerBoundaryIs>");
+			    strcat (buf, "<gml:LinearRing>");
+			    strcat (buf,
+				    "<gml:coordinates decimal=\".\" cs=\",\" ts=\" \">");
 			}
 		  }
-		strcat (*result, buf);
-		gaiaOutCheckBuffer (result, &txt_size);
+		gaiaAppendToOutBuffer (out_buf, buf);
 		for (iv = 0; iv < ring->Points; iv++)
 		  {
 		      /* exporting vertices [Interior Ring] */
@@ -2368,10 +2295,10 @@ gaiaOutGml (int version, int precision, gaiaGeomCollPtr geom, char **result)
 			{
 			    gaiaGetPoint (ring->Coords, iv, &x, &y);
 			}
-		      if (is_multi)
-			  strcpy (buf, "\t\t\t\t\t\t\t\t\t");
+		      if (iv == 0)
+			  *buf = '\0';
 		      else
-			  strcpy (buf, "\t\t\t\t\t\t\t");
+			  strcpy (buf, " ");
 		      if (has_z)
 			{
 			    sprintf (buf_x, "%.*f", precision, x);
@@ -2416,64 +2343,58 @@ gaiaOutGml (int version, int precision, gaiaGeomCollPtr geom, char **result)
 				  strcat (buf, buf_y);
 			      }
 			}
-		      strcat (buf, "\n");
-		      strcat (*result, buf);
-		      gaiaOutCheckBuffer (result, &txt_size);
+		      gaiaAppendToOutBuffer (out_buf, buf);
 		  }
 		/* closing the Interior Ring */
 		if (is_multi)
 		  {
 		      if (version == 3)
 			{
-			    strcpy (buf, "\t\t\t\t\t\t\t\t</gml:posList>\n");
-			    strcat (buf, "\t\t\t\t\t\t\t</gml:LinearRing>\n");
-			    strcat (buf, "\t\t\t\t\t\t</gml:interior>\n");
+			    strcpy (buf, "</gml:posList>");
+			    strcat (buf, "</gml:LinearRing>");
+			    strcat (buf, "</gml:interior>");
 			}
 		      else
 			{
-			    strcpy (buf,
-				    "\t\t\t\t\t\t\t\t</gml:coordinates>\n");
-			    strcat (buf, "\t\t\t\t\t\t\t</gml:LinearRing>\n");
-			    strcat (buf,
-				    "\t\t\t\t\t\t</gml:innerBoundaryIs>\n");
+			    strcpy (buf, "</gml:coordinates>");
+			    strcat (buf, "</gml:LinearRing>");
+			    strcat (buf, "</gml:innerBoundaryIs>");
 			}
 		  }
 		else
 		  {
 		      if (version == 3)
 			{
-			    strcpy (buf, "\t\t\t\t\t\t</gml:posList>\n");
-			    strcat (buf, "\t\t\t\t\t</gml:LinearRing>\n");
-			    strcat (buf, "\t\t\t\t</gml:interior>\n");
+			    strcpy (buf, "</gml:posList>");
+			    strcat (buf, "</gml:LinearRing>");
+			    strcat (buf, "</gml:interior>");
 			}
 		      else
 			{
-			    strcpy (buf, "\t\t\t\t\t\t</gml:coordinates>\n");
-			    strcat (buf, "\t\t\t\t\t</gml:LinearRing>\n");
-			    strcat (buf, "\t\t\t\t</gml:innerBoundaryIs>\n");
+			    strcpy (buf, "</gml:coordinates>");
+			    strcat (buf, "</gml:LinearRing>");
+			    strcat (buf, "</gml:innerBoundaryIs>");
 			}
 		  }
-		strcat (*result, buf);
-		gaiaOutCheckBuffer (result, &txt_size);
+		gaiaAppendToOutBuffer (out_buf, buf);
 	    }
 	  /* closing the Polygon */
 	  if (is_multi)
 	    {
 		if (version == 3)
 		  {
-		      strcpy (buf, "\t\t\t\t\t</gml:Polygon>\n");
-		      strcat (buf, "\t\t\t\t</gml:curveMember>\n");
+		      strcpy (buf, "</gml:Polygon>");
+		      strcat (buf, "</gml:curveMember>");
 		  }
 		else
 		  {
-		      strcpy (buf, "\t\t\t\t\t</gml:Polygon>\n");
-		      strcat (buf, "\t\t\t\t</gml:polygonMember>\n");
+		      strcpy (buf, "</gml:Polygon>");
+		      strcat (buf, "</gml:polygonMember>");
 		  }
 	    }
 	  else
-	      strcpy (buf, "\t\t\t</gml:Polygon>\n");
-	  strcat (*result, buf);
-	  gaiaOutCheckBuffer (result, &txt_size);
+	      strcpy (buf, "</gml:Polygon>");
+	  gaiaAppendToOutBuffer (out_buf, buf);
 	  polyg = polyg->Next;
       }
     switch (geom->DeclaredType)
@@ -2484,25 +2405,25 @@ gaiaOutGml (int version, int precision, gaiaGeomCollPtr geom, char **result)
 	  *buf = '\0';
 	  break;
       case GAIA_MULTIPOINT:
-	  sprintf (buf, "\t\t\t</gml:MultiPoint>\n");
+	  sprintf (buf, "</gml:MultiPoint>");
 	  break;
       case GAIA_MULTILINESTRING:
 	  if (version == 3)
-	      sprintf (buf, "\t\t\t</gml:MultiCurve>\n");
+	      sprintf (buf, "</gml:MultiCurve>");
 	  else
-	      sprintf (buf, "\t\t\t</gml:MultiLineString>\n");
+	      sprintf (buf, "</gml:MultiLineString>");
 	  break;
       case GAIA_MULTIPOLYGON:
 	  if (version == 3)
-	      sprintf (buf, "\t\t\t</gml:MultiSurface>\n");
+	      sprintf (buf, "</gml:MultiSurface>");
 	  else
-	      sprintf (buf, "\t\t\t</gml:MultiPolygon>\n");
+	      sprintf (buf, "</gml:MultiPolygon>");
 	  break;
       default:
-	  sprintf (buf, "\t\t\t</gml:MultiGeometry>\n");
+	  sprintf (buf, "</gml:MultiGeometry>");
 	  break;
       };
-    strcat (*result, buf);
+    gaiaAppendToOutBuffer (out_buf, buf);
 }
 
 

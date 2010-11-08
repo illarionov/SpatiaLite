@@ -444,6 +444,16 @@ extern "C"
     } gaiaShapefile;
     typedef gaiaShapefile *gaiaShapefilePtr;
 
+    typedef struct gaiaOutBufferStruct
+    {
+/* a struct handling a dynamically growing output buffer */
+	char *Buffer;
+	int WriteOffset;
+	int BufferSize;
+	int Error;
+    } gaiaOutBuffer;
+    typedef gaiaOutBuffer *gaiaOutBufferPtr;
+
 /* function prototipes */
 
     GAIAGEO_DECLARE int gaiaEndianArch (void);
@@ -690,14 +700,18 @@ extern "C"
 					   int *deleted);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaParseWkt (const unsigned char
 						  *dirty_buffer, short type);
-    GAIAGEO_DECLARE void gaiaOutWkt (gaiaGeomCollPtr geom, char **result);
-    GAIAGEO_DECLARE void gaiaOutSvg (gaiaGeomCollPtr geom, char **result,
-				     int relative, int precision);
-    GAIAGEO_DECLARE void gaiaOutBareKml (gaiaGeomCollPtr geom, char **result);
-    GAIAGEO_DECLARE void gaiaOutFullKml (const char *name, const char *desc,
-					 gaiaGeomCollPtr geom, char **result);
-    GAIAGEO_DECLARE void gaiaOutGml (int version, int precision,
-				     gaiaGeomCollPtr geom, char **result);
+    GAIAGEO_DECLARE void gaiaOutWkt (gaiaOutBufferPtr out_buf,
+				     gaiaGeomCollPtr geom);
+    GAIAGEO_DECLARE void gaiaOutSvg (gaiaOutBufferPtr out_buf,
+				     gaiaGeomCollPtr geom, int relative,
+				     int precision);
+    GAIAGEO_DECLARE void gaiaOutBareKml (gaiaOutBufferPtr out_buf,
+					 gaiaGeomCollPtr geom, int precision);
+    GAIAGEO_DECLARE void gaiaOutFullKml (gaiaOutBufferPtr out_buf,
+					 const char *name, const char *desc,
+					 gaiaGeomCollPtr geom, int precision);
+    GAIAGEO_DECLARE void gaiaOutGml (gaiaOutBufferPtr out_buf, int version,
+				     int precision, gaiaGeomCollPtr geom);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaFromFgf (const unsigned char *blob,
 						 unsigned int size);
     GAIAGEO_DECLARE void gaiaToFgf (gaiaGeomCollPtr geom,
@@ -797,6 +811,10 @@ extern "C"
 					  double y, double z, double m);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSanitize (gaiaGeomCollPtr org);
     GAIAGEO_DECLARE int gaiaIsToxic (gaiaGeomCollPtr org);
+    GAIAGEO_DECLARE void gaiaOutBufferInitialize (gaiaOutBufferPtr buf);
+    GAIAGEO_DECLARE void gaiaOutBufferReset (gaiaOutBufferPtr buf);
+    GAIAGEO_DECLARE void gaiaAppendToOutBuffer (gaiaOutBufferPtr buf,
+						const char *text);
 
 #ifndef OMIT_PROJ		/* including PROJ.4 */
 
