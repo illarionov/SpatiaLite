@@ -43,6 +43,11 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+/* MSVC strictly requires this include [off_t] */
+#include <sys/types.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -54,7 +59,13 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define LIBICONV_STATIC
 #include <iconv.h>
 #define LIBCHARSET_STATIC
+#ifdef _MSC_VER
+/* <localcharset.h> isn't supported on OSGeo4W */
+/* applying a tricky workaround to fix this issue */
+extern const char * locale_charset (void);
+#else /* sane Windows - not OSGeo4W */
 #include <localcharset.h>
+#endif /* end localcharset */
 #else /* not MINGW32 - WIN32 */
 #ifdef __APPLE__
 #include <iconv.h>

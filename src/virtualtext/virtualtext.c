@@ -43,66 +43,32 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+/* MSVC strictly requires this include [off_t] */
+#include <sys/types.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
 #include <spatialite/sqlite3.h>
+#else
+#include <sqlite3.h>
+#endif
+
 #include <spatialite/spatialite.h>
 #include <spatialite/gaiaaux.h>
+#include <spatialite/gaiageo.h>
 
-#define VRTTXT_TEXT		1
-#define VRTTXT_INTEGER	2
-#define VRTTXT_DOUBLE	3
+#ifdef _WIN32
+#define strcasecmp	_stricmp
+#endif /* not WIN32 */
 
-#if OMIT_ICONV == 0     /* if ICONV is disabled no TXT support is available */
+#if OMIT_ICONV == 0		/* if ICONV is disabled no TXT support is available */
 
 struct sqlite3_module virtualtext_module;
-
-#define VTXT_ROW_BLOCK	65536
-
-struct row_buffer
-{
-/* a complete row */
-    int n_cells;		/* how many cells are stored into this line */
-    char **cells;		/* the cells array */
-    char *text;			/* the text-cells array */
-    struct row_buffer *next;	/* pointer for linked list */
-};
-
-struct row_pointer
-{
-/* a row pointer */
-    long offset;		/* the row start offset */
-    int len;			/* the row length */
-    char start;			/* the first char of the row - signature */
-    char valid;			/* 1=valid - 0=invalid */
-    int n_cells;		/* # cells */
-};
-
-struct row_block
-{
-/* a block of row pointers */
-    int n_rows;
-    struct row_pointer rows[VTXT_ROW_BLOCK];
-    struct row_block *next;
-};
-
-struct text_buffer
-{
-    FILE *text_file;		/* the underlaying file */
-    void *toUtf8;		/* the UTF-8 ICONV converter */
-    char field_separator;
-    char text_separator;
-    char decimal_separator;
-    int max_n_cells;		/* the maximun cell index */
-    char **titles;		/* the column titles array */
-    char *types;		/* the column types array */
-    int n_rows;			/* the number of rows */
-    struct row_pointer **rows;	/* the rows array */
-    struct row_block *first;	/* pointers to build a linked list of rows */
-    struct row_block *last;
-    struct row_buffer *current_row_buffer;
-};
 
 typedef struct VirtualTextStruct
 {
@@ -111,7 +77,7 @@ typedef struct VirtualTextStruct
     int nRef;			/* # references: USED INTERNALLY BY SQLITE */
     char *zErrMsg;		/* error message: USED INTERNALLY BY SQLITE */
     sqlite3 *db;		/* the sqlite db holding the virtual table */
-    struct text_buffer *buffer;	/* the in-memory buffer storing text */
+    gaiaTextReaderPtr reader;	/* the TextReader object */
 } VirtualText;
 typedef VirtualText *VirtualTextPtr;
 
@@ -123,231 +89,6 @@ typedef struct VirtualTextCursortStruct
     int eof;			/* the EOF marker */
 } VirtualTextCursor;
 typedef VirtualTextCursor *VirtualTextCursorPtr;
-
-static int
-text_add_block (struct text_buffer *text)
-{
-/* inserting a block of rows into the text buffer struct */
-    struct row_block *block = malloc (sizeof (struct row_block));
-    if (block == NULL)
-	return 0;
-    block->n_rows = 0;
-    block->next = NULL;
-/* inserting the block of rows into the linked list */
-    if (!(text->first))
-	text->first = block;
-    if (text->last)
-	text->last->next = block;
-    text->last = block;
-    return 1;
-}
-
-static struct row_pointer *
-get_row_pointer (struct text_buffer *text, long current_row)
-{
-/* retrieving a ROW POINTER struct */
-    if (!text)
-	return NULL;
-    if (!(text->rows))
-	return NULL;
-    if (current_row < 0 || current_row >= text->n_rows)
-	return NULL;
-    return *(text->rows + current_row);
-}
-
-static int
-text_insert_row (struct text_buffer *text, long offset, int len, char start)
-{
-/* inserting a row into the text buffer struct */
-    struct row_pointer *row;
-    if (text->last == NULL)
-      {
-	  if (!text_add_block (text))
-	      return 0;
-      }
-    if (text->last->n_rows == VTXT_ROW_BLOCK)
-      {
-	  if (!text_add_block (text))
-	      return 0;
-      }
-    row = text->last->rows + text->last->n_rows;
-    row->offset = offset;
-    row->len = len;
-    row->start = start;
-    row->valid = 0;
-    row->n_cells = 0;
-    (text->last->n_rows)++;
-    return 1;
-}
-
-static struct text_buffer *
-text_buffer_alloc (FILE * fl, void *toUtf8, char field_separator,
-		   char text_separator, char decimal_separator)
-{
-/* allocating and initializing the text buffer struct */
-    struct text_buffer *text = malloc (sizeof (struct text_buffer));
-    if (text == NULL)
-	return NULL;
-    text->text_file = fl;
-    text->toUtf8 = toUtf8;
-    text->field_separator = field_separator;
-    text->text_separator = text_separator;
-    text->decimal_separator = decimal_separator;
-    text->max_n_cells = 0;
-    text->titles = NULL;
-    text->types = NULL;
-    text->n_rows = 0;
-    text->rows = NULL;
-    text->first = NULL;
-    text->last = NULL;
-    text->current_row_buffer = NULL;
-    return text;
-}
-
-static void
-text_row_free (struct row_buffer *row)
-{
-/* memory cleanup - freeing a row buffer */
-    int i;
-    if (!row)
-	return;
-    if (row->cells)
-      {
-	  for (i = 0; i < row->n_cells; i++)
-	    {
-		if (*(row->cells + i))
-		  {
-		      free (*(row->cells + i));
-		  }
-	    }
-	  free (row->cells);
-      }
-    if (row->text)
-	free (row->text);
-    free (row);
-}
-
-static void
-text_buffer_free (struct text_buffer *text)
-{
-/* memory cleanup - freeing the text buffer */
-    int i;
-    struct row_block *block;
-    struct row_block *pn;
-    if (!text)
-	return;
-    block = text->first;
-    while (block)
-      {
-	  pn = block->next;
-	  free (block);
-	  block = pn;
-      }
-    if (text->titles)
-      {
-	  for (i = 0; i < text->max_n_cells; i++)
-	    {
-		if (*(text->titles + i))
-		    free (*(text->titles + i));
-	    }
-	  free (text->titles);
-      }
-    if (text->rows)
-	free (text->rows);
-    if (text->types)
-	free (text->types);
-    if (text->current_row_buffer)
-	text_row_free (text->current_row_buffer);
-    gaiaFreeUTF8Converter (text->toUtf8);
-    fclose (text->text_file);
-    free (text);
-}
-
-static int
-text_is_integer (char *value)
-{
-/* checking if this value can be an INTEGER */
-    int invalids = 0;
-    int digits = 0;
-    int signs = 0;
-    char last = '\0';
-    char *p = value;
-    while (*p != '\0')
-      {
-	  last = *p;
-	  if (*p >= '0' && *p <= '9')
-	      digits++;
-	  else if (*p == '+' || *p == '-')
-	      signs++;
-	  else
-	      invalids++;
-	  p++;
-      }
-    if (invalids)
-	return 0;
-    if (signs > 1)
-	return 0;
-    if (signs)
-      {
-	  if (*value == '+' || *value == '-' || last == '+' || last == '-')
-	      ;
-	  else
-	      return 0;
-      }
-    return 1;
-}
-
-static int
-text_is_double (char *value, char decimal_separator)
-{
-/* checking if this value can be a DOUBLE */
-    int invalids = 0;
-    int digits = 0;
-    int signs = 0;
-    int points = 0;
-    char last = '\0';
-    char *p = value;
-    while (*p != '\0')
-      {
-	  last = *p;
-	  if (*p >= '0' && *p <= '9')
-	      digits++;
-	  else if (*p == '+' || *p == '-')
-	      signs++;
-	  else
-	    {
-		if (decimal_separator == ',')
-		  {
-		      if (*p == ',')
-			  points++;
-		      else
-			  invalids++;
-		  }
-		else
-		  {
-		      if (*p == '.')
-			  points++;
-		      else
-			  invalids++;
-		  }
-	    }
-	  p++;
-      }
-    if (invalids)
-	return 0;
-    if (points > 1)
-	return 0;
-    if (signs > 1)
-	return 0;
-    if (signs)
-      {
-	  if (*value == '+' || *value == '-' || last == '+' || last == '-')
-	      ;
-	  else
-	      return 0;
-      }
-    return 1;
-}
 
 static void
 text_clean_integer (char *value)
@@ -395,554 +136,6 @@ text_clean_double (char *value)
 }
 
 static int
-text_clean_text (char **value, void *toUtf8, char text_separator)
-{
-/* cleaning a TEXT value and converting to UTF-8 */
-    char *text = *value;
-    char *utf8text = NULL;
-    int err;
-    int i;
-    int oldlen = strlen (text);
-    int newlen;
-    for (i = oldlen - 1; i > 0; i++)
-      {
-	  /* cleaning up trailing spaces */
-	  if (text[i] == ' ')
-	      text[i] = '\0';
-	  else
-	      break;
-      }
-    utf8text = gaiaConvertToUTF8 (toUtf8, text, oldlen, &err);
-    if (err)
-      {
-	  /* memory cleanup: Kashif Rasul 14 Jan 2010 */
-	  if (utf8text)
-	      free (utf8text);
-	  return 1;
-      }
-    newlen = strlen (utf8text);
-    if (newlen <= oldlen)
-	strcpy (*value, utf8text);
-    else
-      {
-	  free (*value);
-	  *value = malloc (newlen + 1);
-	  if (*value == NULL)
-	    {
-		/* memory cleanup: Kashif Rasul 14 Jan 2010 */
-		free (utf8text);
-
-		fprintf (stderr, "VirtualText: insufficient memory\n");
-		fflush (stderr);
-		return 1;
-	    }
-	  if (utf8text[0] == text_separator
-	      && utf8text[newlen - 1] == text_separator)
-	    {
-/* avoiding to insert the enclosing quotes */
-		utf8text[newlen - 1] = '\0';
-		strcpy (*value, utf8text);
-	    }
-	  else
-	      strcpy (*value, utf8text);
-      }
-
-/* memory cleanup: Kashif Rasul 14 Jan 2010 */
-    free (utf8text);
-
-    return 0;
-}
-
-static struct row_buffer *
-text_create_row (char **fields, char *text_mark, int max_cell)
-{
-/* creating a row struct */
-    int i;
-    struct row_buffer *row = malloc (sizeof (struct row_buffer));
-    row->n_cells = max_cell;
-    if (max_cell < 0)
-	row->cells = NULL;
-    else
-      {
-	  row->cells = malloc (sizeof (char *) * (max_cell));
-	  if (row->cells == NULL)
-	    {
-		fprintf (stderr, "VirtualText: insufficient memory\n");
-		fflush (stderr);
-		return NULL;
-	    }
-	  row->text = malloc (sizeof (char) * (max_cell));
-	  if (row->text == NULL)
-	    {
-		fprintf (stderr, "VirtualText: insufficient memory\n");
-		fflush (stderr);
-		return NULL;
-	    }
-	  for (i = 0; i < row->n_cells; i++)
-	    {
-		/* setting cell values */
-		*(row->cells + i) = *(fields + i);
-		*(row->text + i) = *(text_mark + i);
-	    }
-      }
-    return row;
-}
-
-static struct row_buffer *
-text_read_row (struct text_buffer *text, struct row_pointer *ptr,
-	       int preliminary)
-{
-/* parsing a single row from the underlaying text file */
-    int fld;
-    int len;
-    int max_cell;
-    int is_text = 0;
-    char last = '\0';
-    char *fields[4096];
-    char text_mark[4096];
-    char buffer[35536];
-    char *p = buffer;
-    char buf_in[65536];
-    char *in = buf_in;
-    struct row_buffer *row;
-    if (fseek (text->text_file, ptr->offset, SEEK_SET) < 0)
-      {
-	  fprintf (stderr, "VirtualText: corrupted text file\n");
-	  fflush (stderr);
-	  return NULL;
-      }
-    if ((int) fread (buf_in, 1, ptr->len, text->text_file) != ptr->len)
-      {
-	  fprintf (stderr, "VirtualText: corrupted text file\n");
-	  fflush (stderr);
-	  return NULL;
-      }
-    if (*buf_in != ptr->start)
-      {
-	  fprintf (stderr, "VirtualText: corrupted text file\n");
-	  fflush (stderr);
-	  return NULL;
-      }
-    if (*(buf_in + ptr->len - 1) != '\n')
-      {
-	  fprintf (stderr, "VirtualText: corrupted text file\n");
-	  fflush (stderr);
-	  return NULL;
-      }
-    buf_in[ptr->len] = '\0';
-    for (fld = 0; fld < 4096; fld++)
-      {
-	  /* preparing an empty row */
-	  fields[fld] = NULL;
-	  text_mark[fld] = 0;
-      }
-    fld = 0;
-    while (*in != '\0')
-      {
-	  /* parsing the row, one char at each time */
-	  if (*in == '\r')
-	    {
-		last = *in++;
-		continue;
-	    }
-	  if (*in == text->field_separator)
-	    {
-		/* inserting a field into the fields tmp array */
-		last = *in;
-		*p = '\0';
-		len = strlen (buffer);
-		if (len)
-		  {
-		      fields[fld] = malloc (len + 1);
-		      strcpy (fields[fld], buffer);
-		      text_mark[fld] = is_text;
-		  }
-		fld++;
-		p = buffer;
-		*p = '\0';
-		is_text = 0;
-		in++;
-		continue;
-	    }
-	  last = *in;
-	  if (*in == '\n')
-	    {
-		/* inserting the row into the text buffer */
-		*p = '\0';
-		len = strlen (buffer);
-		if (len)
-		  {
-		      fields[fld] = malloc (len + 1);
-		      strcpy (fields[fld], buffer);
-		  }
-		fld++;
-		p = buffer;
-		*p = '\0';
-		max_cell = -1;
-		for (fld = 0; fld < 4096; fld++)
-		  {
-		      if (fields[fld])
-			{
-			    max_cell = fld;
-			}
-		  }
-		max_cell++;
-		if (!preliminary)
-		  {
-		      if (max_cell != ptr->n_cells)
-			{
-			    for (fld = 0; fld < 4096; fld++)
-			      {
-				  if (fields[fld])
-				      free (fields[fld]);
-			      }
-			    return NULL;
-			}
-		  }
-		row = text_create_row (fields, text_mark, max_cell);
-		return row;
-	    }
-	  *p++ = *in++;
-      }
-    return NULL;
-}
-
-static struct text_buffer *
-text_parse (char *path, char *encoding, char first_line_titles,
-	    char field_separator, char text_separator, char decimal_separator)
-{
-/* trying to open and parse the text file */
-    int c;
-    int len;
-    int fld;
-    char col_types[4096];
-    char buffer[35536];
-    char *p = buffer;
-    struct text_buffer *text;
-    int nrows;
-    int max_cols;
-    int errs;
-    struct row_block *block;
-    struct row_buffer *row;
-    void *toUtf8;
-    int ir;
-    char title[64];
-    char *first_valid_row;
-    int i;
-    char *name;
-    FILE *in;
-    long cur_pos = 0;
-    long begin_offset = 0;
-    char start = '\0';
-    int new_row = 1;
-/* trying to open the text file */
-    in = fopen (path, "rb");
-    if (!in)
-      {
-	  fprintf (stderr, "VirtualText: open error '%s'\n", path);
-	  fflush (stderr);
-	  return NULL;
-      }
-    toUtf8 = gaiaCreateUTF8Converter (encoding);
-    if (!toUtf8)
-      {
-	  fprintf (stderr, "VirtualText: illegal charset\n");
-	  fflush (stderr);
-
-	  fclose (in);		/* Kashif Rasul 14 Jan 2010 */
-
-	  return NULL;
-      }
-    text =
-	text_buffer_alloc (in, toUtf8, field_separator, text_separator,
-			   decimal_separator);
-    if (text == NULL)
-      {
-	  fprintf (stderr, "VirtualText: insufficient memory\n");
-	  fflush (stderr);
-
-	  fclose (in);		/* Kashif Rasul 14 Jan 2010 */
-
-	  return NULL;
-      }
-    while ((c = getc (in)) != EOF)
-      {
-	  /* parsing the file, one char at each time */
-	  cur_pos++;
-	  if (c == '\r')
-	      continue;
-	  if (new_row)
-	    {
-		/* a new row begins here */
-		new_row = 0;
-		start = (char) c;
-		begin_offset = cur_pos - 1;
-		p = buffer;
-	    }
-	  if (c == '\n')
-	    {
-		/* inserting the row into the text buffer */
-		len = cur_pos - begin_offset;
-		if (!text_insert_row (text, begin_offset, len, start))
-		  {
-		      text_buffer_free (text);
-		      fprintf (stderr, "VirtualText: insufficient memory\n");
-		      fflush (stderr);
-		      return NULL;
-		  }
-		new_row = 1;
-		continue;
-	    }
-	  *p++ = c;
-      }
-/* checking if the text file really seems to contain a table */
-    nrows = 0;
-    errs = 0;
-    block = text->first;
-    while (block)
-      {
-	  for (i = 0; i < block->n_rows; i++)
-	    {
-		if (first_line_titles && block == text->first && i == 0)
-		  {
-		      /* skipping first line */
-		      continue;
-		  }
-		nrows++;
-	    }
-	  block = block->next;
-      }
-    if (nrows == 0)
-      {
-	  text_buffer_free (text);
-	  return NULL;
-      }
-/* going to check the column types */
-    first_valid_row = malloc (sizeof (char) * 4096);
-    if (first_valid_row == NULL)
-      {
-	  text_buffer_free (text);
-	  fprintf (stderr, "VirtualText: insufficient memory\n");
-	  fflush (stderr);
-	  return NULL;
-      }
-    for (fld = 0; fld < 4096; fld++)
-      {
-	  /* initally assuming any cell contains TEXT */
-	  *(col_types + fld) = VRTTXT_TEXT;
-	  *(first_valid_row + fld) = 1;
-      }
-    nrows = 0;
-    max_cols = 0;
-    block = text->first;
-    while (block)
-      {
-	  for (i = 0; i < block->n_rows; i++)
-	    {
-		row = text_read_row (text, block->rows + i, 1);
-		if (row == NULL)
-		  {
-		      text_buffer_free (text);
-		      return NULL;
-		  }
-		if (first_line_titles && block == text->first && i == 0)
-		  {
-		      /* skipping first line */
-		      for (fld = 0; fld < row->n_cells; fld++)
-			{
-			    if (*(row->cells + fld))
-			      {
-				  if (fld > max_cols)
-				      max_cols = fld;
-			      }
-			}
-		      (block->rows + i)->valid = 1;
-		      (block->rows + i)->n_cells = row->n_cells;
-		      text_row_free (row);
-		      continue;
-		  }
-		for (fld = 0; fld < row->n_cells; fld++)
-		  {
-		      if (*(row->cells + fld))
-			{
-			    if ((fld + 1) > max_cols)
-				max_cols = fld + 1;
-			    if (text_is_integer (*(row->cells + fld))
-				&& !(*(row->text + fld)))
-			      {
-				  if (*(first_valid_row + fld))
-				    {
-					*(col_types + fld) = VRTTXT_INTEGER;
-					*(first_valid_row + fld) = 0;
-				    }
-			      }
-			    else if (text_is_double
-				     (*(row->cells + fld), decimal_separator)
-				     && !(*(row->text + fld)))
-			      {
-				  if (*(first_valid_row + fld))
-				    {
-					*(col_types + fld) = VRTTXT_DOUBLE;
-					*(first_valid_row + fld) = 0;
-				    }
-				  else
-				    {
-					/* promoting an INTEGER column to be of the DOUBLE type */
-					if (*(col_types + fld) ==
-					    VRTTXT_INTEGER)
-					    *(col_types + fld) = VRTTXT_DOUBLE;
-				    }
-			      }
-			    else
-			      {
-				  /* this column is anyway of the TEXT type */
-				  *(col_types + fld) = VRTTXT_TEXT;
-				  if (*(first_valid_row + fld))
-				      *(first_valid_row + fld) = 0;
-			      }
-			}
-		  }
-		nrows++;
-		(block->rows + i)->valid = 1;
-		(block->rows + i)->n_cells = row->n_cells;
-		text_row_free (row);
-	    }
-	  block = block->next;
-      }
-    free (first_valid_row);
-    if (nrows == 0 && max_cols == 0)
-      {
-	  text_buffer_free (text);
-	  return NULL;
-      }
-    text->n_rows = nrows;
-    text->max_n_cells = max_cols;
-    text->types = malloc (sizeof (char) * text->max_n_cells);
-    if (text->types == NULL)
-      {
-	  text_buffer_free (text);
-	  fprintf (stderr, "VirtualText: insufficient memory\n");
-	  fflush (stderr);
-	  return NULL;
-      }
-    memcpy (text->types, col_types, text->max_n_cells);
-/* preparing the column names */
-    text->titles = malloc (sizeof (char *) * text->max_n_cells);
-    if (text->titles == NULL)
-      {
-	  text_buffer_free (text);
-	  fprintf (stderr, "VirtualText: insufficient memory\n");
-	  fflush (stderr);
-	  return NULL;
-      }
-    block = text->first;
-    if (first_line_titles && block)
-      {
-	  row = text_read_row (text, block->rows + 0, 0);
-	  if (row == NULL)
-	    {
-		text_buffer_free (text);
-		return NULL;
-	    }
-	  for (fld = 0; fld < text->max_n_cells; fld++)
-	    {
-		if (fld >= row->n_cells)
-		  {
-		      /* this column name is NULL; setting a default name */
-		      sprintf (title, "COL%03d", fld + 1);
-		      len = strlen (title);
-		      *(text->titles + fld) = malloc (len + 1);
-		      if (*(text->titles + fld) == NULL)
-			{
-			    text_buffer_free (text);
-			    fprintf (stderr,
-				     "VirtualText: insufficient memory\n");
-			    fflush (stderr);
-			    return NULL;
-			}
-		      strcpy (*(text->titles + fld), title);
-		  }
-		else
-		  {
-		      if (*(row->cells + fld))
-			{
-			    len = strlen (*(row->cells + fld));
-			    *(text->titles + fld) = malloc (len + 1);
-			    if (*(text->titles + fld) == NULL)
-			      {
-				  text_buffer_free (text);
-				  fprintf (stderr,
-					   "VirtualText: insufficient memory\n");
-				  fflush (stderr);
-				  return NULL;
-			      }
-			    strcpy (*(text->titles + fld), *(row->cells + fld));
-			    name = *(text->titles + fld);
-			    for (i = 0; i < len; i++)
-			      {
-				  /* masking any space in the column name */
-				  if (*(name + i) == ' ')
-				      *(name + i) = '_';
-			      }
-			}
-		      else
-			{
-			    /* this column name is NULL; setting a default name */
-			    sprintf (title, "COL%03d", fld + 1);
-			    len = strlen (title);
-			    *(text->titles + fld) = malloc (len + 1);
-			    strcpy (*(text->titles + fld), title);
-			}
-		  }
-	    }
-	  text_row_free (row);
-      }
-    else
-      {
-	  for (fld = 0; fld < text->max_n_cells; fld++)
-	    {
-		sprintf (title, "COL%03d", fld + 1);
-		len = strlen (title);
-		*(text->titles + fld) = malloc (len + 1);
-		if (*(text->titles + fld) == NULL)
-		  {
-		      text_buffer_free (text);
-		      fprintf (stderr, "VirtualText: insufficient memory\n");
-		      fflush (stderr);
-		      return NULL;
-		  }
-		strcpy (*(text->titles + fld), title);
-	    }
-      }
-/* ok, we can now go to prepare the rows array */
-    text->rows = malloc (sizeof (struct row_pointer *) * text->n_rows);
-    if (text->rows == NULL)
-      {
-	  text_buffer_free (text);
-	  fprintf (stderr, "VirtualText: insufficient memory\n");
-	  fflush (stderr);
-	  return NULL;
-      }
-    ir = 0;
-    block = text->first;
-    while (block)
-      {
-	  for (i = 0; i < block->n_rows; i++)
-	    {
-		if (first_line_titles && block == text->first && i == 0)
-		  {
-		      /* skipping first line */
-		      continue;
-		  }
-		if ((block->rows + i)->valid)
-		    *(text->rows + ir++) = block->rows + i;
-	    }
-	  block = block->next;
-      }
-    return text;
-}
-
-static int
 vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	     sqlite3_vtab ** ppVTab, char **pzErr)
 {
@@ -952,14 +145,14 @@ vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     const char *vtable;
     const char *pEncoding = NULL;
     int len;
-    struct text_buffer *text = NULL;
+    gaiaTextReaderPtr text = NULL;
     const char *pPath = NULL;
     char field_separator = '\t';
     char text_separator = '"';
     char decimal_separator = '.';
     char first_line_titles = 1;
     int i;
-    char sql[4096];
+    char sql[65535];
     int seed;
     int dup;
     int idup;
@@ -1006,11 +199,17 @@ vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	    {
 		if (strcasecmp (argv[6], "COMMA") == 0)
 		    decimal_separator = ',';
+		if (strcasecmp (argv[6], "POINT") == 0)
+		    decimal_separator = '.';
 	    }
 	  if (argc >= 8)
 	    {
 		if (strcasecmp (argv[7], "SINGLEQUOTE") == 0)
 		    text_separator = '\'';
+		if (strcasecmp (argv[7], "DOUBLEQUOTE") == 0)
+		    text_separator = '"';
+		if (strcasecmp (argv[7], "NONE") == 0)
+		    text_separator = '\0';
 	    }
 	  if (argc == 9)
 	    {
@@ -1038,9 +237,17 @@ vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     p_vt->nRef = 0;
     p_vt->zErrMsg = NULL;
     p_vt->db = db;
-    text =
-	text_parse (path, encoding, first_line_titles, field_separator,
-		    text_separator, decimal_separator);
+    text = gaiaTextReaderAlloc (path, field_separator,
+				text_separator, decimal_separator,
+				first_line_titles, encoding);
+    if (text)
+      {
+	  if (gaiaTextReaderParse (text) == 0)
+	    {
+		gaiaTextReaderDestroy (text);
+		text = NULL;
+	    }
+      }
     if (!text)
       {
 	  /* something is going the wrong way; creating a stupid default table */
@@ -1054,38 +261,36 @@ vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 		    ("[VirtualText module] cannot build a table from TEXT file\n");
 		return SQLITE_ERROR;
 	    }
-	  p_vt->buffer = NULL;
+	  p_vt->reader = NULL;
 	  *ppVTab = (sqlite3_vtab *) p_vt;
 	  return SQLITE_OK;
       }
-    p_vt->buffer = text;
+    p_vt->reader = text;
 /* preparing the COLUMNs for this VIRTUAL TABLE */
     sprintf (sql, "CREATE TABLE %s (ROWNO INTEGER", vtable);
-    col_name = malloc (sizeof (char *) * text->max_n_cells);
+    col_name = malloc (sizeof (char *) * text->max_fields);
     seed = 0;
-    for (i = 0; i < text->max_n_cells; i++)
+    for (i = 0; i < text->max_fields; i++)
       {
 	  strcat (sql, ", ");
-	  sprintf (dummyName, "\"%s\"", *(text->titles + i));
+	  sprintf (dummyName, "\"%s\"", text->columns[i].name);
 	  dup = 0;
 	  for (idup = 0; idup < i; idup++)
 	    {
 		if (strcasecmp (dummyName, *(col_name + idup)) == 0)
 		    dup = 1;
 	    }
-	  if (strcasecmp (dummyName, "PKUID") == 0)
-	      dup = 1;
-	  if (strcasecmp (dummyName, "Geometry") == 0)
+	  if (strcasecmp (dummyName, "ROWNO") == 0)
 	      dup = 1;
 	  if (dup)
-	      sprintf (dummyName, "COL_%d", seed++);
+	      sprintf (dummyName, "DUPCOL_%d", seed++);
 	  len = strlen (dummyName);
 	  *(col_name + i) = malloc (len + 1);
 	  strcpy (*(col_name + i), dummyName);
 	  strcat (sql, dummyName);
-	  if (*(text->types + i) == VRTTXT_INTEGER)
+	  if (text->columns[i].type == VRTTXT_INTEGER)
 	      strcat (sql, " INTEGER");
-	  else if (*(text->types + i) == VRTTXT_DOUBLE)
+	  else if (text->columns[i].type == VRTTXT_DOUBLE)
 	      strcat (sql, " DOUBLE");
 	  else
 	      strcat (sql, " TEXT");
@@ -1094,7 +299,7 @@ vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (col_name)
       {
 	  /* releasing memory allocation for column names */
-	  for (i = 0; i < text->max_n_cells; i++)
+	  for (i = 0; i < text->max_fields; i++)
 	      free (*(col_name + i));
 	  free (col_name);
       }
@@ -1132,8 +337,8 @@ vtxt_disconnect (sqlite3_vtab * pVTab)
 {
 /* disconnects the virtual table */
     VirtualTextPtr p_vt = (VirtualTextPtr) pVTab;
-    if (p_vt->buffer)
-	text_buffer_free (p_vt->buffer);
+    if (p_vt->reader)
+	gaiaTextReaderDestroy (p_vt->reader);
     sqlite3_free (p_vt);
     return SQLITE_OK;
 }
@@ -1149,8 +354,7 @@ static int
 vtxt_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
 {
 /* opening a new cursor */
-    struct text_buffer *text;
-    struct row_pointer *pRow;
+    gaiaTextReaderPtr text;
     VirtualTextCursorPtr cursor =
 	(VirtualTextCursorPtr) sqlite3_malloc (sizeof (VirtualTextCursor));
     if (cursor == NULL)
@@ -1159,24 +363,12 @@ vtxt_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
     cursor->current_row = 0;
     cursor->eof = 0;
     *ppCursor = (sqlite3_vtab_cursor *) cursor;
-    text = cursor->pVtab->buffer;
+    text = cursor->pVtab->reader;
     if (!text)
 	cursor->eof = 1;
     else
       {
-	  if (text->current_row_buffer)
-	    {
-		text_row_free (text->current_row_buffer);
-		text->current_row_buffer = NULL;
-	    }
-	  pRow = get_row_pointer (text, cursor->current_row);
-	  if (pRow)
-	    {
-		text->current_row_buffer = text_read_row (text, pRow, 0);
-		if (text->current_row_buffer == NULL)
-		    cursor->eof = 1;
-	    }
-	  else
+	  if (!gaiaTextReaderGetRow (text, cursor->current_row))
 	      cursor->eof = 1;
       }
     return SQLITE_OK;
@@ -1205,28 +397,14 @@ static int
 vtxt_next (sqlite3_vtab_cursor * pCursor)
 {
 /* fetching next row from cursor */
-    struct text_buffer *text;
-    struct row_pointer *pRow;
     VirtualTextCursorPtr cursor = (VirtualTextCursorPtr) pCursor;
-    text = cursor->pVtab->buffer;
+    gaiaTextReaderPtr text = cursor->pVtab->reader;
     if (!text)
 	cursor->eof = 1;
     else
       {
-	  if (text->current_row_buffer)
-	    {
-		text_row_free (text->current_row_buffer);
-		text->current_row_buffer = NULL;
-	    }
 	  cursor->current_row++;
-	  pRow = get_row_pointer (text, cursor->current_row);
-	  if (pRow)
-	    {
-		text->current_row_buffer = text_read_row (text, pRow, 0);
-		if (text->current_row_buffer == NULL)
-		    cursor->eof = 1;
-	    }
-	  else
+	  if (!gaiaTextReaderGetRow (text, cursor->current_row))
 	      cursor->eof = 1;
       }
     return SQLITE_OK;
@@ -1245,67 +423,49 @@ vtxt_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 	     int column)
 {
 /* fetching value for the Nth column */
-    struct row_buffer *row;
     int nCol = 1;
     int i;
     char buf[4096];
+    int type;
+    const char *value;
     VirtualTextCursorPtr cursor = (VirtualTextCursorPtr) pCursor;
-    struct text_buffer *text = cursor->pVtab->buffer;
+    gaiaTextReaderPtr text = cursor->pVtab->reader;
     if (column == 0)
       {
 	  /* the ROWNO column */
 	  sqlite3_result_int (pContext, cursor->current_row);
 	  return SQLITE_OK;
       }
-    row = text->current_row_buffer;
-    if (row == NULL)
+    if (text->current_line_ready == 0)
 	return SQLITE_ERROR;
-    for (i = 0; i < text->max_n_cells; i++)
+    for (i = 0; i < text->max_fields; i++)
       {
 	  if (nCol == column)
 	    {
-		if (i >= row->n_cells)
+		if (!gaiaTextReaderFetchField (text, i, &type, &value))
 		    sqlite3_result_null (pContext);
 		else
 		  {
-		      if (*(row->cells + i))
+		      if (type == VRTTXT_INTEGER)
 			{
-			    if (*(text->types + i) == VRTTXT_INTEGER)
-			      {
-				  strcpy (buf, *(row->cells + i));
-				  text_clean_integer (buf);
+			    strcpy (buf, value);
+			    text_clean_integer (buf);
 #if defined(_WIN32) || defined(__MINGW32__)
 /* CAVEAT - M$ runtime has non-standard functions for 64 bits */
-				  sqlite3_result_int64 (pContext,
-							_atoi64 (buf));
+			    sqlite3_result_int64 (pContext, _atoi64 (buf));
 #else
-				  sqlite3_result_int64 (pContext, atoll (buf));
+			    sqlite3_result_int64 (pContext, atoll (buf));
 #endif
-			      }
-			    else if (*(text->types + i) == VRTTXT_DOUBLE)
-			      {
-				  strcpy (buf, *(row->cells + i));
-				  text_clean_double (buf);
-				  sqlite3_result_double (pContext, atof (buf));
-			      }
-			    else
-			      {
-				  if (text_clean_text
-				      (row->cells + i, text->toUtf8,
-				       text->text_separator))
-				    {
-					fprintf (stderr,
-						 "VirtualText: encoding error\n");
-					fflush (stderr);
-				    }
-				  sqlite3_result_text (pContext,
-						       *(row->cells + i),
-						       strlen (*
-							       (row->cells +
-								i)),
-						       SQLITE_STATIC);
-			      }
 			}
+		      else if (type == VRTTXT_DOUBLE)
+			{
+			    strcpy (buf, value);
+			    text_clean_double (buf);
+			    sqlite3_result_double (pContext, atof (buf));
+			}
+		      else if (type == VRTTXT_TEXT)
+			  sqlite3_result_text (pContext, value, strlen (value),
+					       free);
 		      else
 			  sqlite3_result_null (pContext);
 		  }
@@ -1403,5 +563,819 @@ virtualtext_extension_init (sqlite3 * db)
     return sqlite3VirtualTextInit (db);
 }
 
-#endif  /* ICONV enabled/disabled */
+/*
+**
+** TextReader implementation
+**
+*/
 
+static struct vrttxt_row_block *
+vrttxt_block_alloc ()
+{
+/* allocating a rows Block */
+    struct vrttxt_row_block *p = malloc (sizeof (struct vrttxt_row_block));
+    if (!p)
+	return NULL;
+    p->num_rows = 0;
+    p->min_line_no = -1;
+    p->max_line_no = -1;
+    p->next = NULL;
+    return p;
+}
+
+static void
+vrttxt_block_destroy (struct vrttxt_row_block *p)
+{
+/* destroying a rows Block */
+    if (p)
+	free (p);
+}
+
+GAIAGEO_DECLARE void
+gaiaTextReaderDestroy (gaiaTextReaderPtr reader)
+{
+/* destroying the main TXT-Reader */
+    int col;
+    struct vrttxt_row_block *blk;
+    struct vrttxt_row_block *blkN;
+    if (reader)
+      {
+	  blk = reader->first;
+	  while (blk)
+	    {
+		/* destroying the row offset Blocks */
+		blkN = blk->next;
+		vrttxt_block_destroy (blk);
+		blk = blkN;
+	    }
+	  /* freeing the input buffers */
+	  if (reader->line_buffer)
+	      free (reader->line_buffer);
+	  if (reader->field_buffer)
+	      free (reader->field_buffer);
+	  /* freeing the row offsets array */
+	  if (reader->rows)
+	      free (reader->rows);
+	  /* closing the input file */
+	  fclose (reader->text_file);
+	  for (col = 0; col < VRTTXT_FIELDS_MAX; col++)
+	    {
+		/* destroying column headers */
+		if (reader->columns[col].name != NULL)
+		    free (reader->columns[col].name);
+	    }
+	  gaiaFreeUTF8Converter (reader->toUtf8);
+	  free (reader);
+      }
+}
+
+GAIAGEO_DECLARE gaiaTextReaderPtr
+gaiaTextReaderAlloc (const char *path, char field_separator,
+		     char text_separator, char decimal_separator,
+		     int first_line_titles, const char *encoding)
+{
+/* allocating the main TXT-Reader */
+    int col;
+    gaiaTextReaderPtr reader;
+    FILE *in = fopen (path, "rb");	/* opening the input file */
+    if (in == NULL)
+	return NULL;
+
+/* allocating and initializing the struct */
+    reader = malloc (sizeof (gaiaTextReader));
+    if (!reader)
+      {
+	  fclose (in);
+	  return NULL;
+      }
+    reader->text_file = in;
+    reader->field_separator = field_separator;
+    reader->text_separator = text_separator;
+    reader->decimal_separator = decimal_separator;
+    reader->first_line_titles = first_line_titles;
+    reader->toUtf8 = gaiaCreateUTF8Converter (encoding);
+    if (reader->toUtf8 == (void *) 0)
+      {
+	  fclose (in);
+	  return NULL;
+      }
+    reader->error = 0;
+    reader->first = NULL;
+    reader->last = NULL;
+    reader->rows = NULL;
+    reader->num_rows = 0;
+    reader->line_no = 0;
+    reader->max_fields = 0;
+    reader->max_current_field = 0;
+    reader->current_line_ready = 0;
+    reader->current_buf_sz = 1024;
+    reader->line_buffer = malloc (1024);
+    reader->field_buffer = malloc (1024);
+    if (reader->line_buffer == NULL || reader->field_buffer == NULL)
+      {
+	  /* insufficient memory: no input buffers */
+	  gaiaTextReaderDestroy (reader);
+	  return NULL;
+      }
+    for (col = 0; col < VRTTXT_FIELDS_MAX; col++)
+      {
+	  /* initializing column headers */
+	  reader->columns[col].name = NULL;
+	  reader->columns[col].type = VRTTXT_NULL;
+      }
+    return reader;
+}
+
+static void
+vrttxt_line_init (struct vrttxt_line *line, off_t offset)
+{
+/* initializing a LINE struct */
+    line->offset = offset;
+    line->len = 0;
+    line->num_fields = 0;
+    line->error = 0;
+}
+
+static void
+vrttxt_line_end (struct vrttxt_line *line, off_t offset)
+{
+/* completing a Line struct (EndOfLine encountered) */
+    line->len = offset - line->offset;
+}
+
+static void
+vrttxt_add_field (struct vrttxt_line *line, off_t offset)
+{
+/* adding a Field offset to the current Line */
+    if (line->num_fields >= VRTTXT_FIELDS_MAX)
+      {
+	  line->error = 1;
+	  return;
+      }
+    line->field_offsets[line->num_fields] = offset - line->offset;
+    line->num_fields++;
+}
+
+static int
+vrttxt_is_integer (const char *value)
+{
+/* checking if this value can be an INTEGER */
+    int invalids = 0;
+    int digits = 0;
+    int signs = 0;
+    char last = '\0';
+    const char *p = value;
+    while (*p != '\0')
+      {
+	  last = *p;
+	  if (*p >= '0' && *p <= '9')
+	      digits++;
+	  else if (*p == '+' || *p == '-')
+	      signs++;
+	  else
+	      invalids++;
+	  p++;
+      }
+    if (invalids)
+	return 0;		/* invalid chars where found */
+    if (signs > 1)
+	return 0;		/* more than a single sign */
+    if (signs)
+      {
+	  if (*value == '+' || *value == '-' || last == '+' || last == '-')
+	      ;
+	  else
+	      return 0;		/* sign is not the first/last string char */
+      }
+    return 1;			/* ok, can be a valid INTEGER value */
+}
+
+static int
+vrttxt_is_double (const char *value, char decimal_separator)
+{
+/* checking if this value can be a DOUBLE */
+    int invalids = 0;
+    int digits = 0;
+    int signs = 0;
+    int points = 0;
+    char last = '\0';
+    const char *p = value;
+    while (*p != '\0')
+      {
+	  last = *p;
+	  if (*p >= '0' && *p <= '9')
+	      digits++;
+	  else if (*p == '+' || *p == '-')
+	      signs++;
+	  else
+	    {
+		if (decimal_separator == ',')
+		  {
+		      if (*p == ',')
+			  points++;
+		      else
+			  invalids++;
+		  }
+		else
+		  {
+		      if (*p == '.')
+			  points++;
+		      else
+			  invalids++;
+		  }
+	    }
+	  p++;
+      }
+    if (invalids)
+	return 0;		/* invalid chars where found */
+    if (points > 1)
+	return 0;		/* more than a single decimal separator */
+    if (signs > 1)
+	return 0;		/* more than a single sign */
+    if (signs)
+      {
+	  if (*value == '+' || *value == '-' || last == '+' || last == '-')
+	      ;
+	  else
+	      return 0;		/* sign is not the first/last string char */
+      }
+    return 1;			/* ok, can be a valid DOUBLE value */
+}
+
+static int
+vrttxt_check_type (const char *value, char decimal_separator)
+{
+/* checking the Field type */
+    if (*value == '\0')
+	return VRTTXT_NULL;
+    if (vrttxt_is_integer (value))
+	return VRTTXT_INTEGER;
+    if (vrttxt_is_double (value, decimal_separator))
+	return VRTTXT_DOUBLE;
+    return VRTTXT_TEXT;
+}
+
+static int
+vrttxt_set_column_title (gaiaTextReaderPtr txt, int col_no, const char *name)
+{
+/* setting a Column header name */
+    int err;
+    int ind;
+    char *utf8text;
+    char *str = (char *) name;
+    int len = strlen (str);
+    if (str[0] == txt->text_separator && str[len - 1] == txt->text_separator)
+      {
+	  /* cleaning the enclosing quotes */
+	  str[len - 1] = '\0';
+	  str = (char *) (name + 1);
+	  len -= 2;
+	  if (len <= 0)
+	      return 0;
+      }
+    utf8text = gaiaConvertToUTF8 (txt->toUtf8, str, len, &err);
+    if (err)
+      {
+	  if (utf8text)
+	      free (utf8text);
+	  return 0;
+      }
+    else
+	str = utf8text;
+    len = strlen (str);
+    for (ind = 0; ind < len; ind++)
+      {
+	  /* masking spaces and so on within the column name */
+	  switch (str[ind])
+	    {
+	    case ' ':
+	    case '\t':
+	    case '-':
+	    case '+':
+	    case '*':
+	    case '/':
+	    case '(':
+	    case ')':
+	    case '[':
+	    case ']':
+	    case '{':
+	    case '}':
+		str[ind] = '_';
+		break;
+	    }
+      }
+    if (txt->columns[col_no].name)
+	free (txt->columns[col_no].name);
+    txt->columns[col_no].name = malloc (len + 1);
+    if (txt->columns[col_no].name == NULL)
+	return 0;
+    strcpy (txt->columns[col_no].name, utf8text);
+    free (utf8text);
+    return 1;
+}
+
+static void
+vrttxt_add_line (gaiaTextReaderPtr txt, struct vrttxt_line *line)
+{
+/* appending a Line offset to the main TXT-Reader */
+    struct vrttxt_row_block *p_block;
+    struct vrttxt_row *p_row;
+    int ind;
+    int off;
+    int len;
+    int value_type;
+    int column_type;
+    int first_line = 0;
+    if (txt->line_no == 0)
+	first_line = 1;
+    if (line->error)
+      {
+	  txt->error = 1;
+	  txt->line_no++;
+	  return;
+      }
+    if (line->num_fields == 0)
+      {
+	  txt->line_no++;
+	  return;
+      }
+    p_block = txt->last;
+    if (p_block == NULL)
+      {
+	  /* the offset Blocks list is empty: allocating the first Block */
+	  p_block = vrttxt_block_alloc ();
+	  if (!p_block)
+	    {
+		txt->error = 1;
+		txt->line_no++;
+		return;
+	    }
+	  if (txt->first == NULL)
+	      txt->first = p_block;
+	  if (txt->last != NULL)
+	      txt->last->next = p_block;
+	  txt->last = p_block;
+      }
+    else if (p_block->num_rows >= VRTTXT_BLOCK_MAX)
+      {
+	  /* the currect offset Block is full: expanding the list */
+	  p_block = vrttxt_block_alloc ();
+	  if (!p_block)
+	    {
+		txt->error = 1;
+		txt->line_no++;
+		return;
+	    }
+	  if (txt->first == NULL)
+	      txt->first = p_block;
+	  if (txt->last != NULL)
+	      txt->last->next = p_block;
+	  txt->last = p_block;
+      }
+/* inserting the Row offset into the offset Block */
+    p_row = p_block->rows + p_block->num_rows;
+    p_block->num_rows++;
+    p_row->line_no = txt->line_no;
+    if (p_block->min_line_no < 0)
+	p_block->min_line_no = p_row->line_no;
+    if (p_block->max_line_no < p_row->line_no)
+	p_block->max_line_no = p_row->line_no;
+    txt->line_no++;
+    p_row->offset = line->offset;
+    p_row->len = line->len;
+    p_row->num_fields = line->num_fields;
+    if (line->num_fields > txt->max_fields)
+	txt->max_fields = line->num_fields;
+    off = 0;
+    for (ind = 0; ind < p_row->num_fields; ind++)
+      {
+	  /* setting the corresponding Column (aka Field) header */
+	  len = line->field_offsets[ind] - off;
+	  if (len == 0)
+	      *(txt->field_buffer) = '\0';
+	  else
+	    {
+		/* retrieving the current Field Value */
+		memcpy (txt->field_buffer, txt->line_buffer + off, len);
+		*(txt->field_buffer + len) = '\0';
+	    }
+	  if (txt->first_line_titles && first_line)
+	    {
+		/* first line: the current value is the Column Name */
+		if (!vrttxt_set_column_title (txt, ind, txt->field_buffer))
+		    txt->error = 1;
+	    }
+	  else
+	    {
+		/* plain Field Value */
+		value_type =
+		    vrttxt_check_type (txt->field_buffer,
+				       txt->decimal_separator);
+		column_type = txt->columns[ind].type;
+		switch (value_type)
+		  {
+		      /* checking the Column type */
+		  case VRTTXT_INTEGER:
+		      if (column_type == VRTTXT_NULL)
+			  txt->columns[ind].type = VRTTXT_INTEGER;
+		      break;
+		  case VRTTXT_DOUBLE:
+		      if (column_type == VRTTXT_NULL
+			  || column_type == VRTTXT_INTEGER)
+			  txt->columns[ind].type = VRTTXT_DOUBLE;
+		      break;
+		  case VRTTXT_TEXT:
+		      txt->columns[ind].type = VRTTXT_TEXT;
+		      break;
+		  default:
+		      break;
+		  };
+	    }
+	  off = line->field_offsets[ind] + 1;
+      }
+}
+
+static void
+vrttxt_line_push (gaiaTextReaderPtr txt, char c)
+{
+/* inserting a single char into the dynamically growing buffer */
+    if (txt->error)
+	return;
+    if ((txt->current_buf_off + 1) >= txt->current_buf_sz)
+      {
+	  /* expanding the input buffer */
+	  int new_sz;
+	  char *new_buf;
+	  /*
+	     / allocation strategy:
+	     / - the input buffer has an initial size of 1024 bytes
+	     /   (good for short lines)
+	     / - the second step allocates 4196 bytes
+	     / - the third step allocates 65536 bytes
+	     /   (good for medium sized lines)
+	     / - after this the buffer allocation will be increased
+	     /   be 1MB at each step (good for huge sized lines)
+	   */
+	  if (txt->current_buf_sz < 4196)
+	      new_sz = 4196;
+	  else if (txt->current_buf_sz < 65536)
+	      new_sz = 65536;
+	  else
+	      new_sz = txt->current_buf_sz + (1024 * 1024);
+	  new_buf = malloc (new_sz);
+	  if (!new_buf)
+	    {
+		txt->error = 1;
+		return;
+	    }
+	  txt->current_buf_sz = new_sz;
+	  memcpy (new_buf, txt->line_buffer, txt->current_buf_off);
+	  free (txt->line_buffer);
+	  txt->line_buffer = new_buf;
+	  free (txt->field_buffer);
+	  txt->field_buffer = malloc (new_sz);
+	  if (txt->field_buffer == NULL)
+	    {
+		txt->error = 1;
+		return;
+	    }
+      }
+    *(txt->line_buffer + txt->current_buf_off) = c;
+    txt->current_buf_off++;
+/* ensuring that input buffer will bel null terminated anyway */
+    *(txt->line_buffer + txt->current_buf_off) = '\0';
+}
+
+static void
+vrttxt_build_line_array (gaiaTextReaderPtr txt)
+{
+/* creating the final Line offsets array */
+    struct vrttxt_row_block *p_block;
+    int i;
+    int cnt = 0;
+    int first_line = 1;
+    if (txt->rows)
+	free (txt->rows);
+    txt->rows = NULL;
+    txt->num_rows = 0;
+    p_block = txt->first;
+    while (p_block)
+      {
+	  /* counting how many lines are there */
+	  if (p_block == txt->first && txt->first_line_titles)
+	      txt->num_rows += p_block->num_rows - 1;
+	  else
+	      txt->num_rows += p_block->num_rows;
+	  p_block = p_block->next;
+      }
+    txt->rows = malloc (sizeof (struct vrttxt_row *) * txt->num_rows);
+    if (txt->rows == NULL)
+      {
+	  /* insufficient memory */
+	  txt->error = 1;
+	  return;
+      }
+    p_block = txt->first;
+    while (p_block)
+      {
+	  for (i = 0; i < p_block->num_rows; i++)
+	    {
+		/* setting Line references into the array */
+		if (first_line && txt->first_line_titles)
+		  {
+		      first_line = 0;
+		      continue;	/* skipping the first line (column names) */
+		  }
+		*(txt->rows + cnt++) = p_block->rows + i;
+	    }
+	  p_block = p_block->next;
+      }
+}
+
+GAIAGEO_DECLARE int
+gaiaTextReaderParse (gaiaTextReaderPtr txt)
+{
+/* 
+/ preliminary parsing
+/ - reading the input file until EOF
+/ - then feeding the Row offsets structs
+/   to be used for any subsequent access
+*/
+    char name[64];
+    int ind;
+    int i2;
+    int c;
+    int masked = 0;
+    int token_start = 1;
+    int row_offset = 0;
+    off_t offset = 0;
+    struct vrttxt_line line;
+    vrttxt_line_init (&line, 0);
+    txt->current_buf_off = 0;
+
+    while ((c = getc (txt->text_file)) != EOF)
+      {
+	  if (c == txt->text_separator)
+	    {
+		if (masked)
+		    masked = 0;
+		else
+		  {
+		      if (token_start)
+			  masked = 1;
+		  }
+		vrttxt_line_push (txt, c);
+		if (txt->error)
+		    return 0;
+		row_offset++;
+		offset++;
+		continue;
+	    }
+	  token_start = 0;
+	  if (c == '\r')
+	    {
+		if (masked)
+		  {
+		      vrttxt_line_push (txt, c);
+		      if (txt->error)
+			  return 0;
+		      row_offset++;
+		  }
+		offset++;
+		continue;
+	    }
+	  if (c == '\n')
+	    {
+		if (masked)
+		  {
+		      vrttxt_line_push (txt, c);
+		      if (txt->error)
+			  return 0;
+		      row_offset++;
+		      offset++;
+		      continue;
+		  }
+		vrttxt_add_field (&line, offset);
+		vrttxt_line_end (&line, offset);
+		vrttxt_add_line (txt, &line);
+		if (txt->error)
+		    return 0;
+		vrttxt_line_init (&line, offset + 1);
+		txt->current_buf_off = 0;
+		token_start = 1;
+		row_offset = 0;
+		offset++;
+		continue;
+	    }
+	  if (c == txt->field_separator)
+	    {
+		if (masked)
+		  {
+		      vrttxt_line_push (txt, c);
+		      if (txt->error)
+			  return 0;
+		      row_offset++;
+		      offset++;
+		      continue;
+		  }
+		vrttxt_line_push (txt, c);
+		if (txt->error)
+		    return 0;
+		row_offset++;
+		vrttxt_add_field (&line, offset);
+		token_start = 1;
+		offset++;
+		continue;
+	    }
+	  vrttxt_line_push (txt, c);
+	  if (txt->error)
+	      return 0;
+	  row_offset++;
+	  offset++;
+      }
+    if (txt->error)
+	return 0;
+    if (txt->first_line_titles)
+      {
+	  /* checking for duplicate column names */
+	  for (ind = 0; ind < txt->max_fields; ind++)
+	    {
+		for (i2 = 0; i2 < ind; i2++)
+		  {
+		      if (strcasecmp
+			  (txt->columns[i2].name, txt->columns[ind].name) == 0)
+			{
+			    sprintf (name, "COL%03d", ind + 1);
+			    if (!vrttxt_set_column_title (txt, ind, name))
+			      {
+				  txt->error = 1;
+				  return 0;
+			      }
+			}
+		  }
+	    }
+      }
+    else
+      {
+	  /* setting convenience column names */
+	  for (ind = 0; ind < txt->max_fields; ind++)
+	    {
+		sprintf (name, "COL%03d", ind + 1);
+		if (!vrttxt_set_column_title (txt, ind, name))
+		  {
+		      txt->error = 1;
+		      return 0;
+		  }
+	    }
+      }
+    if (txt->error)
+	return 0;
+    vrttxt_build_line_array (txt);
+    if (txt->error)
+	return 0;
+    return 1;
+}
+
+GAIAGEO_DECLARE int
+gaiaTextReaderGetRow (gaiaTextReaderPtr txt, int line_no)
+{
+/* reading a Line (identified by relative number */
+    int i;
+    char c;
+    int masked = 0;
+    int token_start = 1;
+    int fld = 0;
+    int offset = 0;
+    struct vrttxt_row *p_row;
+    txt->current_line_ready = 0;
+    txt->max_current_field = 0;
+    if (line_no < 0 || line_no >= txt->num_rows || txt->rows == NULL)
+	return 0;
+    p_row = *(txt->rows + line_no);
+    if (fseek (txt->text_file, p_row->offset, SEEK_SET) != 0)
+	return 0;
+    if (fread (txt->line_buffer, 1, p_row->len, txt->text_file) !=
+	(unsigned int) (p_row->len))
+	return 0;
+    txt->field_offsets[0] = 0;
+    for (i = 0; i < p_row->len; i++)
+      {
+	  /* parsing Fields */
+	  c = *(txt->line_buffer + i);
+	  if (c == txt->text_separator)
+	    {
+		if (masked)
+		    masked = 0;
+		else
+		  {
+		      if (token_start)
+			  masked = 1;
+		  }
+		offset++;
+		continue;
+	    }
+	  token_start = 0;
+	  if (c == '\r')
+	    {
+		offset++;
+		continue;
+	    }
+	  if (c == txt->field_separator)
+	    {
+		if (masked)
+		  {
+		      offset++;
+		      continue;
+		  }
+		txt->field_offsets[fld + 1] = offset + 1;
+		txt->field_lens[fld] = -1;
+		txt->field_lens[fld] = offset - txt->field_offsets[fld];
+		fld++;
+		txt->max_current_field = fld;
+		token_start = 1;
+		offset++;
+		continue;
+	    }
+	  offset++;
+      }
+    if (offset > 0)
+      {
+	  txt->field_lens[fld] = offset - txt->field_offsets[fld];
+	  fld++;
+	  txt->max_current_field = fld;
+      }
+    txt->current_line_ready = 1;
+    return 1;
+}
+
+GAIAGEO_DECLARE int
+gaiaTextReaderFetchField (gaiaTextReaderPtr txt, int field_idx, int *type,
+			  const char **value)
+{
+/* fetching a field value */
+    char *utf8text = NULL;
+    int err;
+    int len;
+    char *str;
+    if (txt->current_line_ready == 0)
+      {
+	  *type = VRTTXT_NULL;
+	  *value = NULL;
+	  return 0;
+      }
+    if (field_idx < 0 || field_idx >= txt->max_fields)
+      {
+	  *type = VRTTXT_NULL;
+	  *value = NULL;
+	  return 0;
+      }
+    if (field_idx < 0 || field_idx >= txt->max_current_field)
+      {
+	  *type = VRTTXT_NULL;
+	  *value = NULL;
+	  return 0;
+      }
+    *type = txt->columns[field_idx].type;
+    if (txt->field_lens[field_idx] == 0)
+	*(txt->field_buffer) = '\0';
+    memcpy (txt->field_buffer, txt->line_buffer + txt->field_offsets[field_idx],
+	    txt->field_lens[field_idx]);
+    *(txt->field_buffer + txt->field_lens[field_idx]) = '\0';
+    *value = txt->field_buffer;
+    if (*value == '\0')
+	*type = VRTTXT_NULL;
+    else if (*type == VRTTXT_TEXT)
+      {
+	  /* converting to UTF-8 */
+	  str = (char *) *value;
+	  len = strlen (str);
+	  if (str[0] == txt->text_separator
+	      && str[len - 1] == txt->text_separator)
+	    {
+		/* cleaning the enclosing quotes */
+		str[len - 1] = '\0';
+		str = (char *) (*value + 1);
+		len -= 2;
+		if (len <= 0)
+		  {
+		      *type = VRTTXT_NULL;
+		      *value = NULL;
+		      return 1;
+		  }
+	    }
+	  utf8text = gaiaConvertToUTF8 (txt->toUtf8, str, len, &err);
+	  if (err)
+	    {
+		/* memory cleanup: Kashif Rasul 14 Jan 2010 */
+		if (utf8text)
+		    free (utf8text);
+		*type = VRTTXT_NULL;
+		*value = NULL;
+		return 0;
+	    }
+	  *value = utf8text;
+      }
+    return 1;
+}
+
+#endif /* ICONV enabled/disabled */

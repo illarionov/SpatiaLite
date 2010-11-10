@@ -4,6 +4,7 @@
 AC_PREREQ(2.61)
 AC_INIT(libspatialite-amalgamation, 2.4.0, a.furieri@lqt.it)
 AC_LANG(C)
+AC_CONFIG_AUX_DIR([.])
 
 AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
@@ -54,7 +55,7 @@ AC_CONFIG_FILES([Makefile \
 		spatialite.pc])
 
 #-----------------------------------------------------------------------
-#   --enable-math-functions
+#   --enable-mathsql
 #
 AC_ARG_ENABLE(mathsql, [AS_HELP_STRING(
   [--enable-mathsql], [enables SQL math functions [default=yes]])],
@@ -65,6 +66,20 @@ else
   OMIT_MATHSQL_FLAGS=-DOMIT_MATHSQL
 fi
 AC_SUBST(OMIT_MATHSQL_FLAGS)
+#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#   --enable-geocallbacks
+#
+AC_ARG_ENABLE(geocallbacks, [AS_HELP_STRING(
+  [--enable-geocallbacks], [enables geometry callbacks [default=yes]])],
+  [], [geocallbacks=yes])
+if test x"$enable_geocallbacks" != "xno"; then
+  OMIT_GEOCALLBACKS_FLAGS=
+else
+  OMIT_GEOCALLBACKS_FLAGS=-DOMIT_GEOCALLBACKS
+fi
+AC_SUBST(OMIT_GEOCALLBACKS_FLAGS)
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------

@@ -43,12 +43,22 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+/* MSVC strictly requires this include [off_t] */
+#include <sys/types.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <float.h>
 
+#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
 #include <spatialite/sqlite3ext.h>
+#else
+#include <sqlite3ext.h>
+#endif
+
 #include <spatialite/gaiageo.h>
 
 GAIAGEO_DECLARE double

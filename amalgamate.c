@@ -114,6 +114,10 @@ do_headers (FILE * out, struct masked_keyword *first)
 	     "the provisions above, a recipient may use your version of this file under\n");
     fprintf (out,
 	     "the terms of any one of the MPL, the GPL or the LGPL.\n\n*/\n\n");
+    fprintf (out, "#if defined(_WIN32) && !defined(__MINGW32__)\n");
+    fprintf (out, "/* MSVC strictly requires this include [off_t] */\n");
+    fprintf (out, "#include <sys/types.h>\n");
+    fprintf (out, "#endif\n\n");
     fprintf (out, "#include <stdio.h>\n");
     fprintf (out, "#include <stdlib.h>\n");
     fprintf (out, "#include <string.h>\n");
@@ -239,10 +243,11 @@ do_copy (FILE * out, const char *basedir, const char *file)
     int c;
     int boiler_plate = 0;
     int boiler_plate_found = 0;
+    FILE *in;
     strcpy (input, PREFIX);
     strcat (input, basedir);
     strcat (input, file);
-    FILE *in = fopen (input, "r");
+    in = fopen (input, "r");
     if (!in)
       {
 	  fprintf (stderr, "Error opening %s\n", input);
@@ -291,10 +296,11 @@ do_copy_sqlite (FILE * out, const char *basedir, const char *file)
     char row[256];
     char *p = row;
     int c;
+    FILE *in;
     strcpy (input, PREFIX);
     strcat (input, basedir);
     strcat (input, file);
-    FILE *in = fopen (input, "r");
+    in = fopen (input, "r");
     if (!in)
       {
 	  fprintf (stderr, "Error opening %s\n", input);
@@ -321,9 +327,10 @@ do_copy_plain (FILE * out, const char *file)
 /* copy a source AS IS */
     char input[1024];
     int c;
+    FILE *in;
     strcpy (input, PREFIX);
     strcat (input, file);
-    FILE *in = fopen (input, "r");
+    in = fopen (input, "r");
     if (!in)
       {
 	  fprintf (stderr, "Error opening %s\n", input);
@@ -448,9 +455,10 @@ do_copy_export (FILE * out, const char *file, struct masked_keyword **first,
     char row[1024];
     char *p = row;
     int c;
+    FILE *in;
     strcpy (input, PREFIX);
     strcat (input, file);
-    FILE *in = fopen (input, "r");
+    in = fopen (input, "r");
     if (!in)
       {
 	  fprintf (stderr, "Error opening %s\n", input);
@@ -479,9 +487,10 @@ do_copy_header (FILE * out, const char *file, struct masked_keyword *first)
     struct masked_keyword *p;
     char input[1024];
     int c;
+    FILE *in;
     strcpy (input, PREFIX);
     strcat (input, file);
-    FILE *in = fopen (input, "r");
+    in = fopen (input, "r");
     if (!in)
       {
 	  fprintf (stderr, "Error opening %s\n", input);
@@ -532,8 +541,8 @@ feed_masked_keywords (char *row, int pos, struct masked_keyword **first,
 ** caveat: this symbol is abdolutely required by loadable extension modules 
 ** and must *never* be masked
 */
-if (strcmp(kw, "sqlite3_extension_init") == 0)
-return;
+    if (strcmp (kw, "sqlite3_extension_init") == 0)
+	return;
 
     p = *first;
     while (p)
@@ -562,9 +571,10 @@ prepare_masked (const char *file, struct masked_keyword **first,
     char row[1024];
     char *p = row;
     int c;
+    FILE *in;
     strcpy (input, PREFIX);
     strcat (input, file);
-    FILE *in = fopen (input, "r");
+    in = fopen (input, "r");
     if (!in)
       {
 	  fprintf (stderr, "Error opening %s\n", input);
@@ -625,10 +635,11 @@ do_copy_ext (FILE * out, const char *basedir, const char *file)
     char row[1024];
     char *p = row;
     int c;
+    FILE *in;
     strcpy (input, PREFIX);
     strcat (input, basedir);
     strcat (input, file);
-    FILE *in = fopen (input, "r");
+    in = fopen (input, "r");
     if (!in)
       {
 	  fprintf (stderr, "Error opening %s\n", input);
@@ -681,9 +692,10 @@ static void
 do_output_dll_defs (FILE * out, struct masked_keyword *first,
 		    struct masked_keyword *first_defn)
 {
+    struct masked_keyword *p;
     fprintf (out, "LIBRARY spatialite.dll\r\n");
     fprintf (out, "EXPORTS\r\n");
-/*exporting symbols not found by automatic search */
+/* exporting symbols not found by automatic search */
     fprintf (out, "gaiaAddLinestringToGeomColl\r\n");
     fprintf (out, "gaiaAppendPointToDynamicLine\r\n");
     fprintf (out, "gaiaPrependPointToDynamicLine\r\n");
@@ -693,7 +705,7 @@ do_output_dll_defs (FILE * out, struct masked_keyword *first,
     fprintf (out, "gaiaDynamicLineJoinAfter\r\n");
     fprintf (out, "gaiaDynamicLineJoinBefore\r\n");
     fprintf (out, "gaiaGeomCollSimplifyPreserveTopology");
-    struct masked_keyword *p = first_defn;
+    p = first_defn;
     while (p)
       {
 /* SpatiaLite Symbols */
@@ -746,6 +758,7 @@ main ()
     struct masked_keyword *last = NULL;
     struct masked_keyword *first_def = NULL;
     struct masked_keyword *last_def = NULL;
+    FILE *out;
 
 /* produces the AMALGAMATION */
     mkdir ("amalgamation", 0777);
@@ -753,7 +766,7 @@ main ()
     mkdir ("amalgamation/headers/spatialite", 0777);
 /* amalgamating SpatiaLite */
     prepare_masked ("/sqlite3/sqlite3.c", &first, &last);
-    FILE *out = fopen ("amalgamation/spatialite.c", "wb");
+    out = fopen ("amalgamation/spatialite.c", "wb");
     if (!out)
       {
 	  fprintf (stderr, "Error opening amalgamation/amalgamation.c\n");

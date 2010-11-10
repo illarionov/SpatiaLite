@@ -43,11 +43,22 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+/* MSVC strictly requires this include [off_t] */
+#include <sys/types.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+
+#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
 #include <spatialite/sqlite3.h>
+#else
+#include <sqlite3.h>
+#endif
+
 #include <spatialite/spatialite.h>
 #include <spatialite/gaiaaux.h>
 #include <spatialite/gaiageo.h>
@@ -57,6 +68,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define FDO_OGR_WKT		1
 #define FDO_OGR_WKB		2
 #define FDO_OGR_FGF		3
+
+#ifdef _WIN32
+#define strcasecmp	_stricmp
+#endif /* not WIN32 */
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #define LONG64_MAX	_I64_MAX

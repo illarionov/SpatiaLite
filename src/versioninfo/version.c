@@ -42,7 +42,12 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
+#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
 #include <spatialite/sqlite3.h>
+#else
+#include <sqlite3.h>
+#endif
+
 #include <spatialite.h>
 
 const char spatialiteversion[] = "2.4.0";

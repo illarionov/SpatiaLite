@@ -43,13 +43,28 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+/* MSVC strictly requires this include [off_t] */
+#include <sys/types.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
 #include <spatialite/sqlite3.h>
+#else
+#include <sqlite3.h>
+#endif
+
 #include <spatialite/spatialite.h>
 #include <spatialite/gaiaaux.h>
 #include <spatialite/gaiageo.h>
+
+#ifdef _WIN32
+#define strcasecmp	_stricmp
+#endif /* not WIN32 */
 
 #if OMIT_ICONV == 0     /* if ICONV is disabled no SHP support is available */
 

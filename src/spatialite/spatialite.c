@@ -43,6 +43,11 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+/* MSVC strictly requires this include [off_t] */
+#include <sys/types.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -51,22 +56,41 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <locale.h>
 #include <errno.h>
 
+#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
 #include <spatialite/sqlite3ext.h>
+#else
+#include <sqlite3ext.h>
+#endif
+
 #include <spatialite/gaiageo.h>
 #include <spatialite/gaiaexif.h>
 #include <spatialite/spatialite.h>
 #include <spatialite.h>
 
+#if OMIT_GEOS == 0		/* including GEOS */
+#include <geos_c.h>
+#endif
+
+#if OMIT_PROJ == 0		/* including PROJ.4 */
+#include <proj_api.h>
+#endif
+
+#ifdef _WIN32
+#define strcasecmp	_stricmp
+#endif /* not WIN32 */
+
 #define GAIA_UNUSED() if (argc || argv) argc = argc;
 
+#ifndef OMIT_GEOCALLBACKS	/* supporting RTree geometry callbacks */
 struct gaia_rtree_mbr
 {
-/* a struct used by R*Tree GeometryCallback functions */
+/* a struct used by R*Tree GeometryCallback functions [MBR] */
     double minx;
     double miny;
     double maxx;
     double maxy;
 };
+#endif /* end RTree geometry callbacks */
 
 static SQLITE_EXTENSION_INIT1 struct spatial_index_str
 {
@@ -3423,6 +3447,7 @@ proj_params (sqlite3 * sqlite, int srid, char *proj_params)
     sqlite3_free_table (results);
 }
 
+#ifndef OMIT_PROJ		/* PROJ.4 is strictly required to support KML */
 static void
 fnct_AsKml1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
@@ -3686,6 +3711,7 @@ fnct_AsKml (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
 	fnct_AsKml1 (context, argc, argv);
 }
+#endif /* end including PROJ.4 */
 
 static void
 fnct_AsGml (sqlite3_context * context, int argc, sqlite3_value ** argv)
@@ -6196,6 +6222,7 @@ fnct_MbrMaxY (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_double (context, coord);
 }
 
+#ifndef OMIT_GEOCALLBACKS	/* supporting RTree geometry callbacks */
 static void
 gaia_mbr_del (void *p)
 {
@@ -6397,6 +6424,58 @@ fnct_RTreeIntersects (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
 	*pRes = 0;
     return SQLITE_OK;
 }
+
+static int
+fnct_RTreeDistWithin (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
+		      int *pRes)
+{
+/* R*Tree Geometry callback function:
+/ ... MATCH RTreeDistWithin(double x, double y, double radius)
+*/
+    struct gaia_rtree_mbr *mbr;
+    double xmin;
+    double xmax;
+    double ymin;
+    double ymax;
+
+    if (p->pUser == 0)
+      {
+	  /* first call: we must check args and then initialize the MBR struct */
+	  if (nCoord != 4)
+	      return SQLITE_ERROR;
+	  if (p->nParam != 3)
+	      return SQLITE_ERROR;
+	  mbr = (struct gaia_rtree_mbr *) (p->pUser =
+					   sqlite3_malloc (sizeof
+							   (struct
+							    gaia_rtree_mbr)));
+	  if (!mbr)
+	      return SQLITE_NOMEM;
+	  p->xDelUser = gaia_mbr_del;
+	  mbr->minx = p->aParam[0] - p->aParam[2];
+	  mbr->miny = p->aParam[1] - p->aParam[2];
+	  mbr->maxx = p->aParam[0] + p->aParam[2];
+	  mbr->maxy = p->aParam[1] + p->aParam[2];
+      }
+
+    mbr = (struct gaia_rtree_mbr *) (p->pUser);
+    xmin = aCoord[0];
+    xmax = aCoord[1];
+    ymin = aCoord[2];
+    ymax = aCoord[3];
+    *pRes = 1;
+/* evaluating Intersects relationship */
+    if (xmin > mbr->maxx)
+	*pRes = 0;
+    if (xmax < mbr->minx)
+	*pRes = 0;
+    if (ymin > mbr->maxy)
+	*pRes = 0;
+    if (ymax < mbr->miny)
+	*pRes = 0;
+    return SQLITE_OK;
+}
+#endif /* end RTree geometry callbacks */
 
 static void
 fnct_BuildRings (sqlite3_context * context, int argc, sqlite3_value ** argv)
@@ -11626,7 +11705,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -11710,7 +11790,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -11719,7 +11800,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -12072,10 +12154,14 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
     sqlite3_create_function (db, "AsSvg", 1, SQLITE_ANY, 0, fnct_AsSvg1, 0, 0);
     sqlite3_create_function (db, "AsSvg", 2, SQLITE_ANY, 0, fnct_AsSvg2, 0, 0);
     sqlite3_create_function (db, "AsSvg", 3, SQLITE_ANY, 0, fnct_AsSvg3, 0, 0);
+	
+#ifndef OMIT_PROJ		/* PROJ.4 is strictly required to support KML */
     sqlite3_create_function (db, "AsKml", 1, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
     sqlite3_create_function (db, "AsKml", 2, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
     sqlite3_create_function (db, "AsKml", 3, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
     sqlite3_create_function (db, "AsKml", 4, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
+#endif /* end including PROJ.4 */
+
     sqlite3_create_function (db, "AsGml", 1, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
     sqlite3_create_function (db, "AsGml", 2, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
     sqlite3_create_function (db, "AsGml", 3, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
@@ -12499,11 +12585,16 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_FilterMbrIntersects, 0, 0);
     sqlite3_create_function (db, "BuildRings", 1, SQLITE_ANY, 0,
 			     fnct_BuildRings, 0, 0);
+
+#ifndef OMIT_GEOCALLBACKS	/* supporting RTree geometry callbacks */
     sqlite3_rtree_geometry_callback (db, "RTreeWithin", fnct_RTreeWithin, 0);
     sqlite3_rtree_geometry_callback (db, "RTreeContains", fnct_RTreeContains,
 				     0);
     sqlite3_rtree_geometry_callback (db, "RTreeIntersects",
 				     fnct_RTreeIntersects, 0);
+    sqlite3_rtree_geometry_callback (db, "RTreeDistWithin",
+				     fnct_RTreeDistWithin, 0);
+#endif /* end RTree geometry callbacks */
 
 /* some BLOB/JPEG/EXIF functions */
     sqlite3_create_function (db, "IsGeometryBlob", 1, SQLITE_ANY, 0,
@@ -12932,10 +13023,14 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
     sqlite3_create_function (db, "AsSvg", 1, SQLITE_ANY, 0, fnct_AsSvg1, 0, 0);
     sqlite3_create_function (db, "AsSvg", 2, SQLITE_ANY, 0, fnct_AsSvg2, 0, 0);
     sqlite3_create_function (db, "AsSvg", 3, SQLITE_ANY, 0, fnct_AsSvg3, 0, 0);
+	
+#ifndef OMIT_PROJ		/* PROJ.4 is strictly required to support KML */
     sqlite3_create_function (db, "AsKml", 1, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
     sqlite3_create_function (db, "AsKml", 2, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
     sqlite3_create_function (db, "AsKml", 3, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
     sqlite3_create_function (db, "AsKml", 4, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
+#endif /* end including PROJ.4 */
+
     sqlite3_create_function (db, "AsGml", 1, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
     sqlite3_create_function (db, "AsGml", 2, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
     sqlite3_create_function (db, "AsGml", 3, SQLITE_ANY, 0, fnct_AsGml, 0, 0);
@@ -13359,11 +13454,16 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_FilterMbrIntersects, 0, 0);
     sqlite3_create_function (db, "BuildRings", 1, SQLITE_ANY, 0,
 			     fnct_BuildRings, 0, 0);
+
+#ifndef OMIT_GEOCALLBACKS	/* supporting RTree geometry callbacks */
     sqlite3_rtree_geometry_callback (db, "RTreeWithin", fnct_RTreeWithin, 0);
     sqlite3_rtree_geometry_callback (db, "RTreeContains", fnct_RTreeContains,
 				     0);
     sqlite3_rtree_geometry_callback (db, "RTreeIntersects",
 				     fnct_RTreeIntersects, 0);
+    sqlite3_rtree_geometry_callback (db, "RTreeDistWithin",
+				     fnct_RTreeDistWithin, 0);
+#endif /* end RTree geometry callbacks */
 
 /* some BLOB/JPEG/EXIF functions */
     sqlite3_create_function (db, "IsGeometryBlob", 1, SQLITE_ANY, 0,

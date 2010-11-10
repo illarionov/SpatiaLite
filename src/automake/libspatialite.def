@@ -12,6 +12,7 @@ gaiaDynamicLineSplitBefore
 gaiaDynamicLineSplitAfter
 gaiaDynamicLineJoinAfter
 gaiaDynamicLineJoinBefore
+gaiaGeomCollSimplify
 gaiaGeomCollSimplifyPreserveTopology
 gaiaGetLocaleCharset
 gaiaConvertCharset
@@ -133,6 +134,9 @@ gaiaReadDbfEntity
 gaiaParseWkt
 gaiaOutWkt
 gaiaOutSvg
+gaiaOutBareKml
+gaiaOutFullKml
+gaiaOutGml
 gaiaFromFgf
 gaiaToFgf
 gaiaDimension
@@ -184,6 +188,9 @@ gaiaRingGetPoint
 gaiaRingSetPoint
 gaiaSanitize
 gaiaIsToxic
+gaiaOutBufferInitialize
+gaiaOutBufferReset
+gaiaAppendToOutBuffer
 gaiaRadsToDegs
 gaiaDegsToRads
 gaiaTransform
@@ -224,6 +231,10 @@ gaiaFromGeos_XY
 gaiaFromGeos_XYZ
 gaiaFromGeos_XYM
 gaiaFromGeos_XYZM
+gaiaTextReaderDestroy
+gaiaTextReaderParse
+gaiaTextReaderGetRow
+gaiaTextReaderFetchField
 gaiaGetExifTags
 gaiaExifTagsFree
 gaiaGetExifTagsCount

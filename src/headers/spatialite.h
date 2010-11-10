@@ -57,7 +57,6 @@ extern "C"
 #endif
 
     SPATIALITE_DECLARE const char *spatialite_version (void);
-    SPATIALITE_DECLARE const char *virtualtext_version (void);
     SPATIALITE_DECLARE void spatialite_init (int verbose);
     SPATIALITE_DECLARE int dump_shapefile (sqlite3 * sqlite, char *table,
 					   char *column, char *charset,

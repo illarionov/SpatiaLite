@@ -454,6 +454,85 @@ extern "C"
     } gaiaOutBuffer;
     typedef gaiaOutBuffer *gaiaOutBufferPtr;
 
+#ifndef OMIT_ICONV		/* ICONV enabled: supporting text reader */
+
+#define VRTTXT_FIELDS_MAX	65535
+#define VRTTXT_BLOCK_MAX 65535
+
+#define VRTTXT_TEXT		1
+#define VRTTXT_INTEGER	2
+#define VRTTXT_DOUBLE	3
+#define VRTTXT_NULL	4
+
+    struct vrttxt_line
+    {
+/* a struct representing a full LINE (aka Record) */
+	off_t offset;
+	int len;
+	int field_offsets[VRTTXT_FIELDS_MAX];
+	int num_fields;
+	int error;
+    };
+
+    struct vrttxt_row
+    {
+/* a struct storing Row offsets */
+	int line_no;
+	off_t offset;
+	int len;
+	int num_fields;
+    };
+
+    struct vrttxt_row_block
+    {
+/*
+/ for efficiency sake, individuale Row offsets 
+/ are grouped in reasonably sized blocks
+*/
+	struct vrttxt_row rows[VRTTXT_BLOCK_MAX];
+	int num_rows;
+	int min_line_no;
+	int max_line_no;
+	struct vrttxt_row_block *next;
+    };
+
+    struct vrttxt_column_header
+    {
+/* a struct representing a Column (aka Field) header */
+	char *name;
+	int type;
+    };
+
+    typedef struct vrttxt_reader
+    {
+/* the main TXT-Reader struct */
+	struct vrttxt_column_header columns[VRTTXT_FIELDS_MAX];
+	FILE *text_file;
+	void *toUtf8;		/* the UTF-8 ICONV converter */
+	char field_separator;
+	char text_separator;
+	char decimal_separator;
+	int first_line_titles;
+	int error;
+	struct vrttxt_row_block *first;
+	struct vrttxt_row_block *last;
+	struct vrttxt_row **rows;
+	int num_rows;
+	int line_no;
+	int max_fields;
+	int current_buf_sz;
+	int current_buf_off;
+	char *line_buffer;
+	char *field_buffer;
+	int field_offsets[VRTTXT_FIELDS_MAX];
+	int field_lens[VRTTXT_FIELDS_MAX];
+	int max_current_field;
+	int current_line_ready;
+    } gaiaTextReader;
+    typedef gaiaTextReader *gaiaTextReaderPtr;
+
+#endif				/* end ICONV (text reader) */
+
 /* function prototipes */
 
     GAIAGEO_DECLARE int gaiaEndianArch (void);
@@ -639,13 +718,6 @@ extern "C"
 						 unsigned int size);
     GAIAGEO_DECLARE void gaiaToWkb (gaiaGeomCollPtr geom,
 				    unsigned char **result, int *size);
-    GAIAGEO_DECLARE int gaiaFromWkbNoCheck (const unsigned char *in,
-					    unsigned int szin,
-					    unsigned char **out, int *szout,
-					    int srid);
-    GAIAGEO_DECLARE int gaiaToWkbNoCheck (const unsigned char *in,
-					  unsigned int szin,
-					  unsigned char **out, int *szout);
     GAIAGEO_DECLARE char *gaiaToHexWkb (gaiaGeomCollPtr geom);
     GAIAGEO_DECLARE void gaiaFreeValue (gaiaValuePtr p);
     GAIAGEO_DECLARE void gaiaSetNullValue (gaiaDbfFieldPtr field);
@@ -900,6 +972,25 @@ extern "C"
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaFromGeos_XYZM (const void *geos);
 
 #endif				/* end including GEOS */
+
+#ifndef OMIT_ICONV		/* ICONV enabled: supporting text reader */
+    GAIAGEO_DECLARE gaiaTextReaderPtr gaiaTextReaderAlloc (const char *path,
+							   char field_separator,
+							   char text_separator,
+							   char
+							   decimal_separator,
+							   int
+							   first_line_titles,
+							   const char
+							   *encoding);
+    GAIAGEO_DECLARE void gaiaTextReaderDestroy (gaiaTextReaderPtr reader);
+    GAIAGEO_DECLARE int gaiaTextReaderParse (gaiaTextReaderPtr reader);
+    GAIAGEO_DECLARE int gaiaTextReaderGetRow (gaiaTextReaderPtr reader,
+					      int row_num);
+    GAIAGEO_DECLARE int gaiaTextReaderFetchField (gaiaTextReaderPtr reader,
+						  int field_num, int *type,
+						  const char **value);
+#endif				/* end ICONV (text reader) */
 
 #ifdef __cplusplus
 }
