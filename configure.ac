@@ -57,7 +57,6 @@ AC_CHECK_LIB(sqlite3,sqlite3_prepare_v2,,AC_MSG_ERROR(['libsqlite3' is required 
 AC_CONFIG_FILES([Makefile \
 		src/Makefile \
 		src/headers/Makefile \
-		src/headers/spatialite/Makefile \
 		src/gaiaaux/Makefile \
 		src/gaiaexif/Makefile \
 		src/gaiageo/Makefile \

@@ -24495,7 +24495,7 @@ echo "$as_me: error: 'libsqlite3' is required but it doesn't seems to be install
 fi
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/headers/spatialite/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/spatialite/Makefile src/srsinit/Makefile src/virtualtext/Makefile spatialite.pc"
+ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/spatialite/Makefile src/srsinit/Makefile src/virtualtext/Makefile spatialite.pc"
 
 
 #-----------------------------------------------------------------------
@@ -26123,7 +26123,6 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "src/headers/Makefile") CONFIG_FILES="$CONFIG_FILES src/headers/Makefile" ;;
-    "src/headers/spatialite/Makefile") CONFIG_FILES="$CONFIG_FILES src/headers/spatialite/Makefile" ;;
     "src/gaiaaux/Makefile") CONFIG_FILES="$CONFIG_FILES src/gaiaaux/Makefile" ;;
     "src/gaiaexif/Makefile") CONFIG_FILES="$CONFIG_FILES src/gaiaexif/Makefile" ;;
     "src/gaiageo/Makefile") CONFIG_FILES="$CONFIG_FILES src/gaiageo/Makefile" ;;
