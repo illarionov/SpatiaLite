@@ -45,72 +45,9 @@ their size:
     
 The main external dependencies needed in order to build 'libspatialite' 
 are the PROJ.4 and GEOS devel-packages.
-
-You can build 'libspatialite' without including GEOS; GEOS is
-a quite heavy-weighted library, and you may well prefer
-to build a light-weighted version of 'libspatialite' [loosing
-some advanced features, by the way, but saving lots of memory]; 
-if you want to do such a thing:
-# ./configure --enable-geos=no
-    [disabling GEOS saves some 1.200 KB]
-
-You can even decide not to include PROJ.4:
-# ./configure --enable-proj=no
-    [disabling PROJ.4 saves some 170 KB]
-
-If you wish to build an extra-light-weighted version of 
-'libspatialite' you can obviously omit both PROJ.4 and GEOS:
-# ./configure --enable-geos=no  --enable-proj=no
-
-IMPORTANT NOTICE: avoiding to enable GEOS and/or PROJ is useful only 
-if you are planning to use 'libspatialite' in order to support some
-process requiring only limited access to SQLite/SpatiaLite DBs.
-But if you intend to use 'libspatialite' for any serious GIS app,
-you absolutely MUST support both PROJ and GEOS.
-
-PROJ
-----
-'libspatialite' is built using PROJ v.4.6.1 [and I suppose any 
-previous version may be used as well]
-Many Linux distros support PROJ as a standard package; and you can
-get some standard PROJ package on MacOsX as well.
-Anyway, you can easily build PROJ by yourself starting from sources
-[this is true on Windows as well, using both MinGW or Visual Studio].
-You can get the latest PROJ sources from:
-http://trac.osgeo.org/proj/
-
-The standard ./configure [no args] will apply the followings setting
-to locate the PROJ objects:
-header files: /usr/local/include
-libraries: /usr/local/lib
-
-You are anyway allowed to search them on any other different location,
-simply using the following options:
-
-./configure --with-proj-include=some_dir --with-proj-lib=some_other_dir
-
-GEOS
-----
-'libspatialite' is built using GEOS v.3.1.0 [you can use any v.3.0.x
-as well; using the oldest v.2.x.x is not supported] 
-Many Linux distros support GEOS as a standard package; and you can
-get some standard GEOS package on MacOsX as well.
-Building GEOS by yourself starting from sources is a quite lengthy
-but plain task on Linux and/or MacOsX.
-On Windows [using both MinGW or Visual Studio] building GEOS is
-quite a nightmare, but not an impossible task.
-You can get the latest GEOS sources from:
-http://trac.osgeo.org/geos/
-
-The standard ./configure [no args] will apply the followings setting
-to locate the GEOS objects:
-header files: /usr/local/include
-libraries: /usr/local/lib
-
-You are anyway allowed to search them on any other different location,
-simply using the following options:
-
-./configure --with-geos-include=some_dir --with-geos-lib=some_other_dir
+Please note: SQLITE3 *is not* a prerequisite, because the
+AMALGAMATION distribution already includes a private internal
+copy of SQLite.
 
 ICONV [Windows]
 ---------------
@@ -143,12 +80,15 @@ setting; we'll suppose you have unpacked the sources as
 3.2: Building on MacOsX
 -----------------------
 
-Building 'libspatialite' on MacOsX is the same as for Linux.
+Building 'libspatialite' on MacOsX is quite the same as for Linux.
+You simply have to set explicitly some ENV variable.
 We'll suppose you have unpacked the sources as 
 ./libspatialite-amalgamation-2.4.0
 
 # cd libspatialite-amalgamation-2.4.0
-# ./configure --target=macosx
+# export "CFLAGS=-I/opt/local/include"
+# export "LDFLAGS=-I/opt/local/lib"
+# ./configure 
 # make
 # sudo make install
 #     or (in order to save some disk space)

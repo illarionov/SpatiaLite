@@ -138,6 +138,8 @@ if test x"$enable_iconv" != "xno"; then
 #  on older systems "libiconv()" lives in libiconv
   AC_SEARCH_LIBS(iconv,iconv,,
     AC_SEARCH_LIBS(libiconv,iconv,,AC_MSG_ERROR(['libiconv' is required but it doesn't seems to be installed on this system.]),))
+  AC_SEARCH_LIBS(locale_charset,charset,,
+    AC_SEARCH_LIBS(nl_langinfo,c,,AC_MSG_ERROR(['libcharset' is required but it doesn't seems to be installed on this system.]),))
 else
   OMIT_ICONV_FLAGS=-DOMIT_ICONV
 fi
