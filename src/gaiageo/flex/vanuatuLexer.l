@@ -62,6 +62,8 @@ Greg Wilson			gvwilson@cs.toronto.ca
 -------------------------------------------------------------------------------
 */
 
+%option prefix="VanuatuWkt"
+
 %{
 
 /* For debugging purposes */
@@ -80,38 +82,38 @@ int line = 1, col = 1;
 *  of the two tokens, FLEX will match POINT ZM.
 */
 %%
--?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*       	{ col += (int) strlen(yytext);  yylval.dval = atof(yytext); return VANUATU_NUM; }
-","										{ yylval.dval = 0; return VANUATU_COMMA; }
-"("										{ yylval.dval = 0; return VANUATU_OPEN_BRACKET; }
-")"										{ yylval.dval = 0; return VANUATU_CLOSE_BRACKET; }
-(?i:"point")								{ yylval.dval = 0; return VANUATU_POINT; }
-(?i:"point"[ ]?"z")							{ yylval.dval = 0; return VANUATU_POINT_Z; }
-(?i:"point"[ ]?"m")							{ yylval.dval = 0; return VANUATU_POINT_M; }
-(?i:"point"[ ]?"zm")							{ yylval.dval = 0; return VANUATU_POINT_ZM; }
-(?i:"linestring")							{ yylval.dval = 0; return VANUATU_LINESTRING; }
-(?i:"linestring"[ ]?"z")						{ yylval.dval = 0; return VANUATU_LINESTRING_Z; }
-(?i:"linestring"[ ]?"m")				{ yylval.dval = 0; return VANUATU_LINESTRING_M; }
-(?i:"linestring"[ ]?"zm")				{ yylval.dval = 0; return VANUATU_LINESTRING_ZM; }
-(?i:"polygon")								{ yylval.dval = 0; return VANUATU_POLYGON; }
-(?i:"polygon"[ ]?"z")					{ yylval.dval = 0; return VANUATU_POLYGON_Z; }
-(?i:"polygon"[ ]?"m")					{ yylval.dval = 0; return VANUATU_POLYGON_M; }
-(?i:"polygon"[ ]?"zm")				{ yylval.dval = 0; return VANUATU_POLYGON_ZM; }
-(?i:"multipoint")							{ yylval.dval = 0; return VANUATU_MULTIPOINT; }
-(?i:"multipoint"[ ]?"z")				{ yylval.dval = 0; return VANUATU_MULTIPOINT_Z; }
-(?i:"multipoint"[ ]?"m")				{ yylval.dval = 0; return VANUATU_MULTIPOINT_M; }
-(?i:"multipoint"[ ]?"zm")			{ yylval.dval = 0; return VANUATU_MULTIPOINT_ZM; }
-(?i:"multilinestring")						{ yylval.dval = 0; return VANUATU_MULTILINESTRING; }
-(?i:"multilinestring"[ ]?"z")		{ yylval.dval = 0; return VANUATU_MULTILINESTRING_Z; }
-(?i:"multilinestring"[ ]?"m")		{ yylval.dval = 0; return VANUATU_MULTILINESTRING_M; }
-(?i:"multilinestring"[ ]?"zm")		{ yylval.dval = 0; return VANUATU_MULTILINESTRING_ZM; }	
-(?i:"multipolygon")							{ yylval.dval = 0; return VANUATU_MULTIPOLYGON; }
-(?i:"multipolygon"[ ]?"z")			{ yylval.dval = 0; return VANUATU_MULTIPOLYGON_Z; }
-(?i:"multipolygon"[ ]?"m")			{ yylval.dval = 0; return VANUATU_MULTIPOLYGON_M; }
-(?i:"multipolygon"[ ]?"zm")		{ yylval.dval = 0; return VANUATU_MULTIPOLYGON_ZM; }
-(?i:"geometrycollection")					{ yylval.dval = 0; return VANUATU_GEOMETRYCOLLECTION; }
-(?i:"geometrycollection"[ ]?"z")	{ yylval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_Z; }
-(?i:"geometrycollection"[ ]?"m")	{ yylval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_M; }
-(?i:"geometrycollection"[ ]?"zm")	{ yylval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_ZM; }
+-?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*       	{ col += (int) strlen(yytext);  VanuatuWktlval.dval = atof(yytext); return VANUATU_NUM; }
+","										{ VanuatuWktlval.dval = 0; return VANUATU_COMMA; }
+"("										{ VanuatuWktlval.dval = 0; return VANUATU_OPEN_BRACKET; }
+")"										{ VanuatuWktlval.dval = 0; return VANUATU_CLOSE_BRACKET; }
+(?i:"point")								{ VanuatuWktlval.dval = 0; return VANUATU_POINT; }
+(?i:"point"[ ]?"z")							{ VanuatuWktlval.dval = 0; return VANUATU_POINT_Z; }
+(?i:"point"[ ]?"m")							{ VanuatuWktlval.dval = 0; return VANUATU_POINT_M; }
+(?i:"point"[ ]?"zm")							{ VanuatuWktlval.dval = 0; return VANUATU_POINT_ZM; }
+(?i:"linestring")							{ VanuatuWktlval.dval = 0; return VANUATU_LINESTRING; }
+(?i:"linestring"[ ]?"z")						{ VanuatuWktlval.dval = 0; return VANUATU_LINESTRING_Z; }
+(?i:"linestring"[ ]?"m")				{ VanuatuWktlval.dval = 0; return VANUATU_LINESTRING_M; }
+(?i:"linestring"[ ]?"zm")				{ VanuatuWktlval.dval = 0; return VANUATU_LINESTRING_ZM; }
+(?i:"polygon")								{ VanuatuWktlval.dval = 0; return VANUATU_POLYGON; }
+(?i:"polygon"[ ]?"z")					{ VanuatuWktlval.dval = 0; return VANUATU_POLYGON_Z; }
+(?i:"polygon"[ ]?"m")					{ VanuatuWktlval.dval = 0; return VANUATU_POLYGON_M; }
+(?i:"polygon"[ ]?"zm")				{ VanuatuWktlval.dval = 0; return VANUATU_POLYGON_ZM; }
+(?i:"multipoint")							{ VanuatuWktlval.dval = 0; return VANUATU_MULTIPOINT; }
+(?i:"multipoint"[ ]?"z")				{ VanuatuWktlval.dval = 0; return VANUATU_MULTIPOINT_Z; }
+(?i:"multipoint"[ ]?"m")				{ VanuatuWktlval.dval = 0; return VANUATU_MULTIPOINT_M; }
+(?i:"multipoint"[ ]?"zm")			{ VanuatuWktlval.dval = 0; return VANUATU_MULTIPOINT_ZM; }
+(?i:"multilinestring")						{ VanuatuWktlval.dval = 0; return VANUATU_MULTILINESTRING; }
+(?i:"multilinestring"[ ]?"z")		{ VanuatuWktlval.dval = 0; return VANUATU_MULTILINESTRING_Z; }
+(?i:"multilinestring"[ ]?"m")		{ VanuatuWktlval.dval = 0; return VANUATU_MULTILINESTRING_M; }
+(?i:"multilinestring"[ ]?"zm")		{ VanuatuWktlval.dval = 0; return VANUATU_MULTILINESTRING_ZM; }	
+(?i:"multipolygon")							{ VanuatuWktlval.dval = 0; return VANUATU_MULTIPOLYGON; }
+(?i:"multipolygon"[ ]?"z")			{ VanuatuWktlval.dval = 0; return VANUATU_MULTIPOLYGON_Z; }
+(?i:"multipolygon"[ ]?"m")			{ VanuatuWktlval.dval = 0; return VANUATU_MULTIPOLYGON_M; }
+(?i:"multipolygon"[ ]?"zm")		{ VanuatuWktlval.dval = 0; return VANUATU_MULTIPOLYGON_ZM; }
+(?i:"geometrycollection")					{ VanuatuWktlval.dval = 0; return VANUATU_GEOMETRYCOLLECTION; }
+(?i:"geometrycollection"[ ]?"z")	{ VanuatuWktlval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_Z; }
+(?i:"geometrycollection"[ ]?"m")	{ VanuatuWktlval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_M; }
+(?i:"geometrycollection"[ ]?"zm")	{ VanuatuWktlval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_ZM; }
 
 [ \t]   { col += (int) strlen(yytext); }               /* ignore but count white space */
 
@@ -133,12 +135,12 @@ void reset_lexer(void)
 }
 
 /**
- * yyerror() is invoked when the lexer or the parser encounter
+ * VanuatuWkterror() is invoked when the lexer or the parser encounter
  * an error. The error message is passed via *s
  *
  *
  */
-void yyerror(char *s)
+void VanuatuWkterror(char *s)
 {
   printf("error: %s at line: %d col: %d\n",s,line,col);
 

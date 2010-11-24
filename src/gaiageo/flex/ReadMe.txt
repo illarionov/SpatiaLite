@@ -5,7 +5,7 @@ vanuatuLexer.l
 2) then run:
 flex -L vanuatuLexer.l
 
-3) a source file named "lex.yy.c" will be
+3) a source file named "lex.VanuatuWkt.c" will be
 generated during the above step.
 Please, copy the whole file content and
 then replace [i.e. using cut&paste] the
