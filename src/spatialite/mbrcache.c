@@ -53,7 +53,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <string.h>
 #include <float.h>
 
-#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
+#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
 #include <spatialite/sqlite3.h>
 #else
 #include <sqlite3.h>
@@ -898,6 +898,9 @@ mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     int ok_col;
     MbrCachePtr p_vt;
     char xname[1024];
+    char x_vtable[1024];
+    char x_table[1024];
+    char x_column[1024];
     if (pAux)
 	pAux = pAux;		/* unused arg warning suppression */
     p_vt = (MbrCachePtr) sqlite3_malloc (sizeof (MbrCache));
@@ -915,8 +918,38 @@ mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (argc == 5)
       {
 	  vtable = argv[2];
+	  len = strlen (vtable);
+	  if ((*(vtable + 0) == '\'' || *(vtable + 0) == '"')
+	      && (*(vtable + len - 1) == '\'' || *(vtable + len - 1) == '"'))
+	    {
+/* the VirtualTableName is enclosed between quotes - we need to dequote it */
+		strcpy (x_vtable, vtable + 1);
+		len = strlen (x_vtable);
+		*(x_vtable + len - 1) = '\0';
+		vtable = x_vtable;
+	    }
 	  table = argv[3];
+	  len = strlen (table);
+	  if ((*(table + 0) == '\'' || *(table + 0) == '"')
+	      && (*(table + len - 1) == '\'' || *(table + len - 1) == '"'))
+	    {
+/* the MainTableName is enclosed between quotes - we need to dequote it */
+		strcpy (x_table, table + 1);
+		len = strlen (x_table);
+		*(x_table + len - 1) = '\0';
+		table = x_table;
+	    }
 	  column = argv[4];
+	  len = strlen (column);
+	  if ((*(column + 0) == '\'' || *(column + 0) == '"')
+	      && (*(column + len - 1) == '\'' || *(column + len - 1) == '"'))
+	    {
+/* the GeometryColumnName is enclosed between quotes - we need to dequote it */
+		strcpy (x_column, column + 1);
+		len = strlen (x_column);
+		*(x_column + len - 1) = '\0';
+		column = x_column;
+	    }
 	  len = strlen (table);
 	  p_vt->table_name = sqlite3_malloc (len + 1);
 	  strcpy (p_vt->table_name, table);
