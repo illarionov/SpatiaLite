@@ -276,6 +276,8 @@ extern "C"
     typedef struct gaiaDynamicLineStruct
     {
 /* a generic DYNAMIC LINE object */
+	int Error;
+	int Srid;
 	gaiaPointPtr First;	/* Points linked list - first */
 	gaiaPointPtr Last;	/* Points linked list - last */
     } gaiaDynamicLine;
@@ -649,6 +651,15 @@ extern "C"
     GAIAGEO_DECLARE gaiaPointPtr
 	gaiaAppendPointToDynamicLine (gaiaDynamicLinePtr p, double x, double y);
     GAIAGEO_DECLARE gaiaPointPtr
+	gaiaAppendPointZToDynamicLine (gaiaDynamicLinePtr p, double x, double y,
+				       double z);
+    GAIAGEO_DECLARE gaiaPointPtr
+	gaiaAppendPointMToDynamicLine (gaiaDynamicLinePtr p, double x, double y,
+				       double m);
+    GAIAGEO_DECLARE gaiaPointPtr
+	gaiaAppendPointZMToDynamicLine (gaiaDynamicLinePtr p, double x,
+					double y, double z, double m);
+    GAIAGEO_DECLARE gaiaPointPtr
 	gaiaPrependPointToDynamicLine (gaiaDynamicLinePtr p, double x,
 				       double y);
     GAIAGEO_DECLARE gaiaPointPtr gaiaDynamicLineInsertAfter (gaiaDynamicLinePtr
@@ -833,6 +844,9 @@ extern "C"
 					   gaiaPolygonPtr geom2);
     GAIAGEO_DECLARE void gaiaMakePoint (double x, double y, int srid,
 					unsigned char **result, int *size);
+    GAIAGEO_DECLARE void gaiaMakeLine (gaiaGeomCollPtr geom1,
+				       gaiaGeomCollPtr geom2,
+				       unsigned char **result, int *size);
     GAIAGEO_DECLARE void gaiaBuildMbr (double x1, double y1, double x2,
 				       double y2, int srid,
 				       unsigned char **result, int *size);

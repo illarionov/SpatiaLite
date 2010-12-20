@@ -56,7 +56,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <locale.h>
 #include <errno.h>
 
-#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
+#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
 #include <spatialite/sqlite3ext.h>
 #else
 #include <sqlite3ext.h>
@@ -4006,6 +4006,311 @@ fnct_MakePoint2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
 	sqlite3_result_blob (context, p_result, len, free);
+}
+
+static void
+addGeomPointToDynamicLine (gaiaDynamicLinePtr dyn, gaiaGeomCollPtr geom)
+{
+/* appending a simple-Point Geometry to a Dynamic Line */
+    int pts;
+    int lns;
+    int pgs;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+
+    if (dyn == NULL)
+	return;
+    if (dyn->Error)
+	return;
+/* checking if GEOM simply is a POINT */
+    if (geom == NULL)
+      {
+	  dyn->Error = 1;
+	  return;
+      }
+    pts = 0;
+    lns = 0;
+    pgs = 0;
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  lns++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts == 1 && lns == 0 && pgs == 0)
+	;
+    else
+      {
+	  /* failure: not a simple POINT */
+	  dyn->Error = 1;
+	  return;
+      }
+
+    if (dyn->Srid != geom->Srid)
+      {
+	  /* failure: SRID mismatch */
+	  dyn->Error = 1;
+	  return;
+      }
+
+    switch (geom->FirstPoint->DimensionModel)
+      {
+      case GAIA_XY_Z_M:
+	  gaiaAppendPointZMToDynamicLine (dyn, geom->FirstPoint->X,
+					  geom->FirstPoint->Y,
+					  geom->FirstPoint->Z,
+					  geom->FirstPoint->M);
+	  break;
+      case GAIA_XY_Z:
+	  gaiaAppendPointZToDynamicLine (dyn, geom->FirstPoint->X,
+					 geom->FirstPoint->Y,
+					 geom->FirstPoint->Z);
+	  break;
+      case GAIA_XY_M:
+	  gaiaAppendPointMToDynamicLine (dyn, geom->FirstPoint->X,
+					 geom->FirstPoint->Y,
+					 geom->FirstPoint->M);
+	  break;
+      default:
+	  gaiaAppendPointToDynamicLine (dyn, geom->FirstPoint->X,
+					geom->FirstPoint->Y);
+	  break;
+      }
+}
+
+static void
+fnct_MakeLine_step (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ MakeLine(BLOBencoded geom)
+/
+/ aggregate function - STEP
+/
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geom;
+    gaiaDynamicLinePtr *p;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geom)
+	return;
+    p = sqlite3_aggregate_context (context, sizeof (gaiaDynamicLinePtr));
+    if (!(*p))
+      {
+	  /* this is the first row */
+	  *p = gaiaAllocDynamicLine ();
+	  (*p)->Srid = geom->Srid;
+	  addGeomPointToDynamicLine (*p, geom);
+	  gaiaFreeGeomColl (geom);
+      }
+    else
+      {
+	  /* subsequent rows */
+	  addGeomPointToDynamicLine (*p, geom);
+	  gaiaFreeGeomColl (geom);
+      }
+}
+
+static gaiaGeomCollPtr
+geomFromDynamicLine (gaiaDynamicLinePtr dyn)
+{
+/* attempting to build a Geometry from a Dynamic Line */
+    gaiaGeomCollPtr geom = NULL;
+    gaiaLinestringPtr ln = NULL;
+    gaiaPointPtr pt;
+    int iv;
+    int count = 0;
+    int dims = GAIA_XY;
+
+    if (dyn == NULL)
+	return NULL;
+    if (dyn->Error)
+	return NULL;
+
+    pt = dyn->First;
+    while (pt)
+      {
+	  /* counting points and checking dims */
+	  count++;
+	  if (dims == GAIA_XY && pt->DimensionModel != GAIA_XY)
+	      dims = pt->DimensionModel;
+	  if (dims == GAIA_XY_Z
+	      && (pt->DimensionModel == GAIA_XY_M
+		  || pt->DimensionModel == GAIA_XY_Z_M))
+	      dims = GAIA_XY_Z_M;
+	  if (dims == GAIA_XY_M
+	      && (pt->DimensionModel == GAIA_XY_Z
+		  || pt->DimensionModel == GAIA_XY_Z_M))
+	      dims = GAIA_XY_Z_M;
+	  pt = pt->Next;
+      }
+    if (count == 0)
+	return NULL;
+
+    switch (dims)
+      {
+      case GAIA_XY_Z_M:
+	  geom = gaiaAllocGeomCollXYZM ();
+	  ln = gaiaAllocLinestringXYZM (count);
+	  break;
+      case GAIA_XY_Z:
+	  geom = gaiaAllocGeomCollXYZ ();
+	  ln = gaiaAllocLinestringXYZ (count);
+	  break;
+      case GAIA_XY_M:
+	  geom = gaiaAllocGeomCollXYM ();
+	  ln = gaiaAllocLinestringXYM (count);
+	  break;
+      default:
+	  geom = gaiaAllocGeomColl ();
+	  ln = gaiaAllocLinestring (count);
+	  break;
+      };
+
+    if (geom != NULL && ln != NULL)
+      {
+	  gaiaInsertLinestringInGeomColl (geom, ln);
+	  geom->Srid = dyn->Srid;
+      }
+    else
+      {
+	  if (geom)
+	      gaiaFreeGeomColl (geom);
+	  if (ln)
+	      gaiaFreeLinestring (ln);
+	  return NULL;
+      }
+
+    iv = 0;
+    pt = dyn->First;
+    while (pt)
+      {
+	  /* setting linestring points */
+	  if (dims == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZM (ln->Coords, iv, pt->X, pt->Y, pt->Z, pt->M);
+	    }
+	  else if (dims == GAIA_XY_Z)
+	    {
+		gaiaSetPointXYZ (ln->Coords, iv, pt->X, pt->Y, pt->Z);
+	    }
+	  else if (dims == GAIA_XY_M)
+	    {
+		gaiaSetPointXYM (ln->Coords, iv, pt->X, pt->Y, pt->M);
+	    }
+	  else
+	    {
+		gaiaSetPoint (ln->Coords, iv, pt->X, pt->Y);
+	    }
+	  iv++;
+	  pt = pt->Next;
+      }
+    return geom;
+}
+
+static void
+fnct_MakeLine_final (sqlite3_context * context)
+{
+/* SQL function:
+/ MakeLine(BLOBencoded geom)
+/
+/ aggregate function - FINAL
+/
+*/
+    gaiaGeomCollPtr result;
+    gaiaDynamicLinePtr *p = sqlite3_aggregate_context (context, 0);
+    if (!p)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    result = geomFromDynamicLine (*p);
+    if (!result)
+	sqlite3_result_null (context);
+    else
+      {
+	  /* builds the BLOB geometry to be returned */
+	  int len;
+	  unsigned char *p_result = NULL;
+	  gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+	  sqlite3_result_blob (context, p_result, len, free);
+	  gaiaFreeGeomColl (result);
+      }
+}
+
+static void
+fnct_MakeLine (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ MakeLine(point-geometry geom1, point-geometry geom2)
+/
+/ builds a SEGMENT joining two POINTs 
+/ or NULL if any error is encountered
+*/
+    int len;
+    unsigned char *p_blob;
+    int n_bytes;
+    unsigned char *p_result = NULL;
+    gaiaGeomCollPtr geo1 = NULL;
+    gaiaGeomCollPtr geo2 = NULL;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  goto stop;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo1)
+      {
+	  sqlite3_result_null (context);
+	  goto stop;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  goto stop;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+    n_bytes = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo2)
+      {
+	  sqlite3_result_null (context);
+	  goto stop;
+      }
+    gaiaMakeLine (geo1, geo2, &p_result, &len);
+    if (!p_result)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, p_result, len, free);
+  stop:
+    if (geo1)
+	gaiaFreeGeomColl (geo1);
+    if (geo2)
+	gaiaFreeGeomColl (geo2);
 }
 
 static void
@@ -11705,8 +12010,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -11790,8 +12094,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -11800,8 +12103,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -12154,7 +12456,7 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
     sqlite3_create_function (db, "AsSvg", 1, SQLITE_ANY, 0, fnct_AsSvg1, 0, 0);
     sqlite3_create_function (db, "AsSvg", 2, SQLITE_ANY, 0, fnct_AsSvg2, 0, 0);
     sqlite3_create_function (db, "AsSvg", 3, SQLITE_ANY, 0, fnct_AsSvg3, 0, 0);
-	
+
 #ifndef OMIT_PROJ		/* PROJ.4 is strictly required to support KML */
     sqlite3_create_function (db, "AsKml", 1, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
     sqlite3_create_function (db, "AsKml", 2, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
@@ -12575,6 +12877,10 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "MakePoint", 3, SQLITE_ANY, 0, fnct_MakePoint2,
 			     0, 0);
+    sqlite3_create_function (db, "MakeLine", 1, SQLITE_ANY, 0, 0,
+			     fnct_MakeLine_step, fnct_MakeLine_final);
+    sqlite3_create_function (db, "MakeLine", 2, SQLITE_ANY, 0, fnct_MakeLine, 0,
+			     0);
     sqlite3_create_function (db, "BuildMbrFilter", 4, SQLITE_ANY, 0,
 			     fnct_BuildMbrFilter, 0, 0);
     sqlite3_create_function (db, "FilterMbrWithin", 4, SQLITE_ANY, 0,
@@ -13023,7 +13329,7 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
     sqlite3_create_function (db, "AsSvg", 1, SQLITE_ANY, 0, fnct_AsSvg1, 0, 0);
     sqlite3_create_function (db, "AsSvg", 2, SQLITE_ANY, 0, fnct_AsSvg2, 0, 0);
     sqlite3_create_function (db, "AsSvg", 3, SQLITE_ANY, 0, fnct_AsSvg3, 0, 0);
-	
+
 #ifndef OMIT_PROJ		/* PROJ.4 is strictly required to support KML */
     sqlite3_create_function (db, "AsKml", 1, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
     sqlite3_create_function (db, "AsKml", 2, SQLITE_ANY, 0, fnct_AsKml, 0, 0);
@@ -13444,6 +13750,10 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "MakePoint", 3, SQLITE_ANY, 0, fnct_MakePoint2,
 			     0, 0);
+    sqlite3_create_function (db, "MakeLine", 1, SQLITE_ANY, 0, 0,
+			     fnct_MakeLine_step, fnct_MakeLine_final);
+    sqlite3_create_function (db, "MakeLine", 2, SQLITE_ANY, 0, fnct_MakeLine, 0,
+			     0);
     sqlite3_create_function (db, "BuildMbrFilter", 4, SQLITE_ANY, 0,
 			     fnct_BuildMbrFilter, 0, 0);
     sqlite3_create_function (db, "FilterMbrWithin", 4, SQLITE_ANY, 0,

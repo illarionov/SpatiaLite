@@ -54,7 +54,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <math.h>
 #include <float.h>
 
-#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
+#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
 #include <spatialite/sqlite3ext.h>
 #else
 #include <sqlite3ext.h>
@@ -1444,6 +1444,8 @@ gaiaAllocDynamicLine ()
 {
 /* DYNAMIC LINE object constructor */
     gaiaDynamicLinePtr p = malloc (sizeof (gaiaDynamicLine));
+    p->Error = 0;
+    p->Srid = -1;
     p->First = NULL;
     p->Last = NULL;
     return p;
@@ -1470,6 +1472,51 @@ gaiaAppendPointToDynamicLine (gaiaDynamicLinePtr p, double x, double y)
 {
 /* inserts a new POINT to this DYNAMIC LINE after the last one */
     gaiaPointPtr point = gaiaAllocPoint (x, y);
+    point->Prev = p->Last;
+    if (p->First == NULL)
+	p->First = point;
+    if (p->Last != NULL)
+	p->Last->Next = point;
+    p->Last = point;
+    return point;
+}
+
+GAIAGEO_DECLARE gaiaPointPtr
+gaiaAppendPointZToDynamicLine (gaiaDynamicLinePtr p, double x, double y,
+			       double z)
+{
+/* inserts a new POINT to this DYNAMIC LINE after the last one */
+    gaiaPointPtr point = gaiaAllocPointXYZ (x, y, z);
+    point->Prev = p->Last;
+    if (p->First == NULL)
+	p->First = point;
+    if (p->Last != NULL)
+	p->Last->Next = point;
+    p->Last = point;
+    return point;
+}
+
+GAIAGEO_DECLARE gaiaPointPtr
+gaiaAppendPointMToDynamicLine (gaiaDynamicLinePtr p, double x, double y,
+			       double m)
+{
+/* inserts a new POINT to this DYNAMIC LINE after the last one */
+    gaiaPointPtr point = gaiaAllocPointXYM (x, y, m);
+    point->Prev = p->Last;
+    if (p->First == NULL)
+	p->First = point;
+    if (p->Last != NULL)
+	p->Last->Next = point;
+    p->Last = point;
+    return point;
+}
+
+GAIAGEO_DECLARE gaiaPointPtr
+gaiaAppendPointZMToDynamicLine (gaiaDynamicLinePtr p, double x, double y,
+				double z, double m)
+{
+/* inserts a new POINT to this DYNAMIC LINE after the last one */
+    gaiaPointPtr point = gaiaAllocPointXYZM (x, y, z, m);
     point->Prev = p->Last;
     if (p->First == NULL)
 	p->First = point;
@@ -2853,6 +2900,174 @@ gaiaMakePoint (double x, double y, int srid, unsigned char **result, int *size)
 }
 
 GAIAGEO_DECLARE void
+gaiaMakeLine (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
+	      unsigned char **result, int *size)
+{
+/* build a Blob encoded Geometry representing a LINESTRING (segment) */
+    int pts;
+    int lns;
+    int pgs;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    gaiaGeomCollPtr g;
+    int dims0;
+    int dims1;
+    int dims;
+    double x0;
+    double y0;
+    double z0;
+    double m0;
+    double x1;
+    double y1;
+    double z1;
+    double m1;
+
+/* checking if GEOM-1 simply is a POINT */
+    if (geom1 == NULL)
+      {
+	  *result = NULL;
+	  *size = 0;
+	  return;
+      }
+    pts = 0;
+    lns = 0;
+    pgs = 0;
+    pt = geom1->FirstPoint;
+    while (pt)
+      {
+	  pts++;
+	  x0 = pt->X;
+	  y0 = pt->Y;
+	  z0 = pt->Z;
+	  m0 = pt->M;
+	  dims0 = pt->DimensionModel;
+	  pt = pt->Next;
+      }
+    ln = geom1->FirstLinestring;
+    while (ln)
+      {
+	  lns++;
+	  ln = ln->Next;
+      }
+    pg = geom1->FirstPolygon;
+    while (pg)
+      {
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts == 1 && lns == 0 && pgs == 0)
+	;
+    else
+      {
+	  /* failure: not a simple POINT */
+	  *result = NULL;
+	  *size = 0;
+	  return;
+      }
+
+/* checking if GEOM-2 simply is a POINT */
+    if (geom2 == NULL)
+      {
+	  *result = NULL;
+	  *size = 0;
+	  return;
+      }
+    pts = 0;
+    lns = 0;
+    pgs = 0;
+    pt = geom2->FirstPoint;
+    while (pt)
+      {
+	  pts++;
+	  x1 = pt->X;
+	  y1 = pt->Y;
+	  z1 = pt->Z;
+	  m1 = pt->M;
+	  dims1 = pt->DimensionModel;
+	  pt = pt->Next;
+      }
+    ln = geom2->FirstLinestring;
+    while (ln)
+      {
+	  lns++;
+	  ln = ln->Next;
+      }
+    pg = geom2->FirstPolygon;
+    while (pg)
+      {
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts == 1 && lns == 0 && pgs == 0)
+	;
+    else
+      {
+	  /* failure: not a simple POINT */
+	  *result = NULL;
+	  *size = 0;
+	  return;
+      }
+
+/* building a new Geometry */
+    if (dims0 == dims1)
+	dims = dims0;
+    else
+      {
+	  if (dims0 == GAIA_XY_Z_M || dims1 == GAIA_XY_Z_M)
+	      dims = GAIA_XY_Z_M;
+	  else if (dims0 == GAIA_XY_Z && dims1 == GAIA_XY_M)
+	      dims = GAIA_XY_Z_M;
+	  else if (dims0 == GAIA_XY_M && dims1 == GAIA_XY_Z)
+	      dims = GAIA_XY_Z_M;
+	  else if (dims0 == GAIA_XY_Z)
+	      dims = GAIA_XY_Z;
+	  else if (dims1 == GAIA_XY_Z)
+	      dims = GAIA_XY_Z;
+	  else if (dims0 == GAIA_XY_M)
+	      dims = GAIA_XY_M;
+	  else if (dims1 == GAIA_XY_M)
+	      dims = GAIA_XY_M;
+	  else
+	      dims = GAIA_XY;
+      }
+    if (dims == GAIA_XY_Z_M)
+	g = gaiaAllocGeomCollXYZM ();
+    else if (dims == GAIA_XY_Z)
+	g = gaiaAllocGeomCollXYZ ();
+    else if (dims == GAIA_XY_M)
+	g = gaiaAllocGeomCollXYM ();
+    else
+	g = gaiaAllocGeomColl ();
+    g->Srid = geom1->Srid;
+    g->DeclaredType = GAIA_LINESTRING;
+    ln = gaiaAddLinestringToGeomColl (g, 2);
+    if (dims == GAIA_XY_Z_M)
+      {
+	  gaiaSetPointXYZM (ln->Coords, 0, x0, y0, z0, m0);
+	  gaiaSetPointXYZM (ln->Coords, 1, x1, y1, z1, m1);
+      }
+    else if (dims == GAIA_XY_Z)
+      {
+	  gaiaSetPointXYZ (ln->Coords, 0, x0, y0, z0);
+	  gaiaSetPointXYZ (ln->Coords, 1, x1, y1, z1);
+      }
+    else if (dims == GAIA_XY_M)
+      {
+	  gaiaSetPointXYM (ln->Coords, 0, x0, y0, m0);
+	  gaiaSetPointXYM (ln->Coords, 1, x1, y1, m1);
+      }
+    else
+      {
+	  gaiaSetPoint (ln->Coords, 0, x0, y0);
+	  gaiaSetPoint (ln->Coords, 1, x1, y1);
+      }
+/* converting to Binary Blob */
+    gaiaToSpatiaLiteBlobWkb (g, result, size);
+    gaiaFreeGeomColl (g);
+}
+
+GAIAGEO_DECLARE void
 gaiaBuildMbr (double x1, double y1, double x2, double y2, int srid,
 	      unsigned char **result, int *size)
 {
@@ -3715,6 +3930,30 @@ gaiaSanitize (gaiaGeomCollPtr geom)
     return new_geom;
 }
 
+static int
+gaiaIsToxicRing (gaiaRingPtr ring)
+{
+/* checking a Rings */
+    double x0;
+    double y0;
+    double z0;
+    double m0;
+    double x1;
+    double y1;
+    double z1;
+    double m1;
+    if (ring->Points < 4)
+	return 1;
+/* checking for unclosed rings */
+    gaiaRingGetPoint (ring, 0, &x0, &y0, &z0, &m0);
+    gaiaRingGetPoint (ring, ring->Points - 1, &x1, &y1, &z1, &m1);
+    if (x0 == x1 && y0 == y1)
+	;
+    else
+	return 1;
+    return 0;
+}
+
 GAIAGEO_DECLARE int
 gaiaIsToxic (gaiaGeomCollPtr geom)
 {
@@ -3748,12 +3987,12 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
       {
 	  /* checking POLYGONs */
 	  ring = polyg->Exterior;
-	  if (ring->Points < 4)
+	  if (gaiaIsToxicRing (ring))
 	      return 1;
 	  for (ib = 0; ib < polyg->NumInteriors; ib++)
 	    {
 		ring = polyg->Interiors + ib;
-		if (ring->Points < 4)
+		if (gaiaIsToxicRing (ring))
 		    return 1;
 	    }
 	  polyg = polyg->Next;
