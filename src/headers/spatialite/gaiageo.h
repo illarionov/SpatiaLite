@@ -456,6 +456,32 @@ extern "C"
     } gaiaOutBuffer;
     typedef gaiaOutBuffer *gaiaOutBufferPtr;
 
+    typedef struct gaiaSegmentStruct
+    {
+	/* a simple segment */
+	double x0;
+	double y0;
+	double z0;
+	double m0;
+	double x1;
+	double y1;
+	double z1;
+	double m1;
+	struct gaiaSegmentStruct *prev;
+	struct gaiaSegmentStruct *next;
+    } gaiaSegment;
+    typedef gaiaSegment *gaiaSegmentPtr;
+
+    typedef struct gaiaSegmCollStruct
+    {
+	/* a collection of simple segments */
+	int srid;
+	int dims;
+	struct gaiaSegmentStruct *first;
+	struct gaiaSegmentStruct *last;
+    } gaiaSegmColl;
+    typedef gaiaSegmColl *gaiaSegmCollPtr;
+
 #ifndef OMIT_ICONV		/* ICONV enabled: supporting text reader */
 
 #define VRTTXT_FIELDS_MAX	65535
@@ -662,6 +688,15 @@ extern "C"
     GAIAGEO_DECLARE gaiaPointPtr
 	gaiaPrependPointToDynamicLine (gaiaDynamicLinePtr p, double x,
 				       double y);
+    GAIAGEO_DECLARE gaiaPointPtr
+	gaiaPrependPointZToDynamicLine (gaiaDynamicLinePtr p, double x,
+					double y, double z);
+    GAIAGEO_DECLARE gaiaPointPtr
+	gaiaPrependPointMToDynamicLine (gaiaDynamicLinePtr p, double x,
+					double y, double m);
+    GAIAGEO_DECLARE gaiaPointPtr
+	gaiaPrependPointZMToDynamicLine (gaiaDynamicLinePtr p, double x,
+					 double y, double z, double m);
     GAIAGEO_DECLARE gaiaPointPtr gaiaDynamicLineInsertAfter (gaiaDynamicLinePtr
 							     p, gaiaPointPtr pt,
 							     double x,
@@ -847,6 +882,8 @@ extern "C"
     GAIAGEO_DECLARE void gaiaMakeLine (gaiaGeomCollPtr geom1,
 				       gaiaGeomCollPtr geom2,
 				       unsigned char **result, int *size);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMergeGeometries (gaiaGeomCollPtr geom1,
+							 gaiaGeomCollPtr geom2);
     GAIAGEO_DECLARE void gaiaBuildMbr (double x1, double y1, double x2,
 				       double y2, int srid,
 				       unsigned char **result, int *size);
@@ -868,7 +905,6 @@ extern "C"
 					unsigned int size, double *miny);
     GAIAGEO_DECLARE int gaiaGetMbrMaxY (const unsigned char *blob,
 					unsigned int size, double *maxy);
-    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaBuildRings (gaiaGeomCollPtr geom);
     GAIAGEO_DECLARE void gaiaFree (void *ptr);
     GAIAGEO_DECLARE int gaiaEllipseParams (const char *name, double *a,
 					   double *b, double *rf);
@@ -901,6 +937,25 @@ extern "C"
     GAIAGEO_DECLARE void gaiaOutBufferReset (gaiaOutBufferPtr buf);
     GAIAGEO_DECLARE void gaiaAppendToOutBuffer (gaiaOutBufferPtr buf,
 						const char *text);
+    GAIAGEO_DECLARE gaiaSegmCollPtr gaiaAllocSegmColl (int srid, int dims);
+    GAIAGEO_DECLARE void gaiaFreeSegmColl (gaiaSegmCollPtr coll);
+    GAIAGEO_DECLARE void gaiaAddSegmentToColl (gaiaSegmCollPtr coll, double x0,
+					       double y0, double z0, double m0,
+					       double x1, double y1, double z1,
+					       double m1);
+    GAIAGEO_DECLARE void gaiaDeleteSegmentFromColl (gaiaSegmCollPtr coll,
+						    double x0, double y0,
+						    double z0, double m0,
+						    double x1, double y1,
+						    double z1, double m1);
+    GAIAGEO_DECLARE void gaiaDissolvePolygons (gaiaSegmCollPtr coll,
+					       gaiaGeomCollPtr geom);
+    GAIAGEO_DECLARE void gaiaDissolveLines (gaiaSegmCollPtr coll,
+					    gaiaGeomCollPtr geom);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaAssembleLines (gaiaSegmCollPtr coll,
+						       int force_multi);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaLinearize (gaiaGeomCollPtr geom,
+						   int force_multi);
 
 #ifndef OMIT_PROJ		/* including PROJ.4 */
 
@@ -977,13 +1032,23 @@ extern "C"
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaGeomCollBuffer (gaiaGeomCollPtr geom,
 							double radius,
 							int points);
-    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaPolygonize (gaiaGeomCollPtr geom,
-						    int force_multipolygon);
     GAIAGEO_DECLARE void *gaiaToGeos (const gaiaGeomCollPtr gaia);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaFromGeos_XY (const void *geos);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaFromGeos_XYZ (const void *geos);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaFromGeos_XYM (const void *geos);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaFromGeos_XYZM (const void *geos);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaAssemblePolygons (gaiaSegmCollPtr coll,
+							  int force_multi);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaPolygonize (gaiaGeomCollPtr geom,
+						    int force_multi);
+
+#ifdef GEOS_ADVANCED
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaOffsetCurve (gaiaGeomCollPtr geom,
+						     double radius, int points,
+						     int left_right);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSharedPaths (gaiaGeomCollPtr geom1,
+						     gaiaGeomCollPtr geom2);
+#endif				/* end GEOS advanced and experimental features */
 
 #endif				/* end including GEOS */
 

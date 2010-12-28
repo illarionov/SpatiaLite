@@ -4314,6 +4314,139 @@ fnct_MakeLine (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_Collect_step (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ Collect(BLOBencoded geom)
+/
+/ aggregate function - STEP
+/
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geom;
+    gaiaGeomCollPtr result;
+    gaiaGeomCollPtr *p;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geom)
+	return;
+    p = sqlite3_aggregate_context (context, sizeof (gaiaGeomCollPtr));
+    if (!(*p))
+      {
+	  /* this is the first row */
+	  *p = geom;
+      }
+    else
+      {
+	  /* subsequent rows */
+	  result = gaiaMergeGeometries (*p, geom);
+	  gaiaFreeGeomColl (*p);
+	  *p = result;
+	  gaiaFreeGeomColl (geom);
+      }
+}
+
+static void
+fnct_Collect_final (sqlite3_context * context)
+{
+/* SQL function:
+/ Collect(BLOBencoded geom)
+/
+/ aggregate function - FINAL
+/
+*/
+    gaiaGeomCollPtr result;
+    gaiaGeomCollPtr *p = sqlite3_aggregate_context (context, 0);
+    if (!p)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    result = *p;
+    if (!result)
+	sqlite3_result_null (context);
+    else if (gaiaIsEmpty (result))
+      {
+	  gaiaFreeGeomColl (result);
+	  sqlite3_result_null (context);
+      }
+    else
+      {
+	  /* builds the BLOB geometry to be returned */
+	  int len;
+	  unsigned char *p_result = NULL;
+	  gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+	  sqlite3_result_blob (context, p_result, len, free);
+	  gaiaFreeGeomColl (result);
+      }
+}
+
+static void
+fnct_Collect (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ Collect(geometry geom1, geometry geom2)
+/
+/ merges two generic GEOMETRIES into a single one 
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo1 = NULL;
+    gaiaGeomCollPtr geo2 = NULL;
+    gaiaGeomCollPtr result;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+    n_bytes = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo1 || !geo2)
+	sqlite3_result_null (context);
+    else
+      {
+	  result = gaiaMergeGeometries (geo1, geo2);
+	  if (!result)
+	      sqlite3_result_null (context);
+	  else if (gaiaIsEmpty (result))
+	    {
+		gaiaFreeGeomColl (result);
+		sqlite3_result_null (context);
+	    }
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo1);
+    gaiaFreeGeomColl (geo2);
+}
+
+static void
 geom_from_text1 (sqlite3_context * context, int argc, sqlite3_value ** argv,
 		 short type)
 {
@@ -6783,54 +6916,6 @@ fnct_RTreeDistWithin (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
 #endif /* end RTree geometry callbacks */
 
 static void
-fnct_BuildRings (sqlite3_context * context, int argc, sqlite3_value ** argv)
-{
-/* SQL function:
-/ BuildRings(BLOBencoded geometry)
-/
-/ returns a new geometry [set of closed RINGs] obtained by 
-/ reassembling a set of  LINESTRINGs
-/ or NULL if any error is encountered
-*/
-    unsigned char *p_blob;
-    int n_bytes;
-    int len;
-    unsigned char *p_result = NULL;
-    gaiaGeomCollPtr line_geom = NULL;
-    gaiaGeomCollPtr result = NULL;
-    GAIA_UNUSED ();
-    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    line_geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    if (line_geom == NULL)
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
-/* one or more LINESTINGs are expected */
-    if (line_geom->FirstPoint || line_geom->FirstPolygon)
-	goto invalid;
-    if (!line_geom->FirstLinestring)
-	goto invalid;
-    result = gaiaBuildRings (line_geom);
-    if (!result)
-	goto invalid;
-    gaiaFreeGeomColl (line_geom);
-    gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
-    gaiaFreeGeomColl (result);
-    sqlite3_result_blob (context, p_result, len, free);
-    return;
-  invalid:
-    gaiaFreeGeomColl (line_geom);
-    sqlite3_result_null (context);
-}
-
-static void
 fnct_X (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -8054,6 +8139,56 @@ get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
 	  return 1;
       }
     return 0;
+}
+
+static void
+fnct_Linearize (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ Linearize(BLOBencoded geometry, BOOL multi_linestring)
+/
+/ returns a new geometry [LINESTRING or MULTILINESTRING] representing 
+/ the linearization for current (MULTI)POLYGON geometry
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr geom_new = NULL;
+    int len;
+    int multi_linestring;
+    unsigned char *p_result = NULL;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geo == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc == 2)
+      {
+	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	      multi_linestring = sqlite3_value_int (argv[1]);
+      }
+    geom_new = gaiaLinearize (geo, multi_linestring);
+    if (!geom_new)
+	goto invalid;
+    gaiaFreeGeomColl (geo);
+    gaiaToSpatiaLiteBlobWkb (geom_new, &p_result, &len);
+    gaiaFreeGeomColl (geom_new);
+    sqlite3_result_blob (context, p_result, len, free);
+    return;
+  invalid:
+    if (geo)
+	gaiaFreeGeomColl (geo);
+    sqlite3_result_null (context);
 }
 
 #ifndef OMIT_PROJ		/* including PROJ.4 */
@@ -9716,13 +9851,6 @@ fnct_BdPolyFromText1 (sqlite3_context * context, int argc,
 */
     const unsigned char *text;
     gaiaGeomCollPtr geo = NULL;
-    gaiaLinestringPtr ln;
-    double x0;
-    double y0;
-    double xn;
-    double yn;
-    double z;
-    double m;
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
@@ -9742,43 +9870,8 @@ fnct_BdPolyFromText1 (sqlite3_context * context, int argc,
 	  return;
       }
     geo->Srid = -1;
-/* one or more closed LINESTINGs are expected */
-    if (geo->FirstPoint || geo->FirstPolygon)
-	goto invalid;
-    if (!geo->FirstLinestring)
-	goto invalid;
-    ln = geo->FirstLinestring;
-    while (ln)
-      {
-	  if (ln->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (ln->Coords, 0, &x0, &y0, &z);
-		gaiaGetPointXYZ (ln->Coords, ln->Points - 1, &xn, &yn, &z);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (ln->Coords, 0, &x0, &y0, &m);
-		gaiaGetPointXYM (ln->Coords, ln->Points - 1, &xn, &yn, &m);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (ln->Coords, 0, &x0, &y0, &z, &m);
-		gaiaGetPointXYZM (ln->Coords, ln->Points - 1, &xn, &yn, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (ln->Coords, 0, &x0, &y0);
-		gaiaGetPoint (ln->Coords, ln->Points - 1, &xn, &yn);
-	    }
-	  if (x0 != xn || y0 != yn)
-	      goto invalid;
-	  ln = ln->Next;
-      }
     fnct_aux_polygonize (context, geo, 0, 0);
     return;
-  invalid:
-    gaiaFreeGeomColl (geo);
-    sqlite3_result_null (context);
 }
 
 static void
@@ -9794,13 +9887,6 @@ fnct_BdPolyFromText2 (sqlite3_context * context, int argc,
 */
     const unsigned char *text;
     gaiaGeomCollPtr geo = NULL;
-    gaiaLinestringPtr ln;
-    double x0;
-    double y0;
-    double xn;
-    double yn;
-    double z;
-    double m;
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
@@ -9825,43 +9911,8 @@ fnct_BdPolyFromText2 (sqlite3_context * context, int argc,
 	  return;
       }
     geo->Srid = sqlite3_value_int (argv[1]);
-/* one or more closed LINESTINGs are expected */
-    if (geo->FirstPoint || geo->FirstPolygon)
-	goto invalid;
-    if (!geo->FirstLinestring)
-	goto invalid;
-    ln = geo->FirstLinestring;
-    while (ln)
-      {
-	  if (ln->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (ln->Coords, 0, &x0, &y0, &z);
-		gaiaGetPointXYZ (ln->Coords, ln->Points - 1, &xn, &yn, &z);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (ln->Coords, 0, &x0, &y0, &m);
-		gaiaGetPointXYM (ln->Coords, ln->Points - 1, &xn, &yn, &m);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (ln->Coords, 0, &x0, &y0, &z, &m);
-		gaiaGetPointXYZM (ln->Coords, ln->Points - 1, &xn, &yn, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (ln->Coords, 0, &x0, &y0);
-		gaiaGetPoint (ln->Coords, ln->Points - 1, &xn, &yn);
-	    }
-	  if (x0 != xn || y0 != yn)
-	      goto invalid;
-	  ln = ln->Next;
-      }
     fnct_aux_polygonize (context, geo, 0, 0);
     return;
-  invalid:
-    gaiaFreeGeomColl (geo);
-    sqlite3_result_null (context);
 }
 
 static void
@@ -9877,13 +9928,6 @@ fnct_BdMPolyFromText1 (sqlite3_context * context, int argc,
 */
     const unsigned char *text;
     gaiaGeomCollPtr geo = NULL;
-    gaiaLinestringPtr ln;
-    double x0;
-    double y0;
-    double xn;
-    double yn;
-    double z;
-    double m;
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
@@ -9903,43 +9947,8 @@ fnct_BdMPolyFromText1 (sqlite3_context * context, int argc,
 	  return;
       }
     geo->Srid = -1;
-/* one or more closed LINESTINGs are expected */
-    if (geo->FirstPoint || geo->FirstPolygon)
-	goto invalid;
-    if (!geo->FirstLinestring)
-	goto invalid;
-    ln = geo->FirstLinestring;
-    while (ln)
-      {
-	  if (ln->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (ln->Coords, 0, &x0, &y0, &z);
-		gaiaGetPointXYZ (ln->Coords, ln->Points - 1, &xn, &yn, &z);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (ln->Coords, 0, &x0, &y0, &m);
-		gaiaGetPointXYM (ln->Coords, ln->Points - 1, &xn, &yn, &m);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (ln->Coords, 0, &x0, &y0, &z, &m);
-		gaiaGetPointXYZM (ln->Coords, ln->Points - 1, &xn, &yn, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (ln->Coords, 0, &x0, &y0);
-		gaiaGetPoint (ln->Coords, ln->Points - 1, &xn, &yn);
-	    }
-	  if (x0 != xn || y0 != yn)
-	      goto invalid;
-	  ln = ln->Next;
-      }
     fnct_aux_polygonize (context, geo, 1, 1);
     return;
-  invalid:
-    gaiaFreeGeomColl (geo);
-    sqlite3_result_null (context);
 }
 
 static void
@@ -9955,13 +9964,6 @@ fnct_BdMPolyFromText2 (sqlite3_context * context, int argc,
 */
     const unsigned char *text;
     gaiaGeomCollPtr geo = NULL;
-    gaiaLinestringPtr ln;
-    double x0;
-    double y0;
-    double xn;
-    double yn;
-    double z;
-    double m;
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
@@ -9986,43 +9988,8 @@ fnct_BdMPolyFromText2 (sqlite3_context * context, int argc,
 	  return;
       }
     geo->Srid = sqlite3_value_int (argv[1]);
-/* one or more closed LINESTINGs are expected */
-    if (geo->FirstPoint || geo->FirstPolygon)
-	goto invalid;
-    if (!geo->FirstLinestring)
-	goto invalid;
-    ln = geo->FirstLinestring;
-    while (ln)
-      {
-	  if (ln->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (ln->Coords, 0, &x0, &y0, &z);
-		gaiaGetPointXYZ (ln->Coords, ln->Points - 1, &xn, &yn, &z);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (ln->Coords, 0, &x0, &y0, &m);
-		gaiaGetPointXYM (ln->Coords, ln->Points - 1, &xn, &yn, &m);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (ln->Coords, 0, &x0, &y0, &z, &m);
-		gaiaGetPointXYZM (ln->Coords, ln->Points - 1, &xn, &yn, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (ln->Coords, 0, &x0, &y0);
-		gaiaGetPoint (ln->Coords, ln->Points - 1, &xn, &yn);
-	    }
-	  if (x0 != xn || y0 != yn)
-	      goto invalid;
-	  ln = ln->Next;
-      }
     fnct_aux_polygonize (context, geo, 1, 1);
     return;
-  invalid:
-    gaiaFreeGeomColl (geo);
-    sqlite3_result_null (context);
 }
 
 static void
@@ -10038,13 +10005,6 @@ fnct_BdPolyFromWKB1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int n_bytes;
     const unsigned char *wkb;
     gaiaGeomCollPtr geo = NULL;
-    gaiaLinestringPtr ln;
-    double x0;
-    double y0;
-    double xn;
-    double yn;
-    double z;
-    double m;
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
@@ -10067,43 +10027,8 @@ fnct_BdPolyFromWKB1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     geo->Srid = -1;
-/* one or more closed LINESTINGs are expected */
-    if (geo->FirstPoint || geo->FirstPolygon)
-	goto invalid;
-    if (!geo->FirstLinestring)
-	goto invalid;
-    ln = geo->FirstLinestring;
-    while (ln)
-      {
-	  if (ln->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (ln->Coords, 0, &x0, &y0, &z);
-		gaiaGetPointXYZ (ln->Coords, ln->Points - 1, &xn, &yn, &z);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (ln->Coords, 0, &x0, &y0, &m);
-		gaiaGetPointXYM (ln->Coords, ln->Points - 1, &xn, &yn, &m);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (ln->Coords, 0, &x0, &y0, &z, &m);
-		gaiaGetPointXYZM (ln->Coords, ln->Points - 1, &xn, &yn, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (ln->Coords, 0, &x0, &y0);
-		gaiaGetPoint (ln->Coords, ln->Points - 1, &xn, &yn);
-	    }
-	  if (x0 != xn || y0 != yn)
-	      goto invalid;
-	  ln = ln->Next;
-      }
     fnct_aux_polygonize (context, geo, 0, 0);
     return;
-  invalid:
-    gaiaFreeGeomColl (geo);
-    sqlite3_result_null (context);
 }
 
 static void
@@ -10119,13 +10044,6 @@ fnct_BdPolyFromWKB2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int n_bytes;
     const unsigned char *wkb;
     gaiaGeomCollPtr geo = NULL;
-    gaiaLinestringPtr ln;
-    double x0;
-    double y0;
-    double xn;
-    double yn;
-    double z;
-    double m;
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
@@ -10153,43 +10071,8 @@ fnct_BdPolyFromWKB2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     geo->Srid = sqlite3_value_int (argv[1]);
-/* one or more closed LINESTINGs are expected */
-    if (geo->FirstPoint || geo->FirstPolygon)
-	goto invalid;
-    if (!geo->FirstLinestring)
-	goto invalid;
-    ln = geo->FirstLinestring;
-    while (ln)
-      {
-	  if (ln->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (ln->Coords, 0, &x0, &y0, &z);
-		gaiaGetPointXYZ (ln->Coords, ln->Points - 1, &xn, &yn, &z);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (ln->Coords, 0, &x0, &y0, &m);
-		gaiaGetPointXYM (ln->Coords, ln->Points - 1, &xn, &yn, &m);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (ln->Coords, 0, &x0, &y0, &z, &m);
-		gaiaGetPointXYZM (ln->Coords, ln->Points - 1, &xn, &yn, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (ln->Coords, 0, &x0, &y0);
-		gaiaGetPoint (ln->Coords, ln->Points - 1, &xn, &yn);
-	    }
-	  if (x0 != xn || y0 != yn)
-	      goto invalid;
-	  ln = ln->Next;
-      }
     fnct_aux_polygonize (context, geo, 0, 0);
     return;
-  invalid:
-    gaiaFreeGeomColl (geo);
-    sqlite3_result_null (context);
 }
 
 static void
@@ -10206,13 +10089,6 @@ fnct_BdMPolyFromWKB1 (sqlite3_context * context, int argc,
     int n_bytes;
     const unsigned char *wkb;
     gaiaGeomCollPtr geo = NULL;
-    gaiaLinestringPtr ln;
-    double x0;
-    double y0;
-    double xn;
-    double yn;
-    double z;
-    double m;
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
@@ -10235,43 +10111,8 @@ fnct_BdMPolyFromWKB1 (sqlite3_context * context, int argc,
 	  return;
       }
     geo->Srid = -1;
-/* one or more closed LINESTINGs are expected */
-    if (geo->FirstPoint || geo->FirstPolygon)
-	goto invalid;
-    if (!geo->FirstLinestring)
-	goto invalid;
-    ln = geo->FirstLinestring;
-    while (ln)
-      {
-	  if (ln->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (ln->Coords, 0, &x0, &y0, &z);
-		gaiaGetPointXYZ (ln->Coords, ln->Points - 1, &xn, &yn, &z);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (ln->Coords, 0, &x0, &y0, &m);
-		gaiaGetPointXYM (ln->Coords, ln->Points - 1, &xn, &yn, &m);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (ln->Coords, 0, &x0, &y0, &z, &m);
-		gaiaGetPointXYZM (ln->Coords, ln->Points - 1, &xn, &yn, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (ln->Coords, 0, &x0, &y0);
-		gaiaGetPoint (ln->Coords, ln->Points - 1, &xn, &yn);
-	    }
-	  if (x0 != xn || y0 != yn)
-	      goto invalid;
-	  ln = ln->Next;
-      }
     fnct_aux_polygonize (context, geo, 1, 1);
     return;
-  invalid:
-    gaiaFreeGeomColl (geo);
-    sqlite3_result_null (context);
 }
 
 static void
@@ -10288,13 +10129,6 @@ fnct_BdMPolyFromWKB2 (sqlite3_context * context, int argc,
     int n_bytes;
     const unsigned char *wkb;
     gaiaGeomCollPtr geo = NULL;
-    gaiaLinestringPtr ln;
-    double x0;
-    double y0;
-    double xn;
-    double yn;
-    double z;
-    double m;
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
@@ -10322,514 +10156,15 @@ fnct_BdMPolyFromWKB2 (sqlite3_context * context, int argc,
 	  return;
       }
     geo->Srid = sqlite3_value_int (argv[1]);
-/* one or more closed LINESTINGs are expected */
-    if (geo->FirstPoint || geo->FirstPolygon)
-	goto invalid;
-    if (!geo->FirstLinestring)
-	goto invalid;
-    ln = geo->FirstLinestring;
-    while (ln)
-      {
-	  if (ln->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (ln->Coords, 0, &x0, &y0, &z);
-		gaiaGetPointXYZ (ln->Coords, ln->Points - 1, &xn, &yn, &z);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (ln->Coords, 0, &x0, &y0, &m);
-		gaiaGetPointXYM (ln->Coords, ln->Points - 1, &xn, &yn, &m);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (ln->Coords, 0, &x0, &y0, &z, &m);
-		gaiaGetPointXYZM (ln->Coords, ln->Points - 1, &xn, &yn, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (ln->Coords, 0, &x0, &y0);
-		gaiaGetPoint (ln->Coords, ln->Points - 1, &xn, &yn);
-	    }
-	  if (x0 != xn || y0 != yn)
-	      goto invalid;
-	  ln = ln->Next;
-      }
     fnct_aux_polygonize (context, geo, 1, 1);
     return;
-  invalid:
-    gaiaFreeGeomColl (geo);
-    sqlite3_result_null (context);
-}
-
-static void
-fnct_BuildArea (sqlite3_context * context, int argc, sqlite3_value ** argv)
-{
-/* SQL function:
-/ BuildArea(BLOBencoded geometry)
-/
-/ returns a new geometry [POLYGON or MULTIPOLYGON] 
-/ by parsing a WKB encoded MULTILINESTRING 
-/ [each LINESTRING is expected to be a closed RING 
-/ or NULL if any error is encountered
-*/
-    unsigned char *p_blob;
-    int n_bytes;
-    gaiaGeomCollPtr geo = NULL;
-    gaiaLinestringPtr ln;
-    double x0;
-    double y0;
-    double xn;
-    double yn;
-    double z;
-    double m;
-    GAIA_UNUSED ();
-    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    if (geo == NULL)
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
-/* one or more CLOSED LINESTINGs are expected */
-    if (geo->FirstPoint || geo->FirstPolygon)
-	goto invalid;
-    if (!geo->FirstLinestring)
-	goto invalid;
-    ln = geo->FirstLinestring;
-    while (ln)
-      {
-	  if (ln->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (ln->Coords, 0, &x0, &y0, &z);
-		gaiaGetPointXYZ (ln->Coords, ln->Points - 1, &xn, &yn, &z);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (ln->Coords, 0, &x0, &y0, &m);
-		gaiaGetPointXYM (ln->Coords, ln->Points - 1, &xn, &yn, &m);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (ln->Coords, 0, &x0, &y0, &z, &m);
-		gaiaGetPointXYZM (ln->Coords, ln->Points - 1, &xn, &yn, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (ln->Coords, 0, &x0, &y0);
-		gaiaGetPoint (ln->Coords, ln->Points - 1, &xn, &yn);
-	    }
-	  if (x0 != xn || y0 != yn)
-	      goto invalid;
-	  ln = ln->Next;
-      }
-    fnct_aux_polygonize (context, geo, 0, 1);
-    return;
-  invalid:
-    gaiaFreeGeomColl (geo);
-    sqlite3_result_null (context);
-}
-
-static gaiaLinestringPtr
-fnct_aux_join_segments (gaiaLinestringPtr ln1, gaiaLinestringPtr ln2,
-			int reverse)
-{
-    int iv;
-    int pti = 0;
-    int points = ln1->Points + ln2->Points - 1;
-    gaiaLinestringPtr ln;
-    double x;
-    double y;
-    double z;
-    double m;
-    if (ln1->DimensionModel == GAIA_XY_Z)
-	ln = gaiaAllocLinestringXYZ (points);
-    if (ln1->DimensionModel == GAIA_XY_M)
-	ln = gaiaAllocLinestringXYM (points);
-    if (ln1->DimensionModel == GAIA_XY_Z_M)
-	ln = gaiaAllocLinestringXYZM (points);
-    else
-	ln = gaiaAllocLinestring (points);
-    if (reverse == 1)
-      {
-	  /* copying points from Segm-1 [reversed] */
-	  for (iv = ln1->Points - 1; iv > 0; iv--)
-	    {
-		if (ln1->DimensionModel == GAIA_XY_Z)
-		  {
-		      gaiaGetPointXYZ (ln1->Coords, iv, &x, &y, &z);
-		      gaiaSetPointXYZ (ln->Coords, pti, x, y, z);
-		  }
-		else if (ln1->DimensionModel == GAIA_XY_M)
-		  {
-		      gaiaGetPointXYM (ln1->Coords, iv, &x, &y, &m);
-		      gaiaSetPointXYM (ln->Coords, pti, x, y, m);
-		  }
-		else if (ln1->DimensionModel == GAIA_XY_Z_M)
-		  {
-		      gaiaGetPointXYZM (ln1->Coords, iv, &x, &y, &z, &m);
-		      gaiaSetPointXYZM (ln->Coords, pti, x, y, z, m);
-		  }
-		else
-		  {
-		      gaiaGetPoint (ln1->Coords, iv, &x, &y);
-		      gaiaSetPoint (ln->Coords, pti, x, y);
-		  }
-		pti++;
-	    }
-      }
-    else
-      {
-	  /* copying points from Segm-1 [normal] */
-	  for (iv = 0; iv < ln1->Points - 1; iv++)
-	    {
-		if (ln1->DimensionModel == GAIA_XY_Z)
-		  {
-		      gaiaGetPointXYZ (ln1->Coords, iv, &x, &y, &z);
-		      gaiaSetPointXYZ (ln->Coords, pti, x, y, z);
-		  }
-		else if (ln1->DimensionModel == GAIA_XY_M)
-		  {
-		      gaiaGetPointXYM (ln1->Coords, iv, &x, &y, &m);
-		      gaiaSetPointXYM (ln->Coords, pti, x, y, m);
-		  }
-		else if (ln1->DimensionModel == GAIA_XY_Z_M)
-		  {
-		      gaiaGetPointXYZM (ln1->Coords, iv, &x, &y, &z, &m);
-		      gaiaSetPointXYZM (ln->Coords, pti, x, y, z, m);
-		  }
-		else
-		  {
-		      gaiaGetPoint (ln1->Coords, iv, &x, &y);
-		      gaiaSetPoint (ln->Coords, pti, x, y);
-		  }
-		pti++;
-	    }
-      }
-    if (reverse == 2)
-      {
-	  /* copying points from Segm-2 [reversed] */
-	  for (iv = ln2->Points - 1; iv >= 0; iv--)
-	    {
-		if (ln2->DimensionModel == GAIA_XY_Z)
-		  {
-		      gaiaGetPointXYZ (ln2->Coords, iv, &x, &y, &z);
-		      gaiaSetPointXYZ (ln->Coords, pti, x, y, z);
-		  }
-		else if (ln2->DimensionModel == GAIA_XY_M)
-		  {
-		      gaiaGetPointXYM (ln2->Coords, iv, &x, &y, &m);
-		      gaiaSetPointXYM (ln->Coords, pti, x, y, m);
-		  }
-		else if (ln2->DimensionModel == GAIA_XY_Z_M)
-		  {
-		      gaiaGetPointXYZM (ln2->Coords, iv, &x, &y, &z, &m);
-		      gaiaSetPointXYZM (ln->Coords, pti, x, y, z, m);
-		  }
-		else
-		  {
-		      gaiaGetPoint (ln2->Coords, iv, &x, &y);
-		      gaiaSetPoint (ln->Coords, pti, x, y);
-		  }
-		pti++;
-	    }
-      }
-    else
-      {
-	  /* copying points from Segm-2 [normal] */
-	  for (iv = 0; iv < ln2->Points; iv++)
-	    {
-		if (ln2->DimensionModel == GAIA_XY_Z)
-		  {
-		      gaiaGetPointXYZ (ln2->Coords, iv, &x, &y, &z);
-		      gaiaSetPointXYZ (ln->Coords, pti, x, y, z);
-		  }
-		else if (ln2->DimensionModel == GAIA_XY_M)
-		  {
-		      gaiaGetPointXYM (ln2->Coords, iv, &x, &y, &m);
-		      gaiaSetPointXYM (ln->Coords, pti, x, y, m);
-		  }
-		else if (ln2->DimensionModel == GAIA_XY_Z_M)
-		  {
-		      gaiaGetPointXYZM (ln2->Coords, iv, &x, &y, &z, &m);
-		      gaiaSetPointXYZM (ln->Coords, pti, x, y, z, m);
-		  }
-		else
-		  {
-		      gaiaGetPoint (ln2->Coords, iv, &x, &y);
-		      gaiaSetPoint (ln->Coords, pti, x, y);
-		  }
-		pti++;
-	    }
-      }
-    return ln;
-}
-
-static int
-fnct_aux_join_rings (gaiaGeomCollPtr geo)
-{
-/* helper function
-/
-/ trying to build closed rings joining adjacent fragments
-/
-*/
-    double x0;
-    double y0;
-    double xn;
-    double yn;
-    double z;
-    double m;
-    int count = 0;
-    int count_unclosed = 0;
-    gaiaLinestringPtr *segments;
-    gaiaLinestringPtr *linestrings;
-    gaiaLinestringPtr *merged;
-    double *start_x;
-    double *start_y;
-    double *end_x;
-    double *end_y;
-    int *already_processed;
-    int i;
-    int ir;
-    int retval = 0;
-    gaiaLinestringPtr ln = geo->FirstLinestring;
-    while (ln)
-      {
-	  /* counting how many linestrings are there */
-	  if (ln->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (ln->Coords, 0, &x0, &y0, &z);
-		gaiaGetPointXYZ (ln->Coords, ln->Points - 1, &xn, &yn, &z);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (ln->Coords, 0, &x0, &y0, &m);
-		gaiaGetPointXYM (ln->Coords, ln->Points - 1, &xn, &yn, &m);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (ln->Coords, 0, &x0, &y0, &z, &m);
-		gaiaGetPointXYZM (ln->Coords, ln->Points - 1, &xn, &yn, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (ln->Coords, 0, &x0, &y0);
-		gaiaGetPoint (ln->Coords, ln->Points - 1, &xn, &yn);
-	    }
-	  if (x0 != xn || y0 != yn)
-	      count_unclosed++;
-	  count++;
-	  ln = ln->Next;
-      }
-    if (!count_unclosed)
-      {
-	  /* not a single unclosed LINESTRING was found */
-	  return 0;
-      }
-/* allocating the helper arrays */
-    linestrings = malloc (sizeof (gaiaLinestringPtr) * count);
-    segments = malloc (sizeof (gaiaLinestringPtr) * count);
-    merged = malloc (sizeof (gaiaLinestringPtr) * count);
-    start_x = malloc (sizeof (double) * count);
-    start_y = malloc (sizeof (double) * count);
-    end_x = malloc (sizeof (double) * count);
-    end_y = malloc (sizeof (double) * count);
-    already_processed = malloc (sizeof (int) * count);
-    for (i = 0; i < count; i++)
-      {
-	  merged[i] = NULL;
-	  segments[i] = NULL;
-	  already_processed[i] = 0;
-      }
-    i = 0;
-    ln = geo->FirstLinestring;
-    while (ln)
-      {
-	  /* feeding the helper arrays */
-	  if (ln->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (ln->Coords, 0, &x0, &y0, &z);
-		gaiaGetPointXYZ (ln->Coords, ln->Points - 1, &xn, &yn, &z);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (ln->Coords, 0, &x0, &y0, &m);
-		gaiaGetPointXYM (ln->Coords, ln->Points - 1, &xn, &yn, &m);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (ln->Coords, 0, &x0, &y0, &z, &m);
-		gaiaGetPointXYZM (ln->Coords, ln->Points - 1, &xn, &yn, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (ln->Coords, 0, &x0, &y0);
-		gaiaGetPoint (ln->Coords, ln->Points - 1, &xn, &yn);
-	    }
-	  linestrings[i] = ln;
-	  if (x0 != xn || y0 != yn)
-	    {
-		segments[i] = ln;
-		start_x[i] = x0;
-		start_y[i] = y0;
-		end_x[i] = xn;
-		end_y[i] = yn;
-	    }
-	  i++;
-	  ln = ln->Next;
-      }
-    for (i = 0; i < count; i++)
-      {
-	  /* identifying adjacent segments */
-	  int i2;
-	  gaiaLinestringPtr rng;
-	  if (segments[i] == NULL)
-	      continue;
-	  if (already_processed[i])
-	      continue;
-	  for (i2 = 0; i2 < count; i2++)
-	    {
-		if (already_processed[i])
-		    break;
-		if (i == i2)
-		    continue;
-		if (segments[i2] == NULL)
-		    continue;
-		if (already_processed[i2])
-		    continue;
-		if (end_x[i] == start_x[i2] && end_y[i] == start_y[i2])
-		  {
-		      /* joining Segm-1 and Segm-2 */
-		      rng =
-			  fnct_aux_join_segments (segments[i], segments[i2], 0);
-		      for (ir = 0; ir < count; ir++)
-			{
-			    if (merged[ir] == NULL)
-			      {
-				  merged[ir] = rng;
-				  break;
-			      }
-			}
-		      already_processed[i] = 1;
-		      already_processed[i2] = 1;
-		      retval = 1;
-		      continue;
-		  }
-		if (start_x[i] == end_x[i2] && start_y[i] == end_y[i2])
-		  {
-		      /* joining Segm-2 and Segm-1 */
-		      rng =
-			  fnct_aux_join_segments (segments[i2], segments[i], 0);
-		      for (ir = 0; ir < count; ir++)
-			{
-			    if (merged[ir] == NULL)
-			      {
-				  merged[ir] = rng;
-				  break;
-			      }
-			}
-		      already_processed[i] = 1;
-		      already_processed[i2] = 1;
-		      retval = 1;
-		      continue;
-		  }
-		if (start_x[i] == start_x[i2] && start_y[i] == start_y[i2])
-		  {
-		      /* joining Segm-2 [reversed] and Segm-1 */
-		      rng =
-			  fnct_aux_join_segments (segments[i2], segments[i], 1);
-		      for (ir = 0; ir < count; ir++)
-			{
-			    if (merged[ir] == NULL)
-			      {
-				  merged[ir] = rng;
-				  break;
-			      }
-			}
-		      already_processed[i] = 1;
-		      already_processed[i2] = 1;
-		      retval = 1;
-		      continue;
-		  }
-		if (end_x[i] == end_x[i2] && end_y[i] == end_y[i2])
-		  {
-		      /* joining Segm-1 and Segm-2 [reversed] */
-		      rng =
-			  fnct_aux_join_segments (segments[i], segments[i2], 2);
-		      for (ir = 0; ir < count; ir++)
-			{
-			    if (merged[ir] == NULL)
-			      {
-				  merged[ir] = rng;
-				  break;
-			      }
-			}
-		      already_processed[i] = 1;
-		      already_processed[i2] = 1;
-		      retval = 1;
-		      continue;
-		  }
-	    }
-      }
-    if (retval)
-      {
-	  /* adjusting the actual geometry */
-	  geo->FirstLinestring = NULL;
-	  geo->LastLinestring = NULL;
-	  for (i = 0; i < count; i++)
-	    {
-		if (segments[i] != NULL && already_processed[i] == 1)
-		  {
-		      /* destroying an already merged segment */
-		      gaiaFreeLinestring (segments[i]);
-		      continue;
-		  }
-		/* re-inserting any unprocessed segment */
-		ln = linestrings[i];
-		ln->Next = NULL;
-		if (geo->FirstLinestring == NULL)
-		    geo->FirstLinestring = ln;
-		if (geo->LastLinestring != NULL)
-		    geo->LastLinestring->Next = ln;
-		geo->LastLinestring = ln;
-	    }
-	  for (i = 0; i < count; i++)
-	    {
-		if (merged[i] != NULL)
-		  {
-		      /* inserting any merged segment */
-		      ln = merged[i];
-		      ln->Next = NULL;
-		      if (geo->FirstLinestring == NULL)
-			  geo->FirstLinestring = ln;
-		      if (geo->LastLinestring != NULL)
-			  geo->LastLinestring->Next = ln;
-		      geo->LastLinestring = ln;
-		  }
-	    }
-      }
-/* memory cleanup */
-    free (segments);
-    free (linestrings);
-    free (merged);
-    free (start_x);
-    free (start_y);
-    free (end_x);
-    free (end_y);
-    free (already_processed);
-    return retval;
 }
 
 static void
 fnct_Polygonize (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ Polygonize(BLOBencoded geometry)
+/ Polygonize(BLOBencoded geometry, [bool multi_polygon])
 /
 / returns a new geometry [POLYGON or MULTIPOLYGON] representing 
 / the polygonization for current (MULTI)LINESTRING geometry
@@ -10838,14 +10173,7 @@ fnct_Polygonize (sqlite3_context * context, int argc, sqlite3_value ** argv)
     unsigned char *p_blob;
     int n_bytes;
     gaiaGeomCollPtr geo = NULL;
-    gaiaLinestringPtr ln;
-    double x0;
-    double y0;
-    double xn;
-    double yn;
-    double z;
-    double m;
-    int join = 1;
+    int multi_polygon = 0;
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
@@ -10860,47 +10188,138 @@ fnct_Polygonize (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_null (context);
 	  return;
       }
-/* trying to build closed rings joining adjacent fragments */
-    while (join)
-	join = fnct_aux_join_rings (geo);
-/* one or more CLOSED LINESTINGs are expected */
-    if (geo->FirstPoint || geo->FirstPolygon)
-	goto invalid;
-    if (!geo->FirstLinestring)
-	goto invalid;
-    ln = geo->FirstLinestring;
-    while (ln)
+    if (argc == 2)
       {
-	  if (ln->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (ln->Coords, 0, &x0, &y0, &z);
-		gaiaGetPointXYZ (ln->Coords, ln->Points - 1, &xn, &yn, &z);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (ln->Coords, 0, &x0, &y0, &m);
-		gaiaGetPointXYM (ln->Coords, ln->Points - 1, &xn, &yn, &m);
-	    }
-	  else if (ln->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (ln->Coords, 0, &x0, &y0, &z, &m);
-		gaiaGetPointXYZM (ln->Coords, ln->Points - 1, &xn, &yn, &z, &m);
-	    }
+	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	      multi_polygon = sqlite3_value_int (argv[1]);
+      }
+    fnct_aux_polygonize (context, geo, multi_polygon, 1);
+    return;
+}
+
+#ifdef GEOS_ADVANCED		/* GEOS advanced and experimental features */
+
+static void
+fnct_OffsetCurve (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ OffsetCurve(BLOBencoded geometry, radius, left-or-right-side)
+/
+/ returns a new geometry representing the OFFSET-CURVE for current geometry
+/ [a LINESTRING is expected]
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr result;
+    double radius;
+    int int_value;
+    int left_right;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	radius = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  radius = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	left_right = sqlite3_value_int (argv[2]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  result = gaiaOffsetCurve (geo, radius, 16, left_right);
+	  if (!result)
+	      sqlite3_result_null (context);
 	  else
 	    {
-		gaiaGetPoint (ln->Coords, 0, &x0, &y0);
-		gaiaGetPoint (ln->Coords, ln->Points - 1, &xn, &yn);
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
 	    }
-	  if (x0 != xn || y0 != yn)
-	      goto invalid;
-	  ln = ln->Next;
       }
-    fnct_aux_polygonize (context, geo, 0, 1);
-    return;
-  invalid:
     gaiaFreeGeomColl (geo);
-    sqlite3_result_null (context);
 }
+
+static void
+fnct_CommonEdges (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ CommonEdges(BLOBencoded geometry1, BLOBencoded geometry2)
+/
+/ returns a new geometry representing common (shared) Edges
+/ [two LINESTRINGs/MULTILINESTRINGs are expected]
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo1 = NULL;
+    gaiaGeomCollPtr geo2 = NULL;
+    gaiaGeomCollPtr result;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+    n_bytes = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geo1 == NULL || geo2 == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  result = gaiaSharedPaths (geo1, geo2);
+	  if (!result)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo1->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo1);
+    gaiaFreeGeomColl (geo2);
+}
+
+#endif /* end GEOS advanced and experimental features */
 
 #endif /* end including GEOS */
 
@@ -12010,7 +11429,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -12094,7 +11514,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -12103,7 +11524,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -12881,6 +12303,10 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_MakeLine_step, fnct_MakeLine_final);
     sqlite3_create_function (db, "MakeLine", 2, SQLITE_ANY, 0, fnct_MakeLine, 0,
 			     0);
+    sqlite3_create_function (db, "Collect", 1, SQLITE_ANY, 0, 0,
+			     fnct_Collect_step, fnct_Collect_final);
+    sqlite3_create_function (db, "Collect", 2, SQLITE_ANY, 0, fnct_Collect, 0,
+			     0);
     sqlite3_create_function (db, "BuildMbrFilter", 4, SQLITE_ANY, 0,
 			     fnct_BuildMbrFilter, 0, 0);
     sqlite3_create_function (db, "FilterMbrWithin", 4, SQLITE_ANY, 0,
@@ -12889,8 +12315,10 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_FilterMbrContains, 0, 0);
     sqlite3_create_function (db, "FilterMbrIntersects", 4, SQLITE_ANY, 0,
 			     fnct_FilterMbrIntersects, 0, 0);
-    sqlite3_create_function (db, "BuildRings", 1, SQLITE_ANY, 0,
-			     fnct_BuildRings, 0, 0);
+    sqlite3_create_function (db, "Linearize", 1, SQLITE_ANY, 0,
+			     fnct_Linearize, 0, 0);
+    sqlite3_create_function (db, "Linearize", 2, SQLITE_ANY, 0,
+			     fnct_Linearize, 0, 0);
 
 #ifndef OMIT_GEOCALLBACKS	/* supporting RTree geometry callbacks */
     sqlite3_rtree_geometry_callback (db, "RTreeWithin", fnct_RTreeWithin, 0);
@@ -13215,10 +12643,19 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_BdMPolyFromWKB1, 0, 0);
     sqlite3_create_function (db, "ST_BdMPolyFromWKB", 2, SQLITE_ANY, 0,
 			     fnct_BdMPolyFromWKB2, 0, 0);
-    sqlite3_create_function (db, "BuildArea", 1, SQLITE_ANY, 0, fnct_BuildArea,
-			     0, 0);
     sqlite3_create_function (db, "Polygonize", 1, SQLITE_ANY, 0,
 			     fnct_Polygonize, 0, 0);
+    sqlite3_create_function (db, "Polygonize", 2, SQLITE_ANY, 0,
+			     fnct_Polygonize, 0, 0);
+
+#ifdef GEOS_ADVANCED		/* GEOS advanced and experimental features */
+
+    sqlite3_create_function (db, "OffsetCurve", 3, SQLITE_ANY, 0,
+			     fnct_OffsetCurve, 0, 0);
+    sqlite3_create_function (db, "CommonEdges", 2, SQLITE_ANY, 0,
+			     fnct_CommonEdges, 0, 0);
+
+#endif /* end GEOS advanced and experimental features */
 
 #endif /* end including GEOS */
 
@@ -13754,6 +13191,10 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_MakeLine_step, fnct_MakeLine_final);
     sqlite3_create_function (db, "MakeLine", 2, SQLITE_ANY, 0, fnct_MakeLine, 0,
 			     0);
+    sqlite3_create_function (db, "Collect", 1, SQLITE_ANY, 0, 0,
+			     fnct_Collect_step, fnct_Collect_final);
+    sqlite3_create_function (db, "Collect", 2, SQLITE_ANY, 0, fnct_Collect, 0,
+			     0);
     sqlite3_create_function (db, "BuildMbrFilter", 4, SQLITE_ANY, 0,
 			     fnct_BuildMbrFilter, 0, 0);
     sqlite3_create_function (db, "FilterMbrWithin", 4, SQLITE_ANY, 0,
@@ -13762,8 +13203,10 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_FilterMbrContains, 0, 0);
     sqlite3_create_function (db, "FilterMbrIntersects", 4, SQLITE_ANY, 0,
 			     fnct_FilterMbrIntersects, 0, 0);
-    sqlite3_create_function (db, "BuildRings", 1, SQLITE_ANY, 0,
-			     fnct_BuildRings, 0, 0);
+    sqlite3_create_function (db, "Linearize", 1, SQLITE_ANY, 0,
+			     fnct_Linearize, 0, 0);
+    sqlite3_create_function (db, "Linearize", 2, SQLITE_ANY, 0,
+			     fnct_Linearize, 0, 0);
 
 #ifndef OMIT_GEOCALLBACKS	/* supporting RTree geometry callbacks */
     sqlite3_rtree_geometry_callback (db, "RTreeWithin", fnct_RTreeWithin, 0);
@@ -14088,10 +13531,19 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_BdMPolyFromWKB1, 0, 0);
     sqlite3_create_function (db, "ST_BdMPolyFromWKB", 2, SQLITE_ANY, 0,
 			     fnct_BdMPolyFromWKB2, 0, 0);
-    sqlite3_create_function (db, "BuildArea", 1, SQLITE_ANY, 0,
-			     fnct_BuildArea, 0, 0);
     sqlite3_create_function (db, "Polygonize", 1, SQLITE_ANY, 0,
 			     fnct_Polygonize, 0, 0);
+    sqlite3_create_function (db, "Polygonize", 2, SQLITE_ANY, 0,
+			     fnct_Polygonize, 0, 0);
+
+#ifdef GEOS_ADVANCED		/* GEOS advanced and experimental features */
+
+    sqlite3_create_function (db, "OffsetCurve", 3, SQLITE_ANY, 0,
+			     fnct_OffsetCurve, 0, 0);
+    sqlite3_create_function (db, "CommonEdges", 2, SQLITE_ANY, 0,
+			     fnct_CommonEdges, 0, 0);
+
+#endif /* end GEOS advanced and experimental features */
 
 #endif /* end including GEOS */
 
