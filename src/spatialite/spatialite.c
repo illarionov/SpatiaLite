@@ -43,11 +43,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
-#if defined(_WIN32) && !defined(__MINGW32__)
-/* MSVC strictly requires this include [off_t] */
 #include <sys/types.h>
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -5692,6 +5688,150 @@ fnct_CastToXYZM (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  if (geom2)
 	    {
 		geom2->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (geom2, &p_result, &len);
+		gaiaFreeGeomColl (geom2);
+		sqlite3_result_blob (context, p_result, len, free);
+	    }
+	  else
+	      sqlite3_result_null (context);
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
+fnct_ExtractMultiPoint (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ ExtractMultiPoint(BLOB encoded geometry)
+/
+/ returns a MULTIPOINT-type geometry [if conversion is possible] 
+/ or NULL in any other case
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    unsigned char *p_result = NULL;
+    int pts;
+    int lns;
+    int pgs;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr geom2 = NULL;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  cast_count (geo, &pts, &lns, &pgs);
+	  if (pts >= 1)
+	    {
+		geom2 = gaiaCloneGeomCollPoints (geo);
+		geom2->Srid = geo->Srid;
+		geom2->DeclaredType = GAIA_MULTIPOINT;
+		gaiaToSpatiaLiteBlobWkb (geom2, &p_result, &len);
+		gaiaFreeGeomColl (geom2);
+		sqlite3_result_blob (context, p_result, len, free);
+	    }
+	  else
+	      sqlite3_result_null (context);
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
+fnct_ExtractMultiLinestring (sqlite3_context * context, int argc,
+			     sqlite3_value ** argv)
+{
+/* SQL function:
+/ ExtractMultiLinestring(BLOB encoded geometry)
+/
+/ returns a MULTILINESTRING-type geometry [if conversion is possible] 
+/ or NULL in any other case
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    unsigned char *p_result = NULL;
+    int pts;
+    int lns;
+    int pgs;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr geom2 = NULL;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  cast_count (geo, &pts, &lns, &pgs);
+	  if (lns >= 1)
+	    {
+		geom2 = gaiaCloneGeomCollLinestrings (geo);
+		geom2->Srid = geo->Srid;
+		geom2->DeclaredType = GAIA_MULTILINESTRING;
+		gaiaToSpatiaLiteBlobWkb (geom2, &p_result, &len);
+		gaiaFreeGeomColl (geom2);
+		sqlite3_result_blob (context, p_result, len, free);
+	    }
+	  else
+	      sqlite3_result_null (context);
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
+fnct_ExtractMultiPolygon (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ ExtractMultiPolygon(BLOB encoded geometry)
+/
+/ returns a MULTIPOLYGON-type geometry [if conversion is possible] 
+/ or NULL in any other case
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    unsigned char *p_result = NULL;
+    int pts;
+    int lns;
+    int pgs;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr geom2 = NULL;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  cast_count (geo, &pts, &lns, &pgs);
+	  if (pgs >= 1)
+	    {
+		geom2 = gaiaCloneGeomCollPolygons (geo);
+		geom2->Srid = geo->Srid;
+		geom2->DeclaredType = GAIA_MULTIPOLYGON;
 		gaiaToSpatiaLiteBlobWkb (geom2, &p_result, &len);
 		gaiaFreeGeomColl (geom2);
 		sqlite3_result_blob (context, p_result, len, free);
@@ -11429,7 +11569,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -11513,7 +11654,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -11522,7 +11664,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -12169,6 +12312,12 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "CastToXYZM", 1, SQLITE_ANY, 0,
 			     fnct_CastToXYZM, 0, 0);
+    sqlite3_create_function (db, "ExtractMultiPoint", 1, SQLITE_ANY, 0,
+			     fnct_ExtractMultiPoint, 0, 0);
+    sqlite3_create_function (db, "ExtractMultiLinestring", 1, SQLITE_ANY, 0,
+			     fnct_ExtractMultiLinestring, 0, 0);
+    sqlite3_create_function (db, "ExtractMultiPolygon", 1, SQLITE_ANY, 0,
+			     fnct_ExtractMultiPolygon, 0, 0);
     sqlite3_create_function (db, "Dimension", 1, SQLITE_ANY, 0, fnct_Dimension,
 			     0, 0);
     sqlite3_create_function (db, "ST_Dimension", 1, SQLITE_ANY, 0,
@@ -13057,6 +13206,12 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "CastToXYZM", 1, SQLITE_ANY, 0,
 			     fnct_CastToXYZM, 0, 0);
+    sqlite3_create_function (db, "ExtractMultiPoint", 1, SQLITE_ANY, 0,
+			     fnct_ExtractMultiPoint, 0, 0);
+    sqlite3_create_function (db, "ExtractMultiLinestring", 1, SQLITE_ANY, 0,
+			     fnct_ExtractMultiLinestring, 0, 0);
+    sqlite3_create_function (db, "ExtractMultiPolygon", 1, SQLITE_ANY, 0,
+			     fnct_ExtractMultiPolygon, 0, 0);
     sqlite3_create_function (db, "Dimension", 1, SQLITE_ANY, 0, fnct_Dimension,
 			     0, 0);
     sqlite3_create_function (db, "ST_Dimension", 1, SQLITE_ANY, 0,

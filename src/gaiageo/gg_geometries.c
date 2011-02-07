@@ -43,11 +43,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
-#if defined(_WIN32) && !defined(__MINGW32__)
-/* MSVC strictly requires this include [off_t] */
 #include <sys/types.h>
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <memory.h>
@@ -854,6 +850,119 @@ gaiaCloneGeomColl (gaiaGeomCollPtr geom)
 	  gaiaCopyLinestringCoords (new_line, line);
 	  line = line->Next;
       }
+    polyg = geom->FirstPolygon;
+    while (polyg)
+      {
+	  /* copying POLYGONs */
+	  i_ring = polyg->Exterior;
+	  new_polyg =
+	      gaiaAddPolygonToGeomColl (new_geom, i_ring->Points,
+					polyg->NumInteriors);
+	  o_ring = new_polyg->Exterior;
+	  /* copying points for the EXTERIOR RING */
+	  gaiaCopyRingCoords (o_ring, i_ring);
+	  for (ib = 0; ib < new_polyg->NumInteriors; ib++)
+	    {
+		/* copying each INTERIOR RING [if any] */
+		i_ring = polyg->Interiors + ib;
+		o_ring = gaiaAddInteriorRing (new_polyg, ib, i_ring->Points);
+		gaiaCopyRingCoords (o_ring, i_ring);
+	    }
+	  polyg = polyg->Next;
+      }
+    return new_geom;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaCloneGeomCollPoints (gaiaGeomCollPtr geom)
+{
+/* clones a GEOMETRYCOLLECTION (Points only) */
+    gaiaPointPtr point;
+    gaiaGeomCollPtr new_geom;
+    if (!geom)
+	return NULL;
+    if (geom->DimensionModel == GAIA_XY_Z)
+	new_geom = gaiaAllocGeomCollXYZ ();
+    else if (geom->DimensionModel == GAIA_XY_M)
+	new_geom = gaiaAllocGeomCollXYM ();
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	new_geom = gaiaAllocGeomCollXYZM ();
+    else
+	new_geom = gaiaAllocGeomColl ();
+    new_geom->Srid = geom->Srid;
+    new_geom->DeclaredType = GAIA_MULTIPOINT;
+    point = geom->FirstPoint;
+    while (point)
+      {
+	  /* copying POINTs */
+	  if (geom->DimensionModel == GAIA_XY_Z)
+	      gaiaAddPointToGeomCollXYZ (new_geom, point->X, point->Y,
+					 point->Z);
+	  else if (geom->DimensionModel == GAIA_XY_M)
+	      gaiaAddPointToGeomCollXYM (new_geom, point->X, point->Y,
+					 point->M);
+	  else if (geom->DimensionModel == GAIA_XY_Z_M)
+	      gaiaAddPointToGeomCollXYZM (new_geom, point->X, point->Y,
+					  point->Z, point->M);
+	  else
+	      gaiaAddPointToGeomColl (new_geom, point->X, point->Y);
+	  point = point->Next;
+      }
+    return new_geom;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaCloneGeomCollLinestrings (gaiaGeomCollPtr geom)
+{
+/* clones a GEOMETRYCOLLECTION (Linestrings only) */
+    gaiaLinestringPtr line;
+    gaiaLinestringPtr new_line;
+    gaiaGeomCollPtr new_geom;
+    if (!geom)
+	return NULL;
+    if (geom->DimensionModel == GAIA_XY_Z)
+	new_geom = gaiaAllocGeomCollXYZ ();
+    else if (geom->DimensionModel == GAIA_XY_M)
+	new_geom = gaiaAllocGeomCollXYM ();
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	new_geom = gaiaAllocGeomCollXYZM ();
+    else
+	new_geom = gaiaAllocGeomColl ();
+    new_geom->Srid = geom->Srid;
+    new_geom->DeclaredType = GAIA_MULTILINESTRING;
+    line = geom->FirstLinestring;
+    while (line)
+      {
+	  /* copying LINESTRINGs */
+	  new_line = gaiaAddLinestringToGeomColl (new_geom, line->Points);
+	  gaiaCopyLinestringCoords (new_line, line);
+	  line = line->Next;
+      }
+    return new_geom;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaCloneGeomCollPolygons (gaiaGeomCollPtr geom)
+{
+/* clones a GEOMETRYCOLLECTION (Polygons only) */
+    int ib;
+    gaiaPolygonPtr polyg;
+    gaiaPolygonPtr new_polyg;
+    gaiaGeomCollPtr new_geom;
+    gaiaRingPtr i_ring;
+    gaiaRingPtr o_ring;
+    if (!geom)
+	return NULL;
+    if (geom->DimensionModel == GAIA_XY_Z)
+	new_geom = gaiaAllocGeomCollXYZ ();
+    else if (geom->DimensionModel == GAIA_XY_M)
+	new_geom = gaiaAllocGeomCollXYM ();
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	new_geom = gaiaAllocGeomCollXYZM ();
+    else
+	new_geom = gaiaAllocGeomColl ();
+    new_geom->Srid = geom->Srid;
+    new_geom->DeclaredType = GAIA_MULTIPOLYGON;
     polyg = geom->FirstPolygon;
     while (polyg)
       {

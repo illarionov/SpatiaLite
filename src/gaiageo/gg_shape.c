@@ -43,11 +43,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
-#if defined(_WIN32) && !defined(__MINGW32__)
-/* MSVC strictly requires this include [off_t] */
 #include <sys/types.h>
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
