@@ -776,7 +776,6 @@ main ()
     do_copy_sqlite (out, "/headers/spatialite/", "sqlite3.h");
     do_copy_ext (out, "/headers/spatialite/", "sqlite3ext.h");
     do_copy (out, "/headers/", "spatialite.h");
-    do_copy (out, "/headers/", "spatialite.h");
     do_copy (out, "/headers/spatialite/", "gaiaaux.h");
     do_copy (out, "/headers/spatialite/", "gaiaexif.h");
     do_copy (out, "/headers/spatialite/", "gaiageo.h");

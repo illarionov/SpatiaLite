@@ -867,6 +867,123 @@ fnct_AutoFDOStop (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static int
+testSpatiaLiteHistory (sqlite3 * sqlite)
+{
+/* internal utility function:
+/
+/ checks if the SPATIALITE_HISTORY table already exists
+/
+*/
+    int event_id = 0;
+    int event = 0;
+    int timestamp = 0;
+    int ver_sqlite = 0;
+    int ver_splite = 0;
+    char sql[1024];
+    int ret;
+    const char *name;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+/* checking the SPATIALITE_HISTORY table */
+    strcpy (sql, "PRAGMA table_info(spatialite_history)");
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		name = results[(i * columns) + 1];
+		if (strcasecmp (name, "event_id") == 0)
+		    event_id = 1;
+		if (strcasecmp (name, "event") == 0)
+		    event = 1;
+		if (strcasecmp (name, "timestamp") == 0)
+		    timestamp = 1;
+		if (strcasecmp (name, "ver_sqlite") == 0)
+		    ver_sqlite = 1;
+		if (strcasecmp (name, "ver_splite") == 0)
+		    ver_splite = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (event_id && event && timestamp && ver_sqlite && ver_splite)
+	return 1;
+    return 0;
+}
+
+static int
+checkSpatiaLiteHistory (sqlite3 * sqlite)
+{
+/* internal utility function:
+/
+/ checks if the SPATIALITE_HISTORY table already exists
+/ if not, such table will then be created
+/
+*/
+    char sql[1024];
+    char *errMsg = NULL;
+    int ret;
+
+    if (testSpatiaLiteHistory (sqlite))
+	return 1;
+
+/* creating the SPATIALITE_HISTORY table */
+    strcpy (sql, "CREATE TABLE IF NOT EXISTS ");
+    strcat (sql, "spatialite_history (\n");
+    strcat (sql, "event_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,\n");
+    strcat (sql, "event TEXT NOT NULL,\n");
+    strcat (sql, "timestamp TEXT NOT NULL,\n");
+    strcat (sql, "ver_sqlite TEXT NOT NULL,\n");
+    strcat (sql, "ver_splite TEXT NOT NULL)");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	return 0;
+
+    if (testSpatiaLiteHistory (sqlite))
+	return 1;
+    return 0;
+}
+
+static void
+updateSpatiaLiteHistory (sqlite3 * sqlite, const char *operation)
+{
+/* inserting a row in SPATIALITE_HISTORY */
+    char sql[2048];
+    sqlite3_stmt *stmt = NULL;
+    int ret;
+
+    if (checkSpatiaLiteHistory (sqlite) == 0)
+	return;
+
+    strcpy (sql, "INSERT INTO spatialite_history ");
+    strcat (sql, "(event_id, event, timestamp, ver_sqlite, ver_splite) ");
+    strcat (sql,
+	    "VALUES (NULL, ?, DateTime('now'), sqlite_version(), spatialite_version())");
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "SQL error: %s\n%s\n", sql, sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, operation, strlen (operation), SQLITE_STATIC);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	goto stop;
+    fprintf (stderr, "SQL error: %s\n", sqlite3_errmsg (sqlite));
+
+  stop:
+    if (stmt)
+	sqlite3_finalize (stmt);
+}
+
+static int
 createAdvancedMetaData (sqlite3 * sqlite)
 {
 /* creating the advanced MetaData tables */
@@ -995,6 +1112,8 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
+    updateSpatiaLiteHistory (sqlite,
+			     "\"spatial_ref_sys\" table succesfully created");
 /* creating the GEOMETRY_COLUMN table */
     strcpy (sql, "CREATE TABLE geometry_columns (\n");
     strcat (sql, "f_table_name TEXT NOT NULL,\n");
@@ -1010,6 +1129,8 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
+    updateSpatiaLiteHistory (sqlite,
+			     "\"geometry_table\" table succesfully created");
 /* creating an INDEX corresponding to the SRID FK */
     strcpy (sql, "CREATE INDEX idx_srid_geocols ON geometry_columns\n");
     strcat (sql, "(srid) ");
@@ -1028,7 +1149,9 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 	goto error;
     if (!createAdvancedMetaData (sqlite))
 	goto error;
-    spatial_ref_sys_init (sqlite, 0);
+    if (spatial_ref_sys_init (sqlite, 0))
+	updateSpatiaLiteHistory (sqlite,
+				 "\"spatial_ref_sys\" table succesfully populated");
     sqlite3_result_int (context, 1);
     return;
   error:
@@ -1854,6 +1977,54 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 	goto error;
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
+    sprintf (sql, "Geometry \"%s\".\"%s\" [", table, column);
+    switch (xtype)
+      {
+      case GAIA_POINT:
+	  strcat (sql, "POINT");
+	  break;
+      case GAIA_LINESTRING:
+	  strcat (sql, "LINESTRING");
+	  break;
+      case GAIA_POLYGON:
+	  strcat (sql, "POLYGON");
+	  break;
+      case GAIA_MULTIPOINT:
+	  strcat (sql, "MULTIPOINT");
+	  break;
+      case GAIA_MULTILINESTRING:
+	  strcat (sql, "MULTILINESTRING");
+	  break;
+      case GAIA_MULTIPOLYGON:
+	  strcat (sql, "MULTIPOLYGON");
+	  break;
+      case GAIA_GEOMETRYCOLLECTION:
+	  strcat (sql, "GEOMETRYCOLLECTION");
+	  break;
+      case -1:
+	  strcat (sql, "GEOMETRY");
+	  break;
+      };
+    strcat (sql, ",");
+    switch (dims)
+      {
+      case GAIA_XY:
+	  strcat (sql, "XY");
+	  break;
+      case GAIA_XY_Z:
+	  strcat (sql, "XYZ");
+	  break;
+      case GAIA_XY_M:
+	  strcat (sql, "XYM");
+	  break;
+      case GAIA_XY_Z_M:
+	  strcat (sql, "XYZM");
+	  break;
+      };
+    sprintf (sqlcolumn, ",SRID=%d", (srid <= 0) ? -1 : srid);
+    strcat (sql, sqlcolumn);
+    strcat (sql, "] succesfully created");
+    updateSpatiaLiteHistory (sqlite, sql);
     return;
   error:
     fprintf (stderr, "AddGeometryColumn() error: \"%s\"\n", errMsg);
@@ -2219,6 +2390,54 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 	goto error;
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
+    sprintf (sql, "Geometry \"%s\".\"%s\" [", table, column);
+    switch (xtype)
+      {
+      case GAIA_POINT:
+	  strcat (sql, "POINT");
+	  break;
+      case GAIA_LINESTRING:
+	  strcat (sql, "LINESTRING");
+	  break;
+      case GAIA_POLYGON:
+	  strcat (sql, "POLYGON");
+	  break;
+      case GAIA_MULTIPOINT:
+	  strcat (sql, "MULTIPOINT");
+	  break;
+      case GAIA_MULTILINESTRING:
+	  strcat (sql, "MULTILINESTRING");
+	  break;
+      case GAIA_MULTIPOLYGON:
+	  strcat (sql, "MULTIPOLYGON");
+	  break;
+      case GAIA_GEOMETRYCOLLECTION:
+	  strcat (sql, "GEOMETRYCOLLECTION");
+	  break;
+      case -1:
+	  strcat (sql, "GEOMETRY");
+	  break;
+      };
+    strcat (sql, ",");
+    switch (dims)
+      {
+      case GAIA_XY:
+	  strcat (sql, "XY");
+	  break;
+      case GAIA_XY_Z:
+	  strcat (sql, "XYZ");
+	  break;
+      case GAIA_XY_M:
+	  strcat (sql, "XYM");
+	  break;
+      case GAIA_XY_Z_M:
+	  strcat (sql, "XYZM");
+	  break;
+      };
+    sprintf (sqlcolumn, ",SRID=%d", (srid <= 0) ? -1 : srid);
+    strcat (sql, sqlcolumn);
+    strcat (sql, "] succesfully recovered");
+    updateSpatiaLiteHistory (sqlite, sql);
     return;
   error:
     fprintf (stderr, "RecoverGeometryColumn() error: \"%s\"\n", errMsg);
@@ -2352,6 +2571,9 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     /* end deletion old versions [v2.0, v2.2] triggers[if any] */
 
     sqlite3_result_int (context, 1);
+    sprintf (sql, "Geometry \"%s\".\"%s\"", table, column);
+    strcat (sql, " succesfully discarded");
+    updateSpatiaLiteHistory (sqlite, sql);
     return;
   error:
     fprintf (stderr, "DiscardGeometryColumn() error: \"%s\"\n", errMsg);
@@ -2981,6 +3203,9 @@ fnct_CreateSpatialIndex (sqlite3_context * context, int argc,
       }
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
+    sprintf (sql, "SpatialIndex on Geometry \"%s\".\"%s\"", table, column);
+    strcat (sql, " succesfully created");
+    updateSpatiaLiteHistory (sqlite, sql);
     return;
   error:
     fprintf (stderr, "CreateSpatialIndex() error: \"%s\"\n", errMsg);
@@ -3047,6 +3272,9 @@ fnct_CreateMbrCache (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
+    sprintf (sql, "MbrCache on Geometry \"%s\".\"%s\"", table, column);
+    strcat (sql, " succesfully created");
+    updateSpatiaLiteHistory (sqlite, sql);
     return;
   error:
     fprintf (stderr, "CreateMbrCache() error: \"%s\"\n", errMsg);
@@ -3114,6 +3342,9 @@ fnct_DisableSpatialIndex (sqlite3_context * context, int argc,
       }
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
+    sprintf (sql, "SpatialIndex on Geometry \"%s\".\"%s\"", table, column);
+    strcat (sql, " succesfully disabled");
+    updateSpatiaLiteHistory (sqlite, sql);
     return;
   error:
     fprintf (stderr, "DisableSpatialIndex() error: \"%s\"\n", errMsg);
@@ -3185,6 +3416,9 @@ fnct_RebuildGeometryTriggers (sqlite3_context * context, int argc,
       }
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
+    sprintf (sql, "Triggers on Geometry \"%s\".\"%s\"", table, column);
+    strcat (sql, " succesfully rebuilt");
+    updateSpatiaLiteHistory (sqlite, sql);
     return;
   error:
     fprintf (stderr, "RebuildGeometryTriggers() error: \"%s\"\n", errMsg);
@@ -11657,7 +11891,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -11741,7 +11976,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -11750,7 +11986,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
