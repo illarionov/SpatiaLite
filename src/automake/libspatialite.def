@@ -174,7 +174,6 @@ gaiaGetMbrMinX
 gaiaGetMbrMaxX
 gaiaGetMbrMinY
 gaiaGetMbrMaxY
-gaiaBuildRings
 gaiaFree
 gaiaEllipseParams
 gaiaGreatCircleDistance
