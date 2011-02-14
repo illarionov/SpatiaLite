@@ -10459,6 +10459,94 @@ fnct_CommonEdges (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaFreeGeomColl (geo2);
 }
 
+static void
+fnct_Covers (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ Covers(BLOBencoded geom1, BLOBencoded geom2)
+/
+/ returns:
+/ 1 if GEOM-1 "spatially covers" GEOM-2
+/ 0 otherwise
+/ or -1 if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo1 = NULL;
+    gaiaGeomCollPtr geo2 = NULL;
+    int ret;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+    n_bytes = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo1 || !geo2)
+	sqlite3_result_int (context, -1);
+    else
+      {
+	  ret = gaiaGeomCollCovers (geo1, geo2);
+	  sqlite3_result_int (context, ret);
+      }
+    gaiaFreeGeomColl (geo1);
+    gaiaFreeGeomColl (geo2);
+}
+
+static void
+fnct_CoveredBy (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ CoveredBy(BLOBencoded geom1, BLOBencoded geom2)
+/
+/ returns:
+/ 1 if GEOM-1 is "spatially covered by" GEOM-2
+/ 0 otherwise
+/ or -1 if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo1 = NULL;
+    gaiaGeomCollPtr geo2 = NULL;
+    int ret;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+    n_bytes = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo1 || !geo2)
+	sqlite3_result_int (context, -1);
+    else
+      {
+	  ret = gaiaGeomCollCoveredBy (geo1, geo2);
+	  sqlite3_result_int (context, ret);
+      }
+    gaiaFreeGeomColl (geo1);
+    gaiaFreeGeomColl (geo2);
+}
+
 #endif /* end GEOS advanced and experimental features */
 
 #endif /* end including GEOS */
@@ -11569,8 +11657,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -11654,8 +11741,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -11664,8 +11750,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -12800,6 +12885,9 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_OffsetCurve, 0, 0);
     sqlite3_create_function (db, "CommonEdges", 2, SQLITE_ANY, 0,
 			     fnct_CommonEdges, 0, 0);
+    sqlite3_create_function (db, "Covers", 2, SQLITE_ANY, 0, fnct_Covers, 0, 0);
+    sqlite3_create_function (db, "CoveredBy", 2, SQLITE_ANY, 0, fnct_CoveredBy,
+			     0, 0);
 
 #endif /* end GEOS advanced and experimental features */
 
@@ -13694,6 +13782,9 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_OffsetCurve, 0, 0);
     sqlite3_create_function (db, "CommonEdges", 2, SQLITE_ANY, 0,
 			     fnct_CommonEdges, 0, 0);
+    sqlite3_create_function (db, "Covers", 2, SQLITE_ANY, 0, fnct_Covers, 0, 0);
+    sqlite3_create_function (db, "CoveredBy", 2, SQLITE_ANY, 0, fnct_CoveredBy,
+			     0, 0);
 
 #endif /* end GEOS advanced and experimental features */
 

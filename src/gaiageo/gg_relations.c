@@ -2298,6 +2298,40 @@ gaiaSharedPaths (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     return result;
 }
 
+GAIAGEO_DECLARE int
+gaiaGeomCollCovers (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
+{
+/* checks if geom1 "spatially covers" geom2 */
+    int ret;
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    if (!geom1 || !geom2)
+	return -1;
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    ret = GEOSCovers (g1, g2);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    return ret;
+}
+
+GAIAGEO_DECLARE int
+gaiaGeomCollCoveredBy (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
+{
+/* checks if geom1 is "spatially covered by" geom2 */
+    int ret;
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    if (!geom1 || !geom2)
+	return -1;
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    ret = GEOSCoveredBy (g1, g2);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    return ret;
+}
+
 #endif /* end GEOS advanced and experimental features */
 
 #endif /* end including GEOS */

@@ -1009,6 +1009,10 @@ extern "C"
 						     int left_right);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSharedPaths (gaiaGeomCollPtr geom1,
 						     gaiaGeomCollPtr geom2);
+    GAIAGEO_DECLARE int gaiaGeomCollCovers (gaiaGeomCollPtr geom1,
+					    gaiaGeomCollPtr geom2);
+    GAIAGEO_DECLARE int gaiaGeomCollCoveredBy (gaiaGeomCollPtr geom1,
+					       gaiaGeomCollPtr geom2);
 #endif				/* end GEOS advanced and experimental features */
 
 #endif				/* end including GEOS */
