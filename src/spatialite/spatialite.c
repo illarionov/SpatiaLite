@@ -1257,7 +1257,8 @@ recoverGeomColumn (sqlite3 * sqlite, const unsigned char *table,
 }
 
 static void
-buildSpatialIndex (sqlite3 * sqlite, const unsigned char *table, char *col_name)
+buildSpatialIndex (sqlite3 * sqlite, const unsigned char *table,
+		   const char *col_name)
 {
 /* loading a SpatialIndex [RTree] */
     char sql[2048];
@@ -2040,7 +2041,8 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
     sprintf (sqlcolumn, ",SRID=%d", (srid <= 0) ? -1 : srid);
     strcat (sql, sqlcolumn);
     strcat (sql, "] succesfully created");
-    updateSpatiaLiteHistory (sqlite, table, column, sql);
+    updateSpatiaLiteHistory (sqlite, (const char *) table,
+			     (const char *) column, sql);
     return;
   error:
     fprintf (stderr, "AddGeometryColumn() error: \"%s\"\n", errMsg);
@@ -2453,7 +2455,8 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     sprintf (sqlcolumn, ",SRID=%d", (srid <= 0) ? -1 : srid);
     strcat (sql, sqlcolumn);
     strcat (sql, "] succesfully recovered");
-    updateSpatiaLiteHistory (sqlite, table, column, sql);
+    updateSpatiaLiteHistory (sqlite, (const char *) table,
+			     (const char *) column, sql);
     return;
   error:
     fprintf (stderr, "RecoverGeometryColumn() error: \"%s\"\n", errMsg);
@@ -2588,7 +2591,8 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
 
     sqlite3_result_int (context, 1);
     strcpy (sql, "Geometry succesfully discarded");
-    updateSpatiaLiteHistory (sqlite, table, column, sql);
+    updateSpatiaLiteHistory (sqlite, (const char *) table,
+			     (const char *) column, sql);
     return;
   error:
     fprintf (stderr, "DiscardGeometryColumn() error: \"%s\"\n", errMsg);
@@ -3159,6 +3163,715 @@ fnct_DiscardFDOGeometryColumn (sqlite3_context * context, int argc,
     return;
 }
 
+static int
+eval_rtree_entry (int ok_geom, double geom_value, int ok_rtree,
+		  double rtree_value)
+{
+/* evaluating geom-coord and rtree-coord */
+    if (!ok_geom && !ok_rtree)
+	return 1;
+    if (ok_geom && ok_rtree)
+      {
+	  float g = geom_value;
+	  float r = rtree_value;
+	  if (g != r)
+	      return 0;
+	  return 1;
+      }
+    return 0;
+}
+
+static int
+check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
+		     const unsigned char *geom)
+{
+/* attempting to check an R*Tree for consistency */
+    char xtable[1024];
+    char xgeom[1024];
+    char idx_name[2048];
+    char sql[8192];
+    char sql2[2048];
+    int ret;
+    int is_defined = 0;
+    sqlite3_stmt *stmt;
+    sqlite3_int64 count_geom;
+    sqlite3_int64 count_rtree;
+    double g_xmin;
+    double g_ymin;
+    double g_xmax;
+    double g_ymax;
+    int ok_g_xmin;
+    int ok_g_ymin;
+    int ok_g_xmax;
+    int ok_g_ymax;
+    double i_xmin;
+    double i_ymin;
+    double i_xmax;
+    double i_ymax;
+    int ok_i_xmin;
+    int ok_i_ymin;
+    int ok_i_xmax;
+    int ok_i_ymax;
+
+/* checking if the R*Tree Spatial Index is defined */
+    strcpy (xtable, (const char *) table);
+    clean_sql_string (xtable);
+    strcpy (xgeom, (const char *) geom);
+    clean_sql_string (xgeom);
+    strcpy (sql, "SELECT Count(*) FROM geometry_columns ");
+    sprintf (sql2, "WHERE f_table_name LIKE '%s' ", xtable);
+    strcat (sql, sql2);
+    sprintf (sql2, "AND f_geometry_column LIKE '%s' ", xgeom);
+    strcat (sql, sql2);
+    strcat (sql, "AND spatial_index_enabled = 1");
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CheckSpatialIndex SQL error: %s\n",
+		   sqlite3_errmsg (sqlite));
+	  return -1;
+      }
+    while (1)
+      {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	      is_defined = sqlite3_column_int (stmt, 0);
+	  else
+	    {
+		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return -1;
+	    }
+      }
+    sqlite3_finalize (stmt);
+    if (!is_defined)
+	return -1;
+
+    sprintf (xgeom, "%s", geom);
+    double_quoted_sql (xgeom);
+    strcpy (xtable, (const char *) table);
+    double_quoted_sql (xtable);
+    sprintf (idx_name, "idx_%s_%s", table, geom);
+    double_quoted_sql (idx_name);
+
+/* counting how many Geometries are set into the main-table */
+    sprintf (sql, "SELECT Count(*) FROM %s ", xtable);
+    sprintf (sql2, "WHERE ST_GeometryType(%s) IS NOT NULL", xgeom);
+    strcat (sql, sql2);
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CheckSpatialIndex SQL error: %s\n",
+		   sqlite3_errmsg (sqlite));
+	  return -1;
+      }
+    while (1)
+      {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	      count_geom = sqlite3_column_int (stmt, 0);
+	  else
+	    {
+		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return -1;
+	    }
+      }
+    sqlite3_finalize (stmt);
+
+/* counting how many R*Tree entries are defined */
+    sprintf (sql, "SELECT Count(*) FROM %s", idx_name);
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CheckSpatialIndex SQL error: %s\n",
+		   sqlite3_errmsg (sqlite));
+	  return -1;
+      }
+    while (1)
+      {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	      count_rtree = sqlite3_column_int (stmt, 0);
+	  else
+	    {
+		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return -1;
+	    }
+      }
+    sqlite3_finalize (stmt);
+    if (count_geom != count_rtree)
+      {
+	  /* unexpected count difference */
+	  return 0;
+      }
+
+/* checking the geometry-table against the corresponding R*Tree */
+    sprintf (sql, "SELECT ");
+    sprintf (sql2, "MbrMinX(g.%s), ", xgeom);
+    strcat (sql, sql2);
+    sprintf (sql2, "MbrMinY(g.%s), ", xgeom);
+    strcat (sql, sql2);
+    sprintf (sql2, "MbrMaxX(g.%s), ", xgeom);
+    strcat (sql, sql2);
+    sprintf (sql2, "MbrMaxY(g.%s), ", xgeom);
+    strcat (sql, sql2);
+    strcat (sql, "i.xmin, i.ymin, i.xmax, i.ymax\n");
+    sprintf (sql2, "FROM %s AS g\n", xtable);
+    strcat (sql, sql2);
+    sprintf (sql2, "LEFT JOIN %s AS i ", idx_name);
+    strcat (sql, sql2);
+    strcat (sql, "ON (g.ROWID = i.pkid)");
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CheckSpatialIndex SQL error: %s\n",
+		   sqlite3_errmsg (sqlite));
+	  return -1;
+      }
+    while (1)
+      {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	    {
+		/* checking a row */
+		ok_g_xmin = 1;
+		ok_g_ymin = 1;
+		ok_g_xmax = 1;
+		ok_g_ymax = 1;
+		ok_i_xmin = 1;
+		ok_i_ymin = 1;
+		ok_i_xmax = 1;
+		ok_i_ymax = 1;
+		if (sqlite3_column_type (stmt, 0) == SQLITE_NULL)
+		    ok_g_xmin = 0;
+		else
+		    g_xmin = sqlite3_column_double (stmt, 0);
+		if (sqlite3_column_type (stmt, 1) == SQLITE_NULL)
+		    ok_g_ymin = 0;
+		else
+		    g_ymin = sqlite3_column_double (stmt, 1);
+		if (sqlite3_column_type (stmt, 2) == SQLITE_NULL)
+		    ok_g_xmax = 0;
+		else
+		    g_xmax = sqlite3_column_double (stmt, 2);
+		if (sqlite3_column_type (stmt, 3) == SQLITE_NULL)
+		    ok_g_ymax = 0;
+		else
+		    g_ymax = sqlite3_column_double (stmt, 3);
+		if (sqlite3_column_type (stmt, 4) == SQLITE_NULL)
+		    ok_i_xmin = 0;
+		else
+		    i_xmin = sqlite3_column_double (stmt, 4);
+		if (sqlite3_column_type (stmt, 5) == SQLITE_NULL)
+		    ok_i_ymin = 0;
+		else
+		    i_ymin = sqlite3_column_double (stmt, 5);
+		if (sqlite3_column_type (stmt, 6) == SQLITE_NULL)
+		    ok_i_xmax = 0;
+		else
+		    i_xmax = sqlite3_column_double (stmt, 6);
+		if (sqlite3_column_type (stmt, 7) == SQLITE_NULL)
+		    ok_i_ymax = 0;
+		else
+		    i_ymax = sqlite3_column_double (stmt, 7);
+		if (eval_rtree_entry (ok_g_xmin, g_xmin, ok_i_xmin, i_xmin) ==
+		    0)
+		    goto mismatching;
+		if (eval_rtree_entry (ok_g_ymin, g_ymin, ok_i_ymin, i_ymin) ==
+		    0)
+		    goto mismatching;
+		if (eval_rtree_entry (ok_g_xmax, g_xmax, ok_i_xmax, i_xmax) ==
+		    0)
+		    goto mismatching;
+		if (eval_rtree_entry (ok_g_ymax, g_ymax, ok_i_ymax, i_ymax) ==
+		    0)
+		    goto mismatching;
+	    }
+	  else
+	    {
+		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return -1;
+	    }
+      }
+/* we have now to finalize the query [memory cleanup] */
+    sqlite3_finalize (stmt);
+
+
+/* now we'll check the R*Tree against the corresponding geometry-table */
+    sprintf (sql, "SELECT ");
+    sprintf (sql2, "MbrMinX(g.%s), ", xgeom);
+    strcat (sql, sql2);
+    sprintf (sql2, "MbrMinY(g.%s), ", xgeom);
+    strcat (sql, sql2);
+    sprintf (sql2, "MbrMaxX(g.%s), ", xgeom);
+    strcat (sql, sql2);
+    sprintf (sql2, "MbrMaxY(g.%s), ", xgeom);
+    strcat (sql, sql2);
+    strcat (sql, "i.xmin, i.ymin, i.xmax, i.ymax\n");
+    sprintf (sql2, "FROM %s AS i\n", idx_name);
+    strcat (sql, sql2);
+    sprintf (sql2, "LEFT JOIN %s AS g ", xtable);
+    strcat (sql, sql2);
+    strcat (sql, "ON (g.ROWID = i.pkid)");
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CheckSpatialIndex SQL error: %s\n",
+		   sqlite3_errmsg (sqlite));
+	  return -1;
+      }
+    while (1)
+      {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	    {
+		/* checking a row */
+		ok_g_xmin = 1;
+		ok_g_ymin = 1;
+		ok_g_xmax = 1;
+		ok_g_ymax = 1;
+		ok_i_xmin = 1;
+		ok_i_ymin = 1;
+		ok_i_xmax = 1;
+		ok_i_ymax = 1;
+		if (sqlite3_column_type (stmt, 0) == SQLITE_NULL)
+		    ok_g_xmin = 0;
+		else
+		    g_xmin = sqlite3_column_double (stmt, 0);
+		if (sqlite3_column_type (stmt, 1) == SQLITE_NULL)
+		    ok_g_ymin = 0;
+		else
+		    g_ymin = sqlite3_column_double (stmt, 1);
+		if (sqlite3_column_type (stmt, 2) == SQLITE_NULL)
+		    ok_g_xmax = 0;
+		else
+		    g_xmax = sqlite3_column_double (stmt, 2);
+		if (sqlite3_column_type (stmt, 3) == SQLITE_NULL)
+		    ok_g_ymax = 0;
+		else
+		    g_ymax = sqlite3_column_double (stmt, 3);
+		if (sqlite3_column_type (stmt, 4) == SQLITE_NULL)
+		    ok_i_xmin = 0;
+		else
+		    i_xmin = sqlite3_column_double (stmt, 4);
+		if (sqlite3_column_type (stmt, 5) == SQLITE_NULL)
+		    ok_i_ymin = 0;
+		else
+		    i_ymin = sqlite3_column_double (stmt, 5);
+		if (sqlite3_column_type (stmt, 6) == SQLITE_NULL)
+		    ok_i_xmax = 0;
+		else
+		    i_xmax = sqlite3_column_double (stmt, 6);
+		if (sqlite3_column_type (stmt, 7) == SQLITE_NULL)
+		    ok_i_ymax = 0;
+		else
+		    i_ymax = sqlite3_column_double (stmt, 7);
+		if (eval_rtree_entry (ok_g_xmin, g_xmin, ok_i_xmin, i_xmin) ==
+		    0)
+		    goto mismatching;
+		if (eval_rtree_entry (ok_g_ymin, g_ymin, ok_i_ymin, i_ymin) ==
+		    0)
+		    goto mismatching;
+		if (eval_rtree_entry (ok_g_xmax, g_xmax, ok_i_xmax, i_xmax) ==
+		    0)
+		    goto mismatching;
+		if (eval_rtree_entry (ok_g_ymax, g_ymax, ok_i_ymax, i_ymax) ==
+		    0)
+		    goto mismatching;
+	    }
+	  else
+	    {
+		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return -1;
+	    }
+      }
+    sqlite3_finalize (stmt);
+    strcpy (sql, "Check SpatialIndex: is valid");
+    updateSpatiaLiteHistory (sqlite, (const char *) table, (const char *) geom,
+			     sql);
+    return 1;
+  mismatching:
+    sqlite3_finalize (stmt);
+    strcpy (sql, "Check SpatialIndex: INCONSISTENTENCIES detected");
+    updateSpatiaLiteHistory (sqlite, (const char *) table, (const char *) geom,
+			     sql);
+    return 0;
+}
+
+static int
+check_any_spatial_index (sqlite3 * sqlite)
+{
+/* attempting to check any defined R*Tree for consistency */
+    const unsigned char *table;
+    const unsigned char *column;
+    int status;
+    char sql[1024];
+    int ret;
+    int invalid_rtree = 0;
+    sqlite3_stmt *stmt;
+
+/* retrieving any defined R*Tree */
+    strcpy (sql,
+	    "SELECT f_table_name, f_geometry_column FROM geometry_columns ");
+    strcat (sql, "WHERE spatial_index_enabled = 1");
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CheckSpatialIndex SQL error: %s\n",
+		   sqlite3_errmsg (sqlite));
+	  return -1;
+      }
+    while (1)
+      {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	    {
+		/* checking a single R*Tree */
+		table = sqlite3_column_text (stmt, 0);
+		column = sqlite3_column_text (stmt, 1);
+		status = check_spatial_index (sqlite, table, column);
+		if (status < 0)
+		  {
+		      sqlite3_finalize (stmt);
+		      return -1;
+		  }
+		if (status == 0)
+		    invalid_rtree = 1;
+	    }
+	  else
+	    {
+		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return -1;
+	    }
+      }
+    sqlite3_finalize (stmt);
+    if (invalid_rtree)
+	return 0;
+    return 1;
+}
+
+static void
+fnct_CheckSpatialIndex (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ CheckSpatialIndex()
+/ CheckSpatialIndex(table, column)
+/
+/ checks a SpatialIndex for consistency, returning:
+/ 1 - the R*Tree is fully consistent
+/ 0 - the R*Tree is inconsistent
+/ NULL on failure
+*/
+    const unsigned char *table;
+    const unsigned char *column;
+    int status;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();
+    if (argc == 0)
+      {
+	  /* no arguments: we must check any defined R*Tree */
+	  status = check_any_spatial_index (sqlite);
+	  if (status < 0)
+	      sqlite3_result_null (context);
+	  else if (status > 0)
+	      sqlite3_result_int (context, 1);
+	  else
+	      sqlite3_result_int (context, 0);
+	  return;
+      }
+
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  fprintf (stderr,
+		   "CheckSpatialIndex() error: argument 1 [table_name] is not of the String type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    table = sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  fprintf (stderr,
+		   "CheckSpatialIndex() error: argument 2 [column_name] is not of the String type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    column = sqlite3_value_text (argv[1]);
+    status = check_spatial_index (sqlite, table, column);
+    if (status < 0)
+	sqlite3_result_null (context);
+    else if (status > 0)
+	sqlite3_result_int (context, 1);
+    else
+	sqlite3_result_int (context, 0);
+}
+
+static int
+recover_spatial_index (sqlite3 * sqlite, const unsigned char *table,
+		       const unsigned char *geom)
+{
+/* attempting to rebuild an R*Tree */
+    char sql[8192];
+    char sql2[2048];
+    char *errMsg = NULL;
+    int ret;
+    char xtable[1024];
+    char xgeom[1024];
+    char idx_name[2048];
+    int is_defined = 0;
+    sqlite3_stmt *stmt;
+
+/* checking if the R*Tree Spatial Index is defined */
+    strcpy (xtable, (const char *) table);
+    clean_sql_string (xtable);
+    strcpy (xgeom, (const char *) geom);
+    clean_sql_string (xgeom);
+    strcpy (sql, "SELECT Count(*) FROM geometry_columns ");
+    sprintf (sql2, "WHERE f_table_name LIKE '%s' ", xtable);
+    strcat (sql, sql2);
+    sprintf (sql2, "AND f_geometry_column LIKE '%s' ", xgeom);
+    strcat (sql, sql2);
+    strcat (sql, "AND spatial_index_enabled = 1");
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "RecoverSpatialIndex SQL error: %s\n",
+		   sqlite3_errmsg (sqlite));
+	  return -1;
+      }
+    while (1)
+      {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	      is_defined = sqlite3_column_int (stmt, 0);
+	  else
+	    {
+		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return -1;
+	    }
+      }
+    sqlite3_finalize (stmt);
+    if (!is_defined)
+	return -1;
+
+/* erasing the R*Tree table */
+    sprintf (idx_name, "idx_%s_%s", table, geom);
+    double_quoted_sql (idx_name);
+    sprintf (sql, "DELETE FROM %s", idx_name);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
+/* populating the R*Tree table from scratch */
+    buildSpatialIndex (sqlite, table, (const char *) geom);
+    strcpy (sql, "SpatialIndex: succesfully recovered");
+    updateSpatiaLiteHistory (sqlite, (const char *) table, (const char *) geom,
+			     sql);
+    return 1;
+  error:
+    fprintf (stderr, "RecoverSpatialIndex() error: \"%s\"\n", errMsg);
+    sqlite3_free (errMsg);
+    return 0;
+}
+
+static int
+recover_any_spatial_index (sqlite3 * sqlite, int no_check)
+{
+/* attempting to rebuild any defined R*Tree */
+    const unsigned char *table;
+    const unsigned char *column;
+    int status;
+    char sql[1024];
+    int ret;
+    int to_be_fixed;
+    sqlite3_stmt *stmt;
+
+/* retrieving any defined R*Tree */
+    strcpy (sql,
+	    "SELECT f_table_name, f_geometry_column FROM geometry_columns ");
+    strcat (sql, "WHERE spatial_index_enabled = 1");
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "RecoverSpatialIndex SQL error: %s\n",
+		   sqlite3_errmsg (sqlite));
+	  return -1;
+      }
+    while (1)
+      {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	    {
+		/* checking a single R*Tree */
+		table = sqlite3_column_text (stmt, 0);
+		column = sqlite3_column_text (stmt, 1);
+		to_be_fixed = 1;
+		if (!no_check)
+		  {
+		      status = check_spatial_index (sqlite, table, column);
+		      if (status < 0)
+			{
+			    /* some unexpected error occurred */
+			    goto fatal_error;
+			}
+		      else if (status > 0)
+			{
+			    /* the Spatial Index is already valid */
+			    to_be_fixed = 0;
+			}
+		  }
+		if (to_be_fixed)
+		  {
+		      /* rebuilding the Spatial Index */
+		      status = recover_spatial_index (sqlite, table, column);
+		      if (status < 0)
+			{
+			    /* some unexpected error occurred */
+			    goto fatal_error;
+			}
+		      else if (status == 0)
+			  goto error;
+		  }
+	    }
+	  else
+	    {
+		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		return -1;
+	    }
+      }
+    sqlite3_finalize (stmt);
+    return 1;
+  error:
+    sqlite3_finalize (stmt);
+    return 0;
+  fatal_error:
+    sqlite3_finalize (stmt);
+    return -1;
+}
+
+static void
+fnct_RecoverSpatialIndex (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ RecoverSpatialIndex()
+/ RecoverSpatialIndex(no_check)
+/ RecoverSpatialIndex(table, column)
+/ RecoverSpatialIndex(table, column, no_check)
+/
+/ attempts to rebuild a SpatialIndex, returning:
+/ 1 - on success
+/ 0 - on failure
+/ NULL if any syntax error is detected
+*/
+    const unsigned char *table;
+    const unsigned char *column;
+    int no_check = 0;
+    int status;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();
+    if (argc <= 1)
+      {
+	  /* no arguments: we must rebuild any defined R*Tree */
+	  if (argc == 1)
+	    {
+		if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+		    no_check = sqlite3_value_int (argv[0]);
+		else
+		  {
+		      fprintf (stderr,
+			       "RecoverSpatialIndex() error: argument 1 [no_check] is not of the Integer type\n");
+		      sqlite3_result_null (context);
+		      return;
+		  }
+	    }
+	  status = recover_any_spatial_index (sqlite, no_check);
+	  if (status < 0)
+	      sqlite3_result_null (context);
+	  else if (status > 0)
+	      sqlite3_result_int (context, 1);
+	  else
+	      sqlite3_result_int (context, 0);
+	  return;
+      }
+
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  fprintf (stderr,
+		   "RecoverSpatialIndex() error: argument 1 [table_name] is not of the String type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    table = sqlite3_value_text (argv[0]);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  fprintf (stderr,
+		   "RecoverSpatialIndex() error: argument 2 [column_name] is not of the String type\n");
+	  sqlite3_result_null (context);
+	  return;
+      }
+    column = sqlite3_value_text (argv[1]);
+    if (argc == 3)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	      no_check = sqlite3_value_int (argv[2]);
+	  else
+	    {
+		fprintf (stderr,
+			 "RecoverSpatialIndex() error: argument 2 [no_check] is not of the Integer type\n");
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (!no_check)
+      {
+	  /* checking the current SpatialIndex validity */
+	  status = check_spatial_index (sqlite, table, column);
+	  if (status < 0)
+	    {
+		/* some unexpected error occurred */
+		sqlite3_result_null (context);
+		return;
+	    }
+	  else if (status > 0)
+	    {
+		/* the Spatial Index is already valid */
+		sqlite3_result_int (context, 1);
+		return;
+	    }
+      }
+/* rebuilding the Spatial Index */
+    status = recover_spatial_index (sqlite, table, column);
+    if (status < 0)
+	sqlite3_result_null (context);
+    else if (status > 0)
+	sqlite3_result_int (context, 1);
+    else
+	sqlite3_result_int (context, 0);
+}
+
 static void
 fnct_CreateSpatialIndex (sqlite3_context * context, int argc,
 			 sqlite3_value ** argv)
@@ -3219,7 +3932,8 @@ fnct_CreateSpatialIndex (sqlite3_context * context, int argc,
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
     strcpy (sql, "R*Tree Spatial Index succesfully created");
-    updateSpatiaLiteHistory (sqlite, table, column, sql);
+    updateSpatiaLiteHistory (sqlite, (const char *) table,
+			     (const char *) column, sql);
     return;
   error:
     fprintf (stderr, "CreateSpatialIndex() error: \"%s\"\n", errMsg);
@@ -3287,7 +4001,8 @@ fnct_CreateMbrCache (sqlite3_context * context, int argc, sqlite3_value ** argv)
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
     strcpy (sql, "MbrCache succesfully created");
-    updateSpatiaLiteHistory (sqlite, table, column, sql);
+    updateSpatiaLiteHistory (sqlite, (const char *) table,
+			     (const char *) column, sql);
     return;
   error:
     fprintf (stderr, "CreateMbrCache() error: \"%s\"\n", errMsg);
@@ -3356,7 +4071,8 @@ fnct_DisableSpatialIndex (sqlite3_context * context, int argc,
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
     strcpy (sql, "SpatialIndex succesfully disabled");
-    updateSpatiaLiteHistory (sqlite, table, column, sql);
+    updateSpatiaLiteHistory (sqlite, (const char *) table,
+			     (const char *) column, sql);
     return;
   error:
     fprintf (stderr, "DisableSpatialIndex() error: \"%s\"\n", errMsg);
@@ -3429,7 +4145,8 @@ fnct_RebuildGeometryTriggers (sqlite3_context * context, int argc,
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
     strcpy (sql, "Geometry Triggers succesfully rebuilt");
-    updateSpatiaLiteHistory (sqlite, table, column, sql);
+    updateSpatiaLiteHistory (sqlite, (const char *) table,
+			     (const char *) column, sql);
     return;
   error:
     fprintf (stderr, "RebuildGeometryTriggers() error: \"%s\"\n", errMsg);
@@ -11902,7 +12619,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -11986,7 +12704,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -11995,7 +12714,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -12334,6 +13054,18 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_RecoverGeometryColumn, 0, 0);
     sqlite3_create_function (db, "DiscardGeometryColumn", 2, SQLITE_ANY, 0,
 			     fnct_DiscardGeometryColumn, 0, 0);
+    sqlite3_create_function (db, "RecoverSpatialIndex", 0, SQLITE_ANY, 0,
+			     fnct_RecoverSpatialIndex, 0, 0);
+    sqlite3_create_function (db, "RecoverSpatialIndex", 1, SQLITE_ANY, 0,
+			     fnct_RecoverSpatialIndex, 0, 0);
+    sqlite3_create_function (db, "RecoverSpatialIndex", 2, SQLITE_ANY, 0,
+			     fnct_RecoverSpatialIndex, 0, 0);
+    sqlite3_create_function (db, "RecoverSpatialIndex", 3, SQLITE_ANY, 0,
+			     fnct_RecoverSpatialIndex, 0, 0);
+    sqlite3_create_function (db, "CheckSpatialIndex", 0, SQLITE_ANY, 0,
+			     fnct_CheckSpatialIndex, 0, 0);
+    sqlite3_create_function (db, "CheckSpatialIndex", 2, SQLITE_ANY, 0,
+			     fnct_CheckSpatialIndex, 0, 0);
     sqlite3_create_function (db, "CreateSpatialIndex", 2, SQLITE_ANY, 0,
 			     fnct_CreateSpatialIndex, 0, 0);
     sqlite3_create_function (db, "CreateMbrCache", 2, SQLITE_ANY, 0,
@@ -13231,6 +13963,18 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_RecoverGeometryColumn, 0, 0);
     sqlite3_create_function (db, "DiscardGeometryColumn", 2, SQLITE_ANY, 0,
 			     fnct_DiscardGeometryColumn, 0, 0);
+    sqlite3_create_function (db, "RecoverSpatialIndex", 0, SQLITE_ANY, 0,
+			     fnct_RecoverSpatialIndex, 0, 0);
+    sqlite3_create_function (db, "RecoverSpatialIndex", 1, SQLITE_ANY, 0,
+			     fnct_RecoverSpatialIndex, 0, 0);
+    sqlite3_create_function (db, "RecoverSpatialIndex", 2, SQLITE_ANY, 0,
+			     fnct_RecoverSpatialIndex, 0, 0);
+    sqlite3_create_function (db, "RecoverSpatialIndex", 3, SQLITE_ANY, 0,
+			     fnct_RecoverSpatialIndex, 0, 0);
+    sqlite3_create_function (db, "CheckSpatialIndex", 0, SQLITE_ANY, 0,
+			     fnct_CheckSpatialIndex, 0, 0);
+    sqlite3_create_function (db, "CheckSpatialIndex", 2, SQLITE_ANY, 0,
+			     fnct_CheckSpatialIndex, 0, 0);
     sqlite3_create_function (db, "CreateSpatialIndex", 2, SQLITE_ANY, 0,
 			     fnct_CreateSpatialIndex, 0, 0);
     sqlite3_create_function (db, "CreateMbrCache", 2, SQLITE_ANY, 0,
