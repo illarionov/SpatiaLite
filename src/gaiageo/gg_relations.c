@@ -1647,8 +1647,46 @@ gaiaOffsetCurve (gaiaGeomCollPtr geom, double radius, int points,
     gaiaGeomCollPtr geo;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    int closed = 0;
     if (!geom)
 	return NULL;
+
+/* checking the input geometry for validity */
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  /* counting how many POINTs are there */
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  /* counting how many LINESTRINGs are there */
+	  lns++;
+	  if (gaiaIsClosed (ln))
+	      closed++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  /* counting how many POLYGON are there */
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts > 0 || pgs > 0 || lns > 1 || closed > 0)
+	return NULL;
+
+/* all right: this one simply is a LINESTRING */
+    geom->DeclaredType = GAIA_LINESTRING;
+
     g1 = gaiaToGeos (geom);
     g2 = GEOSSingleSidedBuffer (g1, radius, points, GEOSBUF_JOIN_ROUND, 5.0,
 				left_right);
