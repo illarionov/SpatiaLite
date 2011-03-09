@@ -14,6 +14,7 @@ libsplite_la_SOURCES = mbrcache.c \
 	spatialite.c \
 	virtualdbf.c \
 	virtualfdo.c \
+	virtualspatialindex.c \
 	virtualnetwork.c \
 	virtualshape.c
 

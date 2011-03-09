@@ -13885,6 +13885,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
     mbrcache_extension_init (db);
 /* initializing the VirtualFDO  extension */
     virtualfdo_extension_init (db);
+/* initializing the VirtualSpatialIndex  extension */
+    virtual_spatialindex_extension_init (db);
 /* setting a timeout handler */
     sqlite3_busy_timeout (db, 5000);
 }
@@ -13906,6 +13908,7 @@ spatialite_init (int verbose)
 	  printf ("\t- 'VirtualNetwork'\t[Dijkstra shortest path]\n");
 	  printf ("\t- 'RTree'\t\t[Spatial Index - R*Tree]\n");
 	  printf ("\t- 'MbrCache'\t\t[Spatial Index - MBR cache]\n");
+	  printf ("\t- 'VirtualSpatialIndex'\t[R*Tree metahandler]\n");
 	  printf ("\t- 'VirtualFDO'\t\t[FDO-OGR interoperability]\n");
 	  printf ("\t- 'SpatiaLite'\t\t[Spatial SQL - OGC]\n");
       }
@@ -14794,6 +14797,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
     mbrcache_extension_init (db);
 /* initializing the VirtualFDO  extension */
     virtualfdo_extension_init (db);
+/* initializing the VirtualSpatialIndex  extension */
+    virtual_spatialindex_extension_init (db);
 /* setting a timeout handler */
     sqlite3_busy_timeout (db, 5000);
 
@@ -14806,7 +14811,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 #endif /* end ICONV conditional */
     printf ("\t- 'VirtualNetwork'\t[Dijkstra shortest path]\n");
     printf ("\t- 'RTree'\t\t[Spatial Index - R*Tree]\n");
-    printf ("\t- 'MbrCache'\t\t[Spatial Index - MBR cache]\n");
+    printf ("\t- 'MbrCache'\t\t[Spatial Index - MBR cache]\n"); 
+    printf ("\t- 'VirtualSpatialIndex'\t[R*Tree metahandler]\n");
     printf ("\t- 'VirtualFDO'\t\t[FDO-OGR interoperability]\n");
     printf ("\t- 'SpatiaLite'\t\t[Spatial SQL - OGC]\n");
 #ifndef OMIT_PROJ		/* PROJ.4 version */

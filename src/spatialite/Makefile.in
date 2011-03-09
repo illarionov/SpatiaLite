@@ -43,7 +43,8 @@ CONFIG_CLEAN_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libsplite_la_LIBADD =
 am_libsplite_la_OBJECTS = mbrcache.lo spatialite.lo virtualdbf.lo \
-	virtualfdo.lo virtualnetwork.lo virtualshape.lo
+	virtualfdo.lo virtualspatialindex.lo virtualnetwork.lo \
+	virtualshape.lo
 libsplite_la_OBJECTS = $(am_libsplite_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -192,6 +193,7 @@ libsplite_la_SOURCES = mbrcache.c \
 	spatialite.c \
 	virtualdbf.c \
 	virtualfdo.c \
+	virtualspatialindex.c \
 	virtualnetwork.c \
 	virtualshape.c
 
@@ -252,6 +254,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/virtualfdo.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/virtualnetwork.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/virtualshape.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/virtualspatialindex.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

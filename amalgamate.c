@@ -797,6 +797,7 @@ main ()
     do_copy (out, "/spatialite/", "virtualshape.c");
     do_copy (out, "/spatialite/", "virtualdbf.c");
     do_copy (out, "/spatialite/", "virtualnetwork.c");
+    do_copy (out, "/spatialite/", "virtualspatialindex.c");
     do_copy (out, "/spatialite/", "virtualfdo.c");
     do_copy (out, "/virtualtext/", "virtualtext.c");
     do_copy (out, "/versioninfo/", "version.c");
