@@ -1165,6 +1165,12 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 	goto error;
     if (!createAdvancedMetaData (sqlite))
 	goto error;
+/* creating the SpatialIndex VIRTUAL TABLE */
+    strcpy (sql, "CREATE VIRTUAL TABLE SpatialIndex ");
+    strcat (sql, "USING VirtualSpatialIndex()");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
     if (spatial_ref_sys_init (sqlite, 0))
 	updateSpatiaLiteHistory (sqlite, "spatial_ref_sys", NULL,
 				 "table succesfully populated");
@@ -12619,8 +12625,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -12704,8 +12709,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -12714,8 +12718,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -14811,7 +14814,7 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 #endif /* end ICONV conditional */
     printf ("\t- 'VirtualNetwork'\t[Dijkstra shortest path]\n");
     printf ("\t- 'RTree'\t\t[Spatial Index - R*Tree]\n");
-    printf ("\t- 'MbrCache'\t\t[Spatial Index - MBR cache]\n"); 
+    printf ("\t- 'MbrCache'\t\t[Spatial Index - MBR cache]\n");
     printf ("\t- 'VirtualSpatialIndex'\t[R*Tree metahandler]\n");
     printf ("\t- 'VirtualFDO'\t\t[FDO-OGR interoperability]\n");
     printf ("\t- 'SpatiaLite'\t\t[Spatial SQL - OGC]\n");
