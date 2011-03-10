@@ -227,6 +227,11 @@ static int
 is_header (const char *row)
 {
 /* checks for #include */
+    if (strncmp (row, "#include <inttypes.h>", 21) == 0)
+      {
+	  /* note well: inttypes.h must not be commented */
+	  return 0;
+      }
     if (strlen (row) >= 8 && strncmp (row, "#include", 8) == 0)
 	return 1;
     return 0;
