@@ -48,7 +48,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <float.h>
 
-#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
+#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
 #include <spatialite/sqlite3ext.h>
 #else
 #include <sqlite3ext.h>
@@ -2196,7 +2196,6 @@ gaiaToSpatiaLiteBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 			      }
 			}
 		  }
-		*ptr = GAIA_MARK_END;	/* END signature */
 		polyg = polyg->Next;
 	    }
 	  *ptr = GAIA_MARK_END;	/* END signature */
@@ -3187,7 +3186,7 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 			}
 		      else
 			{
-			    /* compressing any other intermeditate vertex */
+			    /* compressing any other intermediate vertex */
 			    fx = (float) (x - last_x);
 			    fy = (float) (y - last_y);
 			    gaiaExportF32 (ptr, fx, 1, endian_arch);	/* X */
@@ -3204,7 +3203,7 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 			      }
 			    else
 			      {
-				  /* compressing any other intermeditate vertex */
+				  /* compressing any other intermediate vertex */
 				  fz = (float) (z - last_z);
 				  gaiaExportF32 (ptr, fz, 1, endian_arch);	/* Z */
 				  ptr += 4;
@@ -3225,7 +3224,7 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 			      }
 			    else
 			      {
-				  /* compressing any other intermeditate vertex */
+				  /* compressing any other intermediate vertex */
 				  fz = (float) (z - last_z);
 				  gaiaExportF32 (ptr, fz, 1, endian_arch);	/* Z */
 				  ptr += 4;
@@ -3284,7 +3283,7 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 			}
 		      else
 			{
-			    /* compressing any other intermeditate vertex */
+			    /* compressing any other intermediate vertex */
 			    fx = (float) (x - last_x);
 			    fy = (float) (y - last_y);
 			    gaiaExportF32 (ptr, fx, 1, endian_arch);	/* X */
@@ -3301,7 +3300,7 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 			      }
 			    else
 			      {
-				  /* compressing any other intermeditate vertex */
+				  /* compressing any other intermediate vertex */
 				  fz = (float) (z - last_z);
 				  gaiaExportF32 (ptr, fz, 1, endian_arch);	/* Z */
 				  ptr += 4;
@@ -3322,7 +3321,7 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 			      }
 			    else
 			      {
-				  /* compressing any other intermeditate vertex */
+				  /* compressing any other intermediate vertex */
 				  fz = (float) (z - last_z);
 				  gaiaExportF32 (ptr, fz, 1, endian_arch);	/* Z */
 				  ptr += 4;
@@ -3341,8 +3340,8 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 		      ptr += 4;
 		      for (iv = 0; iv < rng->Points; iv++)
 			{
-			    m = 0.0;
 			    z = 0.0;
+			    m = 0.0;
 			    if (geom->DimensionModel == GAIA_XY_Z)
 			      {
 				  gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
@@ -3353,8 +3352,8 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 			      }
 			    else if (geom->DimensionModel == GAIA_XY_Z_M)
 			      {
-				  gaiaGetPointXYZM (rng->Coords, iv, &x, &y,
-						    &z, &m);
+				  gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z,
+						    &m);
 			      }
 			    else
 			      {
@@ -3369,7 +3368,7 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 			      }
 			    else
 			      {
-				  /* compressing any other intermeditate vertex */
+				  /* compressing any other intermediate vertex */
 				  fx = (float) (x - last_x);
 				  fy = (float) (y - last_y);
 				  gaiaExportF32 (ptr, fx, 1, endian_arch);	/* X */
@@ -3386,7 +3385,7 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 				    }
 				  else
 				    {
-					/* compressing any other intermeditate vertex */
+					/* compressing any other intermediate vertex */
 					fz = (float) (z - last_z);
 					gaiaExportF32 (ptr, fz, 1, endian_arch);	/* Z */
 					ptr += 4;
@@ -3407,12 +3406,12 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 				    }
 				  else
 				    {
-					/* compressing any other intermeditate vertex */
+					/* compressing any other intermediate vertex */
 					fz = (float) (z - last_z);
 					gaiaExportF32 (ptr, fz, 1, endian_arch);	/* Z */
 					ptr += 4;
 				    }
-				  gaiaExport64 (ptr + 8, m, 1, endian_arch);	/* M */
+				  gaiaExport64 (ptr, m, 1, endian_arch);	/* M */
 				  ptr += 8;
 			      }
 			    last_x = x;
@@ -3420,7 +3419,6 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 			    last_z = z;
 			}
 		  }
-		*ptr = GAIA_MARK_END;	/* END signature */
 		polyg = polyg->Next;
 	    }
 	  *ptr = GAIA_MARK_END;	/* END signature */

@@ -51,7 +51,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <float.h>
 #include <errno.h>
 
-#if OMIT_ICONV == 0	/* if ICONV is disabled no SHP support is available */
+#if OMIT_ICONV == 0		/* if ICONV is disabled no SHP support is available */
 
 #if defined(__MINGW32__) || defined(_WIN32)
 #define LIBICONV_STATIC
@@ -60,7 +60,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #ifdef _MSC_VER
 /* <localcharset.h> isn't supported on OSGeo4W */
 /* applying a tricky workaround to fix this issue */
-extern const char * locale_charset (void);
+extern const char *locale_charset (void);
 #else /* sane Windows - not OSGeo4W */
 #include <localcharset.h>
 #endif /* end localcharset */
@@ -74,7 +74,7 @@ extern const char * locale_charset (void);
 #endif
 #endif
 
-#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
+#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
 #include <spatialite/sqlite3ext.h>
 #else
 #include <sqlite3ext.h>
@@ -1278,14 +1278,21 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 	  /* shape point Z */
 	  rd = fread (shp->BufShp, sizeof (unsigned char), 32, shp->flShp);
 	  if (rd != 32)
-	      goto error;
+	    {
+		/* required by some buggish SHP (e.g. the GDAL/OGR ones) */
+		if (rd != 24)
+		    goto error;
+	    }
 	  x = gaiaImport64 (shp->BufShp, GAIA_LITTLE_ENDIAN, shp->endian_arch);
 	  y = gaiaImport64 (shp->BufShp + 8, GAIA_LITTLE_ENDIAN,
 			    shp->endian_arch);
 	  z = gaiaImport64 (shp->BufShp + 16, GAIA_LITTLE_ENDIAN,
 			    shp->endian_arch);
-	  m = gaiaImport64 (shp->BufShp + 24, GAIA_LITTLE_ENDIAN,
-			    shp->endian_arch);
+	  if (rd == 24)
+	      m = 0.0;
+	  else
+	      m = gaiaImport64 (shp->BufShp + 24, GAIA_LITTLE_ENDIAN,
+				shp->endian_arch);
 	  if (shp->EffectiveDims == GAIA_XY_Z)
 	    {
 		geom = gaiaAllocGeomCollXYZ ();
@@ -1380,8 +1387,9 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		  {
 		      x = gaiaImport64 (shp->BufShp + base + (iv * 16),
 					GAIA_LITTLE_ENDIAN, shp->endian_arch);
-		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) + 8,
-					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) +
+					8, GAIA_LITTLE_ENDIAN,
+					shp->endian_arch);
 		      if (shp->EffectiveDims == GAIA_XY_Z)
 			{
 			    gaiaSetPointXYZ (line->Coords, points, x, y, 0.0);
@@ -1392,8 +1400,8 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 			}
 		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
 			{
-			    gaiaSetPointXYZM (line->Coords, points, x, y, 0.0,
-					      0.0);
+			    gaiaSetPointXYZM (line->Coords, points, x, y,
+					      0.0, 0.0);
 			}
 		      else
 			{
@@ -1467,13 +1475,14 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		  {
 		      x = gaiaImport64 (shp->BufShp + base + (iv * 16),
 					GAIA_LITTLE_ENDIAN, shp->endian_arch);
-		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) + 8,
-					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) +
+					8, GAIA_LITTLE_ENDIAN,
+					shp->endian_arch);
 		      z = gaiaImport64 (shp->BufShp + baseZ + (iv * 8),
 					GAIA_LITTLE_ENDIAN, shp->endian_arch);
 		      if (hasM)
-			  m = gaiaImport64 (shp->BufShp + baseM + (iv * 8),
-					    GAIA_LITTLE_ENDIAN,
+			  m = gaiaImport64 (shp->BufShp + baseM +
+					    (iv * 8), GAIA_LITTLE_ENDIAN,
 					    shp->endian_arch);
 		      else
 			  m = 0.0;
@@ -1562,11 +1571,12 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		  {
 		      x = gaiaImport64 (shp->BufShp + base + (iv * 16),
 					GAIA_LITTLE_ENDIAN, shp->endian_arch);
-		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) + 8,
-					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) +
+					8, GAIA_LITTLE_ENDIAN,
+					shp->endian_arch);
 		      if (hasM)
-			  m = gaiaImport64 (shp->BufShp + baseM + (iv * 8),
-					    GAIA_LITTLE_ENDIAN,
+			  m = gaiaImport64 (shp->BufShp + baseM +
+					    (iv * 8), GAIA_LITTLE_ENDIAN,
 					    shp->endian_arch);
 		      else
 			  m = 0.0;
@@ -1582,8 +1592,8 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 			}
 		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
 			{
-			    gaiaSetPointXYZM (line->Coords, points, x, y, 0.0,
-					      m);
+			    gaiaSetPointXYZM (line->Coords, points, x, y,
+					      0.0, m);
 			}
 		      else
 			{
@@ -1648,8 +1658,9 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		  {
 		      x = gaiaImport64 (shp->BufShp + base + (iv * 16),
 					GAIA_LITTLE_ENDIAN, shp->endian_arch);
-		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) + 8,
-					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) +
+					8, GAIA_LITTLE_ENDIAN,
+					shp->endian_arch);
 		      if (shp->EffectiveDims == GAIA_XY_Z)
 			{
 			    gaiaSetPointXYZ (ring->Coords, points, x, y, 0.0);
@@ -1660,8 +1671,8 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 			}
 		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
 			{
-			    gaiaSetPointXYZM (ring->Coords, points, x, y, 0.0,
-					      0.0);
+			    gaiaSetPointXYZM (ring->Coords, points, x, y,
+					      0.0, 0.0);
 			}
 		      else
 			{
@@ -1750,13 +1761,14 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		  {
 		      x = gaiaImport64 (shp->BufShp + base + (iv * 16),
 					GAIA_LITTLE_ENDIAN, shp->endian_arch);
-		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) + 8,
-					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) +
+					8, GAIA_LITTLE_ENDIAN,
+					shp->endian_arch);
 		      z = gaiaImport64 (shp->BufShp + baseZ + (iv * 8),
 					GAIA_LITTLE_ENDIAN, shp->endian_arch);
 		      if (hasM)
-			  m = gaiaImport64 (shp->BufShp + baseM + (iv * 8),
-					    GAIA_LITTLE_ENDIAN,
+			  m = gaiaImport64 (shp->BufShp + baseM +
+					    (iv * 8), GAIA_LITTLE_ENDIAN,
 					    shp->endian_arch);
 		      else
 			  m = 0.0;
@@ -1860,11 +1872,12 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 		  {
 		      x = gaiaImport64 (shp->BufShp + base + (iv * 16),
 					GAIA_LITTLE_ENDIAN, shp->endian_arch);
-		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) + 8,
-					GAIA_LITTLE_ENDIAN, shp->endian_arch);
+		      y = gaiaImport64 (shp->BufShp + base + (iv * 16) +
+					8, GAIA_LITTLE_ENDIAN,
+					shp->endian_arch);
 		      if (hasM)
-			  m = gaiaImport64 (shp->BufShp + baseM + (iv * 8),
-					    GAIA_LITTLE_ENDIAN,
+			  m = gaiaImport64 (shp->BufShp + baseM +
+					    (iv * 8), GAIA_LITTLE_ENDIAN,
 					    shp->endian_arch);
 		      m = 0.0;
 		      if (m < SHAPEFILE_NO_DATA)
@@ -1879,8 +1892,8 @@ gaiaReadShpEntity (gaiaShapefilePtr shp, int current_row, int srid)
 			}
 		      else if (shp->EffectiveDims == GAIA_XY_Z_M)
 			{
-			    gaiaSetPointXYZM (ring->Coords, points, x, y, 0.0,
-					      m);
+			    gaiaSetPointXYZM (ring->Coords, points, x, y,
+					      0.0, m);
 			}
 		      else
 			{
@@ -2184,8 +2197,8 @@ gaiaSaneClockwise (gaiaPolygonPtr polyg)
 		      else if (ring->DimensionModel == GAIA_XY_Z_M)
 			{
 			    gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
-			    gaiaSetPointXYZM (new_ring->Coords, iv2, x, y, z,
-					      m);
+			    gaiaSetPointXYZM (new_ring->Coords, iv2, x, y,
+					      z, m);
 			}
 		      else
 			{
@@ -2208,8 +2221,8 @@ gaiaSaneClockwise (gaiaPolygonPtr polyg)
 			}
 		      else if (ring->DimensionModel == GAIA_XY_Z_M)
 			{
-			    gaiaGetPointXYZM (new_ring->Coords, iv, &x, &y, &z,
-					      &m);
+			    gaiaGetPointXYZM (new_ring->Coords, iv, &x, &y,
+					      &z, &m);
 			    gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
 			}
 		      else
@@ -2329,16 +2342,16 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 			    sprintf (dummy, "%lld", fld->Value->IntValue);
 #endif
 			    if (strlen (dummy) <= fld->Length)
-				memcpy (shp->BufDbf + fld->Offset + 1, dummy,
-					strlen (dummy));
+				memcpy (shp->BufDbf + fld->Offset + 1,
+					dummy, strlen (dummy));
 			}
 		      if (fld->Value->Type == GAIA_DOUBLE_VALUE)
 			{
 			    sprintf (fmt, "%%1.%df", fld->Decimals);
 			    sprintf (dummy, fmt, fld->Value->DblValue);
 			    if (strlen (dummy) <= fld->Length)
-				memcpy (shp->BufDbf + fld->Offset + 1, dummy,
-					strlen (dummy));
+				memcpy (shp->BufDbf + fld->Offset + 1,
+					dummy, strlen (dummy));
 			}
 		  }
 		break;
@@ -2517,8 +2530,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		while (line)
 		  {
 		      /* exports start point index for each line */
-		      gaiaExport32 (shp->BufShp + ix, tot_v, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport32 (shp->BufShp + ix, tot_v,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      tot_v += line->Points;
 		      ix += 4;
 		      line = line->Next;
@@ -2542,8 +2555,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 			      }
 			    else if (line->DimensionModel == GAIA_XY_Z_M)
 			      {
-				  gaiaGetPointXYZM (line->Coords, iv, &x, &y,
-						    &z, &m);
+				  gaiaGetPointXYZM (line->Coords, iv, &x,
+						    &y, &z, &m);
 			      }
 			    else
 			      {
@@ -2627,8 +2640,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		while (line)
 		  {
 		      /* exports start point index for each line */
-		      gaiaExport32 (shp->BufShp + ix, tot_v, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport32 (shp->BufShp + ix, tot_v,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      tot_v += line->Points;
 		      ix += 4;
 		      line = line->Next;
@@ -2652,8 +2665,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 			      }
 			    else if (line->DimensionModel == GAIA_XY_Z_M)
 			      {
-				  gaiaGetPointXYZM (line->Coords, iv, &x, &y,
-						    &z, &m);
+				  gaiaGetPointXYZM (line->Coords, iv, &x,
+						    &y, &z, &m);
 			      }
 			    else
 			      {
@@ -2695,8 +2708,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 			      }
 			    else if (line->DimensionModel == GAIA_XY_Z_M)
 			      {
-				  gaiaGetPointXYZM (line->Coords, iv, &x, &y,
-						    &z, &m);
+				  gaiaGetPointXYZM (line->Coords, iv, &x,
+						    &y, &z, &m);
 			      }
 			    else
 			      {
@@ -2711,11 +2724,11 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		if (hasM)
 		  {
 		      /* exporting the M-range [min/max] */
-		      gaiaExport64 (shp->BufShp + ix, minM, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport64 (shp->BufShp + ix, minM,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      ix += 8;
-		      gaiaExport64 (shp->BufShp + ix, maxM, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport64 (shp->BufShp + ix, maxM,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      ix += 8;
 		      line = entity->Geometry->FirstLinestring;
 		      while (line)
@@ -2727,18 +2740,18 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 				  m = 0.0;
 				  if (line->DimensionModel == GAIA_XY_Z)
 				    {
-					gaiaGetPointXYZ (line->Coords, iv, &x,
-							 &y, &z);
+					gaiaGetPointXYZ (line->Coords, iv,
+							 &x, &y, &z);
 				    }
 				  else if (line->DimensionModel == GAIA_XY_M)
 				    {
-					gaiaGetPointXYM (line->Coords, iv, &x,
-							 &y, &m);
+					gaiaGetPointXYM (line->Coords, iv,
+							 &x, &y, &m);
 				    }
 				  else if (line->DimensionModel == GAIA_XY_Z_M)
 				    {
-					gaiaGetPointXYZM (line->Coords, iv, &x,
-							  &y, &z, &m);
+					gaiaGetPointXYZM (line->Coords, iv,
+							  &x, &y, &z, &m);
 				    }
 				  else
 				    {
@@ -2813,8 +2826,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		while (line)
 		  {
 		      /* exports start point index for each line */
-		      gaiaExport32 (shp->BufShp + ix, tot_v, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport32 (shp->BufShp + ix, tot_v,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      tot_v += line->Points;
 		      ix += 4;
 		      line = line->Next;
@@ -2838,8 +2851,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 			      }
 			    else if (line->DimensionModel == GAIA_XY_Z_M)
 			      {
-				  gaiaGetPointXYZM (line->Coords, iv, &x, &y,
-						    &z, &m);
+				  gaiaGetPointXYZM (line->Coords, iv, &x,
+						    &y, &z, &m);
 			      }
 			    else
 			      {
@@ -2881,8 +2894,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 			      }
 			    else if (line->DimensionModel == GAIA_XY_Z_M)
 			      {
-				  gaiaGetPointXYZM (line->Coords, iv, &x, &y,
-						    &z, &m);
+				  gaiaGetPointXYZM (line->Coords, iv, &x,
+						    &y, &z, &m);
 			      }
 			    else
 			      {
@@ -2966,8 +2979,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		  {
 		      /* exports start point index for each line */
 		      ring = polyg->Exterior;	/* this one is the exterior ring */
-		      gaiaExport32 (shp->BufShp + ix, tot_v, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport32 (shp->BufShp + ix, tot_v,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      tot_v += ring->Points;
 		      ix += 4;
 		      for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -3001,8 +3014,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 			      }
 			    else if (ring->DimensionModel == GAIA_XY_Z_M)
 			      {
-				  gaiaGetPointXYZM (ring->Coords, iv, &x, &y,
-						    &z, &m);
+				  gaiaGetPointXYZM (ring->Coords, iv, &x,
+						    &y, &z, &m);
 			      }
 			    else
 			      {
@@ -3024,18 +3037,18 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 				  /* exports a POINT [x,y] - interior ring */
 				  if (ring->DimensionModel == GAIA_XY_Z)
 				    {
-					gaiaGetPointXYZ (ring->Coords, iv, &x,
-							 &y, &z);
+					gaiaGetPointXYZ (ring->Coords, iv,
+							 &x, &y, &z);
 				    }
 				  else if (ring->DimensionModel == GAIA_XY_M)
 				    {
-					gaiaGetPointXYM (ring->Coords, iv, &x,
-							 &y, &m);
+					gaiaGetPointXYM (ring->Coords, iv,
+							 &x, &y, &m);
 				    }
 				  else if (ring->DimensionModel == GAIA_XY_Z_M)
 				    {
-					gaiaGetPointXYZM (ring->Coords, iv, &x,
-							  &y, &z, &m);
+					gaiaGetPointXYZM (ring->Coords, iv,
+							  &x, &y, &z, &m);
 				    }
 				  else
 				    {
@@ -3134,8 +3147,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		  {
 		      /* exports start point index for each line */
 		      ring = polyg->Exterior;	/* this one is the exterior ring */
-		      gaiaExport32 (shp->BufShp + ix, tot_v, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport32 (shp->BufShp + ix, tot_v,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      tot_v += ring->Points;
 		      ix += 4;
 		      for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -3169,8 +3182,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 			      }
 			    else if (ring->DimensionModel == GAIA_XY_Z_M)
 			      {
-				  gaiaGetPointXYZM (ring->Coords, iv, &x, &y,
-						    &z, &m);
+				  gaiaGetPointXYZM (ring->Coords, iv, &x,
+						    &y, &z, &m);
 			      }
 			    else
 			      {
@@ -3192,18 +3205,18 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 				  /* exports a POINT [x,y] - interior ring */
 				  if (ring->DimensionModel == GAIA_XY_Z)
 				    {
-					gaiaGetPointXYZ (ring->Coords, iv, &x,
-							 &y, &z);
+					gaiaGetPointXYZ (ring->Coords, iv,
+							 &x, &y, &z);
 				    }
 				  else if (ring->DimensionModel == GAIA_XY_M)
 				    {
-					gaiaGetPointXYM (ring->Coords, iv, &x,
-							 &y, &m);
+					gaiaGetPointXYM (ring->Coords, iv,
+							 &x, &y, &m);
 				    }
 				  else if (ring->DimensionModel == GAIA_XY_Z_M)
 				    {
-					gaiaGetPointXYZM (ring->Coords, iv, &x,
-							  &y, &z, &m);
+					gaiaGetPointXYZM (ring->Coords, iv,
+							  &x, &y, &z, &m);
 				    }
 				  else
 				    {
@@ -3249,8 +3262,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 			      }
 			    else if (ring->DimensionModel == GAIA_XY_Z_M)
 			      {
-				  gaiaGetPointXYZM (ring->Coords, iv, &x, &y,
-						    &z, &m);
+				  gaiaGetPointXYZM (ring->Coords, iv, &x,
+						    &y, &z, &m);
 			      }
 			    else
 			      {
@@ -3270,18 +3283,18 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 				  z = 0.0;
 				  if (ring->DimensionModel == GAIA_XY_Z)
 				    {
-					gaiaGetPointXYZ (ring->Coords, iv, &x,
-							 &y, &z);
+					gaiaGetPointXYZ (ring->Coords, iv,
+							 &x, &y, &z);
 				    }
 				  else if (ring->DimensionModel == GAIA_XY_M)
 				    {
-					gaiaGetPointXYM (ring->Coords, iv, &x,
-							 &y, &m);
+					gaiaGetPointXYM (ring->Coords, iv,
+							 &x, &y, &m);
 				    }
 				  else if (ring->DimensionModel == GAIA_XY_Z_M)
 				    {
-					gaiaGetPointXYZM (ring->Coords, iv, &x,
-							  &y, &z, &m);
+					gaiaGetPointXYZM (ring->Coords, iv,
+							  &x, &y, &z, &m);
 				    }
 				  else
 				    {
@@ -3298,11 +3311,11 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		if (hasM)
 		  {
 		      /* exporting the M-range [min/max] */
-		      gaiaExport64 (shp->BufShp + ix, minM, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport64 (shp->BufShp + ix, minM,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      ix += 8;
-		      gaiaExport64 (shp->BufShp + ix, maxM, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport64 (shp->BufShp + ix, maxM,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      ix += 8;
 		      polyg = entity->Geometry->FirstPolygon;
 		      while (polyg)
@@ -3315,18 +3328,18 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 				  m = 0.0;
 				  if (ring->DimensionModel == GAIA_XY_Z)
 				    {
-					gaiaGetPointXYZ (ring->Coords, iv, &x,
-							 &y, &z);
+					gaiaGetPointXYZ (ring->Coords, iv,
+							 &x, &y, &z);
 				    }
 				  else if (ring->DimensionModel == GAIA_XY_M)
 				    {
-					gaiaGetPointXYM (ring->Coords, iv, &x,
-							 &y, &m);
+					gaiaGetPointXYM (ring->Coords, iv,
+							 &x, &y, &m);
 				    }
 				  else if (ring->DimensionModel == GAIA_XY_Z_M)
 				    {
-					gaiaGetPointXYZM (ring->Coords, iv, &x,
-							  &y, &z, &m);
+					gaiaGetPointXYZM (ring->Coords, iv,
+							  &x, &y, &z, &m);
 				    }
 				  else
 				    {
@@ -3347,14 +3360,14 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 					m = 0.0;
 					if (ring->DimensionModel == GAIA_XY_Z)
 					  {
-					      gaiaGetPointXYZ (ring->Coords, iv,
-							       &x, &y, &z);
+					      gaiaGetPointXYZ (ring->Coords,
+							       iv, &x, &y, &z);
 					  }
 					else if (ring->DimensionModel ==
 						 GAIA_XY_M)
 					  {
-					      gaiaGetPointXYM (ring->Coords, iv,
-							       &x, &y, &m);
+					      gaiaGetPointXYM (ring->Coords,
+							       iv, &x, &y, &m);
 					  }
 					else if (ring->DimensionModel ==
 						 GAIA_XY_Z_M)
@@ -3365,8 +3378,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 					  }
 					else
 					  {
-					      gaiaGetPoint (ring->Coords, iv,
-							    &x, &y);
+					      gaiaGetPoint (ring->Coords,
+							    iv, &x, &y);
 					  }
 					gaiaExport64 (shp->BufShp + ix, m,
 						      GAIA_LITTLE_ENDIAN,
@@ -3450,8 +3463,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		  {
 		      /* exports start point index for each line */
 		      ring = polyg->Exterior;	/* this one is the exterior ring */
-		      gaiaExport32 (shp->BufShp + ix, tot_v, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport32 (shp->BufShp + ix, tot_v,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      tot_v += ring->Points;
 		      ix += 4;
 		      for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -3485,8 +3498,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 			      }
 			    else if (ring->DimensionModel == GAIA_XY_Z_M)
 			      {
-				  gaiaGetPointXYZM (ring->Coords, iv, &x, &y,
-						    &z, &m);
+				  gaiaGetPointXYZM (ring->Coords, iv, &x,
+						    &y, &z, &m);
 			      }
 			    else
 			      {
@@ -3508,18 +3521,18 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 				  /* exports a POINT [x,y] - interior ring */
 				  if (ring->DimensionModel == GAIA_XY_Z)
 				    {
-					gaiaGetPointXYZ (ring->Coords, iv, &x,
-							 &y, &z);
+					gaiaGetPointXYZ (ring->Coords, iv,
+							 &x, &y, &z);
 				    }
 				  else if (ring->DimensionModel == GAIA_XY_M)
 				    {
-					gaiaGetPointXYM (ring->Coords, iv, &x,
-							 &y, &m);
+					gaiaGetPointXYM (ring->Coords, iv,
+							 &x, &y, &m);
 				    }
 				  else if (ring->DimensionModel == GAIA_XY_Z_M)
 				    {
-					gaiaGetPointXYZM (ring->Coords, iv, &x,
-							  &y, &z, &m);
+					gaiaGetPointXYZM (ring->Coords, iv,
+							  &x, &y, &z, &m);
 				    }
 				  else
 				    {
@@ -3565,8 +3578,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 			      }
 			    else if (ring->DimensionModel == GAIA_XY_Z_M)
 			      {
-				  gaiaGetPointXYZM (ring->Coords, iv, &x, &y,
-						    &z, &m);
+				  gaiaGetPointXYZM (ring->Coords, iv, &x,
+						    &y, &z, &m);
 			      }
 			    else
 			      {
@@ -3586,18 +3599,18 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 				  m = 0.0;
 				  if (ring->DimensionModel == GAIA_XY_Z)
 				    {
-					gaiaGetPointXYZ (ring->Coords, iv, &x,
-							 &y, &z);
+					gaiaGetPointXYZ (ring->Coords, iv,
+							 &x, &y, &z);
 				    }
 				  else if (ring->DimensionModel == GAIA_XY_M)
 				    {
-					gaiaGetPointXYM (ring->Coords, iv, &x,
-							 &y, &m);
+					gaiaGetPointXYM (ring->Coords, iv,
+							 &x, &y, &m);
 				    }
 				  else if (ring->DimensionModel == GAIA_XY_Z_M)
 				    {
-					gaiaGetPointXYZM (ring->Coords, iv, &x,
-							  &y, &z, &m);
+					gaiaGetPointXYZM (ring->Coords, iv,
+							  &x, &y, &z, &m);
 				    }
 				  else
 				    {
@@ -3667,11 +3680,11 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		while (pt)
 		  {
 		      /* exports each point */
-		      gaiaExport64 (shp->BufShp + ix, pt->X, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport64 (shp->BufShp + ix, pt->X,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      ix += 8;
-		      gaiaExport64 (shp->BufShp + ix, pt->Y, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport64 (shp->BufShp + ix, pt->Y,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      ix += 8;
 		      pt = pt->Next;
 		  }
@@ -3740,11 +3753,11 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		while (pt)
 		  {
 		      /* exports each point */
-		      gaiaExport64 (shp->BufShp + ix, pt->X, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport64 (shp->BufShp + ix, pt->X,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      ix += 8;
-		      gaiaExport64 (shp->BufShp + ix, pt->Y, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport64 (shp->BufShp + ix, pt->Y,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      ix += 8;
 		      pt = pt->Next;
 		  }
@@ -3759,19 +3772,19 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		while (pt)
 		  {
 		      /* exports Z-values */
-		      gaiaExport64 (shp->BufShp + ix, pt->Z, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport64 (shp->BufShp + ix, pt->Z,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      ix += 8;
 		      pt = pt->Next;
 		  }
 		if (hasM)
 		  {
 		      /* exporting the M-range [min/max] */
-		      gaiaExport64 (shp->BufShp + ix, minM, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport64 (shp->BufShp + ix, minM,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      ix += 8;
-		      gaiaExport64 (shp->BufShp + ix, maxM, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport64 (shp->BufShp + ix, maxM,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      ix += 8;
 		      pt = entity->Geometry->FirstPoint;
 		      while (pt)
@@ -3840,11 +3853,11 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		while (pt)
 		  {
 		      /* exports each point */
-		      gaiaExport64 (shp->BufShp + ix, pt->X, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport64 (shp->BufShp + ix, pt->X,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      ix += 8;
-		      gaiaExport64 (shp->BufShp + ix, pt->Y, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport64 (shp->BufShp + ix, pt->Y,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      ix += 8;
 		      pt = pt->Next;
 		  }
@@ -3859,8 +3872,8 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		while (pt)
 		  {
 		      /* exports M-values */
-		      gaiaExport64 (shp->BufShp + ix, pt->M, GAIA_LITTLE_ENDIAN,
-				    endian_arch);
+		      gaiaExport64 (shp->BufShp + ix, pt->M,
+				    GAIA_LITTLE_ENDIAN, endian_arch);
 		      ix += 8;
 		      pt = pt->Next;
 		  }
@@ -4021,8 +4034,8 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 			    shp->flShp);
 		if (rd != 32)
 		    goto exit;
-		rd = fread (shp->BufShp, sizeof (unsigned char), (sz * 2) - 36,
-			    shp->flShp);
+		rd = fread (shp->BufShp, sizeof (unsigned char),
+			    (sz * 2) - 36, shp->flShp);
 		if (rd != (sz * 2) - 36)
 		    goto exit;
 		n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN,
@@ -4048,8 +4061,8 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 			    shp->flShp);
 		if (rd != 32)
 		    goto exit;
-		rd = fread (shp->BufShp, sizeof (unsigned char), (sz * 2) - 36,
-			    shp->flShp);
+		rd = fread (shp->BufShp, sizeof (unsigned char),
+			    (sz * 2) - 36, shp->flShp);
 		if (rd != (sz * 2) - 36)
 		    goto exit;
 		n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN,
@@ -4062,7 +4075,8 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 		  {
 		      if (ind < (n - 1))
 			  end =
-			      gaiaImport32 (shp->BufShp + 8 + ((ind + 1) * 4),
+			      gaiaImport32 (shp->BufShp + 8 +
+					    ((ind + 1) * 4),
 					    GAIA_LITTLE_ENDIAN,
 					    shp->endian_arch);
 		      else
@@ -4072,11 +4086,12 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 		      points = 0;
 		      for (iv = start; iv < end; iv++)
 			{
-			    x = gaiaImport64 (shp->BufShp + base + (iv * 16),
-					      GAIA_LITTLE_ENDIAN,
+			    x = gaiaImport64 (shp->BufShp + base +
+					      (iv * 16), GAIA_LITTLE_ENDIAN,
 					      shp->endian_arch);
-			    y = gaiaImport64 (shp->BufShp + base + (iv * 16) +
-					      8, GAIA_LITTLE_ENDIAN,
+			    y = gaiaImport64 (shp->BufShp + base +
+					      (iv * 16) + 8,
+					      GAIA_LITTLE_ENDIAN,
 					      shp->endian_arch);
 			    gaiaSetPoint (ring->Coords, points, x, y);
 			    start++;
@@ -4116,8 +4131,8 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 			    shp->flShp);
 		if (rd != 32)
 		    goto exit;
-		rd = fread (shp->BufShp, sizeof (unsigned char), (sz * 2) - 36,
-			    shp->flShp);
+		rd = fread (shp->BufShp, sizeof (unsigned char),
+			    (sz * 2) - 36, shp->flShp);
 		if (rd != (sz * 2) - 36)
 		    goto exit;
 		n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN,
@@ -4236,7 +4251,8 @@ gaiaOpenDbfRead (gaiaDbfPtr dbf, const char *path, const char *charFrom,
 	  iconv_ret = iconv_open (charTo, charFrom);
 	  if (iconv_ret == (iconv_t) (-1))
 	    {
-		sprintf (errMsg, "conversion from '%s' to '%s' not available\n",
+		sprintf (errMsg,
+			 "conversion from '%s' to '%s' not available\n",
 			 charFrom, charTo);
 		goto unsupported_conversion;
 	    }
@@ -4425,5 +4441,4 @@ gaiaReadDbfEntity (gaiaDbfPtr dbf, int current_row, int *deleted)
     return 0;
 }
 
-#endif	/* ICONV enabled/disabled */
-
+#endif /* ICONV enabled/disabled */
