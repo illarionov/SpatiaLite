@@ -197,7 +197,7 @@ gaiaOutPoint (gaiaOutBufferPtr out_buf, gaiaPointPtr point)
     gaiaAppendToOutBuffer (out_buf, buf);
 }
 
-static void
+GAIAGEO_DECLARE void
 gaiaOutPointZ (gaiaOutBufferPtr out_buf, gaiaPointPtr point)
 {
 /* formats a WKT POINTZ */
@@ -279,7 +279,7 @@ gaiaOutLinestring (gaiaOutBufferPtr out_buf, gaiaLinestringPtr line)
       }
 }
 
-static void
+GAIAGEO_DECLARE void
 gaiaOutLinestringZ (gaiaOutBufferPtr out_buf, gaiaLinestringPtr line)
 {
 /* formats a WKT LINESTRINGZ */
@@ -418,7 +418,7 @@ gaiaOutPolygon (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polyg)
       }
 }
 
-static void
+GAIAGEO_DECLARE void
 gaiaOutPolygonZ (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polyg)
 {
 /* formats a WKT POLYGONZ */

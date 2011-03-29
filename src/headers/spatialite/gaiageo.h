@@ -124,6 +124,16 @@ extern "C"
 #define GAIA_COMMA		11
 #define GAIA_SPACE		12
 
+
+/* constants that defines GEOS-WKB 3D CLASSes */
+#define GAIA_GEOSWKB_POINTZ			-2147483647
+#define GAIA_GEOSWKB_LINESTRINGZ		-2147483646
+#define GAIA_GEOSWKB_POLYGONZ			-2147483645
+#define GAIA_GEOSWKB_MULTIPOINTZ		-2147483644
+#define GAIA_GEOSWKB_MULTILINESTRINGZ		-2147483643
+#define GAIA_GEOSWKB_MULTIPOLYGONZ		-2147483642
+#define GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ	-2147483641
+
 /* constants that defines multitype values */
 #define GAIA_NULL_VALUE		0
 #define GAIA_TEXT_VALUE		1
@@ -792,6 +802,13 @@ extern "C"
 					   int *deleted);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaParseWkt (const unsigned char
 						  *dirty_buffer, short type);
+
+    GAIAGEO_DECLARE void gaiaOutPointZ (gaiaOutBufferPtr out_buf,
+					gaiaPointPtr point);
+    GAIAGEO_DECLARE void gaiaOutLinestringZ (gaiaOutBufferPtr out_buf,
+					     gaiaLinestringPtr linestring);
+    GAIAGEO_DECLARE void gaiaOutPolygonZ (gaiaOutBufferPtr out_buf,
+					  gaiaPolygonPtr polygon);
     GAIAGEO_DECLARE void gaiaOutWkt (gaiaOutBufferPtr out_buf,
 				     gaiaGeomCollPtr geom);
     GAIAGEO_DECLARE void gaiaOutSvg (gaiaOutBufferPtr out_buf,

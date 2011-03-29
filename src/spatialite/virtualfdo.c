@@ -49,7 +49,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <string.h>
 #include <limits.h>
 
-#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
+#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
 #include <spatialite/sqlite3.h>
 #else
 #include <sqlite3.h>
@@ -362,6 +362,559 @@ free_table (VirtualFDOPtr p_vt)
     sqlite3_free (p_vt);
 }
 
+
+static void
+vfdoOutWkt3D (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
+{
+/* prints the GEOS-WKT-3D representation of current geometry */
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    gaiaPointPtr point;
+    gaiaLinestringPtr line;
+    gaiaPolygonPtr polyg;
+    if (!geom)
+	return;
+    point = geom->FirstPoint;
+    while (point)
+      {
+	  /* counting how many POINTs are there */
+	  pts++;
+	  point = point->Next;
+      }
+    line = geom->FirstLinestring;
+    while (line)
+      {
+	  /* counting how many LINESTRINGs are there */
+	  lns++;
+	  line = line->Next;
+      }
+    polyg = geom->FirstPolygon;
+    while (polyg)
+      {
+	  /* counting how many POLYGONs are there */
+	  pgs++;
+	  polyg = polyg->Next;
+      }
+    if ((pts + lns + pgs) == 1
+	&& (geom->DeclaredType == GAIA_POINT
+	    || geom->DeclaredType == GAIA_LINESTRING
+	    || geom->DeclaredType == GAIA_POLYGON))
+      {
+	  /* we have only one elementary geometry */
+	  point = geom->FirstPoint;
+	  while (point)
+	    {
+		/* processing POINT */
+		gaiaAppendToOutBuffer (out_buf, "POINT (");
+		gaiaOutPointZ (out_buf, point);
+		gaiaAppendToOutBuffer (out_buf, ")");
+		point = point->Next;
+	    }
+	  line = geom->FirstLinestring;
+	  while (line)
+	    {
+		/* processing LINESTRING */
+		gaiaAppendToOutBuffer (out_buf, "LINESTRING (");
+		gaiaOutLinestringZ (out_buf, line);
+		gaiaAppendToOutBuffer (out_buf, ")");
+		line = line->Next;
+	    }
+	  polyg = geom->FirstPolygon;
+	  while (polyg)
+	    {
+		/* processing POLYGONZ */
+		gaiaAppendToOutBuffer (out_buf, "POLYGON (");
+		gaiaOutPolygonZ (out_buf, polyg);
+		gaiaAppendToOutBuffer (out_buf, ")");
+		polyg = polyg->Next;
+	    }
+      }
+    else
+      {
+	  /* we have some kind of complex geometry */
+	  if (pts > 0 && lns == 0 && pgs == 0
+	      && geom->DeclaredType == GAIA_MULTIPOINT)
+	    {
+		/* some kind of MULTIPOINT */
+		gaiaAppendToOutBuffer (out_buf, "MULTIPOINT (");
+		point = geom->FirstPoint;
+		while (point)
+		  {
+		      if (point != geom->FirstPoint)
+			  gaiaAppendToOutBuffer (out_buf, ", ");
+		      gaiaOutPointZ (out_buf, point);
+		      point = point->Next;
+		  }
+		gaiaAppendToOutBuffer (out_buf, ")");
+	    }
+	  else if (pts == 0 && lns > 0 && pgs == 0
+		   && geom->DeclaredType == GAIA_MULTILINESTRING)
+	    {
+		/* some kind of MULTILINESTRING */
+		gaiaAppendToOutBuffer (out_buf, "MULTILINESTRING (");
+		line = geom->FirstLinestring;
+		while (line)
+		  {
+		      if (line != geom->FirstLinestring)
+			  gaiaAppendToOutBuffer (out_buf, ", (");
+		      else
+			  gaiaAppendToOutBuffer (out_buf, "(");
+		      gaiaOutLinestringZ (out_buf, line);
+		      gaiaAppendToOutBuffer (out_buf, ")");
+		      line = line->Next;
+		  }
+		gaiaAppendToOutBuffer (out_buf, ")");
+	    }
+	  else if (pts == 0 && lns == 0 && pgs > 0
+		   && geom->DeclaredType == GAIA_MULTIPOLYGON)
+	    {
+		/* some kind of MULTIPOLYGON */
+		gaiaAppendToOutBuffer (out_buf, "MULTIPOLYGON (");
+		polyg = geom->FirstPolygon;
+		while (polyg)
+		  {
+		      if (polyg != geom->FirstPolygon)
+			  gaiaAppendToOutBuffer (out_buf, ", (");
+		      else
+			  gaiaAppendToOutBuffer (out_buf, "(");
+		      gaiaOutPolygonZ (out_buf, polyg);
+		      gaiaAppendToOutBuffer (out_buf, ")");
+		      polyg = polyg->Next;
+		  }
+		gaiaAppendToOutBuffer (out_buf, ")");
+	    }
+	  else
+	    {
+		/* some kind of GEOMETRYCOLLECTION */
+		int ie = 0;
+		gaiaAppendToOutBuffer (out_buf, "GEOMETRYCOLLECTION (");
+		point = geom->FirstPoint;
+		while (point)
+		  {
+		      /* processing POINTs */
+		      if (ie > 0)
+			  gaiaAppendToOutBuffer (out_buf, ", ");
+		      ie++;
+		      gaiaAppendToOutBuffer (out_buf, "POINT (");
+		      gaiaOutPointZ (out_buf, point);
+		      gaiaAppendToOutBuffer (out_buf, ")");
+		      point = point->Next;
+		  }
+		line = geom->FirstLinestring;
+		while (line)
+		  {
+		      /* processing LINESTRINGs */
+		      if (ie > 0)
+			  gaiaAppendToOutBuffer (out_buf, ", ");
+		      ie++;
+		      gaiaAppendToOutBuffer (out_buf, "LINESTRING (");
+		      gaiaOutLinestringZ (out_buf, line);
+		      gaiaAppendToOutBuffer (out_buf, ")");
+		      line = line->Next;
+		  }
+		polyg = geom->FirstPolygon;
+		while (polyg)
+		  {
+		      /* processing POLYGONs */
+		      if (ie > 0)
+			  gaiaAppendToOutBuffer (out_buf, ", ");
+		      ie++;
+		      gaiaAppendToOutBuffer (out_buf, "POLYGON (");
+		      gaiaOutPolygonZ (out_buf, polyg);
+		      gaiaAppendToOutBuffer (out_buf, ")");
+		      polyg = polyg->Next;
+		  }
+		gaiaAppendToOutBuffer (out_buf, ")");
+	    }
+      }
+}
+
+static void
+vfdoToWkb3D (gaiaGeomCollPtr geom, unsigned char **result, int *size)
+{
+/* builds the GEOS-WKB-3D representation for this GEOMETRY */
+    int ib;
+    int iv;
+    double x;
+    double y;
+    double z = 0.0;
+    double m = 0.0;
+    int entities = 0;
+    int n_points = 0;
+    int n_linestrings = 0;
+    int n_polygons = 0;
+    int type;
+    unsigned char *ptr;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr rng;
+    gaiaPointPtr point = NULL;
+    gaiaLinestringPtr line = NULL;
+    gaiaPolygonPtr polyg = NULL;
+    int endian_arch = gaiaEndianArch ();
+    gaiaMbrGeometry (geom);
+/* how many entities, and of what kind, do we have ? */
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  point = pt;
+	  entities++;
+	  n_points++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  line = ln;
+	  entities++;
+	  n_linestrings++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  polyg = pg;
+	  entities++;
+	  n_polygons++;
+	  pg = pg->Next;
+      }
+    *size = 0;
+    *result = NULL;
+    if (n_points == 0 && n_polygons == 0 && n_linestrings == 0)
+	return;
+/* ok, we can determine the geometry class */
+    if (n_points == 1 && n_linestrings == 0 && n_polygons == 0)
+      {
+	  if (geom->DeclaredType == GAIA_MULTIPOINT)
+	      type = GAIA_GEOSWKB_MULTIPOINTZ;
+	  else if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      type = GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ;
+	  else
+	      type = GAIA_GEOSWKB_POINTZ;
+      }
+    else if (n_points > 1 && n_linestrings == 0 && n_polygons == 0)
+      {
+	  if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      type = GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ;
+	  else
+	      type = GAIA_GEOSWKB_MULTIPOINTZ;
+      }
+    else if (n_points == 0 && n_linestrings == 1 && n_polygons == 0)
+      {
+	  if (geom->DeclaredType == GAIA_MULTILINESTRING)
+	      type = GAIA_GEOSWKB_MULTILINESTRINGZ;
+	  else if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      type = GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ;
+	  else
+	      type = GAIA_GEOSWKB_LINESTRINGZ;
+      }
+    else if (n_points == 0 && n_linestrings > 1 && n_polygons == 0)
+      {
+	  if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      type = GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ;
+	  else
+	      type = GAIA_GEOSWKB_MULTILINESTRINGZ;
+      }
+    else if (n_points == 0 && n_linestrings == 0 && n_polygons == 1)
+      {
+	  if (geom->DeclaredType == GAIA_MULTIPOLYGON)
+	      type = GAIA_GEOSWKB_MULTIPOLYGONZ;
+	  else if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      type = GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ;
+	  else
+	      type = GAIA_GEOSWKB_POLYGONZ;
+      }
+    else if (n_points == 0 && n_linestrings == 0 && n_polygons > 1)
+      {
+	  if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      type = GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ;
+	  else
+	      type = GAIA_GEOSWKB_MULTIPOLYGONZ;
+      }
+    else
+	type = GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ;
+/* and now we compute the size of WKB */
+    *size = 5;			/* header size */
+    if (type == GAIA_GEOSWKB_MULTIPOINTZ
+	|| type == GAIA_GEOSWKB_MULTILINESTRINGZ
+	|| type == GAIA_GEOSWKB_MULTIPOLYGONZ
+	|| type == GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ)
+	*size += 4;
+    point = geom->FirstPoint;
+    while (point)
+      {
+	  if (type == GAIA_GEOSWKB_MULTIPOINTZ
+	      || type == GAIA_GEOSWKB_MULTILINESTRINGZ
+	      || type == GAIA_GEOSWKB_MULTIPOLYGONZ
+	      || type == GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ)
+	      *size += 5;
+	  *size += (sizeof (double) * 3);	/* three doubles for each POINT */
+	  point = point->Next;
+      }
+    line = geom->FirstLinestring;
+    while (line)
+      {
+	  if (type == GAIA_GEOSWKB_MULTIPOINTZ
+	      || type == GAIA_GEOSWKB_MULTILINESTRINGZ
+	      || type == GAIA_GEOSWKB_MULTIPOLYGONZ
+	      || type == GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ)
+	      *size += 5;
+	  *size += (4 + ((sizeof (double) * 3) * line->Points));	/* # points + [x,y,z] for each vertex */
+	  line = line->Next;
+      }
+    polyg = geom->FirstPolygon;
+    while (polyg)
+      {
+	  if (type == GAIA_GEOSWKB_MULTIPOINTZ
+	      || type == GAIA_GEOSWKB_MULTILINESTRINGZ
+	      || type == GAIA_GEOSWKB_MULTIPOLYGONZ
+	      || type == GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ)
+	      *size += 5;
+	  rng = polyg->Exterior;
+	  *size += (8 + ((sizeof (double) * 3) * rng->Points));	/* # rings + # points + [x,y,z] array - exterior ring */
+	  for (ib = 0; ib < polyg->NumInteriors; ib++)
+	    {
+		rng = polyg->Interiors + ib;
+		*size += (4 + ((sizeof (double) * 3) * rng->Points));	/* # points + [x,y,z] array - interior ring */
+	    }
+	  polyg = polyg->Next;
+      }
+    *result = malloc (*size);
+    ptr = *result;
+/* and finally we build the WKB */
+    *ptr = 0x01;		/* little endian byte order */
+    gaiaExport32 (ptr + 1, type, 1, endian_arch);	/* the main CLASS TYPE */
+    ptr += 5;
+    if (type == GAIA_GEOSWKB_MULTIPOINTZ
+	|| type == GAIA_GEOSWKB_MULTILINESTRINGZ
+	|| type == GAIA_GEOSWKB_MULTIPOLYGONZ
+	|| type == GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ)
+      {
+	  gaiaExport32 (ptr, entities, 1, endian_arch);	/* it's a collection; # entities */
+	  ptr += 4;
+      }
+    point = geom->FirstPoint;
+    while (point)
+      {
+	  if (type == GAIA_GEOSWKB_MULTIPOINTZ
+	      || type == GAIA_GEOMETRYCOLLECTIONZ)
+	    {
+		*ptr = 0x01;
+		/* it's a collection: the CLASS TYPE for this element */
+		gaiaExport32 (ptr + 1, GAIA_GEOSWKB_POINTZ, 1, endian_arch);
+		ptr += 5;
+	    }
+	  gaiaExport64 (ptr, point->X, 1, endian_arch);	/* X */
+	  gaiaExport64 (ptr + 8, point->Y, 1, endian_arch);	/* Y */
+	  gaiaExport64 (ptr + 16, point->Z, 1, endian_arch);	/* Z */
+	  ptr += 24;
+	  point = point->Next;
+      }
+    line = geom->FirstLinestring;
+    while (line)
+      {
+	  if (type == GAIA_GEOSWKB_MULTILINESTRINGZ
+	      || type == GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ)
+	    {
+		*ptr = 0x01;
+		/* it's a collection: the CLASS TYPE for this element */
+		gaiaExport32 (ptr + 1, GAIA_GEOSWKB_LINESTRINGZ, 1,
+			      endian_arch);
+		ptr += 5;
+	    }
+	  gaiaExport32 (ptr, line->Points, 1, endian_arch);	/* # points */
+	  ptr += 4;
+	  for (iv = 0; iv < line->Points; iv++)
+	    {
+		z = 0.0;
+		m = 0.0;
+		if (line->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+		  }
+		else if (line->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+		  }
+		else if (line->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (line->Coords, iv, &x, &y);
+		  }
+		gaiaExport64 (ptr, x, 1, endian_arch);	/* X */
+		gaiaExport64 (ptr + 8, y, 1, endian_arch);	/* Y */
+		gaiaExport64 (ptr + 16, z, 1, endian_arch);	/* Z */
+		ptr += 24;
+	    }
+	  line = line->Next;
+      }
+    polyg = geom->FirstPolygon;
+    while (polyg)
+      {
+	  if (type == GAIA_GEOSWKB_MULTIPOLYGONZ
+	      || type == GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ)
+	    {
+		*ptr = 0x01;
+		/* it's a collection: the CLASS TYPE for this element */
+		gaiaExport32 (ptr + 1, GAIA_GEOSWKB_POLYGONZ, 1, endian_arch);
+		ptr += 5;
+	    }
+	  gaiaExport32 (ptr, polyg->NumInteriors + 1, 1, endian_arch);	/* # rings */
+	  rng = polyg->Exterior;
+	  gaiaExport32 (ptr + 4, rng->Points, 1, endian_arch);	/* # points - exterior ring */
+	  ptr += 8;
+	  for (iv = 0; iv < rng->Points; iv++)
+	    {
+		z = 0.0;
+		m = 0.0;
+		if (rng->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+		  }
+		else if (rng->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+		  }
+		else if (rng->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (rng->Coords, iv, &x, &y);
+		  }
+		gaiaExport64 (ptr, x, 1, endian_arch);	/* X - exterior ring */
+		gaiaExport64 (ptr + 8, y, 1, endian_arch);	/* Y - exterior ring */
+		gaiaExport64 (ptr + 16, z, 1, endian_arch);	/* Z - exterior ring */
+		ptr += 24;
+	    }
+	  for (ib = 0; ib < polyg->NumInteriors; ib++)
+	    {
+		rng = polyg->Interiors + ib;
+		gaiaExport32 (ptr, rng->Points, 1, endian_arch);	/* # points - interior ring */
+		ptr += 4;
+		for (iv = 0; iv < rng->Points; iv++)
+		  {
+		      z = 0.0;
+		      m = 0.0;
+		      if (rng->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+			}
+		      else if (rng->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+			}
+		      else if (rng->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+			}
+		      else
+			{
+			    gaiaGetPoint (rng->Coords, iv, &x, &y);
+			}
+		      gaiaExport64 (ptr, x, 1, endian_arch);	/* X - interior ring */
+		      gaiaExport64 (ptr + 8, y, 1, endian_arch);	/* Y - interior ring */
+		      gaiaExport64 (ptr + 16, z, 1, endian_arch);	/* Z - exterior ring */
+		      ptr += 24;
+		  }
+	    }
+	  polyg = polyg->Next;
+      }
+}
+
+static int
+vfdoGeometryType (gaiaGeomCollPtr geom)
+{
+/* determinates the Class for this geometry */
+    gaiaPointPtr point;
+    gaiaLinestringPtr line;
+    gaiaPolygonPtr polyg;
+    gaiaRingPtr ring;
+    int n_points = 0;
+    int n_linestrings = 0;
+    int n_polygons = 0;
+    if (!geom)
+	return GAIA_UNKNOWN;
+    point = geom->FirstPoint;
+    while (point)
+      {
+	  /* counts how many points are there */
+	  n_points++;
+	  point = point->Next;
+      }
+    line = geom->FirstLinestring;
+    while (line)
+      {
+	  /* counts how many linestrings are there */
+	  n_linestrings++;
+	  line = line->Next;
+      }
+    polyg = geom->FirstPolygon;
+    while (polyg)
+      {
+	  /* counts how many polygons are there */
+	  n_polygons++;
+	  polyg = polyg->Next;
+      }
+    if (n_points == 0 && n_linestrings == 0 && n_polygons == 0)
+	return GAIA_UNKNOWN;
+    if (n_points == 1 && n_linestrings == 0 && n_polygons == 0)
+      {
+	  if (geom->DeclaredType == GAIA_MULTIPOINT)
+	      return GAIA_MULTIPOINT;
+	  else if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      return GAIA_GEOMETRYCOLLECTION;
+	  else
+	      return GAIA_POINT;
+      }
+    if (n_points > 0 && n_linestrings == 0 && n_polygons == 0)
+      {
+	  if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      return GAIA_GEOMETRYCOLLECTION;
+	  else
+	      return GAIA_MULTIPOINT;
+      }
+    if (n_points == 0 && n_linestrings == 1 && n_polygons == 0)
+      {
+	  if (geom->DeclaredType == GAIA_MULTILINESTRING)
+	      return GAIA_MULTILINESTRING;
+	  else if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      return GAIA_GEOMETRYCOLLECTION;
+	  else
+	      return GAIA_LINESTRING;
+      }
+    if (n_points == 0 && n_linestrings > 0 && n_polygons == 0)
+      {
+	  if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      return GAIA_GEOMETRYCOLLECTION;
+	  else
+	      return GAIA_MULTILINESTRING;
+      }
+    if (n_points == 0 && n_linestrings == 0 && n_polygons == 1)
+      {
+	  if (geom->DeclaredType == GAIA_MULTIPOLYGON)
+	      return GAIA_MULTIPOLYGON;
+	  else if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      return GAIA_GEOMETRYCOLLECTION;
+	  else
+	      return GAIA_POLYGON;
+      }
+    if (n_points == 0 && n_linestrings == 0 && n_polygons > 0)
+      {
+	  if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      return GAIA_GEOMETRYCOLLECTION;
+	  else
+	      return GAIA_MULTIPOLYGON;
+      }
+    return GAIA_GEOMETRYCOLLECTION;
+}
+
 static int
 vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
 		 sqlite3_value ** argv)
@@ -436,7 +989,7 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
 					goto error;
 				    }
 				  /* checking for TYPE constraint violation */
-				  if (gaiaGeometryType (geom) !=
+				  if (vfdoGeometryType (geom) !=
 				      *(p_vt->GeoType + ig))
 				    {
 					/* Geometry TYPE constraint violation */
@@ -447,7 +1000,11 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
 				    {
 				    case FDO_OGR_WKT:
 					gaiaOutBufferInitialize (&out_buf);
-					gaiaOutWkt (&out_buf, geom);
+					if (*(p_vt->CoordDimensions + ig) ==
+					    GAIA_XY_Z)
+					    vfdoOutWkt3D (&out_buf, geom);
+					else
+					    gaiaOutWkt (&out_buf, geom);
 					if (out_buf.Error == 0
 					    && out_buf.Buffer != NULL)
 					  {
@@ -466,7 +1023,12 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
 					  }
 					break;
 				    case FDO_OGR_WKB:
-					gaiaToWkb (geom, &blob_wkb, &size);
+					if (*(p_vt->CoordDimensions + ig) ==
+					    GAIA_XY_Z)
+					    vfdoToWkb3D (geom, &blob_wkb,
+							 &size);
+					else
+					    gaiaToWkb (geom, &blob_wkb, &size);
 					if (blob_wkb)
 					    sqlite3_bind_blob (stmt, i - 1,
 							       blob_wkb, size,
@@ -642,7 +1204,7 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
 					goto error;
 				    }
 				  /* checking for TYPE constraint violation */
-				  if (gaiaGeometryType (geom) !=
+				  if (vfdoGeometryType (geom) !=
 				      *(p_vt->GeoType + ig))
 				    {
 					/* Geometry TYPE constraint violation */
@@ -653,7 +1215,11 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
 				    {
 				    case FDO_OGR_WKT:
 					gaiaOutBufferInitialize (&out_buf);
-					gaiaOutWkt (&out_buf, geom);
+					if (*(p_vt->CoordDimensions + ig) ==
+					    GAIA_XY_Z)
+					    vfdoOutWkt3D (&out_buf, geom);
+					else
+					    gaiaOutWkt (&out_buf, geom);
 					if (out_buf.Error == 0
 					    && out_buf.Buffer != NULL)
 					  {
@@ -672,7 +1238,12 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
 					  }
 					break;
 				    case FDO_OGR_WKB:
-					gaiaToWkb (geom, &blob_wkb, &size);
+					if (*(p_vt->CoordDimensions + ig) ==
+					    GAIA_XY_Z)
+					    vfdoToWkb3D (geom, &blob_wkb,
+							 &size);
+					else
+					    gaiaToWkb (geom, &blob_wkb, &size);
 					if (blob_wkb)
 					    sqlite3_bind_blob (stmt, i - 1,
 							       blob_wkb, size,
@@ -783,6 +1354,121 @@ vfdo_delete_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid)
     return ret;
 }
 
+char *
+vfdo_convertWKT3D (const char *wkt)
+{
+/* converting WKT 3D */
+    char *out;
+    char *o;
+    const char *p = wkt;
+    int len = strlen (wkt);
+    int extra = 0;
+    while (*p != '\0')
+      {
+	  if (strncasecmp (p, "POINT", 5) == 0)
+	    {
+		p += 5;
+		extra++;
+		continue;
+	    }
+	  if (strncasecmp (p, "LINESTRING", 10) == 0)
+	    {
+		p += 10;
+		extra++;
+		continue;
+	    }
+	  if (strncasecmp (p, "POLYGON", 7) == 0)
+	    {
+		p += 7;
+		extra++;
+		continue;
+	    }
+	  if (strncasecmp (p, "MULTIPOINT", 10) == 0)
+	    {
+		p += 10;
+		extra++;
+		continue;
+	    }
+	  if (strncasecmp (p, "MULTILINESTRING", 15) == 0)
+	    {
+		p += 15;
+		extra++;
+		continue;
+	    }
+	  if (strncasecmp (p, "MULTIPOLYGON", 12) == 0)
+	    {
+		p += 12;
+		extra++;
+		continue;
+	    }
+	  if (strncasecmp (p, "GEOMETRYCOLLECTION", 18) == 0)
+	    {
+		p += 18;
+		extra++;
+		continue;
+	    }
+	  *p++;
+      }
+    out = malloc (len + extra + 1);
+    o = out;
+    p = wkt;
+    while (*p != '\0')
+      {
+	  if (strncasecmp (p, "POINT", 5) == 0)
+	    {
+		strcpy (o, "POINTZ");
+		o += 6;
+		p += 5;
+		continue;
+	    }
+	  if (strncasecmp (p, "LINESTRING", 10) == 0)
+	    {
+		strcpy (o, "LINESTRINGZ");
+		o += 11;
+		p += 10;
+		continue;
+	    }
+	  if (strncasecmp (p, "POLYGON", 7) == 0)
+	    {
+		strcpy (o, "POLYGONZ");
+		o += 8;
+		p += 7;
+		continue;
+	    }
+	  if (strncasecmp (p, "MULTIPOINT", 10) == 0)
+	    {
+		strcpy (o, "MULTIPOINTZ");
+		o += 11;
+		p += 10;
+		continue;
+	    }
+	  if (strncasecmp (p, "MULTILINESTRING", 15) == 0)
+	    {
+		strcpy (o, "MULTILINESTRINGZ");
+		o += 16;
+		p += 15;
+		continue;
+	    }
+	  if (strncasecmp (p, "MULTIPOLYGON", 12) == 0)
+	    {
+		strcpy (o, "MULTIPOLYGONZ");
+		o += 13;
+		p += 12;
+		continue;
+	    }
+	  if (strncasecmp (p, "GEOMETRYCOLLECTION", 18) == 0)
+	    {
+		strcpy (o, "GEOMETRYCOLLECTIONZ");
+		o += 19;
+		p += 18;
+		continue;
+	    }
+	  *o++ = *p++;
+      }
+    *o = '\0';
+    return out;
+}
+
 static void
 vfdo_read_row (VirtualFDOCursorPtr cursor)
 {
@@ -851,9 +1537,28 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 				      SQLITE_TEXT)
 				    {
 					/* trying to parse a WKT Geometry */
+					char delete_wkt = 0;
 					wkt =
 					    sqlite3_column_text (stmt, ic + 1);
+					if (*
+					    (cursor->pVtab->CoordDimensions +
+					     ig) == GAIA_XY_Z)
+					  {
+					      wkt =
+						  vfdo_convertWKT3D ((const char
+								      *) wkt);
+					      if (wkt == NULL)
+						{
+						    value_set_null (*
+								    (cursor->pVtab->Value
+								     + ic));
+						    continue;
+						}
+					      delete_wkt = 1;
+					  }
 					geom = gaiaParseWkt (wkt, -1);
+					if (delete_wkt)
+					    free ((void *) wkt);
 					if (!geom)
 					    value_set_null (*
 							    (cursor->
