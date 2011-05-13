@@ -821,6 +821,9 @@ extern "C"
 					 gaiaGeomCollPtr geom, int precision);
     GAIAGEO_DECLARE void gaiaOutGml (gaiaOutBufferPtr out_buf, int version,
 				     int precision, gaiaGeomCollPtr geom);
+    GAIAGEO_DECLARE void gaiaOutGeoJSON (gaiaOutBufferPtr out_buf,
+					 gaiaGeomCollPtr geom, int precision,
+					 int options);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaFromFgf (const unsigned char *blob,
 						 unsigned int size);
     GAIAGEO_DECLARE void gaiaToFgf (gaiaGeomCollPtr geom,
