@@ -7850,10 +7850,10 @@ fnct_Extent_final (sqlite3_context * context)
     gaiaPolygonPtr polyg;
     gaiaRingPtr rect;
     double *max_min;
-double minx;
-double miny;
-double maxx;
-double maxy;
+    double minx;
+    double miny;
+    double maxx;
+    double maxy;
     double **p = sqlite3_aggregate_context (context, 0);
     if (!p)
       {
@@ -7876,10 +7876,10 @@ double maxy;
 	  unsigned char *p_result = NULL;
 	  polyg = gaiaAddPolygonToGeomColl (result, 5, 0);
 	  rect = polyg->Exterior;
-minx = *(max_min + 0);
-miny = *(max_min + 1);
-maxx = *(max_min + 2);
-maxy = *(max_min + 3);
+	  minx = *(max_min + 0);
+	  miny = *(max_min + 1);
+	  maxx = *(max_min + 2);
+	  maxy = *(max_min + 3);
 	  gaiaSetPoint (rect->Coords, 0, minx, miny);	/* vertex # 1 */
 	  gaiaSetPoint (rect->Coords, 1, maxx, miny);	/* vertex # 2 */
 	  gaiaSetPoint (rect->Coords, 2, maxx, maxy);	/* vertex # 3 */
@@ -9475,6 +9475,121 @@ get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
 	  return 1;
       }
     return 0;
+}
+
+static void
+fnct_FromEWKB (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ GeomFromEWKB(EWKB encoded geometry)
+/
+/ returns the current geometry by parsing Geos/PostGis EWKB encoded string 
+/ or NULL if any error is encountered
+*/
+    int len;
+    unsigned char *p_result = NULL;
+    const unsigned char *text;
+    gaiaGeomCollPtr geo = NULL;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    text = sqlite3_value_text (argv[0]);
+    geo = gaiaFromEWKB (text);
+    if (geo == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    gaiaToSpatiaLiteBlobWkb (geo, &p_result, &len);
+    gaiaFreeGeomColl (geo);
+    sqlite3_result_blob (context, p_result, len, free);
+}
+
+static void
+fnct_ToEWKB (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ AsEWKB(BLOB encoded geometry)
+/
+/ returns a text string corresponding to Geos/PostGIS EWKB notation 
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    gaiaOutBuffer out_buf;
+    gaiaGeomCollPtr geo = NULL;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_int (context, -1);
+    else
+      {
+	  gaiaOutBufferInitialize (&out_buf);
+	  gaiaToEWKB (&out_buf, geo);
+	  if (out_buf.Error || out_buf.Buffer == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		len = out_buf.WriteOffset;
+		sqlite3_result_text (context, out_buf.Buffer, len, free);
+		out_buf.Buffer = NULL;
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+    gaiaOutBufferReset (&out_buf);
+}
+
+static void
+fnct_ToEWKT (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ AsEWKT(BLOB encoded geometry)
+/
+/ returns the corresponding PostGIS EWKT encoded value
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    gaiaOutBuffer out_buf;
+    gaiaGeomCollPtr geo = NULL;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  gaiaOutBufferInitialize (&out_buf);
+	  gaiaToEWKT (&out_buf, geo);
+	  if (out_buf.Error || out_buf.Buffer == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		len = out_buf.WriteOffset;
+		sqlite3_result_text (context, out_buf.Buffer, len, free);
+		out_buf.Buffer = NULL;
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+    gaiaOutBufferReset (&out_buf);
 }
 
 static void
@@ -12853,8 +12968,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -12938,8 +13052,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -12948,8 +13061,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -13332,6 +13444,10 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
     sqlite3_create_function (db, "AsGeoJSON", 3, SQLITE_ANY, 0, fnct_AsGeoJSON,
 			     0, 0);
     sqlite3_create_function (db, "AsFGF", 2, SQLITE_ANY, 0, fnct_AsFGF, 0, 0);
+    sqlite3_create_function (db, "GeomFromEWKB", 1, SQLITE_ANY, 0,
+			     fnct_FromEWKB, 0, 0);
+    sqlite3_create_function (db, "AsEWKB", 1, SQLITE_ANY, 0, fnct_ToEWKB, 0, 0);
+    sqlite3_create_function (db, "AsEWKT", 1, SQLITE_ANY, 0, fnct_ToEWKT, 0, 0);
     sqlite3_create_function (db, "AsBinary", 1, SQLITE_ANY, 0, fnct_AsBinary,
 			     0, 0);
     sqlite3_create_function (db, "ST_AsBinary", 1, SQLITE_ANY, 0,
@@ -14252,6 +14368,10 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
     sqlite3_create_function (db, "AsGeoJSON", 3, SQLITE_ANY, 0, fnct_AsGeoJSON,
 			     0, 0);
     sqlite3_create_function (db, "AsFGF", 2, SQLITE_ANY, 0, fnct_AsFGF, 0, 0);
+    sqlite3_create_function (db, "GeomFromEWKB", 1, SQLITE_ANY, 0,
+			     fnct_FromEWKB, 0, 0);
+    sqlite3_create_function (db, "AsEWKB", 1, SQLITE_ANY, 0, fnct_ToEWKB, 0, 0);
+    sqlite3_create_function (db, "AsEWKT", 1, SQLITE_ANY, 0, fnct_ToEWKT, 0, 0);
     sqlite3_create_function (db, "AsBinary", 1, SQLITE_ANY, 0, fnct_AsBinary,
 			     0, 0);
     sqlite3_create_function (db, "ST_AsBinary", 1, SQLITE_ANY, 0,

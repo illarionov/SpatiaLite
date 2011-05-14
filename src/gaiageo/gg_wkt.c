@@ -955,6 +955,362 @@ gaiaOutWkt (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
       }
 }
 
+GAIAGEO_DECLARE void
+gaiaToEWKT (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
+{
+/* prints the EWKT representation of current geometry */
+    char buf[128];
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    gaiaPointPtr point;
+    gaiaLinestringPtr line;
+    gaiaPolygonPtr polyg;
+    if (!geom)
+	return;
+    sprintf (buf, "SRID=%d;", geom->Srid);
+    gaiaAppendToOutBuffer (out_buf, buf);
+    point = geom->FirstPoint;
+    while (point)
+      {
+	  /* counting how many POINTs are there */
+	  pts++;
+	  point = point->Next;
+      }
+    line = geom->FirstLinestring;
+    while (line)
+      {
+	  /* counting how many LINESTRINGs are there */
+	  lns++;
+	  line = line->Next;
+      }
+    polyg = geom->FirstPolygon;
+    while (polyg)
+      {
+	  /* counting how many POLYGONs are there */
+	  pgs++;
+	  polyg = polyg->Next;
+      }
+    if ((pts + lns + pgs) == 1
+	&& (geom->DeclaredType == GAIA_POINT
+	    || geom->DeclaredType == GAIA_LINESTRING
+	    || geom->DeclaredType == GAIA_POLYGON))
+      {
+	  /* we have only one elementary geometry */
+	  point = geom->FirstPoint;
+	  while (point)
+	    {
+		if (point->DimensionModel == GAIA_XY_Z)
+		  {
+		      /* processing POINTZ */
+		      gaiaAppendToOutBuffer (out_buf, "POINT(");
+		      gaiaOutPointZ (out_buf, point);
+		  }
+		else if (point->DimensionModel == GAIA_XY_M)
+		  {
+		      /* processing POINTM */
+		      gaiaAppendToOutBuffer (out_buf, "POINTM(");
+		      gaiaOutPointM (out_buf, point);
+		  }
+		else if (point->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      /* processing POINTZM */
+		      gaiaAppendToOutBuffer (out_buf, "POINT(");
+		      gaiaOutPointZM (out_buf, point);
+		  }
+		else
+		  {
+		      /* processing POINT */
+		      gaiaAppendToOutBuffer (out_buf, "POINT(");
+		      gaiaOutPoint (out_buf, point);
+		  }
+		gaiaAppendToOutBuffer (out_buf, ")");
+		point = point->Next;
+	    }
+	  line = geom->FirstLinestring;
+	  while (line)
+	    {
+		if (line->DimensionModel == GAIA_XY_Z)
+		  {
+		      /* processing LINESTRINGZ */
+		      gaiaAppendToOutBuffer (out_buf, "LINESTRING(");
+		      gaiaOutLinestringZ (out_buf, line);
+		  }
+		else if (line->DimensionModel == GAIA_XY_M)
+		  {
+		      /* processing LINESTRINGM */
+		      gaiaAppendToOutBuffer (out_buf, "LINESTRINGM(");
+		      gaiaOutLinestringM (out_buf, line);
+		  }
+		else if (line->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      /* processing LINESTRINGZM */
+		      gaiaAppendToOutBuffer (out_buf, "LINESTRING(");
+		      gaiaOutLinestringZM (out_buf, line);
+		  }
+		else
+		  {
+		      /* processing LINESTRING */
+		      gaiaAppendToOutBuffer (out_buf, "LINESTRING(");
+		      gaiaOutLinestring (out_buf, line);
+		  }
+		gaiaAppendToOutBuffer (out_buf, ")");
+		line = line->Next;
+	    }
+	  polyg = geom->FirstPolygon;
+	  while (polyg)
+	    {
+		if (polyg->DimensionModel == GAIA_XY_Z)
+		  {
+		      /* processing POLYGONZ */
+		      gaiaAppendToOutBuffer (out_buf, "POLYGON(");
+		      gaiaOutPolygonZ (out_buf, polyg);
+		  }
+		else if (polyg->DimensionModel == GAIA_XY_M)
+		  {
+		      /* processing POLYGONM */
+		      gaiaAppendToOutBuffer (out_buf, "POLYGONM(");
+		      gaiaOutPolygonM (out_buf, polyg);
+		  }
+		else if (polyg->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      /* processing POLYGONZM */
+		      gaiaAppendToOutBuffer (out_buf, "POLYGON(");
+		      gaiaOutPolygonZM (out_buf, polyg);
+		  }
+		else
+		  {
+		      /* processing POLYGON */
+		      gaiaAppendToOutBuffer (out_buf, "POLYGON(");
+		      gaiaOutPolygon (out_buf, polyg);
+		  }
+		gaiaAppendToOutBuffer (out_buf, ")");
+		polyg = polyg->Next;
+	    }
+      }
+    else
+      {
+	  /* we have some kind of complex geometry */
+	  if (pts > 0 && lns == 0 && pgs == 0
+	      && geom->DeclaredType == GAIA_MULTIPOINT)
+	    {
+		/* some kind of MULTIPOINT */
+		if (geom->DimensionModel == GAIA_XY_M)
+		    gaiaAppendToOutBuffer (out_buf, "MULTIPOINTM(");
+		else
+		    gaiaAppendToOutBuffer (out_buf, "MULTIPOINT(");
+		point = geom->FirstPoint;
+		while (point)
+		  {
+		      if (point->DimensionModel == GAIA_XY_Z)
+			{
+			    if (point != geom->FirstPoint)
+				gaiaAppendToOutBuffer (out_buf, ", ");
+			    gaiaOutPointZ (out_buf, point);
+			}
+		      else if (point->DimensionModel == GAIA_XY_M)
+			{
+			    if (point != geom->FirstPoint)
+				gaiaAppendToOutBuffer (out_buf, ", ");
+			    gaiaOutPointM (out_buf, point);
+			}
+		      else if (point->DimensionModel == GAIA_XY_Z_M)
+			{
+			    if (point != geom->FirstPoint)
+				gaiaAppendToOutBuffer (out_buf, ", ");
+			    gaiaOutPointZM (out_buf, point);
+			}
+		      else
+			{
+			    if (point != geom->FirstPoint)
+				gaiaAppendToOutBuffer (out_buf, ", ");
+			    gaiaOutPoint (out_buf, point);
+			}
+		      point = point->Next;
+		  }
+		gaiaAppendToOutBuffer (out_buf, ")");
+	    }
+	  else if (pts == 0 && lns > 0 && pgs == 0
+		   && geom->DeclaredType == GAIA_MULTILINESTRING)
+	    {
+		/* some kind of MULTILINESTRING */
+		if (geom->DimensionModel == GAIA_XY_M)
+		    gaiaAppendToOutBuffer (out_buf, "MULTILINESTRINGM(");
+		else
+		    gaiaAppendToOutBuffer (out_buf, "MULTILINESTRING(");
+		line = geom->FirstLinestring;
+		while (line)
+		  {
+		      if (line != geom->FirstLinestring)
+			  gaiaAppendToOutBuffer (out_buf, ", (");
+		      else
+			  gaiaAppendToOutBuffer (out_buf, "(");
+		      if (line->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaOutLinestringZ (out_buf, line);
+			    gaiaAppendToOutBuffer (out_buf, ")");
+			}
+		      else if (line->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaOutLinestringM (out_buf, line);
+			    gaiaAppendToOutBuffer (out_buf, ")");
+			}
+		      else if (line->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaOutLinestringZM (out_buf, line);
+			    gaiaAppendToOutBuffer (out_buf, ")");
+			}
+		      else
+			{
+			    gaiaOutLinestring (out_buf, line);
+			    gaiaAppendToOutBuffer (out_buf, ")");
+			}
+		      line = line->Next;
+		  }
+		gaiaAppendToOutBuffer (out_buf, ")");
+	    }
+	  else if (pts == 0 && lns == 0 && pgs > 0
+		   && geom->DeclaredType == GAIA_MULTIPOLYGON)
+	    {
+		/* some kind of MULTIPOLYGON */
+		if (geom->DimensionModel == GAIA_XY_M)
+		    gaiaAppendToOutBuffer (out_buf, "MULTIPOLYGONM(");
+		else
+		    gaiaAppendToOutBuffer (out_buf, "MULTIPOLYGON(");
+		polyg = geom->FirstPolygon;
+		while (polyg)
+		  {
+		      if (polyg != geom->FirstPolygon)
+			  gaiaAppendToOutBuffer (out_buf, ", (");
+		      else
+			  gaiaAppendToOutBuffer (out_buf, "(");
+		      if (polyg->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaOutPolygonZ (out_buf, polyg);
+			    gaiaAppendToOutBuffer (out_buf, ")");
+			}
+		      else if (polyg->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaOutPolygonM (out_buf, polyg);
+			    gaiaAppendToOutBuffer (out_buf, ")");
+			}
+		      else if (polyg->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaOutPolygonZM (out_buf, polyg);
+			    gaiaAppendToOutBuffer (out_buf, ")");
+			}
+		      else
+			{
+			    gaiaOutPolygon (out_buf, polyg);
+			    gaiaAppendToOutBuffer (out_buf, ")");
+			}
+		      polyg = polyg->Next;
+		  }
+		gaiaAppendToOutBuffer (out_buf, ")");
+	    }
+	  else
+	    {
+		/* some kind of GEOMETRYCOLLECTION */
+		int ie = 0;
+		if (geom->DimensionModel == GAIA_XY_M)
+		    gaiaAppendToOutBuffer (out_buf, "GEOMETRYCOLLECTIONM(");
+		else
+		    gaiaAppendToOutBuffer (out_buf, "GEOMETRYCOLLECTION(");
+		point = geom->FirstPoint;
+		while (point)
+		  {
+		      /* processing POINTs */
+		      if (ie > 0)
+			  gaiaAppendToOutBuffer (out_buf, ", ");
+		      ie++;
+		      if (point->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaAppendToOutBuffer (out_buf, "POINT(");
+			    gaiaOutPointZ (out_buf, point);
+			}
+		      else if (point->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaAppendToOutBuffer (out_buf, "POINTM(");
+			    gaiaOutPointM (out_buf, point);
+			}
+		      else if (point->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaAppendToOutBuffer (out_buf, "POINT(");
+			    gaiaOutPointZM (out_buf, point);
+			}
+		      else
+			{
+			    gaiaAppendToOutBuffer (out_buf, "POINT(");
+			    gaiaOutPoint (out_buf, point);
+			}
+		      gaiaAppendToOutBuffer (out_buf, ")");
+		      point = point->Next;
+		  }
+		line = geom->FirstLinestring;
+		while (line)
+		  {
+		      /* processing LINESTRINGs */
+		      if (ie > 0)
+			  gaiaAppendToOutBuffer (out_buf, ", ");
+		      ie++;
+		      if (line->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaAppendToOutBuffer (out_buf, "LINESTRING(");
+			    gaiaOutLinestringZ (out_buf, line);
+			}
+		      else if (line->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaAppendToOutBuffer (out_buf, "LINESTRINGM(");
+			    gaiaOutLinestringM (out_buf, line);
+			}
+		      else if (line->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaAppendToOutBuffer (out_buf, "LINESTRING(");
+			    gaiaOutLinestringZM (out_buf, line);
+			}
+		      else
+			{
+			    gaiaAppendToOutBuffer (out_buf, "LINESTRING(");
+			    gaiaOutLinestring (out_buf, line);
+			}
+		      gaiaAppendToOutBuffer (out_buf, ")");
+		      line = line->Next;
+		  }
+		polyg = geom->FirstPolygon;
+		while (polyg)
+		  {
+		      /* processing POLYGONs */
+		      if (ie > 0)
+			  gaiaAppendToOutBuffer (out_buf, ", ");
+		      ie++;
+		      if (polyg->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaAppendToOutBuffer (out_buf, "POLYGON(");
+			    gaiaOutPolygonZ (out_buf, polyg);
+			}
+		      else if (polyg->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaAppendToOutBuffer (out_buf, "POLYGONM(");
+			    gaiaOutPolygonM (out_buf, polyg);
+			}
+		      else if (polyg->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaAppendToOutBuffer (out_buf, "POLYGON(");
+			    gaiaOutPolygonZM (out_buf, polyg);
+			}
+		      else
+			{
+			    gaiaAppendToOutBuffer (out_buf, "POLYGON(");
+			    gaiaOutPolygon (out_buf, polyg);
+			}
+		      gaiaAppendToOutBuffer (out_buf, ")");
+		      polyg = polyg->Next;
+		  }
+		gaiaAppendToOutBuffer (out_buf, ")");
+	    }
+      }
+}
+
 /*
 /
 /  Gaia common support for SVG encoded geometries
@@ -5767,8 +6123,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
       case 36:			/* point ::= VANUATU_POINT VANUATU_OPEN_BRACKET point_coordxy VANUATU_CLOSE_BRACKET */
 	  {
 	      yygotominor.yy0 =
-		  vanuatu_buildGeomFromPoint ((gaiaPointPtr) yymsp[-1].
-					      minor.yy0);
+		  vanuatu_buildGeomFromPoint ((gaiaPointPtr) yymsp[-1].minor.
+					      yy0);
 	  }
 	  break;
       case 37:			/* pointm ::= VANUATU_POINT_M VANUATU_OPEN_BRACKET point_coordxym VANUATU_CLOSE_BRACKET */
@@ -5778,8 +6134,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	  yytestcase (yyruleno == 39);
 	  {
 	      yygotominor.yy0 =
-		  vanuatu_buildGeomFromPoint ((gaiaPointPtr) yymsp[-1].
-					      minor.yy0);
+		  vanuatu_buildGeomFromPoint ((gaiaPointPtr) yymsp[-1].minor.
+					      yy0);
 	  }
 	  break;
       case 40:			/* point_coordxy ::= coord coord */
@@ -5981,8 +6337,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_polygon_xy ((gaiaRingPtr) yymsp[-2].
-					       minor.yy0);
+		  (void *) vanuatu_polygon_xy ((gaiaRingPtr) yymsp[-2].minor.
+					       yy0);
 	  }
 	  break;
       case 66:			/* polygon_textm ::= VANUATU_OPEN_BRACKET ringm extra_ringsm VANUATU_CLOSE_BRACKET */
@@ -5990,8 +6346,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_polygon_xym ((gaiaRingPtr) yymsp[-2].
-						minor.yy0);
+		  (void *) vanuatu_polygon_xym ((gaiaRingPtr) yymsp[-2].minor.
+						yy0);
 	  }
 	  break;
       case 67:			/* polygon_textz ::= VANUATU_OPEN_BRACKET ringz extra_ringsz VANUATU_CLOSE_BRACKET */
@@ -5999,8 +6355,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_polygon_xyz ((gaiaRingPtr) yymsp[-2].
-						minor.yy0);
+		  (void *) vanuatu_polygon_xyz ((gaiaRingPtr) yymsp[-2].minor.
+						yy0);
 	  }
 	  break;
       case 68:			/* polygon_textzm ::= VANUATU_OPEN_BRACKET ringzm extra_ringszm VANUATU_CLOSE_BRACKET */
@@ -6008,8 +6364,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaRingPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_polygon_xyzm ((gaiaRingPtr) yymsp[-2].
-						 minor.yy0);
+		  (void *) vanuatu_polygon_xyzm ((gaiaRingPtr) yymsp[-2].minor.
+						 yy0);
 	  }
 	  break;
       case 69:			/* ring ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
@@ -6050,8 +6406,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_ring_xym ((gaiaPointPtr) yymsp[-8].
-					     minor.yy0);
+		  (void *) vanuatu_ring_xym ((gaiaPointPtr) yymsp[-8].minor.
+					     yy0);
 	  }
 	  break;
       case 75:			/* ringz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
@@ -6065,8 +6421,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_ring_xyz ((gaiaPointPtr) yymsp[-8].
-					     minor.yy0);
+		  (void *) vanuatu_ring_xyz ((gaiaPointPtr) yymsp[-8].minor.
+					     yy0);
 	  }
 	  break;
       case 78:			/* ringzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
@@ -6080,8 +6436,8 @@ yy_reduce (yyParser * yypParser,	/* The parser */
 	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
 		  (gaiaPointPtr) yymsp[-1].minor.yy0;
 	      yygotominor.yy0 =
-		  (void *) vanuatu_ring_xyzm ((gaiaPointPtr) yymsp[-8].
-					      minor.yy0);
+		  (void *) vanuatu_ring_xyzm ((gaiaPointPtr) yymsp[-8].minor.
+					      yy0);
 	  }
 	  break;
       case 85:			/* multipoint_text ::= VANUATU_OPEN_BRACKET point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
@@ -7577,215 +7933,180 @@ YY_DECL
 		    VanuatuWktlval.dval = atof (VanuatuWkttext);
 		    return VANUATU_NUM;
 		}
-	    YY_BREAK case 2:
-		YY_RULE_SETUP
+		YY_BREAK case 2:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_COMMA;
 		}
-	    YY_BREAK case 3:
-		YY_RULE_SETUP
+		YY_BREAK case 3:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_OPEN_BRACKET;
 		}
-	    YY_BREAK case 4:
-		YY_RULE_SETUP
+		YY_BREAK case 4:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_CLOSE_BRACKET;
 		}
-	    YY_BREAK case 5:
-		YY_RULE_SETUP
+		YY_BREAK case 5:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_POINT;
 		}
-	    YY_BREAK case 6:
-		YY_RULE_SETUP
+		YY_BREAK case 6:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_POINT_Z;
 		}
-	    YY_BREAK case 7:
-		YY_RULE_SETUP
+		YY_BREAK case 7:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_POINT_M;
 		}
-	    YY_BREAK case 8:
-		YY_RULE_SETUP
+		YY_BREAK case 8:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_POINT_ZM;
 		}
-	    YY_BREAK case 9:
-		YY_RULE_SETUP
+		YY_BREAK case 9:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_LINESTRING;
 		}
-	    YY_BREAK case 10:
-		YY_RULE_SETUP
+		YY_BREAK case 10:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_LINESTRING_Z;
 		}
-	    YY_BREAK case 11:
-		YY_RULE_SETUP
+		YY_BREAK case 11:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_LINESTRING_M;
 		}
-	    YY_BREAK case 12:
-		YY_RULE_SETUP
+		YY_BREAK case 12:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_LINESTRING_ZM;
 		}
-	    YY_BREAK case 13:
-		YY_RULE_SETUP
+		YY_BREAK case 13:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_POLYGON;
 		}
-	    YY_BREAK case 14:
-		YY_RULE_SETUP
+		YY_BREAK case 14:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_POLYGON_Z;
 		}
-	    YY_BREAK case 15:
-		YY_RULE_SETUP
+		YY_BREAK case 15:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_POLYGON_M;
 		}
-	    YY_BREAK case 16:
-		YY_RULE_SETUP
+		YY_BREAK case 16:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_POLYGON_ZM;
 		}
-	    YY_BREAK case 17:
-		YY_RULE_SETUP
+		YY_BREAK case 17:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOINT;
 		}
-	    YY_BREAK case 18:
-		YY_RULE_SETUP
+		YY_BREAK case 18:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOINT_Z;
 		}
-	    YY_BREAK case 19:
-		YY_RULE_SETUP
+		YY_BREAK case 19:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOINT_M;
 		}
-	    YY_BREAK case 20:
-		YY_RULE_SETUP
+		YY_BREAK case 20:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOINT_ZM;
 		}
-	    YY_BREAK case 21:
-		YY_RULE_SETUP
+		YY_BREAK case 21:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTILINESTRING;
 		}
-	    YY_BREAK case 22:
-		YY_RULE_SETUP
+		YY_BREAK case 22:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTILINESTRING_Z;
 		}
-	    YY_BREAK case 23:
-		YY_RULE_SETUP
+		YY_BREAK case 23:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTILINESTRING_M;
 		}
-	    YY_BREAK case 24:
-		YY_RULE_SETUP
+		YY_BREAK case 24:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTILINESTRING_ZM;
 		}
-	    YY_BREAK case 25:
-		YY_RULE_SETUP
+		YY_BREAK case 25:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOLYGON;
 		}
-	    YY_BREAK case 26:
-		YY_RULE_SETUP
+		YY_BREAK case 26:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOLYGON_Z;
 		}
-	    YY_BREAK case 27:
-		YY_RULE_SETUP
+		YY_BREAK case 27:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOLYGON_M;
 		}
-	    YY_BREAK case 28:
-		YY_RULE_SETUP
+		YY_BREAK case 28:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_MULTIPOLYGON_ZM;
 		}
-	    YY_BREAK case 29:
-		YY_RULE_SETUP
+		YY_BREAK case 29:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_GEOMETRYCOLLECTION;
 		}
-	    YY_BREAK case 30:
-		YY_RULE_SETUP
+		YY_BREAK case 30:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_GEOMETRYCOLLECTION_Z;
 		}
-	    YY_BREAK case 31:
-		YY_RULE_SETUP
+		YY_BREAK case 31:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_GEOMETRYCOLLECTION_M;
 		}
-	    YY_BREAK case 32:
-		YY_RULE_SETUP
+		YY_BREAK case 32:YY_RULE_SETUP
 		{
 		    VanuatuWktlval.dval = 0;
 		    return VANUATU_GEOMETRYCOLLECTION_ZM;
 		}
-	    YY_BREAK case 33:
-		YY_RULE_SETUP
+		YY_BREAK case 33:YY_RULE_SETUP
 		{
 		    col += (int) strlen (VanuatuWkttext);
 		}		/* ignore but count white space */
-	    YY_BREAK case 34:
+		YY_BREAK case 34:
 /* rule 34 can match eol */
-		YY_RULE_SETUP
+		  YY_RULE_SETUP
 		{
 		    col = 0;
 		    ++line;
 		    return VANUATU_NEWLINE;
 		}
-	    YY_BREAK case 35:
-		YY_RULE_SETUP
+		YY_BREAK case 35:YY_RULE_SETUP
 		{
 		    col += (int) strlen (VanuatuWkttext);
 		    return -1;
 		}
-	    YY_BREAK case 36:
-		YY_RULE_SETUP ECHO;
-	    YY_BREAK case YY_STATE_EOF (INITIAL):
-		yyterminate ();
+		YY_BREAK case 36:YY_RULE_SETUP ECHO;
+		YY_BREAK case YY_STATE_EOF (INITIAL):yyterminate ();
 
 	    case YY_END_OF_BUFFER:
 		{
@@ -7905,8 +8226,7 @@ YY_DECL
 
 			  case EOB_ACT_LAST_MATCH:
 			      (yy_c_buf_p) =
-				  &YY_CURRENT_BUFFER_LVALUE->
-				  yy_ch_buf[(yy_n_chars)];
+				  &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)];
 
 			      yy_current_state = yy_get_previous_state ();
 
@@ -8054,8 +8374,9 @@ yy_get_next_buffer (void)
 	  yy_size_t new_size =
 	      (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
 	  YY_CURRENT_BUFFER_LVALUE->yy_ch_buf =
-	      (char *) VanuatuWktrealloc ((void *) YY_CURRENT_BUFFER_LVALUE->
-					  yy_ch_buf, new_size);
+	      (char *) VanuatuWktrealloc ((void *)
+					  YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,
+					  new_size);
 	  if (!YY_CURRENT_BUFFER_LVALUE->yy_ch_buf)
 	      YY_FATAL_ERROR ("out of dynamic memory in yy_get_next_buffer()");
       }
@@ -8145,8 +8466,8 @@ yyunput (int c, register char *yy_bp)
 	  /* +2 for EOB chars. */
 	  register int number_to_move = (yy_n_chars) + 2;
 	  register char *dest =
-	      &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[YY_CURRENT_BUFFER_LVALUE->
-						   yy_buf_size + 2];
+	      &YY_CURRENT_BUFFER_LVALUE->
+	      yy_ch_buf[YY_CURRENT_BUFFER_LVALUE->yy_buf_size + 2];
 	  register char *source =
 	      &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move];
 

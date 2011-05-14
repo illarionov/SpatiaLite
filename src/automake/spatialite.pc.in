@@ -8,5 +8,5 @@ includedir=@includedir@
 Name: spatialite
 Description: Spatial SQL database engine based on SQLite
 Version: 2.4.0
-Libs: -L${libdir} -lspatialite
+Libs: -L${libdir} -lspatialite -lm
 Cflags: -I${includedir} -DSPATIALITE_AMALGAMATION=1

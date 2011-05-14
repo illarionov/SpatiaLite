@@ -803,6 +803,13 @@ extern "C"
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaParseWkt (const unsigned char
 						  *dirty_buffer, short type);
 
+    GAIAGEO_DECLARE void gaiaToEWKB (gaiaOutBufferPtr out_buf,
+				     gaiaGeomCollPtr geom);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaFromEWKB (const unsigned char
+						  *in_buffer);
+    GAIAGEO_DECLARE void gaiaToEWKT (gaiaOutBufferPtr out_buf,
+				     gaiaGeomCollPtr geom);
+
     GAIAGEO_DECLARE void gaiaOutPointZ (gaiaOutBufferPtr out_buf,
 					gaiaPointPtr point);
     GAIAGEO_DECLARE void gaiaOutLinestringZ (gaiaOutBufferPtr out_buf,
