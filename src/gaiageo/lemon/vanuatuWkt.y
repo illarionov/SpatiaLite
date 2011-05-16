@@ -238,13 +238,13 @@ linestring_textzm(L) ::= VANUATU_OPEN_BRACKET point_coordxyzm(P) VANUATU_COMMA p
 // Syntax for a "polygon" object:
 // The functions called build a geometry collection from a gaiaPolygonPtr
 polygon(P) ::= VANUATU_POLYGON polygon_text(X).
-	{ P = buildGeomFromPolygon((gaiaPolygonPtr)X); }
+	{ P = vanuatu_buildGeomFromPolygon((gaiaPolygonPtr)X); }
 polygonm(P) ::= VANUATU_POLYGON_M polygon_textm(X).
-	{ P = buildGeomFromPolygon((gaiaPolygonPtr)X); }
+	{ P = vanuatu_buildGeomFromPolygon((gaiaPolygonPtr)X); }
 polygonz(P) ::= VANUATU_POLYGON_Z polygon_textz(X).
-	{ P = buildGeomFromPolygon((gaiaPolygonPtr)X); }
+	{ P = vanuatu_buildGeomFromPolygon((gaiaPolygonPtr)X); }
 polygonzm(P) ::= VANUATU_POLYGON_ZM polygon_textzm(X).
-	{ P = buildGeomFromPolygon((gaiaPolygonPtr)X); }
+	{ P = vanuatu_buildGeomFromPolygon((gaiaPolygonPtr)X); }
 
 // A valid polygon must have at least one ring:
 // The functions called build a gaiaPolygonPtr from a linked list of gaiaRingPtrs

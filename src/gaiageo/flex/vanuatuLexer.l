@@ -67,7 +67,7 @@ Greg Wilson			gvwilson@cs.toronto.ca
 %{
 
 /* For debugging purposes */
-int line = 1, col = 1;
+int vanuatu_line = 1, vanuatu_col = 1;
 
 %}
 
@@ -82,7 +82,7 @@ int line = 1, col = 1;
 *  of the two tokens, FLEX will match POINT ZM.
 */
 %%
--?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*       	{ col += (int) strlen(yytext);  VanuatuWktlval.dval = atof(yytext); return VANUATU_NUM; }
+-?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*       	{ vanuatu_col += (int) strlen(yytext);  VanuatuWktlval.dval = atof(yytext); return VANUATU_NUM; }
 ","										{ VanuatuWktlval.dval = 0; return VANUATU_COMMA; }
 "("										{ VanuatuWktlval.dval = 0; return VANUATU_OPEN_BRACKET; }
 ")"										{ VanuatuWktlval.dval = 0; return VANUATU_CLOSE_BRACKET; }
@@ -115,22 +115,22 @@ int line = 1, col = 1;
 (?i:"geometrycollection"[ ]?"m")	{ VanuatuWktlval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_M; }
 (?i:"geometrycollection"[ ]?"zm")	{ VanuatuWktlval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_ZM; }
 
-[ \t]   { col += (int) strlen(yytext); }               /* ignore but count white space */
+[ \t]   { vanuatu_col += (int) strlen(yytext); }               /* ignore but count white space */
 
-\n      { col = 0; ++line; return VANUATU_NEWLINE; }
+\n      { vanuatu_col = 0; ++vanuatu_line; return VANUATU_NEWLINE; }
 
-.       { col += (int) strlen(yytext); return -1; }
+.       { vanuatu_col += (int) strlen(yytext); return -1; }
 %%
 /**
  * reset the line and column count
  *
  *
  */
-void reset_lexer(void)
+void vanuatu_reset_lexer(void)
 {
 
-  line = 1;
-  col  = 1;
+  vanuatu_line = 1;
+  vanuatu_col  = 1;
 
 }
 
@@ -142,7 +142,7 @@ void reset_lexer(void)
  */
 void VanuatuWkterror(char *s)
 {
-  printf("error: %s at line: %d col: %d\n",s,line,col);
+  printf("error: %s at line: %d col: %d\n",s,vanuatu_line,vanuatu_col);
 
 }
 

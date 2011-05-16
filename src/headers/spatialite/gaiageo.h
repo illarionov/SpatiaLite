@@ -807,6 +807,8 @@ extern "C"
 				     gaiaGeomCollPtr geom);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaFromEWKB (const unsigned char
 						  *in_buffer);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaParseEWKT (const unsigned char
+						   *in_buffer);
     GAIAGEO_DECLARE void gaiaToEWKT (gaiaOutBufferPtr out_buf,
 				     gaiaGeomCollPtr geom);
 

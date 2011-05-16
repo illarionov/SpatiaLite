@@ -19,5 +19,7 @@ libgaiageo_la_SOURCES = gg_advanced.c \
 	gg_shape.c \
 	gg_transform.c \
 	gg_wkb.c \
-	gg_wkt.c
+	gg_wkt.c \
+	gg_vanuatu.c \
+	gg_ewkt.c
 
