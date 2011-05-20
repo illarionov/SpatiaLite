@@ -36,3 +36,25 @@ correspondign section into "gg_ewkt.c"
 Search for "EWKT_FLEX" in order to 
 identify the appropriate place where
 to paste the generated code.
+
+
+
+
+The GeoJSON lexer:
+================
+1) in order to make any change to the lexer
+you have to edit first the definitions file
+geoJsonLexer.l
+
+2) then run:
+flex -L geoJsonLexer.l
+
+3) a source file named "lex.GeoJson.c" will be
+generated during the above step.
+Please, copy the whole file content and
+then replace [i.e. using cut&paste] the
+correspondign section into "gg_geoJSON.c"
+Search for "GEOJSON_FLEX" in order to 
+identify the appropriate place where
+to paste the generated code.
+

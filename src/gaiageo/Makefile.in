@@ -47,7 +47,8 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 libgaiageo_la_LIBADD =
 am_libgaiageo_la_OBJECTS = gg_advanced.lo gg_endian.lo gg_geodesic.lo \
 	gg_geometries.lo gg_geoscvt.lo gg_relations.lo gg_shape.lo \
-	gg_transform.lo gg_wkb.lo gg_wkt.lo gg_vanuatu.lo gg_ewkt.lo
+	gg_transform.lo gg_wkb.lo gg_wkt.lo gg_vanuatu.lo gg_ewkt.lo \
+	gg_geoJSON.lo
 libgaiageo_la_OBJECTS = $(am_libgaiageo_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -211,7 +212,8 @@ libgaiageo_la_SOURCES = gg_advanced.c \
 	gg_wkb.c \
 	gg_wkt.c \
 	gg_vanuatu.c \
-	gg_ewkt.c
+	gg_ewkt.c \
+	gg_geoJSON.c
 
 all: all-am
 
@@ -268,6 +270,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_advanced.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_endian.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_ewkt.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_geoJSON.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_geodesic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_geometries.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_geoscvt.Plo@am__quote@

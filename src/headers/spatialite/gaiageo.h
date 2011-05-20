@@ -811,6 +811,8 @@ extern "C"
 						   *in_buffer);
     GAIAGEO_DECLARE void gaiaToEWKT (gaiaOutBufferPtr out_buf,
 				     gaiaGeomCollPtr geom);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaParseGeoJSON (const unsigned char
+						      *in_buffer);
 
     GAIAGEO_DECLARE void gaiaOutPointZ (gaiaOutBufferPtr out_buf,
 					gaiaPointPtr point);

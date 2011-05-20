@@ -21,5 +21,6 @@ libgaiageo_la_SOURCES = gg_advanced.c \
 	gg_wkb.c \
 	gg_wkt.c \
 	gg_vanuatu.c \
-	gg_ewkt.c
+	gg_ewkt.c \
+	gg_geoJSON.c
 

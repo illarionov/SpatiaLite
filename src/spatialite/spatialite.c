@@ -9623,6 +9623,38 @@ fnct_FromEWKT (sqlite3_context * context, int argc, sqlite3_value ** argv)
     sqlite3_result_blob (context, p_result, len, free);
 }
 
+
+static void
+fnct_FromGeoJSON (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ GeomFromGeoJSON(GeoJSON encoded geometry)
+/
+/ returns the current geometry by parsing GeoJSON encoded string 
+/ or NULL if any error is encountered
+*/
+    int len;
+    unsigned char *p_result = NULL;
+    const unsigned char *text;
+    gaiaGeomCollPtr geo = NULL;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    text = sqlite3_value_text (argv[0]);
+    geo = gaiaParseGeoJSON (text);
+    if (geo == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    gaiaToSpatiaLiteBlobWkb (geo, &p_result, &len);
+    gaiaFreeGeomColl (geo);
+    sqlite3_result_blob (context, p_result, len, free);
+}
+
 static void
 fnct_Linearize (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
@@ -12999,8 +13031,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -13084,8 +13115,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -13094,8 +13124,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -13477,6 +13506,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "AsGeoJSON", 3, SQLITE_ANY, 0, fnct_AsGeoJSON,
 			     0, 0);
+    sqlite3_create_function (db, "GeomFromGeoJSON", 1, SQLITE_ANY, 0,
+			     fnct_FromGeoJSON, 0, 0);
     sqlite3_create_function (db, "AsFGF", 2, SQLITE_ANY, 0, fnct_AsFGF, 0, 0);
     sqlite3_create_function (db, "GeomFromEWKB", 1, SQLITE_ANY, 0,
 			     fnct_FromEWKB, 0, 0);
@@ -14403,12 +14434,15 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     0, 0);
     sqlite3_create_function (db, "AsGeoJSON", 3, SQLITE_ANY, 0, fnct_AsGeoJSON,
 			     0, 0);
+    sqlite3_create_function (db, "GeomFromGeoJSON", 1, SQLITE_ANY, 0,
+			     fnct_FromGeoJSON, 0, 0);
     sqlite3_create_function (db, "AsFGF", 2, SQLITE_ANY, 0, fnct_AsFGF, 0, 0);
     sqlite3_create_function (db, "GeomFromEWKB", 1, SQLITE_ANY, 0,
 			     fnct_FromEWKB, 0, 0);
-    sqlite3_create_function (db, "AsFromEWKT", 1, SQLITE_ANY, 0, fnct_ToEWKT, 0,
-			     0);
     sqlite3_create_function (db, "AsEWKB", 1, SQLITE_ANY, 0, fnct_ToEWKB, 0, 0);
+    sqlite3_create_function (db, "GeomFromEWKT", 1, SQLITE_ANY, 0,
+			     fnct_FromEWKT, 0, 0);
+    sqlite3_create_function (db, "AsEWKT", 1, SQLITE_ANY, 0, fnct_ToEWKT, 0, 0);
     sqlite3_create_function (db, "AsBinary", 1, SQLITE_ANY, 0, fnct_AsBinary,
 			     0, 0);
     sqlite3_create_function (db, "ST_AsBinary", 1, SQLITE_ANY, 0,

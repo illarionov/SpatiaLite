@@ -61,9 +61,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 /* constants definining FDO-OGR Geometry formats */
 #define FDO_OGR_NONE	0
-#define FDO_OGR_WKT		1
-#define FDO_OGR_WKB		2
-#define FDO_OGR_FGF		3
+#define FDO_OGR_WKT	1
+#define FDO_OGR_WKB	2
+#define FDO_OGR_FGF	3
+#define FDO_OGR_SPLITE	4
 
 #ifdef _WIN32
 #define strcasecmp	_stricmp
@@ -1009,7 +1010,8 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
 					  {
 					      sqlite3_bind_text (stmt, i - 1,
 								 out_buf.Buffer,
-								 out_buf.WriteOffset,
+								 out_buf.
+								 WriteOffset,
 								 free);
 					      out_buf.Buffer = NULL;
 					      gaiaOutBufferReset (&out_buf);
@@ -1041,6 +1043,20 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
 					gaiaToFgf (geom, &blob_wkb, &size,
 						   *(p_vt->CoordDimensions +
 						     ig));
+					if (blob_wkb)
+					    sqlite3_bind_blob (stmt, i - 1,
+							       blob_wkb, size,
+							       free);
+					else
+					  {
+					      err_geom = 1;
+					      goto error;
+					  }
+					break;
+				    case FDO_OGR_SPLITE:
+					gaiaToSpatiaLiteBlobWkb (geom,
+								 &blob_wkb,
+								 &size);
 					if (blob_wkb)
 					    sqlite3_bind_blob (stmt, i - 1,
 							       blob_wkb, size,
@@ -1223,7 +1239,8 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
 					  {
 					      sqlite3_bind_text (stmt, i - 1,
 								 out_buf.Buffer,
-								 out_buf.WriteOffset,
+								 out_buf.
+								 WriteOffset,
 								 free);
 					      out_buf.Buffer = NULL;
 					      gaiaOutBufferReset (&out_buf);
@@ -1255,6 +1272,20 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
 					gaiaToFgf (geom, &blob_wkb, &size,
 						   *(p_vt->CoordDimensions +
 						     ig));
+					if (blob_wkb)
+					    sqlite3_bind_blob (stmt, i - 1,
+							       blob_wkb, size,
+							       free);
+					else
+					  {
+					      err_geom = 1;
+					      goto error;
+					  }
+					break;
+				    case FDO_OGR_SPLITE:
+					gaiaToSpatiaLiteBlobWkb (geom,
+								 &blob_wkb,
+								 &size);
 					if (blob_wkb)
 					    sqlite3_bind_blob (stmt, i - 1,
 							       blob_wkb, size,
@@ -1547,10 +1578,8 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					      if (wkt == NULL)
 						{
 						    value_set_null (*
-								    (cursor->
-								     pVtab->
-								     Value +
-								     ic));
+								    (cursor->pVtab->Value
+								     + ic));
 						    continue;
 						}
 					      delete_wkt = 1;
@@ -1560,8 +1589,9 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					    free ((void *) wkt);
 					if (!geom)
 					    value_set_null (*
-							    (cursor->pVtab->
-							     Value + ic));
+							    (cursor->
+							     pVtab->Value +
+							     ic));
 					else
 					  {
 					      geom->Srid =
@@ -1571,15 +1601,13 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 								       &size);
 					      if (xblob)
 						  value_set_blob (*
-								  (cursor->
-								   pVtab->
-								   Value + ic),
-								  xblob, size);
+								  (cursor->pVtab->Value
+								   + ic), xblob,
+								  size);
 					      else
 						  value_set_null (*
-								  (cursor->
-								   pVtab->
-								   Value + ic));
+								  (cursor->pVtab->Value
+								   + ic));
 					      gaiaFreeGeomColl (geom);
 					  }
 				    }
@@ -1600,8 +1628,9 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					geom = gaiaFromWkb (blob, size);
 					if (!geom)
 					    value_set_null (*
-							    (cursor->pVtab->
-							     Value + ic));
+							    (cursor->
+							     pVtab->Value +
+							     ic));
 					else
 					  {
 					      geom->Srid =
@@ -1611,15 +1640,13 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 								       &size);
 					      if (xblob)
 						  value_set_blob (*
-								  (cursor->
-								   pVtab->
-								   Value + ic),
-								  xblob, size);
+								  (cursor->pVtab->Value
+								   + ic), xblob,
+								  size);
 					      else
 						  value_set_null (*
-								  (cursor->
-								   pVtab->
-								   Value + ic));
+								  (cursor->pVtab->Value
+								   + ic));
 					      gaiaFreeGeomColl (geom);
 					  }
 				    }
@@ -1640,8 +1667,9 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 					geom = gaiaFromFgf (blob, size);
 					if (!geom)
 					    value_set_null (*
-							    (cursor->pVtab->
-							     Value + ic));
+							    (cursor->
+							     pVtab->Value +
+							     ic));
 					else
 					  {
 					      geom->Srid =
@@ -1651,17 +1679,33 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 								       &size);
 					      if (xblob)
 						  value_set_blob (*
-								  (cursor->
-								   pVtab->
-								   Value + ic),
-								  xblob, size);
+								  (cursor->pVtab->Value
+								   + ic), xblob,
+								  size);
 					      else
 						  value_set_null (*
-								  (cursor->
-								   pVtab->
-								   Value + ic));
+								  (cursor->pVtab->Value
+								   + ic));
 					      gaiaFreeGeomColl (geom);
 					  }
+				    }
+				  else
+				      value_set_null (*
+						      (cursor->pVtab->Value +
+						       ic));
+				  break;
+			      case FDO_OGR_SPLITE:
+				  if (sqlite3_column_type (stmt, ic + 1) ==
+				      SQLITE_BLOB)
+				    {
+					/* trying to parse a SPATIALITE Geometry */
+					blob =
+					    sqlite3_column_blob (stmt, ic + 1);
+					size =
+					    sqlite3_column_bytes (stmt, ic + 1);
+					value_set_blob (*
+							(cursor->pVtab->Value +
+							 ic), blob, size);
 				    }
 				  else
 				      value_set_null (*
@@ -1860,6 +1904,8 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 		    *(p_vt->Format + (i - 1)) = FDO_OGR_WKB;
 		if (strcasecmp (format, "FGF") == 0)
 		    *(p_vt->Format + (i - 1)) = FDO_OGR_FGF;
+		if (strcasecmp (format, "SPATIALITE") == 0)
+		    *(p_vt->Format + (i - 1)) = FDO_OGR_SPLITE;
 		if (coord_dimension == 3)
 		    *(p_vt->CoordDimensions + (i - 1)) = GAIA_XY_Z;
 		else if (coord_dimension == 4)

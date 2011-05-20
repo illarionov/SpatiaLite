@@ -1517,8 +1517,8 @@ typedef union
 {
     double dval;
     struct symtab *symp;
-} yystype;
-#define YYSTYPE yystype
+} ewkt_yystype;
+#define YYSTYPE ewkt_yystype
 #define YYSTYPE_IS_TRIVIAL 1
 #endif
 
@@ -2451,6 +2451,7 @@ ewkt_yy_find_reduce_action (int stateno,	/* Current state number */
     )
 {
     int i;
+fprintf(stderr, "\tyy_find_reduce_action\n");fflush(stderr);
 #ifdef YYERRORSYMBOL
     if (stateno > YY_REDUCE_MAX)
       {
@@ -2472,6 +2473,7 @@ ewkt_yy_find_reduce_action (int stateno,	/* Current state number */
     assert (i >= 0 && i < YY_SZ_ACTTAB);
     assert (ewkt_yy_lookahead[i] == iLookAhead);
 #endif
+fprintf(stderr, "\taction=%d [%d]\n", ewkt_yy_action[i], i);fflush(stderr);
     return ewkt_yy_action[i];
 }
 
@@ -2890,6 +2892,7 @@ ewkt_yy_reduce (ewkt_yyParser * yypParser,	/* The parser */
       }
 #endif /* NDEBUG */
 
+fprintf(stderr, "ewktReduce=%d\n", yyruleno);fflush(stderr);
     /* Silence complaints from purify about yygotominor being uninitialized
      ** in some cases when it is copied into the stack after the following
      ** switch.  yygotominor is uninitialized when a rule reduces that does
@@ -3520,6 +3523,7 @@ ewkt_yy_reduce (ewkt_yyParser * yypParser,	/* The parser */
     yyact =
 	ewkt_yy_find_reduce_action (yymsp[-yysize].stateno,
 				    (YYCODETYPE) yygoto);
+fprintf(stderr, "yyact=%d [%d]\n", yyact, YYNSTATE);fflush(stderr);
     if (yyact < YYNSTATE)
       {
 #ifdef NDEBUG
@@ -3538,6 +3542,7 @@ ewkt_yy_reduce (ewkt_yyParser * yypParser,	/* The parser */
 	  else
 #endif
 	    {
+fprintf(stderr, "\tyy_shift\n");fflush(stderr);
 		ewkt_yy_shift (yypParser, yyact, yygoto, &yygotominor);
 	    }
       }
@@ -3680,6 +3685,7 @@ ewktParse (void *yyp,		/* The parser */
     do
       {
 	  yyact = ewkt_yy_find_shift_action (yypParser, (YYCODETYPE) yymajor);
+fprintf(stderr, "LOOP %d [%d/%d]\n", yyact, YYNSTATE, YYNRULE);fflush(stderr);
 	  if (yyact < YYNSTATE)
 	    {
 		assert (!yyendofinput);	/* Impossible to shift the $ token */
@@ -3689,6 +3695,7 @@ ewktParse (void *yyp,		/* The parser */
 	    }
 	  else if (yyact < YYNSTATE + YYNRULE)
 	    {
+fprintf(stderr, "\treduce\n");fflush(stderr);
 		ewkt_yy_reduce (yypParser, yyact - YYNSTATE);
 	    }
 	  else
@@ -4730,6 +4737,7 @@ YY_DECL
 		goto yy_find_action;
 
 	    case 1:
+fprintf(stderr, "NUM\n");fflush(stderr);
 		YY_RULE_SETUP
 		{
 		    ewkt_col += (int) strlen (Ewkttext);
@@ -4737,24 +4745,28 @@ YY_DECL
 		    return EWKT_NUM;
 		}
 	    YY_BREAK case 2:
+fprintf(stderr, "COMMA\n");fflush(stderr);
 		YY_RULE_SETUP
 		{
 		    EwktLval.dval = 0;
 		    return EWKT_COMMA;
 		}
 	    YY_BREAK case 3:
+fprintf(stderr, "BRAKECT\n");fflush(stderr);
 		YY_RULE_SETUP
 		{
 		    EwktLval.dval = 0;
 		    return EWKT_OPEN_BRACKET;
 		}
 	    YY_BREAK case 4:
+fprintf(stderr, "BRAKET-doNE\n");fflush(stderr);
 		YY_RULE_SETUP
 		{
 		    EwktLval.dval = 0;
 		    return EWKT_CLOSE_BRACKET;
 		}
 	    YY_BREAK case 5:
+fprintf(stderr, "POINT\n");fflush(stderr);
 		YY_RULE_SETUP
 		{
 		    EwktLval.dval = 0;
@@ -6163,3 +6175,5 @@ gaiaParseEWKT (const unsigned char *dirty_buffer)
 #undef yy_set_bol
 #undef yytext_ptr
 #undef unput
+#undef YYSTYPE
+

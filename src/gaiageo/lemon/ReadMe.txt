@@ -192,3 +192,87 @@ to paste the generated code.
 
 
 
+
+The GeoJSON parser:
+================
+1) in order to make any change to the  GeoJSON parser
+you have to edit first the definitions file
+geoJSON.y
+
+2) then run:
+lemon -l geoJSOM.y
+
+3) during the above step the following files will be
+generated:
+geoJSON.c [the C code implementing the parser]
+geoJSON.h [C header file]
+geoJSON.out [check file - useful for debugging]
+
+3.1] geoJSON.h
+Please, copy the whole file content and
+then replace [i.e. using cut&paste] the
+correspondign section into "gg_geoJSON.c"
+Search for "GEOJSON_LEMON_H" in order to 
+identify the appropriate place where
+to paste the generated code.
+
+3.2] geoJSON.c
+First some manual adjustement is required.
+Open the source file, applying the following
+substitutions:
+ParseAlloc            -> geoJSONParseAlloc
+ParseFree             -> geoJSONParseFree
+ParseStackPeak        -> geoJSONParseStackPeak
+Parse                 -> geoJSONParse
+YYMINORTYPE           -> GEOJSON_YYMINORTYPE
+YY_CHAR               -> GEOJSON_YY_CHAR
+yyzerominor           -> geoJSON_yyzerominor
+yy_action             -> geoJSON_yy_action
+yy_lookahead          -> geoJSON_yy_lookahead
+yy_shift_ofst         -> geoJSON_yy_shift_ofst
+yy_reduce_ofst        -> geoJSON_yy_reduce_ofst
+yy_default            -> geoJSON_yy_default
+yyStackEntry          -> geoJSON_yyStackEntry
+yyParser              -> geoJSON_yyParser
+yy_destructor         -> geoJSON_yy_destructor
+yy_pop_parser_stack   -> geoJSON_yy_pop_parser_stack
+yy_find_shift_action  -> geoJSON_yy_find_shift_action
+yy_find_reduce_action -> geoJSON_yy_find_reduce_action
+yyStackOverflow       -> geoJSON_yyStackOverflow
+yy_shift              -> geoJSON_yy_shift
+yyRuleInfo            -> geoJSON_yyRuleInfo
+yy_reduce             -> geoJSON_yy_reduce
+yy_parse_failed       -> geoJSON_yy_parse_failed
+yy_syntax_error       -> geoJSON_yy_syntax_error
+yy_buffer_stack_top   -> geoJSON_yy_buffer_stack_top
+yy_buffer_stack_max   -> geoJSON_yy_buffer_stack_max
+yy_buffer_stack       -> geoJSON_yy_buffer_stack
+yy_c_buf_p            -> geoJSON_yy_c_buf_p
+yy_init               -> geoJSON_yy_init
+yy_start              -> geoJSON_yy_start
+yy_state_type         -> geoJSON_yy_state_type
+yy_trans_info         -> geoJSON_yy_trans_info
+yy_accept             -> geoJSON_yy_accept
+yy_ec                 -> geoJSON_yy_ec
+yy_meta               -> geoJSON_yy_meta
+yy_base               -> geoJSON_yy_base
+yy_def                -> geoJSON_yy_def
+yy_nxt                -> geoJSON_yy_nxt
+yy_chk                -> geoJSON_yy_chk
+yy_fatal_error        -> geoJSON_yy_fatal_error
+yy_init_globals       -> geoJSON_yy_init_globals
+yy_get_next_buffer    -> geoJSON_yy_get_next_buffer
+yy_get_previous_state -> geoJSON_yy_get_previous_state
+yy_try_NUL_trans      -> geoJSON_yy_try_NUL_trans
+yyunput               -> geoJSON_yyunput
+input                 -> geoJSON_input
+
+Then copy the whole file content and
+replace [i.e. using cut&paste] the
+correspondign section into "gg_geoJSON.c"
+Search for "GEOJSON_LEMON" in order to 
+identify the appropriate place where
+to paste the generated code.
+
+
+

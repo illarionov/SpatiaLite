@@ -1557,8 +1557,8 @@ typedef union
 {
     double dval;
     struct symtab *symp;
-} yystype;
-#define YYSTYPE yystype
+} vanuatu_yystype;
+#define YYSTYPE vanuatu_yystype
 #define YYSTYPE_IS_TRIVIAL 1
 #endif
 
@@ -5656,3 +5656,5 @@ Greg Wilson			gvwilson@cs.toronto.ca
 #undef yy_set_bol
 #undef yytext_ptr
 #undef unput
+#undef YYSTYPE
+
