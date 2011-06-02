@@ -2778,14 +2778,14 @@ gaiaOutGeoJSON (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom, int precision,
 	    {
 		if (options == 2 || options == 3)
 		  {
-		      // including short CRS
+		      /* including short CRS */
 		      sprintf (crs,
 			       ",\"crs\":{\"type\":\"name\",\"properties\":{\"name\":\"EPSG:%d\"}}",
 			       geom->Srid);
 		  }
 		if (options == 4 || options == 5)
 		  {
-		      // including long CRS
+		      /* including long CRS */
 		      sprintf (crs,
 			       ",\"crs\":{\"type\":\"name\",\"properties\":{\"name\":\"urn:ogc:def:crs:EPSG:%d\"}}",
 			       geom->Srid);
@@ -2793,7 +2793,7 @@ gaiaOutGeoJSON (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom, int precision,
 	    }
 	  if (options == 1 || options == 3 || options == 5)
 	    {
-		// including BBOX
+		/* including BBOX */
 		gaiaMbrGeometry (geom);
 		sprintf (buf_x, "%.*f", precision, geom->MinX);
 		gaiaOutClean (buf_x);
@@ -2862,7 +2862,7 @@ gaiaOutGeoJSON (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom, int precision,
       }
     else
       {
-	  // omitting BBOX
+	  /* omitting BBOX */
 	  switch (geom->DeclaredType)
 	    {
 	    case GAIA_POINT:

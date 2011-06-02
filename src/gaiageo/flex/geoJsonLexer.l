@@ -63,12 +63,12 @@ int geoJSON_line = 1, geoJSON_col = 1;
 -?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*      { geoJSON_col += (int) strlen(yytext);  GeoJsonLval.dval = atof(yytext); return GEOJSON_NUM; }
 -?"\""EPSG:-?[0-9]+"\""					{ geoJSON_col += (int) strlen(yytext);  GeoJsonLval.ival = atoi(yytext+6); return GEOJSON_SHORT_SRID; }
 -?"\""urn:ogc:def:crs:EPSG:-?[0-9]+"\""	{ geoJSON_col += (int) strlen(yytext);  GeoJsonLval.ival = atoi(yytext+22); return GEOJSON_LONG_SRID; }
--?"\n"?",""\n"?							{ GeoJsonLval.dval = 0; return GEOJSON_COMMA; }
--?"\n"?":""\n"?							{ GeoJsonLval.dval = 0; return GEOJSON_COLON; }
--?"\n"?"{""\n"?							{ GeoJsonLval.dval = 0; return GEOJSON_OPEN_BRACE; }
--?"\n"?"}""\n"?							{ GeoJsonLval.dval = 0; return GEOJSON_CLOSE_BRACE; }
--?"\n"?"[""\n"?							{ GeoJsonLval.dval = 0; return GEOJSON_OPEN_BRACKET; }
--?"\n"?"]""\n"?							{ GeoJsonLval.dval = 0; return GEOJSON_CLOSE_BRACKET; }
+","										{ GeoJsonLval.dval = 0; return GEOJSON_COMMA; }
+":"										{ GeoJsonLval.dval = 0; return GEOJSON_COLON; }
+"{"										{ GeoJsonLval.dval = 0; return GEOJSON_OPEN_BRACE; }
+"}"										{ GeoJsonLval.dval = 0; return GEOJSON_CLOSE_BRACE; }
+"["										{ GeoJsonLval.dval = 0; return GEOJSON_OPEN_BRACKET; }
+"]"										{ GeoJsonLval.dval = 0; return GEOJSON_CLOSE_BRACKET; }
 (?-i:"\"type\"")						{ GeoJsonLval.dval = 0; return GEOJSON_TYPE; }
 (?-i:"\"coordinates\"")					{ GeoJsonLval.dval = 0; return GEOJSON_COORDS; }
 (?-i:"\"geometries\"")					{ GeoJsonLval.dval = 0; return GEOJSON_GEOMS; }
@@ -86,7 +86,7 @@ int geoJSON_line = 1, geoJSON_col = 1;
 
 [ \t]   { geoJSON_col += (int) strlen(yytext); }               /* ignore but count white space */
 
-\n      { geoJSON_col = 0; ++geoJSON_line; return GEOJSON_NEWLINE; }
+\n      { geoJSON_col = 0; ++geoJSON_line; }
 
 .       { geoJSON_col += (int) strlen(yytext); return -1; }
 %%

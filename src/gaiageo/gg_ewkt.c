@@ -1471,15 +1471,62 @@ ewkt_geomColl_xyzm (gaiaGeomCollPtr first)
 
 
 
-
-
-
+/*
+** CAVEAT: we must redefine any Lemon/Flex own macro
+*/
+#define YYMINORTYPE				EWKT_MINORTYPE
+#define YY_CHAR					EWKT_YY_CHAR
+#define	input					ewkt_input
+#define ParseAlloc				ewktParseAlloc
+#define ParseFree				ewktParseFree
+#define ParseStackPeak			ewktParseStackPeak
+#define Parse					ewktParse
+#define yyStackEntry			ewkt_yyStackEntry
+#define yyzerominor				ewkt_yyzerominor
+#define yy_accept				ewkt_yy_accept
+#define yy_action				ewkt_yy_action
+#define yy_base					ewkt_yy_base
+#define yy_buffer_stack			ewkt_yy_buffer_stack
+#define yy_buffer_stack_max		ewkt_yy_buffer_stack_max
+#define yy_buffer_stack_top		ewkt_yy_buffer_stack_top
+#define yy_c_buf_p				ewkt_yy_c_buf_p
+#define yy_chk					ewkt_yy_chk
+#define yy_def					ewkt_yy_def
+#define yy_default				ewkt_yy_default
+#define yy_destructor			ewkt_yy_destructor
+#define yy_ec					ewkt_yy_ec
+#define yy_fatal_error			ewkt_yy_fatal_error
+#define yy_find_reduce_action	ewkt_yy_find_reduce_action
+#define yy_find_shift_action	ewkt_yy_find_shift_action
+#define yy_get_next_buffer		ewkt_yy_get_next_buffer
+#define yy_get_previous_state	ewkt_yy_get_previous_state
+#define yy_init					ewkt_yy_init
+#define yy_init_globals			ewkt_yy_init_globals
+#define yy_lookahead			ewkt_yy_lookahead
+#define yy_meta					ewkt_yy_meta
+#define yy_nxt					ewkt_yy_nxt
+#define yy_parse_failed			ewkt_yy_parse_failed
+#define yy_pop_parser_stack		ewkt_yy_pop_parser_stack
+#define yy_reduce				ewkt_yy_reduce
+#define yy_reduce_ofst			ewkt_yy_reduce_ofst
+#define yy_shift				ewkt_yy_shift
+#define yy_shift_ofst			ewkt_yy_shift_ofst
+#define yy_start				ewkt_yy_start
+#define yy_state_type			ewkt_yy_state_type
+#define yy_syntax_error			ewkt_yy_syntax_error
+#define yy_trans_info			ewkt_yy_trans_info
+#define yy_try_NUL_trans		ewkt_yy_try_NUL_trans
+#define yyParser				ewkt_yyParser
+#define yyStackEntry			ewkt_yyStackEntry
+#define yyStackOverflow			ewkt_yyStackOverflow
+#define yyRuleInfo				ewkt_yyRuleInfo
+#define yyunput					ewkt_yyunput
+#define yyzerominor				ewkt_yyzerominor
 
 
 /*
  EWKT_LEMON_H_START - LEMON generated header starts here 
 */
-
 #define EWKT_NEWLINE                    1
 #define EWKT_POINT                      2
 #define EWKT_OPEN_BRACKET               3
@@ -1499,45 +1546,21 @@ ewkt_geomColl_xyzm (gaiaGeomCollPtr first)
 #define EWKT_MULTIPOLYGON_M            17
 #define EWKT_GEOMETRYCOLLECTION        18
 #define EWKT_GEOMETRYCOLLECTION_M      19
-
 /*
  EWKT_LEMON_H_END - LEMON generated header ends here 
 */
 
 
 
-
-
-
-
-
-
-#ifndef YYSTYPE
 typedef union
 {
     double dval;
     struct symtab *symp;
 } ewkt_yystype;
 #define YYSTYPE ewkt_yystype
-#define YYSTYPE_IS_TRIVIAL 1
-#endif
-
 
 /* extern YYSTYPE yylval; */
 YYSTYPE EwktLval;
-
-/*
-** CAVEAT: there is an incompatibility between LEMON and FLEX
-** this macro resolves the issue
-*/
-#define yy_accept	yy_ewkt_accept
-
-
-
-
-
-
-
 
 
 
@@ -1551,7 +1574,9 @@ YYSTYPE EwktLval;
 /* First off, code is included that follows the "include" declaration
 ** in the input grammar file. */
 #include <stdio.h>
+#line 55 "Ewkt.y"
 
+#line 10 "Ewkt.c"
 /* Next is all token values, in a form suitable for use by makeheaders.
 ** This section will be null unless lemon is run with the -m switch.
 */
@@ -1565,7 +1590,7 @@ YYSTYPE EwktLval;
 /* Make sure the INTERFACE macro is defined.
 */
 #ifndef INTERFACE
-#define INTERFACE 1
+# define INTERFACE 1
 #endif
 /* The next thing included is series of defines which control
 ** various aspects of the generated parser.
@@ -1605,18 +1630,17 @@ YYSTYPE EwktLval;
 #define YYNOCODE 109
 #define YYACTIONTYPE unsigned short int
 #define ParseTOKENTYPE void *
-typedef union
-{
-    int yyinit;
-    ParseTOKENTYPE yy0;
-} EWKT_YYMINORTYPE;
+typedef union {
+  int yyinit;
+  ParseTOKENTYPE yy0;
+} YYMINORTYPE;
 #ifndef YYSTACKDEPTH
 #define YYSTACKDEPTH 1000000
 #endif
 #define ParseARG_SDECL  gaiaGeomCollPtr *result ;
-#define ParseARG_PDECL , gaiaGeomCollPtr *result
-#define ParseARG_FETCH  gaiaGeomCollPtr *result  = yypParser->result
-#define ParseARG_STORE yypParser->result  = result
+#define ParseARG_PDECL , gaiaGeomCollPtr *result 
+#define ParseARG_FETCH  gaiaGeomCollPtr *result  = yypParser->result 
+#define ParseARG_STORE yypParser->result  = result 
 #define YYNSTATE 350
 #define YYNRULE 151
 #define YY_NO_ACTION      (YYNSTATE+YYNRULE+2)
@@ -1625,7 +1649,7 @@ typedef union
 
 /* The yyzerominor constant is used to initialize instances of
 ** YYMINORTYPE objects to zero. */
-static const EWKT_YYMINORTYPE ewkt_yyzerominor = { 0 };
+static const YYMINORTYPE yyzerominor = { 0 };
 
 /* Define the yytestcase() macro to be a no-op if is not already defined
 ** otherwise.
@@ -1636,7 +1660,7 @@ static const EWKT_YYMINORTYPE ewkt_yyzerominor = { 0 };
 ** for testing.
 */
 #ifndef yytestcase
-#define yytestcase(X)
+# define yytestcase(X)
 #endif
 
 
@@ -1687,184 +1711,179 @@ static const EWKT_YYMINORTYPE ewkt_yyzerominor = { 0 };
 **                     shifting non-terminals after a reduce.
 **  yy_default[]       Default action for each state.
 */
-static const YYACTIONTYPE ewkt_yy_action[] = {
-    /*     0 */ 159, 222, 223, 224, 225, 226, 227, 228, 229, 230,
-    /*    10 */ 231, 232, 233, 234, 235, 236, 237, 238, 239, 240,
-    /*    20 */ 241, 242, 243, 244, 245, 246, 247, 248, 249, 250,
-    /*    30 */ 251, 252, 350, 257, 160, 161, 162, 164, 163, 54,
-    /*    40 */ 12, 71, 13, 86, 15, 95, 16, 106, 18, 123,
-    /*    50 */ 20, 152, 128, 136, 144, 134, 142, 150, 135, 143,
-    /*    60 */ 151, 166, 168, 4, 170, 54, 175, 180, 55, 185,
-    /*    70 */ 54, 92, 93, 160, 94, 54, 207, 131, 14, 12,
-    /*    80 */ 132, 13, 129, 133, 130, 211, 139, 64, 215, 140,
-    /*    90 */ 62, 137, 141, 138, 145, 147, 146, 56, 148, 164,
-    /*   100 */ 74, 149, 5, 71, 78, 86, 82, 153, 157, 158,
-    /*   110 */ 154, 155, 156, 260, 6, 261, 262, 502, 1, 274,
-    /*   120 */ 60, 275, 276, 290, 59, 291, 292, 165, 298, 57,
-    /*   130 */ 299, 300, 97, 65, 100, 103, 62, 310, 256, 311,
-    /*   140 */ 312, 111, 167, 115, 119, 264, 322, 61, 323, 324,
-    /*   150 */ 172, 59, 57, 69, 66, 70, 66, 72, 73, 57,
-    /*   160 */ 57, 175, 176, 177, 76, 59, 59, 59, 59, 180,
-    /*   170 */ 181, 17, 62, 62, 182, 80, 19, 62, 62, 185,
-    /*   180 */ 66, 186, 66, 187, 66, 84, 66, 190, 191, 57,
-    /*   190 */ 57, 192, 90, 57, 57, 96, 166, 57, 168, 2,
-    /*   200 */ 59, 62, 170, 66, 161, 23, 162, 58, 59, 62,
-    /*   210 */ 163, 66, 259, 263, 63, 266, 25, 27, 67, 169,
-    /*   220 */ 267, 68, 28, 171, 269, 30, 173, 272, 271, 75,
-    /*   230 */ 31, 178, 79, 35, 39, 83, 183, 174, 87, 77,
-    /*   240 */ 188, 43, 279, 89, 195, 47, 193, 179, 81, 286,
-    /*   250 */ 194, 196, 282, 197, 98, 184, 85, 88, 285, 189,
-    /*   260 */ 91, 48, 289, 99, 101, 49, 102, 104, 50, 198,
-    /*   270 */ 296, 105, 107, 108, 109, 112, 110, 113, 74, 302,
-    /*   280 */ 114, 117, 116, 199, 304, 118, 200, 307, 306, 120,
-    /*   290 */ 201, 121, 309, 78, 122, 124, 126, 7, 82, 10,
-    /*   300 */ 8, 202, 125, 314, 260, 9, 127, 274, 11, 221,
-    /*   310 */ 3, 203, 316, 253, 261, 204, 254, 319, 255, 275,
-    /*   320 */ 318, 21, 22, 205, 258, 265, 321, 276, 262, 24,
-    /*   330 */ 268, 26, 270, 273, 29, 277, 206, 32, 326, 33,
-    /*   340 */ 34, 278, 280, 36, 281, 327, 37, 328, 208, 209,
-    /*   350 */ 38, 283, 210, 40, 284, 41, 332, 333, 334, 212,
-    /*   360 */ 213, 42, 214, 287, 44, 45, 338, 46, 288, 293,
-    /*   370 */ 339, 340, 343, 216, 294, 295, 297, 217, 218, 301,
-    /*   380 */ 303, 345, 346, 305, 347, 219, 220, 308, 313, 315,
-    /*   390 */ 317, 320, 325, 51, 503, 329, 330, 331, 335, 52,
-    /*   400 */ 503, 336, 337, 53, 503, 503, 341, 342, 344, 503,
-    /*   410 */ 503, 348, 349,
+static const YYACTIONTYPE yy_action[] = {
+ /*     0 */   159,  222,  223,  224,  225,  226,  227,  228,  229,  230,
+ /*    10 */   231,  232,  233,  234,  235,  236,  237,  238,  239,  240,
+ /*    20 */   241,  242,  243,  244,  245,  246,  247,  248,  249,  250,
+ /*    30 */   251,  252,  350,  257,  160,  161,  162,  164,  163,   54,
+ /*    40 */    12,   71,   13,   86,   15,   95,   16,  106,   18,  123,
+ /*    50 */    20,  152,  128,  136,  144,  134,  142,  150,  135,  143,
+ /*    60 */   151,  166,  168,    4,  170,   54,  175,  180,   55,  185,
+ /*    70 */    54,   92,   93,  160,   94,   54,  207,  131,   14,   12,
+ /*    80 */   132,   13,  129,  133,  130,  211,  139,   64,  215,  140,
+ /*    90 */    62,  137,  141,  138,  145,  147,  146,   56,  148,  164,
+ /*   100 */    74,  149,    5,   71,   78,   86,   82,  153,  157,  158,
+ /*   110 */   154,  155,  156,  260,    6,  261,  262,  502,    1,  274,
+ /*   120 */    60,  275,  276,  290,   59,  291,  292,  165,  298,   57,
+ /*   130 */   299,  300,   97,   65,  100,  103,   62,  310,  256,  311,
+ /*   140 */   312,  111,  167,  115,  119,  264,  322,   61,  323,  324,
+ /*   150 */   172,   59,   57,   69,   66,   70,   66,   72,   73,   57,
+ /*   160 */    57,  175,  176,  177,   76,   59,   59,   59,   59,  180,
+ /*   170 */   181,   17,   62,   62,  182,   80,   19,   62,   62,  185,
+ /*   180 */    66,  186,   66,  187,   66,   84,   66,  190,  191,   57,
+ /*   190 */    57,  192,   90,   57,   57,   96,  166,   57,  168,    2,
+ /*   200 */    59,   62,  170,   66,  161,   23,  162,   58,   59,   62,
+ /*   210 */   163,   66,  259,  263,   63,  266,   25,   27,   67,  169,
+ /*   220 */   267,   68,   28,  171,  269,   30,  173,  272,  271,   75,
+ /*   230 */    31,  178,   79,   35,   39,   83,  183,  174,   87,   77,
+ /*   240 */   188,   43,  279,   89,  195,   47,  193,  179,   81,  286,
+ /*   250 */   194,  196,  282,  197,   98,  184,   85,   88,  285,  189,
+ /*   260 */    91,   48,  289,   99,  101,   49,  102,  104,   50,  198,
+ /*   270 */   296,  105,  107,  108,  109,  112,  110,  113,   74,  302,
+ /*   280 */   114,  117,  116,  199,  304,  118,  200,  307,  306,  120,
+ /*   290 */   201,  121,  309,   78,  122,  124,  126,    7,   82,   10,
+ /*   300 */     8,  202,  125,  314,  260,    9,  127,  274,   11,  221,
+ /*   310 */     3,  203,  316,  253,  261,  204,  254,  319,  255,  275,
+ /*   320 */   318,   21,   22,  205,  258,  265,  321,  276,  262,   24,
+ /*   330 */   268,   26,  270,  273,   29,  277,  206,   32,  326,   33,
+ /*   340 */    34,  278,  280,   36,  281,  327,   37,  328,  208,  209,
+ /*   350 */    38,  283,  210,   40,  284,   41,  332,  333,  334,  212,
+ /*   360 */   213,   42,  214,  287,   44,   45,  338,   46,  288,  293,
+ /*   370 */   339,  340,  343,  216,  294,  295,  297,  217,  218,  301,
+ /*   380 */   303,  345,  346,  305,  347,  219,  220,  308,  313,  315,
+ /*   390 */   317,  320,  325,   51,  503,  329,  330,  331,  335,   52,
+ /*   400 */   503,  336,  337,   53,  503,  503,  341,  342,  344,  503,
+ /*   410 */   503,  348,  349,
 };
-
-static const YYCODETYPE ewkt_yy_lookahead[] = {
-    /*     0 */ 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
-    /*    10 */ 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
-    /*    20 */ 43, 44, 45, 46, 47, 48, 49, 50, 51, 52,
-    /*    30 */ 53, 54, 0, 6, 2, 55, 56, 5, 58, 59,
-    /*    40 */ 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
-    /*    50 */ 18, 19, 27, 28, 29, 30, 31, 32, 33, 34,
-    /*    60 */ 35, 55, 56, 3, 58, 59, 55, 56, 59, 58,
-    /*    70 */ 59, 55, 56, 2, 58, 59, 2, 27, 3, 8,
-    /*    80 */ 30, 10, 8, 33, 10, 2, 28, 56, 2, 31,
-    /*    90 */ 59, 8, 34, 10, 8, 29, 10, 59, 32, 5,
-    /*   100 */ 72, 35, 3, 9, 76, 11, 78, 48, 49, 50,
-    /*   110 */ 48, 49, 50, 64, 3, 66, 67, 21, 22, 68,
-    /*   120 */ 55, 70, 71, 80, 59, 82, 83, 57, 84, 59,
-    /*   130 */ 86, 87, 64, 56, 66, 67, 59, 92, 59, 94,
-    /*   140 */ 95, 68, 60, 70, 71, 60, 100, 55, 102, 103,
-    /*   150 */ 57, 59, 59, 58, 59, 58, 59, 57, 57, 59,
-    /*   160 */ 59, 55, 55, 55, 55, 59, 59, 59, 59, 56,
-    /*   170 */ 56, 3, 59, 59, 56, 56, 3, 59, 59, 58,
-    /*   180 */ 59, 58, 59, 58, 59, 58, 59, 57, 57, 59,
-    /*   190 */ 59, 57, 57, 59, 59, 57, 55, 59, 56, 3,
-    /*   200 */ 59, 59, 58, 59, 55, 7, 56, 59, 59, 59,
-    /*   210 */ 58, 59, 59, 59, 59, 59, 7, 7, 59, 62,
-    /*   220 */ 62, 59, 3, 63, 63, 7, 61, 61, 65, 7,
-    /*   230 */ 3, 60, 7, 3, 3, 7, 62, 73, 3, 72,
-    /*   240 */ 63, 3, 73, 7, 62, 3, 61, 77, 76, 69,
-    /*   250 */ 60, 63, 77, 61, 7, 79, 78, 74, 79, 75,
-    /*   260 */ 74, 3, 75, 64, 7, 3, 66, 7, 3, 88,
-    /*   270 */ 81, 67, 3, 65, 7, 7, 65, 3, 72, 88,
-    /*   280 */ 68, 3, 7, 90, 90, 70, 91, 85, 91, 7,
-    /*   290 */ 89, 3, 89, 76, 71, 3, 7, 7, 78, 3,
-    /*   300 */ 7, 96, 69, 96, 64, 7, 69, 68, 7, 1,
-    /*   310 */ 3, 98, 98, 4, 66, 99, 4, 93, 4, 70,
-    /*   320 */ 99, 3, 7, 97, 4, 4, 97, 71, 67, 7,
-    /*   330 */ 4, 7, 4, 4, 7, 4, 104, 7, 104, 7,
-    /*   340 */ 7, 4, 4, 7, 4, 104, 7, 104, 104, 104,
-    /*   350 */ 7, 4, 106, 7, 4, 7, 106, 106, 106, 106,
-    /*   360 */ 106, 7, 107, 4, 7, 7, 107, 7, 4, 4,
-    /*   370 */ 107, 107, 101, 107, 4, 4, 4, 107, 105, 4,
-    /*   380 */ 4, 105, 105, 4, 105, 105, 105, 4, 4, 4,
-    /*   390 */ 4, 4, 4, 3, 108, 4, 4, 4, 4, 3,
-    /*   400 */ 108, 4, 4, 3, 108, 108, 4, 4, 4, 108,
-    /*   410 */ 108, 4, 4,
+static const YYCODETYPE yy_lookahead[] = {
+ /*     0 */    23,   24,   25,   26,   27,   28,   29,   30,   31,   32,
+ /*    10 */    33,   34,   35,   36,   37,   38,   39,   40,   41,   42,
+ /*    20 */    43,   44,   45,   46,   47,   48,   49,   50,   51,   52,
+ /*    30 */    53,   54,    0,    6,    2,   55,   56,    5,   58,   59,
+ /*    40 */     8,    9,   10,   11,   12,   13,   14,   15,   16,   17,
+ /*    50 */    18,   19,   27,   28,   29,   30,   31,   32,   33,   34,
+ /*    60 */    35,   55,   56,    3,   58,   59,   55,   56,   59,   58,
+ /*    70 */    59,   55,   56,    2,   58,   59,    2,   27,    3,    8,
+ /*    80 */    30,   10,    8,   33,   10,    2,   28,   56,    2,   31,
+ /*    90 */    59,    8,   34,   10,    8,   29,   10,   59,   32,    5,
+ /*   100 */    72,   35,    3,    9,   76,   11,   78,   48,   49,   50,
+ /*   110 */    48,   49,   50,   64,    3,   66,   67,   21,   22,   68,
+ /*   120 */    55,   70,   71,   80,   59,   82,   83,   57,   84,   59,
+ /*   130 */    86,   87,   64,   56,   66,   67,   59,   92,   59,   94,
+ /*   140 */    95,   68,   60,   70,   71,   60,  100,   55,  102,  103,
+ /*   150 */    57,   59,   59,   58,   59,   58,   59,   57,   57,   59,
+ /*   160 */    59,   55,   55,   55,   55,   59,   59,   59,   59,   56,
+ /*   170 */    56,    3,   59,   59,   56,   56,    3,   59,   59,   58,
+ /*   180 */    59,   58,   59,   58,   59,   58,   59,   57,   57,   59,
+ /*   190 */    59,   57,   57,   59,   59,   57,   55,   59,   56,    3,
+ /*   200 */    59,   59,   58,   59,   55,    7,   56,   59,   59,   59,
+ /*   210 */    58,   59,   59,   59,   59,   59,    7,    7,   59,   62,
+ /*   220 */    62,   59,    3,   63,   63,    7,   61,   61,   65,    7,
+ /*   230 */     3,   60,    7,    3,    3,    7,   62,   73,    3,   72,
+ /*   240 */    63,    3,   73,    7,   62,    3,   61,   77,   76,   69,
+ /*   250 */    60,   63,   77,   61,    7,   79,   78,   74,   79,   75,
+ /*   260 */    74,    3,   75,   64,    7,    3,   66,    7,    3,   88,
+ /*   270 */    81,   67,    3,   65,    7,    7,   65,    3,   72,   88,
+ /*   280 */    68,    3,    7,   90,   90,   70,   91,   85,   91,    7,
+ /*   290 */    89,    3,   89,   76,   71,    3,    7,    7,   78,    3,
+ /*   300 */     7,   96,   69,   96,   64,    7,   69,   68,    7,    1,
+ /*   310 */     3,   98,   98,    4,   66,   99,    4,   93,    4,   70,
+ /*   320 */    99,    3,    7,   97,    4,    4,   97,   71,   67,    7,
+ /*   330 */     4,    7,    4,    4,    7,    4,  104,    7,  104,    7,
+ /*   340 */     7,    4,    4,    7,    4,  104,    7,  104,  104,  104,
+ /*   350 */     7,    4,  106,    7,    4,    7,  106,  106,  106,  106,
+ /*   360 */   106,    7,  107,    4,    7,    7,  107,    7,    4,    4,
+ /*   370 */   107,  107,  101,  107,    4,    4,    4,  107,  105,    4,
+ /*   380 */     4,  105,  105,    4,  105,  105,  105,    4,    4,    4,
+ /*   390 */     4,    4,    4,    3,  108,    4,    4,    4,    4,    3,
+ /*   400 */   108,    4,    4,    3,  108,  108,    4,    4,    4,  108,
+ /*   410 */   108,    4,    4,
 };
-
 #define YY_SHIFT_USE_DFLT (-1)
 #define YY_SHIFT_MAX 220
-static const short ewkt_yy_shift_ofst[] = {
-    /*     0 */ -1, 32, 71, 27, 27, 27, 27, 74, 83, 86,
-    /*    10 */ 94, 94, 60, 75, 99, 111, 168, 60, 173, 75,
-    /*    20 */ 196, 27, 27, 27, 27, 27, 27, 27, 27, 27,
-    /*    30 */ 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
-    /*    40 */ 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
-    /*    50 */ 27, 27, 27, 27, 27, 27, 27, 27, 27, 27,
-    /*    60 */ 198, 198, 27, 27, 209, 209, 27, 27, 27, 210,
-    /*    70 */ 210, 219, 218, 218, 222, 227, 198, 222, 225, 230,
-    /*    80 */ 209, 225, 228, 231, 210, 228, 235, 238, 236, 238,
-    /*    90 */ 218, 236, 198, 209, 210, 242, 218, 247, 258, 247,
-    /*   100 */ 257, 262, 257, 260, 265, 260, 269, 219, 267, 219,
-    /*   110 */ 267, 268, 274, 227, 268, 275, 278, 230, 275, 282,
-    /*   120 */ 288, 231, 282, 292, 235, 289, 235, 289, 290, 258,
-    /*   130 */ 274, 290, 290, 290, 290, 290, 293, 262, 278, 293,
-    /*   140 */ 293, 293, 293, 293, 298, 265, 288, 298, 298, 298,
-    /*   150 */ 298, 298, 296, 301, 301, 301, 301, 301, 301, 308,
-    /*   160 */ 307, 309, 312, 314, 318, 320, 315, 321, 322, 326,
-    /*   170 */ 324, 328, 327, 329, 331, 330, 332, 333, 337, 338,
-    /*   180 */ 336, 339, 343, 340, 347, 346, 348, 354, 350, 359,
-    /*   190 */ 357, 358, 360, 364, 365, 370, 371, 372, 375, 376,
-    /*   200 */ 379, 383, 384, 385, 386, 387, 388, 390, 391, 392,
-    /*   210 */ 393, 396, 394, 397, 398, 400, 402, 403, 404, 407,
-    /*   220 */ 408,
+static const short yy_shift_ofst[] = {
+ /*     0 */    -1,   32,   71,   27,   27,   27,   27,   74,   83,   86,
+ /*    10 */    94,   94,   60,   75,   99,  111,  168,   60,  173,   75,
+ /*    20 */   196,   27,   27,   27,   27,   27,   27,   27,   27,   27,
+ /*    30 */    27,   27,   27,   27,   27,   27,   27,   27,   27,   27,
+ /*    40 */    27,   27,   27,   27,   27,   27,   27,   27,   27,   27,
+ /*    50 */    27,   27,   27,   27,   27,   27,   27,   27,   27,   27,
+ /*    60 */   198,  198,   27,   27,  209,  209,   27,   27,   27,  210,
+ /*    70 */   210,  219,  218,  218,  222,  227,  198,  222,  225,  230,
+ /*    80 */   209,  225,  228,  231,  210,  228,  235,  238,  236,  238,
+ /*    90 */   218,  236,  198,  209,  210,  242,  218,  247,  258,  247,
+ /*   100 */   257,  262,  257,  260,  265,  260,  269,  219,  267,  219,
+ /*   110 */   267,  268,  274,  227,  268,  275,  278,  230,  275,  282,
+ /*   120 */   288,  231,  282,  292,  235,  289,  235,  289,  290,  258,
+ /*   130 */   274,  290,  290,  290,  290,  290,  293,  262,  278,  293,
+ /*   140 */   293,  293,  293,  293,  298,  265,  288,  298,  298,  298,
+ /*   150 */   298,  298,  296,  301,  301,  301,  301,  301,  301,  308,
+ /*   160 */   307,  309,  312,  314,  318,  320,  315,  321,  322,  326,
+ /*   170 */   324,  328,  327,  329,  331,  330,  332,  333,  337,  338,
+ /*   180 */   336,  339,  343,  340,  347,  346,  348,  354,  350,  359,
+ /*   190 */   357,  358,  360,  364,  365,  370,  371,  372,  375,  376,
+ /*   200 */   379,  383,  384,  385,  386,  387,  388,  390,  391,  392,
+ /*   210 */   393,  396,  394,  397,  398,  400,  402,  403,  404,  407,
+ /*   220 */   408,
 };
-
 #define YY_REDUCE_USE_DFLT (-24)
 #define YY_REDUCE_MAX 158
-static const short ewkt_yy_reduce_ofst[] = {
-    /*     0 */ 96, -23, 25, -20, 6, 11, 16, 50, 58, 66,
-    /*    10 */ 59, 62, 49, 51, 28, 43, 44, 68, 45, 73,
-    /*    20 */ 46, 70, 65, 92, 31, 77, 95, 97, 93, 100,
-    /*    30 */ 101, 106, 107, 108, 109, 113, 114, 118, 119, 121,
-    /*    40 */ 123, 125, 127, 130, 131, 134, 135, 138, 141, 142,
-    /*    50 */ 144, 149, 150, 152, 9, 38, 79, 148, 153, 154,
-    /*    60 */ 82, 85, 155, 156, 157, 158, 159, 162, 79, 160,
-    /*    70 */ 161, 163, 165, 166, 164, 167, 171, 169, 170, 172,
-    /*    80 */ 174, 175, 176, 178, 177, 179, 180, 183, 184, 186,
-    /*    90 */ 185, 187, 190, 182, 188, 189, 192, 181, 199, 191,
-    /*   100 */ 193, 200, 194, 195, 204, 197, 202, 208, 201, 211,
-    /*   110 */ 203, 205, 212, 206, 207, 213, 215, 217, 214, 216,
-    /*   120 */ 223, 220, 221, 224, 233, 226, 237, 229, 232, 240,
-    /*   130 */ 239, 234, 241, 243, 244, 245, 246, 248, 249, 250,
-    /*   140 */ 251, 252, 253, 254, 255, 261, 256, 259, 263, 264,
-    /*   150 */ 266, 270, 271, 273, 276, 277, 279, 280, 281,
+static const short yy_reduce_ofst[] = {
+ /*     0 */    96,  -23,   25,  -20,    6,   11,   16,   50,   58,   66,
+ /*    10 */    59,   62,   49,   51,   28,   43,   44,   68,   45,   73,
+ /*    20 */    46,   70,   65,   92,   31,   77,   95,   97,   93,  100,
+ /*    30 */   101,  106,  107,  108,  109,  113,  114,  118,  119,  121,
+ /*    40 */   123,  125,  127,  130,  131,  134,  135,  138,  141,  142,
+ /*    50 */   144,  149,  150,  152,    9,   38,   79,  148,  153,  154,
+ /*    60 */    82,   85,  155,  156,  157,  158,  159,  162,   79,  160,
+ /*    70 */   161,  163,  165,  166,  164,  167,  171,  169,  170,  172,
+ /*    80 */   174,  175,  176,  178,  177,  179,  180,  183,  184,  186,
+ /*    90 */   185,  187,  190,  182,  188,  189,  192,  181,  199,  191,
+ /*   100 */   193,  200,  194,  195,  204,  197,  202,  208,  201,  211,
+ /*   110 */   203,  205,  212,  206,  207,  213,  215,  217,  214,  216,
+ /*   120 */   223,  220,  221,  224,  233,  226,  237,  229,  232,  240,
+ /*   130 */   239,  234,  241,  243,  244,  245,  246,  248,  249,  250,
+ /*   140 */   251,  252,  253,  254,  255,  261,  256,  259,  263,  264,
+ /*   150 */   266,  270,  271,  273,  276,  277,  279,  280,  281,
 };
-
-static const YYACTIONTYPE ewkt_yy_default[] = {
-    /*     0 */ 351, 501, 501, 501, 501, 501, 501, 501, 501, 501,
-    /*    10 */ 501, 501, 501, 501, 501, 501, 501, 501, 501, 501,
-    /*    20 */ 501, 501, 501, 501, 501, 501, 501, 501, 501, 501,
-    /*    30 */ 501, 501, 501, 501, 501, 501, 501, 501, 501, 501,
-    /*    40 */ 501, 501, 501, 501, 501, 501, 501, 501, 501, 501,
-    /*    50 */ 501, 501, 501, 501, 501, 388, 390, 501, 501, 501,
-    /*    60 */ 393, 393, 501, 501, 397, 397, 501, 501, 501, 399,
-    /*    70 */ 399, 501, 395, 395, 418, 501, 393, 418, 424, 501,
-    /*    80 */ 397, 424, 427, 501, 399, 427, 501, 501, 421, 501,
-    /*    90 */ 395, 421, 393, 397, 399, 501, 395, 442, 501, 442,
-    /*   100 */ 448, 501, 448, 451, 501, 451, 501, 501, 445, 501,
-    /*   110 */ 445, 458, 501, 501, 458, 464, 501, 501, 464, 467,
-    /*   120 */ 501, 501, 467, 501, 501, 461, 501, 461, 476, 501,
-    /*   130 */ 501, 476, 476, 476, 476, 476, 490, 501, 501, 490,
-    /*   140 */ 490, 490, 490, 490, 497, 501, 501, 497, 497, 497,
-    /*   150 */ 497, 497, 501, 483, 483, 483, 483, 483, 483, 501,
-    /*   160 */ 501, 501, 501, 501, 501, 501, 501, 501, 501, 501,
-    /*   170 */ 501, 501, 501, 501, 501, 501, 501, 501, 501, 501,
-    /*   180 */ 501, 501, 501, 501, 501, 501, 501, 501, 501, 501,
-    /*   190 */ 501, 501, 501, 501, 501, 501, 501, 501, 501, 501,
-    /*   200 */ 501, 501, 501, 501, 501, 501, 501, 501, 501, 501,
-    /*   210 */ 501, 501, 501, 501, 501, 501, 501, 501, 501, 501,
-    /*   220 */ 501, 352, 353, 354, 355, 356, 357, 358, 359, 360,
-    /*   230 */ 361, 362, 363, 364, 365, 366, 367, 368, 369, 370,
-    /*   240 */ 371, 372, 373, 374, 375, 376, 377, 378, 379, 380,
-    /*   250 */ 381, 382, 383, 384, 385, 387, 391, 392, 386, 389,
-    /*   260 */ 401, 403, 404, 388, 394, 405, 390, 398, 407, 400,
-    /*   270 */ 408, 402, 396, 406, 409, 411, 412, 413, 417, 419,
-    /*   280 */ 415, 423, 425, 416, 426, 428, 410, 414, 420, 422,
-    /*   290 */ 429, 431, 432, 433, 435, 436, 430, 434, 437, 439,
-    /*   300 */ 440, 441, 443, 447, 449, 450, 452, 438, 444, 446,
-    /*   310 */ 453, 455, 456, 457, 459, 463, 465, 466, 468, 454,
-    /*   320 */ 460, 462, 469, 471, 472, 473, 477, 478, 479, 474,
-    /*   330 */ 475, 487, 491, 492, 493, 488, 489, 494, 498, 499,
-    /*   340 */ 500, 495, 496, 470, 480, 484, 485, 486, 481, 482,
+static const YYACTIONTYPE yy_default[] = {
+ /*     0 */   351,  501,  501,  501,  501,  501,  501,  501,  501,  501,
+ /*    10 */   501,  501,  501,  501,  501,  501,  501,  501,  501,  501,
+ /*    20 */   501,  501,  501,  501,  501,  501,  501,  501,  501,  501,
+ /*    30 */   501,  501,  501,  501,  501,  501,  501,  501,  501,  501,
+ /*    40 */   501,  501,  501,  501,  501,  501,  501,  501,  501,  501,
+ /*    50 */   501,  501,  501,  501,  501,  388,  390,  501,  501,  501,
+ /*    60 */   393,  393,  501,  501,  397,  397,  501,  501,  501,  399,
+ /*    70 */   399,  501,  395,  395,  418,  501,  393,  418,  424,  501,
+ /*    80 */   397,  424,  427,  501,  399,  427,  501,  501,  421,  501,
+ /*    90 */   395,  421,  393,  397,  399,  501,  395,  442,  501,  442,
+ /*   100 */   448,  501,  448,  451,  501,  451,  501,  501,  445,  501,
+ /*   110 */   445,  458,  501,  501,  458,  464,  501,  501,  464,  467,
+ /*   120 */   501,  501,  467,  501,  501,  461,  501,  461,  476,  501,
+ /*   130 */   501,  476,  476,  476,  476,  476,  490,  501,  501,  490,
+ /*   140 */   490,  490,  490,  490,  497,  501,  501,  497,  497,  497,
+ /*   150 */   497,  497,  501,  483,  483,  483,  483,  483,  483,  501,
+ /*   160 */   501,  501,  501,  501,  501,  501,  501,  501,  501,  501,
+ /*   170 */   501,  501,  501,  501,  501,  501,  501,  501,  501,  501,
+ /*   180 */   501,  501,  501,  501,  501,  501,  501,  501,  501,  501,
+ /*   190 */   501,  501,  501,  501,  501,  501,  501,  501,  501,  501,
+ /*   200 */   501,  501,  501,  501,  501,  501,  501,  501,  501,  501,
+ /*   210 */   501,  501,  501,  501,  501,  501,  501,  501,  501,  501,
+ /*   220 */   501,  352,  353,  354,  355,  356,  357,  358,  359,  360,
+ /*   230 */   361,  362,  363,  364,  365,  366,  367,  368,  369,  370,
+ /*   240 */   371,  372,  373,  374,  375,  376,  377,  378,  379,  380,
+ /*   250 */   381,  382,  383,  384,  385,  387,  391,  392,  386,  389,
+ /*   260 */   401,  403,  404,  388,  394,  405,  390,  398,  407,  400,
+ /*   270 */   408,  402,  396,  406,  409,  411,  412,  413,  417,  419,
+ /*   280 */   415,  423,  425,  416,  426,  428,  410,  414,  420,  422,
+ /*   290 */   429,  431,  432,  433,  435,  436,  430,  434,  437,  439,
+ /*   300 */   440,  441,  443,  447,  449,  450,  452,  438,  444,  446,
+ /*   310 */   453,  455,  456,  457,  459,  463,  465,  466,  468,  454,
+ /*   320 */   460,  462,  469,  471,  472,  473,  477,  478,  479,  474,
+ /*   330 */   475,  487,  491,  492,  493,  488,  489,  494,  498,  499,
+ /*   340 */   500,  495,  496,  470,  480,  484,  485,  486,  481,  482,
 };
-
-#define YY_SZ_ACTTAB (int)(sizeof(ewkt_yy_action)/sizeof(ewkt_yy_action[0]))
+#define YY_SZ_ACTTAB (int)(sizeof(yy_action)/sizeof(yy_action[0]))
 
 /* The next table maps tokens into fallback tokens.  If a construct
 ** like the following:
@@ -1893,34 +1912,32 @@ static const YYCODETYPE yyFallback[] = {
 **      the information used by the action routines in the grammar.
 **      It is sometimes called the "minor" token.
 */
-struct ewkt_yyStackEntry
-{
-    YYACTIONTYPE stateno;	/* The state-number */
-    YYCODETYPE major;		/* The major token value.  This is the code
-				 ** number for the token at this stack level */
-    EWKT_YYMINORTYPE minor;	/* The user-supplied minor token value.  This
-				 ** is the value of the token  */
+struct yyStackEntry {
+  YYACTIONTYPE stateno;  /* The state-number */
+  YYCODETYPE major;      /* The major token value.  This is the code
+                         ** number for the token at this stack level */
+  YYMINORTYPE minor;     /* The user-supplied minor token value.  This
+                         ** is the value of the token  */
 };
-typedef struct ewkt_yyStackEntry ewkt_yyStackEntry;
+typedef struct yyStackEntry yyStackEntry;
 
 /* The state of the parser is completely contained in an instance of
 ** the following structure */
-struct ewkt_yyParser
-{
-    int yyidx;			/* Index of top element in stack */
+struct yyParser {
+  int yyidx;                    /* Index of top element in stack */
 #ifdef YYTRACKMAXSTACKDEPTH
-    int yyidxMax;		/* Maximum value of yyidx */
+  int yyidxMax;                 /* Maximum value of yyidx */
 #endif
-    int yyerrcnt;		/* Shifts left before out of the error */
-      ParseARG_SDECL		/* A place to hold %extra_argument */
+  int yyerrcnt;                 /* Shifts left before out of the error */
+  ParseARG_SDECL                /* A place to hold %extra_argument */
 #if YYSTACKDEPTH<=0
-    int yystksz;		/* Current side of the stack */
-    ewkt_yyStackEntry *yystack;	/* The parser's stack */
+  int yystksz;                  /* Current side of the stack */
+  yyStackEntry *yystack;        /* The parser's stack */
 #else
-      ewkt_yyStackEntry yystack[YYSTACKDEPTH];	/* The parser's stack */
+  yyStackEntry yystack[YYSTACKDEPTH];  /* The parser's stack */
 #endif
 };
-typedef struct ewkt_yyParser ewkt_yyParser;
+typedef struct yyParser yyParser;
 
 #ifndef NDEBUG
 #include <stdio.h>
@@ -1946,57 +1963,45 @@ static char *yyTracePrompt = 0;
 ** Outputs:
 ** None.
 */
-void
-ParseTrace (FILE * TraceFILE, char *zTracePrompt)
-{
-    yyTraceFILE = TraceFILE;
-    yyTracePrompt = zTracePrompt;
-    if (yyTraceFILE == 0)
-	yyTracePrompt = 0;
-    else if (yyTracePrompt == 0)
-	yyTraceFILE = 0;
+void ParseTrace(FILE *TraceFILE, char *zTracePrompt){
+  yyTraceFILE = TraceFILE;
+  yyTracePrompt = zTracePrompt;
+  if( yyTraceFILE==0 ) yyTracePrompt = 0;
+  else if( yyTracePrompt==0 ) yyTraceFILE = 0;
 }
 #endif /* NDEBUG */
 
 #ifndef NDEBUG
 /* For tracing shifts, the names of all terminals and nonterminals
 ** are required.  The following table supplies these names */
-static const char *const yyTokenName[] = {
-    "$", "EWKT_NEWLINE", "EWKT_POINT", "EWKT_OPEN_BRACKET",
-    "EWKT_CLOSE_BRACKET", "EWKT_POINT_M", "EWKT_NUM", "EWKT_COMMA",
-    "EWKT_LINESTRING", "EWKT_LINESTRING_M", "EWKT_POLYGON", "EWKT_POLYGON_M",
-    "EWKT_MULTIPOINT", "EWKT_MULTIPOINT_M", "EWKT_MULTILINESTRING",
-	"EWKT_MULTILINESTRING_M",
-    "EWKT_MULTIPOLYGON", "EWKT_MULTIPOLYGON_M", "EWKT_GEOMETRYCOLLECTION",
-	"EWKT_GEOMETRYCOLLECTION_M",
-    "error", "main", "in", "state",
-    "program", "geo_text", "geo_textm", "point",
-    "pointz", "pointzm", "linestring", "linestringz",
-    "linestringzm", "polygon", "polygonz", "polygonzm",
-    "multipoint", "multipointz", "multipointzm", "multilinestring",
-    "multilinestringz", "multilinestringzm", "multipolygon", "multipolygonz",
-    "multipolygonzm", "geocoll", "geocollz", "geocollzm",
-    "pointm", "linestringm", "polygonm", "multipointm",
-    "multilinestringm", "multipolygonm", "geocollm", "point_coordxy",
-    "point_coordxyz", "point_coordxym", "point_coordxyzm", "coord",
-    "extra_pointsxy", "extra_pointsxym", "extra_pointsxyz", "extra_pointsxyzm",
-    "linestring_text", "linestring_textm", "linestring_textz",
-	"linestring_textzm",
-    "polygon_text", "polygon_textm", "polygon_textz", "polygon_textzm",
-    "ring", "extra_rings", "ringm", "extra_ringsm",
-    "ringz", "extra_ringsz", "ringzm", "extra_ringszm",
-    "multipoint_text", "multipoint_textm", "multipoint_textz",
-	"multipoint_textzm",
-    "multilinestring_text", "multilinestring_textm", "multilinestring_textz",
-	"multilinestring_textzm",
-    "multilinestring_text2", "multilinestring_textm2", "multilinestring_textz2",
-	"multilinestring_textzm2",
-    "multipolygon_text", "multipolygon_textm", "multipolygon_textz",
-	"multipolygon_textzm",
-    "multipolygon_text2", "multipolygon_textm2", "multipolygon_textz2",
-	"multipolygon_textzm2",
-    "geocoll_text", "geocoll_textm", "geocoll_textz", "geocoll_textzm",
-    "geocoll_text2", "geocoll_textm2", "geocoll_textz2", "geocoll_textzm2",
+static const char *const yyTokenName[] = { 
+  "$",             "EWKT_NEWLINE",  "EWKT_POINT",    "EWKT_OPEN_BRACKET",
+  "EWKT_CLOSE_BRACKET",  "EWKT_POINT_M",  "EWKT_NUM",      "EWKT_COMMA",  
+  "EWKT_LINESTRING",  "EWKT_LINESTRING_M",  "EWKT_POLYGON",  "EWKT_POLYGON_M",
+  "EWKT_MULTIPOINT",  "EWKT_MULTIPOINT_M",  "EWKT_MULTILINESTRING",  "EWKT_MULTILINESTRING_M",
+  "EWKT_MULTIPOLYGON",  "EWKT_MULTIPOLYGON_M",  "EWKT_GEOMETRYCOLLECTION",  "EWKT_GEOMETRYCOLLECTION_M",
+  "error",         "main",          "in",            "state",       
+  "program",       "geo_text",      "geo_textm",     "point",       
+  "pointz",        "pointzm",       "linestring",    "linestringz", 
+  "linestringzm",  "polygon",       "polygonz",      "polygonzm",   
+  "multipoint",    "multipointz",   "multipointzm",  "multilinestring",
+  "multilinestringz",  "multilinestringzm",  "multipolygon",  "multipolygonz",
+  "multipolygonzm",  "geocoll",       "geocollz",      "geocollzm",   
+  "pointm",        "linestringm",   "polygonm",      "multipointm", 
+  "multilinestringm",  "multipolygonm",  "geocollm",      "point_coordxy",
+  "point_coordxyz",  "point_coordxym",  "point_coordxyzm",  "coord",       
+  "extra_pointsxy",  "extra_pointsxym",  "extra_pointsxyz",  "extra_pointsxyzm",
+  "linestring_text",  "linestring_textm",  "linestring_textz",  "linestring_textzm",
+  "polygon_text",  "polygon_textm",  "polygon_textz",  "polygon_textzm",
+  "ring",          "extra_rings",   "ringm",         "extra_ringsm",
+  "ringz",         "extra_ringsz",  "ringzm",        "extra_ringszm",
+  "multipoint_text",  "multipoint_textm",  "multipoint_textz",  "multipoint_textzm",
+  "multilinestring_text",  "multilinestring_textm",  "multilinestring_textz",  "multilinestring_textzm",
+  "multilinestring_text2",  "multilinestring_textm2",  "multilinestring_textz2",  "multilinestring_textzm2",
+  "multipolygon_text",  "multipolygon_textm",  "multipolygon_textz",  "multipolygon_textzm",
+  "multipolygon_text2",  "multipolygon_textm2",  "multipolygon_textz2",  "multipolygon_textzm2",
+  "geocoll_text",  "geocoll_textm",  "geocoll_textz",  "geocoll_textzm",
+  "geocoll_text2",  "geocoll_textm2",  "geocoll_textz2",  "geocoll_textzm2",
 };
 #endif /* NDEBUG */
 
@@ -2004,208 +2009,157 @@ static const char *const yyTokenName[] = {
 /* For tracing reduce actions, the names of all rules are required.
 */
 static const char *const yyRuleName[] = {
-    /*   0 */ "main ::= in",
-    /*   1 */ "in ::=",
-    /*   2 */ "in ::= in state EWKT_NEWLINE",
-    /*   3 */ "state ::= program",
-    /*   4 */ "program ::= geo_text",
-    /*   5 */ "program ::= geo_textm",
-    /*   6 */ "geo_text ::= point",
-    /*   7 */ "geo_text ::= pointz",
-    /*   8 */ "geo_text ::= pointzm",
-    /*   9 */ "geo_text ::= linestring",
-    /*  10 */ "geo_text ::= linestringz",
-    /*  11 */ "geo_text ::= linestringzm",
-    /*  12 */ "geo_text ::= polygon",
-    /*  13 */ "geo_text ::= polygonz",
-    /*  14 */ "geo_text ::= polygonzm",
-    /*  15 */ "geo_text ::= multipoint",
-    /*  16 */ "geo_text ::= multipointz",
-    /*  17 */ "geo_text ::= multipointzm",
-    /*  18 */ "geo_text ::= multilinestring",
-    /*  19 */ "geo_text ::= multilinestringz",
-    /*  20 */ "geo_text ::= multilinestringzm",
-    /*  21 */ "geo_text ::= multipolygon",
-    /*  22 */ "geo_text ::= multipolygonz",
-    /*  23 */ "geo_text ::= multipolygonzm",
-    /*  24 */ "geo_text ::= geocoll",
-    /*  25 */ "geo_text ::= geocollz",
-    /*  26 */ "geo_text ::= geocollzm",
-    /*  27 */ "geo_textm ::= pointm",
-    /*  28 */ "geo_textm ::= linestringm",
-    /*  29 */ "geo_textm ::= polygonm",
-    /*  30 */ "geo_textm ::= multipointm",
-    /*  31 */ "geo_textm ::= multilinestringm",
-    /*  32 */ "geo_textm ::= multipolygonm",
-    /*  33 */ "geo_textm ::= geocollm",
-    /*  34 */
-	"point ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxy EWKT_CLOSE_BRACKET",
-    /*  35 */
-	"pointz ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyz EWKT_CLOSE_BRACKET",
-    /*  36 */
-	"pointm ::= EWKT_POINT_M EWKT_OPEN_BRACKET point_coordxym EWKT_CLOSE_BRACKET",
-    /*  37 */
-	"pointzm ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyzm EWKT_CLOSE_BRACKET",
-    /*  38 */ "point_coordxy ::= coord coord",
-    /*  39 */ "point_coordxym ::= coord coord coord",
-    /*  40 */ "point_coordxyz ::= coord coord coord",
-    /*  41 */ "point_coordxyzm ::= coord coord coord coord",
-    /*  42 */ "coord ::= EWKT_NUM",
-    /*  43 */ "extra_pointsxy ::=",
-    /*  44 */ "extra_pointsxy ::= EWKT_COMMA point_coordxy extra_pointsxy",
-    /*  45 */ "extra_pointsxym ::=",
-    /*  46 */ "extra_pointsxym ::= EWKT_COMMA point_coordxym extra_pointsxym",
-    /*  47 */ "extra_pointsxyz ::=",
-    /*  48 */ "extra_pointsxyz ::= EWKT_COMMA point_coordxyz extra_pointsxyz",
-    /*  49 */ "extra_pointsxyzm ::=",
-    /*  50 */
-	"extra_pointsxyzm ::= EWKT_COMMA point_coordxyzm extra_pointsxyzm",
-    /*  51 */ "linestring ::= EWKT_LINESTRING linestring_text",
-    /*  52 */ "linestringm ::= EWKT_LINESTRING_M linestring_textm",
-    /*  53 */ "linestringz ::= EWKT_LINESTRING linestring_textz",
-    /*  54 */ "linestringzm ::= EWKT_LINESTRING linestring_textzm",
-    /*  55 */
-	"linestring_text ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET",
-    /*  56 */
-	"linestring_textm ::= EWKT_OPEN_BRACKET point_coordxym EWKT_COMMA point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET",
-    /*  57 */
-	"linestring_textz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET",
-    /*  58 */
-	"linestring_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET",
-    /*  59 */ "polygon ::= EWKT_POLYGON polygon_text",
-    /*  60 */ "polygonm ::= EWKT_POLYGON_M polygon_textm",
-    /*  61 */ "polygonz ::= EWKT_POLYGON polygon_textz",
-    /*  62 */ "polygonzm ::= EWKT_POLYGON polygon_textzm",
-    /*  63 */
-	"polygon_text ::= EWKT_OPEN_BRACKET ring extra_rings EWKT_CLOSE_BRACKET",
-    /*  64 */
-	"polygon_textm ::= EWKT_OPEN_BRACKET ringm extra_ringsm EWKT_CLOSE_BRACKET",
-    /*  65 */
-	"polygon_textz ::= EWKT_OPEN_BRACKET ringz extra_ringsz EWKT_CLOSE_BRACKET",
-    /*  66 */
-	"polygon_textzm ::= EWKT_OPEN_BRACKET ringzm extra_ringszm EWKT_CLOSE_BRACKET",
-    /*  67 */
-	"ring ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET",
-    /*  68 */ "extra_rings ::=",
-    /*  69 */ "extra_rings ::= EWKT_COMMA ring extra_rings",
-    /*  70 */
-	"ringm ::= EWKT_OPEN_BRACKET point_coordxym EWKT_COMMA point_coordxym EWKT_COMMA point_coordxym EWKT_COMMA point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET",
-    /*  71 */ "extra_ringsm ::=",
-    /*  72 */ "extra_ringsm ::= EWKT_COMMA ringm extra_ringsm",
-    /*  73 */
-	"ringz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz EWKT_COMMA point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET",
-    /*  74 */ "extra_ringsz ::=",
-    /*  75 */ "extra_ringsz ::= EWKT_COMMA ringz extra_ringsz",
-    /*  76 */
-	"ringzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm EWKT_COMMA point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET",
-    /*  77 */ "extra_ringszm ::=",
-    /*  78 */ "extra_ringszm ::= EWKT_COMMA ringzm extra_ringszm",
-    /*  79 */ "multipoint ::= EWKT_MULTIPOINT multipoint_text",
-    /*  80 */ "multipointm ::= EWKT_MULTIPOINT_M multipoint_textm",
-    /*  81 */ "multipointz ::= EWKT_MULTIPOINT multipoint_textz",
-    /*  82 */ "multipointzm ::= EWKT_MULTIPOINT multipoint_textzm",
-    /*  83 */
-	"multipoint_text ::= EWKT_OPEN_BRACKET point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET",
-    /*  84 */
-	"multipoint_textm ::= EWKT_OPEN_BRACKET point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET",
-    /*  85 */
-	"multipoint_textz ::= EWKT_OPEN_BRACKET point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET",
-    /*  86 */
-	"multipoint_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET",
-    /*  87 */ "multilinestring ::= EWKT_MULTILINESTRING multilinestring_text",
-    /*  88 */
-	"multilinestringm ::= EWKT_MULTILINESTRING_M multilinestring_textm",
-    /*  89 */ "multilinestringz ::= EWKT_MULTILINESTRING multilinestring_textz",
-    /*  90 */
-	"multilinestringzm ::= EWKT_MULTILINESTRING multilinestring_textzm",
-    /*  91 */
-	"multilinestring_text ::= EWKT_OPEN_BRACKET linestring_text multilinestring_text2 EWKT_CLOSE_BRACKET",
-    /*  92 */ "multilinestring_text2 ::=",
-    /*  93 */
-	"multilinestring_text2 ::= EWKT_COMMA linestring_text multilinestring_text2",
-    /*  94 */
-	"multilinestring_textm ::= EWKT_OPEN_BRACKET linestring_textm multilinestring_textm2 EWKT_CLOSE_BRACKET",
-    /*  95 */ "multilinestring_textm2 ::=",
-    /*  96 */
-	"multilinestring_textm2 ::= EWKT_COMMA linestring_textm multilinestring_textm2",
-    /*  97 */
-	"multilinestring_textz ::= EWKT_OPEN_BRACKET linestring_textz multilinestring_textz2 EWKT_CLOSE_BRACKET",
-    /*  98 */ "multilinestring_textz2 ::=",
-    /*  99 */
-	"multilinestring_textz2 ::= EWKT_COMMA linestring_textz multilinestring_textz2",
-    /* 100 */
-	"multilinestring_textzm ::= EWKT_OPEN_BRACKET linestring_textzm multilinestring_textzm2 EWKT_CLOSE_BRACKET",
-    /* 101 */ "multilinestring_textzm2 ::=",
-    /* 102 */
-	"multilinestring_textzm2 ::= EWKT_COMMA linestring_textzm multilinestring_textzm2",
-    /* 103 */ "multipolygon ::= EWKT_MULTIPOLYGON multipolygon_text",
-    /* 104 */ "multipolygonm ::= EWKT_MULTIPOLYGON_M multipolygon_textm",
-    /* 105 */ "multipolygonz ::= EWKT_MULTIPOLYGON multipolygon_textz",
-    /* 106 */ "multipolygonzm ::= EWKT_MULTIPOLYGON multipolygon_textzm",
-    /* 107 */
-	"multipolygon_text ::= EWKT_OPEN_BRACKET polygon_text multipolygon_text2 EWKT_CLOSE_BRACKET",
-    /* 108 */ "multipolygon_text2 ::=",
-    /* 109 */
-	"multipolygon_text2 ::= EWKT_COMMA polygon_text multipolygon_text2",
-    /* 110 */
-	"multipolygon_textm ::= EWKT_OPEN_BRACKET polygon_textm multipolygon_textm2 EWKT_CLOSE_BRACKET",
-    /* 111 */ "multipolygon_textm2 ::=",
-    /* 112 */
-	"multipolygon_textm2 ::= EWKT_COMMA polygon_textm multipolygon_textm2",
-    /* 113 */
-	"multipolygon_textz ::= EWKT_OPEN_BRACKET polygon_textz multipolygon_textz2 EWKT_CLOSE_BRACKET",
-    /* 114 */ "multipolygon_textz2 ::=",
-    /* 115 */
-	"multipolygon_textz2 ::= EWKT_COMMA polygon_textz multipolygon_textz2",
-    /* 116 */
-	"multipolygon_textzm ::= EWKT_OPEN_BRACKET polygon_textzm multipolygon_textzm2 EWKT_CLOSE_BRACKET",
-    /* 117 */ "multipolygon_textzm2 ::=",
-    /* 118 */
-	"multipolygon_textzm2 ::= EWKT_COMMA polygon_textzm multipolygon_textzm2",
-    /* 119 */ "geocoll ::= EWKT_GEOMETRYCOLLECTION geocoll_text",
-    /* 120 */ "geocollm ::= EWKT_GEOMETRYCOLLECTION_M geocoll_textm",
-    /* 121 */ "geocollz ::= EWKT_GEOMETRYCOLLECTION geocoll_textz",
-    /* 122 */ "geocollzm ::= EWKT_GEOMETRYCOLLECTION geocoll_textzm",
-    /* 123 */
-	"geocoll_text ::= EWKT_OPEN_BRACKET point geocoll_text2 EWKT_CLOSE_BRACKET",
-    /* 124 */
-	"geocoll_text ::= EWKT_OPEN_BRACKET linestring geocoll_text2 EWKT_CLOSE_BRACKET",
-    /* 125 */
-	"geocoll_text ::= EWKT_OPEN_BRACKET polygon geocoll_text2 EWKT_CLOSE_BRACKET",
-    /* 126 */ "geocoll_text2 ::=",
-    /* 127 */ "geocoll_text2 ::= EWKT_COMMA point geocoll_text2",
-    /* 128 */ "geocoll_text2 ::= EWKT_COMMA linestring geocoll_text2",
-    /* 129 */ "geocoll_text2 ::= EWKT_COMMA polygon geocoll_text2",
-    /* 130 */
-	"geocoll_textm ::= EWKT_OPEN_BRACKET pointm geocoll_textm2 EWKT_CLOSE_BRACKET",
-    /* 131 */
-	"geocoll_textm ::= EWKT_OPEN_BRACKET linestringm geocoll_textm2 EWKT_CLOSE_BRACKET",
-    /* 132 */
-	"geocoll_textm ::= EWKT_OPEN_BRACKET polygonm geocoll_textm2 EWKT_CLOSE_BRACKET",
-    /* 133 */ "geocoll_textm2 ::=",
-    /* 134 */ "geocoll_textm2 ::= EWKT_COMMA pointm geocoll_textm2",
-    /* 135 */ "geocoll_textm2 ::= EWKT_COMMA linestringm geocoll_textm2",
-    /* 136 */ "geocoll_textm2 ::= EWKT_COMMA polygonm geocoll_textm2",
-    /* 137 */
-	"geocoll_textz ::= EWKT_OPEN_BRACKET pointz geocoll_textz2 EWKT_CLOSE_BRACKET",
-    /* 138 */
-	"geocoll_textz ::= EWKT_OPEN_BRACKET linestringz geocoll_textz2 EWKT_CLOSE_BRACKET",
-    /* 139 */
-	"geocoll_textz ::= EWKT_OPEN_BRACKET polygonz geocoll_textz2 EWKT_CLOSE_BRACKET",
-    /* 140 */ "geocoll_textz2 ::=",
-    /* 141 */ "geocoll_textz2 ::= EWKT_COMMA pointz geocoll_textz2",
-    /* 142 */ "geocoll_textz2 ::= EWKT_COMMA linestringz geocoll_textz2",
-    /* 143 */ "geocoll_textz2 ::= EWKT_COMMA polygonz geocoll_textz2",
-    /* 144 */
-	"geocoll_textzm ::= EWKT_OPEN_BRACKET pointzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
-    /* 145 */
-	"geocoll_textzm ::= EWKT_OPEN_BRACKET linestringzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
-    /* 146 */
-	"geocoll_textzm ::= EWKT_OPEN_BRACKET polygonzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
-    /* 147 */ "geocoll_textzm2 ::=",
-    /* 148 */ "geocoll_textzm2 ::= EWKT_COMMA pointzm geocoll_textzm2",
-    /* 149 */ "geocoll_textzm2 ::= EWKT_COMMA linestringzm geocoll_textzm2",
-    /* 150 */ "geocoll_textzm2 ::= EWKT_COMMA polygonzm geocoll_textzm2",
+ /*   0 */ "main ::= in",
+ /*   1 */ "in ::=",
+ /*   2 */ "in ::= in state EWKT_NEWLINE",
+ /*   3 */ "state ::= program",
+ /*   4 */ "program ::= geo_text",
+ /*   5 */ "program ::= geo_textm",
+ /*   6 */ "geo_text ::= point",
+ /*   7 */ "geo_text ::= pointz",
+ /*   8 */ "geo_text ::= pointzm",
+ /*   9 */ "geo_text ::= linestring",
+ /*  10 */ "geo_text ::= linestringz",
+ /*  11 */ "geo_text ::= linestringzm",
+ /*  12 */ "geo_text ::= polygon",
+ /*  13 */ "geo_text ::= polygonz",
+ /*  14 */ "geo_text ::= polygonzm",
+ /*  15 */ "geo_text ::= multipoint",
+ /*  16 */ "geo_text ::= multipointz",
+ /*  17 */ "geo_text ::= multipointzm",
+ /*  18 */ "geo_text ::= multilinestring",
+ /*  19 */ "geo_text ::= multilinestringz",
+ /*  20 */ "geo_text ::= multilinestringzm",
+ /*  21 */ "geo_text ::= multipolygon",
+ /*  22 */ "geo_text ::= multipolygonz",
+ /*  23 */ "geo_text ::= multipolygonzm",
+ /*  24 */ "geo_text ::= geocoll",
+ /*  25 */ "geo_text ::= geocollz",
+ /*  26 */ "geo_text ::= geocollzm",
+ /*  27 */ "geo_textm ::= pointm",
+ /*  28 */ "geo_textm ::= linestringm",
+ /*  29 */ "geo_textm ::= polygonm",
+ /*  30 */ "geo_textm ::= multipointm",
+ /*  31 */ "geo_textm ::= multilinestringm",
+ /*  32 */ "geo_textm ::= multipolygonm",
+ /*  33 */ "geo_textm ::= geocollm",
+ /*  34 */ "point ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxy EWKT_CLOSE_BRACKET",
+ /*  35 */ "pointz ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyz EWKT_CLOSE_BRACKET",
+ /*  36 */ "pointm ::= EWKT_POINT_M EWKT_OPEN_BRACKET point_coordxym EWKT_CLOSE_BRACKET",
+ /*  37 */ "pointzm ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyzm EWKT_CLOSE_BRACKET",
+ /*  38 */ "point_coordxy ::= coord coord",
+ /*  39 */ "point_coordxym ::= coord coord coord",
+ /*  40 */ "point_coordxyz ::= coord coord coord",
+ /*  41 */ "point_coordxyzm ::= coord coord coord coord",
+ /*  42 */ "coord ::= EWKT_NUM",
+ /*  43 */ "extra_pointsxy ::=",
+ /*  44 */ "extra_pointsxy ::= EWKT_COMMA point_coordxy extra_pointsxy",
+ /*  45 */ "extra_pointsxym ::=",
+ /*  46 */ "extra_pointsxym ::= EWKT_COMMA point_coordxym extra_pointsxym",
+ /*  47 */ "extra_pointsxyz ::=",
+ /*  48 */ "extra_pointsxyz ::= EWKT_COMMA point_coordxyz extra_pointsxyz",
+ /*  49 */ "extra_pointsxyzm ::=",
+ /*  50 */ "extra_pointsxyzm ::= EWKT_COMMA point_coordxyzm extra_pointsxyzm",
+ /*  51 */ "linestring ::= EWKT_LINESTRING linestring_text",
+ /*  52 */ "linestringm ::= EWKT_LINESTRING_M linestring_textm",
+ /*  53 */ "linestringz ::= EWKT_LINESTRING linestring_textz",
+ /*  54 */ "linestringzm ::= EWKT_LINESTRING linestring_textzm",
+ /*  55 */ "linestring_text ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET",
+ /*  56 */ "linestring_textm ::= EWKT_OPEN_BRACKET point_coordxym EWKT_COMMA point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET",
+ /*  57 */ "linestring_textz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET",
+ /*  58 */ "linestring_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET",
+ /*  59 */ "polygon ::= EWKT_POLYGON polygon_text",
+ /*  60 */ "polygonm ::= EWKT_POLYGON_M polygon_textm",
+ /*  61 */ "polygonz ::= EWKT_POLYGON polygon_textz",
+ /*  62 */ "polygonzm ::= EWKT_POLYGON polygon_textzm",
+ /*  63 */ "polygon_text ::= EWKT_OPEN_BRACKET ring extra_rings EWKT_CLOSE_BRACKET",
+ /*  64 */ "polygon_textm ::= EWKT_OPEN_BRACKET ringm extra_ringsm EWKT_CLOSE_BRACKET",
+ /*  65 */ "polygon_textz ::= EWKT_OPEN_BRACKET ringz extra_ringsz EWKT_CLOSE_BRACKET",
+ /*  66 */ "polygon_textzm ::= EWKT_OPEN_BRACKET ringzm extra_ringszm EWKT_CLOSE_BRACKET",
+ /*  67 */ "ring ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET",
+ /*  68 */ "extra_rings ::=",
+ /*  69 */ "extra_rings ::= EWKT_COMMA ring extra_rings",
+ /*  70 */ "ringm ::= EWKT_OPEN_BRACKET point_coordxym EWKT_COMMA point_coordxym EWKT_COMMA point_coordxym EWKT_COMMA point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET",
+ /*  71 */ "extra_ringsm ::=",
+ /*  72 */ "extra_ringsm ::= EWKT_COMMA ringm extra_ringsm",
+ /*  73 */ "ringz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz EWKT_COMMA point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET",
+ /*  74 */ "extra_ringsz ::=",
+ /*  75 */ "extra_ringsz ::= EWKT_COMMA ringz extra_ringsz",
+ /*  76 */ "ringzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm EWKT_COMMA point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET",
+ /*  77 */ "extra_ringszm ::=",
+ /*  78 */ "extra_ringszm ::= EWKT_COMMA ringzm extra_ringszm",
+ /*  79 */ "multipoint ::= EWKT_MULTIPOINT multipoint_text",
+ /*  80 */ "multipointm ::= EWKT_MULTIPOINT_M multipoint_textm",
+ /*  81 */ "multipointz ::= EWKT_MULTIPOINT multipoint_textz",
+ /*  82 */ "multipointzm ::= EWKT_MULTIPOINT multipoint_textzm",
+ /*  83 */ "multipoint_text ::= EWKT_OPEN_BRACKET point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET",
+ /*  84 */ "multipoint_textm ::= EWKT_OPEN_BRACKET point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET",
+ /*  85 */ "multipoint_textz ::= EWKT_OPEN_BRACKET point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET",
+ /*  86 */ "multipoint_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET",
+ /*  87 */ "multilinestring ::= EWKT_MULTILINESTRING multilinestring_text",
+ /*  88 */ "multilinestringm ::= EWKT_MULTILINESTRING_M multilinestring_textm",
+ /*  89 */ "multilinestringz ::= EWKT_MULTILINESTRING multilinestring_textz",
+ /*  90 */ "multilinestringzm ::= EWKT_MULTILINESTRING multilinestring_textzm",
+ /*  91 */ "multilinestring_text ::= EWKT_OPEN_BRACKET linestring_text multilinestring_text2 EWKT_CLOSE_BRACKET",
+ /*  92 */ "multilinestring_text2 ::=",
+ /*  93 */ "multilinestring_text2 ::= EWKT_COMMA linestring_text multilinestring_text2",
+ /*  94 */ "multilinestring_textm ::= EWKT_OPEN_BRACKET linestring_textm multilinestring_textm2 EWKT_CLOSE_BRACKET",
+ /*  95 */ "multilinestring_textm2 ::=",
+ /*  96 */ "multilinestring_textm2 ::= EWKT_COMMA linestring_textm multilinestring_textm2",
+ /*  97 */ "multilinestring_textz ::= EWKT_OPEN_BRACKET linestring_textz multilinestring_textz2 EWKT_CLOSE_BRACKET",
+ /*  98 */ "multilinestring_textz2 ::=",
+ /*  99 */ "multilinestring_textz2 ::= EWKT_COMMA linestring_textz multilinestring_textz2",
+ /* 100 */ "multilinestring_textzm ::= EWKT_OPEN_BRACKET linestring_textzm multilinestring_textzm2 EWKT_CLOSE_BRACKET",
+ /* 101 */ "multilinestring_textzm2 ::=",
+ /* 102 */ "multilinestring_textzm2 ::= EWKT_COMMA linestring_textzm multilinestring_textzm2",
+ /* 103 */ "multipolygon ::= EWKT_MULTIPOLYGON multipolygon_text",
+ /* 104 */ "multipolygonm ::= EWKT_MULTIPOLYGON_M multipolygon_textm",
+ /* 105 */ "multipolygonz ::= EWKT_MULTIPOLYGON multipolygon_textz",
+ /* 106 */ "multipolygonzm ::= EWKT_MULTIPOLYGON multipolygon_textzm",
+ /* 107 */ "multipolygon_text ::= EWKT_OPEN_BRACKET polygon_text multipolygon_text2 EWKT_CLOSE_BRACKET",
+ /* 108 */ "multipolygon_text2 ::=",
+ /* 109 */ "multipolygon_text2 ::= EWKT_COMMA polygon_text multipolygon_text2",
+ /* 110 */ "multipolygon_textm ::= EWKT_OPEN_BRACKET polygon_textm multipolygon_textm2 EWKT_CLOSE_BRACKET",
+ /* 111 */ "multipolygon_textm2 ::=",
+ /* 112 */ "multipolygon_textm2 ::= EWKT_COMMA polygon_textm multipolygon_textm2",
+ /* 113 */ "multipolygon_textz ::= EWKT_OPEN_BRACKET polygon_textz multipolygon_textz2 EWKT_CLOSE_BRACKET",
+ /* 114 */ "multipolygon_textz2 ::=",
+ /* 115 */ "multipolygon_textz2 ::= EWKT_COMMA polygon_textz multipolygon_textz2",
+ /* 116 */ "multipolygon_textzm ::= EWKT_OPEN_BRACKET polygon_textzm multipolygon_textzm2 EWKT_CLOSE_BRACKET",
+ /* 117 */ "multipolygon_textzm2 ::=",
+ /* 118 */ "multipolygon_textzm2 ::= EWKT_COMMA polygon_textzm multipolygon_textzm2",
+ /* 119 */ "geocoll ::= EWKT_GEOMETRYCOLLECTION geocoll_text",
+ /* 120 */ "geocollm ::= EWKT_GEOMETRYCOLLECTION_M geocoll_textm",
+ /* 121 */ "geocollz ::= EWKT_GEOMETRYCOLLECTION geocoll_textz",
+ /* 122 */ "geocollzm ::= EWKT_GEOMETRYCOLLECTION geocoll_textzm",
+ /* 123 */ "geocoll_text ::= EWKT_OPEN_BRACKET point geocoll_text2 EWKT_CLOSE_BRACKET",
+ /* 124 */ "geocoll_text ::= EWKT_OPEN_BRACKET linestring geocoll_text2 EWKT_CLOSE_BRACKET",
+ /* 125 */ "geocoll_text ::= EWKT_OPEN_BRACKET polygon geocoll_text2 EWKT_CLOSE_BRACKET",
+ /* 126 */ "geocoll_text2 ::=",
+ /* 127 */ "geocoll_text2 ::= EWKT_COMMA point geocoll_text2",
+ /* 128 */ "geocoll_text2 ::= EWKT_COMMA linestring geocoll_text2",
+ /* 129 */ "geocoll_text2 ::= EWKT_COMMA polygon geocoll_text2",
+ /* 130 */ "geocoll_textm ::= EWKT_OPEN_BRACKET pointm geocoll_textm2 EWKT_CLOSE_BRACKET",
+ /* 131 */ "geocoll_textm ::= EWKT_OPEN_BRACKET linestringm geocoll_textm2 EWKT_CLOSE_BRACKET",
+ /* 132 */ "geocoll_textm ::= EWKT_OPEN_BRACKET polygonm geocoll_textm2 EWKT_CLOSE_BRACKET",
+ /* 133 */ "geocoll_textm2 ::=",
+ /* 134 */ "geocoll_textm2 ::= EWKT_COMMA pointm geocoll_textm2",
+ /* 135 */ "geocoll_textm2 ::= EWKT_COMMA linestringm geocoll_textm2",
+ /* 136 */ "geocoll_textm2 ::= EWKT_COMMA polygonm geocoll_textm2",
+ /* 137 */ "geocoll_textz ::= EWKT_OPEN_BRACKET pointz geocoll_textz2 EWKT_CLOSE_BRACKET",
+ /* 138 */ "geocoll_textz ::= EWKT_OPEN_BRACKET linestringz geocoll_textz2 EWKT_CLOSE_BRACKET",
+ /* 139 */ "geocoll_textz ::= EWKT_OPEN_BRACKET polygonz geocoll_textz2 EWKT_CLOSE_BRACKET",
+ /* 140 */ "geocoll_textz2 ::=",
+ /* 141 */ "geocoll_textz2 ::= EWKT_COMMA pointz geocoll_textz2",
+ /* 142 */ "geocoll_textz2 ::= EWKT_COMMA linestringz geocoll_textz2",
+ /* 143 */ "geocoll_textz2 ::= EWKT_COMMA polygonz geocoll_textz2",
+ /* 144 */ "geocoll_textzm ::= EWKT_OPEN_BRACKET pointzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
+ /* 145 */ "geocoll_textzm ::= EWKT_OPEN_BRACKET linestringzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
+ /* 146 */ "geocoll_textzm ::= EWKT_OPEN_BRACKET polygonzm geocoll_textzm2 EWKT_CLOSE_BRACKET",
+ /* 147 */ "geocoll_textzm2 ::=",
+ /* 148 */ "geocoll_textzm2 ::= EWKT_COMMA pointzm geocoll_textzm2",
+ /* 149 */ "geocoll_textzm2 ::= EWKT_COMMA linestringzm geocoll_textzm2",
+ /* 150 */ "geocoll_textzm2 ::= EWKT_COMMA polygonzm geocoll_textzm2",
 };
 #endif /* NDEBUG */
 
@@ -2214,26 +2168,22 @@ static const char *const yyRuleName[] = {
 /*
 ** Try to increase the size of the parser stack.
 */
-static void
-yyGrowStack (ewkt_yyParser * p)
-{
-    int newSize;
-    ewkt_yyStackEntry *pNew;
+static void yyGrowStack(yyParser *p){
+  int newSize;
+  yyStackEntry *pNew;
 
-    newSize = p->yystksz * 2 + 100;
-    pNew = realloc (p->yystack, newSize * sizeof (pNew[0]));
-    if (pNew)
-      {
-	  p->yystack = pNew;
-	  p->yystksz = newSize;
+  newSize = p->yystksz*2 + 100;
+  pNew = realloc(p->yystack, newSize*sizeof(pNew[0]));
+  if( pNew ){
+    p->yystack = pNew;
+    p->yystksz = newSize;
 #ifndef NDEBUG
-	  if (yyTraceFILE)
-	    {
-		fprintf (yyTraceFILE, "%sStack grows to %d entries!\n",
-			 yyTracePrompt, p->yystksz);
-	    }
+    if( yyTraceFILE ){
+      fprintf(yyTraceFILE,"%sStack grows to %d entries!\n",
+              yyTracePrompt, p->yystksz);
+    }
 #endif
-      }
+  }
 }
 #endif
 
@@ -2249,24 +2199,21 @@ yyGrowStack (ewkt_yyParser * p)
 ** A pointer to a parser.  This pointer is used in subsequent calls
 ** to Parse and ParseFree.
 */
-void *
-ewktParseAlloc (void *(*mallocProc) (size_t))
-{
-    ewkt_yyParser *pParser;
-    pParser = (ewkt_yyParser *) (*mallocProc) ((size_t) sizeof (ewkt_yyParser));
-    if (pParser)
-      {
-	  pParser->yyidx = -1;
+void *ParseAlloc(void *(*mallocProc)(size_t)){
+  yyParser *pParser;
+  pParser = (yyParser*)(*mallocProc)( (size_t)sizeof(yyParser) );
+  if( pParser ){
+    pParser->yyidx = -1;
 #ifdef YYTRACKMAXSTACKDEPTH
-	  pParser->yyidxMax = 0;
+    pParser->yyidxMax = 0;
 #endif
 #if YYSTACKDEPTH<=0
-	  pParser->yystack = NULL;
-	  pParser->yystksz = 0;
-	  yyGrowStack (pParser);
+    pParser->yystack = NULL;
+    pParser->yystksz = 0;
+    yyGrowStack(pParser);
 #endif
-      }
-    return pParser;
+  }
+  return pParser;
 }
 
 /* The following function deletes the value associated with a
@@ -2274,28 +2221,25 @@ ewktParseAlloc (void *(*mallocProc) (size_t))
 ** "yymajor" is the symbol code, and "yypminor" is a pointer to
 ** the value.
 */
-static void
-ewkt_yy_destructor (ewkt_yyParser * yypParser,	/* The parser */
-		    YYCODETYPE yymajor,	/* Type code for object to destroy */
-		    EWKT_YYMINORTYPE * yypminor	/* The object to be destroyed */
-    )
-{
-    ParseARG_FETCH;
-    switch (yymajor)
-      {
-	  /* Here is inserted the actions which take place when a
-	   ** terminal or non-terminal is destroyed.  This can happen
-	   ** when the symbol is popped from the stack during a
-	   ** reduce or during error processing or when a parser is 
-	   ** being destroyed before it is finished parsing.
-	   **
-	   ** Note: during a reduce, the only symbols destroyed are those
-	   ** which appear on the RHS of the rule, but which are not used
-	   ** inside the C code.
-	   */
-      default:
-	  break;		/* If no destructor action specified: do nothing */
-      }
+static void yy_destructor(
+  yyParser *yypParser,    /* The parser */
+  YYCODETYPE yymajor,     /* Type code for object to destroy */
+  YYMINORTYPE *yypminor   /* The object to be destroyed */
+){
+  ParseARG_FETCH;
+  switch( yymajor ){
+    /* Here is inserted the actions which take place when a
+    ** terminal or non-terminal is destroyed.  This can happen
+    ** when the symbol is popped from the stack during a
+    ** reduce or during error processing or when a parser is 
+    ** being destroyed before it is finished parsing.
+    **
+    ** Note: during a reduce, the only symbols destroyed are those
+    ** which appear on the RHS of the rule, but which are not used
+    ** inside the C code.
+    */
+    default:  break;   /* If no destructor action specified: do nothing */
+  }
 }
 
 /*
@@ -2306,25 +2250,22 @@ ewkt_yy_destructor (ewkt_yyParser * yypParser,	/* The parser */
 **
 ** Return the major token number for the symbol popped.
 */
-static int
-ewkt_yy_pop_parser_stack (ewkt_yyParser * pParser)
-{
-    YYCODETYPE yymajor;
-    ewkt_yyStackEntry *yytos = &pParser->yystack[pParser->yyidx];
+static int yy_pop_parser_stack(yyParser *pParser){
+  YYCODETYPE yymajor;
+  yyStackEntry *yytos = &pParser->yystack[pParser->yyidx];
 
-    if (pParser->yyidx < 0)
-	return 0;
+  if( pParser->yyidx<0 ) return 0;
 #ifndef NDEBUG
-    if (yyTraceFILE && pParser->yyidx >= 0)
-      {
-	  fprintf (yyTraceFILE, "%sPopping %s\n",
-		   yyTracePrompt, yyTokenName[yytos->major]);
-      }
+  if( yyTraceFILE && pParser->yyidx>=0 ){
+    fprintf(yyTraceFILE,"%sPopping %s\n",
+      yyTracePrompt,
+      yyTokenName[yytos->major]);
+  }
 #endif
-    yymajor = yytos->major;
-    ewkt_yy_destructor (pParser, yymajor, &yytos->minor);
-    pParser->yyidx--;
-    return yymajor;
+  yymajor = yytos->major;
+  yy_destructor(pParser, yymajor, &yytos->minor);
+  pParser->yyidx--;
+  return yymajor;
 }
 
 /* 
@@ -2339,31 +2280,26 @@ ewkt_yy_pop_parser_stack (ewkt_yyParser * pParser)
 **       from malloc.
 ** </ul>
 */
-void
-ewktParseFree (void *p,		/* The parser to be deleted */
-	       void (*freeProc) (void *)	/* Function used to reclaim memory */
-    )
-{
-    ewkt_yyParser *pParser = (ewkt_yyParser *) p;
-    if (pParser == 0)
-	return;
-    while (pParser->yyidx >= 0)
-	ewkt_yy_pop_parser_stack (pParser);
+void ParseFree(
+  void *p,                    /* The parser to be deleted */
+  void (*freeProc)(void*)     /* Function used to reclaim memory */
+){
+  yyParser *pParser = (yyParser*)p;
+  if( pParser==0 ) return;
+  while( pParser->yyidx>=0 ) yy_pop_parser_stack(pParser);
 #if YYSTACKDEPTH<=0
-    free (pParser->yystack);
+  free(pParser->yystack);
 #endif
-    (*freeProc) ((void *) pParser);
+  (*freeProc)((void*)pParser);
 }
 
 /*
 ** Return the peak depth of the stack for a parser.
 */
 #ifdef YYTRACKMAXSTACKDEPTH
-int
-ewktParseStackPeak (void *p)
-{
-    ewkt_yyParser *pParser = (ewkt_yyParser *) p;
-    return pParser->yyidxMax;
+int ParseStackPeak(void *p){
+  yyParser *pParser = (yyParser*)p;
+  return pParser->yyidxMax;
 }
 #endif
 
@@ -2375,66 +2311,52 @@ ewktParseStackPeak (void *p)
 ** independent of the look-ahead.  If it is, return the action, otherwise
 ** return YY_NO_ACTION.
 */
-static int
-ewkt_yy_find_shift_action (ewkt_yyParser * pParser,	/* The parser */
-			   YYCODETYPE iLookAhead	/* The look-ahead token */
-    )
-{
-    int i;
-    int stateno = pParser->yystack[pParser->yyidx].stateno;
-
-    if (stateno > YY_SHIFT_MAX
-	|| (i = ewkt_yy_shift_ofst[stateno]) == YY_SHIFT_USE_DFLT)
-      {
-	  return ewkt_yy_default[stateno];
-      }
-    assert (iLookAhead != YYNOCODE);
-    i += iLookAhead;
-    if (i < 0 || i >= YY_SZ_ACTTAB || ewkt_yy_lookahead[i] != iLookAhead)
-      {
-	  if (iLookAhead > 0)
-	    {
+static int yy_find_shift_action(
+  yyParser *pParser,        /* The parser */
+  YYCODETYPE iLookAhead     /* The look-ahead token */
+){
+  int i;
+  int stateno = pParser->yystack[pParser->yyidx].stateno;
+ 
+  if( stateno>YY_SHIFT_MAX || (i = yy_shift_ofst[stateno])==YY_SHIFT_USE_DFLT ){
+    return yy_default[stateno];
+  }
+  assert( iLookAhead!=YYNOCODE );
+  i += iLookAhead;
+  if( i<0 || i>=YY_SZ_ACTTAB || yy_lookahead[i]!=iLookAhead ){
+    if( iLookAhead>0 ){
 #ifdef YYFALLBACK
-		YYCODETYPE iFallback;	/* Fallback token */
-		if (iLookAhead < sizeof (yyFallback) / sizeof (yyFallback[0])
-		    && (iFallback = yyFallback[iLookAhead]) != 0)
-		  {
+      YYCODETYPE iFallback;            /* Fallback token */
+      if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
+             && (iFallback = yyFallback[iLookAhead])!=0 ){
 #ifndef NDEBUG
-		      if (yyTraceFILE)
-			{
-			    fprintf (yyTraceFILE, "%sFALLBACK %s => %s\n",
-				     yyTracePrompt, yyTokenName[iLookAhead],
-				     yyTokenName[iFallback]);
-			}
+        if( yyTraceFILE ){
+          fprintf(yyTraceFILE, "%sFALLBACK %s => %s\n",
+             yyTracePrompt, yyTokenName[iLookAhead], yyTokenName[iFallback]);
+        }
 #endif
-		      return ewkt_yy_find_shift_action (pParser, iFallback);
-		  }
+        return yy_find_shift_action(pParser, iFallback);
+      }
 #endif
 #ifdef YYWILDCARD
-		{
-		    int j = i - iLookAhead + YYWILDCARD;
-		    if (j >= 0 && j < YY_SZ_ACTTAB
-			&& ewkt_yy_lookahead[j] == YYWILDCARD)
-		      {
-#ifndef NDEBUG
-			  if (yyTraceFILE)
-			    {
-				fprintf (yyTraceFILE, "%sWILDCARD %s => %s\n",
-					 yyTracePrompt, yyTokenName[iLookAhead],
-					 yyTokenName[YYWILDCARD]);
-			    }
-#endif /* NDEBUG */
-			  return ewkt_yy_action[j];
-		      }
-		}
-#endif /* YYWILDCARD */
-	    }
-	  return ewkt_yy_default[stateno];
-      }
-    else
       {
-	  return ewkt_yy_action[i];
+        int j = i - iLookAhead + YYWILDCARD;
+        if( j>=0 && j<YY_SZ_ACTTAB && yy_lookahead[j]==YYWILDCARD ){
+#ifndef NDEBUG
+          if( yyTraceFILE ){
+            fprintf(yyTraceFILE, "%sWILDCARD %s => %s\n",
+               yyTracePrompt, yyTokenName[iLookAhead], yyTokenName[YYWILDCARD]);
+          }
+#endif /* NDEBUG */
+          return yy_action[j];
+        }
       }
+#endif /* YYWILDCARD */
+    }
+    return yy_default[stateno];
+  }else{
+    return yy_action[i];
+  }
 }
 
 /*
@@ -2445,1177 +2367,833 @@ ewkt_yy_find_shift_action (ewkt_yyParser * pParser,	/* The parser */
 ** independent of the look-ahead.  If it is, return the action, otherwise
 ** return YY_NO_ACTION.
 */
-static int
-ewkt_yy_find_reduce_action (int stateno,	/* Current state number */
-			    YYCODETYPE iLookAhead	/* The look-ahead token */
-    )
-{
-    int i;
-fprintf(stderr, "\tyy_find_reduce_action\n");fflush(stderr);
+static int yy_find_reduce_action(
+  int stateno,              /* Current state number */
+  YYCODETYPE iLookAhead     /* The look-ahead token */
+){
+  int i;
 #ifdef YYERRORSYMBOL
-    if (stateno > YY_REDUCE_MAX)
-      {
-	  return ewkt_yy_default[stateno];
-      }
+  if( stateno>YY_REDUCE_MAX ){
+    return yy_default[stateno];
+  }
 #else
-    assert (stateno <= YY_REDUCE_MAX);
+  assert( stateno<=YY_REDUCE_MAX );
 #endif
-    i = ewkt_yy_reduce_ofst[stateno];
-    assert (i != YY_REDUCE_USE_DFLT);
-    assert (iLookAhead != YYNOCODE);
-    i += iLookAhead;
+  i = yy_reduce_ofst[stateno];
+  assert( i!=YY_REDUCE_USE_DFLT );
+  assert( iLookAhead!=YYNOCODE );
+  i += iLookAhead;
 #ifdef YYERRORSYMBOL
-    if (i < 0 || i >= YY_SZ_ACTTAB || ewkt_yy_lookahead[i] != iLookAhead)
-      {
-	  return ewkt_yy_default[stateno];
-      }
+  if( i<0 || i>=YY_SZ_ACTTAB || yy_lookahead[i]!=iLookAhead ){
+    return yy_default[stateno];
+  }
 #else
-    assert (i >= 0 && i < YY_SZ_ACTTAB);
-    assert (ewkt_yy_lookahead[i] == iLookAhead);
+  assert( i>=0 && i<YY_SZ_ACTTAB );
+  assert( yy_lookahead[i]==iLookAhead );
 #endif
-fprintf(stderr, "\taction=%d [%d]\n", ewkt_yy_action[i], i);fflush(stderr);
-    return ewkt_yy_action[i];
+  return yy_action[i];
 }
 
 /*
 ** The following routine is called if the stack overflows.
 */
-static void
-vanuatu_yyStackOverflow (ewkt_yyParser * yypParser, EWKT_YYMINORTYPE * yypMinor)
-{
-    ParseARG_FETCH;
-    yypParser->yyidx--;
+static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
+   ParseARG_FETCH;
+   yypParser->yyidx--;
 #ifndef NDEBUG
-    if (yyTraceFILE)
-      {
-	  fprintf (yyTraceFILE, "%sStack Overflow!\n", yyTracePrompt);
-      }
+   if( yyTraceFILE ){
+     fprintf(yyTraceFILE,"%sStack Overflow!\n",yyTracePrompt);
+   }
 #endif
-    while (yypParser->yyidx >= 0)
-	ewkt_yy_pop_parser_stack (yypParser);
-    /* Here code is inserted which will execute if the parser
-     ** stack every overflows */
+   while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
+   /* Here code is inserted which will execute if the parser
+   ** stack every overflows */
+#line 47 "Ewkt.y"
 
-    fprintf (stderr, "Giving up.  Parser stack overflow\n");
-    ParseARG_STORE;		/* Suppress warning about unused %extra_argument var */
+     fprintf(stderr,"Giving up.  Parser stack overflow\n");
+#line 845 "Ewkt.c"
+   ParseARG_STORE; /* Suppress warning about unused %extra_argument var */
 }
 
 /*
 ** Perform a shift action.
 */
-static void
-ewkt_yy_shift (ewkt_yyParser * yypParser,	/* The parser to be shifted */
-	       int yyNewState,	/* The new state to shift in */
-	       int yyMajor,	/* The major token to shift in */
-	       EWKT_YYMINORTYPE * yypMinor	/* Pointer to the minor token to shift in */
-    )
-{
-    ewkt_yyStackEntry *yytos;
-    yypParser->yyidx++;
+static void yy_shift(
+  yyParser *yypParser,          /* The parser to be shifted */
+  int yyNewState,               /* The new state to shift in */
+  int yyMajor,                  /* The major token to shift in */
+  YYMINORTYPE *yypMinor         /* Pointer to the minor token to shift in */
+){
+  yyStackEntry *yytos;
+  yypParser->yyidx++;
 #ifdef YYTRACKMAXSTACKDEPTH
-    if (yypParser->yyidx > yypParser->yyidxMax)
-      {
-	  yypParser->yyidxMax = yypParser->yyidx;
-      }
+  if( yypParser->yyidx>yypParser->yyidxMax ){
+    yypParser->yyidxMax = yypParser->yyidx;
+  }
 #endif
-#if YYSTACKDEPTH>0
-    if (yypParser->yyidx >= YYSTACKDEPTH)
-      {
-	  vanuatu_yyStackOverflow (yypParser, yypMinor);
-	  return;
-      }
+#if YYSTACKDEPTH>0 
+  if( yypParser->yyidx>=YYSTACKDEPTH ){
+    yyStackOverflow(yypParser, yypMinor);
+    return;
+  }
 #else
-    if (yypParser->yyidx >= yypParser->yystksz)
-      {
-	  yyGrowStack (yypParser);
-	  if (yypParser->yyidx >= yypParser->yystksz)
-	    {
-		vanuatu_yyStackOverflow (yypParser, yypMinor);
-		return;
-	    }
-      }
+  if( yypParser->yyidx>=yypParser->yystksz ){
+    yyGrowStack(yypParser);
+    if( yypParser->yyidx>=yypParser->yystksz ){
+      yyStackOverflow(yypParser, yypMinor);
+      return;
+    }
+  }
 #endif
-    yytos = &yypParser->yystack[yypParser->yyidx];
-    yytos->stateno = (YYACTIONTYPE) yyNewState;
-    yytos->major = (YYCODETYPE) yyMajor;
-    yytos->minor = *yypMinor;
+  yytos = &yypParser->yystack[yypParser->yyidx];
+  yytos->stateno = (YYACTIONTYPE)yyNewState;
+  yytos->major = (YYCODETYPE)yyMajor;
+  yytos->minor = *yypMinor;
 #ifndef NDEBUG
-    if (yyTraceFILE && yypParser->yyidx > 0)
-      {
-	  int i;
-	  fprintf (yyTraceFILE, "%sShift %d\n", yyTracePrompt, yyNewState);
-	  fprintf (yyTraceFILE, "%sStack:", yyTracePrompt);
-	  for (i = 1; i <= yypParser->yyidx; i++)
-	      fprintf (yyTraceFILE, " %s",
-		       yyTokenName[yypParser->yystack[i].major]);
-	  fprintf (yyTraceFILE, "\n");
-      }
+  if( yyTraceFILE && yypParser->yyidx>0 ){
+    int i;
+    fprintf(yyTraceFILE,"%sShift %d\n",yyTracePrompt,yyNewState);
+    fprintf(yyTraceFILE,"%sStack:",yyTracePrompt);
+    for(i=1; i<=yypParser->yyidx; i++)
+      fprintf(yyTraceFILE," %s",yyTokenName[yypParser->yystack[i].major]);
+    fprintf(yyTraceFILE,"\n");
+  }
 #endif
 }
 
 /* The following table contains information about every rule that
 ** is used during the reduce.
 */
-static const struct
-{
-    YYCODETYPE lhs;		/* Symbol on the left-hand side of the rule */
-    unsigned char nrhs;		/* Number of right-hand side symbols in the rule */
-} ewkt_yyRuleInfo[] =
-{
-    {
-    21, 1},
-    {
-    22, 0},
-    {
-    22, 3},
-    {
-    23, 1},
-    {
-    24, 1},
-    {
-    24, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    25, 1},
-    {
-    26, 1},
-    {
-    26, 1},
-    {
-    26, 1},
-    {
-    26, 1},
-    {
-    26, 1},
-    {
-    26, 1},
-    {
-    26, 1},
-    {
-    27, 4},
-    {
-    28, 4},
-    {
-    48, 4},
-    {
-    29, 4},
-    {
-    55, 2},
-    {
-    57, 3},
-    {
-    56, 3},
-    {
-    58, 4},
-    {
-    59, 1},
-    {
-    60, 0},
-    {
-    60, 3},
-    {
-    61, 0},
-    {
-    61, 3},
-    {
-    62, 0},
-    {
-    62, 3},
-    {
-    63, 0},
-    {
-    63, 3},
-    {
-    30, 2},
-    {
-    49, 2},
-    {
-    31, 2},
-    {
-    32, 2},
-    {
-    64, 6},
-    {
-    65, 6},
-    {
-    66, 6},
-    {
-    67, 6},
-    {
-    33, 2},
-    {
-    50, 2},
-    {
-    34, 2},
-    {
-    35, 2},
-    {
-    68, 4},
-    {
-    69, 4},
-    {
-    70, 4},
-    {
-    71, 4},
-    {
-    72, 10},
-    {
-    73, 0},
-    {
-    73, 3},
-    {
-    74, 10},
-    {
-    75, 0},
-    {
-    75, 3},
-    {
-    76, 10},
-    {
-    77, 0},
-    {
-    77, 3},
-    {
-    78, 10},
-    {
-    79, 0},
-    {
-    79, 3},
-    {
-    36, 2},
-    {
-    51, 2},
-    {
-    37, 2},
-    {
-    38, 2},
-    {
-    80, 4},
-    {
-    81, 4},
-    {
-    82, 4},
-    {
-    83, 4},
-    {
-    39, 2},
-    {
-    52, 2},
-    {
-    40, 2},
-    {
-    41, 2},
-    {
-    84, 4},
-    {
-    88, 0},
-    {
-    88, 3},
-    {
-    85, 4},
-    {
-    89, 0},
-    {
-    89, 3},
-    {
-    86, 4},
-    {
-    90, 0},
-    {
-    90, 3},
-    {
-    87, 4},
-    {
-    91, 0},
-    {
-    91, 3},
-    {
-    42, 2},
-    {
-    53, 2},
-    {
-    43, 2},
-    {
-    44, 2},
-    {
-    92, 4},
-    {
-    96, 0},
-    {
-    96, 3},
-    {
-    93, 4},
-    {
-    97, 0},
-    {
-    97, 3},
-    {
-    94, 4},
-    {
-    98, 0},
-    {
-    98, 3},
-    {
-    95, 4},
-    {
-    99, 0},
-    {
-    99, 3},
-    {
-    45, 2},
-    {
-    54, 2},
-    {
-    46, 2},
-    {
-    47, 2},
-    {
-    100, 4},
-    {
-    100, 4},
-    {
-    100, 4},
-    {
-    104, 0},
-    {
-    104, 3},
-    {
-    104, 3},
-    {
-    104, 3},
-    {
-    101, 4},
-    {
-    101, 4},
-    {
-    101, 4},
-    {
-    105, 0},
-    {
-    105, 3},
-    {
-    105, 3},
-    {
-    105, 3},
-    {
-    102, 4},
-    {
-    102, 4},
-    {
-    102, 4},
-    {
-    106, 0},
-    {
-    106, 3},
-    {
-    106, 3},
-    {
-    106, 3},
-    {
-    103, 4},
-    {
-    103, 4},
-    {
-    103, 4},
-    {
-    107, 0},
-    {
-    107, 3},
-    {
-    107, 3},
-    {
-107, 3},};
+static const struct {
+  YYCODETYPE lhs;         /* Symbol on the left-hand side of the rule */
+  unsigned char nrhs;     /* Number of right-hand side symbols in the rule */
+} yyRuleInfo[] = {
+  { 21, 1 },
+  { 22, 0 },
+  { 22, 3 },
+  { 23, 1 },
+  { 24, 1 },
+  { 24, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 25, 1 },
+  { 26, 1 },
+  { 26, 1 },
+  { 26, 1 },
+  { 26, 1 },
+  { 26, 1 },
+  { 26, 1 },
+  { 26, 1 },
+  { 27, 4 },
+  { 28, 4 },
+  { 48, 4 },
+  { 29, 4 },
+  { 55, 2 },
+  { 57, 3 },
+  { 56, 3 },
+  { 58, 4 },
+  { 59, 1 },
+  { 60, 0 },
+  { 60, 3 },
+  { 61, 0 },
+  { 61, 3 },
+  { 62, 0 },
+  { 62, 3 },
+  { 63, 0 },
+  { 63, 3 },
+  { 30, 2 },
+  { 49, 2 },
+  { 31, 2 },
+  { 32, 2 },
+  { 64, 6 },
+  { 65, 6 },
+  { 66, 6 },
+  { 67, 6 },
+  { 33, 2 },
+  { 50, 2 },
+  { 34, 2 },
+  { 35, 2 },
+  { 68, 4 },
+  { 69, 4 },
+  { 70, 4 },
+  { 71, 4 },
+  { 72, 10 },
+  { 73, 0 },
+  { 73, 3 },
+  { 74, 10 },
+  { 75, 0 },
+  { 75, 3 },
+  { 76, 10 },
+  { 77, 0 },
+  { 77, 3 },
+  { 78, 10 },
+  { 79, 0 },
+  { 79, 3 },
+  { 36, 2 },
+  { 51, 2 },
+  { 37, 2 },
+  { 38, 2 },
+  { 80, 4 },
+  { 81, 4 },
+  { 82, 4 },
+  { 83, 4 },
+  { 39, 2 },
+  { 52, 2 },
+  { 40, 2 },
+  { 41, 2 },
+  { 84, 4 },
+  { 88, 0 },
+  { 88, 3 },
+  { 85, 4 },
+  { 89, 0 },
+  { 89, 3 },
+  { 86, 4 },
+  { 90, 0 },
+  { 90, 3 },
+  { 87, 4 },
+  { 91, 0 },
+  { 91, 3 },
+  { 42, 2 },
+  { 53, 2 },
+  { 43, 2 },
+  { 44, 2 },
+  { 92, 4 },
+  { 96, 0 },
+  { 96, 3 },
+  { 93, 4 },
+  { 97, 0 },
+  { 97, 3 },
+  { 94, 4 },
+  { 98, 0 },
+  { 98, 3 },
+  { 95, 4 },
+  { 99, 0 },
+  { 99, 3 },
+  { 45, 2 },
+  { 54, 2 },
+  { 46, 2 },
+  { 47, 2 },
+  { 100, 4 },
+  { 100, 4 },
+  { 100, 4 },
+  { 104, 0 },
+  { 104, 3 },
+  { 104, 3 },
+  { 104, 3 },
+  { 101, 4 },
+  { 101, 4 },
+  { 101, 4 },
+  { 105, 0 },
+  { 105, 3 },
+  { 105, 3 },
+  { 105, 3 },
+  { 102, 4 },
+  { 102, 4 },
+  { 102, 4 },
+  { 106, 0 },
+  { 106, 3 },
+  { 106, 3 },
+  { 106, 3 },
+  { 103, 4 },
+  { 103, 4 },
+  { 103, 4 },
+  { 107, 0 },
+  { 107, 3 },
+  { 107, 3 },
+  { 107, 3 },
+};
 
-static void yy_accept (ewkt_yyParser *);	/* Forward Declaration */
+static void yy_accept(yyParser*);  /* Forward Declaration */
 
 /*
 ** Perform a reduce action and the shift that must immediately
 ** follow the reduce.
 */
-static void
-ewkt_yy_reduce (ewkt_yyParser * yypParser,	/* The parser */
-		int yyruleno	/* Number of the rule by which to reduce */
-    )
-{
-    int yygoto;			/* The next state */
-    int yyact;			/* The next action */
-    EWKT_YYMINORTYPE yygotominor;	/* The LHS of the rule reduced */
-    ewkt_yyStackEntry *yymsp;	/* The top of the parser's stack */
-    int yysize;			/* Amount to pop the stack */
-    ParseARG_FETCH;
-    yymsp = &yypParser->yystack[yypParser->yyidx];
+static void yy_reduce(
+  yyParser *yypParser,         /* The parser */
+  int yyruleno                 /* Number of the rule by which to reduce */
+){
+  int yygoto;                     /* The next state */
+  int yyact;                      /* The next action */
+  YYMINORTYPE yygotominor;        /* The LHS of the rule reduced */
+  yyStackEntry *yymsp;            /* The top of the parser's stack */
+  int yysize;                     /* Amount to pop the stack */
+  ParseARG_FETCH;
+  yymsp = &yypParser->yystack[yypParser->yyidx];
 #ifndef NDEBUG
-    if (yyTraceFILE && yyruleno >= 0
-	&& yyruleno < (int) (sizeof (yyRuleName) / sizeof (yyRuleName[0])))
-      {
-	  fprintf (yyTraceFILE, "%sReduce [%s].\n", yyTracePrompt,
-		   yyRuleName[yyruleno]);
-      }
+  if( yyTraceFILE && yyruleno>=0 
+        && yyruleno<(int)(sizeof(yyRuleName)/sizeof(yyRuleName[0])) ){
+    fprintf(yyTraceFILE, "%sReduce [%s].\n", yyTracePrompt,
+      yyRuleName[yyruleno]);
+  }
 #endif /* NDEBUG */
 
-fprintf(stderr, "ewktReduce=%d\n", yyruleno);fflush(stderr);
-    /* Silence complaints from purify about yygotominor being uninitialized
-     ** in some cases when it is copied into the stack after the following
-     ** switch.  yygotominor is uninitialized when a rule reduces that does
-     ** not set the value of its left-hand side nonterminal.  Leaving the
-     ** value of the nonterminal uninitialized is utterly harmless as long
-     ** as the value is never used.  So really the only thing this code
-     ** accomplishes is to quieten purify.  
-     **
-     ** 2007-01-16:  The wireshark project (www.wireshark.org) reports that
-     ** without this code, their parser segfaults.  I'm not sure what there
-     ** parser is doing to make this happen.  This is the second bug report
-     ** from wireshark this week.  Clearly they are stressing Lemon in ways
-     ** that it has not been previously stressed...  (SQLite ticket #2172)
-     */
-    /*memset(&yygotominor, 0, sizeof(yygotominor)); */
-    yygotominor = ewkt_yyzerominor;
+  /* Silence complaints from purify about yygotominor being uninitialized
+  ** in some cases when it is copied into the stack after the following
+  ** switch.  yygotominor is uninitialized when a rule reduces that does
+  ** not set the value of its left-hand side nonterminal.  Leaving the
+  ** value of the nonterminal uninitialized is utterly harmless as long
+  ** as the value is never used.  So really the only thing this code
+  ** accomplishes is to quieten purify.  
+  **
+  ** 2007-01-16:  The wireshark project (www.wireshark.org) reports that
+  ** without this code, their parser segfaults.  I'm not sure what there
+  ** parser is doing to make this happen.  This is the second bug report
+  ** from wireshark this week.  Clearly they are stressing Lemon in ways
+  ** that it has not been previously stressed...  (SQLite ticket #2172)
+  */
+  /*memset(&yygotominor, 0, sizeof(yygotominor));*/
+  yygotominor = yyzerominor;
 
 
-    switch (yyruleno)
-      {
-	  /* Beginning here are the reduction cases.  A typical example
-	   ** follows:
-	   **   case 0:
-	   **  #line <lineno> <grammarfile>
-	   **     { ... }           // User supplied code
-	   **  #line <lineno> <thisfile>
-	   **     break;
-	   */
-      case 6:			/* geo_text ::= point */
-      case 7:			/* geo_text ::= pointz */
-	  yytestcase (yyruleno == 7);
-      case 8:			/* geo_text ::= pointzm */
-	  yytestcase (yyruleno == 8);
-      case 9:			/* geo_text ::= linestring */
-	  yytestcase (yyruleno == 9);
-      case 10:			/* geo_text ::= linestringz */
-	  yytestcase (yyruleno == 10);
-      case 11:			/* geo_text ::= linestringzm */
-	  yytestcase (yyruleno == 11);
-      case 12:			/* geo_text ::= polygon */
-	  yytestcase (yyruleno == 12);
-      case 13:			/* geo_text ::= polygonz */
-	  yytestcase (yyruleno == 13);
-      case 14:			/* geo_text ::= polygonzm */
-	  yytestcase (yyruleno == 14);
-      case 15:			/* geo_text ::= multipoint */
-	  yytestcase (yyruleno == 15);
-      case 16:			/* geo_text ::= multipointz */
-	  yytestcase (yyruleno == 16);
-      case 17:			/* geo_text ::= multipointzm */
-	  yytestcase (yyruleno == 17);
-      case 18:			/* geo_text ::= multilinestring */
-	  yytestcase (yyruleno == 18);
-      case 19:			/* geo_text ::= multilinestringz */
-	  yytestcase (yyruleno == 19);
-      case 20:			/* geo_text ::= multilinestringzm */
-	  yytestcase (yyruleno == 20);
-      case 21:			/* geo_text ::= multipolygon */
-	  yytestcase (yyruleno == 21);
-      case 22:			/* geo_text ::= multipolygonz */
-	  yytestcase (yyruleno == 22);
-      case 23:			/* geo_text ::= multipolygonzm */
-	  yytestcase (yyruleno == 23);
-      case 24:			/* geo_text ::= geocoll */
-	  yytestcase (yyruleno == 24);
-      case 25:			/* geo_text ::= geocollz */
-	  yytestcase (yyruleno == 25);
-      case 26:			/* geo_text ::= geocollzm */
-	  yytestcase (yyruleno == 26);
-      case 27:			/* geo_textm ::= pointm */
-	  yytestcase (yyruleno == 27);
-      case 28:			/* geo_textm ::= linestringm */
-	  yytestcase (yyruleno == 28);
-      case 29:			/* geo_textm ::= polygonm */
-	  yytestcase (yyruleno == 29);
-      case 30:			/* geo_textm ::= multipointm */
-	  yytestcase (yyruleno == 30);
-      case 31:			/* geo_textm ::= multilinestringm */
-	  yytestcase (yyruleno == 31);
-      case 32:			/* geo_textm ::= multipolygonm */
-	  yytestcase (yyruleno == 32);
-      case 33:			/* geo_textm ::= geocollm */
-	  yytestcase (yyruleno == 33);
-	  {
-	      *result = yymsp[0].minor.yy0;
-	  }
-	  break;
-      case 34:			/* point ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxy EWKT_CLOSE_BRACKET */
-      case 35:			/* pointz ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyz EWKT_CLOSE_BRACKET */
-	  yytestcase (yyruleno == 35);
-      case 37:			/* pointzm ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyzm EWKT_CLOSE_BRACKET */
-	  yytestcase (yyruleno == 37);
-	  {
-	      yygotominor.yy0 =
-		  ewkt_buildGeomFromPoint ((gaiaPointPtr) yymsp[-1].minor.yy0);
-	  }
-	  break;
-      case 36:			/* pointm ::= EWKT_POINT_M EWKT_OPEN_BRACKET point_coordxym EWKT_CLOSE_BRACKET */
-	  {
-	      yygotominor.yy0 =
-		  ewkt_buildGeomFromPoint ((gaiaPointPtr) yymsp[-1].minor.yy0);
-	  }
-	  break;
-      case 38:			/* point_coordxy ::= coord coord */
-	  {
-	      yygotominor.yy0 =
-		  (void *) ewkt_point_xy ((double *) yymsp[-1].minor.yy0,
-					  (double *) yymsp[0].minor.yy0);
-	  }
-	  break;
-      case 39:			/* point_coordxym ::= coord coord coord */
-	  {
-	      yygotominor.yy0 =
-		  (void *) ewkt_point_xym ((double *) yymsp[-2].minor.yy0,
-					   (double *) yymsp[-1].minor.yy0,
-					   (double *) yymsp[0].minor.yy0);
-	  }
-	  break;
-      case 40:			/* point_coordxyz ::= coord coord coord */
-	  {
-	      yygotominor.yy0 =
-		  (void *) ewkt_point_xyz ((double *) yymsp[-2].minor.yy0,
-					   (double *) yymsp[-1].minor.yy0,
-					   (double *) yymsp[0].minor.yy0);
-	  }
-	  break;
-      case 41:			/* point_coordxyzm ::= coord coord coord coord */
-	  {
-	      yygotominor.yy0 =
-		  (void *) ewkt_point_xyzm ((double *) yymsp[-3].minor.yy0,
-					    (double *) yymsp[-2].minor.yy0,
-					    (double *) yymsp[-1].minor.yy0,
-					    (double *) yymsp[0].minor.yy0);
-	  }
-	  break;
-      case 42:			/* coord ::= EWKT_NUM */
-      case 79:			/* multipoint ::= EWKT_MULTIPOINT multipoint_text */
-	  yytestcase (yyruleno == 79);
-      case 80:			/* multipointm ::= EWKT_MULTIPOINT_M multipoint_textm */
-	  yytestcase (yyruleno == 80);
-      case 81:			/* multipointz ::= EWKT_MULTIPOINT multipoint_textz */
-	  yytestcase (yyruleno == 81);
-      case 82:			/* multipointzm ::= EWKT_MULTIPOINT multipoint_textzm */
-	  yytestcase (yyruleno == 82);
-      case 87:			/* multilinestring ::= EWKT_MULTILINESTRING multilinestring_text */
-	  yytestcase (yyruleno == 87);
-      case 88:			/* multilinestringm ::= EWKT_MULTILINESTRING_M multilinestring_textm */
-	  yytestcase (yyruleno == 88);
-      case 89:			/* multilinestringz ::= EWKT_MULTILINESTRING multilinestring_textz */
-	  yytestcase (yyruleno == 89);
-      case 90:			/* multilinestringzm ::= EWKT_MULTILINESTRING multilinestring_textzm */
-	  yytestcase (yyruleno == 90);
-      case 103:		/* multipolygon ::= EWKT_MULTIPOLYGON multipolygon_text */
-	  yytestcase (yyruleno == 103);
-      case 104:		/* multipolygonm ::= EWKT_MULTIPOLYGON_M multipolygon_textm */
-	  yytestcase (yyruleno == 104);
-      case 105:		/* multipolygonz ::= EWKT_MULTIPOLYGON multipolygon_textz */
-	  yytestcase (yyruleno == 105);
-      case 106:		/* multipolygonzm ::= EWKT_MULTIPOLYGON multipolygon_textzm */
-	  yytestcase (yyruleno == 106);
-      case 119:		/* geocoll ::= EWKT_GEOMETRYCOLLECTION geocoll_text */
-	  yytestcase (yyruleno == 119);
-      case 120:		/* geocollm ::= EWKT_GEOMETRYCOLLECTION_M geocoll_textm */
-	  yytestcase (yyruleno == 120);
-      case 121:		/* geocollz ::= EWKT_GEOMETRYCOLLECTION geocoll_textz */
-	  yytestcase (yyruleno == 121);
-      case 122:		/* geocollzm ::= EWKT_GEOMETRYCOLLECTION geocoll_textzm */
-	  yytestcase (yyruleno == 122);
-	  {
-	      yygotominor.yy0 = yymsp[0].minor.yy0;
-	  }
-	  break;
-      case 43:			/* extra_pointsxy ::= */
-      case 45:			/* extra_pointsxym ::= */
-	  yytestcase (yyruleno == 45);
-      case 47:			/* extra_pointsxyz ::= */
-	  yytestcase (yyruleno == 47);
-      case 49:			/* extra_pointsxyzm ::= */
-	  yytestcase (yyruleno == 49);
-      case 68:			/* extra_rings ::= */
-	  yytestcase (yyruleno == 68);
-      case 71:			/* extra_ringsm ::= */
-	  yytestcase (yyruleno == 71);
-      case 74:			/* extra_ringsz ::= */
-	  yytestcase (yyruleno == 74);
-      case 77:			/* extra_ringszm ::= */
-	  yytestcase (yyruleno == 77);
-      case 92:			/* multilinestring_text2 ::= */
-	  yytestcase (yyruleno == 92);
-      case 95:			/* multilinestring_textm2 ::= */
-	  yytestcase (yyruleno == 95);
-      case 98:			/* multilinestring_textz2 ::= */
-	  yytestcase (yyruleno == 98);
-      case 101:		/* multilinestring_textzm2 ::= */
-	  yytestcase (yyruleno == 101);
-      case 108:		/* multipolygon_text2 ::= */
-	  yytestcase (yyruleno == 108);
-      case 111:		/* multipolygon_textm2 ::= */
-	  yytestcase (yyruleno == 111);
-      case 114:		/* multipolygon_textz2 ::= */
-	  yytestcase (yyruleno == 114);
-      case 117:		/* multipolygon_textzm2 ::= */
-	  yytestcase (yyruleno == 117);
-      case 126:		/* geocoll_text2 ::= */
-	  yytestcase (yyruleno == 126);
-      case 133:		/* geocoll_textm2 ::= */
-	  yytestcase (yyruleno == 133);
-      case 140:		/* geocoll_textz2 ::= */
-	  yytestcase (yyruleno == 140);
-      case 147:		/* geocoll_textzm2 ::= */
-	  yytestcase (yyruleno == 147);
-	  {
-	      yygotominor.yy0 = NULL;
-	  }
-	  break;
-      case 44:			/* extra_pointsxy ::= EWKT_COMMA point_coordxy extra_pointsxy */
-      case 46:			/* extra_pointsxym ::= EWKT_COMMA point_coordxym extra_pointsxym */
-	  yytestcase (yyruleno == 46);
-      case 48:			/* extra_pointsxyz ::= EWKT_COMMA point_coordxyz extra_pointsxyz */
-	  yytestcase (yyruleno == 48);
-      case 50:			/* extra_pointsxyzm ::= EWKT_COMMA point_coordxyzm extra_pointsxyzm */
-	  yytestcase (yyruleno == 50);
-	  {
-	      ((gaiaPointPtr) yymsp[-1].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[0].minor.yy0;
-	      yygotominor.yy0 = yymsp[-1].minor.yy0;
-	  }
-	  break;
-      case 51:			/* linestring ::= EWKT_LINESTRING linestring_text */
-      case 52:			/* linestringm ::= EWKT_LINESTRING_M linestring_textm */
-	  yytestcase (yyruleno == 52);
-      case 53:			/* linestringz ::= EWKT_LINESTRING linestring_textz */
-	  yytestcase (yyruleno == 53);
-      case 54:			/* linestringzm ::= EWKT_LINESTRING linestring_textzm */
-	  yytestcase (yyruleno == 54);
-	  {
-	      yygotominor.yy0 =
-		  ewkt_buildGeomFromLinestring ((gaiaLinestringPtr) yymsp[0].
-						minor.yy0);
-	  }
-	  break;
-      case 55:			/* linestring_text ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-1].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-2].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_linestring_xy ((gaiaPointPtr) yymsp[-4].minor.
-					       yy0);
-	  }
-	  break;
-      case 56:			/* linestring_textm ::= EWKT_OPEN_BRACKET point_coordxym EWKT_COMMA point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-1].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-2].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_linestring_xym ((gaiaPointPtr) yymsp[-4].minor.
-						yy0);
-	  }
-	  break;
-      case 57:			/* linestring_textz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-1].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-2].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_linestring_xyz ((gaiaPointPtr) yymsp[-4].minor.
-						yy0);
-	  }
-	  break;
-      case 58:			/* linestring_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-1].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-2].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_linestring_xyzm ((gaiaPointPtr) yymsp[-4].minor.
-						 yy0);
-	  }
-	  break;
-      case 59:			/* polygon ::= EWKT_POLYGON polygon_text */
-      case 60:			/* polygonm ::= EWKT_POLYGON_M polygon_textm */
-	  yytestcase (yyruleno == 60);
-      case 61:			/* polygonz ::= EWKT_POLYGON polygon_textz */
-	  yytestcase (yyruleno == 61);
-      case 62:			/* polygonzm ::= EWKT_POLYGON polygon_textzm */
-	  yytestcase (yyruleno == 62);
-	  {
-	      yygotominor.yy0 =
-		  ewkt_buildGeomFromPolygon ((gaiaPolygonPtr) yymsp[0].minor.
-					     yy0);
-	  }
-	  break;
-      case 63:			/* polygon_text ::= EWKT_OPEN_BRACKET ring extra_rings EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaRingPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_polygon_xy ((gaiaRingPtr) yymsp[-2].minor.yy0);
-	  }
-	  break;
-      case 64:			/* polygon_textm ::= EWKT_OPEN_BRACKET ringm extra_ringsm EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaRingPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_polygon_xym ((gaiaRingPtr) yymsp[-2].minor.yy0);
-	  }
-	  break;
-      case 65:			/* polygon_textz ::= EWKT_OPEN_BRACKET ringz extra_ringsz EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaRingPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_polygon_xyz ((gaiaRingPtr) yymsp[-2].minor.yy0);
-	  }
-	  break;
-      case 66:			/* polygon_textzm ::= EWKT_OPEN_BRACKET ringzm extra_ringszm EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaRingPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaRingPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_polygon_xyzm ((gaiaRingPtr) yymsp[-2].minor.
-					      yy0);
-	  }
-	  break;
-      case 67:			/* ring ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPointPtr) yymsp[-8].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-6].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-6].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-4].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-2].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_ring_xy ((gaiaPointPtr) yymsp[-8].minor.yy0);
-	  }
-	  break;
-      case 69:			/* extra_rings ::= EWKT_COMMA ring extra_rings */
-      case 72:			/* extra_ringsm ::= EWKT_COMMA ringm extra_ringsm */
-	  yytestcase (yyruleno == 72);
-      case 75:			/* extra_ringsz ::= EWKT_COMMA ringz extra_ringsz */
-	  yytestcase (yyruleno == 75);
-      case 78:			/* extra_ringszm ::= EWKT_COMMA ringzm extra_ringszm */
-	  yytestcase (yyruleno == 78);
-	  {
-	      ((gaiaRingPtr) yymsp[-1].minor.yy0)->Next =
-		  (gaiaRingPtr) yymsp[0].minor.yy0;
-	      yygotominor.yy0 = yymsp[-1].minor.yy0;
-	  }
-	  break;
-      case 70:			/* ringm ::= EWKT_OPEN_BRACKET point_coordxym EWKT_COMMA point_coordxym EWKT_COMMA point_coordxym EWKT_COMMA point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPointPtr) yymsp[-8].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-6].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-6].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-4].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-2].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_ring_xym ((gaiaPointPtr) yymsp[-8].minor.yy0);
-	  }
-	  break;
-      case 73:			/* ringz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz EWKT_COMMA point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPointPtr) yymsp[-8].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-6].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-6].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-4].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-2].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_ring_xyz ((gaiaPointPtr) yymsp[-8].minor.yy0);
-	  }
-	  break;
-      case 76:			/* ringzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm EWKT_COMMA point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPointPtr) yymsp[-8].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-6].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-6].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-4].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-4].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-2].minor.yy0;
-	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_ring_xyzm ((gaiaPointPtr) yymsp[-8].minor.yy0);
-	  }
-	  break;
-      case 83:			/* multipoint_text ::= EWKT_OPEN_BRACKET point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_multipoint_xy ((gaiaPointPtr) yymsp[-2].minor.
-					       yy0);
-	  }
-	  break;
-      case 84:			/* multipoint_textm ::= EWKT_OPEN_BRACKET point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_multipoint_xym ((gaiaPointPtr) yymsp[-2].minor.
-						yy0);
-	  }
-	  break;
-      case 85:			/* multipoint_textz ::= EWKT_OPEN_BRACKET point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_multipoint_xyz ((gaiaPointPtr) yymsp[-2].minor.
-						yy0);
-	  }
-	  break;
-      case 86:			/* multipoint_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPointPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPointPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_multipoint_xyzm ((gaiaPointPtr) yymsp[-2].minor.
-						 yy0);
-	  }
-	  break;
-      case 91:			/* multilinestring_text ::= EWKT_OPEN_BRACKET linestring_text multilinestring_text2 EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaLinestringPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaLinestringPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_multilinestring_xy ((gaiaLinestringPtr)
-						    yymsp[-2].minor.yy0);
-	  }
-	  break;
-      case 93:			/* multilinestring_text2 ::= EWKT_COMMA linestring_text multilinestring_text2 */
-      case 96:			/* multilinestring_textm2 ::= EWKT_COMMA linestring_textm multilinestring_textm2 */
-	  yytestcase (yyruleno == 96);
-      case 99:			/* multilinestring_textz2 ::= EWKT_COMMA linestring_textz multilinestring_textz2 */
-	  yytestcase (yyruleno == 99);
-      case 102:		/* multilinestring_textzm2 ::= EWKT_COMMA linestring_textzm multilinestring_textzm2 */
-	  yytestcase (yyruleno == 102);
-	  {
-	      ((gaiaLinestringPtr) yymsp[-1].minor.yy0)->Next =
-		  (gaiaLinestringPtr) yymsp[0].minor.yy0;
-	      yygotominor.yy0 = yymsp[-1].minor.yy0;
-	  }
-	  break;
-      case 94:			/* multilinestring_textm ::= EWKT_OPEN_BRACKET linestring_textm multilinestring_textm2 EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaLinestringPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaLinestringPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_multilinestring_xym ((gaiaLinestringPtr)
-						     yymsp[-2].minor.yy0);
-	  }
-	  break;
-      case 97:			/* multilinestring_textz ::= EWKT_OPEN_BRACKET linestring_textz multilinestring_textz2 EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaLinestringPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaLinestringPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_multilinestring_xyz ((gaiaLinestringPtr)
-						     yymsp[-2].minor.yy0);
-	  }
-	  break;
-      case 100:		/* multilinestring_textzm ::= EWKT_OPEN_BRACKET linestring_textzm multilinestring_textzm2 EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaLinestringPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaLinestringPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_multilinestring_xyzm ((gaiaLinestringPtr)
-						      yymsp[-2].minor.yy0);
-	  }
-	  break;
-      case 107:		/* multipolygon_text ::= EWKT_OPEN_BRACKET polygon_text multipolygon_text2 EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPolygonPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_multipolygon_xy ((gaiaPolygonPtr) yymsp[-2].
-						 minor.yy0);
-	  }
-	  break;
-      case 109:		/* multipolygon_text2 ::= EWKT_COMMA polygon_text multipolygon_text2 */
-      case 112:		/* multipolygon_textm2 ::= EWKT_COMMA polygon_textm multipolygon_textm2 */
-	  yytestcase (yyruleno == 112);
-      case 115:		/* multipolygon_textz2 ::= EWKT_COMMA polygon_textz multipolygon_textz2 */
-	  yytestcase (yyruleno == 115);
-      case 118:		/* multipolygon_textzm2 ::= EWKT_COMMA polygon_textzm multipolygon_textzm2 */
-	  yytestcase (yyruleno == 118);
-	  {
-	      ((gaiaPolygonPtr) yymsp[-1].minor.yy0)->Next =
-		  (gaiaPolygonPtr) yymsp[0].minor.yy0;
-	      yygotominor.yy0 = yymsp[-1].minor.yy0;
-	  }
-	  break;
-      case 110:		/* multipolygon_textm ::= EWKT_OPEN_BRACKET polygon_textm multipolygon_textm2 EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPolygonPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_multipolygon_xym ((gaiaPolygonPtr) yymsp[-2].
-						  minor.yy0);
-	  }
-	  break;
-      case 113:		/* multipolygon_textz ::= EWKT_OPEN_BRACKET polygon_textz multipolygon_textz2 EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPolygonPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_multipolygon_xyz ((gaiaPolygonPtr) yymsp[-2].
-						  minor.yy0);
-	  }
-	  break;
-      case 116:		/* multipolygon_textzm ::= EWKT_OPEN_BRACKET polygon_textzm multipolygon_textzm2 EWKT_CLOSE_BRACKET */
-	  {
-	      ((gaiaPolygonPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaPolygonPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_multipolygon_xyzm ((gaiaPolygonPtr) yymsp[-2].
-						   minor.yy0);
-	  }
-	  break;
-      case 123:		/* geocoll_text ::= EWKT_OPEN_BRACKET point geocoll_text2 EWKT_CLOSE_BRACKET */
-      case 124:		/* geocoll_text ::= EWKT_OPEN_BRACKET linestring geocoll_text2 EWKT_CLOSE_BRACKET */
-	  yytestcase (yyruleno == 124);
-      case 125:		/* geocoll_text ::= EWKT_OPEN_BRACKET polygon geocoll_text2 EWKT_CLOSE_BRACKET */
-	  yytestcase (yyruleno == 125);
-	  {
-	      ((gaiaGeomCollPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_geomColl_xy ((gaiaGeomCollPtr) yymsp[-2].minor.
-					     yy0);
-	  }
-	  break;
-      case 127:		/* geocoll_text2 ::= EWKT_COMMA point geocoll_text2 */
-      case 128:		/* geocoll_text2 ::= EWKT_COMMA linestring geocoll_text2 */
-	  yytestcase (yyruleno == 128);
-      case 129:		/* geocoll_text2 ::= EWKT_COMMA polygon geocoll_text2 */
-	  yytestcase (yyruleno == 129);
-      case 134:		/* geocoll_textm2 ::= EWKT_COMMA pointm geocoll_textm2 */
-	  yytestcase (yyruleno == 134);
-      case 135:		/* geocoll_textm2 ::= EWKT_COMMA linestringm geocoll_textm2 */
-	  yytestcase (yyruleno == 135);
-      case 136:		/* geocoll_textm2 ::= EWKT_COMMA polygonm geocoll_textm2 */
-	  yytestcase (yyruleno == 136);
-      case 141:		/* geocoll_textz2 ::= EWKT_COMMA pointz geocoll_textz2 */
-	  yytestcase (yyruleno == 141);
-      case 142:		/* geocoll_textz2 ::= EWKT_COMMA linestringz geocoll_textz2 */
-	  yytestcase (yyruleno == 142);
-      case 143:		/* geocoll_textz2 ::= EWKT_COMMA polygonz geocoll_textz2 */
-	  yytestcase (yyruleno == 143);
-      case 148:		/* geocoll_textzm2 ::= EWKT_COMMA pointzm geocoll_textzm2 */
-	  yytestcase (yyruleno == 148);
-      case 149:		/* geocoll_textzm2 ::= EWKT_COMMA linestringzm geocoll_textzm2 */
-	  yytestcase (yyruleno == 149);
-      case 150:		/* geocoll_textzm2 ::= EWKT_COMMA polygonzm geocoll_textzm2 */
-	  yytestcase (yyruleno == 150);
-	  {
-	      ((gaiaGeomCollPtr) yymsp[-1].minor.yy0)->Next =
-		  (gaiaGeomCollPtr) yymsp[0].minor.yy0;
-	      yygotominor.yy0 = yymsp[-1].minor.yy0;
-	  }
-	  break;
-      case 130:		/* geocoll_textm ::= EWKT_OPEN_BRACKET pointm geocoll_textm2 EWKT_CLOSE_BRACKET */
-      case 131:		/* geocoll_textm ::= EWKT_OPEN_BRACKET linestringm geocoll_textm2 EWKT_CLOSE_BRACKET */
-	  yytestcase (yyruleno == 131);
-      case 132:		/* geocoll_textm ::= EWKT_OPEN_BRACKET polygonm geocoll_textm2 EWKT_CLOSE_BRACKET */
-	  yytestcase (yyruleno == 132);
-	  {
-	      ((gaiaGeomCollPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_geomColl_xym ((gaiaGeomCollPtr) yymsp[-2].minor.
-					      yy0);
-	  }
-	  break;
-      case 137:		/* geocoll_textz ::= EWKT_OPEN_BRACKET pointz geocoll_textz2 EWKT_CLOSE_BRACKET */
-      case 138:		/* geocoll_textz ::= EWKT_OPEN_BRACKET linestringz geocoll_textz2 EWKT_CLOSE_BRACKET */
-	  yytestcase (yyruleno == 138);
-      case 139:		/* geocoll_textz ::= EWKT_OPEN_BRACKET polygonz geocoll_textz2 EWKT_CLOSE_BRACKET */
-	  yytestcase (yyruleno == 139);
-	  {
-	      ((gaiaGeomCollPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_geomColl_xyz ((gaiaGeomCollPtr) yymsp[-2].minor.
-					      yy0);
-	  }
-	  break;
-      case 144:		/* geocoll_textzm ::= EWKT_OPEN_BRACKET pointzm geocoll_textzm2 EWKT_CLOSE_BRACKET */
-      case 145:		/* geocoll_textzm ::= EWKT_OPEN_BRACKET linestringzm geocoll_textzm2 EWKT_CLOSE_BRACKET */
-	  yytestcase (yyruleno == 145);
-      case 146:		/* geocoll_textzm ::= EWKT_OPEN_BRACKET polygonzm geocoll_textzm2 EWKT_CLOSE_BRACKET */
-	  yytestcase (yyruleno == 146);
-	  {
-	      ((gaiaGeomCollPtr) yymsp[-2].minor.yy0)->Next =
-		  (gaiaGeomCollPtr) yymsp[-1].minor.yy0;
-	      yygotominor.yy0 =
-		  (void *) ewkt_geomColl_xyzm ((gaiaGeomCollPtr) yymsp[-2].
-					       minor.yy0);
-	  }
-	  break;
+  switch( yyruleno ){
+  /* Beginning here are the reduction cases.  A typical example
+  ** follows:
+  **   case 0:
+  **  #line <lineno> <grammarfile>
+  **     { ... }           // User supplied code
+  **  #line <lineno> <thisfile>
+  **     break;
+  */
+      case 6: /* geo_text ::= point */
+      case 7: /* geo_text ::= pointz */ yytestcase(yyruleno==7);
+      case 8: /* geo_text ::= pointzm */ yytestcase(yyruleno==8);
+      case 9: /* geo_text ::= linestring */ yytestcase(yyruleno==9);
+      case 10: /* geo_text ::= linestringz */ yytestcase(yyruleno==10);
+      case 11: /* geo_text ::= linestringzm */ yytestcase(yyruleno==11);
+      case 12: /* geo_text ::= polygon */ yytestcase(yyruleno==12);
+      case 13: /* geo_text ::= polygonz */ yytestcase(yyruleno==13);
+      case 14: /* geo_text ::= polygonzm */ yytestcase(yyruleno==14);
+      case 15: /* geo_text ::= multipoint */ yytestcase(yyruleno==15);
+      case 16: /* geo_text ::= multipointz */ yytestcase(yyruleno==16);
+      case 17: /* geo_text ::= multipointzm */ yytestcase(yyruleno==17);
+      case 18: /* geo_text ::= multilinestring */ yytestcase(yyruleno==18);
+      case 19: /* geo_text ::= multilinestringz */ yytestcase(yyruleno==19);
+      case 20: /* geo_text ::= multilinestringzm */ yytestcase(yyruleno==20);
+      case 21: /* geo_text ::= multipolygon */ yytestcase(yyruleno==21);
+      case 22: /* geo_text ::= multipolygonz */ yytestcase(yyruleno==22);
+      case 23: /* geo_text ::= multipolygonzm */ yytestcase(yyruleno==23);
+      case 24: /* geo_text ::= geocoll */ yytestcase(yyruleno==24);
+      case 25: /* geo_text ::= geocollz */ yytestcase(yyruleno==25);
+      case 26: /* geo_text ::= geocollzm */ yytestcase(yyruleno==26);
+      case 27: /* geo_textm ::= pointm */ yytestcase(yyruleno==27);
+      case 28: /* geo_textm ::= linestringm */ yytestcase(yyruleno==28);
+      case 29: /* geo_textm ::= polygonm */ yytestcase(yyruleno==29);
+      case 30: /* geo_textm ::= multipointm */ yytestcase(yyruleno==30);
+      case 31: /* geo_textm ::= multilinestringm */ yytestcase(yyruleno==31);
+      case 32: /* geo_textm ::= multipolygonm */ yytestcase(yyruleno==32);
+      case 33: /* geo_textm ::= geocollm */ yytestcase(yyruleno==33);
+#line 88 "Ewkt.y"
+{ *result = yymsp[0].minor.yy0; }
+#line 1137 "Ewkt.c"
+        break;
+      case 34: /* point ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxy EWKT_CLOSE_BRACKET */
+      case 35: /* pointz ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyz EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==35);
+      case 37: /* pointzm ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyzm EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==37);
+#line 123 "Ewkt.y"
+{ yygotominor.yy0 = ewkt_buildGeomFromPoint((gaiaPointPtr)yymsp[-1].minor.yy0); }
+#line 1144 "Ewkt.c"
+        break;
+      case 36: /* pointm ::= EWKT_POINT_M EWKT_OPEN_BRACKET point_coordxym EWKT_CLOSE_BRACKET */
+#line 127 "Ewkt.y"
+{ yygotominor.yy0 = ewkt_buildGeomFromPoint((gaiaPointPtr)yymsp[-1].minor.yy0);  }
+#line 1149 "Ewkt.c"
+        break;
+      case 38: /* point_coordxy ::= coord coord */
+#line 134 "Ewkt.y"
+{ yygotominor.yy0 = (void *) ewkt_point_xy((double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+#line 1154 "Ewkt.c"
+        break;
+      case 39: /* point_coordxym ::= coord coord coord */
+#line 136 "Ewkt.y"
+{ yygotominor.yy0 = (void *) ewkt_point_xym((double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+#line 1159 "Ewkt.c"
+        break;
+      case 40: /* point_coordxyz ::= coord coord coord */
+#line 138 "Ewkt.y"
+{ yygotominor.yy0 = (void *) ewkt_point_xyz((double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+#line 1164 "Ewkt.c"
+        break;
+      case 41: /* point_coordxyzm ::= coord coord coord coord */
+#line 140 "Ewkt.y"
+{ yygotominor.yy0 = (void *) ewkt_point_xyzm((double *)yymsp[-3].minor.yy0, (double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+#line 1169 "Ewkt.c"
+        break;
+      case 42: /* coord ::= EWKT_NUM */
+      case 79: /* multipoint ::= EWKT_MULTIPOINT multipoint_text */ yytestcase(yyruleno==79);
+      case 80: /* multipointm ::= EWKT_MULTIPOINT_M multipoint_textm */ yytestcase(yyruleno==80);
+      case 81: /* multipointz ::= EWKT_MULTIPOINT multipoint_textz */ yytestcase(yyruleno==81);
+      case 82: /* multipointzm ::= EWKT_MULTIPOINT multipoint_textzm */ yytestcase(yyruleno==82);
+      case 87: /* multilinestring ::= EWKT_MULTILINESTRING multilinestring_text */ yytestcase(yyruleno==87);
+      case 88: /* multilinestringm ::= EWKT_MULTILINESTRING_M multilinestring_textm */ yytestcase(yyruleno==88);
+      case 89: /* multilinestringz ::= EWKT_MULTILINESTRING multilinestring_textz */ yytestcase(yyruleno==89);
+      case 90: /* multilinestringzm ::= EWKT_MULTILINESTRING multilinestring_textzm */ yytestcase(yyruleno==90);
+      case 103: /* multipolygon ::= EWKT_MULTIPOLYGON multipolygon_text */ yytestcase(yyruleno==103);
+      case 104: /* multipolygonm ::= EWKT_MULTIPOLYGON_M multipolygon_textm */ yytestcase(yyruleno==104);
+      case 105: /* multipolygonz ::= EWKT_MULTIPOLYGON multipolygon_textz */ yytestcase(yyruleno==105);
+      case 106: /* multipolygonzm ::= EWKT_MULTIPOLYGON multipolygon_textzm */ yytestcase(yyruleno==106);
+      case 119: /* geocoll ::= EWKT_GEOMETRYCOLLECTION geocoll_text */ yytestcase(yyruleno==119);
+      case 120: /* geocollm ::= EWKT_GEOMETRYCOLLECTION_M geocoll_textm */ yytestcase(yyruleno==120);
+      case 121: /* geocollz ::= EWKT_GEOMETRYCOLLECTION geocoll_textz */ yytestcase(yyruleno==121);
+      case 122: /* geocollzm ::= EWKT_GEOMETRYCOLLECTION geocoll_textzm */ yytestcase(yyruleno==122);
+#line 143 "Ewkt.y"
+{ yygotominor.yy0 = yymsp[0].minor.yy0; }
+#line 1190 "Ewkt.c"
+        break;
+      case 43: /* extra_pointsxy ::= */
+      case 45: /* extra_pointsxym ::= */ yytestcase(yyruleno==45);
+      case 47: /* extra_pointsxyz ::= */ yytestcase(yyruleno==47);
+      case 49: /* extra_pointsxyzm ::= */ yytestcase(yyruleno==49);
+      case 68: /* extra_rings ::= */ yytestcase(yyruleno==68);
+      case 71: /* extra_ringsm ::= */ yytestcase(yyruleno==71);
+      case 74: /* extra_ringsz ::= */ yytestcase(yyruleno==74);
+      case 77: /* extra_ringszm ::= */ yytestcase(yyruleno==77);
+      case 92: /* multilinestring_text2 ::= */ yytestcase(yyruleno==92);
+      case 95: /* multilinestring_textm2 ::= */ yytestcase(yyruleno==95);
+      case 98: /* multilinestring_textz2 ::= */ yytestcase(yyruleno==98);
+      case 101: /* multilinestring_textzm2 ::= */ yytestcase(yyruleno==101);
+      case 108: /* multipolygon_text2 ::= */ yytestcase(yyruleno==108);
+      case 111: /* multipolygon_textm2 ::= */ yytestcase(yyruleno==111);
+      case 114: /* multipolygon_textz2 ::= */ yytestcase(yyruleno==114);
+      case 117: /* multipolygon_textzm2 ::= */ yytestcase(yyruleno==117);
+      case 126: /* geocoll_text2 ::= */ yytestcase(yyruleno==126);
+      case 133: /* geocoll_textm2 ::= */ yytestcase(yyruleno==133);
+      case 140: /* geocoll_textz2 ::= */ yytestcase(yyruleno==140);
+      case 147: /* geocoll_textzm2 ::= */ yytestcase(yyruleno==147);
+#line 148 "Ewkt.y"
+{ yygotominor.yy0 = NULL; }
+#line 1214 "Ewkt.c"
+        break;
+      case 44: /* extra_pointsxy ::= EWKT_COMMA point_coordxy extra_pointsxy */
+      case 46: /* extra_pointsxym ::= EWKT_COMMA point_coordxym extra_pointsxym */ yytestcase(yyruleno==46);
+      case 48: /* extra_pointsxyz ::= EWKT_COMMA point_coordxyz extra_pointsxyz */ yytestcase(yyruleno==48);
+      case 50: /* extra_pointsxyzm ::= EWKT_COMMA point_coordxyzm extra_pointsxyzm */ yytestcase(yyruleno==50);
+#line 150 "Ewkt.y"
+{ ((gaiaPointPtr)yymsp[-1].minor.yy0)->Next = (gaiaPointPtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
+#line 1222 "Ewkt.c"
+        break;
+      case 51: /* linestring ::= EWKT_LINESTRING linestring_text */
+      case 52: /* linestringm ::= EWKT_LINESTRING_M linestring_textm */ yytestcase(yyruleno==52);
+      case 53: /* linestringz ::= EWKT_LINESTRING linestring_textz */ yytestcase(yyruleno==53);
+      case 54: /* linestringzm ::= EWKT_LINESTRING linestring_textzm */ yytestcase(yyruleno==54);
+#line 168 "Ewkt.y"
+{ yygotominor.yy0 = ewkt_buildGeomFromLinestring((gaiaLinestringPtr)yymsp[0].minor.yy0); }
+#line 1230 "Ewkt.c"
+        break;
+      case 55: /* linestring_text ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET */
+#line 179 "Ewkt.y"
+{ 
+	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
+	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
+	   yygotominor.yy0 = (void *) ewkt_linestring_xy((gaiaPointPtr)yymsp[-4].minor.yy0);
+	}
+#line 1239 "Ewkt.c"
+        break;
+      case 56: /* linestring_textm ::= EWKT_OPEN_BRACKET point_coordxym EWKT_COMMA point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET */
+#line 186 "Ewkt.y"
+{ 
+	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
+	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
+	   yygotominor.yy0 = (void *) ewkt_linestring_xym((gaiaPointPtr)yymsp[-4].minor.yy0);
+	}
+#line 1248 "Ewkt.c"
+        break;
+      case 57: /* linestring_textz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET */
+#line 193 "Ewkt.y"
+{ 
+	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
+	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
+	   yygotominor.yy0 = (void *) ewkt_linestring_xyz((gaiaPointPtr)yymsp[-4].minor.yy0);
+	}
+#line 1257 "Ewkt.c"
+        break;
+      case 58: /* linestring_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET */
+#line 200 "Ewkt.y"
+{ 
+	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
+	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
+	   yygotominor.yy0 = (void *) ewkt_linestring_xyzm((gaiaPointPtr)yymsp[-4].minor.yy0);
+	}
+#line 1266 "Ewkt.c"
+        break;
+      case 59: /* polygon ::= EWKT_POLYGON polygon_text */
+      case 60: /* polygonm ::= EWKT_POLYGON_M polygon_textm */ yytestcase(yyruleno==60);
+      case 61: /* polygonz ::= EWKT_POLYGON polygon_textz */ yytestcase(yyruleno==61);
+      case 62: /* polygonzm ::= EWKT_POLYGON polygon_textzm */ yytestcase(yyruleno==62);
+#line 210 "Ewkt.y"
+{ yygotominor.yy0 = ewkt_buildGeomFromPolygon((gaiaPolygonPtr)yymsp[0].minor.yy0); }
+#line 1274 "Ewkt.c"
+        break;
+      case 63: /* polygon_text ::= EWKT_OPEN_BRACKET ring extra_rings EWKT_CLOSE_BRACKET */
+#line 221 "Ewkt.y"
+{ 
+		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
+		yygotominor.yy0 = (void *) ewkt_polygon_xy((gaiaRingPtr)yymsp[-2].minor.yy0);
+	}
+#line 1282 "Ewkt.c"
+        break;
+      case 64: /* polygon_textm ::= EWKT_OPEN_BRACKET ringm extra_ringsm EWKT_CLOSE_BRACKET */
+#line 227 "Ewkt.y"
+{ 
+		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
+		yygotominor.yy0 = (void *) ewkt_polygon_xym((gaiaRingPtr)yymsp[-2].minor.yy0);
+	}
+#line 1290 "Ewkt.c"
+        break;
+      case 65: /* polygon_textz ::= EWKT_OPEN_BRACKET ringz extra_ringsz EWKT_CLOSE_BRACKET */
+#line 233 "Ewkt.y"
+{  
+		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
+		yygotominor.yy0 = (void *) ewkt_polygon_xyz((gaiaRingPtr)yymsp[-2].minor.yy0);
+	}
+#line 1298 "Ewkt.c"
+        break;
+      case 66: /* polygon_textzm ::= EWKT_OPEN_BRACKET ringzm extra_ringszm EWKT_CLOSE_BRACKET */
+#line 239 "Ewkt.y"
+{ 
+		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
+		yygotominor.yy0 = (void *) ewkt_polygon_xyzm((gaiaRingPtr)yymsp[-2].minor.yy0);
+	}
+#line 1306 "Ewkt.c"
+        break;
+      case 67: /* ring ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET */
+#line 247 "Ewkt.y"
+{
+		((gaiaPointPtr)yymsp[-8].minor.yy0)->Next = (gaiaPointPtr)yymsp[-6].minor.yy0; 
+		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
+		((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0; 
+		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
+		yygotominor.yy0 = (void *) ewkt_ring_xy((gaiaPointPtr)yymsp[-8].minor.yy0);
+	}
+#line 1317 "Ewkt.c"
+        break;
+      case 69: /* extra_rings ::= EWKT_COMMA ring extra_rings */
+      case 72: /* extra_ringsm ::= EWKT_COMMA ringm extra_ringsm */ yytestcase(yyruleno==72);
+      case 75: /* extra_ringsz ::= EWKT_COMMA ringz extra_ringsz */ yytestcase(yyruleno==75);
+      case 78: /* extra_ringszm ::= EWKT_COMMA ringzm extra_ringszm */ yytestcase(yyruleno==78);
+#line 258 "Ewkt.y"
+{
+		((gaiaRingPtr)yymsp[-1].minor.yy0)->Next = (gaiaRingPtr)yymsp[0].minor.yy0;
+		yygotominor.yy0 = yymsp[-1].minor.yy0;
+	}
+#line 1328 "Ewkt.c"
+        break;
+      case 70: /* ringm ::= EWKT_OPEN_BRACKET point_coordxym EWKT_COMMA point_coordxym EWKT_COMMA point_coordxym EWKT_COMMA point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET */
+#line 264 "Ewkt.y"
+{
+		((gaiaPointPtr)yymsp[-8].minor.yy0)->Next = (gaiaPointPtr)yymsp[-6].minor.yy0; 
+		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
+		((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0; 
+		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
+		yygotominor.yy0 = (void *) ewkt_ring_xym((gaiaPointPtr)yymsp[-8].minor.yy0);
+	}
+#line 1339 "Ewkt.c"
+        break;
+      case 73: /* ringz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz EWKT_COMMA point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET */
+#line 281 "Ewkt.y"
+{
+		((gaiaPointPtr)yymsp[-8].minor.yy0)->Next = (gaiaPointPtr)yymsp[-6].minor.yy0; 
+		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
+		((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0; 
+		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
+		yygotominor.yy0 = (void *) ewkt_ring_xyz((gaiaPointPtr)yymsp[-8].minor.yy0);
+	}
+#line 1350 "Ewkt.c"
+        break;
+      case 76: /* ringzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm EWKT_COMMA point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET */
+#line 298 "Ewkt.y"
+{
+		((gaiaPointPtr)yymsp[-8].minor.yy0)->Next = (gaiaPointPtr)yymsp[-6].minor.yy0; 
+		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
+		((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0; 
+		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
+		yygotominor.yy0 = (void *) ewkt_ring_xyzm((gaiaPointPtr)yymsp[-8].minor.yy0);
+	}
+#line 1361 "Ewkt.c"
+        break;
+      case 83: /* multipoint_text ::= EWKT_OPEN_BRACKET point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET */
+#line 324 "Ewkt.y"
+{ 
+	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
+	   yygotominor.yy0 = (void *) ewkt_multipoint_xy((gaiaPointPtr)yymsp[-2].minor.yy0);
+	}
+#line 1369 "Ewkt.c"
+        break;
+      case 84: /* multipoint_textm ::= EWKT_OPEN_BRACKET point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET */
+#line 329 "Ewkt.y"
+{ 
+	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
+	   yygotominor.yy0 = (void *) ewkt_multipoint_xym((gaiaPointPtr)yymsp[-2].minor.yy0);
+	}
+#line 1377 "Ewkt.c"
+        break;
+      case 85: /* multipoint_textz ::= EWKT_OPEN_BRACKET point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET */
+#line 334 "Ewkt.y"
+{ 
+	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
+	   yygotominor.yy0 = (void *) ewkt_multipoint_xyz((gaiaPointPtr)yymsp[-2].minor.yy0);
+	}
+#line 1385 "Ewkt.c"
+        break;
+      case 86: /* multipoint_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET */
+#line 339 "Ewkt.y"
+{ 
+	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
+	   yygotominor.yy0 = (void *) ewkt_multipoint_xyzm((gaiaPointPtr)yymsp[-2].minor.yy0);
+	}
+#line 1393 "Ewkt.c"
+        break;
+      case 91: /* multilinestring_text ::= EWKT_OPEN_BRACKET linestring_text multilinestring_text2 EWKT_CLOSE_BRACKET */
+#line 355 "Ewkt.y"
+{ 
+	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
+	   yygotominor.yy0 = (void *) ewkt_multilinestring_xy((gaiaLinestringPtr)yymsp[-2].minor.yy0);
+	}
+#line 1401 "Ewkt.c"
+        break;
+      case 93: /* multilinestring_text2 ::= EWKT_COMMA linestring_text multilinestring_text2 */
+      case 96: /* multilinestring_textm2 ::= EWKT_COMMA linestring_textm multilinestring_textm2 */ yytestcase(yyruleno==96);
+      case 99: /* multilinestring_textz2 ::= EWKT_COMMA linestring_textz multilinestring_textz2 */ yytestcase(yyruleno==99);
+      case 102: /* multilinestring_textzm2 ::= EWKT_COMMA linestring_textzm multilinestring_textzm2 */ yytestcase(yyruleno==102);
+#line 363 "Ewkt.y"
+{ ((gaiaLinestringPtr)yymsp[-1].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
+#line 1409 "Ewkt.c"
+        break;
+      case 94: /* multilinestring_textm ::= EWKT_OPEN_BRACKET linestring_textm multilinestring_textm2 EWKT_CLOSE_BRACKET */
+#line 366 "Ewkt.y"
+{ 
+	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
+	   yygotominor.yy0 = (void *) ewkt_multilinestring_xym((gaiaLinestringPtr)yymsp[-2].minor.yy0);
+	}
+#line 1417 "Ewkt.c"
+        break;
+      case 97: /* multilinestring_textz ::= EWKT_OPEN_BRACKET linestring_textz multilinestring_textz2 EWKT_CLOSE_BRACKET */
+#line 376 "Ewkt.y"
+{ 
+	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
+	   yygotominor.yy0 = (void *) ewkt_multilinestring_xyz((gaiaLinestringPtr)yymsp[-2].minor.yy0);
+	}
+#line 1425 "Ewkt.c"
+        break;
+      case 100: /* multilinestring_textzm ::= EWKT_OPEN_BRACKET linestring_textzm multilinestring_textzm2 EWKT_CLOSE_BRACKET */
+#line 386 "Ewkt.y"
+{ 
+	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
+	   yygotominor.yy0 = (void *) ewkt_multilinestring_xyzm((gaiaLinestringPtr)yymsp[-2].minor.yy0);
+	}
+#line 1433 "Ewkt.c"
+        break;
+      case 107: /* multipolygon_text ::= EWKT_OPEN_BRACKET polygon_text multipolygon_text2 EWKT_CLOSE_BRACKET */
+#line 406 "Ewkt.y"
+{ 
+	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
+	   yygotominor.yy0 = (void *) ewkt_multipolygon_xy((gaiaPolygonPtr)yymsp[-2].minor.yy0);
+	}
+#line 1441 "Ewkt.c"
+        break;
+      case 109: /* multipolygon_text2 ::= EWKT_COMMA polygon_text multipolygon_text2 */
+      case 112: /* multipolygon_textm2 ::= EWKT_COMMA polygon_textm multipolygon_textm2 */ yytestcase(yyruleno==112);
+      case 115: /* multipolygon_textz2 ::= EWKT_COMMA polygon_textz multipolygon_textz2 */ yytestcase(yyruleno==115);
+      case 118: /* multipolygon_textzm2 ::= EWKT_COMMA polygon_textzm multipolygon_textzm2 */ yytestcase(yyruleno==118);
+#line 414 "Ewkt.y"
+{ ((gaiaPolygonPtr)yymsp[-1].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
+#line 1449 "Ewkt.c"
+        break;
+      case 110: /* multipolygon_textm ::= EWKT_OPEN_BRACKET polygon_textm multipolygon_textm2 EWKT_CLOSE_BRACKET */
+#line 417 "Ewkt.y"
+{ 
+	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
+	   yygotominor.yy0 = (void *) ewkt_multipolygon_xym((gaiaPolygonPtr)yymsp[-2].minor.yy0);
+	}
+#line 1457 "Ewkt.c"
+        break;
+      case 113: /* multipolygon_textz ::= EWKT_OPEN_BRACKET polygon_textz multipolygon_textz2 EWKT_CLOSE_BRACKET */
+#line 427 "Ewkt.y"
+{ 
+	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
+	   yygotominor.yy0 = (void *) ewkt_multipolygon_xyz((gaiaPolygonPtr)yymsp[-2].minor.yy0);
+	}
+#line 1465 "Ewkt.c"
+        break;
+      case 116: /* multipolygon_textzm ::= EWKT_OPEN_BRACKET polygon_textzm multipolygon_textzm2 EWKT_CLOSE_BRACKET */
+#line 437 "Ewkt.y"
+{ 
+	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
+	   yygotominor.yy0 = (void *) ewkt_multipolygon_xyzm((gaiaPolygonPtr)yymsp[-2].minor.yy0);
+	}
+#line 1473 "Ewkt.c"
+        break;
+      case 123: /* geocoll_text ::= EWKT_OPEN_BRACKET point geocoll_text2 EWKT_CLOSE_BRACKET */
+      case 124: /* geocoll_text ::= EWKT_OPEN_BRACKET linestring geocoll_text2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==124);
+      case 125: /* geocoll_text ::= EWKT_OPEN_BRACKET polygon geocoll_text2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==125);
+#line 456 "Ewkt.y"
+{ 
+		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
+		yygotominor.yy0 = (void *) ewkt_geomColl_xy((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
+	}
+#line 1483 "Ewkt.c"
+        break;
+      case 127: /* geocoll_text2 ::= EWKT_COMMA point geocoll_text2 */
+      case 128: /* geocoll_text2 ::= EWKT_COMMA linestring geocoll_text2 */ yytestcase(yyruleno==128);
+      case 129: /* geocoll_text2 ::= EWKT_COMMA polygon geocoll_text2 */ yytestcase(yyruleno==129);
+      case 134: /* geocoll_textm2 ::= EWKT_COMMA pointm geocoll_textm2 */ yytestcase(yyruleno==134);
+      case 135: /* geocoll_textm2 ::= EWKT_COMMA linestringm geocoll_textm2 */ yytestcase(yyruleno==135);
+      case 136: /* geocoll_textm2 ::= EWKT_COMMA polygonm geocoll_textm2 */ yytestcase(yyruleno==136);
+      case 141: /* geocoll_textz2 ::= EWKT_COMMA pointz geocoll_textz2 */ yytestcase(yyruleno==141);
+      case 142: /* geocoll_textz2 ::= EWKT_COMMA linestringz geocoll_textz2 */ yytestcase(yyruleno==142);
+      case 143: /* geocoll_textz2 ::= EWKT_COMMA polygonz geocoll_textz2 */ yytestcase(yyruleno==143);
+      case 148: /* geocoll_textzm2 ::= EWKT_COMMA pointzm geocoll_textzm2 */ yytestcase(yyruleno==148);
+      case 149: /* geocoll_textzm2 ::= EWKT_COMMA linestringzm geocoll_textzm2 */ yytestcase(yyruleno==149);
+      case 150: /* geocoll_textzm2 ::= EWKT_COMMA polygonzm geocoll_textzm2 */ yytestcase(yyruleno==150);
+#line 476 "Ewkt.y"
+{
+		((gaiaGeomCollPtr)yymsp[-1].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[0].minor.yy0;
+		yygotominor.yy0 = yymsp[-1].minor.yy0;
+	}
+#line 1502 "Ewkt.c"
+        break;
+      case 130: /* geocoll_textm ::= EWKT_OPEN_BRACKET pointm geocoll_textm2 EWKT_CLOSE_BRACKET */
+      case 131: /* geocoll_textm ::= EWKT_OPEN_BRACKET linestringm geocoll_textm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==131);
+      case 132: /* geocoll_textm ::= EWKT_OPEN_BRACKET polygonm geocoll_textm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==132);
+#line 495 "Ewkt.y"
+{ 
+		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
+		yygotominor.yy0 = (void *) ewkt_geomColl_xym((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
+	}
+#line 1512 "Ewkt.c"
+        break;
+      case 137: /* geocoll_textz ::= EWKT_OPEN_BRACKET pointz geocoll_textz2 EWKT_CLOSE_BRACKET */
+      case 138: /* geocoll_textz ::= EWKT_OPEN_BRACKET linestringz geocoll_textz2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==138);
+      case 139: /* geocoll_textz ::= EWKT_OPEN_BRACKET polygonz geocoll_textz2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==139);
+#line 533 "Ewkt.y"
+{ 
+		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
+		yygotominor.yy0 = (void *) ewkt_geomColl_xyz((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
+	}
+#line 1522 "Ewkt.c"
+        break;
+      case 144: /* geocoll_textzm ::= EWKT_OPEN_BRACKET pointzm geocoll_textzm2 EWKT_CLOSE_BRACKET */
+      case 145: /* geocoll_textzm ::= EWKT_OPEN_BRACKET linestringzm geocoll_textzm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==145);
+      case 146: /* geocoll_textzm ::= EWKT_OPEN_BRACKET polygonzm geocoll_textzm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==146);
+#line 571 "Ewkt.y"
+{ 
+		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
+		yygotominor.yy0 = (void *) ewkt_geomColl_xyzm((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
+	}
+#line 1532 "Ewkt.c"
+        break;
       default:
-	  /* (0) main ::= in */ yytestcase (yyruleno == 0);
-	  /* (1) in ::= */ yytestcase (yyruleno == 1);
-	  /* (2) in ::= in state EWKT_NEWLINE */ yytestcase (yyruleno == 2);
-	  /* (3) state ::= program */ yytestcase (yyruleno == 3);
-	  /* (4) program ::= geo_text */ yytestcase (yyruleno == 4);
-	  /* (5) program ::= geo_textm */ yytestcase (yyruleno == 5);
-	  break;
-      };
-    yygoto = ewkt_yyRuleInfo[yyruleno].lhs;
-    yysize = ewkt_yyRuleInfo[yyruleno].nrhs;
-    yypParser->yyidx -= yysize;
-    yyact =
-	ewkt_yy_find_reduce_action (yymsp[-yysize].stateno,
-				    (YYCODETYPE) yygoto);
-fprintf(stderr, "yyact=%d [%d]\n", yyact, YYNSTATE);fflush(stderr);
-    if (yyact < YYNSTATE)
-      {
+      /* (0) main ::= in */ yytestcase(yyruleno==0);
+      /* (1) in ::= */ yytestcase(yyruleno==1);
+      /* (2) in ::= in state EWKT_NEWLINE */ yytestcase(yyruleno==2);
+      /* (3) state ::= program */ yytestcase(yyruleno==3);
+      /* (4) program ::= geo_text */ yytestcase(yyruleno==4);
+      /* (5) program ::= geo_textm */ yytestcase(yyruleno==5);
+        break;
+  };
+  yygoto = yyRuleInfo[yyruleno].lhs;
+  yysize = yyRuleInfo[yyruleno].nrhs;
+  yypParser->yyidx -= yysize;
+  yyact = yy_find_reduce_action(yymsp[-yysize].stateno,(YYCODETYPE)yygoto);
+  if( yyact < YYNSTATE ){
 #ifdef NDEBUG
-	  /* If we are not debugging and the reduce action popped at least
-	   ** one element off the stack, then we can push the new element back
-	   ** onto the stack here, and skip the stack overflow test in yy_shift().
-	   ** That gives a significant speed improvement. */
-	  if (yysize)
-	    {
-		yypParser->yyidx++;
-		yymsp -= yysize - 1;
-		yymsp->stateno = (YYACTIONTYPE) yyact;
-		yymsp->major = (YYCODETYPE) yygoto;
-		yymsp->minor = yygotominor;
-	    }
-	  else
+    /* If we are not debugging and the reduce action popped at least
+    ** one element off the stack, then we can push the new element back
+    ** onto the stack here, and skip the stack overflow test in yy_shift().
+    ** That gives a significant speed improvement. */
+    if( yysize ){
+      yypParser->yyidx++;
+      yymsp -= yysize-1;
+      yymsp->stateno = (YYACTIONTYPE)yyact;
+      yymsp->major = (YYCODETYPE)yygoto;
+      yymsp->minor = yygotominor;
+    }else
 #endif
-	    {
-fprintf(stderr, "\tyy_shift\n");fflush(stderr);
-		ewkt_yy_shift (yypParser, yyact, yygoto, &yygotominor);
-	    }
-      }
-    else
-      {
-	  assert (yyact == YYNSTATE + YYNRULE + 1);
-	  yy_accept (yypParser);
-      }
+    {
+      yy_shift(yypParser,yyact,yygoto,&yygotominor);
+    }
+  }else{
+    assert( yyact == YYNSTATE + YYNRULE + 1 );
+    yy_accept(yypParser);
+  }
 }
 
 /*
 ** The following code executes when the parse fails
 */
 #ifndef YYNOERRORRECOVERY
-static void
-ewkt_yy_parse_failed (ewkt_yyParser * yypParser	/* The parser */
-    )
-{
-    ParseARG_FETCH;
+static void yy_parse_failed(
+  yyParser *yypParser           /* The parser */
+){
+  ParseARG_FETCH;
 #ifndef NDEBUG
-    if (yyTraceFILE)
-      {
-	  fprintf (yyTraceFILE, "%sFail!\n", yyTracePrompt);
-      }
+  if( yyTraceFILE ){
+    fprintf(yyTraceFILE,"%sFail!\n",yyTracePrompt);
+  }
 #endif
-    while (yypParser->yyidx >= 0)
-	ewkt_yy_pop_parser_stack (yypParser);
-    /* Here code is inserted which will be executed whenever the
-     ** parser fails */
-    ParseARG_STORE;		/* Suppress warning about unused %extra_argument variable */
+  while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
+  /* Here code is inserted which will be executed whenever the
+  ** parser fails */
+  ParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
 #endif /* YYNOERRORRECOVERY */
 
 /*
 ** The following code executes when a syntax error first occurs.
 */
-static void
-ewkt_yy_syntax_error (ewkt_yyParser * yypParser,	/* The parser */
-		      int yymajor,	/* The major type of the error token */
-		      EWKT_YYMINORTYPE yyminor	/* The minor type of the error token */
-    )
-{
-    ParseARG_FETCH;
+static void yy_syntax_error(
+  yyParser *yypParser,           /* The parser */
+  int yymajor,                   /* The major type of the error token */
+  YYMINORTYPE yyminor            /* The minor type of the error token */
+){
+  ParseARG_FETCH;
 #define TOKEN (yyminor.yy0)
+#line 62 "Ewkt.y"
 
 /* 
 ** when the LEMON parser encounters an error
 ** then this global variable is set 
 */
-    ewkt_parse_error = 1;
-    *result = NULL;
-    ParseARG_STORE;		/* Suppress warning about unused %extra_argument variable */
+	ewkt_parse_error = 1;
+	*result = NULL;
+#line 1608 "Ewkt.c"
+  ParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
 
 /*
 ** The following is executed when the parser accepts
 */
-static void
-yy_accept (ewkt_yyParser * yypParser	/* The parser */
-    )
-{
-    ParseARG_FETCH;
+static void yy_accept(
+  yyParser *yypParser           /* The parser */
+){
+  ParseARG_FETCH;
 #ifndef NDEBUG
-    if (yyTraceFILE)
-      {
-	  fprintf (yyTraceFILE, "%sAccept!\n", yyTracePrompt);
-      }
+  if( yyTraceFILE ){
+    fprintf(yyTraceFILE,"%sAccept!\n",yyTracePrompt);
+  }
 #endif
-    while (yypParser->yyidx >= 0)
-	ewkt_yy_pop_parser_stack (yypParser);
-    /* Here code is inserted which will be executed whenever the
-     ** parser accepts */
-    ParseARG_STORE;		/* Suppress warning about unused %extra_argument variable */
+  while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
+  /* Here code is inserted which will be executed whenever the
+  ** parser accepts */
+  ParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
 
 /* The main parser program.
@@ -3637,188 +3215,155 @@ yy_accept (ewkt_yyParser * yypParser	/* The parser */
 ** Outputs:
 ** None.
 */
-void
-ewktParse (void *yyp,		/* The parser */
-	   int yymajor,		/* The major token code number */
-	   ParseTOKENTYPE yyminor	/* The value for the token */
-	   ParseARG_PDECL	/* Optional %extra_argument parameter */
-    )
-{
-    EWKT_YYMINORTYPE yyminorunion;
-    int yyact;			/* The parser action. */
-    int yyendofinput;		/* True if we are at the end of input */
+void Parse(
+  void *yyp,                   /* The parser */
+  int yymajor,                 /* The major token code number */
+  ParseTOKENTYPE yyminor       /* The value for the token */
+  ParseARG_PDECL               /* Optional %extra_argument parameter */
+){
+  YYMINORTYPE yyminorunion;
+  int yyact;            /* The parser action. */
+  int yyendofinput;     /* True if we are at the end of input */
 #ifdef YYERRORSYMBOL
-    int yyerrorhit = 0;		/* True if yymajor has invoked an error */
+  int yyerrorhit = 0;   /* True if yymajor has invoked an error */
 #endif
-    ewkt_yyParser *yypParser;	/* The parser */
+  yyParser *yypParser;  /* The parser */
 
-    /* (re)initialize the parser, if necessary */
-    yypParser = (ewkt_yyParser *) yyp;
-    if (yypParser->yyidx < 0)
-      {
+  /* (re)initialize the parser, if necessary */
+  yypParser = (yyParser*)yyp;
+  if( yypParser->yyidx<0 ){
 #if YYSTACKDEPTH<=0
-	  if (yypParser->yystksz <= 0)
-	    {
-		/*memset(&yyminorunion, 0, sizeof(yyminorunion)); */
-		yyminorunion = ewkt_yyzerominor;
-		vanuatu_yyStackOverflow (yypParser, &yyminorunion);
-		return;
-	    }
+    if( yypParser->yystksz <=0 ){
+      /*memset(&yyminorunion, 0, sizeof(yyminorunion));*/
+      yyminorunion = yyzerominor;
+      yyStackOverflow(yypParser, &yyminorunion);
+      return;
+    }
 #endif
-	  yypParser->yyidx = 0;
-	  yypParser->yyerrcnt = -1;
-	  yypParser->yystack[0].stateno = 0;
-	  yypParser->yystack[0].major = 0;
-      }
-    yyminorunion.yy0 = yyminor;
-    yyendofinput = (yymajor == 0);
-    ParseARG_STORE;
+    yypParser->yyidx = 0;
+    yypParser->yyerrcnt = -1;
+    yypParser->yystack[0].stateno = 0;
+    yypParser->yystack[0].major = 0;
+  }
+  yyminorunion.yy0 = yyminor;
+  yyendofinput = (yymajor==0);
+  ParseARG_STORE;
 
 #ifndef NDEBUG
-    if (yyTraceFILE)
-      {
-	  fprintf (yyTraceFILE, "%sInput %s\n", yyTracePrompt,
-		   yyTokenName[yymajor]);
-      }
+  if( yyTraceFILE ){
+    fprintf(yyTraceFILE,"%sInput %s\n",yyTracePrompt,yyTokenName[yymajor]);
+  }
 #endif
 
-    do
-      {
-	  yyact = ewkt_yy_find_shift_action (yypParser, (YYCODETYPE) yymajor);
-fprintf(stderr, "LOOP %d [%d/%d]\n", yyact, YYNSTATE, YYNRULE);fflush(stderr);
-	  if (yyact < YYNSTATE)
-	    {
-		assert (!yyendofinput);	/* Impossible to shift the $ token */
-		ewkt_yy_shift (yypParser, yyact, yymajor, &yyminorunion);
-		yypParser->yyerrcnt--;
-		yymajor = YYNOCODE;
-	    }
-	  else if (yyact < YYNSTATE + YYNRULE)
-	    {
-fprintf(stderr, "\treduce\n");fflush(stderr);
-		ewkt_yy_reduce (yypParser, yyact - YYNSTATE);
-	    }
-	  else
-	    {
-		assert (yyact == YY_ERROR_ACTION);
+  do{
+    yyact = yy_find_shift_action(yypParser,(YYCODETYPE)yymajor);
+    if( yyact<YYNSTATE ){
+      assert( !yyendofinput );  /* Impossible to shift the $ token */
+      yy_shift(yypParser,yyact,yymajor,&yyminorunion);
+      yypParser->yyerrcnt--;
+      yymajor = YYNOCODE;
+    }else if( yyact < YYNSTATE + YYNRULE ){
+      yy_reduce(yypParser,yyact-YYNSTATE);
+    }else{
+      assert( yyact == YY_ERROR_ACTION );
 #ifdef YYERRORSYMBOL
-		int yymx;
+      int yymx;
 #endif
 #ifndef NDEBUG
-		if (yyTraceFILE)
-		  {
-		      fprintf (yyTraceFILE, "%sSyntax Error!\n", yyTracePrompt);
-		  }
+      if( yyTraceFILE ){
+        fprintf(yyTraceFILE,"%sSyntax Error!\n",yyTracePrompt);
+      }
 #endif
 #ifdef YYERRORSYMBOL
-		/* A syntax error has occurred.
-		 ** The response to an error depends upon whether or not the
-		 ** grammar defines an error token "ERROR".  
-		 **
-		 ** This is what we do if the grammar does define ERROR:
-		 **
-		 **  * Call the %syntax_error function.
-		 **
-		 **  * Begin popping the stack until we enter a state where
-		 **    it is legal to shift the error symbol, then shift
-		 **    the error symbol.
-		 **
-		 **  * Set the error count to three.
-		 **
-		 **  * Begin accepting and shifting new tokens.  No new error
-		 **    processing will occur until three tokens have been
-		 **    shifted successfully.
-		 **
-		 */
-		if (yypParser->yyerrcnt < 0)
-		  {
-		      ewkt_yy_syntax_error (yypParser, yymajor, yyminorunion);
-		  }
-		yymx = yypParser->yystack[yypParser->yyidx].major;
-		if (yymx == YYERRORSYMBOL || yyerrorhit)
-		  {
+      /* A syntax error has occurred.
+      ** The response to an error depends upon whether or not the
+      ** grammar defines an error token "ERROR".  
+      **
+      ** This is what we do if the grammar does define ERROR:
+      **
+      **  * Call the %syntax_error function.
+      **
+      **  * Begin popping the stack until we enter a state where
+      **    it is legal to shift the error symbol, then shift
+      **    the error symbol.
+      **
+      **  * Set the error count to three.
+      **
+      **  * Begin accepting and shifting new tokens.  No new error
+      **    processing will occur until three tokens have been
+      **    shifted successfully.
+      **
+      */
+      if( yypParser->yyerrcnt<0 ){
+        yy_syntax_error(yypParser,yymajor,yyminorunion);
+      }
+      yymx = yypParser->yystack[yypParser->yyidx].major;
+      if( yymx==YYERRORSYMBOL || yyerrorhit ){
 #ifndef NDEBUG
-		      if (yyTraceFILE)
-			{
-			    fprintf (yyTraceFILE, "%sDiscard input token %s\n",
-				     yyTracePrompt, yyTokenName[yymajor]);
-			}
+        if( yyTraceFILE ){
+          fprintf(yyTraceFILE,"%sDiscard input token %s\n",
+             yyTracePrompt,yyTokenName[yymajor]);
+        }
 #endif
-		      ewkt_yy_destructor (yypParser, (YYCODETYPE) yymajor,
-					  &yyminorunion);
-		      yymajor = YYNOCODE;
-		  }
-		else
-		  {
-		      while (yypParser->yyidx >= 0 &&
-			     yymx != YYERRORSYMBOL &&
-			     (yyact =
-			      ewkt_yy_find_reduce_action (yypParser->
-							  yystack[yypParser->
-								  yyidx].
-							  stateno,
-							  YYERRORSYMBOL)) >=
-			     YYNSTATE)
-			{
-			    ewkt_yy_pop_parser_stack (yypParser);
-			}
-		      if (yypParser->yyidx < 0 || yymajor == 0)
-			{
-			    ewkt_yy_destructor (yypParser, (YYCODETYPE) yymajor,
-						&yyminorunion);
-			    ewkt_yy_parse_failed (yypParser);
-			    yymajor = YYNOCODE;
-			}
-		      else if (yymx != YYERRORSYMBOL)
-			{
-			    EWKT_YYMINORTYPE u2;
-			    u2.YYERRSYMDT = 0;
-			    ewkt_yy_shift (yypParser, yyact, YYERRORSYMBOL,
-					   &u2);
-			}
-		  }
-		yypParser->yyerrcnt = 3;
-		yyerrorhit = 1;
+        yy_destructor(yypParser, (YYCODETYPE)yymajor,&yyminorunion);
+        yymajor = YYNOCODE;
+      }else{
+         while(
+          yypParser->yyidx >= 0 &&
+          yymx != YYERRORSYMBOL &&
+          (yyact = yy_find_reduce_action(
+                        yypParser->yystack[yypParser->yyidx].stateno,
+                        YYERRORSYMBOL)) >= YYNSTATE
+        ){
+          yy_pop_parser_stack(yypParser);
+        }
+        if( yypParser->yyidx < 0 || yymajor==0 ){
+          yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
+          yy_parse_failed(yypParser);
+          yymajor = YYNOCODE;
+        }else if( yymx!=YYERRORSYMBOL ){
+          YYMINORTYPE u2;
+          u2.YYERRSYMDT = 0;
+          yy_shift(yypParser,yyact,YYERRORSYMBOL,&u2);
+        }
+      }
+      yypParser->yyerrcnt = 3;
+      yyerrorhit = 1;
 #elif defined(YYNOERRORRECOVERY)
-		/* If the YYNOERRORRECOVERY macro is defined, then do not attempt to
-		 ** do any kind of error recovery.  Instead, simply invoke the syntax
-		 ** error routine and continue going as if nothing had happened.
-		 **
-		 ** Applications can set this macro (for example inside %include) if
-		 ** they intend to abandon the parse upon the first syntax error seen.
-		 */
-		ewkt_yy_syntax_error (yypParser, yymajor, yyminorunion);
-		ewkt_yy_destructor (yypParser, (YYCODETYPE) yymajor,
-				    &yyminorunion);
-		yymajor = YYNOCODE;
-
-#else /* YYERRORSYMBOL is not defined */
-		/* This is what we do if the grammar does not define ERROR:
-		 **
-		 **  * Report an error message, and throw away the input token.
-		 **
-		 **  * If the input token is $, then fail the parse.
-		 **
-		 ** As before, subsequent error messages are suppressed until
-		 ** three input tokens have been successfully shifted.
-		 */
-		if (yypParser->yyerrcnt <= 0)
-		  {
-		      ewkt_yy_syntax_error (yypParser, yymajor, yyminorunion);
-		  }
-		yypParser->yyerrcnt = 3;
-		ewkt_yy_destructor (yypParser, (YYCODETYPE) yymajor,
-				    &yyminorunion);
-		if (yyendofinput)
-		  {
-		      ewkt_yy_parse_failed (yypParser);
-		  }
-		yymajor = YYNOCODE;
-#endif
-	    }
+      /* If the YYNOERRORRECOVERY macro is defined, then do not attempt to
+      ** do any kind of error recovery.  Instead, simply invoke the syntax
+      ** error routine and continue going as if nothing had happened.
+      **
+      ** Applications can set this macro (for example inside %include) if
+      ** they intend to abandon the parse upon the first syntax error seen.
+      */
+      yy_syntax_error(yypParser,yymajor,yyminorunion);
+      yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
+      yymajor = YYNOCODE;
+      
+#else  /* YYERRORSYMBOL is not defined */
+      /* This is what we do if the grammar does not define ERROR:
+      **
+      **  * Report an error message, and throw away the input token.
+      **
+      **  * If the input token is $, then fail the parse.
+      **
+      ** As before, subsequent error messages are suppressed until
+      ** three input tokens have been successfully shifted.
+      */
+      if( yypParser->yyerrcnt<=0 ){
+        yy_syntax_error(yypParser,yymajor,yyminorunion);
       }
-    while (yymajor != YYNOCODE && yypParser->yyidx >= 0);
-    return;
+      yypParser->yyerrcnt = 3;
+      yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
+      if( yyendofinput ){
+        yy_parse_failed(yypParser);
+      }
+      yymajor = YYNOCODE;
+#endif
+    }
+  }while( yymajor!=YYNOCODE && yypParser->yyidx>=0 );
+  return;
 }
 
 
@@ -3847,18 +3392,7 @@ fprintf(stderr, "\treduce\n");fflush(stderr);
 ** this macro resolves the issue
 */
 #undef yy_accept
-
-
-
-
-
-
-
-
-
-
-
-
+#define yy_accept	yy_ewkt_flex_accept
 
 
 
@@ -3866,6 +3400,8 @@ fprintf(stderr, "\treduce\n");fflush(stderr);
 /*
  EWKT_FLEX_START - FLEX generated code starts here 
 */
+
+#line 3 "lex.Ewkt.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -3935,7 +3471,7 @@ typedef uint32_t flex_uint32_t;
 typedef signed char flex_int8_t;
 typedef short int flex_int16_t;
 typedef int flex_int32_t;
-typedef unsigned char flex_uint8_t;
+typedef unsigned char flex_uint8_t; 
 typedef unsigned short int flex_uint16_t;
 typedef unsigned int flex_uint32_t;
 
@@ -3977,15 +3513,15 @@ typedef unsigned int flex_uint32_t;
 /* The "const" storage-class-modifier is valid. */
 #define YY_USE_CONST
 
-#else /* ! __cplusplus */
+#else	/* ! __cplusplus */
 
 /* C99 requires __STDC__ to be defined as 1. */
 #if defined (__STDC__)
 
 #define YY_USE_CONST
 
-#endif /* defined (__STDC__) */
-#endif /* ! __cplusplus */
+#endif	/* defined (__STDC__) */
+#endif	/* ! __cplusplus */
 
 #ifdef YY_USE_CONST
 #define yyconst const
@@ -4007,13 +3543,13 @@ typedef unsigned int flex_uint32_t;
  * but we do it the disgusting crufty way forced on us by the ()-less
  * definition of BEGIN.
  */
-#define BEGIN (ewkt_yy_start) = 1 + 2 *
+#define BEGIN (yy_start) = 1 + 2 *
 
 /* Translate the current start state into a value that can be later handed
  * to BEGIN to return to the state.  The YYSTATE alias is for lex
  * compatibility.
  */
-#define YY_START (((ewkt_yy_start) - 1) / 2)
+#define YY_START (((yy_start) - 1) / 2)
 #define YYSTATE YY_START
 
 /* Action number for EOF rule of a given start state. */
@@ -4039,7 +3575,7 @@ typedef unsigned int flex_uint32_t;
 
 /* The state buf must be large enough to hold one state per character in the main buffer.
  */
-#define YY_STATE_BUF_SIZE   ((YY_BUF_SIZE + 2) * sizeof(ewkt_yy_state_type))
+#define YY_STATE_BUF_SIZE   ((YY_BUF_SIZE + 2) * sizeof(yy_state_type))
 
 #ifndef YY_TYPEDEF_YY_BUFFER_STATE
 #define YY_TYPEDEF_YY_BUFFER_STATE
@@ -4054,8 +3590,8 @@ extern FILE *Ewktin, *Ewktout;
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
 
-#define YY_LESS_LINENO(n)
-
+    #define YY_LESS_LINENO(n)
+    
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
 	do \
@@ -4065,12 +3601,12 @@ extern FILE *Ewktin, *Ewktout;
         YY_LESS_LINENO(yyless_macro_arg);\
 		*yy_cp = (yy_hold_char); \
 		YY_RESTORE_YY_MORE_OFFSET \
-		(ewkt_yy_c_buf_p) = yy_cp = yy_bp + yyless_macro_arg - YY_MORE_ADJ; \
+		(yy_c_buf_p) = yy_cp = yy_bp + yyless_macro_arg - YY_MORE_ADJ; \
 		YY_DO_BEFORE_ACTION; /* set up Ewkttext again */ \
 		} \
 	while ( 0 )
 
-#define unput(c) ewkt_yyunput( c, (yytext_ptr)  )
+#define unput(c) yyunput( c, (yytext_ptr)  )
 
 #ifndef YY_TYPEDEF_YY_SIZE_T
 #define YY_TYPEDEF_YY_SIZE_T
@@ -4080,72 +3616,72 @@ typedef size_t yy_size_t;
 #ifndef YY_STRUCT_YY_BUFFER_STATE
 #define YY_STRUCT_YY_BUFFER_STATE
 struct yy_buffer_state
-{
-    FILE *yy_input_file;
+	{
+	FILE *yy_input_file;
 
-    char *yy_ch_buf;		/* input buffer */
-    char *yy_buf_pos;		/* current position in input buffer */
+	char *yy_ch_buf;		/* input buffer */
+	char *yy_buf_pos;		/* current position in input buffer */
 
-    /* Size of input buffer in bytes, not including room for EOB
-     * characters.
-     */
-    yy_size_t yy_buf_size;
+	/* Size of input buffer in bytes, not including room for EOB
+	 * characters.
+	 */
+	yy_size_t yy_buf_size;
 
-    /* Number of characters read into yy_ch_buf, not including EOB
-     * characters.
-     */
-    int yy_n_chars;
+	/* Number of characters read into yy_ch_buf, not including EOB
+	 * characters.
+	 */
+	int yy_n_chars;
 
-    /* Whether we "own" the buffer - i.e., we know we created it,
-     * and can realloc() it to grow it, and should free() it to
-     * delete it.
-     */
-    int yy_is_our_buffer;
+	/* Whether we "own" the buffer - i.e., we know we created it,
+	 * and can realloc() it to grow it, and should free() it to
+	 * delete it.
+	 */
+	int yy_is_our_buffer;
 
-    /* Whether this is an "interactive" input source; if so, and
-     * if we're using stdio for input, then we want to use getc()
-     * instead of fread(), to make sure we stop fetching input after
-     * each newline.
-     */
-    int yy_is_interactive;
+	/* Whether this is an "interactive" input source; if so, and
+	 * if we're using stdio for input, then we want to use getc()
+	 * instead of fread(), to make sure we stop fetching input after
+	 * each newline.
+	 */
+	int yy_is_interactive;
 
-    /* Whether we're considered to be at the beginning of a line.
-     * If so, '^' rules will be active on the next match, otherwise
-     * not.
-     */
-    int yy_at_bol;
+	/* Whether we're considered to be at the beginning of a line.
+	 * If so, '^' rules will be active on the next match, otherwise
+	 * not.
+	 */
+	int yy_at_bol;
 
     int yy_bs_lineno; /**< The line count. */
     int yy_bs_column; /**< The column count. */
+    
+	/* Whether to try to fill the input buffer when we reach the
+	 * end of it.
+	 */
+	int yy_fill_buffer;
 
-    /* Whether to try to fill the input buffer when we reach the
-     * end of it.
-     */
-    int yy_fill_buffer;
-
-    int yy_buffer_status;
+	int yy_buffer_status;
 
 #define YY_BUFFER_NEW 0
 #define YY_BUFFER_NORMAL 1
-    /* When an EOF's been seen but there's still some text to process
-     * then we mark the buffer as YY_EOF_PENDING, to indicate that we
-     * shouldn't try reading from the input source any more.  We might
-     * still have a bunch of tokens to match, though, because of
-     * possible backing-up.
-     *
-     * When we actually see the EOF, we change the status to "new"
-     * (via Ewktrestart()), so that the user can continue scanning by
-     * just pointing Ewktin at a new input file.
-     */
+	/* When an EOF's been seen but there's still some text to process
+	 * then we mark the buffer as YY_EOF_PENDING, to indicate that we
+	 * shouldn't try reading from the input source any more.  We might
+	 * still have a bunch of tokens to match, though, because of
+	 * possible backing-up.
+	 *
+	 * When we actually see the EOF, we change the status to "new"
+	 * (via Ewktrestart()), so that the user can continue scanning by
+	 * just pointing Ewktin at a new input file.
+	 */
 #define YY_BUFFER_EOF_PENDING 2
 
-};
+	};
 #endif /* !YY_STRUCT_YY_BUFFER_STATE */
 
 /* Stack of input buffers. */
-static size_t ewkt_yy_buffer_stack_top = 0; /**< index of top of stack. */
-static size_t ewkt_yy_buffer_stack_max = 0; /**< capacity of stack. */
-static YY_BUFFER_STATE *ewkt_yy_buffer_stack = 0;  /**< Stack as an array. */
+static size_t yy_buffer_stack_top = 0; /**< index of top of stack. */
+static size_t yy_buffer_stack_max = 0; /**< capacity of stack. */
+static YY_BUFFER_STATE * yy_buffer_stack = 0; /**< Stack as an array. */
 
 /* We provide macros for accessing buffer states in case in the
  * future we want to put the buffer states in a more general
@@ -4153,14 +3689,14 @@ static YY_BUFFER_STATE *ewkt_yy_buffer_stack = 0;  /**< Stack as an array. */
  *
  * Returns the top of the stack, or NULL.
  */
-#define YY_CURRENT_BUFFER ( (ewkt_yy_buffer_stack) \
-                          ? (ewkt_yy_buffer_stack)[(ewkt_yy_buffer_stack_top)] \
+#define YY_CURRENT_BUFFER ( (yy_buffer_stack) \
+                          ? (yy_buffer_stack)[(yy_buffer_stack_top)] \
                           : NULL)
 
 /* Same as previous macro, but useful when we know that the buffer stack is not
  * NULL or when we need an lvalue. For internal use only.
  */
-#define YY_CURRENT_BUFFER_LVALUE (ewkt_yy_buffer_stack)[(ewkt_yy_buffer_stack_top)]
+#define YY_CURRENT_BUFFER_LVALUE (yy_buffer_stack)[(yy_buffer_stack_top)]
 
 /* yy_hold_char holds the character lost when Ewkttext is formed. */
 static char yy_hold_char;
@@ -4168,36 +3704,36 @@ static int yy_n_chars;		/* number of characters read into yy_ch_buf */
 int Ewktleng;
 
 /* Points to current character in buffer. */
-static char *ewkt_yy_c_buf_p = (char *) 0;
-static int ewkt_yy_init = 0;	/* whether we need to initialize */
-static int ewkt_yy_start = 0;	/* start state number */
+static char *yy_c_buf_p = (char *) 0;
+static int yy_init = 0;		/* whether we need to initialize */
+static int yy_start = 0;	/* start state number */
 
 /* Flag which is used to allow Ewktwrap()'s to do buffer switches
  * instead of setting up a fresh Ewktin.  A bit of a hack ...
  */
 static int yy_did_buffer_switch_on_eof;
 
-void Ewktrestart (FILE * input_file);
-void Ewkt_switch_to_buffer (YY_BUFFER_STATE new_buffer);
-YY_BUFFER_STATE Ewkt_create_buffer (FILE * file, int size);
-void Ewkt_delete_buffer (YY_BUFFER_STATE b);
-void Ewkt_flush_buffer (YY_BUFFER_STATE b);
-void Ewktpush_buffer_state (YY_BUFFER_STATE new_buffer);
-void Ewktpop_buffer_state (void);
+void Ewktrestart (FILE *input_file  );
+void Ewkt_switch_to_buffer (YY_BUFFER_STATE new_buffer  );
+YY_BUFFER_STATE Ewkt_create_buffer (FILE *file,int size  );
+void Ewkt_delete_buffer (YY_BUFFER_STATE b  );
+void Ewkt_flush_buffer (YY_BUFFER_STATE b  );
+void Ewktpush_buffer_state (YY_BUFFER_STATE new_buffer  );
+void Ewktpop_buffer_state (void );
 
-static void Ewktensure_buffer_stack (void);
-static void Ewkt_load_buffer_state (void);
-static void Ewkt_init_buffer (YY_BUFFER_STATE b, FILE * file);
+static void Ewktensure_buffer_stack (void );
+static void Ewkt_load_buffer_state (void );
+static void Ewkt_init_buffer (YY_BUFFER_STATE b,FILE *file  );
 
 #define YY_FLUSH_BUFFER Ewkt_flush_buffer(YY_CURRENT_BUFFER )
 
-YY_BUFFER_STATE Ewkt_scan_buffer (char *base, yy_size_t size);
-YY_BUFFER_STATE Ewkt_scan_string (yyconst char *yy_str);
-YY_BUFFER_STATE Ewkt_scan_bytes (yyconst char *bytes, int len);
+YY_BUFFER_STATE Ewkt_scan_buffer (char *base,yy_size_t size  );
+YY_BUFFER_STATE Ewkt_scan_string (yyconst char *yy_str  );
+YY_BUFFER_STATE Ewkt_scan_bytes (yyconst char *bytes,int len  );
 
-void *Ewktalloc (yy_size_t);
-void *Ewktrealloc (void *, yy_size_t);
-void Ewktfree (void *);
+void *Ewktalloc (yy_size_t  );
+void *Ewktrealloc (void *,yy_size_t  );
+void Ewktfree (void *  );
 
 #define yy_new_buffer Ewkt_create_buffer
 
@@ -4225,11 +3761,11 @@ void Ewktfree (void *);
 
 /* Begin user sect3 */
 
-typedef unsigned char EWKT_YY_CHAR;
+typedef unsigned char YY_CHAR;
 
 FILE *Ewktin = (FILE *) 0, *Ewktout = (FILE *) 0;
 
-typedef int ewkt_yy_state_type;
+typedef int yy_state_type;
 
 extern int Ewktlineno;
 
@@ -4238,11 +3774,10 @@ int Ewktlineno = 1;
 extern char *Ewkttext;
 #define yytext_ptr Ewkttext
 
-static ewkt_yy_state_type ewkt_yy_get_previous_state (void);
-static ewkt_yy_state_type ewkt_yy_try_NUL_trans (ewkt_yy_state_type
-						 current_state);
-static int ewkt_yy_get_next_buffer (void);
-static void ewkt_yy_fatal_error (yyconst char msg[]);
+static yy_state_type yy_get_previous_state (void );
+static yy_state_type yy_try_NUL_trans (yy_state_type current_state  );
+static int yy_get_next_buffer (void );
+static void yy_fatal_error (yyconst char msg[]  );
 
 /* Done after the current pattern has been matched and before the
  * corresponding action - sets up Ewkttext.
@@ -4252,151 +3787,161 @@ static void ewkt_yy_fatal_error (yyconst char msg[]);
 	Ewktleng = (size_t) (yy_cp - yy_bp); \
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
-	(ewkt_yy_c_buf_p) = yy_cp;
+	(yy_c_buf_p) = yy_cp;
 
 #define YY_NUM_RULES 22
 #define YY_END_OF_BUFFER 23
 /* This struct is not used in this scanner,
    but its presence is necessary. */
-struct ewkt_yy_trans_info
-{
-    flex_int32_t yy_verify;
-    flex_int32_t yy_nxt;
-};
-static yyconst flex_int16_t ewkt_yy_accept[93] = { 0,
-    0, 0, 23, 21, 19, 20, 3, 4, 21, 2,
-    21, 1, 21, 21, 21, 21, 1, 1, 1, 1,
-    0, 0, 0, 0, 1, 1, 1, 0, 0, 0,
-    0, 0, 1, 1, 0, 0, 0, 0, 0, 0,
-    0, 0, 5, 0, 0, 0, 0, 0, 6, 0,
-    0, 0, 0, 0, 9, 0, 0, 0, 0, 0,
-    10, 0, 0, 0, 0, 0, 0, 7, 0, 11,
-    0, 0, 8, 0, 12, 0, 0, 0, 15, 0,
-    0, 16, 0, 0, 0, 13, 0, 14, 0, 17,
-    18, 0
-};
+struct yy_trans_info
+	{
+	flex_int32_t yy_verify;
+	flex_int32_t yy_nxt;
+	};
+static yyconst flex_int16_t yy_accept[93] =
+    {   0,
+        0,    0,   23,   21,   19,   20,    3,    4,   21,    2,
+       21,    1,   21,   21,   21,   21,    1,    1,    1,    1,
+        0,    0,    0,    0,    1,    1,    1,    0,    0,    0,
+        0,    0,    1,    1,    0,    0,    0,    0,    0,    0,
+        0,    0,    5,    0,    0,    0,    0,    0,    6,    0,
+        0,    0,    0,    0,    9,    0,    0,    0,    0,    0,
+       10,    0,    0,    0,    0,    0,    0,    7,    0,   11,
+        0,    0,    8,    0,   12,    0,    0,    0,   15,    0,
+        0,   16,    0,    0,    0,   13,    0,   14,    0,   17,
+       18,    0
 
-static yyconst flex_int32_t ewkt_yy_ec[256] = { 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 2, 3,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 2, 1, 1, 1, 1, 1, 1, 1, 4,
-    5, 1, 6, 7, 8, 9, 1, 10, 10, 10,
-    10, 10, 10, 10, 10, 10, 10, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 11, 1, 12, 1,
-    13, 1, 14, 1, 1, 15, 16, 17, 18, 19,
-    1, 20, 21, 22, 23, 1, 1, 1, 24, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 25, 1,
+    } ;
 
-    26, 1, 27, 1, 28, 1, 1, 29, 30, 31,
-    32, 33, 1, 34, 35, 36, 37, 1, 1, 1,
-    38, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+static yyconst flex_int32_t yy_ec[256] =
+    {   0,
+        1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    2,    1,    1,    1,    1,    1,    1,    1,    4,
+        5,    1,    6,    7,    8,    9,    1,   10,   10,   10,
+       10,   10,   10,   10,   10,   10,   10,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,   11,    1,   12,    1,
+       13,    1,   14,    1,    1,   15,   16,   17,   18,   19,
+        1,   20,   21,   22,   23,    1,    1,    1,   24,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,   25,    1,
 
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1
-};
+       26,    1,   27,    1,   28,    1,    1,   29,   30,   31,
+       32,   33,    1,   34,   35,   36,   37,    1,    1,    1,
+       38,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
 
-static yyconst flex_int32_t ewkt_yy_meta[39] = { 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1
-};
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1
+    } ;
 
-static yyconst flex_int16_t ewkt_yy_base[93] = { 0,
-    0, 0, 187, 188, 188, 188, 188, 188, 174, 188,
-    173, 30, 29, 28, 20, 26, 36, 38, 172, 40,
-    33, 35, 38, 45, 171, 166, 165, 38, 49, 40,
-    46, 40, 164, 163, 57, 49, 57, 50, 66, 58,
-    59, 72, 66, 70, 69, 70, 78, 79, 188, 81,
-    75, 86, 90, 94, 94, 104, 99, 105, 101, 95,
-    188, 102, 112, 105, 105, 115, 120, 120, 115, 122,
-    125, 129, 188, 125, 188, 129, 135, 134, 137, 143,
-    138, 188, 134, 150, 150, 149, 148, 188, 154, 156,
-    188, 188
-};
+static yyconst flex_int32_t yy_meta[39] =
+    {   0,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1
+    } ;
 
-static yyconst flex_int16_t ewkt_yy_def[93] = { 0,
-    92, 1, 92, 92, 92, 92, 92, 92, 92, 92,
-    92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
-    92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
-    92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
-    92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
-    92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
-    92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
-    92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
-    92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
-    92, 0
-};
+static yyconst flex_int16_t yy_base[93] =
+    {   0,
+        0,    0,  187,  188,  188,  188,  188,  188,  174,  188,
+      173,   30,   29,   28,   20,   26,   36,   38,  172,   40,
+       33,   35,   38,   45,  171,  166,  165,   38,   49,   40,
+       46,   40,  164,  163,   57,   49,   57,   50,   66,   58,
+       59,   72,   66,   70,   69,   70,   78,   79,  188,   81,
+       75,   86,   90,   94,   94,  104,   99,  105,  101,   95,
+      188,  102,  112,  105,  105,  115,  120,  120,  115,  122,
+      125,  129,  188,  125,  188,  129,  135,  134,  137,  143,
+      138,  188,  134,  150,  150,  149,  148,  188,  154,  156,
+      188,  188
 
-static yyconst flex_int16_t ewkt_yy_nxt[227] = { 0,
-    4, 5, 6, 7, 8, 9, 10, 11, 4, 12,
-    4, 4, 13, 4, 14, 15, 4, 4, 16, 4,
-    4, 4, 4, 4, 4, 4, 13, 4, 14, 15,
-    4, 4, 16, 4, 4, 4, 4, 4, 19, 20,
-    21, 22, 23, 24, 25, 17, 26, 18, 19, 20,
-    28, 29, 30, 35, 21, 22, 23, 24, 31, 32,
-    36, 37, 38, 39, 28, 29, 30, 35, 40, 41,
-    42, 43, 31, 32, 36, 37, 38, 39, 44, 45,
-    46, 49, 40, 41, 42, 43, 47, 50, 51, 52,
-    48, 53, 44, 45, 46, 49, 54, 55, 56, 57,
+    } ;
 
-    47, 50, 51, 52, 48, 53, 58, 59, 60, 61,
-    54, 55, 56, 57, 62, 63, 64, 65, 66, 67,
-    58, 59, 60, 61, 68, 69, 70, 71, 62, 63,
-    64, 65, 66, 67, 72, 73, 74, 75, 68, 69,
-    70, 71, 76, 77, 78, 79, 80, 81, 72, 73,
-    74, 75, 82, 83, 84, 85, 76, 77, 78, 79,
-    80, 81, 86, 87, 88, 89, 82, 83, 84, 85,
-    90, 91, 34, 33, 27, 34, 86, 87, 88, 89,
-    33, 27, 18, 17, 90, 91, 92, 3, 92, 92,
-    92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
+static yyconst flex_int16_t yy_def[93] =
+    {   0,
+       92,    1,   92,   92,   92,   92,   92,   92,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+       92,    0
 
-    92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
-    92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
-    92, 92, 92, 92, 92, 92
-};
+    } ;
 
-static yyconst flex_int16_t ewkt_yy_chk[227] = { 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 12, 12,
-    13, 14, 15, 16, 17, 17, 18, 18, 20, 20,
-    21, 22, 23, 28, 13, 14, 15, 16, 24, 24,
-    29, 30, 31, 32, 21, 22, 23, 28, 35, 36,
-    37, 38, 24, 24, 29, 30, 31, 32, 39, 40,
-    41, 43, 35, 36, 37, 38, 42, 44, 45, 46,
-    42, 47, 39, 40, 41, 43, 48, 50, 51, 52,
+static yyconst flex_int16_t yy_nxt[227] =
+    {   0,
+        4,    5,    6,    7,    8,    9,   10,   11,    4,   12,
+        4,    4,   13,    4,   14,   15,    4,    4,   16,    4,
+        4,    4,    4,    4,    4,    4,   13,    4,   14,   15,
+        4,    4,   16,    4,    4,    4,    4,    4,   19,   20,
+       21,   22,   23,   24,   25,   17,   26,   18,   19,   20,
+       28,   29,   30,   35,   21,   22,   23,   24,   31,   32,
+       36,   37,   38,   39,   28,   29,   30,   35,   40,   41,
+       42,   43,   31,   32,   36,   37,   38,   39,   44,   45,
+       46,   49,   40,   41,   42,   43,   47,   50,   51,   52,
+       48,   53,   44,   45,   46,   49,   54,   55,   56,   57,
 
-    42, 44, 45, 46, 42, 47, 53, 54, 54, 55,
-    48, 50, 51, 52, 56, 57, 58, 59, 60, 62,
-    53, 54, 54, 55, 63, 64, 65, 66, 56, 57,
-    58, 59, 60, 62, 67, 68, 69, 70, 63, 64,
-    65, 66, 71, 72, 74, 76, 77, 78, 67, 68,
-    69, 70, 79, 80, 81, 83, 71, 72, 74, 76,
-    77, 78, 84, 85, 86, 87, 79, 80, 81, 83,
-    89, 90, 34, 33, 27, 26, 84, 85, 86, 87,
-    25, 19, 11, 9, 89, 90, 3, 92, 92, 92,
-    92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
+       47,   50,   51,   52,   48,   53,   58,   59,   60,   61,
+       54,   55,   56,   57,   62,   63,   64,   65,   66,   67,
+       58,   59,   60,   61,   68,   69,   70,   71,   62,   63,
+       64,   65,   66,   67,   72,   73,   74,   75,   68,   69,
+       70,   71,   76,   77,   78,   79,   80,   81,   72,   73,
+       74,   75,   82,   83,   84,   85,   76,   77,   78,   79,
+       80,   81,   86,   87,   88,   89,   82,   83,   84,   85,
+       90,   91,   34,   33,   27,   34,   86,   87,   88,   89,
+       33,   27,   18,   17,   90,   91,   92,    3,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
 
-    92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
-    92, 92, 92, 92, 92, 92, 92, 92, 92, 92,
-    92, 92, 92, 92, 92, 92
-};
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+       92,   92,   92,   92,   92,   92
+    } ;
 
-static ewkt_yy_state_type yy_last_accepting_state;
+static yyconst flex_int16_t yy_chk[227] =
+    {   0,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,   12,   12,
+       13,   14,   15,   16,   17,   17,   18,   18,   20,   20,
+       21,   22,   23,   28,   13,   14,   15,   16,   24,   24,
+       29,   30,   31,   32,   21,   22,   23,   28,   35,   36,
+       37,   38,   24,   24,   29,   30,   31,   32,   39,   40,
+       41,   43,   35,   36,   37,   38,   42,   44,   45,   46,
+       42,   47,   39,   40,   41,   43,   48,   50,   51,   52,
+
+       42,   44,   45,   46,   42,   47,   53,   54,   54,   55,
+       48,   50,   51,   52,   56,   57,   58,   59,   60,   62,
+       53,   54,   54,   55,   63,   64,   65,   66,   56,   57,
+       58,   59,   60,   62,   67,   68,   69,   70,   63,   64,
+       65,   66,   71,   72,   74,   76,   77,   78,   67,   68,
+       69,   70,   79,   80,   81,   83,   71,   72,   74,   76,
+       77,   78,   84,   85,   86,   87,   79,   80,   81,   83,
+       89,   90,   34,   33,   27,   26,   84,   85,   86,   87,
+       25,   19,   11,    9,   89,   90,    3,   92,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+       92,   92,   92,   92,   92,   92,   92,   92,   92,   92,
+       92,   92,   92,   92,   92,   92
+    } ;
+
+static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
 
 extern int Ewkt_flex_debug;
@@ -4480,36 +4025,36 @@ int ewkt_line = 1, ewkt_col = 1;
 #define YY_EXTRA_TYPE void *
 #endif
 
-static int ewkt_yy_init_globals (void);
+static int yy_init_globals (void );
 
 /* Accessor methods to globals.
    These are made visible to non-reentrant scanners for convenience. */
 
-int Ewktlex_destroy (void);
+int Ewktlex_destroy (void );
 
-int Ewktget_debug (void);
+int Ewktget_debug (void );
 
-void Ewktset_debug (int debug_flag);
+void Ewktset_debug (int debug_flag  );
 
-YY_EXTRA_TYPE Ewktget_extra (void);
+YY_EXTRA_TYPE Ewktget_extra (void );
 
-void Ewktset_extra (YY_EXTRA_TYPE user_defined);
+void Ewktset_extra (YY_EXTRA_TYPE user_defined  );
 
-FILE *Ewktget_in (void);
+FILE *Ewktget_in (void );
 
-void Ewktset_in (FILE * in_str);
+void Ewktset_in  (FILE * in_str  );
 
-FILE *Ewktget_out (void);
+FILE *Ewktget_out (void );
 
-void Ewktset_out (FILE * out_str);
+void Ewktset_out  (FILE * out_str  );
 
-int Ewktget_leng (void);
+int Ewktget_leng (void );
 
-char *Ewktget_text (void);
+char *Ewktget_text (void );
 
-int Ewktget_lineno (void);
+int Ewktget_lineno (void );
 
-void Ewktset_lineno (int line_number);
+void Ewktset_lineno (int line_number  );
 
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -4517,28 +4062,28 @@ void Ewktset_lineno (int line_number);
 
 #ifndef YY_SKIP_YYWRAP
 #ifdef __cplusplus
-extern "C" int Ewktwrap (void);
+extern "C" int Ewktwrap (void );
 #else
-extern int Ewktwrap (void);
+extern int Ewktwrap (void );
 #endif
 #endif
 
-static void ewkt_yyunput (int c, char *buf_ptr);
-
+    static void yyunput (int c,char *buf_ptr  );
+    
 #ifndef yytext_ptr
-static void yy_flex_strncpy (char *, yyconst char *, int);
+static void yy_flex_strncpy (char *,yyconst char *,int );
 #endif
 
 #ifdef YY_NEED_STRLEN
-static int yy_flex_strlen (yyconst char *);
+static int yy_flex_strlen (yyconst char * );
 #endif
 
 #ifndef YY_NO_INPUT
 
 #ifdef __cplusplus
-static int yyinput (void);
+static int yyinput (void );
 #else
-static int ewkt_input (void);
+static int input (void );
 #endif
 
 #endif
@@ -4612,7 +4157,7 @@ static int ewkt_input (void);
 
 /* Report a fatal error. */
 #ifndef YY_FATAL_ERROR
-#define YY_FATAL_ERROR(msg) ewkt_yy_fatal_error( msg )
+#define YY_FATAL_ERROR(msg) yy_fatal_error( msg )
 #endif
 
 /* end tables serialization structures and prototypes */
@@ -4647,315 +4192,259 @@ extern int Ewktlex (void);
  */
 YY_DECL
 {
-    register ewkt_yy_state_type yy_current_state;
-    register char *yy_cp, *yy_bp;
-    register int yy_act;
-
-    if (!(ewkt_yy_init))
-      {
-	  (ewkt_yy_init) = 1;
+	register yy_state_type yy_current_state;
+	register char *yy_cp, *yy_bp;
+	register int yy_act;
+    
+	if ( !(yy_init) )
+		{
+		(yy_init) = 1;
 
 #ifdef YY_USER_INIT
-	  YY_USER_INIT;
+		YY_USER_INIT;
 #endif
 
-	  if (!(ewkt_yy_start))
-	      (ewkt_yy_start) = 1;	/* first start state */
+		if ( ! (yy_start) )
+			(yy_start) = 1;	/* first start state */
 
-	  if (!Ewktin)
-	      Ewktin = stdin;
+		if ( ! Ewktin )
+			Ewktin = stdin;
 
-	  if (!Ewktout)
-	      Ewktout = stdout;
+		if ( ! Ewktout )
+			Ewktout = stdout;
 
-	  if (!YY_CURRENT_BUFFER)
-	    {
-		Ewktensure_buffer_stack ();
-		YY_CURRENT_BUFFER_LVALUE =
-		    Ewkt_create_buffer (Ewktin, YY_BUF_SIZE);
-	    }
+		if ( ! YY_CURRENT_BUFFER ) {
+			Ewktensure_buffer_stack ();
+			YY_CURRENT_BUFFER_LVALUE =
+				Ewkt_create_buffer(Ewktin,YY_BUF_SIZE );
+		}
 
-	  Ewkt_load_buffer_state ();
-      }
+		Ewkt_load_buffer_state( );
+		}
 
-    while (1)			/* loops until end-of-file is reached */
-      {
-	  yy_cp = (ewkt_yy_c_buf_p);
+	while ( 1 )		/* loops until end-of-file is reached */
+		{
+		yy_cp = (yy_c_buf_p);
 
-	  /* Support of Ewkttext. */
-	  *yy_cp = (yy_hold_char);
-
-	  /* yy_bp points to the position in yy_ch_buf of the start of
-	   * the current run.
-	   */
-	  yy_bp = yy_cp;
-
-	  yy_current_state = (ewkt_yy_start);
-	yy_match:
-	  do
-	    {
-		register EWKT_YY_CHAR yy_c = ewkt_yy_ec[YY_SC_TO_UI (*yy_cp)];
-		if (ewkt_yy_accept[yy_current_state])
-		  {
-		      (yy_last_accepting_state) = yy_current_state;
-		      (yy_last_accepting_cpos) = yy_cp;
-		  }
-		while (ewkt_yy_chk[ewkt_yy_base[yy_current_state] + yy_c] !=
-		       yy_current_state)
-		  {
-		      yy_current_state = (int) ewkt_yy_def[yy_current_state];
-		      if (yy_current_state >= 93)
-			  yy_c = ewkt_yy_meta[(unsigned int) yy_c];
-		  }
-		yy_current_state =
-		    ewkt_yy_nxt[ewkt_yy_base[yy_current_state] +
-				(unsigned int) yy_c];
-		++yy_cp;
-	    }
-	  while (ewkt_yy_base[yy_current_state] != 188);
-
-	yy_find_action:
-	  yy_act = ewkt_yy_accept[yy_current_state];
-	  if (yy_act == 0)
-	    {			/* have to back up */
-		yy_cp = (yy_last_accepting_cpos);
-		yy_current_state = (yy_last_accepting_state);
-		yy_act = ewkt_yy_accept[yy_current_state];
-	    }
-
-	  YY_DO_BEFORE_ACTION;
-
-	do_action:		/* This label is used only to access EOF actions. */
-
-	  switch (yy_act)
-	    {			/* beginning of action switch */
-	    case 0:		/* must back up */
-		/* undo the effects of YY_DO_BEFORE_ACTION */
+		/* Support of Ewkttext. */
 		*yy_cp = (yy_hold_char);
-		yy_cp = (yy_last_accepting_cpos);
-		yy_current_state = (yy_last_accepting_state);
-		goto yy_find_action;
 
-	    case 1:
-fprintf(stderr, "NUM\n");fflush(stderr);
-		YY_RULE_SETUP
-		{
-		    ewkt_col += (int) strlen (Ewkttext);
-		    EwktLval.dval = atof (Ewkttext);
-		    return EWKT_NUM;
-		}
-	    YY_BREAK case 2:
-fprintf(stderr, "COMMA\n");fflush(stderr);
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_COMMA;
-		}
-	    YY_BREAK case 3:
-fprintf(stderr, "BRAKECT\n");fflush(stderr);
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_OPEN_BRACKET;
-		}
-	    YY_BREAK case 4:
-fprintf(stderr, "BRAKET-doNE\n");fflush(stderr);
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_CLOSE_BRACKET;
-		}
-	    YY_BREAK case 5:
-fprintf(stderr, "POINT\n");fflush(stderr);
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_POINT;
-		}
-	    YY_BREAK case 6:
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_POINT_M;
-		}
-	    YY_BREAK case 7:
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_LINESTRING;
-		}
-	    YY_BREAK case 8:
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_LINESTRING_M;
-		}
-	    YY_BREAK case 9:
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_POLYGON;
-		}
-	    YY_BREAK case 10:
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_POLYGON_M;
-		}
-	    YY_BREAK case 11:
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_MULTIPOINT;
-		}
-	    YY_BREAK case 12:
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_MULTIPOINT_M;
-		}
-	    YY_BREAK case 13:
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_MULTILINESTRING;
-		}
-	    YY_BREAK case 14:
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_MULTILINESTRING_M;
-		}
-	    YY_BREAK case 15:
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_MULTIPOLYGON;
-		}
-	    YY_BREAK case 16:
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_MULTIPOLYGON_M;
-		}
-	    YY_BREAK case 17:
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_GEOMETRYCOLLECTION;
-		}
-	    YY_BREAK case 18:
-		YY_RULE_SETUP
-		{
-		    EwktLval.dval = 0;
-		    return EWKT_GEOMETRYCOLLECTION_M;
-		}
-	    YY_BREAK case 19:
-		YY_RULE_SETUP
-		{
-		    ewkt_col += (int) strlen (Ewkttext);
-		}		/* ignore but count white space */
-	    YY_BREAK case 20:
+		/* yy_bp points to the position in yy_ch_buf of the start of
+		 * the current run.
+		 */
+		yy_bp = yy_cp;
+
+		yy_current_state = (yy_start);
+yy_match:
+		do
+			{
+			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
+			if ( yy_accept[yy_current_state] )
+				{
+				(yy_last_accepting_state) = yy_current_state;
+				(yy_last_accepting_cpos) = yy_cp;
+				}
+			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
+				{
+				yy_current_state = (int) yy_def[yy_current_state];
+				if ( yy_current_state >= 93 )
+					yy_c = yy_meta[(unsigned int) yy_c];
+				}
+			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+			++yy_cp;
+			}
+		while ( yy_base[yy_current_state] != 188 );
+
+yy_find_action:
+		yy_act = yy_accept[yy_current_state];
+		if ( yy_act == 0 )
+			{ /* have to back up */
+			yy_cp = (yy_last_accepting_cpos);
+			yy_current_state = (yy_last_accepting_state);
+			yy_act = yy_accept[yy_current_state];
+			}
+
+		YY_DO_BEFORE_ACTION;
+
+do_action:	/* This label is used only to access EOF actions. */
+
+		switch ( yy_act )
+	{ /* beginning of action switch */
+			case 0: /* must back up */
+			/* undo the effects of YY_DO_BEFORE_ACTION */
+			*yy_cp = (yy_hold_char);
+			yy_cp = (yy_last_accepting_cpos);
+			yy_current_state = (yy_last_accepting_state);
+			goto yy_find_action;
+
+case 1:
+YY_RULE_SETUP
+{ ewkt_col += (int) strlen(Ewkttext);  EwktLval.dval = atof(Ewkttext); return EWKT_NUM; }
+	YY_BREAK
+case 2:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_COMMA; }
+	YY_BREAK
+case 3:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_OPEN_BRACKET; }
+	YY_BREAK
+case 4:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_CLOSE_BRACKET; }
+	YY_BREAK
+case 5:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_POINT; }
+	YY_BREAK
+case 6:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_POINT_M; }
+	YY_BREAK
+case 7:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_LINESTRING; }
+	YY_BREAK
+case 8:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_LINESTRING_M; }
+	YY_BREAK
+case 9:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_POLYGON; }
+	YY_BREAK
+case 10:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_POLYGON_M; }
+	YY_BREAK
+case 11:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_MULTIPOINT; }
+	YY_BREAK
+case 12:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_MULTIPOINT_M; }
+	YY_BREAK
+case 13:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_MULTILINESTRING; }
+	YY_BREAK
+case 14:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_MULTILINESTRING_M; }
+	YY_BREAK
+case 15:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_MULTIPOLYGON; }
+	YY_BREAK
+case 16:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_MULTIPOLYGON_M; }
+	YY_BREAK
+case 17:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_GEOMETRYCOLLECTION; }
+	YY_BREAK
+case 18:
+YY_RULE_SETUP
+{ EwktLval.dval = 0; return EWKT_GEOMETRYCOLLECTION_M; }
+	YY_BREAK
+case 19:
+YY_RULE_SETUP
+{ ewkt_col += (int) strlen(Ewkttext); }               /* ignore but count white space */
+	YY_BREAK
+case 20:
 /* rule 20 can match eol */
-		YY_RULE_SETUP
+YY_RULE_SETUP
+{ ewkt_col = 0; ++ewkt_line; }
+	YY_BREAK
+case 21:
+YY_RULE_SETUP
+{ ewkt_col += (int) strlen(Ewkttext); return -1; }
+	YY_BREAK
+case 22:
+YY_RULE_SETUP
+ECHO;
+	YY_BREAK
+case YY_STATE_EOF(INITIAL):
+	yyterminate();
+
+	case YY_END_OF_BUFFER:
 		{
-		    ewkt_col = 0;
-		    ++ewkt_line;
-		    return EWKT_NEWLINE;
-		}
-	    YY_BREAK case 21:
-		YY_RULE_SETUP
-		{
-		    ewkt_col += (int) strlen (Ewkttext);
-		    return -1;
-		}
-	    YY_BREAK case 22:
-		YY_RULE_SETUP ECHO;
-	    YY_BREAK case YY_STATE_EOF (INITIAL):
-		yyterminate ();
+		/* Amount of text matched not including the EOB char. */
+		int yy_amount_of_matched_text = (int) (yy_cp - (yytext_ptr)) - 1;
 
-	    case YY_END_OF_BUFFER:
-		{
-		    /* Amount of text matched not including the EOB char. */
-		    int yy_amount_of_matched_text =
-			(int) (yy_cp - (yytext_ptr)) - 1;
+		/* Undo the effects of YY_DO_BEFORE_ACTION. */
+		*yy_cp = (yy_hold_char);
+		YY_RESTORE_YY_MORE_OFFSET
 
-		    /* Undo the effects of YY_DO_BEFORE_ACTION. */
-		    *yy_cp = (yy_hold_char);
-		    YY_RESTORE_YY_MORE_OFFSET
-			if (YY_CURRENT_BUFFER_LVALUE->yy_buffer_status ==
-			    YY_BUFFER_NEW)
-		      {
-			  /* We're scanning a new file or input source.  It's
-			   * possible that this happened because the user
-			   * just pointed Ewktin at a new source and called
-			   * Ewktlex().  If so, then we have to assure
-			   * consistency between YY_CURRENT_BUFFER and our
-			   * globals.  Here is the right place to do so, because
-			   * this is the first action (other than possibly a
-			   * back-up) that will match for the new input source.
-			   */
-			  (yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
-			  YY_CURRENT_BUFFER_LVALUE->yy_input_file = Ewktin;
-			  YY_CURRENT_BUFFER_LVALUE->yy_buffer_status =
-			      YY_BUFFER_NORMAL;
-		      }
+		if ( YY_CURRENT_BUFFER_LVALUE->yy_buffer_status == YY_BUFFER_NEW )
+			{
+			/* We're scanning a new file or input source.  It's
+			 * possible that this happened because the user
+			 * just pointed Ewktin at a new source and called
+			 * Ewktlex().  If so, then we have to assure
+			 * consistency between YY_CURRENT_BUFFER and our
+			 * globals.  Here is the right place to do so, because
+			 * this is the first action (other than possibly a
+			 * back-up) that will match for the new input source.
+			 */
+			(yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
+			YY_CURRENT_BUFFER_LVALUE->yy_input_file = Ewktin;
+			YY_CURRENT_BUFFER_LVALUE->yy_buffer_status = YY_BUFFER_NORMAL;
+			}
 
-		    /* Note that here we test for yy_c_buf_p "<=" to the position
-		     * of the first EOB in the buffer, since yy_c_buf_p will
-		     * already have been incremented past the NUL character
-		     * (since all states make transitions on EOB to the
-		     * end-of-buffer state).  Contrast this with the test
-		     * in input().
-		     */
-		    if ((ewkt_yy_c_buf_p) <=
-			&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)])
-		      {		/* This was really a NUL. */
-			  ewkt_yy_state_type yy_next_state;
+		/* Note that here we test for yy_c_buf_p "<=" to the position
+		 * of the first EOB in the buffer, since yy_c_buf_p will
+		 * already have been incremented past the NUL character
+		 * (since all states make transitions on EOB to the
+		 * end-of-buffer state).  Contrast this with the test
+		 * in input().
+		 */
+		if ( (yy_c_buf_p) <= &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] )
+			{ /* This was really a NUL. */
+			yy_state_type yy_next_state;
 
-			  (ewkt_yy_c_buf_p) =
-			      (yytext_ptr) + yy_amount_of_matched_text;
+			(yy_c_buf_p) = (yytext_ptr) + yy_amount_of_matched_text;
 
-			  yy_current_state = ewkt_yy_get_previous_state ();
+			yy_current_state = yy_get_previous_state(  );
 
-			  /* Okay, we're now positioned to make the NUL
-			   * transition.  We couldn't have
-			   * yy_get_previous_state() go ahead and do it
-			   * for us because it doesn't know how to deal
-			   * with the possibility of jamming (and we don't
-			   * want to build jamming into it because then it
-			   * will run more slowly).
-			   */
+			/* Okay, we're now positioned to make the NUL
+			 * transition.  We couldn't have
+			 * yy_get_previous_state() go ahead and do it
+			 * for us because it doesn't know how to deal
+			 * with the possibility of jamming (and we don't
+			 * want to build jamming into it because then it
+			 * will run more slowly).
+			 */
 
-			  yy_next_state =
-			      ewkt_yy_try_NUL_trans (yy_current_state);
+			yy_next_state = yy_try_NUL_trans( yy_current_state );
 
-			  yy_bp = (yytext_ptr) + YY_MORE_ADJ;
+			yy_bp = (yytext_ptr) + YY_MORE_ADJ;
 
-			  if (yy_next_state)
-			    {
+			if ( yy_next_state )
+				{
 				/* Consume the NUL. */
-				yy_cp = ++(ewkt_yy_c_buf_p);
+				yy_cp = ++(yy_c_buf_p);
 				yy_current_state = yy_next_state;
 				goto yy_match;
-			    }
+				}
 
-			  else
-			    {
-				yy_cp = (ewkt_yy_c_buf_p);
+			else
+				{
+				yy_cp = (yy_c_buf_p);
 				goto yy_find_action;
-			    }
-		      }
+				}
+			}
 
-		    else
-			switch (ewkt_yy_get_next_buffer ())
-			  {
-			  case EOB_ACT_END_OF_FILE:
-			      {
-				  (yy_did_buffer_switch_on_eof) = 0;
+		else switch ( yy_get_next_buffer(  ) )
+			{
+			case EOB_ACT_END_OF_FILE:
+				{
+				(yy_did_buffer_switch_on_eof) = 0;
 
-				  if (Ewktwrap ())
-				    {
+				if ( Ewktwrap( ) )
+					{
 					/* Note: because we've taken care in
 					 * yy_get_next_buffer() to have set up
 					 * Ewkttext, we can now set up
@@ -4965,51 +4454,49 @@ fprintf(stderr, "POINT\n");fflush(stderr);
 					 * YY_NULL, it'll still work - another
 					 * YY_NULL will get returned.
 					 */
-					(ewkt_yy_c_buf_p) =
-					    (yytext_ptr) + YY_MORE_ADJ;
+					(yy_c_buf_p) = (yytext_ptr) + YY_MORE_ADJ;
 
-					yy_act = YY_STATE_EOF (YY_START);
+					yy_act = YY_STATE_EOF(YY_START);
 					goto do_action;
-				    }
+					}
 
-				  else
-				    {
-					if (!(yy_did_buffer_switch_on_eof))
-					    YY_NEW_FILE;
-				    }
-				  break;
-			      }
+				else
+					{
+					if ( ! (yy_did_buffer_switch_on_eof) )
+						YY_NEW_FILE;
+					}
+				break;
+				}
 
-			  case EOB_ACT_CONTINUE_SCAN:
-			      (ewkt_yy_c_buf_p) =
-				  (yytext_ptr) + yy_amount_of_matched_text;
+			case EOB_ACT_CONTINUE_SCAN:
+				(yy_c_buf_p) =
+					(yytext_ptr) + yy_amount_of_matched_text;
 
-			      yy_current_state = ewkt_yy_get_previous_state ();
+				yy_current_state = yy_get_previous_state(  );
 
-			      yy_cp = (ewkt_yy_c_buf_p);
-			      yy_bp = (yytext_ptr) + YY_MORE_ADJ;
-			      goto yy_match;
+				yy_cp = (yy_c_buf_p);
+				yy_bp = (yytext_ptr) + YY_MORE_ADJ;
+				goto yy_match;
 
-			  case EOB_ACT_LAST_MATCH:
-			      (ewkt_yy_c_buf_p) =
-				  &YY_CURRENT_BUFFER_LVALUE->
-				  yy_ch_buf[(yy_n_chars)];
+			case EOB_ACT_LAST_MATCH:
+				(yy_c_buf_p) =
+				&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)];
 
-			      yy_current_state = ewkt_yy_get_previous_state ();
+				yy_current_state = yy_get_previous_state(  );
 
-			      yy_cp = (ewkt_yy_c_buf_p);
-			      yy_bp = (yytext_ptr) + YY_MORE_ADJ;
-			      goto yy_find_action;
-			  }
-		    break;
+				yy_cp = (yy_c_buf_p);
+				yy_bp = (yytext_ptr) + YY_MORE_ADJ;
+				goto yy_find_action;
+			}
+		break;
 		}
 
-	    default:
-		YY_FATAL_ERROR
-		    ("fatal flex scanner internal error--no action found");
-	    }			/* end of action switch */
-      }				/* end of scanning one token */
-}				/* end of Ewktlex */
+	default:
+		YY_FATAL_ERROR(
+			"fatal flex scanner internal error--no action found" );
+	} /* end of action switch */
+		} /* end of scanning one token */
+} /* end of Ewktlex */
 
 /* yy_get_next_buffer - try to read in a new buffer
  *
@@ -5018,178 +4505,165 @@ fprintf(stderr, "POINT\n");fflush(stderr);
  *	EOB_ACT_CONTINUE_SCAN - continue scanning from current position
  *	EOB_ACT_END_OF_FILE - end of file
  */
-static int
-ewkt_yy_get_next_buffer (void)
+static int yy_get_next_buffer (void)
 {
-    register char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
-    register char *source = (yytext_ptr);
-    register int number_to_move, i;
-    int ret_val;
+    	register char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
+	register char *source = (yytext_ptr);
+	register int number_to_move, i;
+	int ret_val;
 
-    if ((ewkt_yy_c_buf_p) >
-	&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1])
-	YY_FATAL_ERROR
-	    ("fatal flex scanner internal error--end of buffer missed");
+	if ( (yy_c_buf_p) > &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1] )
+		YY_FATAL_ERROR(
+		"fatal flex scanner internal error--end of buffer missed" );
 
-    if (YY_CURRENT_BUFFER_LVALUE->yy_fill_buffer == 0)
-      {				/* Don't try to fill the buffer, so this is an EOF. */
-	  if ((ewkt_yy_c_buf_p) - (yytext_ptr) - YY_MORE_ADJ == 1)
-	    {
-		/* We matched a single character, the EOB, so
-		 * treat this as a final EOF.
-		 */
-		return EOB_ACT_END_OF_FILE;
-	    }
+	if ( YY_CURRENT_BUFFER_LVALUE->yy_fill_buffer == 0 )
+		{ /* Don't try to fill the buffer, so this is an EOF. */
+		if ( (yy_c_buf_p) - (yytext_ptr) - YY_MORE_ADJ == 1 )
+			{
+			/* We matched a single character, the EOB, so
+			 * treat this as a final EOF.
+			 */
+			return EOB_ACT_END_OF_FILE;
+			}
 
-	  else
-	    {
-		/* We matched some text prior to the EOB, first
-		 * process it.
-		 */
-		return EOB_ACT_LAST_MATCH;
-	    }
-      }
-
-    /* Try to read more data. */
-
-    /* First move last chars to start of buffer. */
-    number_to_move = (int) ((ewkt_yy_c_buf_p) - (yytext_ptr)) - 1;
-
-    for (i = 0; i < number_to_move; ++i)
-	*(dest++) = *(source++);
-
-    if (YY_CURRENT_BUFFER_LVALUE->yy_buffer_status == YY_BUFFER_EOF_PENDING)
-	/* don't do the read, it's not guaranteed to return an EOF,
-	 * just force an EOF
-	 */
-	YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars) = 0;
-
-    else
-      {
-	  int num_to_read =
-	      YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1;
-
-	  while (num_to_read <= 0)
-	    {			/* Not enough room in the buffer - grow it. */
-
-		/* just a shorter name for the current buffer */
-		YY_BUFFER_STATE b = YY_CURRENT_BUFFER;
-
-		int yy_c_buf_p_offset =
-		    (int) ((ewkt_yy_c_buf_p) - b->yy_ch_buf);
-
-		if (b->yy_is_our_buffer)
-		  {
-		      int new_size = b->yy_buf_size * 2;
-
-		      if (new_size <= 0)
-			  b->yy_buf_size += b->yy_buf_size / 8;
-		      else
-			  b->yy_buf_size *= 2;
-
-		      b->yy_ch_buf = (char *)
-			  /* Include room in for 2 EOB chars. */
-			  Ewktrealloc ((void *) b->yy_ch_buf,
-				       b->yy_buf_size + 2);
-		  }
 		else
-		    /* Can't grow it, we don't own it. */
-		    b->yy_ch_buf = 0;
+			{
+			/* We matched some text prior to the EOB, first
+			 * process it.
+			 */
+			return EOB_ACT_LAST_MATCH;
+			}
+		}
 
-		if (!b->yy_ch_buf)
-		    YY_FATAL_ERROR
-			("fatal error - scanner input buffer overflow");
+	/* Try to read more data. */
 
-		(ewkt_yy_c_buf_p) = &b->yy_ch_buf[yy_c_buf_p_offset];
+	/* First move last chars to start of buffer. */
+	number_to_move = (int) ((yy_c_buf_p) - (yytext_ptr)) - 1;
 
-		num_to_read = YY_CURRENT_BUFFER_LVALUE->yy_buf_size -
-		    number_to_move - 1;
+	for ( i = 0; i < number_to_move; ++i )
+		*(dest++) = *(source++);
 
-	    }
+	if ( YY_CURRENT_BUFFER_LVALUE->yy_buffer_status == YY_BUFFER_EOF_PENDING )
+		/* don't do the read, it's not guaranteed to return an EOF,
+		 * just force an EOF
+		 */
+		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars) = 0;
 
-	  if (num_to_read > YY_READ_BUF_SIZE)
-	      num_to_read = YY_READ_BUF_SIZE;
+	else
+		{
+			int num_to_read =
+			YY_CURRENT_BUFFER_LVALUE->yy_buf_size - number_to_move - 1;
 
-	  /* Read in more data. */
-	  YY_INPUT ((&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move]),
-		    (yy_n_chars), (size_t) num_to_read);
+		while ( num_to_read <= 0 )
+			{ /* Not enough room in the buffer - grow it. */
 
-	  YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
-      }
+			/* just a shorter name for the current buffer */
+			YY_BUFFER_STATE b = YY_CURRENT_BUFFER;
 
-    if ((yy_n_chars) == 0)
-      {
-	  if (number_to_move == YY_MORE_ADJ)
-	    {
-		ret_val = EOB_ACT_END_OF_FILE;
-		Ewktrestart (Ewktin);
-	    }
+			int yy_c_buf_p_offset =
+				(int) ((yy_c_buf_p) - b->yy_ch_buf);
 
-	  else
-	    {
-		ret_val = EOB_ACT_LAST_MATCH;
-		YY_CURRENT_BUFFER_LVALUE->yy_buffer_status =
-		    YY_BUFFER_EOF_PENDING;
-	    }
-      }
+			if ( b->yy_is_our_buffer )
+				{
+				int new_size = b->yy_buf_size * 2;
 
-    else
-	ret_val = EOB_ACT_CONTINUE_SCAN;
+				if ( new_size <= 0 )
+					b->yy_buf_size += b->yy_buf_size / 8;
+				else
+					b->yy_buf_size *= 2;
 
-    if ((yy_size_t) ((yy_n_chars) + number_to_move) >
-	YY_CURRENT_BUFFER_LVALUE->yy_buf_size)
-      {
-	  /* Extend the array by 50%, plus the number we really need. */
-	  yy_size_t new_size =
-	      (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
-	  YY_CURRENT_BUFFER_LVALUE->yy_ch_buf =
-	      (char *) Ewktrealloc ((void *) YY_CURRENT_BUFFER_LVALUE->
-				    yy_ch_buf, new_size);
-	  if (!YY_CURRENT_BUFFER_LVALUE->yy_ch_buf)
-	      YY_FATAL_ERROR ("out of dynamic memory in yy_get_next_buffer()");
-      }
+				b->yy_ch_buf = (char *)
+					/* Include room in for 2 EOB chars. */
+					Ewktrealloc((void *) b->yy_ch_buf,b->yy_buf_size + 2  );
+				}
+			else
+				/* Can't grow it, we don't own it. */
+				b->yy_ch_buf = 0;
 
-    (yy_n_chars) += number_to_move;
-    YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] = YY_END_OF_BUFFER_CHAR;
-    YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1] =
-	YY_END_OF_BUFFER_CHAR;
+			if ( ! b->yy_ch_buf )
+				YY_FATAL_ERROR(
+				"fatal error - scanner input buffer overflow" );
 
-    (yytext_ptr) = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[0];
+			(yy_c_buf_p) = &b->yy_ch_buf[yy_c_buf_p_offset];
 
-    return ret_val;
+			num_to_read = YY_CURRENT_BUFFER_LVALUE->yy_buf_size -
+						number_to_move - 1;
+
+			}
+
+		if ( num_to_read > YY_READ_BUF_SIZE )
+			num_to_read = YY_READ_BUF_SIZE;
+
+		/* Read in more data. */
+		YY_INPUT( (&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move]),
+			(yy_n_chars), (size_t) num_to_read );
+
+		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
+		}
+
+	if ( (yy_n_chars) == 0 )
+		{
+		if ( number_to_move == YY_MORE_ADJ )
+			{
+			ret_val = EOB_ACT_END_OF_FILE;
+			Ewktrestart(Ewktin  );
+			}
+
+		else
+			{
+			ret_val = EOB_ACT_LAST_MATCH;
+			YY_CURRENT_BUFFER_LVALUE->yy_buffer_status =
+				YY_BUFFER_EOF_PENDING;
+			}
+		}
+
+	else
+		ret_val = EOB_ACT_CONTINUE_SCAN;
+
+	if ((yy_size_t) ((yy_n_chars) + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
+		/* Extend the array by 50%, plus the number we really need. */
+		yy_size_t new_size = (yy_n_chars) + number_to_move + ((yy_n_chars) >> 1);
+		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) Ewktrealloc((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,new_size  );
+		if ( ! YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
+			YY_FATAL_ERROR( "out of dynamic memory in yy_get_next_buffer()" );
+	}
+
+	(yy_n_chars) += number_to_move;
+	YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] = YY_END_OF_BUFFER_CHAR;
+	YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1] = YY_END_OF_BUFFER_CHAR;
+
+	(yytext_ptr) = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[0];
+
+	return ret_val;
 }
 
 /* yy_get_previous_state - get the state just before the EOB char was reached */
 
-static ewkt_yy_state_type
-ewkt_yy_get_previous_state (void)
+    static yy_state_type yy_get_previous_state (void)
 {
-    register ewkt_yy_state_type yy_current_state;
-    register char *yy_cp;
+	register yy_state_type yy_current_state;
+	register char *yy_cp;
+    
+	yy_current_state = (yy_start);
 
-    yy_current_state = (ewkt_yy_start);
+	for ( yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (yy_c_buf_p); ++yy_cp )
+		{
+		register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+		if ( yy_accept[yy_current_state] )
+			{
+			(yy_last_accepting_state) = yy_current_state;
+			(yy_last_accepting_cpos) = yy_cp;
+			}
+		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
+			{
+			yy_current_state = (int) yy_def[yy_current_state];
+			if ( yy_current_state >= 93 )
+				yy_c = yy_meta[(unsigned int) yy_c];
+			}
+		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+		}
 
-    for (yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (ewkt_yy_c_buf_p); ++yy_cp)
-      {
-	  register EWKT_YY_CHAR yy_c =
-	      (*yy_cp ? ewkt_yy_ec[YY_SC_TO_UI (*yy_cp)] : 1);
-	  if (ewkt_yy_accept[yy_current_state])
-	    {
-		(yy_last_accepting_state) = yy_current_state;
-		(yy_last_accepting_cpos) = yy_cp;
-	    }
-	  while (ewkt_yy_chk[ewkt_yy_base[yy_current_state] + yy_c] !=
-		 yy_current_state)
-	    {
-		yy_current_state = (int) ewkt_yy_def[yy_current_state];
-		if (yy_current_state >= 93)
-		    yy_c = ewkt_yy_meta[(unsigned int) yy_c];
-	    }
-	  yy_current_state =
-	      ewkt_yy_nxt[ewkt_yy_base[yy_current_state] + (unsigned int) yy_c];
-      }
-
-    return yy_current_state;
+	return yy_current_state;
 }
 
 /* yy_try_NUL_trans - try to make a transition on the NUL character
@@ -5197,207 +4671,199 @@ ewkt_yy_get_previous_state (void)
  * synopsis
  *	next_state = yy_try_NUL_trans( current_state );
  */
-static ewkt_yy_state_type
-ewkt_yy_try_NUL_trans (ewkt_yy_state_type yy_current_state)
+    static yy_state_type yy_try_NUL_trans  (yy_state_type yy_current_state )
 {
-    register int yy_is_jam;
-    register char *yy_cp = (ewkt_yy_c_buf_p);
+	register int yy_is_jam;
+    	register char *yy_cp = (yy_c_buf_p);
 
-    register EWKT_YY_CHAR yy_c = 1;
-    if (ewkt_yy_accept[yy_current_state])
-      {
-	  (yy_last_accepting_state) = yy_current_state;
-	  (yy_last_accepting_cpos) = yy_cp;
-      }
-    while (ewkt_yy_chk[ewkt_yy_base[yy_current_state] + yy_c] !=
-	   yy_current_state)
-      {
-	  yy_current_state = (int) ewkt_yy_def[yy_current_state];
-	  if (yy_current_state >= 93)
-	      yy_c = ewkt_yy_meta[(unsigned int) yy_c];
-      }
-    yy_current_state =
-	ewkt_yy_nxt[ewkt_yy_base[yy_current_state] + (unsigned int) yy_c];
-    yy_is_jam = (yy_current_state == 92);
+	register YY_CHAR yy_c = 1;
+	if ( yy_accept[yy_current_state] )
+		{
+		(yy_last_accepting_state) = yy_current_state;
+		(yy_last_accepting_cpos) = yy_cp;
+		}
+	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
+		{
+		yy_current_state = (int) yy_def[yy_current_state];
+		if ( yy_current_state >= 93 )
+			yy_c = yy_meta[(unsigned int) yy_c];
+		}
+	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+	yy_is_jam = (yy_current_state == 92);
 
-    return yy_is_jam ? 0 : yy_current_state;
+	return yy_is_jam ? 0 : yy_current_state;
 }
 
-static void
-ewkt_yyunput (int c, register char *yy_bp)
+    static void yyunput (int c, register char * yy_bp )
 {
-    register char *yy_cp;
+	register char *yy_cp;
+    
+    yy_cp = (yy_c_buf_p);
 
-    yy_cp = (ewkt_yy_c_buf_p);
+	/* undo effects of setting up Ewkttext */
+	*yy_cp = (yy_hold_char);
 
-    /* undo effects of setting up Ewkttext */
-    *yy_cp = (yy_hold_char);
+	if ( yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2 )
+		{ /* need to shift things up to make room */
+		/* +2 for EOB chars. */
+		register int number_to_move = (yy_n_chars) + 2;
+		register char *dest = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[
+					YY_CURRENT_BUFFER_LVALUE->yy_buf_size + 2];
+		register char *source =
+				&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move];
 
-    if (yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2)
-      {				/* need to shift things up to make room */
-	  /* +2 for EOB chars. */
-	  register int number_to_move = (yy_n_chars) + 2;
-	  register char *dest =
-	      &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[YY_CURRENT_BUFFER_LVALUE->
-						   yy_buf_size + 2];
-	  register char *source =
-	      &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move];
+		while ( source > YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
+			*--dest = *--source;
 
-	  while (source > YY_CURRENT_BUFFER_LVALUE->yy_ch_buf)
-	      *--dest = *--source;
+		yy_cp += (int) (dest - source);
+		yy_bp += (int) (dest - source);
+		YY_CURRENT_BUFFER_LVALUE->yy_n_chars =
+			(yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_buf_size;
 
-	  yy_cp += (int) (dest - source);
-	  yy_bp += (int) (dest - source);
-	  YY_CURRENT_BUFFER_LVALUE->yy_n_chars =
-	      (yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_buf_size;
+		if ( yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2 )
+			YY_FATAL_ERROR( "flex scanner push-back overflow" );
+		}
 
-	  if (yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2)
-	      YY_FATAL_ERROR ("flex scanner push-back overflow");
-      }
+	*--yy_cp = (char) c;
 
-    *--yy_cp = (char) c;
-
-    (yytext_ptr) = yy_bp;
-    (yy_hold_char) = *yy_cp;
-    (ewkt_yy_c_buf_p) = yy_cp;
+	(yytext_ptr) = yy_bp;
+	(yy_hold_char) = *yy_cp;
+	(yy_c_buf_p) = yy_cp;
 }
 
 #ifndef YY_NO_INPUT
 #ifdef __cplusplus
-static int
-yyinput (void)
+    static int yyinput (void)
 #else
-static int
-ewkt_input (void)
+    static int input  (void)
 #endif
+
 {
-    int c;
+	int c;
+    
+	*(yy_c_buf_p) = (yy_hold_char);
 
-    *(ewkt_yy_c_buf_p) = (yy_hold_char);
+	if ( *(yy_c_buf_p) == YY_END_OF_BUFFER_CHAR )
+		{
+		/* yy_c_buf_p now points to the character we want to return.
+		 * If this occurs *before* the EOB characters, then it's a
+		 * valid NUL; if not, then we've hit the end of the buffer.
+		 */
+		if ( (yy_c_buf_p) < &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] )
+			/* This was really a NUL. */
+			*(yy_c_buf_p) = '\0';
 
-    if (*(ewkt_yy_c_buf_p) == YY_END_OF_BUFFER_CHAR)
-      {
-	  /* yy_c_buf_p now points to the character we want to return.
-	   * If this occurs *before* the EOB characters, then it's a
-	   * valid NUL; if not, then we've hit the end of the buffer.
-	   */
-	  if ((ewkt_yy_c_buf_p) <
-	      &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)])
-	      /* This was really a NUL. */
-	      *(ewkt_yy_c_buf_p) = '\0';
+		else
+			{ /* need more input */
+			int offset = (yy_c_buf_p) - (yytext_ptr);
+			++(yy_c_buf_p);
 
-	  else
-	    {			/* need more input */
-		int offset = (ewkt_yy_c_buf_p) - (yytext_ptr);
-		++(ewkt_yy_c_buf_p);
+			switch ( yy_get_next_buffer(  ) )
+				{
+				case EOB_ACT_LAST_MATCH:
+					/* This happens because yy_g_n_b()
+					 * sees that we've accumulated a
+					 * token and flags that we need to
+					 * try matching the token before
+					 * proceeding.  But for input(),
+					 * there's no matching to consider.
+					 * So convert the EOB_ACT_LAST_MATCH
+					 * to EOB_ACT_END_OF_FILE.
+					 */
 
-		switch (ewkt_yy_get_next_buffer ())
-		  {
-		  case EOB_ACT_LAST_MATCH:
-		      /* This happens because yy_g_n_b()
-		       * sees that we've accumulated a
-		       * token and flags that we need to
-		       * try matching the token before
-		       * proceeding.  But for input(),
-		       * there's no matching to consider.
-		       * So convert the EOB_ACT_LAST_MATCH
-		       * to EOB_ACT_END_OF_FILE.
-		       */
+					/* Reset buffer status. */
+					Ewktrestart(Ewktin );
 
-		      /* Reset buffer status. */
-		      Ewktrestart (Ewktin);
+					/*FALLTHROUGH*/
 
-		   /*FALLTHROUGH*/ case EOB_ACT_END_OF_FILE:
-		      {
-			  if (Ewktwrap ())
-			      return EOF;
+				case EOB_ACT_END_OF_FILE:
+					{
+					if ( Ewktwrap( ) )
+						return EOF;
 
-			  if (!(yy_did_buffer_switch_on_eof))
-			      YY_NEW_FILE;
+					if ( ! (yy_did_buffer_switch_on_eof) )
+						YY_NEW_FILE;
 #ifdef __cplusplus
-			  return yyinput ();
+					return yyinput();
 #else
-			  return ewkt_input ();
+					return input();
 #endif
-		      }
+					}
 
-		  case EOB_ACT_CONTINUE_SCAN:
-		      (ewkt_yy_c_buf_p) = (yytext_ptr) + offset;
-		      break;
-		  }
-	    }
-      }
+				case EOB_ACT_CONTINUE_SCAN:
+					(yy_c_buf_p) = (yytext_ptr) + offset;
+					break;
+				}
+			}
+		}
 
-    c = *(unsigned char *) (ewkt_yy_c_buf_p);	/* cast for 8-bit char's */
-    *(ewkt_yy_c_buf_p) = '\0';	/* preserve Ewkttext */
-    (yy_hold_char) = *++(ewkt_yy_c_buf_p);
+	c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
+	*(yy_c_buf_p) = '\0';	/* preserve Ewkttext */
+	(yy_hold_char) = *++(yy_c_buf_p);
 
-    return c;
+	return c;
 }
-#endif /* ifndef YY_NO_INPUT */
+#endif	/* ifndef YY_NO_INPUT */
 
 /** Immediately switch to a different input stream.
  * @param input_file A readable stream.
  * 
  * @note This function does not reset the start condition to @c INITIAL .
  */
-void
-Ewktrestart (FILE * input_file)
+    void Ewktrestart  (FILE * input_file )
 {
+    
+	if ( ! YY_CURRENT_BUFFER ){
+        Ewktensure_buffer_stack ();
+		YY_CURRENT_BUFFER_LVALUE =
+            Ewkt_create_buffer(Ewktin,YY_BUF_SIZE );
+	}
 
-    if (!YY_CURRENT_BUFFER)
-      {
-	  Ewktensure_buffer_stack ();
-	  YY_CURRENT_BUFFER_LVALUE = Ewkt_create_buffer (Ewktin, YY_BUF_SIZE);
-      }
-
-    Ewkt_init_buffer (YY_CURRENT_BUFFER, input_file);
-    Ewkt_load_buffer_state ();
+	Ewkt_init_buffer(YY_CURRENT_BUFFER,input_file );
+	Ewkt_load_buffer_state( );
 }
 
 /** Switch to a different input buffer.
  * @param new_buffer The new input buffer.
  * 
  */
-void
-Ewkt_switch_to_buffer (YY_BUFFER_STATE new_buffer)
+    void Ewkt_switch_to_buffer  (YY_BUFFER_STATE  new_buffer )
 {
-
-    /* TODO. We should be able to replace this entire function body
-     * with
-     *              Ewktpop_buffer_state();
-     *              Ewktpush_buffer_state(new_buffer);
+    
+	/* TODO. We should be able to replace this entire function body
+	 * with
+	 *		Ewktpop_buffer_state();
+	 *		Ewktpush_buffer_state(new_buffer);
      */
-    Ewktensure_buffer_stack ();
-    if (YY_CURRENT_BUFFER == new_buffer)
-	return;
+	Ewktensure_buffer_stack ();
+	if ( YY_CURRENT_BUFFER == new_buffer )
+		return;
 
-    if (YY_CURRENT_BUFFER)
-      {
-	  /* Flush out information for old buffer. */
-	  *(ewkt_yy_c_buf_p) = (yy_hold_char);
-	  YY_CURRENT_BUFFER_LVALUE->yy_buf_pos = (ewkt_yy_c_buf_p);
-	  YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
-      }
+	if ( YY_CURRENT_BUFFER )
+		{
+		/* Flush out information for old buffer. */
+		*(yy_c_buf_p) = (yy_hold_char);
+		YY_CURRENT_BUFFER_LVALUE->yy_buf_pos = (yy_c_buf_p);
+		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
+		}
 
-    YY_CURRENT_BUFFER_LVALUE = new_buffer;
-    Ewkt_load_buffer_state ();
+	YY_CURRENT_BUFFER_LVALUE = new_buffer;
+	Ewkt_load_buffer_state( );
 
-    /* We don't actually know whether we did this switch during
-     * EOF (Ewktwrap()) processing, but the only time this flag
-     * is looked at is after Ewktwrap() is called, so it's safe
-     * to go ahead and always set it.
-     */
-    (yy_did_buffer_switch_on_eof) = 1;
+	/* We don't actually know whether we did this switch during
+	 * EOF (Ewktwrap()) processing, but the only time this flag
+	 * is looked at is after Ewktwrap() is called, so it's safe
+	 * to go ahead and always set it.
+	 */
+	(yy_did_buffer_switch_on_eof) = 1;
 }
 
-static void
-Ewkt_load_buffer_state (void)
+static void Ewkt_load_buffer_state  (void)
 {
-    (yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
-    (yytext_ptr) = (ewkt_yy_c_buf_p) = YY_CURRENT_BUFFER_LVALUE->yy_buf_pos;
-    Ewktin = YY_CURRENT_BUFFER_LVALUE->yy_input_file;
-    (yy_hold_char) = *(ewkt_yy_c_buf_p);
+    	(yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
+	(yytext_ptr) = (yy_c_buf_p) = YY_CURRENT_BUFFER_LVALUE->yy_buf_pos;
+	Ewktin = YY_CURRENT_BUFFER_LVALUE->yy_input_file;
+	(yy_hold_char) = *(yy_c_buf_p);
 }
 
 /** Allocate and initialize an input buffer state.
@@ -5406,110 +4872,106 @@ Ewkt_load_buffer_state (void)
  * 
  * @return the allocated buffer state.
  */
-YY_BUFFER_STATE
-Ewkt_create_buffer (FILE * file, int size)
+    YY_BUFFER_STATE Ewkt_create_buffer  (FILE * file, int  size )
 {
-    YY_BUFFER_STATE b;
+	YY_BUFFER_STATE b;
+    
+	b = (YY_BUFFER_STATE) Ewktalloc(sizeof( struct yy_buffer_state )  );
+	if ( ! b )
+		YY_FATAL_ERROR( "out of dynamic memory in Ewkt_create_buffer()" );
 
-    b = (YY_BUFFER_STATE) Ewktalloc (sizeof (struct yy_buffer_state));
-    if (!b)
-	YY_FATAL_ERROR ("out of dynamic memory in Ewkt_create_buffer()");
+	b->yy_buf_size = size;
 
-    b->yy_buf_size = size;
+	/* yy_ch_buf has to be 2 characters longer than the size given because
+	 * we need to put in 2 end-of-buffer characters.
+	 */
+	b->yy_ch_buf = (char *) Ewktalloc(b->yy_buf_size + 2  );
+	if ( ! b->yy_ch_buf )
+		YY_FATAL_ERROR( "out of dynamic memory in Ewkt_create_buffer()" );
 
-    /* yy_ch_buf has to be 2 characters longer than the size given because
-     * we need to put in 2 end-of-buffer characters.
-     */
-    b->yy_ch_buf = (char *) Ewktalloc (b->yy_buf_size + 2);
-    if (!b->yy_ch_buf)
-	YY_FATAL_ERROR ("out of dynamic memory in Ewkt_create_buffer()");
+	b->yy_is_our_buffer = 1;
 
-    b->yy_is_our_buffer = 1;
+	Ewkt_init_buffer(b,file );
 
-    Ewkt_init_buffer (b, file);
-
-    return b;
+	return b;
 }
 
 /** Destroy the buffer.
  * @param b a buffer created with Ewkt_create_buffer()
  * 
  */
-void
-Ewkt_delete_buffer (YY_BUFFER_STATE b)
+    void Ewkt_delete_buffer (YY_BUFFER_STATE  b )
 {
+    
+	if ( ! b )
+		return;
 
-    if (!b)
-	return;
+	if ( b == YY_CURRENT_BUFFER ) /* Not sure if we should pop here. */
+		YY_CURRENT_BUFFER_LVALUE = (YY_BUFFER_STATE) 0;
 
-    if (b == YY_CURRENT_BUFFER)	/* Not sure if we should pop here. */
-	YY_CURRENT_BUFFER_LVALUE = (YY_BUFFER_STATE) 0;
+	if ( b->yy_is_our_buffer )
+		Ewktfree((void *) b->yy_ch_buf  );
 
-    if (b->yy_is_our_buffer)
-	Ewktfree ((void *) b->yy_ch_buf);
-
-    Ewktfree ((void *) b);
+	Ewktfree((void *) b  );
 }
 
 #ifndef __cplusplus
-extern int isatty (int);
+extern int isatty (int );
 #endif /* __cplusplus */
-
+    
 /* Initializes or reinitializes a buffer.
  * This function is sometimes called more than once on the same buffer,
  * such as during a Ewktrestart() or at EOF.
  */
-static void
-Ewkt_init_buffer (YY_BUFFER_STATE b, FILE * file)
+    static void Ewkt_init_buffer  (YY_BUFFER_STATE  b, FILE * file )
+
 {
-    int oerrno = errno;
+	int oerrno = errno;
+    
+	Ewkt_flush_buffer(b );
 
-    Ewkt_flush_buffer (b);
-
-    b->yy_input_file = file;
-    b->yy_fill_buffer = 1;
+	b->yy_input_file = file;
+	b->yy_fill_buffer = 1;
 
     /* If b is the current buffer, then Ewkt_init_buffer was _probably_
      * called from Ewktrestart() or through yy_get_next_buffer.
      * In that case, we don't want to reset the lineno or column.
      */
-    if (b != YY_CURRENT_BUFFER)
-      {
-	  b->yy_bs_lineno = 1;
-	  b->yy_bs_column = 0;
-      }
+    if (b != YY_CURRENT_BUFFER){
+        b->yy_bs_lineno = 1;
+        b->yy_bs_column = 0;
+    }
 
-    b->yy_is_interactive = file ? (isatty (fileno (file)) > 0) : 0;
-
-    errno = oerrno;
+        b->yy_is_interactive = file ? (isatty( fileno(file) ) > 0) : 0;
+    
+	errno = oerrno;
 }
 
 /** Discard all buffered characters. On the next scan, YY_INPUT will be called.
  * @param b the buffer state to be flushed, usually @c YY_CURRENT_BUFFER.
  * 
  */
-void
-Ewkt_flush_buffer (YY_BUFFER_STATE b)
+    void Ewkt_flush_buffer (YY_BUFFER_STATE  b )
 {
-    if (!b)
-	return;
+    	if ( ! b )
+		return;
 
-    b->yy_n_chars = 0;
+	b->yy_n_chars = 0;
 
-    /* We always need two end-of-buffer characters.  The first causes
-     * a transition to the end-of-buffer state.  The second causes
-     * a jam in that state.
-     */
-    b->yy_ch_buf[0] = YY_END_OF_BUFFER_CHAR;
-    b->yy_ch_buf[1] = YY_END_OF_BUFFER_CHAR;
+	/* We always need two end-of-buffer characters.  The first causes
+	 * a transition to the end-of-buffer state.  The second causes
+	 * a jam in that state.
+	 */
+	b->yy_ch_buf[0] = YY_END_OF_BUFFER_CHAR;
+	b->yy_ch_buf[1] = YY_END_OF_BUFFER_CHAR;
 
-    b->yy_buf_pos = &b->yy_ch_buf[0];
+	b->yy_buf_pos = &b->yy_ch_buf[0];
 
-    b->yy_at_bol = 1;
-    b->yy_buffer_status = YY_BUFFER_NEW;
+	b->yy_at_bol = 1;
+	b->yy_buffer_status = YY_BUFFER_NEW;
 
-    if (b == YY_CURRENT_BUFFER)
-	Ewkt_load_buffer_state ();
+	if ( b == YY_CURRENT_BUFFER )
+		Ewkt_load_buffer_state( );
 }
 
 /** Pushes the new state onto the stack. The new state becomes
@@ -5518,104 +4980,96 @@ Ewkt_flush_buffer (YY_BUFFER_STATE b)
  *  @param new_buffer The new state.
  *  
  */
-void
-Ewktpush_buffer_state (YY_BUFFER_STATE new_buffer)
+void Ewktpush_buffer_state (YY_BUFFER_STATE new_buffer )
 {
-    if (new_buffer == NULL)
-	return;
+    	if (new_buffer == NULL)
+		return;
 
-    Ewktensure_buffer_stack ();
+	Ewktensure_buffer_stack();
 
-    /* This block is copied from Ewkt_switch_to_buffer. */
-    if (YY_CURRENT_BUFFER)
-      {
-	  /* Flush out information for old buffer. */
-	  *(ewkt_yy_c_buf_p) = (yy_hold_char);
-	  YY_CURRENT_BUFFER_LVALUE->yy_buf_pos = (ewkt_yy_c_buf_p);
-	  YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
-      }
+	/* This block is copied from Ewkt_switch_to_buffer. */
+	if ( YY_CURRENT_BUFFER )
+		{
+		/* Flush out information for old buffer. */
+		*(yy_c_buf_p) = (yy_hold_char);
+		YY_CURRENT_BUFFER_LVALUE->yy_buf_pos = (yy_c_buf_p);
+		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
+		}
 
-    /* Only push if top exists. Otherwise, replace top. */
-    if (YY_CURRENT_BUFFER)
-	(ewkt_yy_buffer_stack_top)++;
-    YY_CURRENT_BUFFER_LVALUE = new_buffer;
+	/* Only push if top exists. Otherwise, replace top. */
+	if (YY_CURRENT_BUFFER)
+		(yy_buffer_stack_top)++;
+	YY_CURRENT_BUFFER_LVALUE = new_buffer;
 
-    /* copied from Ewkt_switch_to_buffer. */
-    Ewkt_load_buffer_state ();
-    (yy_did_buffer_switch_on_eof) = 1;
+	/* copied from Ewkt_switch_to_buffer. */
+	Ewkt_load_buffer_state( );
+	(yy_did_buffer_switch_on_eof) = 1;
 }
 
 /** Removes and deletes the top of the stack, if present.
  *  The next element becomes the new top.
  *  
  */
-void
-Ewktpop_buffer_state (void)
+void Ewktpop_buffer_state (void)
 {
-    if (!YY_CURRENT_BUFFER)
-	return;
+    	if (!YY_CURRENT_BUFFER)
+		return;
 
-    Ewkt_delete_buffer (YY_CURRENT_BUFFER);
-    YY_CURRENT_BUFFER_LVALUE = NULL;
-    if ((ewkt_yy_buffer_stack_top) > 0)
-	--(ewkt_yy_buffer_stack_top);
+	Ewkt_delete_buffer(YY_CURRENT_BUFFER );
+	YY_CURRENT_BUFFER_LVALUE = NULL;
+	if ((yy_buffer_stack_top) > 0)
+		--(yy_buffer_stack_top);
 
-    if (YY_CURRENT_BUFFER)
-      {
-	  Ewkt_load_buffer_state ();
-	  (yy_did_buffer_switch_on_eof) = 1;
-      }
+	if (YY_CURRENT_BUFFER) {
+		Ewkt_load_buffer_state( );
+		(yy_did_buffer_switch_on_eof) = 1;
+	}
 }
 
 /* Allocates the stack if it does not exist.
  *  Guarantees space for at least one push.
  */
-static void
-Ewktensure_buffer_stack (void)
+static void Ewktensure_buffer_stack (void)
 {
-    int num_to_alloc;
+	int num_to_alloc;
+    
+	if (!(yy_buffer_stack)) {
 
-    if (!(ewkt_yy_buffer_stack))
-      {
+		/* First allocation is just for 2 elements, since we don't know if this
+		 * scanner will even need a stack. We use 2 instead of 1 to avoid an
+		 * immediate realloc on the next call.
+         */
+		num_to_alloc = 1;
+		(yy_buffer_stack) = (struct yy_buffer_state**)Ewktalloc
+								(num_to_alloc * sizeof(struct yy_buffer_state*)
+								);
+		if ( ! (yy_buffer_stack) )
+			YY_FATAL_ERROR( "out of dynamic memory in Ewktensure_buffer_stack()" );
+								  
+		memset((yy_buffer_stack), 0, num_to_alloc * sizeof(struct yy_buffer_state*));
+				
+		(yy_buffer_stack_max) = num_to_alloc;
+		(yy_buffer_stack_top) = 0;
+		return;
+	}
 
-	  /* First allocation is just for 2 elements, since we don't know if this
-	   * scanner will even need a stack. We use 2 instead of 1 to avoid an
-	   * immediate realloc on the next call.
-	   */
-	  num_to_alloc = 1;
-	  (ewkt_yy_buffer_stack) = (struct yy_buffer_state **) Ewktalloc
-	      (num_to_alloc * sizeof (struct yy_buffer_state *));
-	  if (!(ewkt_yy_buffer_stack))
-	      YY_FATAL_ERROR
-		  ("out of dynamic memory in Ewktensure_buffer_stack()");
+	if ((yy_buffer_stack_top) >= ((yy_buffer_stack_max)) - 1){
 
-	  memset ((ewkt_yy_buffer_stack), 0,
-		  num_to_alloc * sizeof (struct yy_buffer_state *));
+		/* Increase the buffer to prepare for a possible push. */
+		int grow_size = 8 /* arbitrary grow size */;
 
-	  (ewkt_yy_buffer_stack_max) = num_to_alloc;
-	  (ewkt_yy_buffer_stack_top) = 0;
-	  return;
-      }
+		num_to_alloc = (yy_buffer_stack_max) + grow_size;
+		(yy_buffer_stack) = (struct yy_buffer_state**)Ewktrealloc
+								((yy_buffer_stack),
+								num_to_alloc * sizeof(struct yy_buffer_state*)
+								);
+		if ( ! (yy_buffer_stack) )
+			YY_FATAL_ERROR( "out of dynamic memory in Ewktensure_buffer_stack()" );
 
-    if ((ewkt_yy_buffer_stack_top) >= ((ewkt_yy_buffer_stack_max)) - 1)
-      {
-
-	  /* Increase the buffer to prepare for a possible push. */
-	  int grow_size = 8 /* arbitrary grow size */ ;
-
-	  num_to_alloc = (ewkt_yy_buffer_stack_max) + grow_size;
-	  (ewkt_yy_buffer_stack) = (struct yy_buffer_state **) Ewktrealloc
-	      ((ewkt_yy_buffer_stack),
-	       num_to_alloc * sizeof (struct yy_buffer_state *));
-	  if (!(ewkt_yy_buffer_stack))
-	      YY_FATAL_ERROR
-		  ("out of dynamic memory in Ewktensure_buffer_stack()");
-
-	  /* zero only the new slots. */
-	  memset ((ewkt_yy_buffer_stack) + (ewkt_yy_buffer_stack_max), 0,
-		  grow_size * sizeof (struct yy_buffer_state *));
-	  (ewkt_yy_buffer_stack_max) = num_to_alloc;
-      }
+		/* zero only the new slots.*/
+		memset((yy_buffer_stack) + (yy_buffer_stack_max), 0, grow_size * sizeof(struct yy_buffer_state*));
+		(yy_buffer_stack_max) = num_to_alloc;
+	}
 }
 
 /** Setup the input buffer state to scan directly from a user-specified character buffer.
@@ -5624,34 +5078,33 @@ Ewktensure_buffer_stack (void)
  * 
  * @return the newly allocated buffer state object. 
  */
-YY_BUFFER_STATE
-Ewkt_scan_buffer (char *base, yy_size_t size)
+YY_BUFFER_STATE Ewkt_scan_buffer  (char * base, yy_size_t  size )
 {
-    YY_BUFFER_STATE b;
+	YY_BUFFER_STATE b;
+    
+	if ( size < 2 ||
+	     base[size-2] != YY_END_OF_BUFFER_CHAR ||
+	     base[size-1] != YY_END_OF_BUFFER_CHAR )
+		/* They forgot to leave room for the EOB's. */
+		return 0;
 
-    if (size < 2 ||
-	base[size - 2] != YY_END_OF_BUFFER_CHAR ||
-	base[size - 1] != YY_END_OF_BUFFER_CHAR)
-	/* They forgot to leave room for the EOB's. */
-	return 0;
+	b = (YY_BUFFER_STATE) Ewktalloc(sizeof( struct yy_buffer_state )  );
+	if ( ! b )
+		YY_FATAL_ERROR( "out of dynamic memory in Ewkt_scan_buffer()" );
 
-    b = (YY_BUFFER_STATE) Ewktalloc (sizeof (struct yy_buffer_state));
-    if (!b)
-	YY_FATAL_ERROR ("out of dynamic memory in Ewkt_scan_buffer()");
+	b->yy_buf_size = size - 2;	/* "- 2" to take care of EOB's */
+	b->yy_buf_pos = b->yy_ch_buf = base;
+	b->yy_is_our_buffer = 0;
+	b->yy_input_file = 0;
+	b->yy_n_chars = b->yy_buf_size;
+	b->yy_is_interactive = 0;
+	b->yy_at_bol = 1;
+	b->yy_fill_buffer = 0;
+	b->yy_buffer_status = YY_BUFFER_NEW;
 
-    b->yy_buf_size = size - 2;	/* "- 2" to take care of EOB's */
-    b->yy_buf_pos = b->yy_ch_buf = base;
-    b->yy_is_our_buffer = 0;
-    b->yy_input_file = 0;
-    b->yy_n_chars = b->yy_buf_size;
-    b->yy_is_interactive = 0;
-    b->yy_at_bol = 1;
-    b->yy_fill_buffer = 0;
-    b->yy_buffer_status = YY_BUFFER_NEW;
+	Ewkt_switch_to_buffer(b  );
 
-    Ewkt_switch_to_buffer (b);
-
-    return b;
+	return b;
 }
 
 /** Setup the input buffer state to scan a string. The next call to Ewktlex() will
@@ -5662,11 +5115,10 @@ Ewkt_scan_buffer (char *base, yy_size_t size)
  * @note If you want to scan bytes that may contain NUL values, then use
  *       Ewkt_scan_bytes() instead.
  */
-YY_BUFFER_STATE
-Ewkt_scan_string (yyconst char *yystr)
+YY_BUFFER_STATE Ewkt_scan_string (yyconst char * yystr )
 {
-
-    return Ewkt_scan_bytes (yystr, strlen (yystr));
+    
+	return Ewkt_scan_bytes(yystr,strlen(yystr) );
 }
 
 /** Setup the input buffer state to scan the given bytes. The next call to Ewktlex() will
@@ -5676,46 +5128,44 @@ Ewkt_scan_string (yyconst char *yystr)
  * 
  * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE
-Ewkt_scan_bytes (yyconst char *yybytes, int _yybytes_len)
+YY_BUFFER_STATE Ewkt_scan_bytes  (yyconst char * yybytes, int  _yybytes_len )
 {
-    YY_BUFFER_STATE b;
-    char *buf;
-    yy_size_t n;
-    int i;
+	YY_BUFFER_STATE b;
+	char *buf;
+	yy_size_t n;
+	int i;
+    
+	/* Get memory for full buffer, including space for trailing EOB's. */
+	n = _yybytes_len + 2;
+	buf = (char *) Ewktalloc(n  );
+	if ( ! buf )
+		YY_FATAL_ERROR( "out of dynamic memory in Ewkt_scan_bytes()" );
 
-    /* Get memory for full buffer, including space for trailing EOB's. */
-    n = _yybytes_len + 2;
-    buf = (char *) Ewktalloc (n);
-    if (!buf)
-	YY_FATAL_ERROR ("out of dynamic memory in Ewkt_scan_bytes()");
+	for ( i = 0; i < _yybytes_len; ++i )
+		buf[i] = yybytes[i];
 
-    for (i = 0; i < _yybytes_len; ++i)
-	buf[i] = yybytes[i];
+	buf[_yybytes_len] = buf[_yybytes_len+1] = YY_END_OF_BUFFER_CHAR;
 
-    buf[_yybytes_len] = buf[_yybytes_len + 1] = YY_END_OF_BUFFER_CHAR;
+	b = Ewkt_scan_buffer(buf,n );
+	if ( ! b )
+		YY_FATAL_ERROR( "bad buffer in Ewkt_scan_bytes()" );
 
-    b = Ewkt_scan_buffer (buf, n);
-    if (!b)
-	YY_FATAL_ERROR ("bad buffer in Ewkt_scan_bytes()");
+	/* It's okay to grow etc. this buffer, and we should throw it
+	 * away when we're done.
+	 */
+	b->yy_is_our_buffer = 1;
 
-    /* It's okay to grow etc. this buffer, and we should throw it
-     * away when we're done.
-     */
-    b->yy_is_our_buffer = 1;
-
-    return b;
+	return b;
 }
 
 #ifndef YY_EXIT_FAILURE
 #define YY_EXIT_FAILURE 2
 #endif
 
-static void
-ewkt_yy_fatal_error (yyconst char *msg)
+static void yy_fatal_error (yyconst char* msg )
 {
-    (void) fprintf (stderr, "%s\n", msg);
-    exit (YY_EXIT_FAILURE);
+    	(void) fprintf( stderr, "%s\n", msg );
+	exit( YY_EXIT_FAILURE );
 }
 
 /* Redefine yyless() so it works in section 3 code. */
@@ -5728,9 +5178,9 @@ ewkt_yy_fatal_error (yyconst char *msg)
         int yyless_macro_arg = (n); \
         YY_LESS_LINENO(yyless_macro_arg);\
 		Ewkttext[Ewktleng] = (yy_hold_char); \
-		(ewkt_yy_c_buf_p) = Ewkttext + yyless_macro_arg; \
-		(yy_hold_char) = *(ewkt_yy_c_buf_p); \
-		*(ewkt_yy_c_buf_p) = '\0'; \
+		(yy_c_buf_p) = Ewkttext + yyless_macro_arg; \
+		(yy_hold_char) = *(yy_c_buf_p); \
+		*(yy_c_buf_p) = '\0'; \
 		Ewktleng = yyless_macro_arg; \
 		} \
 	while ( 0 )
@@ -5740,58 +5190,52 @@ ewkt_yy_fatal_error (yyconst char *msg)
 /** Get the current line number.
  * 
  */
-int
-Ewktget_lineno (void)
+int Ewktget_lineno  (void)
 {
-
+        
     return Ewktlineno;
 }
 
 /** Get the input stream.
  * 
  */
-FILE *
-Ewktget_in (void)
+FILE *Ewktget_in  (void)
 {
-    return Ewktin;
+        return Ewktin;
 }
 
 /** Get the output stream.
  * 
  */
-FILE *
-Ewktget_out (void)
+FILE *Ewktget_out  (void)
 {
-    return Ewktout;
+        return Ewktout;
 }
 
 /** Get the length of the current token.
  * 
  */
-int
-Ewktget_leng (void)
+int Ewktget_leng  (void)
 {
-    return Ewktleng;
+        return Ewktleng;
 }
 
 /** Get the current token.
  * 
  */
 
-char *
-Ewktget_text (void)
+char *Ewktget_text  (void)
 {
-    return Ewkttext;
+        return Ewkttext;
 }
 
 /** Set the current line number.
  * @param line_number
  * 
  */
-void
-Ewktset_lineno (int line_number)
+void Ewktset_lineno (int  line_number )
 {
-
+    
     Ewktlineno = line_number;
 }
 
@@ -5801,43 +5245,38 @@ Ewktset_lineno (int line_number)
  * 
  * @see Ewkt_switch_to_buffer
  */
-void
-Ewktset_in (FILE * in_str)
+void Ewktset_in (FILE *  in_str )
 {
-    Ewktin = in_str;
+        Ewktin = in_str ;
 }
 
-void
-Ewktset_out (FILE * out_str)
+void Ewktset_out (FILE *  out_str )
 {
-    Ewktout = out_str;
+        Ewktout = out_str ;
 }
 
-int
-Ewktget_debug (void)
+int Ewktget_debug  (void)
 {
-    return Ewkt_flex_debug;
+        return Ewkt_flex_debug;
 }
 
-void
-Ewktset_debug (int bdebug)
+void Ewktset_debug (int  bdebug )
 {
-    Ewkt_flex_debug = bdebug;
+        Ewkt_flex_debug = bdebug ;
 }
 
-static int
-ewkt_yy_init_globals (void)
+static int yy_init_globals (void)
 {
-    /* Initialization is the same as for the non-reentrant scanner.
+        /* Initialization is the same as for the non-reentrant scanner.
      * This function is called from Ewktlex_destroy(), so don't allocate here.
      */
 
-    (ewkt_yy_buffer_stack) = 0;
-    (ewkt_yy_buffer_stack_top) = 0;
-    (ewkt_yy_buffer_stack_max) = 0;
-    (ewkt_yy_c_buf_p) = (char *) 0;
-    (ewkt_yy_init) = 0;
-    (ewkt_yy_start) = 0;
+    (yy_buffer_stack) = 0;
+    (yy_buffer_stack_top) = 0;
+    (yy_buffer_stack_max) = 0;
+    (yy_c_buf_p) = (char *) 0;
+    (yy_init) = 0;
+    (yy_start) = 0;
 
 /* Defined in main.c */
 #ifdef YY_STDINIT
@@ -5855,25 +5294,23 @@ ewkt_yy_init_globals (void)
 }
 
 /* Ewktlex_destroy is for both reentrant and non-reentrant scanners. */
-int
-Ewktlex_destroy (void)
+int Ewktlex_destroy  (void)
 {
-
+    
     /* Pop the buffer stack, destroying each element. */
-    while (YY_CURRENT_BUFFER)
-      {
-	  Ewkt_delete_buffer (YY_CURRENT_BUFFER);
-	  YY_CURRENT_BUFFER_LVALUE = NULL;
-	  Ewktpop_buffer_state ();
-      }
+	while(YY_CURRENT_BUFFER){
+		Ewkt_delete_buffer(YY_CURRENT_BUFFER  );
+		YY_CURRENT_BUFFER_LVALUE = NULL;
+		Ewktpop_buffer_state();
+	}
 
-    /* Destroy the stack itself. */
-    Ewktfree ((ewkt_yy_buffer_stack));
-    (ewkt_yy_buffer_stack) = NULL;
+	/* Destroy the stack itself. */
+	Ewktfree((yy_buffer_stack) );
+	(yy_buffer_stack) = NULL;
 
     /* Reset the globals. This is important in a non-reentrant scanner so the next time
      * Ewktlex() is called, initialization will occur. */
-    ewkt_yy_init_globals ();
+    yy_init_globals( );
 
     return 0;
 }
@@ -5883,50 +5320,45 @@ Ewktlex_destroy (void)
  */
 
 #ifndef yytext_ptr
-static void
-yy_flex_strncpy (char *s1, yyconst char *s2, int n)
+static void yy_flex_strncpy (char* s1, yyconst char * s2, int n )
 {
-    register int i;
-    for (i = 0; i < n; ++i)
-	s1[i] = s2[i];
+	register int i;
+	for ( i = 0; i < n; ++i )
+		s1[i] = s2[i];
 }
 #endif
 
 #ifdef YY_NEED_STRLEN
-static int
-yy_flex_strlen (yyconst char *s)
+static int yy_flex_strlen (yyconst char * s )
 {
-    register int n;
-    for (n = 0; s[n]; ++n)
-	;
+	register int n;
+	for ( n = 0; s[n]; ++n )
+		;
 
-    return n;
+	return n;
 }
 #endif
 
-void *
-Ewktalloc (yy_size_t size)
+void *Ewktalloc (yy_size_t  size )
 {
-    return (void *) malloc (size);
+	return (void *) malloc( size );
 }
 
-void *
-Ewktrealloc (void *ptr, yy_size_t size)
+void *Ewktrealloc  (void * ptr, yy_size_t  size )
 {
-    /* The cast to (char *) in the following accommodates both
-     * implementations that use char* generic pointers, and those
-     * that use void* generic pointers.  It works with the latter
-     * because both ANSI C and C++ allow castless assignment from
-     * any pointer type to void*, and deal with argument conversions
-     * as though doing an assignment.
-     */
-    return (void *) realloc ((char *) ptr, size);
+	/* The cast to (char *) in the following accommodates both
+	 * implementations that use char* generic pointers, and those
+	 * that use void* generic pointers.  It works with the latter
+	 * because both ANSI C and C++ allow castless assignment from
+	 * any pointer type to void*, and deal with argument conversions
+	 * as though doing an assignment.
+	 */
+	return (void *) realloc( (char *) ptr, size );
 }
 
-void
-Ewktfree (void *ptr)
+void Ewktfree (void * ptr )
 {
-    free ((char *) ptr);	/* see Ewktrealloc() for (char *) cast */
+	free( (char *) ptr );	/* see Ewktrealloc() for (char *) cast */
 }
 
 #define YYTABLES_NAME "yytables"
@@ -5936,12 +5368,11 @@ Ewktfree (void *ptr)
  *
  *
  */
-void
-ewkt_reset_lexer (void)
+void ewkt_reset_lexer(void)
 {
 
-    ewkt_line = 1;
-    ewkt_col = 1;
+  ewkt_line = 1;
+  ewkt_col  = 1;
 
 }
 
@@ -5951,17 +5382,15 @@ ewkt_reset_lexer (void)
  *
  *
  */
-void
-EwktError (char *s)
+void EwktError(char *s)
 {
-    printf ("error: %s at line: %d col: %d\n", s, ewkt_line, ewkt_col);
+  printf("error: %s at line: %d col: %d\n",s,ewkt_line,ewkt_col);
 
 }
 
-int
-Ewktwrap (void)
+int Ewktwrap(void)
 {
-    return 1;
+  return 1;
 }
 
 
@@ -6060,7 +5489,7 @@ findEwktSrid (const char *buffer, int *base_offset)
 gaiaGeomCollPtr
 gaiaParseEWKT (const unsigned char *dirty_buffer)
 {
-    void *pParser = ewktParseAlloc (malloc);
+    void *pParser = ParseAlloc (malloc);
     /* Linked-list of token values */
     ewktFlexToken *tokens = malloc (sizeof (ewktFlexToken));
     /* Pointer to the head of the list */
@@ -6092,12 +5521,12 @@ gaiaParseEWKT (const unsigned char *dirty_buffer)
 	   */
 	  tokens->Next->value = EwktLval.dval;
 	  /* Pass the token to the wkt parser created from lemon */
-	  ewktParse (pParser, yv, &(tokens->Next->value), &result);
+	  Parse (pParser, yv, &(tokens->Next->value), &result);
 	  tokens = tokens->Next;
       }
     /* This denotes the end of a line as well as the end of the parser */
-    ewktParse (pParser, EWKT_NEWLINE, 0, &result);
-    ewktParseFree (pParser, free);
+    Parse (pParser, EWKT_NEWLINE, 0, &result);
+    ParseFree (pParser, free);
     Ewktlex_destroy ();
 
     /* Assigning the token as the end to avoid seg faults while cleaning */
@@ -6127,7 +5556,7 @@ gaiaParseEWKT (const unsigned char *dirty_buffer)
 
 
 /*
-** CAVEAT: we must now undefine any Flex own macro
+** CAVEAT: we must now undefine any Lemon/Flex own macro
 */
 #undef YYNOCODE
 #undef YYNSTATE
@@ -6150,30 +5579,76 @@ gaiaParseEWKT (const unsigned char *dirty_buffer)
 #undef YY_STATE_BUF_SIZE
 #undef YY_DECL
 #undef YY_FATAL_ERROR
-#undef yy_accept
-#undef yy_create_buffer
-#undef yy_delete_buffer
-#undef yy_flex_debug
-#undef yy_init_buffer
-#undef yy_flush_buffer
-#undef yy_load_buffer_state
-#undef yy_switch_to_buffer
+#undef YYMINORTYPE
+#undef YY_CHAR
+#undef YYSTYPE
+#undef input
+#undef ParseAlloc
+#undef ParseFree
+#undef ParseStackPeak
+#undef Parse
+#undef yyalloc
+#undef yyfree
 #undef yyin
 #undef yyleng
+#undef yyless
 #undef yylex
 #undef yylineno
 #undef yyout
+#undef yyrealloc
 #undef yyrestart
+#undef yyStackEntry
 #undef yytext
 #undef yywrap
-#undef yyalloc
-#undef yyrealloc
-#undef yyfree
-#undef yyless
+#undef yyzerominor
+#undef yy_accept
+#undef yy_action
+#undef yy_base
+#undef yy_buffer_stack
+#undef yy_buffer_stack_max
+#undef yy_buffer_stack_top
+#undef yy_c_buf_p
+#undef yy_chk
+#undef yy_create_buffer
+#undef yy_def
+#undef yy_default
+#undef yy_delete_buffer
+#undef yy_destructor
+#undef yy_ec
+#undef yy_fatal_error
+#undef yy_find_reduce_action
+#undef yy_find_shift_action
+#undef yy_flex_debug
+#undef yy_flush_buffer
+#undef yy_get_next_buffer
+#undef yy_get_previous_state
+#undef yy_init
+#undef yy_init_buffer
+#undef yy_init_globals
+#undef yy_load_buffer
+#undef yy_load_buffer_state
+#undef yy_lookahead
+#undef yy_meta
 #undef yy_new_buffer
-#undef yy_set_interactive
+#undef yy_nxt
+#undef yy_parse_failed
+#undef yy_pop_parser_stack
+#undef yy_reduce
+#undef yy_reduce_ofst
 #undef yy_set_bol
+#undef yy_set_interactive
+#undef yy_shift
+#undef yy_shift_ofst
+#undef yy_start
+#undef yy_state_type
+#undef yy_switch_to_buffer
+#undef yy_syntax_error
+#undef yy_trans_info
+#undef yy_try_NUL_trans
+#undef yyParser
+#undef yyStackEntry
+#undef yyStackOverflow
+#undef yyRuleInfo
 #undef yytext_ptr
-#undef unput
-#undef YYSTYPE
-
+#undef yyunput
+#undef yyzerominor

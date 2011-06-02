@@ -1128,6 +1128,11 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
+    strcpy (sql, "CREATE UNIQUE INDEX idx_spatial_ref_sys \n");
+    strcat (sql, "ON spatial_ref_sys (auth_srid, auth_name)");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
     updateSpatiaLiteHistory (sqlite, "spatial_ref_sys", NULL,
 			     "table succesfully created");
 /* creating the GEOMETRY_COLUMN table */
@@ -7243,6 +7248,61 @@ fnct_GeometryAliasType (sqlite3_context * context, int argc,
 	    }
       }
     gaiaFreeGeomColl (geo);
+}
+
+static void
+fnct_SridFromAuthCRS (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
+{
+/* SQL function:
+/ SridFromAuthCRS(auth_name, auth_srid)
+/
+/ returns the SRID
+/ or NULL if any error is encountered
+*/
+    const unsigned char *auth_name;
+    int auth_srid;
+    int srid = -1;
+    char sql[1024];
+    char sql2[1024];
+    char **results;
+    int n_rows;
+    int n_columns;
+    char *err_msg = NULL;
+    int ret;
+    int i;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    auth_name = sqlite3_value_text (argv[0]);
+    auth_srid = sqlite3_value_int (argv[1]);
+
+    sprintf (sql, "SELECT srid FROM spatial_ref_sys ");
+    sprintf (sql2, "WHERE auth_name LIKE '%s' AND auth_srid = %d", auth_name,
+	     auth_srid);
+    strcat (sql, sql2);
+    ret =
+	sqlite3_get_table (sqlite, sql, &results, &n_rows, &n_columns,
+			   &err_msg);
+    if (ret != SQLITE_OK)
+	goto done;
+    if (n_rows >= 1)
+      {
+	  for (i = 1; i <= n_rows; i++)
+	      srid = atoi (results[(i * n_columns) + 0]);
+      }
+    sqlite3_free_table (results);
+  done:
+    sqlite3_result_int (context, srid);
 }
 
 static void
@@ -13815,6 +13875,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_GeometryType, 0, 0);
     sqlite3_create_function (db, "GeometryAliasType", 1, SQLITE_ANY, 0,
 			     fnct_GeometryAliasType, 0, 0);
+    sqlite3_create_function (db, "SridFromAuthCRS", 2, SQLITE_ANY, 0,
+			     fnct_SridFromAuthCRS, 0, 0);
     sqlite3_create_function (db, "SRID", 1, SQLITE_ANY, 0, fnct_SRID, 0, 0);
     sqlite3_create_function (db, "ST_SRID", 1, SQLITE_ANY, 0, fnct_SRID, 0, 0);
     sqlite3_create_function (db, "SetSRID", 2, SQLITE_ANY, 0, fnct_SetSRID, 0,
@@ -14743,6 +14805,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_GeometryType, 0, 0);
     sqlite3_create_function (db, "GeometryAliasType", 1, SQLITE_ANY, 0,
 			     fnct_GeometryAliasType, 0, 0);
+    sqlite3_create_function (db, "SridFromAuthCRS", 2, SQLITE_ANY, 0,
+			     fnct_SridFromAuthCRS, 0, 0);
     sqlite3_create_function (db, "SRID", 1, SQLITE_ANY, 0, fnct_SRID, 0, 0);
     sqlite3_create_function (db, "ST_SRID", 1, SQLITE_ANY, 0, fnct_SRID, 0, 0);
     sqlite3_create_function (db, "SetSrid", 2, SQLITE_ANY, 0, fnct_SetSRID, 0,

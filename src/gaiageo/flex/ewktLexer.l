@@ -81,7 +81,7 @@ int ewkt_line = 1, ewkt_col = 1;
 
 [ \t]   { ewkt_col += (int) strlen(yytext); }               /* ignore but count white space */
 
-\n      { ewkt_col = 0; ++ewkt_line; return EWKT_NEWLINE; }
+\n      { ewkt_col = 0; ++ewkt_line; }
 
 .       { ewkt_col += (int) strlen(yytext); return -1; }
 %%

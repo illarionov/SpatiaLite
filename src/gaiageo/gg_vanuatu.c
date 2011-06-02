@@ -1499,9 +1499,57 @@ vanuatu_geomColl_xyzm (gaiaGeomCollPtr first)
 
 
 
-
-
-
+/*
+** CAVEAT: we must redefine any Lemon/Flex own macro
+*/
+#define YYMINORTYPE				VANUATU_MINORTYPE
+#define YY_CHAR					VANUATU_YY_CHAR
+#define	input					vanuatu_input
+#define ParseAlloc				vanuatuParseAlloc
+#define ParseFree				vanuatuParseFree
+#define ParseStackPeak			vanuatuParseStackPeak
+#define Parse					vanuatuParse
+#define yyStackEntry			vanuatu_yyStackEntry
+#define yyzerominor				vanuatu_yyzerominor
+#define yy_accept				vanuatu_yy_accept
+#define yy_action				vanuatu_yy_action
+#define yy_base					vanuatu_yy_base
+#define yy_buffer_stack			vanuatu_yy_buffer_stack
+#define yy_buffer_stack_max		vanuatu_yy_buffer_stack_max
+#define yy_buffer_stack_top		vanuatu_yy_buffer_stack_top
+#define yy_c_buf_p				vanuatu_yy_c_buf_p
+#define yy_chk					vanuatu_yy_chk
+#define yy_def					vanuatu_yy_def
+#define yy_default				vanuatu_yy_default
+#define yy_destructor			vanuatu_yy_destructor
+#define yy_ec					vanuatu_yy_ec
+#define yy_fatal_error			vanuatu_yy_fatal_error
+#define yy_find_reduce_action	vanuatu_yy_find_reduce_action
+#define yy_find_shift_action	vanuatu_yy_find_shift_action
+#define yy_get_next_buffer		vanuatu_yy_get_next_buffer
+#define yy_get_previous_state	vanuatu_yy_get_previous_state
+#define yy_init					vanuatu_yy_init
+#define yy_init_globals			vanuatu_yy_init_globals
+#define yy_lookahead			vanuatu_yy_lookahead
+#define yy_meta					vanuatu_yy_meta
+#define yy_nxt					vanuatu_yy_nxt
+#define yy_parse_failed			vanuatu_yy_parse_failed
+#define yy_pop_parser_stack		vanuatu_yy_pop_parser_stack
+#define yy_reduce				vanuatu_yy_reduce
+#define yy_reduce_ofst			vanuatu_yy_reduce_ofst
+#define yy_shift				vanuatu_yy_shift
+#define yy_shift_ofst			vanuatu_yy_shift_ofst
+#define yy_start				vanuatu_yy_start
+#define yy_state_type			vanuatu_yy_state_type
+#define yy_syntax_error			vanuatu_yy_syntax_error
+#define yy_trans_info			vanuatu_yy_trans_info
+#define yy_try_NUL_trans		vanuatu_yy_try_NUL_trans
+#define yyParser				vanuatu_yyParser
+#define yyStackEntry			vanuatu_yyStackEntry
+#define yyStackOverflow			vanuatu_yyStackOverflow
+#define yyRuleInfo				vanuatu_yyRuleInfo
+#define yyunput					vanuatu_yyunput
+#define yyzerominor				vanuatu_yyzerominor
 
 
 /*
@@ -1546,38 +1594,15 @@ vanuatu_geomColl_xyzm (gaiaGeomCollPtr first)
 
 
 
-
-
-
-
-
-
-#ifndef YYSTYPE
 typedef union
 {
     double dval;
     struct symtab *symp;
 } vanuatu_yystype;
 #define YYSTYPE vanuatu_yystype
-#define YYSTYPE_IS_TRIVIAL 1
-#endif
-
 
 /* extern YYSTYPE yylval; */
 YYSTYPE VanuatuWktlval;
-
-/*
-** CAVEAT: there is an incompatibility between LEMON and FLEX
-** this macro resolves the issue
-*/
-#define yy_accept	yy_vanuatu_accept
-
-
-
-
-
-
-
 
 
 
@@ -1591,7 +1616,9 @@ YYSTYPE VanuatuWktlval;
 /* First off, code is included that follows the "include" declaration
 ** in the input grammar file. */
 #include <stdio.h>
+#line 77 "vanuatuWkt.y"
 
+#line 10 "vanuatuWkt.c"
 /* Next is all token values, in a form suitable for use by makeheaders.
 ** This section will be null unless lemon is run with the -m switch.
 */
@@ -1648,7 +1675,7 @@ YYSTYPE VanuatuWktlval;
 typedef union {
   int yyinit;
   ParseTOKENTYPE yy0;
-} VANUATU_YYMINORTYPE;
+} YYMINORTYPE;
 #ifndef YYSTACKDEPTH
 #define YYSTACKDEPTH 1000000
 #endif
@@ -1664,7 +1691,7 @@ typedef union {
 
 /* The yyzerominor constant is used to initialize instances of
 ** YYMINORTYPE objects to zero. */
-static const VANUATU_YYMINORTYPE vanuatu_yyzerominor = { 0 };
+static const YYMINORTYPE yyzerominor = { 0 };
 
 /* Define the yytestcase() macro to be a no-op if is not already defined
 ** otherwise.
@@ -1726,7 +1753,7 @@ static const VANUATU_YYMINORTYPE vanuatu_yyzerominor = { 0 };
 **                     shifting non-terminals after a reduce.
 **  yy_default[]       Default action for each state.
 */
-static const YYACTIONTYPE vanuatu_yy_action[] = {
+static const YYACTIONTYPE yy_action[] = {
  /*     0 */   166,  228,  229,  230,  231,  232,  233,  234,  235,  236,
  /*    10 */   237,  238,  239,  240,  241,  242,  243,  244,  245,  246,
  /*    20 */   247,  248,  249,  250,  251,  252,  253,  254,  255,  256,
@@ -1769,7 +1796,7 @@ static const YYACTIONTYPE vanuatu_yy_action[] = {
  /*   390 */   319,  322,  325,  328,  331,  335,  336,  338,  342,  343,
  /*   400 */   345,  349,  350,  352,  356,  357,
 };
-static const YYCODETYPE vanuatu_yy_lookahead[] = {
+static const YYCODETYPE yy_lookahead[] = {
  /*     0 */    37,   38,   39,   40,   41,   42,   43,   44,   45,   46,
  /*    10 */    47,   48,   49,   50,   51,   52,   53,   54,   55,   56,
  /*    20 */    57,   58,   59,   60,   61,   62,   63,   64,   65,   66,
@@ -1814,7 +1841,7 @@ static const YYCODETYPE vanuatu_yy_lookahead[] = {
 };
 #define YY_SHIFT_USE_DFLT (-1)
 #define YY_SHIFT_MAX 226
-static const short vanuatu_yy_shift_ofst[] = {
+static const short yy_shift_ofst[] = {
  /*     0 */    -1,   34,   66,   66,   70,   70,   80,   80,   87,   87,
  /*    10 */    27,   27,   27,   27,   27,   27,   27,   27,   27,   27,
  /*    20 */    27,   27,   27,   27,   27,   27,   27,   27,   27,   27,
@@ -1841,7 +1868,7 @@ static const short vanuatu_yy_shift_ofst[] = {
 };
 #define YY_REDUCE_USE_DFLT (-38)
 #define YY_REDUCE_MAX 165
-static const short vanuatu_yy_reduce_ofst[] = {
+static const short yy_reduce_ofst[] = {
  /*     0 */     2,  -37,   26,   29,   20,   25,   37,   47,   41,   45,
  /*    10 */    42,   18,   28,  -32,   43,   44,   49,   50,   51,   55,
  /*    20 */    56,   59,   60,   62,   64,   67,   69,   72,   74,   75,
@@ -1860,7 +1887,7 @@ static const short vanuatu_yy_reduce_ofst[] = {
  /*   150 */   232,  233,  237,  234,  236,  239,  240,  242,  243,  248,
  /*   160 */   246,  249,  250,  253,  254,  255,
 };
-static const YYACTIONTYPE vanuatu_yy_default[] = {
+static const YYACTIONTYPE yy_default[] = {
  /*     0 */   359,  511,  511,  511,  511,  511,  511,  511,  511,  511,
  /*    10 */   511,  511,  511,  511,  511,  511,  511,  511,  511,  511,
  /*    20 */   511,  511,  511,  511,  511,  511,  511,  511,  511,  511,
@@ -1898,7 +1925,7 @@ static const YYACTIONTYPE vanuatu_yy_default[] = {
  /*   340 */   495,  496,  491,  492,  481,  497,  501,  502,  503,  498,
  /*   350 */   499,  482,  504,  508,  509,  510,  505,  506,
 };
-#define YY_SZ_ACTTAB (int)(sizeof(vanuatu_yy_action)/sizeof(vanuatu_yy_action[0]))
+#define YY_SZ_ACTTAB (int)(sizeof(yy_action)/sizeof(yy_action[0]))
 
 /* The next table maps tokens into fallback tokens.  If a construct
 ** like the following:
@@ -1927,18 +1954,18 @@ static const YYCODETYPE yyFallback[] = {
 **      the information used by the action routines in the grammar.
 **      It is sometimes called the "minor" token.
 */
-struct vanuatu_yyStackEntry {
+struct yyStackEntry {
   YYACTIONTYPE stateno;  /* The state-number */
   YYCODETYPE major;      /* The major token value.  This is the code
                          ** number for the token at this stack level */
-  VANUATU_YYMINORTYPE minor;     /* The user-supplied minor token value.  This
+  YYMINORTYPE minor;     /* The user-supplied minor token value.  This
                          ** is the value of the token  */
 };
-typedef struct vanuatu_yyStackEntry vanuatu_yyStackEntry;
+typedef struct yyStackEntry yyStackEntry;
 
 /* The state of the parser is completely contained in an instance of
 ** the following structure */
-struct vanuatu_yyParser {
+struct yyParser {
   int yyidx;                    /* Index of top element in stack */
 #ifdef YYTRACKMAXSTACKDEPTH
   int yyidxMax;                 /* Maximum value of yyidx */
@@ -1947,12 +1974,12 @@ struct vanuatu_yyParser {
   ParseARG_SDECL                /* A place to hold %extra_argument */
 #if YYSTACKDEPTH<=0
   int yystksz;                  /* Current side of the stack */
-  vanuatu_yyStackEntry *yystack;        /* The parser's stack */
+  yyStackEntry *yystack;        /* The parser's stack */
 #else
-  vanuatu_yyStackEntry yystack[YYSTACKDEPTH];  /* The parser's stack */
+  yyStackEntry yystack[YYSTACKDEPTH];  /* The parser's stack */
 #endif
 };
-typedef struct vanuatu_yyParser vanuatu_yyParser;
+typedef struct yyParser yyParser;
 
 #ifndef NDEBUG
 #include <stdio.h>
@@ -2189,9 +2216,9 @@ static const char *const yyRuleName[] = {
 /*
 ** Try to increase the size of the parser stack.
 */
-static void yyGrowStack(vanuatu_yyParser *p){
+static void yyGrowStack(yyParser *p){
   int newSize;
-  vanuatu_yyStackEntry *pNew;
+  yyStackEntry *pNew;
 
   newSize = p->yystksz*2 + 100;
   pNew = realloc(p->yystack, newSize*sizeof(pNew[0]));
@@ -2220,9 +2247,9 @@ static void yyGrowStack(vanuatu_yyParser *p){
 ** A pointer to a parser.  This pointer is used in subsequent calls
 ** to Parse and ParseFree.
 */
-void *vanuatuParseAlloc(void *(*mallocProc)(size_t)){
-  vanuatu_yyParser *pParser;
-  pParser = (vanuatu_yyParser*)(*mallocProc)( (size_t)sizeof(vanuatu_yyParser) );
+void *ParseAlloc(void *(*mallocProc)(size_t)){
+  yyParser *pParser;
+  pParser = (yyParser*)(*mallocProc)( (size_t)sizeof(yyParser) );
   if( pParser ){
     pParser->yyidx = -1;
 #ifdef YYTRACKMAXSTACKDEPTH
@@ -2242,10 +2269,10 @@ void *vanuatuParseAlloc(void *(*mallocProc)(size_t)){
 ** "yymajor" is the symbol code, and "yypminor" is a pointer to
 ** the value.
 */
-static void vanuatu_yy_destructor(
-  vanuatu_yyParser *yypParser,    /* The parser */
+static void yy_destructor(
+  yyParser *yypParser,    /* The parser */
   YYCODETYPE yymajor,     /* Type code for object to destroy */
-  VANUATU_YYMINORTYPE *yypminor   /* The object to be destroyed */
+  YYMINORTYPE *yypminor   /* The object to be destroyed */
 ){
   ParseARG_FETCH;
   switch( yymajor ){
@@ -2271,9 +2298,9 @@ static void vanuatu_yy_destructor(
 **
 ** Return the major token number for the symbol popped.
 */
-static int vanuatu_yy_pop_parser_stack(vanuatu_yyParser *pParser){
+static int yy_pop_parser_stack(yyParser *pParser){
   YYCODETYPE yymajor;
-  vanuatu_yyStackEntry *yytos = &pParser->yystack[pParser->yyidx];
+  yyStackEntry *yytos = &pParser->yystack[pParser->yyidx];
 
   if( pParser->yyidx<0 ) return 0;
 #ifndef NDEBUG
@@ -2284,7 +2311,7 @@ static int vanuatu_yy_pop_parser_stack(vanuatu_yyParser *pParser){
   }
 #endif
   yymajor = yytos->major;
-  vanuatu_yy_destructor(pParser, yymajor, &yytos->minor);
+  yy_destructor(pParser, yymajor, &yytos->minor);
   pParser->yyidx--;
   return yymajor;
 }
@@ -2301,13 +2328,13 @@ static int vanuatu_yy_pop_parser_stack(vanuatu_yyParser *pParser){
 **       from malloc.
 ** </ul>
 */
-void vanuatuParseFree(
+void ParseFree(
   void *p,                    /* The parser to be deleted */
   void (*freeProc)(void*)     /* Function used to reclaim memory */
 ){
-  vanuatu_yyParser *pParser = (vanuatu_yyParser*)p;
+  yyParser *pParser = (yyParser*)p;
   if( pParser==0 ) return;
-  while( pParser->yyidx>=0 ) vanuatu_yy_pop_parser_stack(pParser);
+  while( pParser->yyidx>=0 ) yy_pop_parser_stack(pParser);
 #if YYSTACKDEPTH<=0
   free(pParser->yystack);
 #endif
@@ -2318,8 +2345,8 @@ void vanuatuParseFree(
 ** Return the peak depth of the stack for a parser.
 */
 #ifdef YYTRACKMAXSTACKDEPTH
-int vanuatuParseStackPeak(void *p){
-  vanuatu_yyParser *pParser = (vanuatu_yyParser*)p;
+int ParseStackPeak(void *p){
+  yyParser *pParser = (yyParser*)p;
   return pParser->yyidxMax;
 }
 #endif
@@ -2332,19 +2359,19 @@ int vanuatuParseStackPeak(void *p){
 ** independent of the look-ahead.  If it is, return the action, otherwise
 ** return YY_NO_ACTION.
 */
-static int vanuatu_yy_find_shift_action(
-  vanuatu_yyParser *pParser,        /* The parser */
+static int yy_find_shift_action(
+  yyParser *pParser,        /* The parser */
   YYCODETYPE iLookAhead     /* The look-ahead token */
 ){
   int i;
   int stateno = pParser->yystack[pParser->yyidx].stateno;
  
-  if( stateno>YY_SHIFT_MAX || (i = vanuatu_yy_shift_ofst[stateno])==YY_SHIFT_USE_DFLT ){
-    return vanuatu_yy_default[stateno];
+  if( stateno>YY_SHIFT_MAX || (i = yy_shift_ofst[stateno])==YY_SHIFT_USE_DFLT ){
+    return yy_default[stateno];
   }
   assert( iLookAhead!=YYNOCODE );
   i += iLookAhead;
-  if( i<0 || i>=YY_SZ_ACTTAB || vanuatu_yy_lookahead[i]!=iLookAhead ){
+  if( i<0 || i>=YY_SZ_ACTTAB || yy_lookahead[i]!=iLookAhead ){
     if( iLookAhead>0 ){
 #ifdef YYFALLBACK
       YYCODETYPE iFallback;            /* Fallback token */
@@ -2356,27 +2383,27 @@ static int vanuatu_yy_find_shift_action(
              yyTracePrompt, yyTokenName[iLookAhead], yyTokenName[iFallback]);
         }
 #endif
-        return vanuatu_yy_find_shift_action(pParser, iFallback);
+        return yy_find_shift_action(pParser, iFallback);
       }
 #endif
 #ifdef YYWILDCARD
       {
         int j = i - iLookAhead + YYWILDCARD;
-        if( j>=0 && j<YY_SZ_ACTTAB && vanuatu_yy_lookahead[j]==YYWILDCARD ){
+        if( j>=0 && j<YY_SZ_ACTTAB && yy_lookahead[j]==YYWILDCARD ){
 #ifndef NDEBUG
           if( yyTraceFILE ){
             fprintf(yyTraceFILE, "%sWILDCARD %s => %s\n",
                yyTracePrompt, yyTokenName[iLookAhead], yyTokenName[YYWILDCARD]);
           }
 #endif /* NDEBUG */
-          return vanuatu_yy_action[j];
+          return yy_action[j];
         }
       }
 #endif /* YYWILDCARD */
     }
-    return vanuatu_yy_default[stateno];
+    return yy_default[stateno];
   }else{
-    return vanuatu_yy_action[i];
+    return yy_action[i];
   }
 }
 
@@ -2388,37 +2415,37 @@ static int vanuatu_yy_find_shift_action(
 ** independent of the look-ahead.  If it is, return the action, otherwise
 ** return YY_NO_ACTION.
 */
-static int vanuatu_yy_find_reduce_action(
+static int yy_find_reduce_action(
   int stateno,              /* Current state number */
   YYCODETYPE iLookAhead     /* The look-ahead token */
 ){
   int i;
 #ifdef YYERRORSYMBOL
   if( stateno>YY_REDUCE_MAX ){
-    return vanuatu_yy_default[stateno];
+    return yy_default[stateno];
   }
 #else
   assert( stateno<=YY_REDUCE_MAX );
 #endif
-  i = vanuatu_yy_reduce_ofst[stateno];
+  i = yy_reduce_ofst[stateno];
   assert( i!=YY_REDUCE_USE_DFLT );
   assert( iLookAhead!=YYNOCODE );
   i += iLookAhead;
 #ifdef YYERRORSYMBOL
-  if( i<0 || i>=YY_SZ_ACTTAB || vanuatu_yy_lookahead[i]!=iLookAhead ){
-    return vanuatu_yy_default[stateno];
+  if( i<0 || i>=YY_SZ_ACTTAB || yy_lookahead[i]!=iLookAhead ){
+    return yy_default[stateno];
   }
 #else
   assert( i>=0 && i<YY_SZ_ACTTAB );
-  assert( vanuatu_yy_lookahead[i]==iLookAhead );
+  assert( yy_lookahead[i]==iLookAhead );
 #endif
-  return vanuatu_yy_action[i];
+  return yy_action[i];
 }
 
 /*
 ** The following routine is called if the stack overflows.
 */
-static void ewkt_yyStackOverflow(vanuatu_yyParser *yypParser, VANUATU_YYMINORTYPE *yypMinor){
+static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
    ParseARG_FETCH;
    yypParser->yyidx--;
 #ifndef NDEBUG
@@ -2426,24 +2453,26 @@ static void ewkt_yyStackOverflow(vanuatu_yyParser *yypParser, VANUATU_YYMINORTYP
      fprintf(yyTraceFILE,"%sStack Overflow!\n",yyTracePrompt);
    }
 #endif
-   while( yypParser->yyidx>=0 ) vanuatu_yy_pop_parser_stack(yypParser);
+   while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
    /* Here code is inserted which will execute if the parser
    ** stack every overflows */
+#line 69 "vanuatuWkt.y"
 
      fprintf(stderr,"Giving up.  Parser stack overflow\n");
+#line 851 "vanuatuWkt.c"
    ParseARG_STORE; /* Suppress warning about unused %extra_argument var */
 }
 
 /*
 ** Perform a shift action.
 */
-static void vanuatu_yy_shift(
-  vanuatu_yyParser *yypParser,          /* The parser to be shifted */
+static void yy_shift(
+  yyParser *yypParser,          /* The parser to be shifted */
   int yyNewState,               /* The new state to shift in */
   int yyMajor,                  /* The major token to shift in */
-  VANUATU_YYMINORTYPE *yypMinor         /* Pointer to the minor token to shift in */
+  YYMINORTYPE *yypMinor         /* Pointer to the minor token to shift in */
 ){
-  vanuatu_yyStackEntry *yytos;
+  yyStackEntry *yytos;
   yypParser->yyidx++;
 #ifdef YYTRACKMAXSTACKDEPTH
   if( yypParser->yyidx>yypParser->yyidxMax ){
@@ -2452,14 +2481,14 @@ static void vanuatu_yy_shift(
 #endif
 #if YYSTACKDEPTH>0 
   if( yypParser->yyidx>=YYSTACKDEPTH ){
-    ewkt_yyStackOverflow(yypParser, yypMinor);
+    yyStackOverflow(yypParser, yypMinor);
     return;
   }
 #else
   if( yypParser->yyidx>=yypParser->yystksz ){
     yyGrowStack(yypParser);
     if( yypParser->yyidx>=yypParser->yystksz ){
-      ewkt_yyStackOverflow(yypParser, yypMinor);
+      yyStackOverflow(yypParser, yypMinor);
       return;
     }
   }
@@ -2486,7 +2515,7 @@ static void vanuatu_yy_shift(
 static const struct {
   YYCODETYPE lhs;         /* Symbol on the left-hand side of the rule */
   unsigned char nrhs;     /* Number of right-hand side symbols in the rule */
-} vanuatu_yyRuleInfo[] = {
+} yyRuleInfo[] = {
   { 35, 1 },
   { 36, 0 },
   { 36, 3 },
@@ -2642,20 +2671,20 @@ static const struct {
   { 123, 3 },
 };
 
-static void yy_accept(vanuatu_yyParser*);  /* Forward Declaration */
+static void yy_accept(yyParser*);  /* Forward Declaration */
 
 /*
 ** Perform a reduce action and the shift that must immediately
 ** follow the reduce.
 */
-static void vanuatu_yy_reduce(
-  vanuatu_yyParser *yypParser,         /* The parser */
+static void yy_reduce(
+  yyParser *yypParser,         /* The parser */
   int yyruleno                 /* Number of the rule by which to reduce */
 ){
   int yygoto;                     /* The next state */
   int yyact;                      /* The next action */
-  VANUATU_YYMINORTYPE yygotominor;        /* The LHS of the rule reduced */
-  vanuatu_yyStackEntry *yymsp;            /* The top of the parser's stack */
+  YYMINORTYPE yygotominor;        /* The LHS of the rule reduced */
+  yyStackEntry *yymsp;            /* The top of the parser's stack */
   int yysize;                     /* Amount to pop the stack */
   ParseARG_FETCH;
   yymsp = &yypParser->yystack[yypParser->yyidx];
@@ -2682,7 +2711,7 @@ static void vanuatu_yy_reduce(
   ** that it has not been previously stressed...  (SQLite ticket #2172)
   */
   /*memset(&yygotominor, 0, sizeof(yygotominor));*/
-  yygotominor = vanuatu_yyzerominor;
+  yygotominor = yyzerominor;
 
 
   switch( yyruleno ){
@@ -2722,27 +2751,41 @@ static void vanuatu_yy_reduce(
       case 33: /* geo_textzm ::= multilinestringzm */ yytestcase(yyruleno==33);
       case 34: /* geo_textzm ::= multipolygonzm */ yytestcase(yyruleno==34);
       case 35: /* geo_textzm ::= geocollzm */ yytestcase(yyruleno==35);
+#line 115 "vanuatuWkt.y"
 { *result = yymsp[0].minor.yy0; }
+#line 1145 "vanuatuWkt.c"
         break;
       case 36: /* point ::= VANUATU_POINT VANUATU_OPEN_BRACKET point_coordxy VANUATU_CLOSE_BRACKET */
+#line 154 "vanuatuWkt.y"
 { yygotominor.yy0 = vanuatu_buildGeomFromPoint((gaiaPointPtr)yymsp[-1].minor.yy0); }
+#line 1150 "vanuatuWkt.c"
         break;
       case 37: /* pointm ::= VANUATU_POINT_M VANUATU_OPEN_BRACKET point_coordxym VANUATU_CLOSE_BRACKET */
       case 38: /* pointz ::= VANUATU_POINT_Z VANUATU_OPEN_BRACKET point_coordxyz VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==38);
       case 39: /* pointzm ::= VANUATU_POINT_ZM VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==39);
+#line 156 "vanuatuWkt.y"
 { yygotominor.yy0 = vanuatu_buildGeomFromPoint((gaiaPointPtr)yymsp[-1].minor.yy0);  }
+#line 1157 "vanuatuWkt.c"
         break;
       case 40: /* point_coordxy ::= coord coord */
+#line 165 "vanuatuWkt.y"
 { yygotominor.yy0 = (void *) vanuatu_point_xy((double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+#line 1162 "vanuatuWkt.c"
         break;
       case 41: /* point_coordxym ::= coord coord coord */
+#line 167 "vanuatuWkt.y"
 { yygotominor.yy0 = (void *) vanuatu_point_xym((double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+#line 1167 "vanuatuWkt.c"
         break;
       case 42: /* point_coordxyz ::= coord coord coord */
+#line 169 "vanuatuWkt.y"
 { yygotominor.yy0 = (void *) vanuatu_point_xyz((double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+#line 1172 "vanuatuWkt.c"
         break;
       case 43: /* point_coordxyzm ::= coord coord coord coord */
+#line 171 "vanuatuWkt.y"
 { yygotominor.yy0 = (void *) vanuatu_point_xyzm((double *)yymsp[-3].minor.yy0, (double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+#line 1177 "vanuatuWkt.c"
         break;
       case 44: /* coord ::= VANUATU_NUM */
       case 81: /* multipoint ::= VANUATU_MULTIPOINT multipoint_text */ yytestcase(yyruleno==81);
@@ -2761,7 +2804,9 @@ static void vanuatu_yy_reduce(
       case 122: /* geocollm ::= VANUATU_GEOMETRYCOLLECTION_M geocoll_textm */ yytestcase(yyruleno==122);
       case 123: /* geocollz ::= VANUATU_GEOMETRYCOLLECTION_Z geocoll_textz */ yytestcase(yyruleno==123);
       case 124: /* geocollzm ::= VANUATU_GEOMETRYCOLLECTION_ZM geocoll_textzm */ yytestcase(yyruleno==124);
+#line 174 "vanuatuWkt.y"
 { yygotominor.yy0 = yymsp[0].minor.yy0; }
+#line 1198 "vanuatuWkt.c"
         break;
       case 45: /* extra_pointsxy ::= */
       case 47: /* extra_pointsxym ::= */ yytestcase(yyruleno==47);
@@ -2783,79 +2828,104 @@ static void vanuatu_yy_reduce(
       case 135: /* geocoll_textm2 ::= */ yytestcase(yyruleno==135);
       case 142: /* geocoll_textz2 ::= */ yytestcase(yyruleno==142);
       case 149: /* geocoll_textzm2 ::= */ yytestcase(yyruleno==149);
+#line 179 "vanuatuWkt.y"
 { yygotominor.yy0 = NULL; }
+#line 1222 "vanuatuWkt.c"
         break;
       case 46: /* extra_pointsxy ::= VANUATU_COMMA point_coordxy extra_pointsxy */
       case 48: /* extra_pointsxym ::= VANUATU_COMMA point_coordxym extra_pointsxym */ yytestcase(yyruleno==48);
       case 50: /* extra_pointsxyz ::= VANUATU_COMMA point_coordxyz extra_pointsxyz */ yytestcase(yyruleno==50);
       case 52: /* extra_pointsxyzm ::= VANUATU_COMMA point_coordxyzm extra_pointsxyzm */ yytestcase(yyruleno==52);
+#line 181 "vanuatuWkt.y"
 { ((gaiaPointPtr)yymsp[-1].minor.yy0)->Next = (gaiaPointPtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
+#line 1230 "vanuatuWkt.c"
         break;
       case 53: /* linestring ::= VANUATU_LINESTRING linestring_text */
       case 54: /* linestringm ::= VANUATU_LINESTRING_M linestring_textm */ yytestcase(yyruleno==54);
       case 55: /* linestringz ::= VANUATU_LINESTRING_Z linestring_textz */ yytestcase(yyruleno==55);
       case 56: /* linestringzm ::= VANUATU_LINESTRING_ZM linestring_textzm */ yytestcase(yyruleno==56);
+#line 199 "vanuatuWkt.y"
 { yygotominor.yy0 = vanuatu_buildGeomFromLinestring((gaiaLinestringPtr)yymsp[0].minor.yy0); }
+#line 1238 "vanuatuWkt.c"
         break;
       case 57: /* linestring_text ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
+#line 210 "vanuatuWkt.y"
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
 	   yygotominor.yy0 = (void *) vanuatu_linestring_xy((gaiaPointPtr)yymsp[-4].minor.yy0);
 	}
+#line 1247 "vanuatuWkt.c"
         break;
       case 58: /* linestring_textm ::= VANUATU_OPEN_BRACKET point_coordxym VANUATU_COMMA point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET */
+#line 217 "vanuatuWkt.y"
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
 	   yygotominor.yy0 = (void *) vanuatu_linestring_xym((gaiaPointPtr)yymsp[-4].minor.yy0);
 	}
+#line 1256 "vanuatuWkt.c"
         break;
       case 59: /* linestring_textz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
+#line 224 "vanuatuWkt.y"
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
 	   yygotominor.yy0 = (void *) vanuatu_linestring_xyz((gaiaPointPtr)yymsp[-4].minor.yy0);
 	}
+#line 1265 "vanuatuWkt.c"
         break;
       case 60: /* linestring_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
+#line 231 "vanuatuWkt.y"
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
 	   yygotominor.yy0 = (void *) vanuatu_linestring_xyzm((gaiaPointPtr)yymsp[-4].minor.yy0);
 	}
+#line 1274 "vanuatuWkt.c"
         break;
       case 61: /* polygon ::= VANUATU_POLYGON polygon_text */
       case 62: /* polygonm ::= VANUATU_POLYGON_M polygon_textm */ yytestcase(yyruleno==62);
       case 63: /* polygonz ::= VANUATU_POLYGON_Z polygon_textz */ yytestcase(yyruleno==63);
       case 64: /* polygonzm ::= VANUATU_POLYGON_ZM polygon_textzm */ yytestcase(yyruleno==64);
+#line 241 "vanuatuWkt.y"
 { yygotominor.yy0 = vanuatu_buildGeomFromPolygon((gaiaPolygonPtr)yymsp[0].minor.yy0); }
+#line 1282 "vanuatuWkt.c"
         break;
       case 65: /* polygon_text ::= VANUATU_OPEN_BRACKET ring extra_rings VANUATU_CLOSE_BRACKET */
+#line 252 "vanuatuWkt.y"
 { 
 		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_polygon_xy((gaiaRingPtr)yymsp[-2].minor.yy0);
 	}
+#line 1290 "vanuatuWkt.c"
         break;
       case 66: /* polygon_textm ::= VANUATU_OPEN_BRACKET ringm extra_ringsm VANUATU_CLOSE_BRACKET */
+#line 258 "vanuatuWkt.y"
 { 
 		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_polygon_xym((gaiaRingPtr)yymsp[-2].minor.yy0);
 	}
+#line 1298 "vanuatuWkt.c"
         break;
       case 67: /* polygon_textz ::= VANUATU_OPEN_BRACKET ringz extra_ringsz VANUATU_CLOSE_BRACKET */
+#line 264 "vanuatuWkt.y"
 {  
 		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_polygon_xyz((gaiaRingPtr)yymsp[-2].minor.yy0);
 	}
+#line 1306 "vanuatuWkt.c"
         break;
       case 68: /* polygon_textzm ::= VANUATU_OPEN_BRACKET ringzm extra_ringszm VANUATU_CLOSE_BRACKET */
+#line 270 "vanuatuWkt.y"
 { 
 		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_polygon_xyzm((gaiaRingPtr)yymsp[-2].minor.yy0);
 	}
+#line 1314 "vanuatuWkt.c"
         break;
       case 69: /* ring ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
+#line 278 "vanuatuWkt.y"
 {
 		((gaiaPointPtr)yymsp[-8].minor.yy0)->Next = (gaiaPointPtr)yymsp[-6].minor.yy0; 
 		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
@@ -2863,17 +2933,21 @@ static void vanuatu_yy_reduce(
 		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_ring_xy((gaiaPointPtr)yymsp[-8].minor.yy0);
 	}
+#line 1325 "vanuatuWkt.c"
         break;
       case 71: /* extra_rings ::= VANUATU_COMMA ring extra_rings */
       case 74: /* extra_ringsm ::= VANUATU_COMMA ringm extra_ringsm */ yytestcase(yyruleno==74);
       case 77: /* extra_ringsz ::= VANUATU_COMMA ringz extra_ringsz */ yytestcase(yyruleno==77);
       case 80: /* extra_ringszm ::= VANUATU_COMMA ringzm extra_ringszm */ yytestcase(yyruleno==80);
+#line 289 "vanuatuWkt.y"
 {
 		((gaiaRingPtr)yymsp[-1].minor.yy0)->Next = (gaiaRingPtr)yymsp[0].minor.yy0;
 		yygotominor.yy0 = yymsp[-1].minor.yy0;
 	}
+#line 1336 "vanuatuWkt.c"
         break;
       case 72: /* ringm ::= VANUATU_OPEN_BRACKET point_coordxym VANUATU_COMMA point_coordxym VANUATU_COMMA point_coordxym VANUATU_COMMA point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET */
+#line 295 "vanuatuWkt.y"
 {
 		((gaiaPointPtr)yymsp[-8].minor.yy0)->Next = (gaiaPointPtr)yymsp[-6].minor.yy0; 
 		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
@@ -2881,8 +2955,10 @@ static void vanuatu_yy_reduce(
 		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_ring_xym((gaiaPointPtr)yymsp[-8].minor.yy0);
 	}
+#line 1347 "vanuatuWkt.c"
         break;
       case 75: /* ringz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
+#line 312 "vanuatuWkt.y"
 {
 		((gaiaPointPtr)yymsp[-8].minor.yy0)->Next = (gaiaPointPtr)yymsp[-6].minor.yy0; 
 		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
@@ -2890,8 +2966,10 @@ static void vanuatu_yy_reduce(
 		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_ring_xyz((gaiaPointPtr)yymsp[-8].minor.yy0);
 	}
+#line 1358 "vanuatuWkt.c"
         break;
       case 78: /* ringzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
+#line 329 "vanuatuWkt.y"
 {
 		((gaiaPointPtr)yymsp[-8].minor.yy0)->Next = (gaiaPointPtr)yymsp[-6].minor.yy0; 
 		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
@@ -2899,98 +2977,129 @@ static void vanuatu_yy_reduce(
 		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_ring_xyzm((gaiaPointPtr)yymsp[-8].minor.yy0);
 	}
+#line 1369 "vanuatuWkt.c"
         break;
       case 85: /* multipoint_text ::= VANUATU_OPEN_BRACKET point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
+#line 355 "vanuatuWkt.y"
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) vanuatu_multipoint_xy((gaiaPointPtr)yymsp[-2].minor.yy0);
 	}
+#line 1377 "vanuatuWkt.c"
         break;
       case 86: /* multipoint_textm ::= VANUATU_OPEN_BRACKET point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET */
+#line 360 "vanuatuWkt.y"
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) vanuatu_multipoint_xym((gaiaPointPtr)yymsp[-2].minor.yy0);
 	}
+#line 1385 "vanuatuWkt.c"
         break;
       case 87: /* multipoint_textz ::= VANUATU_OPEN_BRACKET point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
+#line 365 "vanuatuWkt.y"
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) vanuatu_multipoint_xyz((gaiaPointPtr)yymsp[-2].minor.yy0);
 	}
+#line 1393 "vanuatuWkt.c"
         break;
       case 88: /* multipoint_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
+#line 370 "vanuatuWkt.y"
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) vanuatu_multipoint_xyzm((gaiaPointPtr)yymsp[-2].minor.yy0);
 	}
+#line 1401 "vanuatuWkt.c"
         break;
       case 93: /* multilinestring_text ::= VANUATU_OPEN_BRACKET linestring_text multilinestring_text2 VANUATU_CLOSE_BRACKET */
+#line 386 "vanuatuWkt.y"
 { 
 	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) vanuatu_multilinestring_xy((gaiaLinestringPtr)yymsp[-2].minor.yy0);
 	}
+#line 1409 "vanuatuWkt.c"
         break;
       case 95: /* multilinestring_text2 ::= VANUATU_COMMA linestring_text multilinestring_text2 */
       case 98: /* multilinestring_textm2 ::= VANUATU_COMMA linestring_textm multilinestring_textm2 */ yytestcase(yyruleno==98);
       case 101: /* multilinestring_textz2 ::= VANUATU_COMMA linestring_textz multilinestring_textz2 */ yytestcase(yyruleno==101);
       case 104: /* multilinestring_textzm2 ::= VANUATU_COMMA linestring_textzm multilinestring_textzm2 */ yytestcase(yyruleno==104);
+#line 394 "vanuatuWkt.y"
 { ((gaiaLinestringPtr)yymsp[-1].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
+#line 1417 "vanuatuWkt.c"
         break;
       case 96: /* multilinestring_textm ::= VANUATU_OPEN_BRACKET linestring_textm multilinestring_textm2 VANUATU_CLOSE_BRACKET */
+#line 397 "vanuatuWkt.y"
 { 
 	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) vanuatu_multilinestring_xym((gaiaLinestringPtr)yymsp[-2].minor.yy0);
 	}
+#line 1425 "vanuatuWkt.c"
         break;
       case 99: /* multilinestring_textz ::= VANUATU_OPEN_BRACKET linestring_textz multilinestring_textz2 VANUATU_CLOSE_BRACKET */
+#line 407 "vanuatuWkt.y"
 { 
 	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) vanuatu_multilinestring_xyz((gaiaLinestringPtr)yymsp[-2].minor.yy0);
 	}
+#line 1433 "vanuatuWkt.c"
         break;
       case 102: /* multilinestring_textzm ::= VANUATU_OPEN_BRACKET linestring_textzm multilinestring_textzm2 VANUATU_CLOSE_BRACKET */
+#line 417 "vanuatuWkt.y"
 { 
 	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) vanuatu_multilinestring_xyzm((gaiaLinestringPtr)yymsp[-2].minor.yy0);
 	}
+#line 1441 "vanuatuWkt.c"
         break;
       case 109: /* multipolygon_text ::= VANUATU_OPEN_BRACKET polygon_text multipolygon_text2 VANUATU_CLOSE_BRACKET */
+#line 437 "vanuatuWkt.y"
 { 
 	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) vanuatu_multipolygon_xy((gaiaPolygonPtr)yymsp[-2].minor.yy0);
 	}
+#line 1449 "vanuatuWkt.c"
         break;
       case 111: /* multipolygon_text2 ::= VANUATU_COMMA polygon_text multipolygon_text2 */
       case 114: /* multipolygon_textm2 ::= VANUATU_COMMA polygon_textm multipolygon_textm2 */ yytestcase(yyruleno==114);
       case 117: /* multipolygon_textz2 ::= VANUATU_COMMA polygon_textz multipolygon_textz2 */ yytestcase(yyruleno==117);
       case 120: /* multipolygon_textzm2 ::= VANUATU_COMMA polygon_textzm multipolygon_textzm2 */ yytestcase(yyruleno==120);
+#line 445 "vanuatuWkt.y"
 { ((gaiaPolygonPtr)yymsp[-1].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
+#line 1457 "vanuatuWkt.c"
         break;
       case 112: /* multipolygon_textm ::= VANUATU_OPEN_BRACKET polygon_textm multipolygon_textm2 VANUATU_CLOSE_BRACKET */
+#line 448 "vanuatuWkt.y"
 { 
 	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) vanuatu_multipolygon_xym((gaiaPolygonPtr)yymsp[-2].minor.yy0);
 	}
+#line 1465 "vanuatuWkt.c"
         break;
       case 115: /* multipolygon_textz ::= VANUATU_OPEN_BRACKET polygon_textz multipolygon_textz2 VANUATU_CLOSE_BRACKET */
+#line 458 "vanuatuWkt.y"
 { 
 	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) vanuatu_multipolygon_xyz((gaiaPolygonPtr)yymsp[-2].minor.yy0);
 	}
+#line 1473 "vanuatuWkt.c"
         break;
       case 118: /* multipolygon_textzm ::= VANUATU_OPEN_BRACKET polygon_textzm multipolygon_textzm2 VANUATU_CLOSE_BRACKET */
+#line 468 "vanuatuWkt.y"
 { 
 	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) vanuatu_multipolygon_xyzm((gaiaPolygonPtr)yymsp[-2].minor.yy0);
 	}
+#line 1481 "vanuatuWkt.c"
         break;
       case 125: /* geocoll_text ::= VANUATU_OPEN_BRACKET point geocoll_text2 VANUATU_CLOSE_BRACKET */
       case 126: /* geocoll_text ::= VANUATU_OPEN_BRACKET linestring geocoll_text2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==126);
       case 127: /* geocoll_text ::= VANUATU_OPEN_BRACKET polygon geocoll_text2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==127);
+#line 487 "vanuatuWkt.y"
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_geomColl_xy((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
 	}
+#line 1491 "vanuatuWkt.c"
         break;
       case 129: /* geocoll_text2 ::= VANUATU_COMMA point geocoll_text2 */
       case 130: /* geocoll_text2 ::= VANUATU_COMMA linestring geocoll_text2 */ yytestcase(yyruleno==130);
@@ -3004,34 +3113,42 @@ static void vanuatu_yy_reduce(
       case 150: /* geocoll_textzm2 ::= VANUATU_COMMA pointzm geocoll_textzm2 */ yytestcase(yyruleno==150);
       case 151: /* geocoll_textzm2 ::= VANUATU_COMMA linestringzm geocoll_textzm2 */ yytestcase(yyruleno==151);
       case 152: /* geocoll_textzm2 ::= VANUATU_COMMA polygonzm geocoll_textzm2 */ yytestcase(yyruleno==152);
+#line 507 "vanuatuWkt.y"
 {
 		((gaiaGeomCollPtr)yymsp[-1].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[0].minor.yy0;
 		yygotominor.yy0 = yymsp[-1].minor.yy0;
 	}
+#line 1510 "vanuatuWkt.c"
         break;
       case 132: /* geocoll_textm ::= VANUATU_OPEN_BRACKET pointm geocoll_textm2 VANUATU_CLOSE_BRACKET */
       case 133: /* geocoll_textm ::= VANUATU_OPEN_BRACKET linestringm geocoll_textm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==133);
       case 134: /* geocoll_textm ::= VANUATU_OPEN_BRACKET polygonm geocoll_textm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==134);
+#line 526 "vanuatuWkt.y"
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_geomColl_xym((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
 	}
+#line 1520 "vanuatuWkt.c"
         break;
       case 139: /* geocoll_textz ::= VANUATU_OPEN_BRACKET pointz geocoll_textz2 VANUATU_CLOSE_BRACKET */
       case 140: /* geocoll_textz ::= VANUATU_OPEN_BRACKET linestringz geocoll_textz2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==140);
       case 141: /* geocoll_textz ::= VANUATU_OPEN_BRACKET polygonz geocoll_textz2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==141);
+#line 564 "vanuatuWkt.y"
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_geomColl_xyz((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
 	}
+#line 1530 "vanuatuWkt.c"
         break;
       case 146: /* geocoll_textzm ::= VANUATU_OPEN_BRACKET pointzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */
       case 147: /* geocoll_textzm ::= VANUATU_OPEN_BRACKET linestringzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==147);
       case 148: /* geocoll_textzm ::= VANUATU_OPEN_BRACKET polygonzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==148);
+#line 602 "vanuatuWkt.y"
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_geomColl_xyzm((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
 	}
+#line 1540 "vanuatuWkt.c"
         break;
       default:
       /* (0) main ::= in */ yytestcase(yyruleno==0);
@@ -3044,10 +3161,10 @@ static void vanuatu_yy_reduce(
       /* (7) program ::= geo_textzm */ yytestcase(yyruleno==7);
         break;
   };
-  yygoto = vanuatu_yyRuleInfo[yyruleno].lhs;
-  yysize = vanuatu_yyRuleInfo[yyruleno].nrhs;
+  yygoto = yyRuleInfo[yyruleno].lhs;
+  yysize = yyRuleInfo[yyruleno].nrhs;
   yypParser->yyidx -= yysize;
-  yyact = vanuatu_yy_find_reduce_action(yymsp[-yysize].stateno,(YYCODETYPE)yygoto);
+  yyact = yy_find_reduce_action(yymsp[-yysize].stateno,(YYCODETYPE)yygoto);
   if( yyact < YYNSTATE ){
 #ifdef NDEBUG
     /* If we are not debugging and the reduce action popped at least
@@ -3063,7 +3180,7 @@ static void vanuatu_yy_reduce(
     }else
 #endif
     {
-      vanuatu_yy_shift(yypParser,yyact,yygoto,&yygotominor);
+      yy_shift(yypParser,yyact,yygoto,&yygotominor);
     }
   }else{
     assert( yyact == YYNSTATE + YYNRULE + 1 );
@@ -3075,8 +3192,8 @@ static void vanuatu_yy_reduce(
 ** The following code executes when the parse fails
 */
 #ifndef YYNOERRORRECOVERY
-static void vanuatu_yy_parse_failed(
-  vanuatu_yyParser *yypParser           /* The parser */
+static void yy_parse_failed(
+  yyParser *yypParser           /* The parser */
 ){
   ParseARG_FETCH;
 #ifndef NDEBUG
@@ -3084,7 +3201,7 @@ static void vanuatu_yy_parse_failed(
     fprintf(yyTraceFILE,"%sFail!\n",yyTracePrompt);
   }
 #endif
-  while( yypParser->yyidx>=0 ) vanuatu_yy_pop_parser_stack(yypParser);
+  while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
   /* Here code is inserted which will be executed whenever the
   ** parser fails */
   ParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
@@ -3094,13 +3211,14 @@ static void vanuatu_yy_parse_failed(
 /*
 ** The following code executes when a syntax error first occurs.
 */
-static void vanuatu_yy_syntax_error(
-  vanuatu_yyParser *yypParser,           /* The parser */
+static void yy_syntax_error(
+  yyParser *yypParser,           /* The parser */
   int yymajor,                   /* The major type of the error token */
-  VANUATU_YYMINORTYPE yyminor            /* The minor type of the error token */
+  YYMINORTYPE yyminor            /* The minor type of the error token */
 ){
   ParseARG_FETCH;
 #define TOKEN (yyminor.yy0)
+#line 84 "vanuatuWkt.y"
 
 /* 
 ** Sandro Furieri 2010 Apr 4
@@ -3109,6 +3227,7 @@ static void vanuatu_yy_syntax_error(
 */
 	vanuatu_parse_error = 1;
 	*result = NULL;
+#line 1619 "vanuatuWkt.c"
   ParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
 
@@ -3116,7 +3235,7 @@ static void vanuatu_yy_syntax_error(
 ** The following is executed when the parser accepts
 */
 static void yy_accept(
-  vanuatu_yyParser *yypParser           /* The parser */
+  yyParser *yypParser           /* The parser */
 ){
   ParseARG_FETCH;
 #ifndef NDEBUG
@@ -3124,7 +3243,7 @@ static void yy_accept(
     fprintf(yyTraceFILE,"%sAccept!\n",yyTracePrompt);
   }
 #endif
-  while( yypParser->yyidx>=0 ) vanuatu_yy_pop_parser_stack(yypParser);
+  while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
   /* Here code is inserted which will be executed whenever the
   ** parser accepts */
   ParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
@@ -3149,28 +3268,28 @@ static void yy_accept(
 ** Outputs:
 ** None.
 */
-void vanuatuParse(
+void Parse(
   void *yyp,                   /* The parser */
   int yymajor,                 /* The major token code number */
   ParseTOKENTYPE yyminor       /* The value for the token */
   ParseARG_PDECL               /* Optional %extra_argument parameter */
 ){
-  VANUATU_YYMINORTYPE yyminorunion;
+  YYMINORTYPE yyminorunion;
   int yyact;            /* The parser action. */
   int yyendofinput;     /* True if we are at the end of input */
 #ifdef YYERRORSYMBOL
   int yyerrorhit = 0;   /* True if yymajor has invoked an error */
 #endif
-  vanuatu_yyParser *yypParser;  /* The parser */
+  yyParser *yypParser;  /* The parser */
 
   /* (re)initialize the parser, if necessary */
-  yypParser = (vanuatu_yyParser*)yyp;
+  yypParser = (yyParser*)yyp;
   if( yypParser->yyidx<0 ){
 #if YYSTACKDEPTH<=0
     if( yypParser->yystksz <=0 ){
       /*memset(&yyminorunion, 0, sizeof(yyminorunion));*/
-      yyminorunion = vanuatu_yyzerominor;
-      ewkt_yyStackOverflow(yypParser, &yyminorunion);
+      yyminorunion = yyzerominor;
+      yyStackOverflow(yypParser, &yyminorunion);
       return;
     }
 #endif
@@ -3190,14 +3309,14 @@ void vanuatuParse(
 #endif
 
   do{
-    yyact = vanuatu_yy_find_shift_action(yypParser,(YYCODETYPE)yymajor);
+    yyact = yy_find_shift_action(yypParser,(YYCODETYPE)yymajor);
     if( yyact<YYNSTATE ){
       assert( !yyendofinput );  /* Impossible to shift the $ token */
-      vanuatu_yy_shift(yypParser,yyact,yymajor,&yyminorunion);
+      yy_shift(yypParser,yyact,yymajor,&yyminorunion);
       yypParser->yyerrcnt--;
       yymajor = YYNOCODE;
     }else if( yyact < YYNSTATE + YYNRULE ){
-      vanuatu_yy_reduce(yypParser,yyact-YYNSTATE);
+      yy_reduce(yypParser,yyact-YYNSTATE);
     }else{
       assert( yyact == YY_ERROR_ACTION );
 #ifdef YYERRORSYMBOL
@@ -3229,7 +3348,7 @@ void vanuatuParse(
       **
       */
       if( yypParser->yyerrcnt<0 ){
-        vanuatu_yy_syntax_error(yypParser,yymajor,yyminorunion);
+        yy_syntax_error(yypParser,yymajor,yyminorunion);
       }
       yymx = yypParser->yystack[yypParser->yyidx].major;
       if( yymx==YYERRORSYMBOL || yyerrorhit ){
@@ -3239,26 +3358,26 @@ void vanuatuParse(
              yyTracePrompt,yyTokenName[yymajor]);
         }
 #endif
-        vanuatu_yy_destructor(yypParser, (YYCODETYPE)yymajor,&yyminorunion);
+        yy_destructor(yypParser, (YYCODETYPE)yymajor,&yyminorunion);
         yymajor = YYNOCODE;
       }else{
          while(
           yypParser->yyidx >= 0 &&
           yymx != YYERRORSYMBOL &&
-          (yyact = vanuatu_yy_find_reduce_action(
+          (yyact = yy_find_reduce_action(
                         yypParser->yystack[yypParser->yyidx].stateno,
                         YYERRORSYMBOL)) >= YYNSTATE
         ){
-          vanuatu_yy_pop_parser_stack(yypParser);
+          yy_pop_parser_stack(yypParser);
         }
         if( yypParser->yyidx < 0 || yymajor==0 ){
-          vanuatu_yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
-          vanuatu_yy_parse_failed(yypParser);
+          yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
+          yy_parse_failed(yypParser);
           yymajor = YYNOCODE;
         }else if( yymx!=YYERRORSYMBOL ){
-          VANUATU_YYMINORTYPE u2;
+          YYMINORTYPE u2;
           u2.YYERRSYMDT = 0;
-          vanuatu_yy_shift(yypParser,yyact,YYERRORSYMBOL,&u2);
+          yy_shift(yypParser,yyact,YYERRORSYMBOL,&u2);
         }
       }
       yypParser->yyerrcnt = 3;
@@ -3271,8 +3390,8 @@ void vanuatuParse(
       ** Applications can set this macro (for example inside %include) if
       ** they intend to abandon the parse upon the first syntax error seen.
       */
-      vanuatu_yy_syntax_error(yypParser,yymajor,yyminorunion);
-      vanuatu_yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
+      yy_syntax_error(yypParser,yymajor,yyminorunion);
+      yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
       yymajor = YYNOCODE;
       
 #else  /* YYERRORSYMBOL is not defined */
@@ -3286,12 +3405,12 @@ void vanuatuParse(
       ** three input tokens have been successfully shifted.
       */
       if( yypParser->yyerrcnt<=0 ){
-        vanuatu_yy_syntax_error(yypParser,yymajor,yyminorunion);
+        yy_syntax_error(yypParser,yymajor,yyminorunion);
       }
       yypParser->yyerrcnt = 3;
-      vanuatu_yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
+      yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
       if( yyendofinput ){
-        vanuatu_yy_parse_failed(yypParser);
+        yy_parse_failed(yypParser);
       }
       yymajor = YYNOCODE;
 #endif
@@ -3326,25 +3445,15 @@ void vanuatuParse(
 ** this macro resolves the issue
 */
 #undef yy_accept
-
-
-
-
-
-
-
-
-
-
-
-
-
+#define yy_accept	yy_vanuatu_flex_accept
 
 
 
 /*
  VANUATU_FLEX_START - FLEX generated code starts here 
 */
+
+#line 3 "lex.VanuatuWkt.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -3486,13 +3595,13 @@ typedef unsigned int flex_uint32_t;
  * but we do it the disgusting crufty way forced on us by the ()-less
  * definition of BEGIN.
  */
-#define BEGIN (vanuatu_yy_start) = 1 + 2 *
+#define BEGIN (yy_start) = 1 + 2 *
 
 /* Translate the current start state into a value that can be later handed
  * to BEGIN to return to the state.  The YYSTATE alias is for lex
  * compatibility.
  */
-#define YY_START (((vanuatu_yy_start) - 1) / 2)
+#define YY_START (((yy_start) - 1) / 2)
 #define YYSTATE YY_START
 
 /* Action number for EOF rule of a given start state. */
@@ -3518,7 +3627,7 @@ typedef unsigned int flex_uint32_t;
 
 /* The state buf must be large enough to hold one state per character in the main buffer.
  */
-#define YY_STATE_BUF_SIZE   ((YY_BUF_SIZE + 2) * sizeof(vanuatu_yy_state_type))
+#define YY_STATE_BUF_SIZE   ((YY_BUF_SIZE + 2) * sizeof(yy_state_type))
 
 #ifndef YY_TYPEDEF_YY_BUFFER_STATE
 #define YY_TYPEDEF_YY_BUFFER_STATE
@@ -3544,12 +3653,12 @@ extern FILE *VanuatuWktin, *VanuatuWktout;
         YY_LESS_LINENO(yyless_macro_arg);\
 		*yy_cp = (yy_hold_char); \
 		YY_RESTORE_YY_MORE_OFFSET \
-		(vanuatu_yy_c_buf_p) = yy_cp = yy_bp + yyless_macro_arg - YY_MORE_ADJ; \
+		(yy_c_buf_p) = yy_cp = yy_bp + yyless_macro_arg - YY_MORE_ADJ; \
 		YY_DO_BEFORE_ACTION; /* set up VanuatuWkttext again */ \
 		} \
 	while ( 0 )
 
-#define unput(c) vanuatu_yyunput( c, (yytext_ptr)  )
+#define unput(c) yyunput( c, (yytext_ptr)  )
 
 #ifndef YY_TYPEDEF_YY_SIZE_T
 #define YY_TYPEDEF_YY_SIZE_T
@@ -3622,9 +3731,9 @@ struct yy_buffer_state
 #endif /* !YY_STRUCT_YY_BUFFER_STATE */
 
 /* Stack of input buffers. */
-static size_t vanuatu_yy_buffer_stack_top = 0; /**< index of top of stack. */
-static size_t vanuatu_yy_buffer_stack_max = 0; /**< capacity of stack. */
-static YY_BUFFER_STATE * vanuatu_yy_buffer_stack = 0; /**< Stack as an array. */
+static size_t yy_buffer_stack_top = 0; /**< index of top of stack. */
+static size_t yy_buffer_stack_max = 0; /**< capacity of stack. */
+static YY_BUFFER_STATE * yy_buffer_stack = 0; /**< Stack as an array. */
 
 /* We provide macros for accessing buffer states in case in the
  * future we want to put the buffer states in a more general
@@ -3632,14 +3741,14 @@ static YY_BUFFER_STATE * vanuatu_yy_buffer_stack = 0; /**< Stack as an array. */
  *
  * Returns the top of the stack, or NULL.
  */
-#define YY_CURRENT_BUFFER ( (vanuatu_yy_buffer_stack) \
-                          ? (vanuatu_yy_buffer_stack)[(vanuatu_yy_buffer_stack_top)] \
+#define YY_CURRENT_BUFFER ( (yy_buffer_stack) \
+                          ? (yy_buffer_stack)[(yy_buffer_stack_top)] \
                           : NULL)
 
 /* Same as previous macro, but useful when we know that the buffer stack is not
  * NULL or when we need an lvalue. For internal use only.
  */
-#define YY_CURRENT_BUFFER_LVALUE (vanuatu_yy_buffer_stack)[(vanuatu_yy_buffer_stack_top)]
+#define YY_CURRENT_BUFFER_LVALUE (yy_buffer_stack)[(yy_buffer_stack_top)]
 
 /* yy_hold_char holds the character lost when VanuatuWkttext is formed. */
 static char yy_hold_char;
@@ -3647,9 +3756,9 @@ static int yy_n_chars;		/* number of characters read into yy_ch_buf */
 int VanuatuWktleng;
 
 /* Points to current character in buffer. */
-static char *vanuatu_yy_c_buf_p = (char *) 0;
-static int vanuatu_yy_init = 0;		/* whether we need to initialize */
-static int vanuatu_yy_start = 0;	/* start state number */
+static char *yy_c_buf_p = (char *) 0;
+static int yy_init = 0;		/* whether we need to initialize */
+static int yy_start = 0;	/* start state number */
 
 /* Flag which is used to allow VanuatuWktwrap()'s to do buffer switches
  * instead of setting up a fresh VanuatuWktin.  A bit of a hack ...
@@ -3704,11 +3813,11 @@ void VanuatuWktfree (void *  );
 
 /* Begin user sect3 */
 
-typedef unsigned char VANUATU_YY_CHAR;
+typedef unsigned char YY_CHAR;
 
 FILE *VanuatuWktin = (FILE *) 0, *VanuatuWktout = (FILE *) 0;
 
-typedef int vanuatu_yy_state_type;
+typedef int yy_state_type;
 
 extern int VanuatuWktlineno;
 
@@ -3717,10 +3826,10 @@ int VanuatuWktlineno = 1;
 extern char *VanuatuWkttext;
 #define yytext_ptr VanuatuWkttext
 
-static vanuatu_yy_state_type vanuatu_yy_get_previous_state (void );
-static vanuatu_yy_state_type vanuatu_yy_try_NUL_trans (vanuatu_yy_state_type current_state  );
-static int vanuatu_yy_get_next_buffer (void );
-static void vanuatu_yy_fatal_error (yyconst char msg[]  );
+static yy_state_type yy_get_previous_state (void );
+static yy_state_type yy_try_NUL_trans (yy_state_type current_state  );
+static int yy_get_next_buffer (void );
+static void yy_fatal_error (yyconst char msg[]  );
 
 /* Done after the current pattern has been matched and before the
  * corresponding action - sets up VanuatuWkttext.
@@ -3730,18 +3839,18 @@ static void vanuatu_yy_fatal_error (yyconst char msg[]  );
 	VanuatuWktleng = (size_t) (yy_cp - yy_bp); \
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
-	(vanuatu_yy_c_buf_p) = yy_cp;
+	(yy_c_buf_p) = yy_cp;
 
 #define YY_NUM_RULES 36
 #define YY_END_OF_BUFFER 37
 /* This struct is not used in this scanner,
    but its presence is necessary. */
-struct vanuatu_yy_trans_info
+struct yy_trans_info
 	{
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static yyconst flex_int16_t vanuatu_yy_accept[114] =
+static yyconst flex_int16_t yy_accept[114] =
     {   0,
         0,    0,   37,   35,   33,   34,    3,    4,   35,    2,
        35,    1,   35,   35,   35,   35,    1,    1,    1,    1,
@@ -3758,7 +3867,7 @@ static yyconst flex_int16_t vanuatu_yy_accept[114] =
        30,   32,    0
     } ;
 
-static yyconst flex_int32_t vanuatu_yy_ec[256] =
+static yyconst flex_int32_t yy_ec[256] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -3790,7 +3899,7 @@ static yyconst flex_int32_t vanuatu_yy_ec[256] =
         1,    1,    1,    1,    1
     } ;
 
-static yyconst flex_int32_t vanuatu_yy_meta[42] =
+static yyconst flex_int32_t yy_meta[42] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -3799,7 +3908,7 @@ static yyconst flex_int32_t vanuatu_yy_meta[42] =
         1
     } ;
 
-static yyconst flex_int16_t vanuatu_yy_base[114] =
+static yyconst flex_int16_t yy_base[114] =
     {   0,
         0,    0,  246,  270,  270,  270,  270,  270,  230,  270,
       228,   32,   31,   30,   22,   28,   38,   40,  227,   42,
@@ -3816,7 +3925,7 @@ static yyconst flex_int16_t vanuatu_yy_base[114] =
       218,  270,  270
     } ;
 
-static yyconst flex_int16_t vanuatu_yy_def[114] =
+static yyconst flex_int16_t yy_def[114] =
     {   0,
       113,    1,  113,  113,  113,  113,  113,  113,  113,  113,
       113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
@@ -3833,7 +3942,7 @@ static yyconst flex_int16_t vanuatu_yy_def[114] =
       113,  113,    0
     } ;
 
-static yyconst flex_int16_t vanuatu_yy_nxt[312] =
+static yyconst flex_int16_t yy_nxt[312] =
     {   0,
         4,    5,    6,    5,    7,    8,    9,   10,   11,    4,
        12,    4,    4,   13,    4,   14,   15,    4,    4,   16,
@@ -3872,7 +3981,7 @@ static yyconst flex_int16_t vanuatu_yy_nxt[312] =
       113
     } ;
 
-static yyconst flex_int16_t vanuatu_yy_chk[312] =
+static yyconst flex_int16_t yy_chk[312] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -3911,7 +4020,7 @@ static yyconst flex_int16_t vanuatu_yy_chk[312] =
       113
     } ;
 
-static vanuatu_yy_state_type yy_last_accepting_state;
+static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
 
 extern int VanuatuWkt_flex_debug;
@@ -4016,7 +4125,7 @@ int vanuatu_line = 1, vanuatu_col = 1;
 #define YY_EXTRA_TYPE void *
 #endif
 
-static int vanuatu_yy_init_globals (void );
+static int yy_init_globals (void );
 
 /* Accessor methods to globals.
    These are made visible to non-reentrant scanners for convenience. */
@@ -4059,7 +4168,7 @@ extern int VanuatuWktwrap (void );
 #endif
 #endif
 
-    static void vanuatu_yyunput (int c,char *buf_ptr  );
+    static void yyunput (int c,char *buf_ptr  );
     
 #ifndef yytext_ptr
 static void yy_flex_strncpy (char *,yyconst char *,int );
@@ -4074,7 +4183,7 @@ static int yy_flex_strlen (yyconst char * );
 #ifdef __cplusplus
 static int yyinput (void );
 #else
-static int vanuatu_input (void );
+static int input (void );
 #endif
 
 #endif
@@ -4148,7 +4257,7 @@ static int vanuatu_input (void );
 
 /* Report a fatal error. */
 #ifndef YY_FATAL_ERROR
-#define YY_FATAL_ERROR(msg) vanuatu_yy_fatal_error( msg )
+#define YY_FATAL_ERROR(msg) yy_fatal_error( msg )
 #endif
 
 /* end tables serialization structures and prototypes */
@@ -4183,20 +4292,20 @@ extern int VanuatuWktlex (void);
  */
 YY_DECL
 {
-	register vanuatu_yy_state_type yy_current_state;
+	register yy_state_type yy_current_state;
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-	if ( !(vanuatu_yy_init) )
+	if ( !(yy_init) )
 		{
-		(vanuatu_yy_init) = 1;
+		(yy_init) = 1;
 
 #ifdef YY_USER_INIT
 		YY_USER_INIT;
 #endif
 
-		if ( ! (vanuatu_yy_start) )
-			(vanuatu_yy_start) = 1;	/* first start state */
+		if ( ! (yy_start) )
+			(yy_start) = 1;	/* first start state */
 
 		if ( ! VanuatuWktin )
 			VanuatuWktin = stdin;
@@ -4215,7 +4324,7 @@ YY_DECL
 
 	while ( 1 )		/* loops until end-of-file is reached */
 		{
-		yy_cp = (vanuatu_yy_c_buf_p);
+		yy_cp = (yy_c_buf_p);
 
 		/* Support of VanuatuWkttext. */
 		*yy_cp = (yy_hold_char);
@@ -4225,34 +4334,34 @@ YY_DECL
 		 */
 		yy_bp = yy_cp;
 
-		yy_current_state = (vanuatu_yy_start);
+		yy_current_state = (yy_start);
 yy_match:
 		do
 			{
-			register VANUATU_YY_CHAR yy_c = vanuatu_yy_ec[YY_SC_TO_UI(*yy_cp)];
-			if ( vanuatu_yy_accept[yy_current_state] )
+			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
+			if ( yy_accept[yy_current_state] )
 				{
 				(yy_last_accepting_state) = yy_current_state;
 				(yy_last_accepting_cpos) = yy_cp;
 				}
-			while ( vanuatu_yy_chk[vanuatu_yy_base[yy_current_state] + yy_c] != yy_current_state )
+			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
-				yy_current_state = (int) vanuatu_yy_def[yy_current_state];
+				yy_current_state = (int) yy_def[yy_current_state];
 				if ( yy_current_state >= 114 )
-					yy_c = vanuatu_yy_meta[(unsigned int) yy_c];
+					yy_c = yy_meta[(unsigned int) yy_c];
 				}
-			yy_current_state = vanuatu_yy_nxt[vanuatu_yy_base[yy_current_state] + (unsigned int) yy_c];
+			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 			++yy_cp;
 			}
-		while ( vanuatu_yy_base[yy_current_state] != 270 );
+		while ( yy_base[yy_current_state] != 270 );
 
 yy_find_action:
-		yy_act = vanuatu_yy_accept[yy_current_state];
+		yy_act = yy_accept[yy_current_state];
 		if ( yy_act == 0 )
 			{ /* have to back up */
 			yy_cp = (yy_last_accepting_cpos);
 			yy_current_state = (yy_last_accepting_state);
-			yy_act = vanuatu_yy_accept[yy_current_state];
+			yy_act = yy_accept[yy_current_state];
 			}
 
 		YY_DO_BEFORE_ACTION;
@@ -4403,7 +4512,7 @@ YY_RULE_SETUP
 case 34:
 /* rule 34 can match eol */
 YY_RULE_SETUP
-{ vanuatu_col = 0; ++vanuatu_line; return VANUATU_NEWLINE; }
+{ vanuatu_col = 0; ++vanuatu_line; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
@@ -4448,13 +4557,13 @@ case YY_STATE_EOF(INITIAL):
 		 * end-of-buffer state).  Contrast this with the test
 		 * in input().
 		 */
-		if ( (vanuatu_yy_c_buf_p) <= &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] )
+		if ( (yy_c_buf_p) <= &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] )
 			{ /* This was really a NUL. */
-			vanuatu_yy_state_type yy_next_state;
+			yy_state_type yy_next_state;
 
-			(vanuatu_yy_c_buf_p) = (yytext_ptr) + yy_amount_of_matched_text;
+			(yy_c_buf_p) = (yytext_ptr) + yy_amount_of_matched_text;
 
-			yy_current_state = vanuatu_yy_get_previous_state(  );
+			yy_current_state = yy_get_previous_state(  );
 
 			/* Okay, we're now positioned to make the NUL
 			 * transition.  We couldn't have
@@ -4465,26 +4574,26 @@ case YY_STATE_EOF(INITIAL):
 			 * will run more slowly).
 			 */
 
-			yy_next_state = vanuatu_yy_try_NUL_trans( yy_current_state );
+			yy_next_state = yy_try_NUL_trans( yy_current_state );
 
 			yy_bp = (yytext_ptr) + YY_MORE_ADJ;
 
 			if ( yy_next_state )
 				{
 				/* Consume the NUL. */
-				yy_cp = ++(vanuatu_yy_c_buf_p);
+				yy_cp = ++(yy_c_buf_p);
 				yy_current_state = yy_next_state;
 				goto yy_match;
 				}
 
 			else
 				{
-				yy_cp = (vanuatu_yy_c_buf_p);
+				yy_cp = (yy_c_buf_p);
 				goto yy_find_action;
 				}
 			}
 
-		else switch ( vanuatu_yy_get_next_buffer(  ) )
+		else switch ( yy_get_next_buffer(  ) )
 			{
 			case EOB_ACT_END_OF_FILE:
 				{
@@ -4501,7 +4610,7 @@ case YY_STATE_EOF(INITIAL):
 					 * YY_NULL, it'll still work - another
 					 * YY_NULL will get returned.
 					 */
-					(vanuatu_yy_c_buf_p) = (yytext_ptr) + YY_MORE_ADJ;
+					(yy_c_buf_p) = (yytext_ptr) + YY_MORE_ADJ;
 
 					yy_act = YY_STATE_EOF(YY_START);
 					goto do_action;
@@ -4516,22 +4625,22 @@ case YY_STATE_EOF(INITIAL):
 				}
 
 			case EOB_ACT_CONTINUE_SCAN:
-				(vanuatu_yy_c_buf_p) =
+				(yy_c_buf_p) =
 					(yytext_ptr) + yy_amount_of_matched_text;
 
-				yy_current_state = vanuatu_yy_get_previous_state(  );
+				yy_current_state = yy_get_previous_state(  );
 
-				yy_cp = (vanuatu_yy_c_buf_p);
+				yy_cp = (yy_c_buf_p);
 				yy_bp = (yytext_ptr) + YY_MORE_ADJ;
 				goto yy_match;
 
 			case EOB_ACT_LAST_MATCH:
-				(vanuatu_yy_c_buf_p) =
+				(yy_c_buf_p) =
 				&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)];
 
-				yy_current_state = vanuatu_yy_get_previous_state(  );
+				yy_current_state = yy_get_previous_state(  );
 
-				yy_cp = (vanuatu_yy_c_buf_p);
+				yy_cp = (yy_c_buf_p);
 				yy_bp = (yytext_ptr) + YY_MORE_ADJ;
 				goto yy_find_action;
 			}
@@ -4552,20 +4661,20 @@ case YY_STATE_EOF(INITIAL):
  *	EOB_ACT_CONTINUE_SCAN - continue scanning from current position
  *	EOB_ACT_END_OF_FILE - end of file
  */
-static int vanuatu_yy_get_next_buffer (void)
+static int yy_get_next_buffer (void)
 {
     	register char *dest = YY_CURRENT_BUFFER_LVALUE->yy_ch_buf;
 	register char *source = (yytext_ptr);
 	register int number_to_move, i;
 	int ret_val;
 
-	if ( (vanuatu_yy_c_buf_p) > &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1] )
+	if ( (yy_c_buf_p) > &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars) + 1] )
 		YY_FATAL_ERROR(
 		"fatal flex scanner internal error--end of buffer missed" );
 
 	if ( YY_CURRENT_BUFFER_LVALUE->yy_fill_buffer == 0 )
 		{ /* Don't try to fill the buffer, so this is an EOF. */
-		if ( (vanuatu_yy_c_buf_p) - (yytext_ptr) - YY_MORE_ADJ == 1 )
+		if ( (yy_c_buf_p) - (yytext_ptr) - YY_MORE_ADJ == 1 )
 			{
 			/* We matched a single character, the EOB, so
 			 * treat this as a final EOF.
@@ -4585,7 +4694,7 @@ static int vanuatu_yy_get_next_buffer (void)
 	/* Try to read more data. */
 
 	/* First move last chars to start of buffer. */
-	number_to_move = (int) ((vanuatu_yy_c_buf_p) - (yytext_ptr)) - 1;
+	number_to_move = (int) ((yy_c_buf_p) - (yytext_ptr)) - 1;
 
 	for ( i = 0; i < number_to_move; ++i )
 		*(dest++) = *(source++);
@@ -4608,7 +4717,7 @@ static int vanuatu_yy_get_next_buffer (void)
 			YY_BUFFER_STATE b = YY_CURRENT_BUFFER;
 
 			int yy_c_buf_p_offset =
-				(int) ((vanuatu_yy_c_buf_p) - b->yy_ch_buf);
+				(int) ((yy_c_buf_p) - b->yy_ch_buf);
 
 			if ( b->yy_is_our_buffer )
 				{
@@ -4631,7 +4740,7 @@ static int vanuatu_yy_get_next_buffer (void)
 				YY_FATAL_ERROR(
 				"fatal error - scanner input buffer overflow" );
 
-			(vanuatu_yy_c_buf_p) = &b->yy_ch_buf[yy_c_buf_p_offset];
+			(yy_c_buf_p) = &b->yy_ch_buf[yy_c_buf_p_offset];
 
 			num_to_read = YY_CURRENT_BUFFER_LVALUE->yy_buf_size -
 						number_to_move - 1;
@@ -4686,28 +4795,28 @@ static int vanuatu_yy_get_next_buffer (void)
 
 /* yy_get_previous_state - get the state just before the EOB char was reached */
 
-    static vanuatu_yy_state_type vanuatu_yy_get_previous_state (void)
+    static yy_state_type yy_get_previous_state (void)
 {
-	register vanuatu_yy_state_type yy_current_state;
+	register yy_state_type yy_current_state;
 	register char *yy_cp;
     
-	yy_current_state = (vanuatu_yy_start);
+	yy_current_state = (yy_start);
 
-	for ( yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (vanuatu_yy_c_buf_p); ++yy_cp )
+	for ( yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (yy_c_buf_p); ++yy_cp )
 		{
-		register VANUATU_YY_CHAR yy_c = (*yy_cp ? vanuatu_yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
-		if ( vanuatu_yy_accept[yy_current_state] )
+		register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
+		if ( yy_accept[yy_current_state] )
 			{
 			(yy_last_accepting_state) = yy_current_state;
 			(yy_last_accepting_cpos) = yy_cp;
 			}
-		while ( vanuatu_yy_chk[vanuatu_yy_base[yy_current_state] + yy_c] != yy_current_state )
+		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
-			yy_current_state = (int) vanuatu_yy_def[yy_current_state];
+			yy_current_state = (int) yy_def[yy_current_state];
 			if ( yy_current_state >= 114 )
-				yy_c = vanuatu_yy_meta[(unsigned int) yy_c];
+				yy_c = yy_meta[(unsigned int) yy_c];
 			}
-		yy_current_state = vanuatu_yy_nxt[vanuatu_yy_base[yy_current_state] + (unsigned int) yy_c];
+		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 		}
 
 	return yy_current_state;
@@ -4718,34 +4827,34 @@ static int vanuatu_yy_get_next_buffer (void)
  * synopsis
  *	next_state = yy_try_NUL_trans( current_state );
  */
-    static vanuatu_yy_state_type vanuatu_yy_try_NUL_trans  (vanuatu_yy_state_type yy_current_state )
+    static yy_state_type yy_try_NUL_trans  (yy_state_type yy_current_state )
 {
 	register int yy_is_jam;
-    	register char *yy_cp = (vanuatu_yy_c_buf_p);
+    	register char *yy_cp = (yy_c_buf_p);
 
-	register VANUATU_YY_CHAR yy_c = 1;
-	if ( vanuatu_yy_accept[yy_current_state] )
+	register YY_CHAR yy_c = 1;
+	if ( yy_accept[yy_current_state] )
 		{
 		(yy_last_accepting_state) = yy_current_state;
 		(yy_last_accepting_cpos) = yy_cp;
 		}
-	while ( vanuatu_yy_chk[vanuatu_yy_base[yy_current_state] + yy_c] != yy_current_state )
+	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
-		yy_current_state = (int) vanuatu_yy_def[yy_current_state];
+		yy_current_state = (int) yy_def[yy_current_state];
 		if ( yy_current_state >= 114 )
-			yy_c = vanuatu_yy_meta[(unsigned int) yy_c];
+			yy_c = yy_meta[(unsigned int) yy_c];
 		}
-	yy_current_state = vanuatu_yy_nxt[vanuatu_yy_base[yy_current_state] + (unsigned int) yy_c];
+	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 	yy_is_jam = (yy_current_state == 113);
 
 	return yy_is_jam ? 0 : yy_current_state;
 }
 
-    static void vanuatu_yyunput (int c, register char * yy_bp )
+    static void yyunput (int c, register char * yy_bp )
 {
 	register char *yy_cp;
     
-    yy_cp = (vanuatu_yy_c_buf_p);
+    yy_cp = (yy_c_buf_p);
 
 	/* undo effects of setting up VanuatuWkttext */
 	*yy_cp = (yy_hold_char);
@@ -4775,37 +4884,37 @@ static int vanuatu_yy_get_next_buffer (void)
 
 	(yytext_ptr) = yy_bp;
 	(yy_hold_char) = *yy_cp;
-	(vanuatu_yy_c_buf_p) = yy_cp;
+	(yy_c_buf_p) = yy_cp;
 }
 
 #ifndef YY_NO_INPUT
 #ifdef __cplusplus
     static int yyinput (void)
 #else
-    static int vanuatu_input  (void)
+    static int input  (void)
 #endif
 
 {
 	int c;
     
-	*(vanuatu_yy_c_buf_p) = (yy_hold_char);
+	*(yy_c_buf_p) = (yy_hold_char);
 
-	if ( *(vanuatu_yy_c_buf_p) == YY_END_OF_BUFFER_CHAR )
+	if ( *(yy_c_buf_p) == YY_END_OF_BUFFER_CHAR )
 		{
 		/* yy_c_buf_p now points to the character we want to return.
 		 * If this occurs *before* the EOB characters, then it's a
 		 * valid NUL; if not, then we've hit the end of the buffer.
 		 */
-		if ( (vanuatu_yy_c_buf_p) < &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] )
+		if ( (yy_c_buf_p) < &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[(yy_n_chars)] )
 			/* This was really a NUL. */
-			*(vanuatu_yy_c_buf_p) = '\0';
+			*(yy_c_buf_p) = '\0';
 
 		else
 			{ /* need more input */
-			int offset = (vanuatu_yy_c_buf_p) - (yytext_ptr);
-			++(vanuatu_yy_c_buf_p);
+			int offset = (yy_c_buf_p) - (yytext_ptr);
+			++(yy_c_buf_p);
 
-			switch ( vanuatu_yy_get_next_buffer(  ) )
+			switch ( yy_get_next_buffer(  ) )
 				{
 				case EOB_ACT_LAST_MATCH:
 					/* This happens because yy_g_n_b()
@@ -4833,20 +4942,20 @@ static int vanuatu_yy_get_next_buffer (void)
 #ifdef __cplusplus
 					return yyinput();
 #else
-					return vanuatu_input();
+					return input();
 #endif
 					}
 
 				case EOB_ACT_CONTINUE_SCAN:
-					(vanuatu_yy_c_buf_p) = (yytext_ptr) + offset;
+					(yy_c_buf_p) = (yytext_ptr) + offset;
 					break;
 				}
 			}
 		}
 
-	c = *(unsigned char *) (vanuatu_yy_c_buf_p);	/* cast for 8-bit char's */
-	*(vanuatu_yy_c_buf_p) = '\0';	/* preserve VanuatuWkttext */
-	(yy_hold_char) = *++(vanuatu_yy_c_buf_p);
+	c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
+	*(yy_c_buf_p) = '\0';	/* preserve VanuatuWkttext */
+	(yy_hold_char) = *++(yy_c_buf_p);
 
 	return c;
 }
@@ -4889,8 +4998,8 @@ static int vanuatu_yy_get_next_buffer (void)
 	if ( YY_CURRENT_BUFFER )
 		{
 		/* Flush out information for old buffer. */
-		*(vanuatu_yy_c_buf_p) = (yy_hold_char);
-		YY_CURRENT_BUFFER_LVALUE->yy_buf_pos = (vanuatu_yy_c_buf_p);
+		*(yy_c_buf_p) = (yy_hold_char);
+		YY_CURRENT_BUFFER_LVALUE->yy_buf_pos = (yy_c_buf_p);
 		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
 		}
 
@@ -4908,9 +5017,9 @@ static int vanuatu_yy_get_next_buffer (void)
 static void VanuatuWkt_load_buffer_state  (void)
 {
     	(yy_n_chars) = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
-	(yytext_ptr) = (vanuatu_yy_c_buf_p) = YY_CURRENT_BUFFER_LVALUE->yy_buf_pos;
+	(yytext_ptr) = (yy_c_buf_p) = YY_CURRENT_BUFFER_LVALUE->yy_buf_pos;
 	VanuatuWktin = YY_CURRENT_BUFFER_LVALUE->yy_input_file;
-	(yy_hold_char) = *(vanuatu_yy_c_buf_p);
+	(yy_hold_char) = *(yy_c_buf_p);
 }
 
 /** Allocate and initialize an input buffer state.
@@ -5038,14 +5147,14 @@ void VanuatuWktpush_buffer_state (YY_BUFFER_STATE new_buffer )
 	if ( YY_CURRENT_BUFFER )
 		{
 		/* Flush out information for old buffer. */
-		*(vanuatu_yy_c_buf_p) = (yy_hold_char);
-		YY_CURRENT_BUFFER_LVALUE->yy_buf_pos = (vanuatu_yy_c_buf_p);
+		*(yy_c_buf_p) = (yy_hold_char);
+		YY_CURRENT_BUFFER_LVALUE->yy_buf_pos = (yy_c_buf_p);
 		YY_CURRENT_BUFFER_LVALUE->yy_n_chars = (yy_n_chars);
 		}
 
 	/* Only push if top exists. Otherwise, replace top. */
 	if (YY_CURRENT_BUFFER)
-		(vanuatu_yy_buffer_stack_top)++;
+		(yy_buffer_stack_top)++;
 	YY_CURRENT_BUFFER_LVALUE = new_buffer;
 
 	/* copied from VanuatuWkt_switch_to_buffer. */
@@ -5064,8 +5173,8 @@ void VanuatuWktpop_buffer_state (void)
 
 	VanuatuWkt_delete_buffer(YY_CURRENT_BUFFER );
 	YY_CURRENT_BUFFER_LVALUE = NULL;
-	if ((vanuatu_yy_buffer_stack_top) > 0)
-		--(vanuatu_yy_buffer_stack_top);
+	if ((yy_buffer_stack_top) > 0)
+		--(yy_buffer_stack_top);
 
 	if (YY_CURRENT_BUFFER) {
 		VanuatuWkt_load_buffer_state( );
@@ -5080,42 +5189,42 @@ static void VanuatuWktensure_buffer_stack (void)
 {
 	int num_to_alloc;
     
-	if (!(vanuatu_yy_buffer_stack)) {
+	if (!(yy_buffer_stack)) {
 
 		/* First allocation is just for 2 elements, since we don't know if this
 		 * scanner will even need a stack. We use 2 instead of 1 to avoid an
 		 * immediate realloc on the next call.
          */
 		num_to_alloc = 1;
-		(vanuatu_yy_buffer_stack) = (struct yy_buffer_state**)VanuatuWktalloc
+		(yy_buffer_stack) = (struct yy_buffer_state**)VanuatuWktalloc
 								(num_to_alloc * sizeof(struct yy_buffer_state*)
 								);
-		if ( ! (vanuatu_yy_buffer_stack) )
+		if ( ! (yy_buffer_stack) )
 			YY_FATAL_ERROR( "out of dynamic memory in VanuatuWktensure_buffer_stack()" );
 								  
-		memset((vanuatu_yy_buffer_stack), 0, num_to_alloc * sizeof(struct yy_buffer_state*));
+		memset((yy_buffer_stack), 0, num_to_alloc * sizeof(struct yy_buffer_state*));
 				
-		(vanuatu_yy_buffer_stack_max) = num_to_alloc;
-		(vanuatu_yy_buffer_stack_top) = 0;
+		(yy_buffer_stack_max) = num_to_alloc;
+		(yy_buffer_stack_top) = 0;
 		return;
 	}
 
-	if ((vanuatu_yy_buffer_stack_top) >= ((vanuatu_yy_buffer_stack_max)) - 1){
+	if ((yy_buffer_stack_top) >= ((yy_buffer_stack_max)) - 1){
 
 		/* Increase the buffer to prepare for a possible push. */
 		int grow_size = 8 /* arbitrary grow size */;
 
-		num_to_alloc = (vanuatu_yy_buffer_stack_max) + grow_size;
-		(vanuatu_yy_buffer_stack) = (struct yy_buffer_state**)VanuatuWktrealloc
-								((vanuatu_yy_buffer_stack),
+		num_to_alloc = (yy_buffer_stack_max) + grow_size;
+		(yy_buffer_stack) = (struct yy_buffer_state**)VanuatuWktrealloc
+								((yy_buffer_stack),
 								num_to_alloc * sizeof(struct yy_buffer_state*)
 								);
-		if ( ! (vanuatu_yy_buffer_stack) )
+		if ( ! (yy_buffer_stack) )
 			YY_FATAL_ERROR( "out of dynamic memory in VanuatuWktensure_buffer_stack()" );
 
 		/* zero only the new slots.*/
-		memset((vanuatu_yy_buffer_stack) + (vanuatu_yy_buffer_stack_max), 0, grow_size * sizeof(struct yy_buffer_state*));
-		(vanuatu_yy_buffer_stack_max) = num_to_alloc;
+		memset((yy_buffer_stack) + (yy_buffer_stack_max), 0, grow_size * sizeof(struct yy_buffer_state*));
+		(yy_buffer_stack_max) = num_to_alloc;
 	}
 }
 
@@ -5209,7 +5318,7 @@ YY_BUFFER_STATE VanuatuWkt_scan_bytes  (yyconst char * yybytes, int  _yybytes_le
 #define YY_EXIT_FAILURE 2
 #endif
 
-static void vanuatu_yy_fatal_error (yyconst char* msg )
+static void yy_fatal_error (yyconst char* msg )
 {
     	(void) fprintf( stderr, "%s\n", msg );
 	exit( YY_EXIT_FAILURE );
@@ -5225,9 +5334,9 @@ static void vanuatu_yy_fatal_error (yyconst char* msg )
         int yyless_macro_arg = (n); \
         YY_LESS_LINENO(yyless_macro_arg);\
 		VanuatuWkttext[VanuatuWktleng] = (yy_hold_char); \
-		(vanuatu_yy_c_buf_p) = VanuatuWkttext + yyless_macro_arg; \
-		(yy_hold_char) = *(vanuatu_yy_c_buf_p); \
-		*(vanuatu_yy_c_buf_p) = '\0'; \
+		(yy_c_buf_p) = VanuatuWkttext + yyless_macro_arg; \
+		(yy_hold_char) = *(yy_c_buf_p); \
+		*(yy_c_buf_p) = '\0'; \
 		VanuatuWktleng = yyless_macro_arg; \
 		} \
 	while ( 0 )
@@ -5312,18 +5421,18 @@ void VanuatuWktset_debug (int  bdebug )
         VanuatuWkt_flex_debug = bdebug ;
 }
 
-static int vanuatu_yy_init_globals (void)
+static int yy_init_globals (void)
 {
         /* Initialization is the same as for the non-reentrant scanner.
      * This function is called from VanuatuWktlex_destroy(), so don't allocate here.
      */
 
-    (vanuatu_yy_buffer_stack) = 0;
-    (vanuatu_yy_buffer_stack_top) = 0;
-    (vanuatu_yy_buffer_stack_max) = 0;
-    (vanuatu_yy_c_buf_p) = (char *) 0;
-    (vanuatu_yy_init) = 0;
-    (vanuatu_yy_start) = 0;
+    (yy_buffer_stack) = 0;
+    (yy_buffer_stack_top) = 0;
+    (yy_buffer_stack_max) = 0;
+    (yy_c_buf_p) = (char *) 0;
+    (yy_init) = 0;
+    (yy_start) = 0;
 
 /* Defined in main.c */
 #ifdef YY_STDINIT
@@ -5352,12 +5461,12 @@ int VanuatuWktlex_destroy  (void)
 	}
 
 	/* Destroy the stack itself. */
-	VanuatuWktfree((vanuatu_yy_buffer_stack) );
-	(vanuatu_yy_buffer_stack) = NULL;
+	VanuatuWktfree((yy_buffer_stack) );
+	(yy_buffer_stack) = NULL;
 
     /* Reset the globals. This is important in a non-reentrant scanner so the next time
      * VanuatuWktlex() is called, initialization will occur. */
-    vanuatu_yy_init_globals( );
+    yy_init_globals( );
 
     return 0;
 }
@@ -5502,7 +5611,7 @@ vanuatu_cleanup (vanuatuFlexToken * token)
 gaiaGeomCollPtr
 gaiaParseWkt (const unsigned char *dirty_buffer, short type)
 {
-    void *pParser = vanuatuParseAlloc (malloc);
+    void *pParser = ParseAlloc (malloc);
     /* Linked-list of token values */
     vanuatuFlexToken *tokens = malloc (sizeof (vanuatuFlexToken));
     /* Pointer to the head of the list */
@@ -5535,12 +5644,12 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
 	   */
 	  tokens->Next->value = VanuatuWktlval.dval;
 	  /* Pass the token to the wkt parser created from lemon */
-	  vanuatuParse (pParser, yv, &(tokens->Next->value), &result);
+	  Parse (pParser, yv, &(tokens->Next->value), &result);
 	  tokens = tokens->Next;
       }
     /* This denotes the end of a line as well as the end of the parser */
-    vanuatuParse (pParser, VANUATU_NEWLINE, 0, &result);
-    vanuatuParseFree (pParser, free);
+    Parse (pParser, VANUATU_NEWLINE, 0, &result);
+    ParseFree (pParser, free);
     VanuatuWktlex_destroy ();
 
     /* Assigning the token as the end to avoid seg faults while cleaning */
@@ -5608,7 +5717,7 @@ Greg Wilson			gvwilson@cs.toronto.ca
 */
 
 /*
-** CAVEAT: we must now undefine any Flex own macro
+** CAVEAT: we must now undefine any Lemon/Flex own macro
 */
 #undef YYNOCODE
 #undef YYNSTATE
@@ -5631,30 +5740,76 @@ Greg Wilson			gvwilson@cs.toronto.ca
 #undef YY_STATE_BUF_SIZE
 #undef YY_DECL
 #undef YY_FATAL_ERROR
-#undef yy_accept
-#undef yy_create_buffer 
-#undef yy_delete_buffer 
-#undef yy_flex_debug
-#undef yy_init_buffer
-#undef yy_flush_buffer
-#undef yy_load_buffer_state
-#undef yy_switch_to_buffer
+#undef YYMINORTYPE
+#undef YY_CHAR
+#undef YYSTYPE
+#undef input
+#undef ParseAlloc
+#undef ParseFree
+#undef ParseStackPeak
+#undef Parse
+#undef yyalloc
+#undef yyfree
 #undef yyin
 #undef yyleng
+#undef yyless
 #undef yylex
 #undef yylineno
 #undef yyout
+#undef yyrealloc
 #undef yyrestart
+#undef yyStackEntry
 #undef yytext
 #undef yywrap
-#undef yyalloc
-#undef yyrealloc
-#undef yyfree
-#undef yyless
+#undef yyzerominor
+#undef yy_accept
+#undef yy_action
+#undef yy_base
+#undef yy_buffer_stack
+#undef yy_buffer_stack_max
+#undef yy_buffer_stack_top
+#undef yy_c_buf_p
+#undef yy_chk
+#undef yy_create_buffer
+#undef yy_def
+#undef yy_default
+#undef yy_delete_buffer
+#undef yy_destructor
+#undef yy_ec
+#undef yy_fatal_error
+#undef yy_find_reduce_action
+#undef yy_find_shift_action
+#undef yy_flex_debug
+#undef yy_flush_buffer
+#undef yy_get_next_buffer
+#undef yy_get_previous_state
+#undef yy_init
+#undef yy_init_buffer
+#undef yy_init_globals
+#undef yy_load_buffer
+#undef yy_load_buffer_state
+#undef yy_lookahead
+#undef yy_meta
 #undef yy_new_buffer
-#undef yy_set_interactive
+#undef yy_nxt
+#undef yy_parse_failed
+#undef yy_pop_parser_stack
+#undef yy_reduce
+#undef yy_reduce_ofst
 #undef yy_set_bol
+#undef yy_set_interactive
+#undef yy_shift
+#undef yy_shift_ofst
+#undef yy_start
+#undef yy_state_type
+#undef yy_switch_to_buffer
+#undef yy_syntax_error
+#undef yy_trans_info
+#undef yy_try_NUL_trans
+#undef yyParser
+#undef yyStackEntry
+#undef yyStackOverflow
+#undef yyRuleInfo
 #undef yytext_ptr
-#undef unput
-#undef YYSTYPE
-
+#undef yyunput
+#undef yyzerominor
