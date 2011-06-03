@@ -1700,9 +1700,9 @@ XmlClean (const char *string)
 }
 
 static void
-out_bare_kml_point (gaiaOutBufferPtr out_buf, gaiaPointPtr point, int precision)
+out_kml_point (gaiaOutBufferPtr out_buf, gaiaPointPtr point, int precision)
 {
-/* formats POINT as 'bare' KML [x,y] */
+/* formats POINT as KML [x,y] */
     char buf_x[128];
     char buf_y[128];
     char buf[256];
@@ -1717,47 +1717,10 @@ out_bare_kml_point (gaiaOutBufferPtr out_buf, gaiaPointPtr point, int precision)
 }
 
 static void
-out_full_kml_point (gaiaOutBufferPtr out_buf, const char *name,
-		    const char *desc, gaiaPointPtr point, int precision)
+out_kml_linestring (gaiaOutBuffer * out_buf, int dims, int points,
+		    double *coords, int precision)
 {
-/* formats POINT as 'full' KML [x,y] */
-    char buf_x[128];
-    char buf_y[128];
-    char buf[256];
-    char *xml_clean;
-    sprintf (buf_x, "%.*f", precision, point->X);
-    gaiaOutClean (buf_x);
-    sprintf (buf_y, "%.*f", precision, point->Y);
-    gaiaOutClean (buf_y);
-    gaiaAppendToOutBuffer (out_buf, "<Placemark><name>");
-    xml_clean = XmlClean (name);
-    if (xml_clean)
-      {
-	  gaiaAppendToOutBuffer (out_buf, xml_clean);
-	  free (xml_clean);
-      }
-    else
-	gaiaAppendToOutBuffer (out_buf, " ");
-    gaiaAppendToOutBuffer (out_buf, "</name><description>");
-    xml_clean = XmlClean (desc);
-    if (xml_clean)
-      {
-	  gaiaAppendToOutBuffer (out_buf, xml_clean);
-	  free (xml_clean);
-      }
-    else
-	gaiaAppendToOutBuffer (out_buf, " ");
-    gaiaAppendToOutBuffer (out_buf, "</description><Point><coordinates>");
-    sprintf (buf, "%s,%s", buf_x, buf_y);
-    gaiaAppendToOutBuffer (out_buf, buf);
-    gaiaAppendToOutBuffer (out_buf, "</coordinates></Point></Placemark>");
-}
-
-static void
-out_bare_kml_linestring (gaiaOutBuffer * out_buf, int dims, int points,
-			 double *coords, int precision)
-{
-/* formats LINESTRING as 'bare' KML [x,y] */
+/* formats LINESTRING as KML [x,y] */
     char buf_x[128];
     char buf_y[128];
     char buf[256];
@@ -1800,76 +1763,10 @@ out_bare_kml_linestring (gaiaOutBuffer * out_buf, int dims, int points,
 }
 
 static void
-out_full_kml_linestring (gaiaOutBufferPtr out_buf, const char *name,
-			 const char *desc, int dims, int points, double *coords,
-			 int precision)
+out_kml_polygon (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polygon,
+		 int precision)
 {
-/* formats LINESTRING as 'full' KML [x,y] */
-    char buf_x[128];
-    char buf_y[128];
-    char buf[256];
-    char *xml_clean;
-    int iv;
-    double x;
-    double y;
-    double z;
-    double m;
-    gaiaAppendToOutBuffer (out_buf, "<Placemark><name>");
-    xml_clean = XmlClean (name);
-    if (xml_clean)
-      {
-	  gaiaAppendToOutBuffer (out_buf, xml_clean);
-	  free (xml_clean);
-      }
-    else
-	gaiaAppendToOutBuffer (out_buf, " ");
-    gaiaAppendToOutBuffer (out_buf, "</name><description>");
-    xml_clean = XmlClean (desc);
-    if (xml_clean)
-      {
-	  gaiaAppendToOutBuffer (out_buf, xml_clean);
-	  free (xml_clean);
-      }
-    else
-	gaiaAppendToOutBuffer (out_buf, " ");
-    gaiaAppendToOutBuffer (out_buf, "</description><LineString><coordinates>");
-    for (iv = 0; iv < points; iv++)
-      {
-	  /* exporting vertices */
-	  if (dims == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (coords, iv, &x, &y, &z);
-	    }
-	  else if (dims == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (coords, iv, &x, &y, &m);
-	    }
-	  else if (dims == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (coords, iv, &x, &y, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (coords, iv, &x, &y);
-	    }
-	  sprintf (buf_x, "%.*f", precision, x);
-	  gaiaOutClean (buf_x);
-	  sprintf (buf_y, "%.*f", precision, y);
-	  gaiaOutClean (buf_y);
-	  if (iv == 0)
-	      sprintf (buf, "%s,%s", buf_x, buf_y);
-	  else
-	      sprintf (buf, " %s,%s", buf_x, buf_y);
-	  gaiaAppendToOutBuffer (out_buf, buf);
-      }
-    gaiaAppendToOutBuffer (out_buf, "</coordinates></LineString></Placemark>");
-}
-
-static void
-out_bare_kml_polygon (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polygon,
-		      int precision)
-{
-/* formats POLYGON as 'bare' KML [x,y] */
+/* formats POLYGON as KML [x,y] */
     char buf_x[128];
     char buf_y[128];
     char buf[256];
@@ -1957,22 +1854,41 @@ out_bare_kml_polygon (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polygon,
     gaiaAppendToOutBuffer (out_buf, buf);
 }
 
-static void
-out_full_kml_polygon (gaiaOutBufferPtr out_buf, const char *name,
-		      const char *desc, gaiaPolygonPtr polygon, int precision)
+GAIAGEO_DECLARE void
+gaiaOutFullKml (gaiaOutBufferPtr out_buf, const char *name, const char *desc,
+		gaiaGeomCollPtr geom, int precision)
 {
-/* formats POLYGON as 'full' KML [x,y] */
-    char buf_x[128];
-    char buf_y[128];
-    char buf[256];
+/* prints the 'full' KML representation of current geometry */
+    gaiaPointPtr point;
+    gaiaLinestringPtr line;
+    gaiaPolygonPtr polyg;
+    int count = 0;
     char *xml_clean;
-    gaiaRingPtr ring;
-    int iv;
-    int ib;
-    double x;
-    double y;
-    double z;
-    double m;
+    if (!geom)
+	return;
+    if (precision > 18)
+	precision = 18;
+
+/* counting how many elementary geometries are there */
+    point = geom->FirstPoint;
+    while (point)
+      {
+	  count++;
+	  point = point->Next;
+      }
+    line = geom->FirstLinestring;
+    while (line)
+      {
+	  count++;
+	  line = line->Next;
+      }
+    polyg = geom->FirstPolygon;
+    while (polyg)
+      {
+	  count++;
+	  polyg = polyg->Next;
+      }
+
     gaiaAppendToOutBuffer (out_buf, "<Placemark><name>");
     xml_clean = XmlClean (name);
     if (xml_clean)
@@ -1991,116 +1907,43 @@ out_full_kml_polygon (gaiaOutBufferPtr out_buf, const char *name,
       }
     else
 	gaiaAppendToOutBuffer (out_buf, " ");
-    gaiaAppendToOutBuffer (out_buf, "</description><Polygon>");
-    gaiaAppendToOutBuffer (out_buf,
-			   "<outerBoundaryIs><LinearRing><coordinates>");
-    ring = polygon->Exterior;
-    for (iv = 0; iv < ring->Points; iv++)
-      {
-	  /* exporting vertices [Exterior Ring] */
-	  if (ring->DimensionModel == GAIA_XY_Z)
-	    {
-		gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);
-	    }
-	  else if (ring->DimensionModel == GAIA_XY_M)
-	    {
-		gaiaGetPointXYM (ring->Coords, iv, &x, &y, &m);
-	    }
-	  else if (ring->DimensionModel == GAIA_XY_Z_M)
-	    {
-		gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
-	    }
-	  else
-	    {
-		gaiaGetPoint (ring->Coords, iv, &x, &y);
-	    }
-	  sprintf (buf_x, "%.*f", precision, x);
-	  gaiaOutClean (buf_x);
-	  sprintf (buf_y, "%.*f", precision, y);
-	  gaiaOutClean (buf_y);
-	  if (iv == 0)
-	      sprintf (buf, "%s,%s", buf_x, buf_y);
-	  else
-	      sprintf (buf, " %s,%s", buf_x, buf_y);
-	  gaiaAppendToOutBuffer (out_buf, buf);
-      }
-    gaiaAppendToOutBuffer (out_buf,
-			   "</coordinates></LinearRing></outerBoundaryIs>");
-    for (ib = 0; ib < polygon->NumInteriors; ib++)
-      {
-	  /* interior rings */
-	  ring = polygon->Interiors + ib;
-	  gaiaAppendToOutBuffer (out_buf,
-				 "<innerBoundaryIs><LinearRing><coordinates>");
-	  for (iv = 0; iv < ring->Points; iv++)
-	    {
-		/* exporting vertices [Interior Ring] */
-		if (ring->DimensionModel == GAIA_XY_Z)
-		  {
-		      gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);
-		  }
-		else if (ring->DimensionModel == GAIA_XY_M)
-		  {
-		      gaiaGetPointXYM (ring->Coords, iv, &x, &y, &m);
-		  }
-		else if (ring->DimensionModel == GAIA_XY_Z_M)
-		  {
-		      gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
-		  }
-		else
-		  {
-		      gaiaGetPoint (ring->Coords, iv, &x, &y);
-		  }
-		sprintf (buf_x, "%.*f", precision, x);
-		gaiaOutClean (buf_x);
-		sprintf (buf_y, "%.*f", precision, y);
-		gaiaOutClean (buf_y);
-		if (iv == 0)
-		    sprintf (buf, "%s,%s", buf_x, buf_y);
-		else
-		    sprintf (buf, " %s,%s", buf_x, buf_y);
-		gaiaAppendToOutBuffer (out_buf, buf);
-	    }
-	  gaiaAppendToOutBuffer (out_buf,
-				 "</coordinates></LinearRing></innerBoundaryIs>");
-      }
-    gaiaAppendToOutBuffer (out_buf, "</Polygon></Placemark>");
-}
+    gaiaAppendToOutBuffer (out_buf, "</description>");
 
-GAIAGEO_DECLARE void
-gaiaOutFullKml (gaiaOutBufferPtr out_buf, const char *name, const char *desc,
-		gaiaGeomCollPtr geom, int precision)
-{
-/* prints the 'full' KML representation of current geometry */
-    gaiaPointPtr point;
-    gaiaLinestringPtr line;
-    gaiaPolygonPtr polyg;
-    if (!geom)
-	return;
-    if (precision > 18)
-	precision = 18;
+    if (count > 1)
+      {
+	  /* MultiGeometry start */
+	  gaiaAppendToOutBuffer (out_buf, "<MultiGeometry>");
+      }
+
     point = geom->FirstPoint;
     while (point)
       {
 	  /* processing POINT */
-	  out_full_kml_point (out_buf, name, desc, point, precision);
+	  out_kml_point (out_buf, point, precision);
 	  point = point->Next;
       }
     line = geom->FirstLinestring;
     while (line)
       {
 	  /* processing LINESTRING */
-	  out_full_kml_linestring (out_buf, name, desc, line->DimensionModel,
-				   line->Points, line->Coords, precision);
+	  out_kml_linestring (out_buf, line->DimensionModel,
+			      line->Points, line->Coords, precision);
 	  line = line->Next;
       }
     polyg = geom->FirstPolygon;
     while (polyg)
       {
 	  /* processing POLYGON */
-	  out_full_kml_polygon (out_buf, name, desc, polyg, precision);
+	  out_kml_polygon (out_buf, polyg, precision);
 	  polyg = polyg->Next;
       }
+
+    if (count > 1)
+      {
+	  /* MultiGeometry end */
+	  gaiaAppendToOutBuffer (out_buf, "</MultiGeometry>");
+      }
+    gaiaAppendToOutBuffer (out_buf, "</Placemark>");
 }
 
 GAIAGEO_DECLARE void
@@ -2110,31 +1953,65 @@ gaiaOutBareKml (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom, int precision)
     gaiaPointPtr point;
     gaiaLinestringPtr line;
     gaiaPolygonPtr polyg;
+    int count = 0;
     if (!geom)
 	return;
     if (precision > 18)
 	precision = 18;
+
+/* counting how many elementary geometries are there */
+    point = geom->FirstPoint;
+    while (point)
+      {
+	  count++;
+	  point = point->Next;
+      }
+    line = geom->FirstLinestring;
+    while (line)
+      {
+	  count++;
+	  line = line->Next;
+      }
+    polyg = geom->FirstPolygon;
+    while (polyg)
+      {
+	  count++;
+	  polyg = polyg->Next;
+      }
+
+    if (count > 1)
+      {
+	  /* MultiGeometry start */
+	  gaiaAppendToOutBuffer (out_buf, "<MultiGeometry>");
+      }
+
     point = geom->FirstPoint;
     while (point)
       {
 	  /* processing POINT */
-	  out_bare_kml_point (out_buf, point, precision);
+	  out_kml_point (out_buf, point, precision);
 	  point = point->Next;
       }
     line = geom->FirstLinestring;
     while (line)
       {
 	  /* processing LINESTRING */
-	  out_bare_kml_linestring (out_buf, line->DimensionModel, line->Points,
-				   line->Coords, precision);
+	  out_kml_linestring (out_buf, line->DimensionModel, line->Points,
+			      line->Coords, precision);
 	  line = line->Next;
       }
     polyg = geom->FirstPolygon;
     while (polyg)
       {
 	  /* processing POLYGON */
-	  out_bare_kml_polygon (out_buf, polyg, precision);
+	  out_kml_polygon (out_buf, polyg, precision);
 	  polyg = polyg->Next;
+      }
+
+    if (count > 1)
+      {
+	  /* MultiGeometry end */
+	  gaiaAppendToOutBuffer (out_buf, "</MultiGeometry>");
       }
 }
 

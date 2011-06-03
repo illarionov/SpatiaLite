@@ -5723,6 +5723,7 @@ Greg Wilson			gvwilson@cs.toronto.ca
 #undef YYNSTATE
 #undef YYNRULE
 #undef YY_SHIFT_MAX
+#undef YY_SHIFT_USE_DFLT
 #undef YY_REDUCE_USE_DFLT
 #undef YY_REDUCE_MAX
 #undef YY_FLUSH_BUFFER

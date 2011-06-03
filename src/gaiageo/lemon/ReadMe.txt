@@ -126,3 +126,34 @@ to paste the generated code.
 
 
 
+
+The KML parser:
+================
+1) in order to make any change to the  KML parser
+you have to edit first the definitions file
+Kml.y
+
+2) then run:
+lemon -l Kml.y
+
+3) during the above step the following files will be
+generated:
+Kml.c [the C code implementing the parser]
+Kml.h [C header file]
+Kml.out [check file - useful for debugging]
+
+3.1] Kml.h
+Please, copy the whole file content and
+then replace [i.e. using cut&paste] the
+correspondign section into "gg_kml.c"
+Search for "KML_LEMON_H" in order to 
+identify the appropriate place where
+to paste the generated code.
+
+3.2] Kml.c
+Please, copy the whole file content and
+replace [i.e. using cut&paste] the
+correspondign section into "gg_kml.c"
+Search for "KML_LEMON" in order to 
+identify the appropriate place where
+to paste the generated code.

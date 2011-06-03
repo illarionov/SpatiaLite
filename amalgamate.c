@@ -811,6 +811,7 @@ main ()
     do_copy (out, "/gaiageo/", "gg_vanuatu.c");
     do_copy (out, "/gaiageo/", "gg_ewkt.c");
     do_copy (out, "/gaiageo/", "gg_geoJSON.c");
+    do_copy (out, "/gaiageo/", "gg_kml.c");
     fclose (out);
 
 /* setting up the HEADERS */
