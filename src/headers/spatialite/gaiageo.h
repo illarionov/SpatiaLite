@@ -827,6 +827,8 @@ extern "C"
 					  gaiaPolygonPtr polygon);
     GAIAGEO_DECLARE void gaiaOutWkt (gaiaOutBufferPtr out_buf,
 				     gaiaGeomCollPtr geom);
+    GAIAGEO_DECLARE void gaiaOutWktStrict (gaiaOutBufferPtr out_buf,
+					   gaiaGeomCollPtr geom, int precision);
     GAIAGEO_DECLARE void gaiaOutSvg (gaiaOutBufferPtr out_buf,
 				     gaiaGeomCollPtr geom, int relative,
 				     int precision);

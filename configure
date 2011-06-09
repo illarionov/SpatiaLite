@@ -752,6 +752,7 @@ MINGW_TRUE
 OMIT_EPSG_FLAGS
 OMIT_ICONV_FLAGS
 OMIT_GEOS_FLAGS
+GEOSADVANCED_FLAGS
 OMIT_PROJ_FLAGS
 OMIT_GEOCALLBACKS_FLAGS
 OMIT_MATHSQL_FLAGS
@@ -888,6 +889,7 @@ enable_mathsql
 enable_geocallbacks
 enable_proj
 enable_geos
+enable_geosadvanced
 enable_iconv
 enable_epsg
 '
@@ -1537,6 +1539,7 @@ Optional Features:
   --enable-geocallbacks   enables geometry callbacks [default=yes]
   --enable-proj           enables PROJ.4 inclusion [default=yes]
   --enable-geos           enables GEOS inclusion [default=yes]
+  --enable-geosadvanced   enables GEOS advanced features [default=yes]
   --enable-iconv          enables ICONV inclusion [default=yes]
   --enable-epsg           enables full EPSG dataset support [default=yes]
 
@@ -6718,13 +6721,13 @@ if test "${lt_cv_nm_interface+set}" = set; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:6721: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:6724: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:6724: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:6727: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:6727: output\"" >&5)
+  (eval echo "\"\$as_me:6730: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -7915,7 +7918,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 7918 "configure"' > conftest.$ac_ext
+  echo '#line 7921 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -9698,11 +9701,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9701: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9704: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9705: \$? = $ac_status" >&5
+   echo "$as_me:9708: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -10037,11 +10040,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10040: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10043: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:10044: \$? = $ac_status" >&5
+   echo "$as_me:10047: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -10142,11 +10145,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10145: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10148: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:10149: \$? = $ac_status" >&5
+   echo "$as_me:10152: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -10197,11 +10200,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10200: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10203: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:10204: \$? = $ac_status" >&5
+   echo "$as_me:10207: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12581,7 +12584,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12584 "configure"
+#line 12587 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12677,7 +12680,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 12680 "configure"
+#line 12683 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -14633,11 +14636,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14636: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14639: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14640: \$? = $ac_status" >&5
+   echo "$as_me:14643: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14732,11 +14735,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14735: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14738: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14739: \$? = $ac_status" >&5
+   echo "$as_me:14742: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14784,11 +14787,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14787: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14790: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14791: \$? = $ac_status" >&5
+   echo "$as_me:14794: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -16615,6 +16618,80 @@ if test "$ac_res" != no; then :
 else
   as_fn_error $? "'libgeos_c' is required but it doesn't seems to be installed on this system." "$LINENO" 5
 fi
+
+  #-----------------------------------------------------------------------
+  #   --enable-geos-advanced
+  #
+  # Check whether --enable-geosadvanced was given.
+if test "${enable_geosadvanced+set}" = set; then :
+  enableval=$enable_geosadvanced;
+else
+  geosadvanced=yes
+fi
+
+  if test x"$enable_geosadvanced" != "xno"; then
+	  GEOSADVANCED_FLAGS=-DGEOS_ADVANCED
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing GEOSCoveredBy" >&5
+$as_echo_n "checking for library containing GEOSCoveredBy... " >&6; }
+if test "${ac_cv_search_GEOSCoveredBy+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char GEOSCoveredBy ();
+int
+main ()
+{
+return GEOSCoveredBy ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' geos_c; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib -lm -lgeos $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_GEOSCoveredBy=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if test "${ac_cv_search_GEOSCoveredBy+set}" = set; then :
+  break
+fi
+done
+if test "${ac_cv_search_GEOSCoveredBy+set}" = set; then :
+
+else
+  ac_cv_search_GEOSCoveredBy=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_GEOSCoveredBy" >&5
+$as_echo "$ac_cv_search_GEOSCoveredBy" >&6; }
+ac_res=$ac_cv_search_GEOSCoveredBy
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+  as_fn_error $? "obsolete 'libgeos_c' (< v.3.3.0). please retry specifying: --disable-geosadvanced." "$LINENO" 5
+fi
+
+  else
+	  GEOSADVANCED_FLAGS=
+  fi
 
 else
   OMIT_GEOS_FLAGS=-DOMIT_GEOS

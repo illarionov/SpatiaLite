@@ -121,6 +121,19 @@ if test x"$enable_geos" != "xno"; then
   OMIT_GEOS_FLAGS=
   AC_CHECK_HEADERS(geos_c.h,, [AC_MSG_ERROR([cannot find geos_c.h, bailing out])])
   AC_SEARCH_LIBS(GEOSTopologyPreserveSimplify,geos_c,,AC_MSG_ERROR(['libgeos_c' is required but it doesn't seems to be installed on this system.]),-lm -lgeos)
+  #-----------------------------------------------------------------------
+  #   --enable-geosadvanced
+  #
+  AC_ARG_ENABLE(geosadvanced, [AS_HELP_STRING(
+	  [--enable-geosadvanced], [enables GEOS advanced features [default=yes]])],
+	  [], [geosadvanced=yes])
+  if test x"$enable_geosadvanced" != "xno"; then
+	  GEOSADVANCED_FLAGS=-DGEOS_ADVANCED
+	  AC_SEARCH_LIBS(GEOSCoveredBy,geos_c,,AC_MSG_ERROR([obsolete 'libgeos_c' (< v.3.3.0). please retry specifying: --disable-geosadvanced.]),-lm -lgeos)
+  else
+	  GEOSADVANCED_FLAGS=
+  fi
+	  AC_SUBST(GEOSADVANCED_FLAGS)
 else
   OMIT_GEOS_FLAGS=-DOMIT_GEOS
 fi
