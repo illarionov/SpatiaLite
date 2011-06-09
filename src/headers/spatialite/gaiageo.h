@@ -815,6 +815,9 @@ extern "C"
 						      *in_buffer);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaParseKml (const unsigned char
 						  *in_buffer);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaParseGml (const unsigned char
+						  *in_buffer,
+						  sqlite3 * sqlite_handle);
 
     GAIAGEO_DECLARE void gaiaOutPointZ (gaiaOutBufferPtr out_buf,
 					gaiaPointPtr point);

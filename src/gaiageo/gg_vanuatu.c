@@ -5619,6 +5619,7 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
     int yv;
     gaiaGeomCollPtr result = NULL;
 
+    tokens->Next = NULL;
     /*
      ** Sandro Furieri 2010 Apr 4
      ** unsetting the parser error flag
@@ -5638,6 +5639,7 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
 		return NULL;
 	    }
 	  tokens->Next = malloc (sizeof (vanuatuFlexToken));
+	  tokens->Next->Next = NULL;
 	  /*
 	     /VanuatuWktlval is a global variable from FLEX.
 	     /VanuatuWktlval is defined in vanuatuLexglobal.h
@@ -5814,3 +5816,8 @@ Greg Wilson			gvwilson@cs.toronto.ca
 #undef yytext_ptr
 #undef yyunput
 #undef yyzerominor
+#undef ParseARG_SDECL
+#undef ParseARG_PDECL
+#undef ParseARG_FETCH
+#undef ParseARG_STORE
+

@@ -3776,6 +3776,7 @@ gaiaParseKml (const unsigned char *dirty_buffer)
     int yv;
     gaiaGeomCollPtr result = NULL;
 
+    tokens->Next = NULL;
     kml_parse_error = 0;
 
     Kml_scan_string ((char *) dirty_buffer);
@@ -3927,3 +3928,8 @@ gaiaParseKml (const unsigned char *dirty_buffer)
 #undef yytext_ptr
 #undef yyunput
 #undef yyzerominor
+#undef ParseARG_SDECL
+#undef ParseARG_PDECL
+#undef ParseARG_FETCH
+#undef ParseARG_STORE
+

@@ -2035,6 +2035,7 @@ gaiaOutGml (gaiaOutBufferPtr out_buf, int version, int precision,
     double m;
     int has_z;
     int is_multi = 1;
+    int is_coll = 0;
     char buf[1024];
     char buf_x[128];
     char buf_y[128];
@@ -2053,27 +2054,56 @@ gaiaOutGml (gaiaOutBufferPtr out_buf, int version, int precision,
 	  is_multi = 0;
 	  break;
       case GAIA_MULTIPOINT:
-	  sprintf (buf, "<gml:MultiPoint SrsName=\"EPSG::%d\">", geom->Srid);
+	  if (geom->Srid == -1)
+	      strcpy (buf, "<gml:MultiPoint>");
+	  else
+	      sprintf (buf, "<gml:MultiPoint srsName=\"EPSG:%d\">",
+		       geom->Srid);
 	  break;
       case GAIA_MULTILINESTRING:
 	  if (version == 3)
-	      sprintf (buf, "<gml:MultiCurve SrsName=\"EPSG::%d\">",
-		       geom->Srid);
+	    {
+		if (geom->Srid == -1)
+		    strcpy (buf, "<gml:MultiCurve>");
+		else
+		    sprintf (buf, "<gml:MultiCurve srsName=\"EPSG:%d\">",
+			     geom->Srid);
+	    }
 	  else
-	      sprintf (buf,
-		       "<gml:MultiLineString SrsName=\"EPSG::%d\">",
-		       geom->Srid);
+	    {
+		if (geom->Srid == -1)
+		    strcpy (buf, "<gml:MultiLineString>");
+		else
+		    sprintf (buf,
+			     "<gml:MultiLineString srsName=\"EPSG:%d\">",
+			     geom->Srid);
+	    }
 	  break;
       case GAIA_MULTIPOLYGON:
 	  if (version == 3)
-	      sprintf (buf, "<gml:MultiSurface SrsName=\"EPSG::%d\">",
-		       geom->Srid);
+	    {
+		if (geom->Srid == -1)
+		    strcpy (buf, "<gml:MultiSurface>");
+		else
+		    sprintf (buf, "<gml:MultiSurface srsName=\"EPSG:%d\">",
+			     geom->Srid);
+	    }
 	  else
-	      sprintf (buf, "<gml:MultiPolygon SrsName=\"EPSG::%d\">",
-		       geom->Srid);
+	    {
+		if (geom->Srid == -1)
+		    strcpy (buf, "<gml:MultiPolygon>");
+		else
+		    sprintf (buf, "<gml:MultiPolygon srsName=\"EPSG:%d\">",
+			     geom->Srid);
+	    }
 	  break;
       default:
-	  sprintf (buf, "<gml:MultiGeometry SrsName=\"EPSG::%d\">", geom->Srid);
+	  if (geom->Srid == -1)
+	      strcpy (buf, "<gml:MultiGeometry>");
+	  else
+	      sprintf (buf, "<gml:MultiGeometry srsName=\"EPSG:%d\">",
+		       geom->Srid);
+	  is_coll = 1;
 	  break;
       };
     gaiaAppendToOutBuffer (out_buf, buf);
@@ -2083,15 +2113,30 @@ gaiaOutGml (gaiaOutBufferPtr out_buf, int version, int precision,
 	  /* processing POINT */
 	  if (is_multi)
 	    {
-		strcpy (buf, "<gml:pointMember>");
+		if (is_coll)
+		    strcpy (buf, "<gml:geometryMember>");
+		else
+		    strcpy (buf, "<gml:pointMember>");
 		strcat (buf, "<gml:Point>");
 	    }
 	  else
-	      sprintf (buf, "<gml:Point SrsName=\"EPSG::%d\">", geom->Srid);
+	    {
+		if (geom->Srid == -1)
+		    strcpy (buf, "<gml:Point>");
+		else
+		    sprintf (buf, "<gml:Point srsName=\"EPSG:%d\">",
+			     geom->Srid);
+	    }
 	  if (version == 3)
-	      strcat (buf, "<gml:pos>");
+	    {
+		if (point->DimensionModel == GAIA_XY_Z
+		    || point->DimensionModel == GAIA_XY_Z_M)
+		    strcat (buf, "<gml:pos srsDimension=\"3\">");
+		else
+		    strcat (buf, "<gml:pos srsDimension=\"2\">");
+	    }
 	  else
-	      strcat (buf, "<gml:coordinates decimal=\".\" cs=\",\" ts=\" \">");
+	      strcat (buf, "<gml:coordinates>");
 	  sprintf (buf_x, "%.*f", precision, point->X);
 	  gaiaOutClean (buf_x);
 	  sprintf (buf_y, "%.*f", precision, point->Y);
@@ -2140,7 +2185,10 @@ gaiaOutGml (gaiaOutBufferPtr out_buf, int version, int precision,
 	  if (is_multi)
 	    {
 		strcat (buf, "</gml:Point>");
-		strcat (buf, "</gml:pointMember>");
+		if (is_coll)
+		    strcat (buf, "</gml:geometryMember>");
+		else
+		    strcat (buf, "</gml:pointMember>");
 	    }
 	  else
 	      strcat (buf, "</gml:Point>");
@@ -2155,27 +2203,55 @@ gaiaOutGml (gaiaOutBufferPtr out_buf, int version, int precision,
 	    {
 		if (version == 3)
 		  {
-		      strcpy (buf, "<gml:curveMember>");
-		      strcat (buf, "<gml:LineString>");
-		      strcat (buf, "<gml:posList>");
+		      if (is_coll)
+			  strcpy (buf, "<gml:geometryMember>");
+		      else
+			  strcpy (buf, "<gml:curveMember>");
+		      strcat (buf, "<gml:Curve>");
+		      strcat (buf, "<gml:segments>");
+		      strcat (buf, "<gml:LineStringSegment>");
+		      if (line->DimensionModel == GAIA_XY_Z
+			  || line->DimensionModel == GAIA_XY_Z_M)
+			  strcat (buf, "<gml:posList srsDimension=\"3\">");
+		      else
+			  strcat (buf, "<gml:posList srsDimension=\"2\">");
 		  }
 		else
 		  {
-		      strcpy (buf, "<gml:lineStringMember>");
+		      if (is_coll)
+			  strcpy (buf, "<gml:geometryMember>");
+		      else
+			  strcpy (buf, "<gml:lineStringMember>");
 		      strcat (buf, "<gml:LineString>");
-		      strcat (buf,
-			      "<gml:coordinates decimal=\".\" cs=\",\" ts=\" \">");
+		      strcat (buf, "<gml:coordinates>");
 		  }
 	    }
 	  else
 	    {
-		sprintf (buf, "<gml:LineString SrsName=\"EPSG::%d\">",
-			 geom->Srid);
 		if (version == 3)
-		    strcat (buf, "<gml:posList>");
+		  {
+		      if (geom->Srid == -1)
+			  strcpy (buf, "<gml:Curve>");
+		      else
+			  sprintf (buf, "<gml:Curve srsName=\"EPSG:%d\">",
+				   geom->Srid);
+		      strcat (buf, "<gml:segments>");
+		      strcat (buf, "<gml:LineStringSegment>");
+		      if (line->DimensionModel == GAIA_XY_Z
+			  || line->DimensionModel == GAIA_XY_Z_M)
+			  strcat (buf, "<gml:posList srsDimension=\"3\">");
+		      else
+			  strcat (buf, "<gml:posList srsDimension=\"2\">");
+		  }
 		else
-		    strcat (buf,
-			    "<gml:coordinates decimal=\".\" cs=\",\" ts=\" \">");
+		  {
+		      if (geom->Srid == -1)
+			  strcpy (buf, "<gml:LineString>");
+		      else
+			  sprintf (buf, "<gml:LineString srsName=\"EPSG:%d\">",
+				   geom->Srid);
+		      strcat (buf, "<gml:coordinates>");
+		  }
 	    }
 	  gaiaAppendToOutBuffer (out_buf, buf);
 	  for (iv = 0; iv < line->Points; iv++)
@@ -2255,23 +2331,38 @@ gaiaOutGml (gaiaOutBufferPtr out_buf, int version, int precision,
 		if (version == 3)
 		  {
 		      strcpy (buf, "</gml:posList>");
-		      strcat (buf, "</gml:LineString>");
-		      strcat (buf, "</gml:curveMember>");
+		      strcat (buf, "</gml:LineStringSegment>");
+		      strcat (buf, "</gml:segments>");
+		      strcat (buf, "</gml:Curve>");
+		      if (is_coll)
+			  strcat (buf, "</gml:geometryMember>");
+		      else
+			  strcat (buf, "</gml:curveMember>");
 		  }
 		else
 		  {
 		      strcpy (buf, "</gml:coordinates>");
 		      strcat (buf, "</gml:LineString>");
-		      strcat (buf, "</gml:lineStringMember>");
+		      if (is_coll)
+			  strcat (buf, "</gml:geometryMember>");
+		      else
+			  strcat (buf, "</gml:lineStringMember>");
 		  }
 	    }
 	  else
 	    {
 		if (version == 3)
-		    strcpy (buf, "</gml:posList>");
+		  {
+		      strcpy (buf, "</gml:posList>");
+		      strcat (buf, "</gml:LineStringSegment>");
+		      strcat (buf, "</gml:segments>");
+		      strcat (buf, "</gml:Curve>");
+		  }
 		else
-		    strcpy (buf, "</gml:coordinates>");
-		strcat (buf, "</gml:LineString>");
+		  {
+		      strcpy (buf, "</gml:coordinates>");
+		      strcat (buf, "</gml:LineString>");
+		  }
 	    }
 	  gaiaAppendToOutBuffer (out_buf, buf);
 	  line = line->Next;
@@ -2280,45 +2371,61 @@ gaiaOutGml (gaiaOutBufferPtr out_buf, int version, int precision,
     while (polyg)
       {
 	  /* processing POLYGON */
+	  ring = polyg->Exterior;
 	  if (is_multi)
 	    {
 		if (version == 3)
 		  {
-		      strcpy (buf, "<gml:surfaceMember>");
+		      if (is_coll)
+			  strcpy (buf, "<gml:geometryMember>");
+		      else
+			  strcpy (buf, "<gml:surfaceMember>");
 		      strcat (buf, "<gml:Polygon>");
 		      strcat (buf, "<gml:exterior>");
 		      strcat (buf, "<gml:LinearRing>");
-		      strcat (buf, "<gml:posList>");
+		      if (ring->DimensionModel == GAIA_XY_Z
+			  || ring->DimensionModel == GAIA_XY_Z_M)
+			  strcat (buf, "<gml:posList srsDimension=\"3\">");
+		      else
+			  strcat (buf, "<gml:posList srsDimension=\"2\">");
 		  }
 		else
 		  {
-		      strcpy (buf, "<gml:polygonMember>");
+		      if (is_coll)
+			  strcpy (buf, "<gml:geometryMember>");
+		      else
+			  strcpy (buf, "<gml:polygonMember>");
 		      strcat (buf, "<gml:Polygon>");
 		      strcat (buf, "<gml:outerBoundaryIs>");
 		      strcat (buf, "<gml:LinearRing>");
-		      strcat (buf,
-			      "<gml:coordinates decimal=\".\" cs=\",\" ts=\" \">");
+		      strcat (buf, "<gml:coordinates>");
 		  }
 	    }
 	  else
 	    {
-		sprintf (buf, "<gml:Polygon SrsName=\"EPSG::%d\">", geom->Srid);
+		if (geom->Srid == -1)
+		    strcpy (buf, "<gml:Polygon>");
+		else
+		    sprintf (buf, "<gml:Polygon srsName=\"EPSG:%d\">",
+			     geom->Srid);
 		if (version == 3)
 		  {
 		      strcat (buf, "<gml:exterior>");
 		      strcat (buf, "<gml:LinearRing>");
-		      strcat (buf, "<gml:posList>");
+		      if (ring->DimensionModel == GAIA_XY_Z
+			  || ring->DimensionModel == GAIA_XY_Z_M)
+			  strcat (buf, "<gml:posList srsDimension=\"3\">");
+		      else
+			  strcat (buf, "<gml:posList srsDimension=\"2\">");
 		  }
 		else
 		  {
 		      strcat (buf, "<gml:outerBoundaryIs>");
 		      strcat (buf, "<gml:LinearRing>");
-		      strcat (buf,
-			      "<gml:coordinates decimal=\".\" cs=\",\" ts=\" \">");
+		      strcat (buf, "<gml:coordinates>");
 		  }
 	    }
 	  gaiaAppendToOutBuffer (out_buf, buf);
-	  ring = polyg->Exterior;
 	  for (iv = 0; iv < ring->Points; iv++)
 	    {
 		/* exporting vertices [Interior Ring] */
@@ -2392,72 +2499,38 @@ gaiaOutGml (gaiaOutBufferPtr out_buf, int version, int precision,
 		gaiaAppendToOutBuffer (out_buf, buf);
 	    }
 	  /* closing the Exterior Ring */
-	  if (is_multi)
+	  if (version == 3)
 	    {
-		if (version == 3)
-		  {
-		      strcpy (buf, "</gml:posList>");
-		      strcat (buf, "</gml:LinearRing>");
-		      strcat (buf, "</gml:exterior>");
-		  }
-		else
-		  {
-		      strcpy (buf, "</gml:coordinates>");
-		      strcat (buf, "</gml:LinearRing>");
-		      strcat (buf, "</gml:outerBoundaryIs>");
-		  }
+		strcpy (buf, "</gml:posList>");
+		strcat (buf, "</gml:LinearRing>");
+		strcat (buf, "</gml:exterior>");
 	    }
 	  else
 	    {
-		if (version == 3)
-		  {
-		      strcpy (buf, "</gml:posList>");
-		      strcat (buf, "</gml:LinearRing>");
-		      strcat (buf, "</gml:exterior>");
-		  }
-		else
-		  {
-		      strcpy (buf, "</gml:coordinates>");
-		      strcat (buf, "</gml:LinearRing>");
-		      strcat (buf, "</gml:outerBoundaryIs>");
-		  }
+		strcpy (buf, "</gml:coordinates>");
+		strcat (buf, "</gml:LinearRing>");
+		strcat (buf, "</gml:outerBoundaryIs>");
 	    }
 	  gaiaAppendToOutBuffer (out_buf, buf);
 	  for (ib = 0; ib < polyg->NumInteriors; ib++)
 	    {
 		/* interior rings */
 		ring = polyg->Interiors + ib;
-		if (is_multi)
+		if (version == 3)
 		  {
-		      if (version == 3)
-			{
-			    strcpy (buf, "<gml:interior>");
-			    strcat (buf, "<gml:LinearRing>");
-			    strcat (buf, "<gml:posList>");
-			}
+		      strcpy (buf, "<gml:interior>");
+		      strcat (buf, "<gml:LinearRing>");
+		      if (ring->DimensionModel == GAIA_XY_Z
+			  || ring->DimensionModel == GAIA_XY_Z_M)
+			  strcat (buf, "<gml:posList srsDimension=\"3\">");
 		      else
-			{
-			    strcpy (buf, "<gml:innerBoundaryIs>");
-			    strcat (buf, "<gml:LinearRing>");
-			    strcat (buf,
-				    "<gml:coordinates decimal=\".\" cs=\",\" ts=\" \">");
-			}
+			  strcat (buf, "<gml:posList srsDimension=\"2\">");
 		  }
 		else
 		  {
-		      if (version == 3)
-			{
-			    strcpy (buf, "<gml:interior>");
-			    strcat (buf, "<gml:LinearRing>");
-			    strcat (buf, "<gml:posList>");
-			}
-		      else
-			{
-			    strcpy (buf, "<gml:innerBoundaryIs>");
-			    strcat (buf, "<gml:LinearRing>");
-			    strcat (buf,
-				    "<gml:coordinates decimal=\".\" cs=\",\" ts=\" \">");
-			}
+		      strcpy (buf, "<gml:innerBoundaryIs>");
+		      strcat (buf, "<gml:LinearRing>");
+		      strcat (buf, "<gml:coordinates>");
 		  }
 		gaiaAppendToOutBuffer (out_buf, buf);
 		for (iv = 0; iv < ring->Points; iv++)
@@ -2533,35 +2606,17 @@ gaiaOutGml (gaiaOutBufferPtr out_buf, int version, int precision,
 		      gaiaAppendToOutBuffer (out_buf, buf);
 		  }
 		/* closing the Interior Ring */
-		if (is_multi)
+		if (version == 3)
 		  {
-		      if (version == 3)
-			{
-			    strcpy (buf, "</gml:posList>");
-			    strcat (buf, "</gml:LinearRing>");
-			    strcat (buf, "</gml:interior>");
-			}
-		      else
-			{
-			    strcpy (buf, "</gml:coordinates>");
-			    strcat (buf, "</gml:LinearRing>");
-			    strcat (buf, "</gml:innerBoundaryIs>");
-			}
+		      strcpy (buf, "</gml:posList>");
+		      strcat (buf, "</gml:LinearRing>");
+		      strcat (buf, "</gml:interior>");
 		  }
 		else
 		  {
-		      if (version == 3)
-			{
-			    strcpy (buf, "</gml:posList>");
-			    strcat (buf, "</gml:LinearRing>");
-			    strcat (buf, "</gml:interior>");
-			}
-		      else
-			{
-			    strcpy (buf, "</gml:coordinates>");
-			    strcat (buf, "</gml:LinearRing>");
-			    strcat (buf, "</gml:innerBoundaryIs>");
-			}
+		      strcpy (buf, "</gml:coordinates>");
+		      strcat (buf, "</gml:LinearRing>");
+		      strcat (buf, "</gml:innerBoundaryIs>");
 		  }
 		gaiaAppendToOutBuffer (out_buf, buf);
 	    }
@@ -2571,12 +2626,18 @@ gaiaOutGml (gaiaOutBufferPtr out_buf, int version, int precision,
 		if (version == 3)
 		  {
 		      strcpy (buf, "</gml:Polygon>");
-		      strcat (buf, "</gml:curveMember>");
+		      if (is_coll)
+			  strcat (buf, "</gml:geometryMember>");
+		      else
+			  strcat (buf, "</gml:surfaceMember>");
 		  }
 		else
 		  {
 		      strcpy (buf, "</gml:Polygon>");
-		      strcat (buf, "</gml:polygonMember>");
+		      if (is_coll)
+			  strcat (buf, "</gml:geometryMember>");
+		      else
+			  strcat (buf, "</gml:polygonMember>");
 		  }
 	    }
 	  else

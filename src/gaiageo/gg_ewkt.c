@@ -5499,6 +5499,7 @@ gaiaParseEWKT (const unsigned char *dirty_buffer)
     int base_offset;
     gaiaGeomCollPtr result = NULL;
 
+    tokens->Next = NULL;
     ewkt_parse_error = 0;
 
     srid = findEwktSrid ((char *) dirty_buffer, &base_offset);
@@ -5515,6 +5516,7 @@ gaiaParseEWKT (const unsigned char *dirty_buffer)
 		return NULL;
 	    }
 	  tokens->Next = malloc (sizeof (ewktFlexToken));
+	  tokens->Next->Next = NULL;
 	  /*
 	     /EwktLval is a global variable from FLEX.
 	     /EwktLval is defined in ewktLexglobal.h
@@ -5653,3 +5655,8 @@ gaiaParseEWKT (const unsigned char *dirty_buffer)
 #undef yytext_ptr
 #undef yyunput
 #undef yyzerominor
+#undef ParseARG_SDECL
+#undef ParseARG_PDECL
+#undef ParseARG_FETCH
+#undef ParseARG_STORE
+

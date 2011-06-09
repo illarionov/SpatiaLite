@@ -812,6 +812,7 @@ main ()
     do_copy (out, "/gaiageo/", "gg_ewkt.c");
     do_copy (out, "/gaiageo/", "gg_geoJSON.c");
     do_copy (out, "/gaiageo/", "gg_kml.c");
+    do_copy (out, "/gaiageo/", "gg_gml.c");
     fclose (out);
 
 /* setting up the HEADERS */

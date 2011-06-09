@@ -157,3 +157,38 @@ correspondign section into "gg_kml.c"
 Search for "KML_LEMON" in order to 
 identify the appropriate place where
 to paste the generated code.
+
+
+
+
+The GML parser:
+================
+1) in order to make any change to the  GML parser
+you have to edit first the definitions file
+Gml.y
+
+2) then run:
+lemon -l Gml.y
+
+3) during the above step the following files will be
+generated:
+Gml.c [the C code implementing the parser]
+Gml.h [C header file]
+Gml.out [check file - useful for debugging]
+
+3.1] Gml.h
+Please, copy the whole file content and
+then replace [i.e. using cut&paste] the
+correspondign section into "gg_gml.c"
+Search for "GML_LEMON_H" in order to 
+identify the appropriate place where
+to paste the generated code.
+
+3.2] Gml.c
+Please, copy the whole file content and
+replace [i.e. using cut&paste] the
+correspondign section into "gg_gml.c"
+Search for "GML_LEMON" in order to 
+identify the appropriate place where
+to paste the generated code.
+

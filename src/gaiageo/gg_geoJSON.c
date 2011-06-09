@@ -5079,6 +5079,7 @@ gaiaParseGeoJSON (const unsigned char *dirty_buffer)
     int yv;
     gaiaGeomCollPtr result = NULL;
 
+    tokens->Next = NULL;
     geoJSON_parse_error = 0;
 
     GeoJson_scan_string ((char *) dirty_buffer);
@@ -5094,6 +5095,7 @@ gaiaParseGeoJSON (const unsigned char *dirty_buffer)
 		return NULL;
 	    }
 	  tokens->Next = malloc (sizeof (geoJsonFlexToken));
+	  tokens->Next->Next = NULL;
 	  /*
 	     /GeoJsonLval is a global variable from FLEX.
 	     /GeoJsonLval is defined in geoJsonLexglobal.h
@@ -5231,3 +5233,8 @@ gaiaParseGeoJSON (const unsigned char *dirty_buffer)
 #undef yytext_ptr
 #undef yyunput
 #undef yyzerominor
+#undef ParseARG_SDECL
+#undef ParseARG_PDECL
+#undef ParseARG_FETCH
+#undef ParseARG_STORE
+
