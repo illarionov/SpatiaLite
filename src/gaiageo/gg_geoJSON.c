@@ -1065,7 +1065,7 @@ YYSTYPE GeoJsonLval;
 
 
 /*
- GEOJSON_LEMON_START - LEMON generated header starts here 
+ GEOJSON_LEMON_START - LEMON generated code starts here 
 */
 
 /* Driver template for the LEMON parser generator.
@@ -1074,9 +1074,7 @@ YYSTYPE GeoJsonLval;
 /* First off, code is included that follows the "include" declaration
 ** in the input grammar file. */
 #include <stdio.h>
-#line 55 "geoJSON.y"
 
-#line 10 "geoJSON.c"
 /* Next is all token values, in a form suitable for use by makeheaders.
 ** This section will be null unless lemon is run with the -m switch.
 */
@@ -2056,10 +2054,8 @@ static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
    while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
    /* Here code is inserted which will execute if the parser
    ** stack every overflows */
-#line 47 "geoJSON.y"
 
      fprintf(stderr,"Giving up.  Parser stack overflow\n");
-#line 993 "geoJSON.c"
    ParseARG_STORE; /* Suppress warning about unused %extra_argument var */
 }
 
@@ -2343,9 +2339,7 @@ static void yy_reduce(
       case 16: /* geo_text ::= multipolygonz */ yytestcase(yyruleno==16);
       case 17: /* geo_text ::= geocoll */ yytestcase(yyruleno==17);
       case 18: /* geo_text ::= geocollz */ yytestcase(yyruleno==18);
-#line 86 "geoJSON.y"
 { *result = yymsp[0].minor.yy0; }
-#line 1279 "geoJSON.c"
         break;
       case 19: /* point ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON point_coordxy GEOJSON_CLOSE_BRACE */
       case 20: /* point ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON point_coordxy GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==20);
@@ -2353,49 +2347,35 @@ static void yy_reduce(
       case 26: /* pointz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON point_coordxyz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==26);
       case 153: /* coll_point ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON point_coordxy GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==153);
       case 154: /* coll_pointz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON point_coordxyz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==154);
-#line 106 "geoJSON.y"
 { yygotominor.yy0 = geoJSON_buildGeomFromPoint((gaiaPointPtr)yymsp[-1].minor.yy0); }
-#line 1289 "geoJSON.c"
         break;
       case 21: /* point ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON point_coordxy GEOJSON_CLOSE_BRACE */
       case 22: /* point ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON point_coordxy GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==22);
       case 27: /* pointz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON point_coordxyz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==27);
       case 28: /* pointz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON point_coordxyz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==28);
-#line 114 "geoJSON.y"
 { yygotominor.yy0 = geoJSON_buildGeomFromPointSrid((gaiaPointPtr)yymsp[-1].minor.yy0, (int *)yymsp[-5].minor.yy0); }
-#line 1297 "geoJSON.c"
         break;
       case 23: /* point ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON point_coordxy GEOJSON_CLOSE_BRACE */
       case 24: /* point ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON point_coordxy GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==24);
       case 29: /* point ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON point_coordxyz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==29);
       case 30: /* point ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON point_coordxyz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==30);
-#line 123 "geoJSON.y"
 { yygotominor.yy0 = geoJSON_buildGeomFromPointSrid((gaiaPointPtr)yymsp[-1].minor.yy0, (int *)yymsp[-11].minor.yy0); }
-#line 1305 "geoJSON.c"
         break;
       case 32: /* short_crs ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_NAME GEOJSON_COMMA GEOJSON_PROPS GEOJSON_COLON GEOJSON_OPEN_BRACE GEOJSON_NAME GEOJSON_COLON short_srid GEOJSON_CLOSE_BRACE GEOJSON_CLOSE_BRACE */
       case 33: /* long_crs ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_NAME GEOJSON_COMMA GEOJSON_PROPS GEOJSON_COLON GEOJSON_OPEN_BRACE GEOJSON_NAME GEOJSON_COLON long_srid GEOJSON_CLOSE_BRACE GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==33);
-#line 162 "geoJSON.y"
 { yygotominor.yy0 = yymsp[-2].minor.yy0; }
-#line 1311 "geoJSON.c"
         break;
       case 34: /* point_coordxy ::= GEOJSON_OPEN_BRACKET coord GEOJSON_COMMA coord GEOJSON_CLOSE_BRACKET */
-#line 173 "geoJSON.y"
 { yygotominor.yy0 = (void *) geoJSON_point_xy((double *)yymsp[-3].minor.yy0, (double *)yymsp[-1].minor.yy0); }
-#line 1316 "geoJSON.c"
         break;
       case 35: /* point_coordxyz ::= GEOJSON_OPEN_BRACKET coord GEOJSON_COMMA coord GEOJSON_COMMA coord GEOJSON_CLOSE_BRACKET */
-#line 175 "geoJSON.y"
 { yygotominor.yy0 = (void *) geoJSON_point_xyz((double *)yymsp[-5].minor.yy0, (double *)yymsp[-3].minor.yy0, (double *)yymsp[-1].minor.yy0); }
-#line 1321 "geoJSON.c"
         break;
       case 36: /* coord ::= GEOJSON_NUM */
       case 37: /* short_srid ::= GEOJSON_SHORT_SRID */ yytestcase(yyruleno==37);
       case 38: /* long_srid ::= GEOJSON_LONG_SRID */ yytestcase(yyruleno==38);
       case 133: /* geocollz ::= GEOJSON_GEOMETRYCOLLECTION geocoll_textz */ yytestcase(yyruleno==133);
-#line 178 "geoJSON.y"
 { yygotominor.yy0 = yymsp[0].minor.yy0; }
-#line 1329 "geoJSON.c"
         break;
       case 39: /* extra_pointsxy ::= */
       case 41: /* extra_pointsxyz ::= */ yytestcase(yyruleno==41);
@@ -2407,15 +2387,11 @@ static void yy_reduce(
       case 125: /* multipolygon_textz2 ::= */ yytestcase(yyruleno==125);
       case 142: /* geocoll_text2 ::= */ yytestcase(yyruleno==142);
       case 149: /* geocoll_textz2 ::= */ yytestcase(yyruleno==149);
-#line 189 "geoJSON.y"
 { yygotominor.yy0 = NULL; }
-#line 1343 "geoJSON.c"
         break;
       case 40: /* extra_pointsxy ::= GEOJSON_COMMA point_coordxy extra_pointsxy */
       case 42: /* extra_pointsxyz ::= GEOJSON_COMMA point_coordxyz extra_pointsxyz */ yytestcase(yyruleno==42);
-#line 191 "geoJSON.y"
 { ((gaiaPointPtr)yymsp[-1].minor.yy0)->Next = (gaiaPointPtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
-#line 1349 "geoJSON.c"
         break;
       case 43: /* linestring ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON linestring_text GEOJSON_CLOSE_BRACE */
       case 44: /* linestring ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON linestring_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==44);
@@ -2423,43 +2399,33 @@ static void yy_reduce(
       case 50: /* linestringz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON linestring_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==50);
       case 155: /* coll_linestring ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON linestring_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==155);
       case 156: /* coll_linestringz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON linestring_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==156);
-#line 202 "geoJSON.y"
 { yygotominor.yy0 = geoJSON_buildGeomFromLinestring((gaiaLinestringPtr)yymsp[-1].minor.yy0); }
-#line 1359 "geoJSON.c"
         break;
       case 45: /* linestring ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON linestring_text GEOJSON_CLOSE_BRACE */
       case 46: /* linestring ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON linestring_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==46);
       case 51: /* linestringz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON linestring_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==51);
       case 52: /* linestringz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON linestring_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==52);
-#line 210 "geoJSON.y"
 { yygotominor.yy0 = geoJSON_buildGeomFromLinestringSrid((gaiaLinestringPtr)yymsp[-1].minor.yy0, (int *)yymsp[-5].minor.yy0); }
-#line 1367 "geoJSON.c"
         break;
       case 47: /* linestring ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON linestring_text GEOJSON_CLOSE_BRACE */
       case 48: /* linestring ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON linestring_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==48);
       case 53: /* linestringz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON linestring_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==53);
       case 54: /* linestringz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON linestring_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==54);
-#line 219 "geoJSON.y"
 { yygotominor.yy0 = geoJSON_buildGeomFromLinestringSrid((gaiaLinestringPtr)yymsp[-1].minor.yy0, (int *)yymsp[-11].minor.yy0); }
-#line 1375 "geoJSON.c"
         break;
       case 55: /* linestring_text ::= GEOJSON_OPEN_BRACKET point_coordxy GEOJSON_COMMA point_coordxy extra_pointsxy GEOJSON_CLOSE_BRACKET */
-#line 254 "geoJSON.y"
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
 	   yygotominor.yy0 = (void *) geoJSON_linestring_xy((gaiaPointPtr)yymsp[-4].minor.yy0);
 	}
-#line 1384 "geoJSON.c"
         break;
       case 56: /* linestring_textz ::= GEOJSON_OPEN_BRACKET point_coordxyz GEOJSON_COMMA point_coordxyz extra_pointsxyz GEOJSON_CLOSE_BRACKET */
-#line 261 "geoJSON.y"
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
 	   yygotominor.yy0 = (void *) geoJSON_linestring_xyz((gaiaPointPtr)yymsp[-4].minor.yy0);
 	}
-#line 1393 "geoJSON.c"
         break;
       case 57: /* polygon ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON polygon_text GEOJSON_CLOSE_BRACE */
       case 58: /* polygon ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON polygon_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==58);
@@ -2467,44 +2433,33 @@ static void yy_reduce(
       case 64: /* polygonz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON polygon_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==64);
       case 157: /* coll_polygon ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON polygon_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==157);
       case 158: /* coll_polygonz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON polygon_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==158);
-#line 272 "geoJSON.y"
 { yygotominor.yy0 = geoJSON_buildGeomFromPolygon((gaiaPolygonPtr)yymsp[-1].minor.yy0); }
-#line 1403 "geoJSON.c"
         break;
       case 59: /* polygon ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON polygon_text GEOJSON_CLOSE_BRACE */
       case 60: /* polygon ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON polygon_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==60);
       case 65: /* polygonz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON polygon_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==65);
       case 66: /* polygonz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON polygon_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==66);
-#line 280 "geoJSON.y"
 { yygotominor.yy0 = geoJSON_buildGeomFromPolygonSrid((gaiaPolygonPtr)yymsp[-1].minor.yy0, (int *)yymsp[-5].minor.yy0); }
-#line 1411 "geoJSON.c"
         break;
       case 61: /* polygon ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON polygon_text GEOJSON_CLOSE_BRACE */
       case 62: /* polygon ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON polygon_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==62);
       case 67: /* polygonz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON polygon_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==67);
       case 68: /* polygonz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON polygon_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==68);
-#line 289 "geoJSON.y"
 { yygotominor.yy0 = geoJSON_buildGeomFromPolygonSrid((gaiaPolygonPtr)yymsp[-1].minor.yy0, (int *)yymsp[-11].minor.yy0); }
-#line 1419 "geoJSON.c"
         break;
       case 69: /* polygon_text ::= GEOJSON_OPEN_BRACKET ring extra_rings GEOJSON_CLOSE_BRACKET */
-#line 324 "geoJSON.y"
 { 
 		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) geoJSON_polygon_xy((gaiaRingPtr)yymsp[-2].minor.yy0);
 	}
-#line 1427 "geoJSON.c"
         break;
       case 70: /* polygon_textz ::= GEOJSON_OPEN_BRACKET ringz extra_ringsz GEOJSON_CLOSE_BRACKET */
-#line 330 "geoJSON.y"
 {  
 		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) geoJSON_polygon_xyz((gaiaRingPtr)yymsp[-2].minor.yy0);
 	}
-#line 1435 "geoJSON.c"
         break;
       case 71: /* ring ::= GEOJSON_OPEN_BRACKET point_coordxy GEOJSON_COMMA point_coordxy GEOJSON_COMMA point_coordxy GEOJSON_COMMA point_coordxy extra_pointsxy GEOJSON_CLOSE_BRACKET */
-#line 339 "geoJSON.y"
 {
 		((gaiaPointPtr)yymsp[-8].minor.yy0)->Next = (gaiaPointPtr)yymsp[-6].minor.yy0; 
 		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
@@ -2512,19 +2467,15 @@ static void yy_reduce(
 		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) geoJSON_ring_xy((gaiaPointPtr)yymsp[-8].minor.yy0);
 	}
-#line 1446 "geoJSON.c"
         break;
       case 73: /* extra_rings ::= GEOJSON_COMMA ring extra_rings */
       case 76: /* extra_ringsz ::= GEOJSON_COMMA ringz extra_ringsz */ yytestcase(yyruleno==76);
-#line 350 "geoJSON.y"
 {
 		((gaiaRingPtr)yymsp[-1].minor.yy0)->Next = (gaiaRingPtr)yymsp[0].minor.yy0;
 		yygotominor.yy0 = yymsp[-1].minor.yy0;
 	}
-#line 1455 "geoJSON.c"
         break;
       case 74: /* ringz ::= GEOJSON_OPEN_BRACKET point_coordxyz GEOJSON_COMMA point_coordxyz GEOJSON_COMMA point_coordxyz GEOJSON_COMMA point_coordxyz extra_pointsxyz GEOJSON_CLOSE_BRACKET */
-#line 357 "geoJSON.y"
 {
 		((gaiaPointPtr)yymsp[-8].minor.yy0)->Next = (gaiaPointPtr)yymsp[-6].minor.yy0; 
 		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
@@ -2532,7 +2483,6 @@ static void yy_reduce(
 		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) geoJSON_ring_xyz((gaiaPointPtr)yymsp[-8].minor.yy0);
 	}
-#line 1466 "geoJSON.c"
         break;
       case 77: /* multipoint ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_MULTIPOINT GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON multipoint_text GEOJSON_CLOSE_BRACE */
       case 78: /* multipoint ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_MULTIPOINT GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON multipoint_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==78);
@@ -2549,9 +2499,7 @@ static void yy_reduce(
       case 127: /* geocoll ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_GEOMETRYCOLLECTION GEOJSON_COMMA GEOJSON_GEOMS GEOJSON_COLON geocoll_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==127);
       case 128: /* geocoll ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_GEOMETRYCOLLECTION GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_GEOMS GEOJSON_COLON geocoll_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==128);
       case 134: /* geocollz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_GEOMETRYCOLLECTION GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_GEOMS GEOJSON_COLON geocoll_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==134);
-#line 377 "geoJSON.y"
 { yygotominor.yy0 = yymsp[-1].minor.yy0; }
-#line 1485 "geoJSON.c"
         break;
       case 79: /* multipoint ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_MULTIPOINT GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON multipoint_text GEOJSON_CLOSE_BRACE */
       case 80: /* multipoint ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_MULTIPOINT GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON multipoint_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==80);
@@ -2569,9 +2517,7 @@ static void yy_reduce(
       case 130: /* geocoll ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_GEOMETRYCOLLECTION GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_GEOMS GEOJSON_COLON geocoll_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==130);
       case 135: /* geocollz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_GEOMETRYCOLLECTION GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_GEOMS GEOJSON_COLON geocoll_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==135);
       case 136: /* geocollz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_GEOMETRYCOLLECTION GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_GEOMS GEOJSON_COLON geocoll_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==136);
-#line 385 "geoJSON.y"
 { yygotominor.yy0 = (void *) geoJSON_setSrid((gaiaGeomCollPtr)yymsp[-1].minor.yy0, (int *)yymsp[-5].minor.yy0); }
-#line 1505 "geoJSON.c"
         break;
       case 81: /* multipoint ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_MULTIPOINT GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON multipoint_text GEOJSON_CLOSE_BRACE */
       case 82: /* multipoint ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_MULTIPOINT GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS GEOJSON_COLON multipoint_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==82);
@@ -2589,79 +2535,59 @@ static void yy_reduce(
       case 132: /* geocoll ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_GEOMETRYCOLLECTION GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_GEOMS GEOJSON_COLON geocoll_text GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==132);
       case 137: /* geocollz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_GEOMETRYCOLLECTION GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON short_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_GEOMS GEOJSON_COLON geocoll_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==137);
       case 138: /* geocollz ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_GEOMETRYCOLLECTION GEOJSON_COMMA GEOJSON_CRS GEOJSON_COLON long_crs GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_GEOMS GEOJSON_COLON geocoll_textz GEOJSON_CLOSE_BRACE */ yytestcase(yyruleno==138);
-#line 394 "geoJSON.y"
 { yygotominor.yy0 = (void *) geoJSON_setSrid((gaiaGeomCollPtr)yymsp[-1].minor.yy0, (int *)yymsp[-11].minor.yy0); }
-#line 1525 "geoJSON.c"
         break;
       case 89: /* multipoint_text ::= GEOJSON_OPEN_BRACKET point_coordxy extra_pointsxy GEOJSON_CLOSE_BRACKET */
-#line 429 "geoJSON.y"
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) geoJSON_multipoint_xy((gaiaPointPtr)yymsp[-2].minor.yy0);
 	}
-#line 1533 "geoJSON.c"
         break;
       case 90: /* multipoint_textz ::= GEOJSON_OPEN_BRACKET point_coordxyz extra_pointsxyz GEOJSON_CLOSE_BRACKET */
-#line 434 "geoJSON.y"
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) geoJSON_multipoint_xyz((gaiaPointPtr)yymsp[-2].minor.yy0);
 	}
-#line 1541 "geoJSON.c"
         break;
       case 103: /* multilinestring_text ::= GEOJSON_OPEN_BRACKET linestring_text multilinestring_text2 GEOJSON_CLOSE_BRACKET */
-#line 496 "geoJSON.y"
 { 
 	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) geoJSON_multilinestring_xy((gaiaLinestringPtr)yymsp[-2].minor.yy0);
 	}
-#line 1549 "geoJSON.c"
         break;
       case 105: /* multilinestring_text2 ::= GEOJSON_COMMA linestring_text multilinestring_text2 */
       case 108: /* multilinestring_textz2 ::= GEOJSON_COMMA linestring_textz multilinestring_textz2 */ yytestcase(yyruleno==108);
-#line 504 "geoJSON.y"
 { ((gaiaLinestringPtr)yymsp[-1].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
-#line 1555 "geoJSON.c"
         break;
       case 106: /* multilinestring_textz ::= GEOJSON_OPEN_BRACKET linestring_textz multilinestring_textz2 GEOJSON_CLOSE_BRACKET */
-#line 507 "geoJSON.y"
 { 
 	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) geoJSON_multilinestring_xyz((gaiaLinestringPtr)yymsp[-2].minor.yy0);
 	}
-#line 1563 "geoJSON.c"
         break;
       case 121: /* multipolygon_text ::= GEOJSON_OPEN_BRACKET polygon_text multipolygon_text2 GEOJSON_CLOSE_BRACKET */
-#line 573 "geoJSON.y"
 { 
 	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) geoJSON_multipolygon_xy((gaiaPolygonPtr)yymsp[-2].minor.yy0);
 	}
-#line 1571 "geoJSON.c"
         break;
       case 123: /* multipolygon_text2 ::= GEOJSON_COMMA polygon_text multipolygon_text2 */
       case 126: /* multipolygon_textz2 ::= GEOJSON_COMMA polygon_textz multipolygon_textz2 */ yytestcase(yyruleno==126);
-#line 581 "geoJSON.y"
 { ((gaiaPolygonPtr)yymsp[-1].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
-#line 1577 "geoJSON.c"
         break;
       case 124: /* multipolygon_textz ::= GEOJSON_OPEN_BRACKET polygon_textz multipolygon_textz2 GEOJSON_CLOSE_BRACKET */
-#line 584 "geoJSON.y"
 { 
 	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
 	   yygotominor.yy0 = (void *) geoJSON_multipolygon_xyz((gaiaPolygonPtr)yymsp[-2].minor.yy0);
 	}
-#line 1585 "geoJSON.c"
         break;
       case 139: /* geocoll_text ::= GEOJSON_OPEN_BRACKET coll_point geocoll_text2 GEOJSON_CLOSE_BRACKET */
       case 140: /* geocoll_text ::= GEOJSON_OPEN_BRACKET coll_linestring geocoll_text2 GEOJSON_CLOSE_BRACKET */ yytestcase(yyruleno==140);
       case 141: /* geocoll_text ::= GEOJSON_OPEN_BRACKET coll_polygon geocoll_text2 GEOJSON_CLOSE_BRACKET */ yytestcase(yyruleno==141);
-#line 648 "geoJSON.y"
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) geoJSON_geomColl_xy((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
 	}
-#line 1595 "geoJSON.c"
         break;
       case 143: /* geocoll_text2 ::= GEOJSON_COMMA coll_point geocoll_text2 */
       case 144: /* geocoll_text2 ::= GEOJSON_COMMA coll_linestring geocoll_text2 */ yytestcase(yyruleno==144);
@@ -2669,22 +2595,18 @@ static void yy_reduce(
       case 150: /* geocoll_textz2 ::= GEOJSON_COMMA coll_pointz geocoll_textz2 */ yytestcase(yyruleno==150);
       case 151: /* geocoll_textz2 ::= GEOJSON_COMMA coll_linestringz geocoll_textz2 */ yytestcase(yyruleno==151);
       case 152: /* geocoll_textz2 ::= GEOJSON_COMMA coll_polygonz geocoll_textz2 */ yytestcase(yyruleno==152);
-#line 668 "geoJSON.y"
 {
 		((gaiaGeomCollPtr)yymsp[-1].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[0].minor.yy0;
 		yygotominor.yy0 = yymsp[-1].minor.yy0;
 	}
-#line 1608 "geoJSON.c"
         break;
       case 146: /* geocoll_textz ::= GEOJSON_OPEN_BRACKET coll_pointz geocoll_textz2 GEOJSON_CLOSE_BRACKET */
       case 147: /* geocoll_textz ::= GEOJSON_OPEN_BRACKET coll_linestringz geocoll_textz2 GEOJSON_CLOSE_BRACKET */ yytestcase(yyruleno==147);
       case 148: /* geocoll_textz ::= GEOJSON_OPEN_BRACKET coll_polygonz geocoll_textz2 GEOJSON_CLOSE_BRACKET */ yytestcase(yyruleno==148);
-#line 687 "geoJSON.y"
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) geoJSON_geomColl_xyz((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
 	}
-#line 1618 "geoJSON.c"
         break;
       default:
       /* (0) main ::= in */ yytestcase(yyruleno==0);
@@ -2752,7 +2674,6 @@ static void yy_syntax_error(
 ){
   ParseARG_FETCH;
 #define TOKEN (yyminor.yy0)
-#line 62 "geoJSON.y"
 
 /* 
 ** when the LEMON parser encounters an error
@@ -2760,7 +2681,6 @@ static void yy_syntax_error(
 */
 	geoJSON_parse_error = 1;
 	*result = NULL;
-#line 1694 "geoJSON.c"
   ParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
 
@@ -5092,7 +5012,8 @@ gaiaParseGeoJSON (const unsigned char *dirty_buffer)
       {
 	  if (yv == -1)
 	    {
-		return NULL;
+		geoJSON_parse_error = 1;
+		break;
 	    }
 	  tokens->Next = malloc (sizeof (geoJsonFlexToken));
 	  tokens->Next->Next = NULL;
@@ -5237,4 +5158,8 @@ gaiaParseGeoJSON (const unsigned char *dirty_buffer)
 #undef ParseARG_PDECL
 #undef ParseARG_FETCH
 #undef ParseARG_STORE
-
+#undef REJECT
+#undef yymore
+#undef YY_MORE_ADJ
+#undef YY_RESTORE_YY_MORE_OFFSET
+#undef YY_LESS_LINENO

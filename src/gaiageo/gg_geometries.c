@@ -1545,6 +1545,7 @@ gaiaAddRingToPolyg (gaiaPolygonPtr polyg, gaiaRingPtr ring)
 		  sizeof (gaiaRing));
 	  (polyg->NumInteriors)++;
 	  free (old_interiors);
+	  free (ring);
       }
 }
 

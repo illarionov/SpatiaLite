@@ -1,7 +1,7 @@
 /* 
  kml.y -- KML parser - LEMON config
   
- version 2.4, 2011 June 2
+ version 2.4, 2011 June 14
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -55,8 +55,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 %include {
 }
 
-// Set the return value of gaiaParseKml in the following pointer:
-%extra_argument { gaiaGeomCollPtr *result }
+// Set the return value of gaiaParseKML in the following pointer:
+%extra_argument { kmlNodePtr *result }
 
 // Invalid syntax (ie. no rules matched)
 %syntax_error {
@@ -76,137 +76,109 @@ the terms of any one of the MPL, the GPL or the LGPL.
  state ::= program.
  
  /* 
- * program is the start node. All strings matched by this CFG must be one of 
- * geo_text (text describing a geometry)
+ * program is the start node. 
  */
  
-program ::= geo_text.
+program ::= kml_tree.
 
-// geometries (2D):
-geo_text ::= point(P). { *result = P; }				// P is a geometry collection containing a point
-geo_text ::= linestring(L). { *result = L; }		// L is a geometry collection containing a linestring
-geo_text ::= polygon(P). { *result = P; }		// P is a geometry collection containing a polygon
-geo_text ::= geocoll(H). { *result = H; }		// H is a geometry collection created from user input
-
-// Syntax for a "point" object:
-// The functions called build a geometry collection from a gaiaPointPtr
-point(P) ::= KML_START_POINT KML_START_COORDS point_coordxy(Q) KML_END_COORDS KML_END_POINT.
-	{ P = kml_buildGeomFromPoint((gaiaPointPtr)Q); } // Point 
-
-// Point coordinates in different dimensions.
-// Create the point by calling the proper function in SpatiaLite :
-point_coordxy(P) ::= coord(X) KML_COMMA coord(Y). 
-	{ P = (void *) kml_point_xy((double *)X, (double *)Y); }
-
-// All coordinates are assumed to be doubles (guaranteed by the flex tokenizer).
-coord(A) ::= KML_NUM(B). { A = B; } 
+// KML node:
+kml_tree ::= node(N). { *result = N; }				// N is a KML node
+kml_tree ::= node_chain(C). { *result = C; }		// C is a chain of KML nodes
 
 
-// Rules to match an infinite number of points:
-// Also links the generated gaiaPointPtrs together
-extra_pointsxy(A) ::=  . { A = NULL; }
-extra_pointsxy(A) ::= point_coordxy(P) extra_pointsxy(B).
-	{ ((gaiaPointPtr)P)->Next = (gaiaPointPtr)B;  A = P; }
+// syntax for a KML node object:
+node(N) ::= open_tag(K) KML_END KML_CLOSE.
+	{ N = kml_createSelfClosedNode((void *)K, NULL); }
+node(N) ::= open_tag(K) attr(A) KML_END KML_CLOSE.
+	{ N = kml_createSelfClosedNode((void *)K, (void *)A); }
+node(N) ::= open_tag(K) attributes(A) KML_END KML_CLOSE.
+	{ N = kml_createSelfClosedNode((void *)K, (void *)A); }
+node(N) ::= open_tag(K) KML_CLOSE.
+	{ N = kml_createNode((void *)K, NULL, NULL); }
+node(N) ::= open_tag(K) attr(A) KML_CLOSE.
+	{ N = kml_createNode((void *)K, (void *)A, NULL); }
+node(N) ::= open_tag(K) attributes(A) KML_CLOSE.
+	{ N = kml_createNode((void *)K, (void *)A, NULL); }
+node(N) ::= open_tag(K) KML_CLOSE coord(C).
+	{ N = kml_createNode((void *)K, NULL, (void *)C); }
+node(N) ::= open_tag(K) KML_CLOSE coord_chain(C).
+	{ N = kml_createNode((void *)K, NULL, (void *)C); }
+node(N) ::= open_tag(K) attr(A) KML_CLOSE coord(C).
+	{ N = kml_createNode((void *)K, (void *)A, (void *)C); }
+node(N) ::= open_tag(K) attr(A) KML_CLOSE coord_chain(C).
+	{ N = kml_createNode((void *)K, (void *)A, (void *)C); }
+node(N) ::= open_tag(K) attributes(A) KML_CLOSE coord(C).
+	{ N = kml_createNode((void *)K, (void *)A, (void *)C); }
+node(N) ::= open_tag(K) attributes(A) KML_CLOSE coord_chain(C).
+	{ N = kml_createNode((void *)K, (void *)A, (void *)C); }
+node(N) ::= close_tag(K).
+	{ N = kml_closingNode((void *)K); }
+	
+
+// syntax for a KML tag object:
+open_tag(T) ::= KML_OPEN keyword(K). { T = K; }
+close_tag(T) ::= KML_OPEN KML_END keyword(K) KML_CLOSE. { T = K; }
+	
+
+// Keyword.
+keyword(A) ::= KML_KEYWORD(B). { A = B; }
 
 
-// Syntax for a "linestring" object:
-// The functions called build a geometry collection from a gaiaLinestringPtr
-linestring(L) ::= KML_START_LINESTRING KML_START_COORDS linestring_text(X) KML_END_COORDS KML_END_LINESTRING. 
-	{ L = kml_buildGeomFromLinestring((gaiaLinestringPtr)X); }
+// Rules to match an infinite number of KML nodes:
+// Also links the generated kmlNodePtrs together
+extra_nodes(A) ::=  . { A = NULL; }
+extra_nodes(A) ::= node(P) extra_nodes(B).
+	{ ((kmlNodePtr)P)->Next = (kmlNodePtr)B;  A = P; }
+	
 
-// A valid linestring must have at least two vertices:
-// The functions called build a gaiaLinestring from a linked list of points
-linestring_text(L) ::= point_coordxy(P) point_coordxy(Q) extra_pointsxy(R).
+// a chain can contain any number of KML Nodes (but at least two):
+node_chain(C) ::= node(A) node(B) extra_nodes(Q).
 	{ 
-	   ((gaiaPointPtr)Q)->Next = (gaiaPointPtr)R; 
-	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q;
-	   L = (void *) kml_linestring_xy((gaiaPointPtr)P);
+	   ((kmlNodePtr)B)->Next = (kmlNodePtr)Q; 
+	   ((kmlNodePtr)A)->Next = (kmlNodePtr)B;
+	   C = A;
 	}
 
+	
+// syntax for a KML attribute:
+attr(A) ::= KML_KEYWORD(K) KML_EQ KML_VALUE(V).
+	{ A = kml_attribute((void *)K, (void *)V); }
 
-// Syntax for a "polygon" object:
-// The functions called build a geometry collection from a gaiaPolygonPtr
-polygon(P) ::= KML_START_POLYGON polygon_text(X) KML_END_POLYGON.
-	{ P = kml_buildGeomFromPolygon((gaiaPolygonPtr)X); }
 
-// A valid polygon must have at least the outer ring:
-// The functions called build a gaiaPolygonPtr from a linked list of gaiaRingPtrs
-polygon_text(P) ::= outer_ring(R) inner_rings(E).
+// Rules to match an infinite number of KML attributes:
+// Also links the generated kmlAttrPtrs together
+extra_attr(A) ::=  . { A = NULL; }
+extra_attr(A) ::= attr(P) extra_attr(B).
+	{ ((kmlAttrPtr)P)->Next = (kmlAttrPtr)B;  A = P; }
+	
+
+// a chain can contain any number of KML Attributes (but at least two):
+attributes(C) ::= attr(A) attr(B) extra_attr(Q).
 	{ 
-		((gaiaRingPtr)R)->Next = (gaiaRingPtr)E;
-		P = (void *) kml_polygon_xy((gaiaRingPtr)R);
+	   ((kmlAttrPtr)B)->Next = (kmlAttrPtr)Q; 
+	   ((kmlAttrPtr)A)->Next = (kmlAttrPtr)B;
+	   C = A;
 	}
 
-// A valid outer ring must have at least 4 points
-// The functions called build a gaiaRingPtr from a linked list of gaiaPointPtrs
-outer_ring(R) ::= KML_START_OUTER KML_START_RING KML_START_COORDS point_coordxy(A) point_coordxy(B) point_coordxy(C) point_coordxy(D) extra_pointsxy(E) KML_END_COORDS KML_END_RING KML_END_OUTER.
-	{
-		((gaiaPointPtr)A)->Next = (gaiaPointPtr)B; 
-		((gaiaPointPtr)B)->Next = (gaiaPointPtr)C;
-		((gaiaPointPtr)C)->Next = (gaiaPointPtr)D; 
-		((gaiaPointPtr)D)->Next = (gaiaPointPtr)E;
-		R = (void *) kml_ring_xy((gaiaPointPtr)A);
-	}
-
-// A valid inner ring must have at least 4 points
-// The functions called build a gaiaRingPtr from a linked list of gaiaPointPtrs
-inner_ring(R) ::= KML_START_INNER KML_START_RING KML_START_COORDS point_coordxy(A) point_coordxy(B) point_coordxy(C) point_coordxy(D) extra_pointsxy(E) KML_END_COORDS KML_END_RING KML_END_INNER.
-	{
-		((gaiaPointPtr)A)->Next = (gaiaPointPtr)B; 
-		((gaiaPointPtr)B)->Next = (gaiaPointPtr)C;
-		((gaiaPointPtr)C)->Next = (gaiaPointPtr)D; 
-		((gaiaPointPtr)D)->Next = (gaiaPointPtr)E;
-		R = (void *) kml_ring_xy((gaiaPointPtr)A);
-	}
-
-// To match more than one 2D ring:
-inner_rings(R) ::=  . { R = NULL; }
-inner_rings(R) ::= inner_ring(S) inner_rings(T).
-	{
-		((gaiaRingPtr)S)->Next = (gaiaRingPtr)T;
-		R = S;
-	}
+	
+// syntax for a KML coordinate:
+coord(C) ::= KML_COORD(V).
+	{ C = kml_coord((void *)V); }
 
 
-// Syntax for a "geometrycollection" object:
-// X in the following lines refers to a geometry collection generated based on user input
-geocoll(G) ::= KML_START_MULTI geocoll_text(X) KML_END_MULTI. { G = X; }
+// Rules to match an infinite number of KML coords:
+// Also links the generated kmlCoordPtrs together
+extra_coord(A) ::=  . { A = NULL; }
+extra_coord(A) ::= coord(P) extra_coord(B).
+	{ ((kmlCoordPtr)P)->Next = (kmlCoordPtr)B;  A = P; }
+	
 
-// Geometry collections can contain any number of points, linestrings, or polygons (but at least one):
-geocoll_text(G) ::= point(P) geocoll_text2(X).
+// a chain can contain any number of KML Coordinates (but at least two):
+coord_chain(C) ::= coord(A) coord(B) extra_coord(Q).
 	{ 
-		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) kml_geomColl_xy((gaiaGeomCollPtr)P);
+	   ((kmlCoordPtr)B)->Next = (kmlCoordPtr)Q; 
+	   ((kmlCoordPtr)A)->Next = (kmlCoordPtr)B;
+	   C = A;
 	}
 	
-geocoll_text(G) ::= linestring(L) geocoll_text2(X).
-	{ 
-		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) kml_geomColl_xy((gaiaGeomCollPtr)L);
-	}
 	
-geocoll_text(G) ::= polygon(P) geocoll_text2(X).
-	{ 
-		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) kml_geomColl_xy((gaiaGeomCollPtr)P);
-	}
-
-// Extra points, linestrings, or polygons
-geocoll_text2(X) ::=  . { X = NULL; }
-geocoll_text2(X) ::= point(P) geocoll_text2(Y).
-	{
-		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
-		X = P;
-	}
-	
-geocoll_text2(X) ::= linestring(L) geocoll_text2(Y).
-	{
-		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)Y;
-		X = L;
-	}
-	
-geocoll_text2(X) ::= polygon(P) geocoll_text2(Y).
-	{
-		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
-		X = P;
-	}

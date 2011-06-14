@@ -1,7 +1,7 @@
 /* 
  kmlLexer.l -- KML parser - FLEX config
   
- version 2.4, 2011 June 2
+ version 2.4, 2011 June 14
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -60,30 +60,19 @@ int kml_line = 1, kml_col = 1;
 *  of the two tokens, FLEX will match POINTM.
 */
 %%
--?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*      { kml_col += (int) strlen(yytext);  kmlLval.dval = atof(yytext); return KML_NUM; }
-","										{ kmlLval.dval = 0; return KML_COMMA; }
-(?-i:"<coordinates>")					{ kmlLval.dval = 0; return KML_START_COORDS; }
-(?-i:"</coordinates>")					{ kmlLval.dval = 0; return KML_END_COORDS; }
-(?-i:"<Point>")							{ kmlLval.dval = 0; return KML_START_POINT; }
-(?-i:"</Point>")						{ kmlLval.dval = 0; return KML_END_POINT; }
-(?-i:"<LineString>")					{ kmlLval.dval = 0; return KML_START_LINESTRING; }
-(?-i:"</LineString>")					{ kmlLval.dval = 0; return KML_END_LINESTRING; }
-(?-i:"<Polygon>")						{ kmlLval.dval = 0; return KML_START_POLYGON; }
-(?-i:"</Polygon>")						{ kmlLval.dval = 0; return KML_END_POLYGON; }
-(?-i:"<LinearRing>")					{ kmlLval.dval = 0; return KML_START_RING; }
-(?-i:"</LinearRing>")					{ kmlLval.dval = 0; return KML_END_RING; }
-(?-i:"<outerBoundaryIs>")				{ kmlLval.dval = 0; return KML_START_OUTER; }
-(?-i:"</outerBoundaryIs>")				{ kmlLval.dval = 0; return KML_END_OUTER; }
-(?-i:"<innerBoundaryIs>")				{ kmlLval.dval = 0; return KML_START_INNER; }
-(?-i:"</innerBoundaryIs>")				{ kmlLval.dval = 0; return KML_END_INNER; }
-(?-i:"<MultiGeometry>")					{ kmlLval.dval = 0; return KML_START_MULTI; }
-(?-i:"</MultiGeometry>")				{ kmlLval.dval = 0; return KML_END_MULTI; }
+"/"											{ kml_freeString(&(KmlLval.pval)); return KML_END; }
+"="											{ kml_freeString(&(KmlLval.pval)); return KML_EQ; }
+"<"											{ kml_freeString(&(KmlLval.pval)); return KML_OPEN; }
+">"											{ kml_freeString(&(KmlLval.pval)); return KML_CLOSE; }
+[0-9,\.\+-]*								{ kml_saveString(&(KmlLval.pval), yytext); return KML_COORD; }
+\"[^<>\"]*\"								{ kml_saveString(&(KmlLval.pval), yytext); return KML_VALUE; }
+[a-zA-Z_][a-zA-Z_:0-9]*						{ kml_saveString(&(KmlLval.pval), yytext); return KML_KEYWORD; }
 
-[ \t]   { kml_col += (int) strlen(yytext); }               /* ignore but count white space */
+[ \t]   { kml_freeString(&(KmlLval.pval)); kml_col += (int) strlen(yytext); }               /* ignore but count white space */
 
-\n      { kml_col = 0; ++kml_line; }
+\n      { kml_freeString(&(KmlLval.pval)); kml_col = 0; ++kml_line; }
 
-.       { kml_col += (int) strlen(yytext); return -1; }
+.       { kml_freeString(&(KmlLval.pval)); kml_col += (int) strlen(yytext); return -1; }
 %%
 /**
  * reset the line and column count

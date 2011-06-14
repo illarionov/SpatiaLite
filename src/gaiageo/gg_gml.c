@@ -160,7 +160,7 @@ gml_alloc_dyn_polygon (void)
     gmlDynamicPolygonPtr p = malloc (sizeof (gmlDynamicPolygon));
     p->first = NULL;
     p->last = NULL;
-	return p;
+    return p;
 }
 
 static void
@@ -455,20 +455,20 @@ guessGmlSrid (gmlNodePtr node)
 static int
 gml_get_srsDimension (gmlNodePtr node)
 {
-/* attempting to get srsDimension (2 or 3) */
+/* attempting to establis if there is a Z coordinate */
     gmlAttrPtr attr = node->Attributes;
     while (attr)
       {
 	  if (strcmp (attr->Key, "srsDimension") == 0)
 	    {
 		if (atoi (attr->Value) == 3)
-		    return 3;
+		    return 1;
 		else
-		    return 2;
+		    return 0;
 	    }
 	  attr = attr->Next;
       }
-    return 2;
+    return 0;
 }
 
 static int
@@ -875,24 +875,14 @@ gml_extract_multi_coords (gmlCoordPtr coord, double *x, double *y, double *z,
 static void
 gml_add_point_to_line (gaiaDynamicLinePtr dyn, double x, double y)
 {
-/* appending a point (checks for duplicates) */
-    if (dyn->Last != NULL)
-      {
-	  if (dyn->Last->X == x && dyn->Last->Y == y)
-	      return;
-      }
+/* appending a point */
     gaiaAppendPointToDynamicLine (dyn, x, y);
 }
 
 static void
 gml_add_point_to_lineZ (gaiaDynamicLinePtr dyn, double x, double y, double z)
 {
-/* appending a point (checks for duplicates) */
-    if (dyn->Last != NULL)
-      {
-	  if (dyn->Last->X == x && dyn->Last->Y == y && dyn->Last->Z == z)
-	      return;
-      }
+/* appending a point */
     gaiaAppendPointZToDynamicLine (dyn, x, y, z);
 }
 
@@ -941,7 +931,7 @@ gml_parse_posList (gmlCoordPtr coord, gaiaDynamicLinePtr dyn, int has_z)
       {
 	  if (!gml_check_coord (c->Value))
 	      return 0;
-	  if (has_z)
+	  if (!has_z)
 	    {
 		switch (count)
 		  {
@@ -2071,7 +2061,12 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
 		geom->Srid = chain->Srid;
-		geom->DeclaredType = GAIA_POINT;
+		if (chain->DeclaredType == GAIA_MULTIPOINT)
+		    geom->DeclaredType = GAIA_MULTIPOINT;
+		else if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+		    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+		else
+		    geom->DeclaredType = GAIA_POINT;
 		gaiaAddPointToGeomColl (geom, save_pt->X, save_pt->Y);
 		return geom;
 	    }
@@ -2080,7 +2075,12 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
 		geom->Srid = chain->Srid;
-		geom->DeclaredType = GAIA_POINT;
+		if (chain->DeclaredType == GAIA_MULTIPOINT)
+		    geom->DeclaredType = GAIA_MULTIPOINT;
+		else if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+		    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+		else
+		    geom->DeclaredType = GAIA_POINT;
 		gaiaAddPointToGeomCollXYZ (geom, save_pt->X, save_pt->Y,
 					   save_pt->Z);
 		return geom;
@@ -2100,7 +2100,12 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 		geom = gaiaAllocGeomCollXYZ ();
 	    }
 	  geom->Srid = chain->Srid;
-	  geom->DeclaredType = GAIA_LINESTRING;
+	  if (chain->DeclaredType == GAIA_MULTILINESTRING)
+	      geom->DeclaredType = GAIA_MULTILINESTRING;
+	  else if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+	  else
+	      geom->DeclaredType = GAIA_LINESTRING;
 	  ln = gaiaAddLinestringToGeomColl (geom, save_ln->Points);
 	  gaiaCopyLinestringCoords (ln, save_ln);
 	  return geom;
@@ -2119,7 +2124,12 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 		geom = gaiaAllocGeomCollXYZ ();
 	    }
 	  geom->Srid = chain->Srid;
-	  geom->DeclaredType = GAIA_POLYGON;
+	  if (chain->DeclaredType == GAIA_MULTIPOLYGON)
+	      geom->DeclaredType = GAIA_MULTIPOLYGON;
+	  else if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+	  else
+	      geom->DeclaredType = GAIA_POLYGON;
 	  i_ring = save_pg->Exterior;
 	  pg = gaiaAddPolygonToGeomColl (geom, i_ring->Points,
 					 save_pg->NumInteriors);
@@ -2141,7 +2151,10 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
 		geom->Srid = chain->Srid;
-		geom->DeclaredType = GAIA_MULTIPOINT;
+		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+		    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+		else
+		    geom->DeclaredType = GAIA_MULTIPOINT;
 		g = chain;
 		while (g)
 		  {
@@ -2189,7 +2202,10 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
 		geom->Srid = chain->Srid;
-		geom->DeclaredType = GAIA_MULTIPOINT;
+		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+		    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+		else
+		    geom->DeclaredType = GAIA_MULTIPOINT;
 		g = chain;
 		while (g)
 		  {
@@ -2242,7 +2258,10 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
 		geom->Srid = chain->Srid;
-		geom->DeclaredType = GAIA_MULTILINESTRING;
+		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+		    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+		else
+		    geom->DeclaredType = GAIA_MULTILINESTRING;
 		g = chain;
 		while (g)
 		  {
@@ -2292,7 +2311,10 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
 		geom->Srid = chain->Srid;
-		geom->DeclaredType = GAIA_MULTILINESTRING;
+		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+		    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+		else
+		    geom->DeclaredType = GAIA_MULTILINESTRING;
 		g = chain;
 		while (g)
 		  {
@@ -2346,7 +2368,10 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
 		geom->Srid = chain->Srid;
-		geom->DeclaredType = GAIA_MULTIPOLYGON;
+		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+		    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+		else
+		    geom->DeclaredType = GAIA_MULTIPOLYGON;
 		g = chain;
 		while (g)
 		  {
@@ -2407,7 +2432,10 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
 		geom->Srid = chain->Srid;
-		geom->DeclaredType = GAIA_MULTIPOLYGON;
+		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+		    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+		else
+		    geom->DeclaredType = GAIA_MULTIPOLYGON;
 		g = chain;
 		while (g)
 		  {
@@ -2660,44 +2688,54 @@ gml_build_geometry (gmlNodePtr tree, sqlite3 * sqlite_handle)
       {
 	  /* parsing GML nodes accordingly with declared GML type */
       case GAIA_GML_POINT:
+	  geom->DeclaredType = GAIA_POINT;
 	  if (!gml_parse_point (geom, tree->Next, geom->Srid, &next))
 	      goto error;
 	  break;
       case GAIA_GML_LINESTRING:
+	  geom->DeclaredType = GAIA_LINESTRING;
 	  if (!gml_parse_linestring (geom, tree->Next, geom->Srid, &next))
 	      goto error;
 	  break;
       case GAIA_GML_CURVE:
+	  geom->DeclaredType = GAIA_LINESTRING;
 	  if (!gml_parse_curve (geom, tree->Next, geom->Srid, &next))
 	      goto error;
 	  break;
       case GAIA_GML_POLYGON:
+	  geom->DeclaredType = GAIA_POLYGON;
 	  if (!gml_parse_polygon (geom, tree->Next, geom->Srid, &next))
 	      goto error;
 	  if (next != NULL)
 	      goto error;
 	  break;
       case GAIA_GML_MULTIPOINT:
+	  geom->DeclaredType = GAIA_MULTIPOINT;
 	  if (!gml_parse_multi_point (geom, tree->Next))
 	      goto error;
 	  break;
       case GAIA_GML_MULTILINESTRING:
+	  geom->DeclaredType = GAIA_MULTILINESTRING;
 	  if (!gml_parse_multi_linestring (geom, tree->Next))
 	      goto error;
 	  break;
       case GAIA_GML_MULTICURVE:
+	  geom->DeclaredType = GAIA_MULTILINESTRING;
 	  if (!gml_parse_multi_curve (geom, tree->Next))
 	      goto error;
 	  break;
       case GAIA_GML_MULTIPOLYGON:
+	  geom->DeclaredType = GAIA_MULTIPOLYGON;
 	  if (!gml_parse_multi_polygon (geom, tree->Next))
 	      goto error;
 	  break;
       case GAIA_GML_MULTISURFACE:
+	  geom->DeclaredType = GAIA_MULTIPOLYGON;
 	  if (!gml_parse_multi_surface (geom, tree->Next))
 	      goto error;
 	  break;
       case GAIA_GML_MULTIGEOMETRY:
+	  geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
 	  if (!gml_parse_multi_geometry (geom, tree->Next))
 	      goto error;
 	  break;
@@ -2800,7 +2838,7 @@ YYSTYPE GmlLval;
 
 
 /*
- GML_LEMON_START - LEMON generated header starts here 
+ GML_LEMON_START - LEMON generated code starts here 
 */
 
 /* Driver template for the LEMON parser generator.
@@ -4081,7 +4119,20 @@ extern FILE *Gmlin, *Gmlout;
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
 
-    #define YY_LESS_LINENO(n)
+    /* Note: We specifically omit the test for yy_rule_can_match_eol because it requires
+     *       access to the local variable yy_act. Since yyless() is a macro, it would break
+     *       existing scanners that call yyless() from OUTSIDE Gmllex. 
+     *       One obvious solution it to make yy_act a global. I tried that, and saw
+     *       a 5% performance hit in a non-Gmllineno scanner, because yy_act is
+     *       normally declared as a register variable-- so it is not worth it.
+     */
+    #define  YY_LESS_LINENO(n) \
+            do { \
+                int yyl;\
+                for ( yyl = n; yyl < Gmlleng; ++yyl )\
+                    if ( Gmltext[yyl] == '\n' )\
+                        --Gmllineno;\
+            }while(0)
     
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
@@ -4258,12 +4309,12 @@ FILE *Gmlin = (FILE *) 0, *Gmlout = (FILE *) 0;
 
 typedef int yy_state_type;
 
+#define YY_FLEX_LEX_COMPAT
 extern int Gmllineno;
 
 int Gmllineno = 1;
 
-extern char *Gmltext;
-#define yytext_ptr Gmltext
+extern char Gmltext[];
 
 static yy_state_type yy_get_previous_state (void );
 static yy_state_type yy_try_NUL_trans (yy_state_type current_state  );
@@ -4278,6 +4329,12 @@ static void yy_fatal_error (yyconst char msg[]  );
 	Gmlleng = (size_t) (yy_cp - yy_bp); \
 	(yy_hold_char) = *yy_cp; \
 	*yy_cp = '\0'; \
+	if ( Gmlleng + (yy_more_offset) >= YYLMAX ) \
+		YY_FATAL_ERROR( "token too large, exceeds YYLMAX" ); \
+	yy_flex_strncpy( &Gmltext[(yy_more_offset)], (yytext_ptr), Gmlleng + 1 ); \
+	Gmlleng += (yy_more_offset); \
+	(yy_prev_more_offset) = (yy_more_offset); \
+	(yy_more_offset) = 0; \
 	(yy_c_buf_p) = yy_cp;
 
 #define YY_NUM_RULES 11
@@ -4289,10 +4346,18 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static yyconst flex_int16_t yy_accept[19] =
+static yyconst flex_int16_t yy_acclist[34] =
     {   0,
-        5,    5,   12,   10,    8,    9,   10,    5,    1,    3,
-        2,    4,    7,    0,    6,    5,    7,    0
+        5,    5,   12,   10,   11,    8,   10,   11,    9,   11,
+       10,   11,    5,   10,   11,    1,   10,   11,    3,   10,
+       11,    2,   10,   11,    4,   10,   11,    7,   10,   11,
+        6,    5,    7
+    } ;
+
+static yyconst flex_int16_t yy_accept[20] =
+    {   0,
+        1,    2,    3,    4,    6,    9,   11,   13,   16,   19,
+       22,   25,   28,   31,   31,   32,   33,   34,   34
     } ;
 
 static yyconst flex_int32_t yy_ec[256] =
@@ -4363,20 +4428,42 @@ static yyconst flex_int16_t yy_chk[37] =
        18,   18,   18,   18,   18,   18
     } ;
 
-static yy_state_type yy_last_accepting_state;
-static char *yy_last_accepting_cpos;
+/* Table of booleans, true if rule could match eol. */
+static yyconst flex_int32_t yy_rule_can_match_eol[12] =
+    {   0,
+0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0,     };
 
 extern int Gml_flex_debug;
 int Gml_flex_debug = 0;
 
-/* The intent behind this definition is that it'll catch
- * any uses of REJECT which flex missed.
- */
-#define REJECT reject_used_but_not_detected
-#define yymore() yymore_used_but_not_detected
+static yy_state_type *yy_state_buf=0, *yy_state_ptr=0;
+static char *yy_full_match;
+static int yy_lp;
+#define REJECT \
+{ \
+*yy_cp = (yy_hold_char); /* undo effects of setting up Gmltext */ \
+yy_cp = (yy_full_match); /* restore poss. backed-over text */ \
+++(yy_lp); \
+goto find_rule; \
+}
+
+static int yy_more_offset = 0;
+static int yy_prev_more_offset = 0;
+#define yymore() ((yy_more_offset) = yy_flex_strlen( Gmltext ))
+#define YY_NEED_STRLEN
 #define YY_MORE_ADJ 0
-#define YY_RESTORE_YY_MORE_OFFSET
-char *Gmltext;
+#define YY_RESTORE_YY_MORE_OFFSET \
+	{ \
+	(yy_more_offset) = (yy_prev_more_offset); \
+	Gmlleng -= (yy_more_offset); \
+	}
+#ifndef YYLMAX
+#define YYLMAX 8192
+#endif
+
+char Gmltext[YYLMAX];
+char *yytext_ptr;
+#line 1 "gmlLexer.l"
 /* 
  gmlLexer.l -- GML parser - FLEX config
   
@@ -4418,6 +4505,7 @@ the provisions above, a recipient may use your version of this file under
 the terms of any one of the MPL, the GPL or the LGPL.
  
 */
+#line 46 "gmlLexer.l"
 
 /* For debugging purposes */
 int gml_line = 1, gml_col = 1;
@@ -4432,6 +4520,7 @@ int gml_line = 1, gml_col = 1;
 *  Flex would match both POINT and POINTM, but since POINTM is the longer
 *  of the two tokens, FLEX will match POINTM.
 */
+#line 593 "lex.Gml.c"
 
 #define INITIAL 0
 
@@ -4618,6 +4707,10 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
+#line 62 "gmlLexer.l"
+
+#line 782 "lex.Gml.c"
+
 	if ( !(yy_init) )
 		{
 		(yy_init) = 1;
@@ -4625,6 +4718,12 @@ YY_DECL
 #ifdef YY_USER_INIT
 		YY_USER_INIT;
 #endif
+
+        /* Create the reject buffer large enough to save one state per allowed character. */
+        if ( ! (yy_state_buf) )
+            (yy_state_buf) = (yy_state_type *)Gmlalloc(YY_STATE_BUF_SIZE  );
+            if ( ! (yy_state_buf) )
+                YY_FATAL_ERROR( "out of dynamic memory in Gmllex()" );
 
 		if ( ! (yy_start) )
 			(yy_start) = 1;	/* first start state */
@@ -4657,15 +4756,14 @@ YY_DECL
 		yy_bp = yy_cp;
 
 		yy_current_state = (yy_start);
+
+		(yy_state_ptr) = (yy_state_buf);
+		*(yy_state_ptr)++ = yy_current_state;
+
 yy_match:
 		do
 			{
 			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
-			if ( yy_accept[yy_current_state] )
-				{
-				(yy_last_accepting_state) = yy_current_state;
-				(yy_last_accepting_cpos) = yy_cp;
-				}
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
@@ -4673,80 +4771,106 @@ yy_match:
 					yy_c = yy_meta[(unsigned int) yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+			*(yy_state_ptr)++ = yy_current_state;
 			++yy_cp;
 			}
 		while ( yy_base[yy_current_state] != 24 );
 
 yy_find_action:
-		yy_act = yy_accept[yy_current_state];
-		if ( yy_act == 0 )
-			{ /* have to back up */
-			yy_cp = (yy_last_accepting_cpos);
-			yy_current_state = (yy_last_accepting_state);
-			yy_act = yy_accept[yy_current_state];
+		yy_current_state = *--(yy_state_ptr);
+		(yy_lp) = yy_accept[yy_current_state];
+find_rule: /* we branch to this label when backing up */
+		for ( ; ; ) /* until we find what rule we matched */
+			{
+			if ( (yy_lp) && (yy_lp) < yy_accept[yy_current_state + 1] )
+				{
+				yy_act = yy_acclist[(yy_lp)];
+					{
+					(yy_full_match) = yy_cp;
+					break;
+					}
+				}
+			--yy_cp;
+			yy_current_state = *--(yy_state_ptr);
+			(yy_lp) = yy_accept[yy_current_state];
 			}
 
 		YY_DO_BEFORE_ACTION;
+
+		if ( yy_act != YY_END_OF_BUFFER && yy_rule_can_match_eol[yy_act] )
+			{
+			int yyl;
+			for ( yyl = (yy_prev_more_offset); yyl < Gmlleng; ++yyl )
+				if ( Gmltext[yyl] == '\n' )
+					   
+    Gmllineno++;
+;
+			}
 
 do_action:	/* This label is used only to access EOF actions. */
 
 		switch ( yy_act )
 	{ /* beginning of action switch */
-			case 0: /* must back up */
-			/* undo the effects of YY_DO_BEFORE_ACTION */
-			*yy_cp = (yy_hold_char);
-			yy_cp = (yy_last_accepting_cpos);
-			yy_current_state = (yy_last_accepting_state);
-			goto yy_find_action;
-
 case 1:
 YY_RULE_SETUP
+#line 63 "gmlLexer.l"
 { gml_freeString(&(GmlLval.pval)); return GML_END; }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
+#line 64 "gmlLexer.l"
 { gml_freeString(&(GmlLval.pval)); return GML_EQ; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
+#line 65 "gmlLexer.l"
 { gml_freeString(&(GmlLval.pval)); return GML_OPEN; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
+#line 66 "gmlLexer.l"
 { gml_freeString(&(GmlLval.pval)); return GML_CLOSE; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
+#line 67 "gmlLexer.l"
 { gml_saveString(&(GmlLval.pval), Gmltext); return GML_COORD; }
 	YY_BREAK
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
+#line 68 "gmlLexer.l"
 { gml_saveString(&(GmlLval.pval), Gmltext); return GML_VALUE; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
+#line 69 "gmlLexer.l"
 { gml_saveString(&(GmlLval.pval), Gmltext); return GML_KEYWORD; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
+#line 71 "gmlLexer.l"
 { gml_freeString(&(GmlLval.pval)); gml_col += (int) strlen(Gmltext); }               /* ignore but count white space */
 	YY_BREAK
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
+#line 73 "gmlLexer.l"
 { gml_freeString(&(GmlLval.pval)); gml_col = 0; ++gml_line; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
+#line 75 "gmlLexer.l"
 { gml_freeString(&(GmlLval.pval)); gml_col += (int) strlen(Gmltext); return -1; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
+#line 76 "gmlLexer.l"
 ECHO;
 	YY_BREAK
-case YY_STATE_EOF(INITIAL):
-	yyterminate();
+#line 941 "lex.Gml.c"
+			case YY_STATE_EOF(INITIAL):
+				yyterminate();
 
 	case YY_END_OF_BUFFER:
 		{
@@ -4936,37 +5060,8 @@ static int yy_get_next_buffer (void)
 		while ( num_to_read <= 0 )
 			{ /* Not enough room in the buffer - grow it. */
 
-			/* just a shorter name for the current buffer */
-			YY_BUFFER_STATE b = YY_CURRENT_BUFFER;
-
-			int yy_c_buf_p_offset =
-				(int) ((yy_c_buf_p) - b->yy_ch_buf);
-
-			if ( b->yy_is_our_buffer )
-				{
-				int new_size = b->yy_buf_size * 2;
-
-				if ( new_size <= 0 )
-					b->yy_buf_size += b->yy_buf_size / 8;
-				else
-					b->yy_buf_size *= 2;
-
-				b->yy_ch_buf = (char *)
-					/* Include room in for 2 EOB chars. */
-					Gmlrealloc((void *) b->yy_ch_buf,b->yy_buf_size + 2  );
-				}
-			else
-				/* Can't grow it, we don't own it. */
-				b->yy_ch_buf = 0;
-
-			if ( ! b->yy_ch_buf )
-				YY_FATAL_ERROR(
-				"fatal error - scanner input buffer overflow" );
-
-			(yy_c_buf_p) = &b->yy_ch_buf[yy_c_buf_p_offset];
-
-			num_to_read = YY_CURRENT_BUFFER_LVALUE->yy_buf_size -
-						number_to_move - 1;
+			YY_FATAL_ERROR(
+"input buffer overflow, can't enlarge buffer because scanner uses REJECT" );
 
 			}
 
@@ -5025,14 +5120,12 @@ static int yy_get_next_buffer (void)
     
 	yy_current_state = (yy_start);
 
+	(yy_state_ptr) = (yy_state_buf);
+	*(yy_state_ptr)++ = yy_current_state;
+
 	for ( yy_cp = (yytext_ptr) + YY_MORE_ADJ; yy_cp < (yy_c_buf_p); ++yy_cp )
 		{
 		register YY_CHAR yy_c = (*yy_cp ? yy_ec[YY_SC_TO_UI(*yy_cp)] : 1);
-		if ( yy_accept[yy_current_state] )
-			{
-			(yy_last_accepting_state) = yy_current_state;
-			(yy_last_accepting_cpos) = yy_cp;
-			}
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
@@ -5040,6 +5133,7 @@ static int yy_get_next_buffer (void)
 				yy_c = yy_meta[(unsigned int) yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
+		*(yy_state_ptr)++ = yy_current_state;
 		}
 
 	return yy_current_state;
@@ -5053,14 +5147,8 @@ static int yy_get_next_buffer (void)
     static yy_state_type yy_try_NUL_trans  (yy_state_type yy_current_state )
 {
 	register int yy_is_jam;
-    	register char *yy_cp = (yy_c_buf_p);
-
+    
 	register YY_CHAR yy_c = 1;
-	if ( yy_accept[yy_current_state] )
-		{
-		(yy_last_accepting_state) = yy_current_state;
-		(yy_last_accepting_cpos) = yy_cp;
-		}
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
@@ -5069,6 +5157,8 @@ static int yy_get_next_buffer (void)
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 	yy_is_jam = (yy_current_state == 18);
+	if ( ! yy_is_jam )
+		*(yy_state_ptr)++ = yy_current_state;
 
 	return yy_is_jam ? 0 : yy_current_state;
 }
@@ -5104,6 +5194,10 @@ static int yy_get_next_buffer (void)
 		}
 
 	*--yy_cp = (char) c;
+
+    if ( c == '\n' ){
+        --Gmllineno;
+    }
 
 	(yytext_ptr) = yy_bp;
 	(yy_hold_char) = *yy_cp;
@@ -5179,6 +5273,11 @@ static int yy_get_next_buffer (void)
 	c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
 	*(yy_c_buf_p) = '\0';	/* preserve Gmltext */
 	(yy_hold_char) = *++(yy_c_buf_p);
+
+	if ( c == '\n' )
+		   
+    Gmllineno++;
+;
 
 	return c;
 }
@@ -5650,12 +5749,20 @@ static int yy_init_globals (void)
      * This function is called from Gmllex_destroy(), so don't allocate here.
      */
 
+    /* We do not touch Gmllineno unless the option is enabled. */
+    Gmllineno =  1;
+    
     (yy_buffer_stack) = 0;
     (yy_buffer_stack_top) = 0;
     (yy_buffer_stack_max) = 0;
     (yy_c_buf_p) = (char *) 0;
     (yy_init) = 0;
     (yy_start) = 0;
+
+    (yy_state_buf) = 0;
+    (yy_state_ptr) = 0;
+    (yy_full_match) = 0;
+    (yy_lp) = 0;
 
 /* Defined in main.c */
 #ifdef YY_STDINIT
@@ -5686,6 +5793,9 @@ int Gmllex_destroy  (void)
 	/* Destroy the stack itself. */
 	Gmlfree((yy_buffer_stack) );
 	(yy_buffer_stack) = NULL;
+
+    Gmlfree ( (yy_state_buf) );
+    (yy_state_buf)  = NULL;
 
     /* Reset the globals. This is important in a non-reentrant scanner so the next time
      * Gmllex() is called, initialization will occur. */
@@ -5742,6 +5852,9 @@ void Gmlfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
+#line 76 "gmlLexer.l"
+
+
 /**
  * reset the line and column count
  *
@@ -5790,7 +5903,7 @@ gaiaParseGml (const unsigned char *dirty_buffer, sqlite3 * sqlite_handle)
     int yv;
     gmlNodePtr result = NULL;
     gaiaGeomCollPtr geom = NULL;
-    
+
     GmlLval.pval = NULL;
     tokens->value = NULL;
     tokens->Next = NULL;
@@ -5805,7 +5918,8 @@ gaiaParseGml (const unsigned char *dirty_buffer, sqlite3 * sqlite_handle)
       {
 	  if (yv == -1)
 	    {
-		return NULL;
+		gml_parse_error = 1;
+		break;
 	    }
 	  tokens->Next = malloc (sizeof (gmlFlexToken));
 	  tokens->Next->Next = NULL;
@@ -5944,3 +6058,8 @@ gaiaParseGml (const unsigned char *dirty_buffer, sqlite3 * sqlite_handle)
 #undef ParseARG_PDECL
 #undef ParseARG_FETCH
 #undef ParseARG_STORE
+#undef REJECT
+#undef yymore
+#undef YY_MORE_ADJ
+#undef YY_RESTORE_YY_MORE_OFFSET
+#undef YY_LESS_LINENO

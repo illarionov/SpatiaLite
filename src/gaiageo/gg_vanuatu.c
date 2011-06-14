@@ -1607,7 +1607,7 @@ YYSTYPE VanuatuWktlval;
 
 
 /*
- VANUATU_LEMON_START - LEMON generated header starts here 
+ VANUATU_LEMON_START - LEMON generated code starts here 
 */
 
 /* Driver template for the LEMON parser generator.
@@ -3872,17 +3872,17 @@ static yyconst flex_int32_t yy_ec[256] =
         1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    4,    1,    1,    1,    1,    1,    1,    1,    5,
-        6,    1,    7,    8,    9,   10,    1,   11,   11,   11,
-       11,   11,   11,   11,   11,   11,   11,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,   12,    1,   13,    1,
-       14,    1,   15,    1,    1,   16,   17,   18,   19,   20,
-        1,   21,   22,   23,   24,    1,    1,    1,   25,   26,
-        1,    1,    1,    1,    1,    1,    1,    1,   27,    1,
+        1,    2,    1,    1,    1,    1,    1,    1,    1,    4,
+        5,    1,    6,    7,    8,    9,    1,   10,   10,   10,
+       10,   10,   10,   10,   10,   10,   10,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,   11,    1,   12,    1,
+       13,    1,   14,    1,    1,   15,   16,   17,   18,   19,
+        1,   20,   21,   22,   23,    1,    1,    1,   24,   25,
+        1,    1,    1,    1,    1,    1,    1,    1,   26,    1,
 
-       28,    1,   29,    1,   30,    1,    1,   31,   32,   33,
-       34,   35,    1,   36,   37,   38,   39,    1,    1,    1,
-       40,   41,    1,    1,    1,    1,    1,    1,    1,    1,
+       27,    1,   28,    1,   29,    1,    1,   30,   31,   32,
+       33,   34,    1,   35,   36,   37,   38,    1,    1,    1,
+       39,   40,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -3899,125 +3899,120 @@ static yyconst flex_int32_t yy_ec[256] =
         1,    1,    1,    1,    1
     } ;
 
-static yyconst flex_int32_t yy_meta[42] =
+static yyconst flex_int32_t yy_meta[41] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1
     } ;
 
-static yyconst flex_int16_t yy_base[114] =
+static yyconst flex_int16_t yy_base[115] =
     {   0,
-        0,    0,  246,  270,  270,  270,  270,  270,  230,  270,
-      228,   32,   31,   30,   22,   28,   38,   40,  227,   42,
-       35,   37,   40,   42,  226,  159,  123,   46,   51,   42,
-       48,   42,   84,   75,   55,   52,   60,   53,   63,   61,
-       62,   77,   84,   68,   73,   75,   83,   84,   88,  270,
-       87,   88,   82,  100,   99,  108,  270,  123,  114,  110,
-      118,  115,  110,  119,  270,  120,  123,  130,  125,  130,
-      140,  270,  140,  157,  135,  159,  146,  150,  158,  270,
-      150,  151,  160,  270,  161,  161,  175,  270,  180,  270,
-      192,  185,  184,  187,  270,  188,  183,  193,  270,  193,
+        0,   33,  211,  255,  255,  255,  255,  255,  192,  255,
+      191,    2,    2,    3,    4,    0,   11,   13,  185,   15,
+       26,   28,   32,   36,  162,  161,  154,   37,   42,   33,
+       39,   33,   71,   16,   46,   53,   61,   54,   64,   56,
+       57,   65,   80,   67,   66,   67,   74,   79,    0,  255,
+       82,   87,   82,   93,   91,   95,  255,  112,  105,  100,
+      106,  109,  103,    0,  255,  113,  112,  121,  114,  114,
+      125,  255,  124,  144,  118,  154,  130,  143,    0,  255,
+      143,  141,    0,  255,  146,  148,  154,  255,  153,  255,
+      184,  157,  161,    0,  255,  172,  167,  177,  255,  177,
 
-      210,  192,  199,  270,  198,  211,  270,  228,  217,  270,
-      218,  270,  270
+      194,  174,    0,  255,  182,  182,  255,  214,    0,  255,
+      192,  255,  255,    0
     } ;
 
-static yyconst flex_int16_t yy_def[114] =
+static yyconst flex_int16_t yy_def[115] =
     {   0,
-      113,    1,  113,  113,  113,  113,  113,  113,  113,  113,
+      114,  114,  113,  113,  113,  113,  113,  113,  113,  113,
       113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
       113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
       113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
+      113,  113,  113,  113,  113,  113,  113,  113,   43,  113,
       113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
+      113,  113,  113,   58,  113,  113,  113,  113,  113,  113,
+      113,  113,  113,  113,  113,  113,  113,  113,   74,  113,
+      113,  113,   76,  113,  113,  113,  113,  113,  113,  113,
+      113,  113,  113,   91,  113,  113,  113,  113,  113,  113,
 
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113,  113,    0
+      113,  113,  101,  113,  113,  113,  113,  113,  108,  113,
+      113,  113,    0,  113
     } ;
 
-static yyconst flex_int16_t yy_nxt[312] =
+static yyconst flex_int16_t yy_nxt[296] =
     {   0,
-        4,    5,    6,    5,    7,    8,    9,   10,   11,    4,
-       12,    4,    4,   13,    4,   14,   15,    4,    4,   16,
-        4,    4,    4,    4,    4,    4,    4,    4,   13,    4,
-       14,   15,    4,    4,   16,    4,    4,    4,    4,    4,
-        4,   19,   20,   21,   22,   23,   24,   25,   17,   26,
-       18,   19,   20,   28,   29,   30,   31,   32,   21,   22,
-       23,   24,   35,   36,   37,   38,   39,   40,   28,   29,
-       30,   31,   32,   41,   42,   43,   44,   35,   36,   37,
-       38,   39,   40,   45,   46,   34,   52,   49,   41,   42,
-       43,   44,   47,   53,   33,   54,   48,   55,   45,   46,
+        4,    5,    6,    7,    8,    9,   10,   11,  113,   12,
+       19,   20,   13,   21,   14,   15,   22,   24,   16,   25,
+       17,   26,   18,   19,   20,   34,   23,   13,   21,   14,
+       15,   22,   24,   16,    5,    6,    7,    8,    9,   10,
+       11,   23,   12,   28,   29,   13,   30,   14,   15,   31,
+       32,   16,   35,   36,   37,   38,   39,   40,   28,   29,
+       13,   30,   14,   15,   31,   32,   16,   35,   36,   37,
+       38,   39,   40,   41,   42,   43,   44,   45,   46,   47,
+       33,   49,   49,   48,   52,   53,   54,   55,   41,   42,
+       43,   44,   45,   46,   47,   50,   56,   57,   48,   52,
 
-       50,   52,   56,   57,   50,   58,   59,   47,   53,   51,
-       54,   48,   55,   51,   60,   50,   61,   56,   57,   50,
-       58,   59,   62,   63,   51,   67,   64,   68,   51,   60,
-       69,   61,   70,   27,   71,   65,   72,   62,   63,   65,
-       67,   73,   68,   74,   66,   69,   75,   70,   66,   71,
-       65,   72,   76,   77,   65,   78,   73,   82,   74,   66,
-       79,   75,   83,   66,   86,   87,   88,   76,   77,   34,
-       78,   89,   82,   80,   80,   84,   84,   90,   91,   86,
-       87,   88,   81,   81,   85,   85,   89,   92,   80,   80,
-       84,   84,   90,   91,   93,   94,   97,   81,   81,   85,
+       53,   54,   55,   58,   51,   59,   60,   61,   62,   63,
+       50,   56,   57,   64,   64,   67,   68,   69,   58,   51,
+       59,   60,   61,   62,   63,   70,   71,   65,   72,   73,
+       67,   68,   69,   74,   75,   76,   66,   77,   78,   82,
+       70,   71,   65,   72,   73,   79,   79,   86,   74,   75,
+       76,   66,   77,   78,   82,   83,   83,   87,   88,   80,
+       89,   90,   86,   27,   91,   92,   93,   97,   81,   84,
+       34,   33,   87,   88,   80,   89,   90,   98,   85,   91,
+       92,   93,   97,   81,   84,   94,   94,   99,  100,  101,
+      102,  106,   98,   85,   27,  103,  103,  107,  108,   95,
 
-       85,   98,   92,   95,   99,  100,  101,  102,   95,   93,
-      106,   97,   96,  103,  107,  104,   98,   96,   95,   99,
-      100,  101,  102,   95,  105,  106,  104,   96,  108,  107,
-      104,  109,   96,  110,  112,  105,   33,   27,   18,  105,
-       17,  104,  111,  108,  110,  113,  113,  113,  110,  112,
-      105,  113,  113,  111,  113,  113,  113,  111,  113,  110,
-      113,  113,  113,  113,  113,  113,  113,  113,  111,    3,
+       18,   17,   99,  100,  101,  102,  106,  112,   96,  104,
+      113,  113,  107,  108,   95,  109,  109,  113,  105,  113,
+      113,  113,  112,   96,  104,  113,  113,  113,  113,  110,
+      113,  113,  113,  105,  113,  113,  113,  113,  111,  113,
+      113,  113,  113,  113,  110,  113,  113,  113,  113,  113,
+      113,  113,  113,  111,    3,  113,  113,  113,  113,  113,
       113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
       113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
       113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
+      113,  113,  113,  113,  113
 
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113
     } ;
 
-static yyconst flex_int16_t yy_chk[312] =
+static yyconst flex_int16_t yy_chk[296] =
     {   0,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,   12,   12,   13,   14,   15,   16,   17,   17,   18,
-       18,   20,   20,   21,   22,   23,   24,   24,   13,   14,
-       15,   16,   28,   29,   30,   31,   32,   35,   21,   22,
-       23,   24,   24,   36,   37,   38,   39,   28,   29,   30,
-       31,   32,   35,   40,   41,   34,   44,   43,   36,   37,
-       38,   39,   42,   45,   33,   46,   42,   47,   40,   41,
+      114,    1,    1,    1,    1,    1,    1,    1,    0,    1,
+       12,   12,    1,   13,    1,    1,   14,   16,    1,   17,
+       17,   18,   18,   20,   20,   34,   15,    1,   13,    1,
+        1,   14,   16,    1,    2,    2,    2,    2,    2,    2,
+        2,   15,    2,   21,   22,    2,   23,    2,    2,   24,
+       24,    2,   28,   29,   30,   31,   32,   35,   21,   22,
+        2,   23,    2,    2,   24,   24,    2,   28,   29,   30,
+       31,   32,   35,   36,   37,   38,   39,   40,   41,   42,
+       33,   43,   43,   42,   44,   45,   46,   47,   36,   37,
+       38,   39,   40,   41,   42,   43,   48,   51,   42,   44,
 
-       43,   44,   48,   51,   49,   52,   53,   42,   45,   43,
-       46,   42,   47,   49,   54,   43,   55,   48,   51,   49,
-       52,   53,   56,   56,   43,   59,   58,   60,   49,   54,
-       61,   55,   62,   27,   63,   64,   66,   56,   56,   58,
-       59,   67,   60,   68,   64,   61,   69,   62,   58,   63,
-       64,   66,   70,   71,   58,   73,   67,   75,   68,   64,
-       74,   69,   76,   58,   77,   78,   81,   70,   71,   26,
-       73,   82,   75,   74,   79,   76,   83,   85,   86,   77,
-       78,   81,   74,   79,   76,   83,   82,   87,   74,   79,
-       76,   83,   85,   86,   89,   91,   92,   74,   79,   76,
+       45,   46,   47,   52,   43,   53,   54,   55,   56,   56,
+       43,   48,   51,   58,   58,   59,   60,   61,   52,   43,
+       53,   54,   55,   56,   56,   62,   63,   58,   66,   67,
+       59,   60,   61,   68,   69,   70,   58,   71,   73,   75,
+       62,   63,   58,   66,   67,   74,   74,   77,   68,   69,
+       70,   58,   71,   73,   75,   76,   76,   78,   81,   74,
+       82,   85,   77,   27,   86,   87,   89,   92,   74,   76,
+       26,   25,   78,   81,   74,   82,   85,   93,   76,   86,
+       87,   89,   92,   74,   76,   91,   91,   96,   97,   98,
+      100,  102,   93,   76,   19,  101,  101,  105,  106,   91,
 
-       83,   93,   87,   94,   96,   97,   98,  100,   91,   89,
-      102,   92,   94,  101,  105,  103,   93,   91,   94,   96,
-       97,   98,  100,   91,  103,  102,  101,   94,  106,  105,
-      103,  108,   91,  109,  111,  101,   25,   19,   11,  103,
-        9,  101,  109,  106,  108,    3,    0,    0,  109,  111,
-      101,    0,    0,  108,    0,    0,    0,  109,    0,  108,
-        0,    0,    0,    0,    0,    0,    0,    0,  108,  113,
+       11,    9,   96,   97,   98,  100,  102,  111,   91,  101,
+        3,    0,  105,  106,   91,  108,  108,    0,  101,    0,
+        0,    0,  111,   91,  101,    0,    0,    0,    0,  108,
+        0,    0,    0,  101,    0,    0,    0,    0,  108,    0,
+        0,    0,    0,    0,  108,    0,    0,    0,    0,    0,
+        0,    0,    0,  108,  113,  113,  113,  113,  113,  113,
       113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
       113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
       113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
+      113,  113,  113,  113,  113
 
-      113,  113,  113,  113,  113,  113,  113,  113,  113,  113,
-      113
     } ;
 
 static yy_state_type yy_last_accepting_state;
@@ -4353,7 +4348,7 @@ yy_match:
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 			++yy_cp;
 			}
-		while ( yy_base[yy_current_state] != 270 );
+		while ( yy_base[yy_current_state] != 255 );
 
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
@@ -4398,14 +4393,17 @@ YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_POINT; }
 	YY_BREAK
 case 6:
+/* rule 6 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_POINT_Z; }
 	YY_BREAK
 case 7:
+/* rule 7 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_POINT_M; }
 	YY_BREAK
 case 8:
+/* rule 8 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_POINT_ZM; }
 	YY_BREAK
@@ -4414,14 +4412,17 @@ YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_LINESTRING; }
 	YY_BREAK
 case 10:
+/* rule 10 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_LINESTRING_Z; }
 	YY_BREAK
 case 11:
+/* rule 11 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_LINESTRING_M; }
 	YY_BREAK
 case 12:
+/* rule 12 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_LINESTRING_ZM; }
 	YY_BREAK
@@ -4430,14 +4431,17 @@ YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_POLYGON; }
 	YY_BREAK
 case 14:
+/* rule 14 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_POLYGON_Z; }
 	YY_BREAK
 case 15:
+/* rule 15 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_POLYGON_M; }
 	YY_BREAK
 case 16:
+/* rule 16 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_POLYGON_ZM; }
 	YY_BREAK
@@ -4446,14 +4450,17 @@ YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_MULTIPOINT; }
 	YY_BREAK
 case 18:
+/* rule 18 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_MULTIPOINT_Z; }
 	YY_BREAK
 case 19:
+/* rule 19 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_MULTIPOINT_M; }
 	YY_BREAK
 case 20:
+/* rule 20 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_MULTIPOINT_ZM; }
 	YY_BREAK
@@ -4462,14 +4469,17 @@ YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_MULTILINESTRING; }
 	YY_BREAK
 case 22:
+/* rule 22 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_MULTILINESTRING_Z; }
 	YY_BREAK
 case 23:
+/* rule 23 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_MULTILINESTRING_M; }
 	YY_BREAK
 case 24:
+/* rule 24 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_MULTILINESTRING_ZM; }	
 	YY_BREAK
@@ -4478,14 +4488,17 @@ YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_MULTIPOLYGON; }
 	YY_BREAK
 case 26:
+/* rule 26 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_MULTIPOLYGON_Z; }
 	YY_BREAK
 case 27:
+/* rule 27 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_MULTIPOLYGON_M; }
 	YY_BREAK
 case 28:
+/* rule 28 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_MULTIPOLYGON_ZM; }
 	YY_BREAK
@@ -4494,14 +4507,17 @@ YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_GEOMETRYCOLLECTION; }
 	YY_BREAK
 case 30:
+/* rule 30 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_Z; }
 	YY_BREAK
 case 31:
+/* rule 31 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_M; }
 	YY_BREAK
 case 32:
+/* rule 32 can match eol */
 YY_RULE_SETUP
 { VanuatuWktlval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_ZM; }
 	YY_BREAK
@@ -5636,7 +5652,8 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
       {
 	  if (yv == -1)
 	    {
-		return NULL;
+		vanuatu_parse_error = 1;
+		break;
 	    }
 	  tokens->Next = malloc (sizeof (vanuatuFlexToken));
 	  tokens->Next->Next = NULL;
@@ -5820,4 +5837,8 @@ Greg Wilson			gvwilson@cs.toronto.ca
 #undef ParseARG_PDECL
 #undef ParseARG_FETCH
 #undef ParseARG_STORE
-
+#undef REJECT
+#undef yymore
+#undef YY_MORE_ADJ
+#undef YY_RESTORE_YY_MORE_OFFSET
+#undef YY_LESS_LINENO

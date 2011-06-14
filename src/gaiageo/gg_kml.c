@@ -2,7 +2,7 @@
 
  gg_kml.c -- KML parser/lexer 
   
- version 2.4, 2011 June 2
+ version 2.4, 2011 June 14
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -58,446 +58,1560 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 int kml_parse_error;
 
-static int
-kmlCheckValidity (gaiaGeomCollPtr geom)
+#define KML_PARSER_OPEN_NODE		1
+#define KML_PARSER_SELF_CLOSED_NODE	2
+#define KML_PARSER_CLOSED_NODE		3
+
+#define GAIA_KML_UNKNOWN			0
+#define GAIA_KML_POINT				1
+#define GAIA_KML_LINESTRING			2
+#define GAIA_KML_POLYGON			3
+#define GAIA_KML_MULTIGEOMETRY		4
+
+/*
+** This is a linked-list struct to store all the values for each token.
+*/
+typedef struct kmlFlexTokenStruct
 {
-/* checks if this one is a degenerated geometry */
-    gaiaPointPtr pt;
-    gaiaLinestringPtr ln;
-    gaiaPolygonPtr pg;
-    gaiaRingPtr rng;
-    int ib;
-    int entities = 0;
-    pt = geom->FirstPoint;
-    while (pt)
+    char *value;
+    struct kmlFlexTokenStruct *Next;
+} kmlFlexToken;
+
+typedef struct kml_coord
+{
+    char *Value;
+    struct kml_coord *Next;
+} kmlCoord;
+typedef kmlCoord *kmlCoordPtr;
+
+typedef struct kml_attr
+{
+    char *Key;
+    char *Value;
+    struct kml_attr *Next;
+} kmlAttr;
+typedef kmlAttr *kmlAttrPtr;
+
+typedef struct kml_node
+{
+    char *Tag;
+    int Type;
+    int Error;
+    struct kml_attr *Attributes;
+    struct kml_coord *Coordinates;
+    struct kml_node *Next;
+} kmlNode;
+typedef kmlNode *kmlNodePtr;
+
+typedef struct kml_dynamic_ring
+{
+    gaiaDynamicLinePtr ring;
+    int interior;
+    int has_z;
+    struct kml_dynamic_ring *next;
+} kmlDynamicRing;
+typedef kmlDynamicRing *kmlDynamicRingPtr;
+
+typedef struct kml_dynamic_polygon
+{
+    struct kml_dynamic_ring *first;
+    struct kml_dynamic_ring *last;
+} kmlDynamicPolygon;
+typedef kmlDynamicPolygon *kmlDynamicPolygonPtr;
+
+static kmlDynamicPolygonPtr
+kml_alloc_dyn_polygon (void)
+{
+/* creating a dynamic polygon (ring collection) */
+    kmlDynamicPolygonPtr p = malloc (sizeof (kmlDynamicPolygon));
+    p->first = NULL;
+    p->last = NULL;
+    return p;
+}
+
+static void
+kml_free_dyn_polygon (kmlDynamicPolygonPtr dyn)
+{
+/* deleting a dynamic polygon (ring collection) */
+    kmlDynamicRingPtr r;
+    kmlDynamicRingPtr rn;
+    if (!dyn)
+	return;
+    r = dyn->first;
+    while (r)
       {
-	  /* checking points */
-	  entities++;
-	  pt = pt->Next;
+	  rn = r->next;
+	  if (r->ring)
+	      gaiaFreeDynamicLine (r->ring);
+	  free (r);
+	  r = rn;
       }
-    ln = geom->FirstLinestring;
-    while (ln)
+    free (dyn);
+}
+
+static void
+kml_add_polygon_ring (kmlDynamicPolygonPtr dyn_pg, gaiaDynamicLinePtr dyn,
+		      int interior, int has_z)
+{
+/* inserting a further ring into the collection (dynamic polygon) */
+    kmlDynamicRingPtr p = malloc (sizeof (kmlDynamicRing));
+    p->ring = dyn;
+    p->interior = interior;
+    p->has_z = has_z;
+    p->next = NULL;
+    if (dyn_pg->first == NULL)
+	dyn_pg->first = p;
+    if (dyn_pg->last != NULL)
+	dyn_pg->last->next = p;
+    dyn_pg->last = p;
+}
+
+static void
+kml_freeString (char **ptr)
+{
+/* releasing a string from the lexer */
+    if (*ptr != NULL)
+	free (*ptr);
+    *ptr = NULL;
+}
+
+static void
+kml_saveString (char **ptr, const char *str)
+{
+/* saving a string from the lexer */
+    int len = strlen (str);
+    kml_freeString (ptr);
+    *ptr = malloc (len + 1);
+    strcpy (*ptr, str);
+}
+
+static kmlCoordPtr
+kml_coord (void *value)
+{
+/* creating a coord Item */
+    int len;
+    kmlFlexToken *tok = (kmlFlexToken *) value;
+    kmlCoordPtr c = malloc (sizeof (kmlCoord));
+    len = strlen (tok->value);
+    c->Value = malloc (len + 1);
+    strcpy (c->Value, tok->value);
+    c->Next = NULL;
+    return c;
+}
+
+static void
+kml_freeCoordinate (kmlCoordPtr c)
+{
+/* deleting a KML coordinate */
+    if (c == NULL)
+	return;
+    if (c->Value)
+	free (c->Value);
+    free (c);
+}
+
+static kmlAttrPtr
+kml_attribute (void *key, void *value)
+{
+/* creating an attribute */
+    int len;
+    kmlFlexToken *k_tok = (kmlFlexToken *) key;
+    kmlFlexToken *v_tok = (kmlFlexToken *) value;
+    kmlAttrPtr a = malloc (sizeof (kmlAttr));
+    len = strlen (k_tok->value);
+    a->Key = malloc (len + 1);
+    strcpy (a->Key, k_tok->value);
+    len = strlen (v_tok->value);
+/* we need to de-quote the string, removing first and last ".." */
+    if (*(v_tok->value + 0) == '"' && *(v_tok->value + len - 1) == '"')
       {
-	  /* checking linestrings */
-	  if (ln->Points < 2)
-	      return 0;
-	  entities++;
-	  ln = ln->Next;
+	  a->Value = malloc (len - 1);
+	  memcpy (a->Value, v_tok->value + 1, len - 1);
+	  *(a->Value + len - 1) = '\0';
       }
-    pg = geom->FirstPolygon;
-    while (pg)
+    else
       {
-	  /* checking polygons */
-	  rng = pg->Exterior;
-	  if (rng->Points < 4)
-	      return 0;
-	  for (ib = 0; ib < pg->NumInteriors; ib++)
+	  a->Value = malloc (len + 1);
+	  strcpy (a->Value, v_tok->value);
+      }
+    a->Next = NULL;
+    return a;
+}
+
+static void
+kml_freeAttribute (kmlAttrPtr a)
+{
+/* deleting a KML attribute */
+    if (a == NULL)
+	return;
+    if (a->Key)
+	free (a->Key);
+    if (a->Value)
+	free (a->Value);
+    free (a);
+}
+
+static void
+kml_freeNode (kmlNodePtr n)
+{
+/* deleting a KML node */
+    kmlAttrPtr a;
+    kmlAttrPtr an;
+    kmlCoordPtr c;
+    kmlCoordPtr cn;
+    if (n == NULL)
+	return;
+    a = n->Attributes;
+    while (a)
+      {
+	  an = a->Next;
+	  kml_freeAttribute (a);
+	  a = an;
+      }
+    c = n->Coordinates;
+    while (c)
+      {
+	  cn = c->Next;
+	  kml_freeCoordinate (c);
+	  c = cn;
+      }
+    if (n->Tag)
+	free (n->Tag);
+    free (n);
+}
+
+static void
+kml_freeTree (kmlNodePtr t)
+{
+/* deleting a KML tree */
+    kmlNodePtr n;
+    kmlNodePtr nn;
+    n = t;
+    while (n)
+      {
+	  nn = n->Next;
+	  kml_freeNode (n);
+	  n = nn;
+      }
+}
+
+static kmlNodePtr
+kml_createNode (void *tag, void *attributes, void *coords)
+{
+/* creating a node */
+    int len;
+    kmlFlexToken *tok = (kmlFlexToken *) tag;
+    kmlNodePtr n = malloc (sizeof (kmlNode));
+    len = strlen (tok->value);
+    n->Tag = malloc (len + 1);
+    strcpy (n->Tag, tok->value);
+    n->Type = KML_PARSER_OPEN_NODE;
+    n->Error = 0;
+    n->Attributes = attributes;
+    n->Coordinates = coords;
+    n->Next = NULL;
+    return n;
+}
+
+static kmlNodePtr
+kml_createSelfClosedNode (void *tag, void *attributes)
+{
+/* creating a self-closed node */
+    int len;
+    kmlFlexToken *tok = (kmlFlexToken *) tag;
+    kmlNodePtr n = malloc (sizeof (kmlNode));
+    len = strlen (tok->value);
+    n->Tag = malloc (len + 1);
+    strcpy (n->Tag, tok->value);
+    n->Type = KML_PARSER_SELF_CLOSED_NODE;
+    n->Error = 0;
+    n->Attributes = attributes;
+    n->Coordinates = NULL;
+    n->Next = NULL;
+    return n;
+}
+
+static kmlNodePtr
+kml_closingNode (void *tag)
+{
+/* creating a closing node */
+    int len;
+    kmlFlexToken *tok = (kmlFlexToken *) tag;
+    kmlNodePtr n = malloc (sizeof (kmlNode));
+    len = strlen (tok->value);
+    n->Tag = malloc (len + 1);
+    strcpy (n->Tag, tok->value);
+    n->Type = KML_PARSER_CLOSED_NODE;
+    n->Error = 0;
+    n->Attributes = NULL;
+    n->Coordinates = NULL;
+    n->Next = NULL;
+    return n;
+}
+
+static int
+kml_cleanup (kmlFlexToken * token)
+{
+    kmlFlexToken *ptok;
+    kmlFlexToken *ptok_n;
+    if (token == NULL)
+	return 0;
+    ptok = token;
+    while (ptok)
+      {
+	  ptok_n = ptok->Next;
+	  if (ptok->value != NULL)
+	      free (ptok->value);
+	  free (ptok);
+	  ptok = ptok_n;
+      }
+    return 0;
+}
+
+static void
+kml_xferString (char **p, const char *str)
+{
+/* saving some token */
+    int len;
+    if (str == NULL)
+      {
+	  *p = NULL;
+	  return;
+      }
+    len = strlen (str);
+    *p = malloc (len + 1);
+    strcpy (*p, str);
+}
+
+static int
+guessKmlGeometryType (kmlNodePtr node)
+{
+/* attempting to guess the Geometry Type for a KML node */
+    int type = GAIA_KML_UNKNOWN;
+    if (strcmp (node->Tag, "Point") == 0)
+	type = GAIA_KML_POINT;
+    if (strcmp (node->Tag, "LineString") == 0)
+	type = GAIA_KML_LINESTRING;
+    if (strcmp (node->Tag, "Polygon") == 0)
+	type = GAIA_KML_POLYGON;
+    if (strcmp (node->Tag, "MultiGeometry") == 0)
+	type = GAIA_KML_MULTIGEOMETRY;
+    return type;
+}
+
+static int
+kml_check_coord (const char *value)
+{
+/* checking a KML coordinate */
+    int decimal = 0;
+    const char *p = value;
+    if (*p == '+' || *p == '-')
+	p++;
+    while (*p != '\0')
+      {
+	  if (*p == '.')
 	    {
-		rng = pg->Interiors + ib;
-		if (rng->Points < 4)
+		if (!decimal)
+		    decimal = 1;
+		else
 		    return 0;
 	    }
-	  entities++;
-	  pg = pg->Next;
+	  else if (*p >= '0' && *p <= '9')
+	      ;
+	  else
+	      return 0;
+	  p++;
       }
-    if (!entities)
-	return 0;
+    return 1;
+}
+
+static int
+kml_extract_coords (const char *value, double *x, double *y, double *z,
+		    int *count)
+{
+/* extracting KML coords from a comma-separated string */
+    const char *in = value;
+    char buf[1024];
+    char *out = buf;
+    *out = '\0';
+
+    while (*in != '\0')
+      {
+	  if (*in == ',')
+	    {
+		*out = '\0';
+		if (*buf != '\0')
+		  {
+		      if (!kml_check_coord (buf))
+			  return 0;
+		      switch (*count)
+			{
+			case 0:
+			    *x = atof (buf);
+			    *count += 1;
+			    break;
+			case 1:
+			    *y = atof (buf);
+			    *count += 1;
+			    break;
+			case 2:
+			    *z = atof (buf);
+			    *count += 1;
+			    break;
+			default:
+			    *count += 1;
+			    break;
+			};
+		  }
+		in++;
+		out = buf;
+		*out = '\0';
+		continue;
+	    }
+	  *out++ = *in++;
+      }
+    *out = '\0';
+/* parsing the last item */
+    if (*buf != '\0')
+      {
+	  if (!kml_check_coord (buf))
+	      return 0;
+	  switch (*count)
+	    {
+	    case 0:
+		*x = atof (buf);
+		*count += 1;
+		break;
+	    case 1:
+		*y = atof (buf);
+		*count += 1;
+		break;
+	    case 2:
+		*z = atof (buf);
+		*count += 1;
+		break;
+	    default:
+		*count += 1;
+		break;
+	    };
+      }
+    return 1;
+}
+
+static int
+kml_parse_point_v2 (kmlCoordPtr coord, double *x, double *y, double *z,
+		    int *has_z)
+{
+/* parsing KML <coordinates> [Point] */
+    int count = 0;
+    kmlCoordPtr c = coord;
+    while (c)
+      {
+	  if (!kml_extract_coords (c->Value, x, y, z, &count))
+	      return 0;
+	  c = c->Next;
+      }
+    if (count == 2)
+      {
+	  *has_z = 0;
+	  return 1;
+      }
+    if (count == 3)
+      {
+	  *has_z = 1;
+	  return 1;
+      }
+    return 0;
+}
+
+static int
+kml_parse_point (gaiaGeomCollPtr geom, kmlNodePtr node, kmlNodePtr * next)
+{
+/* parsing a <Point> */
+    double x;
+    double y;
+    double z;
+    int has_z;
+    gaiaGeomCollPtr pt;
+    gaiaGeomCollPtr last;
+
+    if (strcmp (node->Tag, "coordinates") == 0)
+      {
+	  /* parsing a KML <Point> */
+	  if (!kml_parse_point_v2 (node->Coordinates, &x, &y, &z, &has_z))
+	      return 0;
+	  node = node->Next;
+	  if (node == NULL)
+	      return 0;
+	  if (strcmp (node->Tag, "coordinates") == 0)
+	      ;
+	  else
+	      return 0;
+	  node = node->Next;
+	  if (node == NULL)
+	      return 0;
+	  if (strcmp (node->Tag, "Point") == 0)
+	      ;
+	  else
+	      return 0;
+	  *next = node->Next;
+	  goto ok;
+      }
+    return 0;
+
+  ok:
+/* ok, KML nodes match as expected */
+    if (has_z)
+      {
+	  pt = gaiaAllocGeomCollXYZ ();
+	  gaiaAddPointToGeomCollXYZ (pt, x, y, z);
+      }
+    else
+      {
+	  pt = gaiaAllocGeomColl ();
+	  gaiaAddPointToGeomColl (pt, x, y);
+      }
+    last = geom;
+    while (1)
+      {
+	  /* searching the last Geometry within chain */
+	  if (last->Next == NULL)
+	      break;
+	  last = last->Next;
+      }
+    last->Next = pt;
+    return 1;
+}
+
+static int
+kml_extract_multi_coord (const char *value, double *x, double *y, double *z,
+			 int *count, int *follow)
+{
+/* extracting KML coords from a comma-separated string */
+    const char *in = value;
+    char buf[1024];
+    char *out = buf;
+    int last;
+    *out = '\0';
+    while (*in != '\0')
+      {
+	  last = *in;
+	  if (*in == ',')
+	    {
+		*out = '\0';
+		if (*buf != '\0')
+		  {
+		      if (!kml_check_coord (buf))
+			  return 0;
+		      switch (*count)
+			{
+			case 0:
+			    *x = atof (buf);
+			    *count += 1;
+			    break;
+			case 1:
+			    *y = atof (buf);
+			    *count += 1;
+			    break;
+			case 2:
+			    *z = atof (buf);
+			    *count += 1;
+			    break;
+			default:
+			    *count += 1;
+			    break;
+			};
+		  }
+		in++;
+		out = buf;
+		*out = '\0';
+		continue;
+	    }
+	  *out++ = *in++;
+      }
+    *out = '\0';
+/* parsing the last item */
+    if (*buf != '\0')
+      {
+	  if (!kml_check_coord (buf))
+	      return 0;
+	  switch (*count)
+	    {
+	    case 0:
+		*x = atof (buf);
+		*count += 1;
+		break;
+	    case 1:
+		*y = atof (buf);
+		*count += 1;
+		break;
+	    case 2:
+		*z = atof (buf);
+		*count += 1;
+		break;
+	    default:
+		*count += 1;
+		break;
+	    };
+      }
+    if (last == ',')
+	*follow = 1;
+    else
+	*follow = 0;
+    return 1;
+}
+
+static int
+kml_extract_multi_coords (kmlCoordPtr coord, double *x, double *y, double *z,
+			  int *count, kmlCoordPtr * next)
+{
+/* extracting KML coords from a comma-separated string */
+    int follow;
+    kmlCoordPtr c = coord;
+    while (c)
+      {
+	  if (!kml_extract_multi_coord (c->Value, x, y, z, count, &follow))
+	      return 0;
+	  if (!follow && c->Next != NULL)
+	    {
+		if (*(c->Next->Value) == ',')
+		    follow = 1;
+	    }
+	  if (follow)
+	      c = c->Next;
+	  else
+	    {
+		*next = c->Next;
+		break;
+	    }
+      }
+    return 1;
+}
+
+static void
+kml_add_point_to_line (gaiaDynamicLinePtr dyn, double x, double y)
+{
+/* appending a point */
+    gaiaAppendPointToDynamicLine (dyn, x, y);
+}
+
+static void
+kml_add_point_to_lineZ (gaiaDynamicLinePtr dyn, double x, double y, double z)
+{
+/* appending a point */
+    gaiaAppendPointZToDynamicLine (dyn, x, y, z);
+}
+
+static int
+kml_parse_coordinates (kmlCoordPtr coord, gaiaDynamicLinePtr dyn, int *has_z)
+{
+/* parsing KML <coordinates> [Linestring or Ring] */
+    int count = 0;
+    double x;
+    double y;
+    double z;
+    kmlCoordPtr next;
+    kmlCoordPtr c = coord;
+    while (c)
+      {
+	  if (!kml_extract_multi_coords (c, &x, &y, &z, &count, &next))
+	      return 0;
+	  if (count == 2)
+	    {
+		*has_z = 0;
+		kml_add_point_to_line (dyn, x, y);
+		count = 0;
+	    }
+	  else if (count == 3)
+	    {
+		kml_add_point_to_lineZ (dyn, x, y, z);
+		count = 0;
+	    }
+	  else
+	      return 0;
+	  c = next;
+      }
+    return 1;
+}
+
+static int
+kml_count_dyn_points (gaiaDynamicLinePtr dyn)
+{
+/* count how many vertices are into sone linestring/ring */
+    int iv = 0;
+    gaiaPointPtr pt = dyn->First;
+    while (pt)
+      {
+	  iv++;
+	  pt = pt->Next;
+      }
+    return iv;
+}
+
+static int
+kml_parse_linestring (gaiaGeomCollPtr geom, kmlNodePtr node, kmlNodePtr * next)
+{
+/* parsing a <LineString> */
+    gaiaGeomCollPtr ln;
+    gaiaGeomCollPtr last;
+    gaiaLinestringPtr new_ln;
+    gaiaPointPtr pt;
+    gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
+    int iv;
+    int has_z = 1;
+    int points = 0;
+
+    if (strcmp (node->Tag, "coordinates") == 0)
+      {
+	  /* parsing a KML <LineString> */
+	  if (!kml_parse_coordinates (node->Coordinates, dyn, &has_z))
+	      goto error;
+	  node = node->Next;
+	  if (node == NULL)
+	      goto error;
+	  if (strcmp (node->Tag, "coordinates") == 0)
+	      ;
+	  else
+	      goto error;
+	  node = node->Next;
+	  if (node == NULL)
+	      goto error;
+	  if (strcmp (node->Tag, "LineString") == 0)
+	      ;
+	  else
+	      goto error;
+	  *next = node->Next;
+      }
+
+/* ok, KML nodes match as expected */
+    points = kml_count_dyn_points (dyn);
+    if (points < 2)
+	goto error;
+    if (has_z)
+      {
+	  ln = gaiaAllocGeomCollXYZ ();
+	  new_ln = gaiaAddLinestringToGeomColl (ln, points);
+	  pt = dyn->First;
+	  iv = 0;
+	  while (pt)
+	    {
+		gaiaSetPointXYZ (new_ln->Coords, iv, pt->X, pt->Y, pt->Z);
+		iv++;
+		pt = pt->Next;
+	    }
+      }
+    else
+      {
+	  ln = gaiaAllocGeomColl ();
+	  new_ln = gaiaAddLinestringToGeomColl (ln, points);
+	  pt = dyn->First;
+	  iv = 0;
+	  while (pt)
+	    {
+		gaiaSetPoint (new_ln->Coords, iv, pt->X, pt->Y);
+		iv++;
+		pt = pt->Next;
+	    }
+      }
+    last = geom;
+    while (1)
+      {
+	  /* searching the last Geometry within chain */
+	  if (last->Next == NULL)
+	      break;
+	  last = last->Next;
+      }
+    last->Next = ln;
+    gaiaFreeDynamicLine (dyn);
+    return 1;
+
+  error:
+    gaiaFreeDynamicLine (dyn);
+    return 0;
+}
+
+static gaiaDynamicLinePtr
+kml_parse_ring (kmlNodePtr node, int *interior, int *has_z, kmlNodePtr * next)
+{
+/* parsing a generic KML ring */
+    gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
+    *has_z = 1;
+
+    if (strcmp (node->Tag, "outerBoundaryIs") == 0)
+      {
+	  /* parsing a KML <outerBoundaryIs> */
+	  node = node->Next;
+	  if (node == NULL)
+	      goto error;
+	  if (strcmp (node->Tag, "LinearRing") == 0)
+	      ;
+	  else
+	      goto error;
+	  node = node->Next;
+	  if (node == NULL)
+	      goto error;
+	  if (strcmp (node->Tag, "coordinates") == 0)
+	    {
+		/* parsing a KML <kml:coordinates> */
+		if (!kml_parse_coordinates (node->Coordinates, dyn, has_z))
+		    goto error;
+		node = node->Next;
+		if (node == NULL)
+		    goto error;
+		if (strcmp (node->Tag, "coordinates") == 0)
+		    ;
+		else
+		    goto error;
+	    }
+	  else
+	      goto error;
+	  node = node->Next;
+	  if (node == NULL)
+	      goto error;
+	  if (strcmp (node->Tag, "LinearRing") == 0)
+	      ;
+	  else
+	      goto error;
+	  node = node->Next;
+	  if (node == NULL)
+	      goto error;
+	  if (strcmp (node->Tag, "outerBoundaryIs") == 0)
+	      ;
+	  else
+	      goto error;
+	  *interior = 0;
+	  *next = node->Next;
+	  return dyn;
+      }
+    if (strcmp (node->Tag, "innerBoundaryIs") == 0)
+      {
+	  /* parsing a KML <innerBoundaryIs> */
+	  node = node->Next;
+	  if (node == NULL)
+	      goto error;
+	  if (strcmp (node->Tag, "LinearRing") == 0)
+	      ;
+	  else
+	      goto error;
+	  node = node->Next;
+	  if (node == NULL)
+	      goto error;
+	  if (strcmp (node->Tag, "coordinates") == 0)
+	    {
+		/* parsing a KML <coordinates> */
+		if (!kml_parse_coordinates (node->Coordinates, dyn, has_z))
+		    goto error;
+		node = node->Next;
+		if (node == NULL)
+		    goto error;
+		if (strcmp (node->Tag, "coordinates") == 0)
+		    ;
+		else
+		    goto error;
+	    }
+	  else
+	      goto error;
+	  node = node->Next;
+	  if (node == NULL)
+	      goto error;
+	  if (strcmp (node->Tag, "LinearRing") == 0)
+	      ;
+	  else
+	      goto error;
+	  node = node->Next;
+	  if (node == NULL)
+	      goto error;
+	  if (strcmp (node->Tag, "innerBoundaryIs") == 0)
+	      ;
+	  else
+	      goto error;
+	  *interior = 1;
+	  *next = node->Next;
+	  return dyn;
+      }
+
+  error:
+    gaiaFreeDynamicLine (dyn);
+    return 0;
+}
+
+static int
+kml_parse_polygon (gaiaGeomCollPtr geom, kmlNodePtr node, kmlNodePtr * next_n)
+{
+/* parsing a <Polygon> */
+    int interior;
+    int has_z;
+    int inners;
+    int outers;
+    int points;
+    int iv;
+    int ib = 0;
+    gaiaGeomCollPtr pg;
+    gaiaGeomCollPtr last_g;
+    gaiaPolygonPtr new_pg;
+    gaiaRingPtr ring;
+    gaiaDynamicLinePtr dyn;
+    gaiaPointPtr pt;
+    gaiaDynamicLinePtr exterior_ring;
+    kmlNodePtr next;
+    kmlDynamicRingPtr dyn_rng;
+    kmlDynamicPolygonPtr dyn_pg = kml_alloc_dyn_polygon ();
+    kmlNodePtr n = node;
+    while (n)
+      {
+	  /* looping on rings */
+	  if (strcmp (n->Tag, "Polygon") == 0)
+	    {
+		*next_n = n->Next;
+		break;
+	    }
+	  dyn = kml_parse_ring (n, &interior, &has_z, &next);
+	  if (dyn == NULL)
+	      goto error;
+	  if (kml_count_dyn_points (dyn) < 4)
+	    {
+		/* cannot be a valid ring */
+		goto error;
+	    }
+	  /* checking if the ring is closed */
+	  if (has_z)
+	    {
+		if (dyn->First->X == dyn->Last->X
+		    && dyn->First->Y == dyn->Last->Y
+		    && dyn->First->Z == dyn->Last->Z)
+		    ;
+		else
+		    goto error;
+	    }
+	  else
+	    {
+		if (dyn->First->X == dyn->Last->X
+		    && dyn->First->Y == dyn->Last->Y)
+		    ;
+		else
+		    goto error;
+	    }
+	  kml_add_polygon_ring (dyn_pg, dyn, interior, has_z);
+	  n = next;
+      }
+/* ok, KML nodes match as expected */
+    inners = 0;
+    outers = 0;
+    has_z = 1;
+    dyn_rng = dyn_pg->first;
+    while (dyn_rng)
+      {
+	  /* verifying the rings collection */
+	  if (dyn_rng->has_z == 0)
+	      has_z = 0;
+	  if (dyn_rng->interior)
+	      inners++;
+	  else
+	    {
+		outers++;
+		points = kml_count_dyn_points (dyn_rng->ring);
+		exterior_ring = dyn_rng->ring;
+	    }
+	  dyn_rng = dyn_rng->next;
+      }
+    if (outers != 1)		/* no exterior ring declared */
+	goto error;
+
+    if (has_z)
+      {
+	  pg = gaiaAllocGeomCollXYZ ();
+	  new_pg = gaiaAddPolygonToGeomColl (pg, points, inners);
+	  /* initializing the EXTERIOR RING */
+	  ring = new_pg->Exterior;
+	  pt = exterior_ring->First;
+	  iv = 0;
+	  while (pt)
+	    {
+		gaiaSetPointXYZ (ring->Coords, iv, pt->X, pt->Y, pt->Z);
+		iv++;
+		pt = pt->Next;
+	    }
+	  dyn_rng = dyn_pg->first;
+	  while (dyn_rng)
+	    {
+		/* initializing any INTERIOR RING */
+		if (dyn_rng->interior == 0)
+		  {
+		      dyn_rng = dyn_rng->next;
+		      continue;
+		  }
+		points = kml_count_dyn_points (dyn_rng->ring);
+		ring = gaiaAddInteriorRing (new_pg, ib, points);
+		ib++;
+		pt = dyn_rng->ring->First;
+		iv = 0;
+		while (pt)
+		  {
+		      gaiaSetPointXYZ (ring->Coords, iv, pt->X, pt->Y, pt->Z);
+		      iv++;
+		      pt = pt->Next;
+		  }
+		dyn_rng = dyn_rng->next;
+	    }
+      }
+    else
+      {
+	  pg = gaiaAllocGeomColl ();
+	  new_pg = gaiaAddPolygonToGeomColl (pg, points, inners);
+	  /* initializing the EXTERIOR RING */
+	  ring = new_pg->Exterior;
+	  pt = exterior_ring->First;
+	  iv = 0;
+	  while (pt)
+	    {
+		gaiaSetPoint (ring->Coords, iv, pt->X, pt->Y);
+		iv++;
+		pt = pt->Next;
+	    }
+	  dyn_rng = dyn_pg->first;
+	  while (dyn_rng)
+	    {
+		/* initializing any INTERIOR RING */
+		if (dyn_rng->interior == 0)
+		  {
+		      dyn_rng = dyn_rng->next;
+		      continue;
+		  }
+		points = kml_count_dyn_points (dyn_rng->ring);
+		ring = gaiaAddInteriorRing (new_pg, ib, points);
+		ib++;
+		pt = dyn_rng->ring->First;
+		iv = 0;
+		while (pt)
+		  {
+		      gaiaSetPoint (ring->Coords, iv, pt->X, pt->Y);
+		      iv++;
+		      pt = pt->Next;
+		  }
+		dyn_rng = dyn_rng->next;
+	    }
+      }
+
+    last_g = geom;
+    while (1)
+      {
+	  /* searching the last Geometry within chain */
+	  if (last_g->Next == NULL)
+	      break;
+	  last_g = last_g->Next;
+      }
+    last_g->Next = pg;
+    kml_free_dyn_polygon (dyn_pg);
+    return 1;
+
+  error:
+    kml_free_dyn_polygon (dyn_pg);
+    return 0;
+}
+
+static int
+kml_parse_multi_geometry (gaiaGeomCollPtr geom, kmlNodePtr node)
+{
+/* parsing a <MultiGeometry> */
+    kmlNodePtr next;
+    kmlNodePtr n = node;
+    while (n)
+      {
+	  /* looping on Geometry Members */
+	  if (n->Next == NULL)
+	    {
+		/* verifying the last KML node */
+		if (strcmp (n->Tag, "MultiGeometry") == 0)
+		    break;
+		else
+		    return 0;
+	    }
+	  if (strcmp (n->Tag, "Point") == 0)
+	    {
+		n = n->Next;
+		if (n == NULL)
+		    return 0;
+		if (!kml_parse_point (geom, n, &next))
+		    return 0;
+		n = next;
+		continue;
+	    }
+	  else if (strcmp (n->Tag, "LineString") == 0)
+	    {
+		n = n->Next;
+		if (n == NULL)
+		    return 0;
+		if (!kml_parse_linestring (geom, n, &next))
+		    return 0;
+		n = next;
+		continue;
+	    }
+	  else if (strcmp (n->Tag, "Polygon") == 0)
+	    {
+		n = n->Next;
+		if (n == NULL)
+		    return 0;
+		if (!kml_parse_polygon (geom, n, &next))
+		    return 0;
+		n = next;
+		continue;
+	    }
+	  else
+	      return 0;
+      }
     return 1;
 }
 
 static gaiaGeomCollPtr
-gaiaKmlGeometryFromPoint (gaiaPointPtr point)
+kml_validate_geometry (gaiaGeomCollPtr chain)
 {
-/* builds a GEOMETRY containing a POINT */
-    gaiaGeomCollPtr geom = NULL;
-    geom = gaiaAllocGeomColl ();
-    geom->DeclaredType = GAIA_POINT;
-    geom->Srid = 4326;
-    gaiaAddPointToGeomColl (geom, point->X, point->Y);
-    gaiaFreePoint (point);
-    return geom;
-}
+    int xy = 0;
+    int xyz = 0;
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    gaiaPointPtr save_pt;
+    gaiaLinestringPtr save_ln;
+    gaiaPolygonPtr save_pg;
+    gaiaRingPtr i_ring;
+    gaiaRingPtr o_ring;
+    int ib;
+    gaiaGeomCollPtr g;
+    gaiaGeomCollPtr geom;
 
-static gaiaGeomCollPtr
-gaiaKmlGeometryFromLinestring (gaiaLinestringPtr line)
-{
-/* builds a GEOMETRY containing a LINESTRING */
-    gaiaGeomCollPtr geom = NULL;
-    gaiaLinestringPtr line2;
-    int iv;
-    double x;
-    double y;
-    geom = gaiaAllocGeomColl ();
-    geom->DeclaredType = GAIA_LINESTRING;
-    geom->Srid = 4326;
-    line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
-    for (iv = 0; iv < line2->Points; iv++)
+    g = chain;
+    while (g)
       {
-	  /* sets the POINTS for the exterior ring */
-	  gaiaGetPoint (line->Coords, iv, &x, &y);
-	  gaiaSetPoint (line2->Coords, iv, x, y);
+	  if (g != chain)
+	    {
+		if (g->DimensionModel == GAIA_XY)
+		    xy++;
+		if (g->DimensionModel == GAIA_XY_Z)
+		    xyz++;
+	    }
+	  pt = g->FirstPoint;
+	  while (pt)
+	    {
+		pts++;
+		save_pt = pt;
+		pt = pt->Next;
+	    }
+	  ln = g->FirstLinestring;
+	  while (ln)
+	    {
+		lns++;
+		save_ln = ln;
+		ln = ln->Next;
+	    }
+	  pg = g->FirstPolygon;
+	  while (pg)
+	    {
+		pgs++;
+		save_pg = pg;
+		pg = pg->Next;
+	    }
+	  g = g->Next;
       }
-    gaiaFreeLinestring (line);
-    return geom;
-}
-
-static gaiaPointPtr
-kml_point_xy (double *x, double *y)
-{
-    return gaiaAllocPoint (*x, *y);
-}
-
-/*
- * Builds a geometry collection from a point. The geometry collection should contain only one element ? the point. 
- * The correct geometry type must be *decided based on the point type. The parser should call this function when the 
- * ?POINT? WKT expression is encountered.
- * Parameter point is a pointer to a 2D, 3D, 2D with an m value, or 4D with an m value point.
- * Returns a geometry collection containing the point. The geometry must have FirstPoint and LastPoint  pointing to the
- * same place as point.  *DimensionModel must be the same as the model of the point and DimensionType must be GAIA_TYPE_POINT.
- */
-static gaiaGeomCollPtr
-kml_buildGeomFromPoint (gaiaPointPtr point)
-{
-    switch (point->DimensionModel)
+    if (pts == 1 && lns == 0 && pgs == 0)
       {
-      case GAIA_XY:
-	  return gaiaKmlGeometryFromPoint (point);
-	  break;
-      }
-    return NULL;
-}
-
-/* 
- * Creates a 2D (xy) linestring from a list of 2D points.
- *
- * Parameter first is a gaiaPointPtr to the first point in a linked list of points which define the linestring.
- * All of the points in the list must be 2D (xy) points. There must be at least 2 points in the list.
- *
- * Returns a pointer to linestring containing all of the points in the list.
- */
-static gaiaLinestringPtr
-kml_linestring_xy (gaiaPointPtr first)
-{
-    gaiaPointPtr p = first;
-    gaiaPointPtr p_n;
-    int points = 0;
-    int i = 0;
-    gaiaLinestringPtr linestring;
-
-    while (p != NULL)
-      {
-	  p = p->Next;
-	  points++;
-      }
-
-    linestring = gaiaAllocLinestring (points);
-
-    p = first;
-    while (p != NULL)
-      {
-	  gaiaSetPoint (linestring->Coords, i, p->X, p->Y);
-	  p_n = p->Next;
-	  gaiaFreePoint (p);
-	  p = p_n;
-	  i++;
-      }
-
-    return linestring;
-}
-
-/*
- * Builds a geometry collection from a linestring.
- */
-static gaiaGeomCollPtr
-kml_buildGeomFromLinestring (gaiaLinestringPtr line)
-{
-    switch (line->DimensionModel)
-      {
-      case GAIA_XY:
-	  return gaiaKmlGeometryFromLinestring (line);
-	  break;
-      }
-    return NULL;
-}
-
-/*
- * Helper function that determines the number of points in the linked list.
- */
-static int
-kml_count_points (gaiaPointPtr first)
-{
-    /* Counts the number of points in the ring. */
-    gaiaPointPtr p = first;
-    int numpoints = 0;
-    while (p != NULL)
-      {
-	  numpoints++;
-	  p = p->Next;
-      }
-    return numpoints;
-}
-
-/*
- * Creates a 2D (xy) ring in SpatiaLite
- *
- * first is a gaiaPointPtr to the first point in a linked list of points which define the polygon.
- * All of the points given to the function are 2D (xy) points. There will be at least 4 points in the list.
- *
- * Returns the ring defined by the points given to the function.
- */
-static gaiaRingPtr
-kml_ring_xy (gaiaPointPtr first)
-{
-    gaiaPointPtr p = first;
-    gaiaPointPtr p_n;
-    gaiaRingPtr ring = NULL;
-    int numpoints;
-    int index;
-
-    /* If no pointers are given, return. */
-    if (first == NULL)
-	return NULL;
-
-    /* Counts the number of points in the ring. */
-    numpoints = kml_count_points (first);
-    if (numpoints < 4)
-	return NULL;
-
-    /* Creates and allocates a ring structure. */
-    ring = gaiaAllocRing (numpoints);
-    if (ring == NULL)
-	return NULL;
-
-    /* Adds every point into the ring structure. */
-    p = first;
-    for (index = 0; index < numpoints; index++)
-      {
-	  gaiaSetPoint (ring->Coords, index, p->X, p->Y);
-	  p_n = p->Next;
-	  gaiaFreePoint (p);
-	  p = p_n;
-      }
-
-    return ring;
-}
-
-/*
- * Helper function that will create any type of polygon (xy, xyz) in SpatiaLite.
- * 
- * first is a gaiaRingPtr to the first ring in a linked list of rings which define the polygon.
- * The first ring in the linked list is the external ring while the rest (if any) are internal rings.
- * All of the rings given to the function are of the same type. There will be at least 1 ring in the list.
- *
- * Returns the polygon defined by the rings given to the function.
- */
-static gaiaPolygonPtr
-kml_polygon_any_type (gaiaRingPtr first)
-{
-    gaiaRingPtr p;
-    gaiaRingPtr p_n;
-    gaiaPolygonPtr polygon;
-    /* If no pointers are given, return. */
-    if (first == NULL)
-	return NULL;
-
-    /* Creates and allocates a polygon structure with the exterior ring. */
-    polygon = gaiaCreatePolygon (first);
-    if (polygon == NULL)
-	return NULL;
-
-    /* Adds all interior rings into the polygon structure. */
-    p = first;
-    while (p != NULL)
-      {
-	  p_n = p->Next;
-	  if (p == first)
-	      gaiaFreeRing (p);
+	  /* POINT */
+	  if (xy > 0)
+	    {
+		/* 2D [XY] */
+		geom = gaiaAllocGeomColl ();
+		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+		    geom->DeclaredType = GAIA_MULTIPOINT;
+		else
+		    geom->DeclaredType = GAIA_POINT;
+		gaiaAddPointToGeomColl (geom, save_pt->X, save_pt->Y);
+		return geom;
+	    }
 	  else
-	      gaiaAddRingToPolyg (polygon, p);
-	  p = p_n;
+	    {
+		/* 3D [XYZ] */
+		geom = gaiaAllocGeomCollXYZ ();
+		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+		    geom->DeclaredType = GAIA_MULTIPOINT;
+		else
+		    geom->DeclaredType = GAIA_POINT;
+		gaiaAddPointToGeomCollXYZ (geom, save_pt->X, save_pt->Y,
+					   save_pt->Z);
+		return geom;
+	    }
       }
-
-    return polygon;
-}
-
-/* 
- * Creates a 2D (xy) polygon in SpatiaLite
- *
- * first is a gaiaRingPtr to the first ring in a linked list of rings which define the polygon.
- * The first ring in the linked list is the external ring while the rest (if any) are internal rings.
- * All of the rings given to the function are 2D (xy) rings. There will be at least 1 ring in the list.
- *
- * Returns the polygon defined by the rings given to the function.
- */
-static gaiaPolygonPtr
-kml_polygon_xy (gaiaRingPtr first)
-{
-    return kml_polygon_any_type (first);
-}
-
-/*
- * Builds a geometry collection from a polygon.
- * NOTE: This function may already be implemented in the SpatiaLite code base. If it is, make sure that we
- *              can use it (ie. it doesn't use any other variables or anything else set by Sandro's parser). If you find
- *              that we can use an existing function then ignore this one.
- */
-static gaiaGeomCollPtr
-kml_buildGeomFromPolygon (gaiaPolygonPtr polygon)
-{
-    gaiaGeomCollPtr geom = NULL;
-
-    /* If no pointers are given, return. */
-    if (polygon == NULL)
+    if (pts == 0 && lns == 1 && pgs == 0)
       {
-	  return NULL;
+	  /* LINESTRING */
+	  if (xy > 0)
+	    {
+		/* 2D [XY] */
+		geom = gaiaAllocGeomColl ();
+	    }
+	  else
+	    {
+		/* 3D [XYZ] */
+		geom = gaiaAllocGeomCollXYZ ();
+	    }
+	  if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      geom->DeclaredType = GAIA_MULTILINESTRING;
+	  else
+	      geom->DeclaredType = GAIA_LINESTRING;
+	  ln = gaiaAddLinestringToGeomColl (geom, save_ln->Points);
+	  gaiaCopyLinestringCoords (ln, save_ln);
+	  return geom;
       }
-
-    /* Creates and allocates a geometry collection containing a multipoint. */
-    switch (polygon->DimensionModel)
+    if (pts == 0 && lns == 0 && pgs == 1)
       {
-      case GAIA_XY:
-	  geom = gaiaAllocGeomColl ();
-	  geom->Srid = 4326;
-	  break;
+	  /* POLYGON */
+	  if (xy > 0)
+	    {
+		/* 2D [XY] */
+		geom = gaiaAllocGeomColl ();
+	    }
+	  else
+	    {
+		/* 3D [XYZ] */
+		geom = gaiaAllocGeomCollXYZ ();
+	    }
+	  if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      geom->DeclaredType = GAIA_MULTIPOLYGON;
+	  else
+	      geom->DeclaredType = GAIA_POLYGON;
+	  i_ring = save_pg->Exterior;
+	  pg = gaiaAddPolygonToGeomColl (geom, i_ring->Points,
+					 save_pg->NumInteriors);
+	  o_ring = pg->Exterior;
+	  gaiaCopyRingCoords (o_ring, i_ring);
+	  for (ib = 0; ib < save_pg->NumInteriors; ib++)
+	    {
+		i_ring = save_pg->Interiors + ib;
+		o_ring = gaiaAddInteriorRing (pg, ib, i_ring->Points);
+		gaiaCopyRingCoords (o_ring, i_ring);
+	    }
+	  return geom;
       }
-    if (geom == NULL)
+    if (pts >= 1 && lns == 0 && pgs == 0)
       {
-	  return NULL;
+	  /* MULTIPOINT */
+	  if (xy > 0)
+	    {
+		/* 2D [XY] */
+		geom = gaiaAllocGeomColl ();
+		geom->DeclaredType = GAIA_MULTIPOINT;
+		g = chain;
+		while (g)
+		  {
+		      pt = g->FirstPoint;
+		      while (pt)
+			{
+			    gaiaAddPointToGeomColl (geom, pt->X, pt->Y);
+			    pt = pt->Next;
+			}
+		      g = g->Next;
+		  }
+		return geom;
+	    }
+	  else
+	    {
+		/* 3D [XYZ] */
+		geom = gaiaAllocGeomCollXYZ ();
+		geom->DeclaredType = GAIA_MULTIPOINT;
+		g = chain;
+		while (g)
+		  {
+		      pt = g->FirstPoint;
+		      while (pt)
+			{
+			    gaiaAddPointToGeomCollXYZ (geom, pt->X, pt->Y,
+						       pt->Z);
+			    pt = pt->Next;
+			}
+		      g = g->Next;
+		  }
+		return geom;
+	    }
       }
-    geom->DeclaredType = GAIA_POLYGON;
-
-    /* Stores the location of the first and last polygons in the linked list. */
-    geom->FirstPolygon = polygon;
-    while (polygon != NULL)
+    if (pts == 0 && lns >= 1 && pgs == 0)
       {
-	  geom->LastPolygon = polygon;
-	  polygon = polygon->Next;
+	  /* MULTILINESTRING */
+	  if (xy > 0)
+	    {
+		/* 2D [XY] */
+		geom = gaiaAllocGeomColl ();
+		geom->DeclaredType = GAIA_MULTILINESTRING;
+		g = chain;
+		while (g)
+		  {
+		      ln = g->FirstLinestring;
+		      while (ln)
+			{
+			    save_ln =
+				gaiaAddLinestringToGeomColl (geom, ln->Points);
+			    gaiaCopyLinestringCoords (save_ln, ln);
+			    ln = ln->Next;
+			}
+		      g = g->Next;
+		  }
+		return geom;
+	    }
+	  else
+	    {
+		/* 3D [XYZ] */
+		geom = gaiaAllocGeomCollXYZ ();
+		geom->DeclaredType = GAIA_MULTILINESTRING;
+		g = chain;
+		while (g)
+		  {
+		      ln = g->FirstLinestring;
+		      while (ln)
+			{
+			    save_ln =
+				gaiaAddLinestringToGeomColl (geom, ln->Points);
+			    gaiaCopyLinestringCoords (save_ln, ln);
+			    ln = ln->Next;
+			}
+		      g = g->Next;
+		  }
+		return geom;
+	    }
       }
-    return geom;
+    if (pts == 0 && lns == 0 && pgs >= 1)
+      {
+	  /* MULTIPOLYGON */
+	  if (xy > 0)
+	    {
+		/* 2D [XY] */
+		geom = gaiaAllocGeomColl ();
+		geom->DeclaredType = GAIA_MULTIPOLYGON;
+		g = chain;
+		while (g)
+		  {
+		      pg = g->FirstPolygon;
+		      while (pg)
+			{
+			    i_ring = pg->Exterior;
+			    save_pg =
+				gaiaAddPolygonToGeomColl (geom, i_ring->Points,
+							  pg->NumInteriors);
+			    o_ring = save_pg->Exterior;
+			    gaiaCopyRingCoords (o_ring, i_ring);
+			    for (ib = 0; ib < pg->NumInteriors; ib++)
+			      {
+				  i_ring = pg->Interiors + ib;
+				  o_ring =
+				      gaiaAddInteriorRing (save_pg, ib,
+							   i_ring->Points);
+				  gaiaCopyRingCoords (o_ring, i_ring);
+			      }
+			    pg = pg->Next;
+			}
+		      g = g->Next;
+		  }
+		return geom;
+	    }
+	  else
+	    {
+		/* 3D [XYZ] */
+		geom = gaiaAllocGeomCollXYZ ();
+		geom->DeclaredType = GAIA_MULTIPOLYGON;
+		g = chain;
+		while (g)
+		  {
+		      pg = g->FirstPolygon;
+		      while (pg)
+			{
+			    i_ring = pg->Exterior;
+			    save_pg =
+				gaiaAddPolygonToGeomColl (geom, i_ring->Points,
+							  pg->NumInteriors);
+			    o_ring = save_pg->Exterior;
+			    gaiaCopyRingCoords (o_ring, i_ring);
+			    for (ib = 0; ib < pg->NumInteriors; ib++)
+			      {
+				  i_ring = pg->Interiors + ib;
+				  o_ring =
+				      gaiaAddInteriorRing (save_pg, ib,
+							   i_ring->Points);
+				  gaiaCopyRingCoords (o_ring, i_ring);
+			      }
+			    pg = pg->Next;
+			}
+		      g = g->Next;
+		  }
+		return geom;
+	    }
+      }
+    if ((pts + lns + pgs) > 0)
+      {
+	  /* GEOMETRYCOLLECTION */
+	  if (xy > 0)
+	    {
+		/* 2D [XY] */
+		geom = gaiaAllocGeomColl ();
+		geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+		g = chain;
+		while (g)
+		  {
+		      pt = g->FirstPoint;
+		      while (pt)
+			{
+			    gaiaAddPointToGeomColl (geom, pt->X, pt->Y);
+			    pt = pt->Next;
+			}
+		      ln = g->FirstLinestring;
+		      while (ln)
+			{
+			    save_ln =
+				gaiaAddLinestringToGeomColl (geom, ln->Points);
+			    gaiaCopyLinestringCoords (save_ln, ln);
+			    ln = ln->Next;
+			}
+		      pg = g->FirstPolygon;
+		      while (pg)
+			{
+			    i_ring = pg->Exterior;
+			    save_pg =
+				gaiaAddPolygonToGeomColl (geom, i_ring->Points,
+							  pg->NumInteriors);
+			    o_ring = save_pg->Exterior;
+			    gaiaCopyRingCoords (o_ring, i_ring);
+			    for (ib = 0; ib < pg->NumInteriors; ib++)
+			      {
+				  i_ring = pg->Interiors + ib;
+				  o_ring =
+				      gaiaAddInteriorRing (save_pg, ib,
+							   i_ring->Points);
+				  gaiaCopyRingCoords (o_ring, i_ring);
+			      }
+			    pg = pg->Next;
+			}
+		      g = g->Next;
+		  }
+		return geom;
+	    }
+	  else
+	    {
+		/* 3D [XYZ] */
+		geom = gaiaAllocGeomCollXYZ ();
+		geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+		g = chain;
+		while (g)
+		  {
+		      pt = g->FirstPoint;
+		      while (pt)
+			{
+			    gaiaAddPointToGeomCollXYZ (geom, pt->X, pt->Y,
+						       pt->Z);
+			    pt = pt->Next;
+			}
+		      ln = g->FirstLinestring;
+		      while (ln)
+			{
+			    save_ln =
+				gaiaAddLinestringToGeomColl (geom, ln->Points);
+			    gaiaCopyLinestringCoords (save_ln, ln);
+			    ln = ln->Next;
+			}
+		      pg = g->FirstPolygon;
+		      while (pg)
+			{
+			    i_ring = pg->Exterior;
+			    save_pg =
+				gaiaAddPolygonToGeomColl (geom, i_ring->Points,
+							  pg->NumInteriors);
+			    o_ring = save_pg->Exterior;
+			    gaiaCopyRingCoords (o_ring, i_ring);
+			    for (ib = 0; ib < pg->NumInteriors; ib++)
+			      {
+				  i_ring = pg->Interiors + ib;
+				  o_ring =
+				      gaiaAddInteriorRing (save_pg, ib,
+							   i_ring->Points);
+				  gaiaCopyRingCoords (o_ring, i_ring);
+			      }
+			    pg = pg->Next;
+			}
+		      g = g->Next;
+		  }
+		return geom;
+	    }
+      }
+    return NULL;
 }
 
 static void
-kml_geomColl_common (gaiaGeomCollPtr org, gaiaGeomCollPtr dst)
+kml_free_geom_chain (gaiaGeomCollPtr geom)
 {
-/* 
-/ helper function: xfers entities between the Origin and Destination 
-/ Sandro Furieri: 2010 October 12
-*/
-    gaiaGeomCollPtr p = org;
-    gaiaGeomCollPtr p_n;
-    gaiaPointPtr pt;
-    gaiaPointPtr pt_n;
-    gaiaLinestringPtr ln;
-    gaiaLinestringPtr ln_n;
-    gaiaPolygonPtr pg;
-    gaiaPolygonPtr pg_n;
-	int pts = 0;
-	int lns = 0;
-	int pgs = 0;
-    while (p)
+/* deleting a chain of preliminary geometries */
+    gaiaGeomCollPtr gn;
+    while (geom)
       {
-	  pt = p->FirstPoint;
-	  while (pt)
-	    {
-		pt_n = pt->Next;
-		pt->Next = NULL;
-		if (dst->FirstPoint == NULL)
-		    dst->FirstPoint = pt;
-		if (dst->LastPoint != NULL)
-		    dst->LastPoint->Next = pt;
-		dst->LastPoint = pt;
-		pt = pt_n;
-		pts++;
-	    }
-	  ln = p->FirstLinestring;
-	  while (ln)
-	    {
-		ln_n = ln->Next;
-		ln->Next = NULL;
-		if (dst->FirstLinestring == NULL)
-		    dst->FirstLinestring = ln;
-		if (dst->LastLinestring != NULL)
-		    dst->LastLinestring->Next = ln;
-		dst->LastLinestring = ln;
-		ln = ln_n;
-		lns++;
-	    }
-	  pg = p->FirstPolygon;
-	  while (pg)
-	    {
-		pg_n = pg->Next;
-		pg->Next = NULL;
-		if (dst->FirstPolygon == NULL)
-		    dst->FirstPolygon = pg;
-		if (dst->LastPolygon != NULL)
-		    dst->LastPolygon->Next = pg;
-		dst->LastPolygon = pg;
-		pg = pg_n;
-		pgs++;
-	    }
-	  p_n = p->Next;
-	  p->FirstPoint = NULL;
-	  p->LastPoint = NULL;
-	  p->FirstLinestring = NULL;
-	  p->LastLinestring = NULL;
-	  p->FirstPolygon = NULL;
-	  p->LastPolygon = NULL;
-	  gaiaFreeGeomColl (p);
-	  p = p_n;
+	  gn = geom->Next;
+	  gaiaFreeGeomColl (geom);
+	  geom = gn;
       }
-	  
-/* attempting to guess the Geometry Type */
-	if (pts > 0 && lns == 0 && pgs == 0)
-	{
-		dst->DeclaredType = GAIA_MULTIPOINT;
-		return;
-	}
-	if (pts == 0 && lns > 0 && pgs == 0)
-	{
-		dst->DeclaredType = GAIA_MULTILINESTRING;
-		return;
-	}
-	if (pts == 0 && lns == 0 && pgs > 0)
-	{
-		dst->DeclaredType = GAIA_MULTIPOLYGON;
-		return;
-	}
-	dst->DeclaredType = GAIA_GEOMETRYCOLLECTION;
 }
 
-/* Creates a 2D (xy) geometry collection in SpatiaLite
- *
- * first is the first geometry collection in a linked list of geometry collections.
- * Each geometry collection represents a single type of object (eg. one could be a POINT, 
- * another could be a LINESTRING, another could be a MULTILINESTRING, etc.).
- *
- * The type of object represented by any geometry collection is stored in the declaredType 
- * field of its struct. For example, if first->declaredType = GAIA_POINT, then first represents a point.
- * If first->declaredType = GAIA_MULTIPOINT, then first represents a multipoint.
- *
- * NOTE: geometry collections cannot contain other geometry collections (have to confirm this 
- * with Sandro).
- *
- * The goal of this function is to take the information from all of the structs in the linked list and 
- * return one geomColl struct containing all of that information.
- *
- * The integers used for 'declaredType' are defined in gaiageo.h. In this function, the only values 
- * contained in 'declaredType' that will be encountered will be:
- *
- *	GAIA_POINT, GAIA_LINESTRING, GAIA_POLYGON, 
- *	GAIA_MULTIPOINT, GAIA_MULTILINESTRING, GAIA_MULTIPOLYGON
- */
 static gaiaGeomCollPtr
-kml_geomColl_xy (gaiaGeomCollPtr first)
+kml_build_geometry (kmlNodePtr tree)
 {
-    gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
-    if (geom == NULL)
+/* attempting to build a geometry from KML nodes */
+    gaiaGeomCollPtr geom;
+    gaiaGeomCollPtr result;
+    int geom_type;
+    kmlNodePtr next;
+
+    if (tree == NULL)
 	return NULL;
-    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
-    geom->DimensionModel = GAIA_XY;
-    geom->Srid = 4326;
-    kml_geomColl_common (first, geom);
-    return geom;
+    geom_type = guessKmlGeometryType (tree);
+    if (geom_type == GAIA_KML_UNKNOWN)
+      {
+	  /* unsupported main geometry type */
+	  return NULL;
+      }
+/* creating the main geometry */
+    geom = gaiaAllocGeomColl ();
+
+    switch (geom_type)
+      {
+	  /* parsing KML nodes accordingly with declared KML type */
+      case GAIA_KML_POINT:
+	  geom->DeclaredType = GAIA_POINT;
+	  if (!kml_parse_point (geom, tree->Next, &next))
+	      goto error;
+	  break;
+      case GAIA_KML_LINESTRING:
+	  geom->DeclaredType = GAIA_LINESTRING;
+	  if (!kml_parse_linestring (geom, tree->Next, &next))
+	      goto error;
+	  break;
+      case GAIA_KML_POLYGON:
+	  geom->DeclaredType = GAIA_POLYGON;
+	  if (!kml_parse_polygon (geom, tree->Next, &next))
+	      goto error;
+	  if (next != NULL)
+	      goto error;
+	  break;
+      case GAIA_KML_MULTIGEOMETRY:
+	  geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+	  if (!kml_parse_multi_geometry (geom, tree->Next))
+	      goto error;
+	  break;
+      };
+
+/* attempting to build the final geometry */
+    result = kml_validate_geometry (geom);
+    if (result == NULL)
+	goto error;
+    kml_free_geom_chain (geom);
+    return result;
+
+  error:
+    kml_free_geom_chain (geom);
+    return NULL;
 }
 
 
@@ -559,24 +1673,13 @@ kml_geomColl_xy (gaiaGeomCollPtr first)
  KML_LEMON_H_START - LEMON generated header starts here 
 */
 #define KML_NEWLINE                     1
-#define KML_START_POINT                 2
-#define KML_START_COORDS                3
-#define KML_END_COORDS                  4
-#define KML_END_POINT                   5
-#define KML_COMMA                       6
-#define KML_NUM                         7
-#define KML_START_LINESTRING            8
-#define KML_END_LINESTRING              9
-#define KML_START_POLYGON              10
-#define KML_END_POLYGON                11
-#define KML_START_OUTER                12
-#define KML_START_RING                 13
-#define KML_END_RING                   14
-#define KML_END_OUTER                  15
-#define KML_START_INNER                16
-#define KML_END_INNER                  17
-#define KML_START_MULTI                18
-#define KML_END_MULTI                  19
+#define KML_END                         2
+#define KML_CLOSE                       3
+#define KML_OPEN                        4
+#define KML_KEYWORD                     5
+#define KML_EQ                          6
+#define KML_VALUE                       7
+#define KML_COORD                       8
 /*
  KML_LEMON_H_END - LEMON generated header ends here 
 */
@@ -584,19 +1687,19 @@ kml_geomColl_xy (gaiaGeomCollPtr first)
 
 typedef union
 {
-    double dval;
+    char *pval;
     struct symtab *symp;
 } kml_yystype;
 #define YYSTYPE kml_yystype
 
 
 /* extern YYSTYPE yylval; */
-YYSTYPE kmlLval;
+YYSTYPE KmlLval;
 
 
 
 /*
- KML_LEMON_START - LEMON generated header starts here 
+ KML_LEMON_START - LEMON generated code starts here 
 */
 
 /* Driver template for the LEMON parser generator.
@@ -656,7 +1759,7 @@ YYSTYPE kmlLval;
 **                       defined, then do no error processing.
 */
 #define YYCODETYPE unsigned char
-#define YYNOCODE 41
+#define YYNOCODE 28
 #define YYACTIONTYPE unsigned char
 #define ParseTOKENTYPE void *
 typedef union {
@@ -666,12 +1769,12 @@ typedef union {
 #ifndef YYSTACKDEPTH
 #define YYSTACKDEPTH 1000000
 #endif
-#define ParseARG_SDECL  gaiaGeomCollPtr *result ;
-#define ParseARG_PDECL , gaiaGeomCollPtr *result 
-#define ParseARG_FETCH  gaiaGeomCollPtr *result  = yypParser->result 
+#define ParseARG_SDECL  kmlNodePtr *result ;
+#define ParseARG_PDECL , kmlNodePtr *result 
+#define ParseARG_FETCH  kmlNodePtr *result  = yypParser->result 
 #define ParseARG_STORE yypParser->result  = result 
-#define YYNSTATE 73
-#define YYNRULE 30
+#define YYNSTATE 49
+#define YYNRULE 34
 #define YY_NO_ACTION      (YYNSTATE+YYNRULE+2)
 #define YY_ACCEPT_ACTION  (YYNSTATE+YYNRULE+1)
 #define YY_ERROR_ACTION   (YYNSTATE+YYNRULE)
@@ -741,58 +1844,42 @@ static const YYMINORTYPE yyzerominor = { 0 };
 **  yy_default[]       Default action for each state.
 */
 static const YYACTIONTYPE yy_action[] = {
- /*     0 */    28,   49,   50,   51,   52,   53,   54,   73,   57,   29,
- /*    10 */     3,    7,    8,   15,   32,   33,   34,   16,    4,    5,
- /*    20 */     6,   42,   47,  104,    1,    2,    4,    5,    6,   30,
- /*    30 */    32,   67,    4,    5,    6,   37,    4,    5,    6,   68,
- /*    40 */    62,   22,    4,    5,    6,   69,    4,    5,    6,   70,
- /*    50 */    29,   11,   32,   60,   56,   71,   33,   31,   16,   72,
- /*    60 */    10,   32,   11,   32,   59,   11,   32,   39,   11,   32,
- /*    70 */    44,   36,   17,   19,   32,   20,   32,   21,   32,   12,
- /*    80 */    32,   48,   64,   22,   24,   32,   25,   32,   14,   26,
- /*    90 */    32,   13,   32,   55,    9,   27,   35,   61,   18,   58,
- /*   100 */    38,   40,   23,   66,   45,  105,  105,   41,  105,   43,
- /*   110 */   105,   63,   46,  105,  105,  105,   65,
+ /*     0 */    20,   28,   29,    4,   48,    5,    3,    3,    5,    5,
+ /*    10 */    42,   84,    1,   42,   42,   47,   46,    2,   10,    5,
+ /*    20 */    21,   12,   32,   23,   42,   38,   22,    6,   49,   23,
+ /*    30 */    13,   19,   14,   15,   35,    8,    8,   10,   25,   11,
+ /*    40 */    18,   34,   33,   45,   37,   16,   40,   17,   41,   14,
+ /*    50 */     9,   23,   43,    7,   45,   27,   30,   26,   31,   36,
+ /*    60 */    39,   44,   24,
 };
 static const YYCODETYPE yy_lookahead[] = {
- /*     0 */    23,   24,   25,   26,   27,   28,   29,    0,    7,    2,
- /*    10 */    26,   27,   28,   30,   31,    8,   33,   10,   26,   27,
- /*    20 */    28,   12,   38,   21,   22,   18,   26,   27,   28,   30,
- /*    30 */    31,   39,   26,   27,   28,   16,   26,   27,   28,   39,
- /*    40 */    36,   37,   26,   27,   28,   39,   26,   27,   28,   39,
- /*    50 */     2,   30,   31,   32,   31,   39,    8,    4,   10,   39,
- /*    60 */    30,   31,   30,   31,   32,   30,   31,   32,   30,   31,
- /*    70 */    32,   34,   35,   30,   31,   30,   31,   30,   31,   30,
- /*    80 */    31,    1,   36,   37,   30,   31,   30,   31,    3,   30,
- /*    90 */    31,   30,   31,    5,    3,    6,    4,   11,    3,    9,
- /*   100 */    13,    4,    3,   19,    4,   40,   40,   14,   40,   13,
- /*   110 */    40,   17,   14,   40,   40,   40,   15,
+ /*     0 */    12,   13,   14,   15,   16,   17,   15,   15,   17,   17,
+ /*    10 */    22,   10,   11,   22,   22,   24,   24,   15,   18,   17,
+ /*    20 */     2,    3,    8,    5,   22,   25,    2,    3,    0,    5,
+ /*    30 */    18,   19,    4,   20,   21,   20,   20,   18,    2,    3,
+ /*    40 */     2,   26,   26,    5,   25,   20,   21,   20,   21,    4,
+ /*    50 */    18,    5,   23,   20,    5,    1,    3,   23,    3,    7,
+ /*    60 */     3,    3,    6,
 };
 #define YY_SHIFT_USE_DFLT (-1)
-#define YY_SHIFT_MAX 47
+#define YY_SHIFT_MAX 26
 static const signed char yy_shift_ofst[] = {
- /*     0 */    -1,    7,   48,   48,   48,   48,   48,   48,   48,    1,
- /*    10 */     1,    1,    1,    1,    1,    1,    9,   19,    1,    1,
- /*    20 */     1,    1,   19,    1,    1,    1,    1,    1,   80,   85,
- /*    30 */    53,   88,   89,   91,   92,   90,   86,   87,   95,   97,
- /*    40 */    93,   94,   96,   99,  100,   98,  101,   84,
+ /*     0 */    -1,   28,   45,   45,   45,   18,   14,   14,   14,   46,
+ /*    10 */    46,   14,   14,   24,   38,   14,   14,   14,   49,   36,
+ /*    20 */    54,   53,   55,   56,   52,   57,   58,
 };
-#define YY_REDUCE_USE_DFLT (-24)
-#define YY_REDUCE_MAX 27
+#define YY_REDUCE_USE_DFLT (-13)
+#define YY_REDUCE_MAX 18
 static const signed char yy_reduce_ofst[] = {
- /*     0 */     2,  -23,  -16,   -8,    0,    6,   10,   16,   20,  -17,
- /*    10 */    21,   32,   35,   38,   -1,   30,   37,    4,   43,   45,
- /*    20 */    47,   49,   46,   54,   56,   59,   61,   23,
+ /*     0 */     1,  -12,   -9,   -8,    2,   12,   13,   15,   16,    0,
+ /*    10 */    19,   25,   27,   32,   29,   33,   33,   33,   34,
 };
 static const YYACTIONTYPE yy_default[] = {
- /*     0 */    74,  103,  103,   99,   99,   99,   99,   99,   99,  103,
- /*    10 */    85,   85,   85,   85,  103,  103,  103,   93,  103,  103,
- /*    20 */   103,  103,   93,  103,  103,  103,  103,  103,  103,  103,
- /*    30 */   103,  103,  103,  103,  103,  103,  103,  103,  103,  103,
- /*    40 */   103,  103,  103,  103,  103,  103,  103,  103,   75,   76,
- /*    50 */    77,   78,   79,   80,   81,   82,   83,   84,   87,   86,
- /*    60 */    88,   89,   90,   92,   94,   91,   95,   96,  100,  101,
- /*    70 */   102,   97,   98,
+ /*     0 */    50,   83,   72,   72,   54,   83,   60,   80,   80,   76,
+ /*    10 */    76,   61,   59,   83,   83,   64,   66,   62,   83,   83,
+ /*    20 */    83,   83,   83,   83,   83,   83,   83,   51,   52,   53,
+ /*    30 */    56,   57,   79,   81,   82,   65,   75,   77,   78,   58,
+ /*    40 */    67,   63,   68,   69,   70,   71,   73,   74,   55,
 };
 #define YY_SZ_ACTTAB (int)(sizeof(yy_action)/sizeof(yy_action[0]))
 
@@ -886,16 +1973,13 @@ void ParseTrace(FILE *TraceFILE, char *zTracePrompt){
 /* For tracing shifts, the names of all terminals and nonterminals
 ** are required.  The following table supplies these names */
 static const char *const yyTokenName[] = { 
-  "$",             "KML_NEWLINE",   "KML_START_POINT",  "KML_START_COORDS",
-  "KML_END_COORDS",  "KML_END_POINT",  "KML_COMMA",     "KML_NUM",     
-  "KML_START_LINESTRING",  "KML_END_LINESTRING",  "KML_START_POLYGON",  "KML_END_POLYGON",
-  "KML_START_OUTER",  "KML_START_RING",  "KML_END_RING",  "KML_END_OUTER",
-  "KML_START_INNER",  "KML_END_INNER",  "KML_START_MULTI",  "KML_END_MULTI",
-  "error",         "main",          "in",            "state",       
-  "program",       "geo_text",      "point",         "linestring",  
-  "polygon",       "geocoll",       "point_coordxy",  "coord",       
-  "extra_pointsxy",  "linestring_text",  "polygon_text",  "outer_ring",  
-  "inner_rings",   "inner_ring",    "geocoll_text",  "geocoll_text2",
+  "$",             "KML_NEWLINE",   "KML_END",       "KML_CLOSE",   
+  "KML_OPEN",      "KML_KEYWORD",   "KML_EQ",        "KML_VALUE",   
+  "KML_COORD",     "error",         "main",          "in",          
+  "state",         "program",       "kml_tree",      "node",        
+  "node_chain",    "open_tag",      "attr",          "attributes",  
+  "coord",         "coord_chain",   "close_tag",     "keyword",     
+  "extra_nodes",   "extra_attr",    "extra_coord", 
 };
 #endif /* NDEBUG */
 
@@ -907,32 +1991,36 @@ static const char *const yyRuleName[] = {
  /*   1 */ "in ::=",
  /*   2 */ "in ::= in state KML_NEWLINE",
  /*   3 */ "state ::= program",
- /*   4 */ "program ::= geo_text",
- /*   5 */ "geo_text ::= point",
- /*   6 */ "geo_text ::= linestring",
- /*   7 */ "geo_text ::= polygon",
- /*   8 */ "geo_text ::= geocoll",
- /*   9 */ "point ::= KML_START_POINT KML_START_COORDS point_coordxy KML_END_COORDS KML_END_POINT",
- /*  10 */ "point_coordxy ::= coord KML_COMMA coord",
- /*  11 */ "coord ::= KML_NUM",
- /*  12 */ "extra_pointsxy ::=",
- /*  13 */ "extra_pointsxy ::= point_coordxy extra_pointsxy",
- /*  14 */ "linestring ::= KML_START_LINESTRING KML_START_COORDS linestring_text KML_END_COORDS KML_END_LINESTRING",
- /*  15 */ "linestring_text ::= point_coordxy point_coordxy extra_pointsxy",
- /*  16 */ "polygon ::= KML_START_POLYGON polygon_text KML_END_POLYGON",
- /*  17 */ "polygon_text ::= outer_ring inner_rings",
- /*  18 */ "outer_ring ::= KML_START_OUTER KML_START_RING KML_START_COORDS point_coordxy point_coordxy point_coordxy point_coordxy extra_pointsxy KML_END_COORDS KML_END_RING KML_END_OUTER",
- /*  19 */ "inner_ring ::= KML_START_INNER KML_START_RING KML_START_COORDS point_coordxy point_coordxy point_coordxy point_coordxy extra_pointsxy KML_END_COORDS KML_END_RING KML_END_INNER",
- /*  20 */ "inner_rings ::=",
- /*  21 */ "inner_rings ::= inner_ring inner_rings",
- /*  22 */ "geocoll ::= KML_START_MULTI geocoll_text KML_END_MULTI",
- /*  23 */ "geocoll_text ::= point geocoll_text2",
- /*  24 */ "geocoll_text ::= linestring geocoll_text2",
- /*  25 */ "geocoll_text ::= polygon geocoll_text2",
- /*  26 */ "geocoll_text2 ::=",
- /*  27 */ "geocoll_text2 ::= point geocoll_text2",
- /*  28 */ "geocoll_text2 ::= linestring geocoll_text2",
- /*  29 */ "geocoll_text2 ::= polygon geocoll_text2",
+ /*   4 */ "program ::= kml_tree",
+ /*   5 */ "kml_tree ::= node",
+ /*   6 */ "kml_tree ::= node_chain",
+ /*   7 */ "node ::= open_tag KML_END KML_CLOSE",
+ /*   8 */ "node ::= open_tag attr KML_END KML_CLOSE",
+ /*   9 */ "node ::= open_tag attributes KML_END KML_CLOSE",
+ /*  10 */ "node ::= open_tag KML_CLOSE",
+ /*  11 */ "node ::= open_tag attr KML_CLOSE",
+ /*  12 */ "node ::= open_tag attributes KML_CLOSE",
+ /*  13 */ "node ::= open_tag KML_CLOSE coord",
+ /*  14 */ "node ::= open_tag KML_CLOSE coord_chain",
+ /*  15 */ "node ::= open_tag attr KML_CLOSE coord",
+ /*  16 */ "node ::= open_tag attr KML_CLOSE coord_chain",
+ /*  17 */ "node ::= open_tag attributes KML_CLOSE coord",
+ /*  18 */ "node ::= open_tag attributes KML_CLOSE coord_chain",
+ /*  19 */ "node ::= close_tag",
+ /*  20 */ "open_tag ::= KML_OPEN keyword",
+ /*  21 */ "close_tag ::= KML_OPEN KML_END keyword KML_CLOSE",
+ /*  22 */ "keyword ::= KML_KEYWORD",
+ /*  23 */ "extra_nodes ::=",
+ /*  24 */ "extra_nodes ::= node extra_nodes",
+ /*  25 */ "node_chain ::= node node extra_nodes",
+ /*  26 */ "attr ::= KML_KEYWORD KML_EQ KML_VALUE",
+ /*  27 */ "extra_attr ::=",
+ /*  28 */ "extra_attr ::= attr extra_attr",
+ /*  29 */ "attributes ::= attr attr extra_attr",
+ /*  30 */ "coord ::= KML_COORD",
+ /*  31 */ "extra_coord ::=",
+ /*  32 */ "extra_coord ::= coord extra_coord",
+ /*  33 */ "coord_chain ::= coord coord extra_coord",
 };
 #endif /* NDEBUG */
 
@@ -1239,36 +2327,40 @@ static const struct {
   YYCODETYPE lhs;         /* Symbol on the left-hand side of the rule */
   unsigned char nrhs;     /* Number of right-hand side symbols in the rule */
 } yyRuleInfo[] = {
-  { 21, 1 },
-  { 22, 0 },
-  { 22, 3 },
+  { 10, 1 },
+  { 11, 0 },
+  { 11, 3 },
+  { 12, 1 },
+  { 13, 1 },
+  { 14, 1 },
+  { 14, 1 },
+  { 15, 3 },
+  { 15, 4 },
+  { 15, 4 },
+  { 15, 2 },
+  { 15, 3 },
+  { 15, 3 },
+  { 15, 3 },
+  { 15, 3 },
+  { 15, 4 },
+  { 15, 4 },
+  { 15, 4 },
+  { 15, 4 },
+  { 15, 1 },
+  { 17, 2 },
+  { 22, 4 },
   { 23, 1 },
-  { 24, 1 },
-  { 25, 1 },
-  { 25, 1 },
-  { 25, 1 },
-  { 25, 1 },
-  { 26, 5 },
-  { 30, 3 },
-  { 31, 1 },
-  { 32, 0 },
-  { 32, 2 },
-  { 27, 5 },
-  { 33, 3 },
-  { 28, 3 },
-  { 34, 2 },
-  { 35, 11 },
-  { 37, 11 },
-  { 36, 0 },
-  { 36, 2 },
-  { 29, 3 },
-  { 38, 2 },
-  { 38, 2 },
-  { 38, 2 },
-  { 39, 0 },
-  { 39, 2 },
-  { 39, 2 },
-  { 39, 2 },
+  { 24, 0 },
+  { 24, 2 },
+  { 16, 3 },
+  { 18, 3 },
+  { 25, 0 },
+  { 25, 2 },
+  { 19, 3 },
+  { 20, 1 },
+  { 26, 0 },
+  { 26, 2 },
+  { 21, 3 },
 };
 
 static void yy_accept(yyParser*);  /* Forward Declaration */
@@ -1323,81 +2415,83 @@ static void yy_reduce(
   **  #line <lineno> <thisfile>
   **     break;
   */
-      case 5: /* geo_text ::= point */
-      case 6: /* geo_text ::= linestring */ yytestcase(yyruleno==6);
-      case 7: /* geo_text ::= polygon */ yytestcase(yyruleno==7);
-      case 8: /* geo_text ::= geocoll */ yytestcase(yyruleno==8);
+      case 5: /* kml_tree ::= node */
+      case 6: /* kml_tree ::= node_chain */ yytestcase(yyruleno==6);
 { *result = yymsp[0].minor.yy0; }
         break;
-      case 9: /* point ::= KML_START_POINT KML_START_COORDS point_coordxy KML_END_COORDS KML_END_POINT */
-{ yygotominor.yy0 = kml_buildGeomFromPoint((gaiaPointPtr)yymsp[-2].minor.yy0); }
+      case 7: /* node ::= open_tag KML_END KML_CLOSE */
+{ yygotominor.yy0 = kml_createSelfClosedNode((void *)yymsp[-2].minor.yy0, NULL); }
         break;
-      case 10: /* point_coordxy ::= coord KML_COMMA coord */
-{ yygotominor.yy0 = (void *) kml_point_xy((double *)yymsp[-2].minor.yy0, (double *)yymsp[0].minor.yy0); }
+      case 8: /* node ::= open_tag attr KML_END KML_CLOSE */
+      case 9: /* node ::= open_tag attributes KML_END KML_CLOSE */ yytestcase(yyruleno==9);
+{ yygotominor.yy0 = kml_createSelfClosedNode((void *)yymsp[-3].minor.yy0, (void *)yymsp[-2].minor.yy0); }
         break;
-      case 11: /* coord ::= KML_NUM */
+      case 10: /* node ::= open_tag KML_CLOSE */
+{ yygotominor.yy0 = kml_createNode((void *)yymsp[-1].minor.yy0, NULL, NULL); }
+        break;
+      case 11: /* node ::= open_tag attr KML_CLOSE */
+      case 12: /* node ::= open_tag attributes KML_CLOSE */ yytestcase(yyruleno==12);
+{ yygotominor.yy0 = kml_createNode((void *)yymsp[-2].minor.yy0, (void *)yymsp[-1].minor.yy0, NULL); }
+        break;
+      case 13: /* node ::= open_tag KML_CLOSE coord */
+      case 14: /* node ::= open_tag KML_CLOSE coord_chain */ yytestcase(yyruleno==14);
+{ yygotominor.yy0 = kml_createNode((void *)yymsp[-2].minor.yy0, NULL, (void *)yymsp[0].minor.yy0); }
+        break;
+      case 15: /* node ::= open_tag attr KML_CLOSE coord */
+      case 16: /* node ::= open_tag attr KML_CLOSE coord_chain */ yytestcase(yyruleno==16);
+      case 17: /* node ::= open_tag attributes KML_CLOSE coord */ yytestcase(yyruleno==17);
+      case 18: /* node ::= open_tag attributes KML_CLOSE coord_chain */ yytestcase(yyruleno==18);
+{ yygotominor.yy0 = kml_createNode((void *)yymsp[-3].minor.yy0, (void *)yymsp[-2].minor.yy0, (void *)yymsp[0].minor.yy0); }
+        break;
+      case 19: /* node ::= close_tag */
+{ yygotominor.yy0 = kml_closingNode((void *)yymsp[0].minor.yy0); }
+        break;
+      case 20: /* open_tag ::= KML_OPEN keyword */
+      case 22: /* keyword ::= KML_KEYWORD */ yytestcase(yyruleno==22);
 { yygotominor.yy0 = yymsp[0].minor.yy0; }
         break;
-      case 12: /* extra_pointsxy ::= */
-      case 20: /* inner_rings ::= */ yytestcase(yyruleno==20);
-      case 26: /* geocoll_text2 ::= */ yytestcase(yyruleno==26);
-{ yygotominor.yy0 = NULL; }
-        break;
-      case 13: /* extra_pointsxy ::= point_coordxy extra_pointsxy */
-{ ((gaiaPointPtr)yymsp[-1].minor.yy0)->Next = (gaiaPointPtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
-        break;
-      case 14: /* linestring ::= KML_START_LINESTRING KML_START_COORDS linestring_text KML_END_COORDS KML_END_LINESTRING */
-{ yygotominor.yy0 = kml_buildGeomFromLinestring((gaiaLinestringPtr)yymsp[-2].minor.yy0); }
-        break;
-      case 15: /* linestring_text ::= point_coordxy point_coordxy extra_pointsxy */
-{ 
-	   ((gaiaPointPtr)yymsp[-1].minor.yy0)->Next = (gaiaPointPtr)yymsp[0].minor.yy0; 
-	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
-	   yygotominor.yy0 = (void *) kml_linestring_xy((gaiaPointPtr)yymsp[-2].minor.yy0);
-	}
-        break;
-      case 16: /* polygon ::= KML_START_POLYGON polygon_text KML_END_POLYGON */
-{ yygotominor.yy0 = kml_buildGeomFromPolygon((gaiaPolygonPtr)yymsp[-1].minor.yy0); }
-        break;
-      case 17: /* polygon_text ::= outer_ring inner_rings */
-{ 
-		((gaiaRingPtr)yymsp[-1].minor.yy0)->Next = (gaiaRingPtr)yymsp[0].minor.yy0;
-		yygotominor.yy0 = (void *) kml_polygon_xy((gaiaRingPtr)yymsp[-1].minor.yy0);
-	}
-        break;
-      case 18: /* outer_ring ::= KML_START_OUTER KML_START_RING KML_START_COORDS point_coordxy point_coordxy point_coordxy point_coordxy extra_pointsxy KML_END_COORDS KML_END_RING KML_END_OUTER */
-      case 19: /* inner_ring ::= KML_START_INNER KML_START_RING KML_START_COORDS point_coordxy point_coordxy point_coordxy point_coordxy extra_pointsxy KML_END_COORDS KML_END_RING KML_END_INNER */ yytestcase(yyruleno==19);
-{
-		((gaiaPointPtr)yymsp[-7].minor.yy0)->Next = (gaiaPointPtr)yymsp[-6].minor.yy0; 
-		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-5].minor.yy0;
-		((gaiaPointPtr)yymsp[-5].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0; 
-		((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-3].minor.yy0;
-		yygotominor.yy0 = (void *) kml_ring_xy((gaiaPointPtr)yymsp[-7].minor.yy0);
-	}
-        break;
-      case 21: /* inner_rings ::= inner_ring inner_rings */
-{
-		((gaiaRingPtr)yymsp[-1].minor.yy0)->Next = (gaiaRingPtr)yymsp[0].minor.yy0;
-		yygotominor.yy0 = yymsp[-1].minor.yy0;
-	}
-        break;
-      case 22: /* geocoll ::= KML_START_MULTI geocoll_text KML_END_MULTI */
+      case 21: /* close_tag ::= KML_OPEN KML_END keyword KML_CLOSE */
 { yygotominor.yy0 = yymsp[-1].minor.yy0; }
         break;
-      case 23: /* geocoll_text ::= point geocoll_text2 */
-      case 24: /* geocoll_text ::= linestring geocoll_text2 */ yytestcase(yyruleno==24);
-      case 25: /* geocoll_text ::= polygon geocoll_text2 */ yytestcase(yyruleno==25);
+      case 23: /* extra_nodes ::= */
+      case 27: /* extra_attr ::= */ yytestcase(yyruleno==27);
+      case 31: /* extra_coord ::= */ yytestcase(yyruleno==31);
+{ yygotominor.yy0 = NULL; }
+        break;
+      case 24: /* extra_nodes ::= node extra_nodes */
+{ ((kmlNodePtr)yymsp[-1].minor.yy0)->Next = (kmlNodePtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
+        break;
+      case 25: /* node_chain ::= node node extra_nodes */
 { 
-		((gaiaGeomCollPtr)yymsp[-1].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[0].minor.yy0;
-		yygotominor.yy0 = (void *) kml_geomColl_xy((gaiaGeomCollPtr)yymsp[-1].minor.yy0);
+	   ((kmlNodePtr)yymsp[-1].minor.yy0)->Next = (kmlNodePtr)yymsp[0].minor.yy0; 
+	   ((kmlNodePtr)yymsp[-2].minor.yy0)->Next = (kmlNodePtr)yymsp[-1].minor.yy0;
+	   yygotominor.yy0 = yymsp[-2].minor.yy0;
 	}
         break;
-      case 27: /* geocoll_text2 ::= point geocoll_text2 */
-      case 28: /* geocoll_text2 ::= linestring geocoll_text2 */ yytestcase(yyruleno==28);
-      case 29: /* geocoll_text2 ::= polygon geocoll_text2 */ yytestcase(yyruleno==29);
-{
-		((gaiaGeomCollPtr)yymsp[-1].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[0].minor.yy0;
-		yygotominor.yy0 = yymsp[-1].minor.yy0;
+      case 26: /* attr ::= KML_KEYWORD KML_EQ KML_VALUE */
+{ yygotominor.yy0 = kml_attribute((void *)yymsp[-2].minor.yy0, (void *)yymsp[0].minor.yy0); }
+        break;
+      case 28: /* extra_attr ::= attr extra_attr */
+{ ((kmlAttrPtr)yymsp[-1].minor.yy0)->Next = (kmlAttrPtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
+        break;
+      case 29: /* attributes ::= attr attr extra_attr */
+{ 
+	   ((kmlAttrPtr)yymsp[-1].minor.yy0)->Next = (kmlAttrPtr)yymsp[0].minor.yy0; 
+	   ((kmlAttrPtr)yymsp[-2].minor.yy0)->Next = (kmlAttrPtr)yymsp[-1].minor.yy0;
+	   yygotominor.yy0 = yymsp[-2].minor.yy0;
+	}
+        break;
+      case 30: /* coord ::= KML_COORD */
+{ yygotominor.yy0 = kml_coord((void *)yymsp[0].minor.yy0); }
+        break;
+      case 32: /* extra_coord ::= coord extra_coord */
+{ ((kmlCoordPtr)yymsp[-1].minor.yy0)->Next = (kmlCoordPtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
+        break;
+      case 33: /* coord_chain ::= coord coord extra_coord */
+{ 
+	   ((kmlCoordPtr)yymsp[-1].minor.yy0)->Next = (kmlCoordPtr)yymsp[0].minor.yy0; 
+	   ((kmlCoordPtr)yymsp[-2].minor.yy0)->Next = (kmlCoordPtr)yymsp[-1].minor.yy0;
+	   yygotominor.yy0 = yymsp[-2].minor.yy0;
 	}
         break;
       default:
@@ -1405,7 +2499,7 @@ static void yy_reduce(
       /* (1) in ::= */ yytestcase(yyruleno==1);
       /* (2) in ::= in state KML_NEWLINE */ yytestcase(yyruleno==2);
       /* (3) state ::= program */ yytestcase(yyruleno==3);
-      /* (4) program ::= geo_text */ yytestcase(yyruleno==4);
+      /* (4) program ::= kml_tree */ yytestcase(yyruleno==4);
         break;
   };
   yygoto = yyRuleInfo[yyruleno].lhs;
@@ -2085,8 +3179,8 @@ static void yy_fatal_error (yyconst char msg[]  );
 	*yy_cp = '\0'; \
 	(yy_c_buf_p) = yy_cp;
 
-#define YY_NUM_RULES 22
-#define YY_END_OF_BUFFER 23
+#define YY_NUM_RULES 11
+#define YY_END_OF_BUFFER 12
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -2094,30 +3188,10 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static yyconst flex_int16_t yy_accept[199] =
+static yyconst flex_int16_t yy_accept[19] =
     {   0,
-        0,    0,   23,   21,   19,   20,   21,    2,   21,    1,
-       21,    1,    1,    1,    1,    0,    0,    0,    0,    0,
-        0,    0,    1,    1,    1,    0,    0,    0,    0,    0,
-        0,    0,    0,    0,    0,    0,    0,    1,    1,    0,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        0,    0,    5,    0,    0,    0,    0,    0,    0,    0,
-
-        6,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        0,    0,    9,    0,    0,    0,    0,    0,    0,   10,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        0,    0,    0,    0,    0,    0,    0,    7,   11,    0,
-        0,    0,    0,    8,   12,    0,    0,    0,    0,    0,
-        3,    0,    0,    0,    4,    0,    0,    0,    0,    0,
-        0,    0,    0,   17,    0,    0,   18,    0,    0,    0,
-        0,    0,    0,   15,   13,   16,   14,    0
-
+        5,    5,   12,   10,    8,    9,   10,    5,    1,    3,
+        2,    4,    7,    0,    6,    5,    7,    0
     } ;
 
 static yyconst flex_int32_t yy_ec[256] =
@@ -2125,17 +3199,17 @@ static yyconst flex_int32_t yy_ec[256] =
         1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    2,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    4,    5,    6,    7,    8,    9,    9,    9,
-        9,    9,    9,    9,    9,    9,    9,    1,    1,   10,
-        1,   11,    1,    1,    1,   12,    1,    1,    1,    1,
-       13,    1,   14,    1,    1,   15,   16,    1,    1,   17,
-        1,   18,   19,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,   20,    1,   21,   22,
+        1,    2,    1,    4,    1,    1,    1,    1,    1,    1,
+        1,    1,    5,    5,    5,    5,    6,    7,    7,    7,
+        7,    7,    7,    7,    7,    7,    7,    8,    1,    9,
+       10,   11,    1,    1,   12,   12,   12,   12,   12,   12,
+       12,   12,   12,   12,   12,   12,   12,   12,   12,   12,
+       12,   12,   12,   12,   12,   12,   12,   12,   12,   12,
+        1,    1,    1,    1,   12,    1,   12,   12,   12,   12,
 
-       23,    1,   24,    1,   25,    1,    1,   26,   27,   28,
-       29,    1,    1,   30,   31,   32,   33,    1,    1,    1,
-       34,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+       12,   12,   12,   12,   12,   12,   12,   12,   12,   12,
+       12,   12,   12,   12,   12,   12,   12,   12,   12,   12,
+       12,   12,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -2152,126 +3226,40 @@ static yyconst flex_int32_t yy_ec[256] =
         1,    1,    1,    1,    1
     } ;
 
-static yyconst flex_int32_t yy_meta[35] =
+static yyconst flex_int32_t yy_meta[13] =
+    {   0,
+        1,    1,    1,    1,    2,    1,    3,    4,    5,    1,
+        5,    4
+    } ;
+
+static yyconst flex_int16_t yy_base[22] =
+    {   0,
+        0,    0,   23,   24,   24,   24,   18,    0,   24,   24,
+       24,   24,    0,   17,   24,    0,    0,   24,   12,   15,
+       16
+    } ;
+
+static yyconst flex_int16_t yy_def[22] =
+    {   0,
+       18,    1,   18,   18,   18,   18,   19,   20,   18,   18,
+       18,   18,   21,   19,   18,   20,   21,    0,   18,   18,
+       18
+    } ;
+
+static yyconst flex_int16_t yy_nxt[37] =
+    {   0,
+        4,    5,    6,    7,    8,    9,    8,    4,   10,   11,
+       12,   13,   14,   14,   14,   14,   16,   16,   17,   17,
+       15,   15,   18,    3,   18,   18,   18,   18,   18,   18,
+       18,   18,   18,   18,   18,   18
+    } ;
+
+static yyconst flex_int16_t yy_chk[37] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1
-    } ;
-
-static yyconst flex_int16_t yy_base[200] =
-    {   0,
-        0,    9,  211,  212,  212,  212,  201,  212,  200,   13,
-       15,   17,   18,  199,   26,   30,  182,  173,  176,  175,
-      175,  169,  192,  191,  190,  173,  164,  167,  166,  166,
-      160,  164,  165,    3,  161,  161,  156,  178,  177,  157,
-      158,   12,  154,  154,  149,  157,  147,  150,  143,  146,
-      152,  151,  150,  140,  143,  136,  139,  145,  144,   22,
-      141,  133,  140,  141,  132,  131,   29,  135,  127,  134,
-      135,  126,  125,  122,  123,  139,  140,  121,  124,  136,
-      135,  114,  115,  131,  132,  113,  116,  128,  127,  108,
-      119,  113,  212,  107,  106,  104,  103,  101,  112,  106,
-
-      212,  100,   99,   97,   96,   99,   98,   93,  110,  100,
-       86,   85,   92,   91,   86,  103,   93,   79,   78,   82,
-       81,   81,  212,   75,   78,   77,   76,   75,   75,  212,
-       69,   72,   71,   74,   73,   73,   72,   72,   71,   68,
-       67,   67,   66,   66,   65,   75,   74,   52,   52,   62,
-       61,   69,   68,   46,   46,   56,   55,  212,  212,   44,
-       62,   42,   41,  212,  212,   40,   58,   38,   37,   32,
-      212,   31,   30,   29,  212,   28,   27,   49,   44,   43,
-       45,   40,   39,  212,   21,   19,  212,   12,    8,   23,
-       10,    6,    5,  212,  212,  212,  212,  212,    0
-
-    } ;
-
-static yyconst flex_int16_t yy_def[200] =
-    {   0,
-      199,  199,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,    0,  198
-
-    } ;
-
-static yyconst flex_int16_t yy_nxt[247] =
-    {   0,
-        4,    5,    6,    7,    8,    9,  198,  198,   10,   11,
-        5,    6,    7,    8,    9,  197,  196,   10,   11,   14,
-      195,   15,   16,   23,   24,   12,   13,   48,   49,   17,
-       18,   19,   14,  194,   15,   20,   55,   56,  193,   21,
-       74,   75,  192,   22,   26,   27,   28,   82,   83,  191,
-       29,  190,  189,  188,   30,  187,  186,  185,   31,  184,
-      183,  182,  181,  180,  179,  178,  177,  176,  175,  174,
-      173,  172,  171,  170,  169,  168,  167,  166,  165,  164,
-      163,  162,  161,  160,  159,  158,  157,  156,  155,  154,
-      153,  152,  151,  150,  149,  148,  147,  146,  145,  144,
-
-      143,  142,  141,  140,  139,  138,  137,  136,  135,  134,
-      133,  132,  131,  130,  129,  128,  127,  126,  125,  124,
-      123,  122,  121,  120,  119,  118,  117,  116,  115,  114,
-      113,  112,  111,  110,  109,  108,  107,  106,  105,  104,
-      103,  102,  101,  100,   99,   98,   97,   96,   95,   94,
-       93,   92,   91,   90,   89,   88,   87,   86,   85,   84,
-       81,   80,   79,   78,   77,   76,   73,   72,   71,   70,
-       69,   68,   67,   66,   65,   64,   63,   62,   61,   60,
-       59,   58,   57,   54,   53,   39,   38,   52,   51,   50,
-       47,   46,   45,   44,   43,   42,   41,   40,   25,   39,
-
-       38,   37,   36,   35,   34,   33,   32,   25,   13,   12,
-      198,    3,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198
-    } ;
-
-static yyconst flex_int16_t yy_chk[247] =
-    {   0,
-      199,    1,    1,    1,    1,    1,    0,    0,    1,    1,
-        2,    2,    2,    2,    2,  193,  192,    2,    2,   10,
-      191,   10,   11,   12,   13,   12,   13,   34,   34,   11,
-       11,   11,   15,  190,   15,   11,   42,   42,  189,   11,
-       60,   60,  188,   11,   16,   16,   16,   67,   67,  186,
-       16,  185,  183,  182,   16,  181,  180,  179,   16,  178,
-      177,  176,  174,  173,  172,  170,  169,  168,  167,  166,
-      163,  162,  161,  160,  157,  156,  155,  154,  153,  152,
-      151,  150,  149,  148,  147,  146,  145,  144,  143,  142,
-      141,  140,  139,  138,  137,  136,  135,  134,  133,  132,
-
-      131,  129,  128,  127,  126,  125,  124,  122,  121,  120,
-      119,  118,  117,  116,  115,  114,  113,  112,  111,  110,
-      109,  108,  107,  106,  105,  104,  103,  102,  100,   99,
-       98,   97,   96,   95,   94,   92,   91,   90,   89,   88,
-       87,   86,   85,   84,   83,   82,   81,   80,   79,   78,
-       77,   76,   75,   74,   73,   72,   71,   70,   69,   68,
-       66,   65,   64,   63,   62,   61,   59,   58,   57,   56,
-       55,   54,   53,   52,   51,   50,   49,   48,   47,   46,
-       45,   44,   43,   41,   40,   39,   38,   37,   36,   35,
-       33,   32,   31,   30,   29,   28,   27,   26,   25,   24,
-
-       23,   22,   21,   20,   19,   18,   17,   14,    9,    7,
-        3,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198,  198,  198,  198,  198,
-      198,  198,  198,  198,  198,  198
+        1,    1,   19,   19,   19,   19,   20,   20,   21,   21,
+       14,    7,    3,   18,   18,   18,   18,   18,   18,   18,
+       18,   18,   18,   18,   18,   18
     } ;
 
 static yy_state_type yy_last_accepting_state;
@@ -2291,7 +3279,7 @@ char *Kmltext;
 /* 
  kmlLexer.l -- KML parser - FLEX config
   
- version 2.4, 2011 June 2
+ version 2.4, 2011 June 14
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -2580,13 +3568,13 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 199 )
+				if ( yy_current_state >= 19 )
 					yy_c = yy_meta[(unsigned int) yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 			++yy_cp;
 			}
-		while ( yy_base[yy_current_state] != 212 );
+		while ( yy_base[yy_current_state] != 24 );
 
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
@@ -2612,90 +3600,47 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-{ kml_col += (int) strlen(Kmltext);  kmlLval.dval = atof(Kmltext); return KML_NUM; }
+{ kml_freeString(&(KmlLval.pval)); return KML_END; }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_COMMA; }
+{ kml_freeString(&(KmlLval.pval)); return KML_EQ; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_START_COORDS; }
+{ kml_freeString(&(KmlLval.pval)); return KML_OPEN; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_END_COORDS; }
+{ kml_freeString(&(KmlLval.pval)); return KML_CLOSE; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_START_POINT; }
+{ kml_saveString(&(KmlLval.pval), Kmltext); return KML_COORD; }
 	YY_BREAK
 case 6:
+/* rule 6 can match eol */
 YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_END_POINT; }
+{ kml_saveString(&(KmlLval.pval), Kmltext); return KML_VALUE; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_START_LINESTRING; }
+{ kml_saveString(&(KmlLval.pval), Kmltext); return KML_KEYWORD; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_END_LINESTRING; }
+{ kml_freeString(&(KmlLval.pval)); kml_col += (int) strlen(Kmltext); }               /* ignore but count white space */
 	YY_BREAK
 case 9:
+/* rule 9 can match eol */
 YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_START_POLYGON; }
+{ kml_freeString(&(KmlLval.pval)); kml_col = 0; ++kml_line; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_END_POLYGON; }
+{ kml_freeString(&(KmlLval.pval)); kml_col += (int) strlen(Kmltext); return -1; }
 	YY_BREAK
 case 11:
-YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_START_RING; }
-	YY_BREAK
-case 12:
-YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_END_RING; }
-	YY_BREAK
-case 13:
-YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_START_OUTER; }
-	YY_BREAK
-case 14:
-YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_END_OUTER; }
-	YY_BREAK
-case 15:
-YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_START_INNER; }
-	YY_BREAK
-case 16:
-YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_END_INNER; }
-	YY_BREAK
-case 17:
-YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_START_MULTI; }
-	YY_BREAK
-case 18:
-YY_RULE_SETUP
-{ kmlLval.dval = 0; return KML_END_MULTI; }
-	YY_BREAK
-case 19:
-YY_RULE_SETUP
-{ kml_col += (int) strlen(Kmltext); }               /* ignore but count white space */
-	YY_BREAK
-case 20:
-/* rule 20 can match eol */
-YY_RULE_SETUP
-{ kml_col = 0; ++kml_line; }
-	YY_BREAK
-case 21:
-YY_RULE_SETUP
-{ kml_col += (int) strlen(Kmltext); return -1; }
-	YY_BREAK
-case 22:
 YY_RULE_SETUP
 ECHO;
 	YY_BREAK
@@ -2990,7 +3935,7 @@ static int yy_get_next_buffer (void)
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 199 )
+			if ( yy_current_state >= 19 )
 				yy_c = yy_meta[(unsigned int) yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
@@ -3018,11 +3963,11 @@ static int yy_get_next_buffer (void)
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 199 )
+		if ( yy_current_state >= 19 )
 			yy_c = yy_meta[(unsigned int) yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-	yy_is_jam = (yy_current_state == 198);
+	yy_is_jam = (yy_current_state == 18);
 
 	return yy_is_jam ? 0 : yy_current_state;
 }
@@ -3733,38 +4678,6 @@ int Kmlwrap(void)
 
 
 
-/*
-** This is a linked-list struct to store all the values for each token.
-** All tokens will have a value of 0, except tokens denoted as NUM.
-** NUM tokens are geometry coordinates and will contain the floating
-** point number.
-*/
-typedef struct kmlFlexTokenStruct
-{
-    double value;
-    struct kmlFlexTokenStruct *Next;
-} kmlFlexToken;
-
-/*
-** Function to clean up the linked-list of token values.
-*/
-static int
-kml_cleanup (kmlFlexToken * token)
-{
-    kmlFlexToken *ptok;
-    kmlFlexToken *ptok_n;
-    if (token == NULL)
-	return 0;
-    ptok = token;
-    while (ptok)
-      {
-	  ptok_n = ptok->Next;
-	  free (ptok);
-	  ptok = ptok_n;
-      }
-    return 0;
-}
-
 gaiaGeomCollPtr
 gaiaParseKml (const unsigned char *dirty_buffer)
 {
@@ -3774,11 +4687,13 @@ gaiaParseKml (const unsigned char *dirty_buffer)
     /* Pointer to the head of the list */
     kmlFlexToken *head = tokens;
     int yv;
-    gaiaGeomCollPtr result = NULL;
+    kmlNodePtr result = NULL;
+    gaiaGeomCollPtr geom = NULL;
 
+    KmlLval.pval = NULL;
+    tokens->value = NULL;
     tokens->Next = NULL;
     kml_parse_error = 0;
-
     Kml_scan_string ((char *) dirty_buffer);
 
     /*
@@ -3789,14 +4704,16 @@ gaiaParseKml (const unsigned char *dirty_buffer)
       {
 	  if (yv == -1)
 	    {
-		return NULL;
+		kml_parse_error = 1;
+		break;
 	    }
 	  tokens->Next = malloc (sizeof (kmlFlexToken));
+	  tokens->Next->Next = NULL;
 	  /*
-	     /kmlLval is a global variable from FLEX.
-	     /kmlLval is defined in kmlLexglobal.h
+	     /KmlLval is a global variable from FLEX.
+	     /KmlLval is defined in kmlLexglobal.h
 	   */
-	  tokens->Next->value = kmlLval.dval;
+	  kml_xferString (&(tokens->Next->value), KmlLval.pval);
 	  /* Pass the token to the wkt parser created from lemon */
 	  Parse (pParser, yv, &(tokens->Next->value), &result);
 	  tokens = tokens->Next;
@@ -3809,25 +4726,20 @@ gaiaParseKml (const unsigned char *dirty_buffer)
     /* Assigning the token as the end to avoid seg faults while cleaning */
     tokens->Next = NULL;
     kml_cleanup (head);
+    kml_freeString (&(KmlLval.pval));
 
     if (kml_parse_error)
       {
 	  if (result)
-	      gaiaFreeGeomColl (result);
+	      kml_freeTree (result);
 	  return NULL;
       }
 
-    if (!result)
-	return NULL;
-    if (!kmlCheckValidity (result))
-      {
-	  gaiaFreeGeomColl (result);
-	  return NULL;
-      }
-
-    gaiaMbrGeometry (result);
-
-    return result;
+    /* attempting to build a geometry from KML */
+    geom = kml_build_geometry (result);
+    geom->Srid = 4326;
+    kml_freeTree (result);
+    return geom;
 }
 
 
@@ -3932,4 +4844,8 @@ gaiaParseKml (const unsigned char *dirty_buffer)
 #undef ParseARG_PDECL
 #undef ParseARG_FETCH
 #undef ParseARG_STORE
-
+#undef REJECT
+#undef yymore
+#undef YY_MORE_ADJ
+#undef YY_RESTORE_YY_MORE_OFFSET
+#undef YY_LESS_LINENO

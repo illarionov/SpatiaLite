@@ -218,6 +218,78 @@ gaiaOutPointZM (gaiaOutBufferPtr out_buf, gaiaPointPtr point)
 }
 
 static void
+gaiaOutEwktPoint (gaiaOutBufferPtr out_buf, gaiaPointPtr point)
+{
+/* formats an EWKT POINT */
+    char buf_x[128];
+    char buf_y[128];
+    char buf[256];
+    sprintf (buf_x, "%1.15f", point->X);
+    gaiaOutClean (buf_x);
+    sprintf (buf_y, "%1.15f", point->Y);
+    gaiaOutClean (buf_y);
+    sprintf (buf, "%s %s", buf_x, buf_y);
+    gaiaAppendToOutBuffer (out_buf, buf);
+}
+
+GAIAGEO_DECLARE void
+gaiaOutEwktPointZ (gaiaOutBufferPtr out_buf, gaiaPointPtr point)
+{
+/* formats an EWKT POINTZ */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_z[128];
+    char buf[512];
+    sprintf (buf_x, "%1.15f", point->X);
+    gaiaOutClean (buf_x);
+    sprintf (buf_y, "%1.15f", point->Y);
+    gaiaOutClean (buf_y);
+    sprintf (buf_z, "%1.15f", point->Z);
+    gaiaOutClean (buf_z);
+    sprintf (buf, "%s %s %s", buf_x, buf_y, buf_z);
+    gaiaAppendToOutBuffer (out_buf, buf);
+}
+
+static void
+gaiaOutEwktPointM (gaiaOutBufferPtr out_buf, gaiaPointPtr point)
+{
+/* formats an EWKT POINTM */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_m[128];
+    char buf[512];
+    sprintf (buf_x, "%1.15f", point->X);
+    gaiaOutClean (buf_x);
+    sprintf (buf_y, "%1.15f", point->Y);
+    gaiaOutClean (buf_y);
+    sprintf (buf_m, "%1.15f", point->M);
+    gaiaOutClean (buf_m);
+    sprintf (buf, "%s %s %s", buf_x, buf_y, buf_m);
+    gaiaAppendToOutBuffer (out_buf, buf);
+}
+
+static void
+gaiaOutEwktPointZM (gaiaOutBufferPtr out_buf, gaiaPointPtr point)
+{
+/* formats an EWKT POINTZM */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_z[128];
+    char buf_m[128];
+    char buf[1024];
+    sprintf (buf_x, "%1.15f", point->X);
+    gaiaOutClean (buf_x);
+    sprintf (buf_y, "%1.15f", point->Y);
+    gaiaOutClean (buf_y);
+    sprintf (buf_z, "%1.15f", point->Z);
+    gaiaOutClean (buf_z);
+    sprintf (buf_m, "%1.15f", point->M);
+    gaiaOutClean (buf_m);
+    sprintf (buf, "%s %s %s %s", buf_x, buf_y, buf_z, buf_m);
+    gaiaAppendToOutBuffer (out_buf, buf);
+}
+
+static void
 gaiaOutLinestringStrict (gaiaOutBufferPtr out_buf, gaiaLinestringPtr line,
 			 int precision)
 {
@@ -370,6 +442,122 @@ gaiaOutLinestringZM (gaiaOutBufferPtr out_buf, gaiaLinestringPtr line)
 	  gaiaOutClean (buf_m);
 	  if (iv > 0)
 	      sprintf (buf, ", %s %s %s %s", buf_x, buf_y, buf_z, buf_m);
+	  else
+	      sprintf (buf, "%s %s %s %s", buf_x, buf_y, buf_z, buf_m);
+	  gaiaAppendToOutBuffer (out_buf, buf);
+      }
+}
+
+static void
+gaiaOutEwktLinestring (gaiaOutBufferPtr out_buf, gaiaLinestringPtr line)
+{
+/* formats an EWKT LINESTRING */
+    char buf_x[128];
+    char buf_y[128];
+    char buf[256];
+    double x;
+    double y;
+    int iv;
+    for (iv = 0; iv < line->Points; iv++)
+      {
+	  gaiaGetPoint (line->Coords, iv, &x, &y);
+	  sprintf (buf_x, "%1.15f", x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%1.15f", y);
+	  gaiaOutClean (buf_y);
+	  if (iv > 0)
+	      sprintf (buf, ",%s %s", buf_x, buf_y);
+	  else
+	      sprintf (buf, "%s %s", buf_x, buf_y);
+	  gaiaAppendToOutBuffer (out_buf, buf);
+      }
+}
+
+GAIAGEO_DECLARE void
+gaiaOutEwktLinestringZ (gaiaOutBufferPtr out_buf, gaiaLinestringPtr line)
+{
+/* formats an EWKT LINESTRINGZ */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_z[128];
+    char buf[512];
+    double x;
+    double y;
+    double z;
+    int iv;
+    for (iv = 0; iv < line->Points; iv++)
+      {
+	  gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+	  sprintf (buf_x, "%1.15f", x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%1.15f", y);
+	  gaiaOutClean (buf_y);
+	  sprintf (buf_z, "%1.15f", z);
+	  gaiaOutClean (buf_z);
+	  if (iv > 0)
+	      sprintf (buf, ",%s %s %s", buf_x, buf_y, buf_z);
+	  else
+	      sprintf (buf, "%s %s %s", buf_x, buf_y, buf_z);
+	  gaiaAppendToOutBuffer (out_buf, buf);
+      }
+}
+
+static void
+gaiaOutEwktLinestringM (gaiaOutBufferPtr out_buf, gaiaLinestringPtr line)
+{
+/* formats an EWKT LINESTRINGM */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_m[128];
+    char buf[512];
+    double x;
+    double y;
+    double m;
+    int iv;
+    for (iv = 0; iv < line->Points; iv++)
+      {
+	  gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+	  sprintf (buf_x, "%1.15f", x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%1.15f", y);
+	  gaiaOutClean (buf_y);
+	  sprintf (buf_m, "%1.15f", m);
+	  gaiaOutClean (buf_m);
+	  if (iv > 0)
+	      sprintf (buf, ",%s %s %s", buf_x, buf_y, buf_m);
+	  else
+	      sprintf (buf, "%s %s %s", buf_x, buf_y, buf_m);
+	  gaiaAppendToOutBuffer (out_buf, buf);
+      }
+}
+
+static void
+gaiaOutEwktLinestringZM (gaiaOutBufferPtr out_buf, gaiaLinestringPtr line)
+{
+/* formats an EWKT LINESTRINGZM */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_z[128];
+    char buf_m[128];
+    char buf[1024];
+    double x;
+    double y;
+    double z;
+    double m;
+    int iv;
+    for (iv = 0; iv < line->Points; iv++)
+      {
+	  gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+	  sprintf (buf_x, "%1.15f", x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%1.15f", y);
+	  gaiaOutClean (buf_y);
+	  sprintf (buf_z, "%1.15f", z);
+	  gaiaOutClean (buf_z);
+	  sprintf (buf_m, "%1.15f", m);
+	  gaiaOutClean (buf_m);
+	  if (iv > 0)
+	      sprintf (buf, ",%s %s %s %s", buf_x, buf_y, buf_z, buf_m);
 	  else
 	      sprintf (buf, "%s %s %s %s", buf_x, buf_y, buf_z, buf_m);
 	  gaiaAppendToOutBuffer (out_buf, buf);
@@ -668,6 +856,222 @@ gaiaOutPolygonZM (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polyg)
 		    sprintf (buf, ", %s %s %s %s)", buf_x, buf_y, buf_z, buf_m);
 		else
 		    sprintf (buf, ", %s %s %s %s", buf_x, buf_y, buf_z, buf_m);
+		gaiaAppendToOutBuffer (out_buf, buf);
+	    }
+      }
+}
+
+static void
+gaiaOutEwktPolygon (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polyg)
+{
+/* formats an EWKT POLYGON */
+    char buf_x[128];
+    char buf_y[128];
+    char buf[256];
+    int ib;
+    int iv;
+    double x;
+    double y;
+    gaiaRingPtr ring = polyg->Exterior;
+    for (iv = 0; iv < ring->Points; iv++)
+      {
+	  gaiaGetPoint (ring->Coords, iv, &x, &y);
+	  sprintf (buf_x, "%1.15f", x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%1.15f", y);
+	  gaiaOutClean (buf_y);
+	  if (iv == 0)
+	      sprintf (buf, "(%s %s", buf_x, buf_y);
+	  else if (iv == (ring->Points - 1))
+	      sprintf (buf, ",%s %s)", buf_x, buf_y);
+	  else
+	      sprintf (buf, ",%s %s", buf_x, buf_y);
+	  gaiaAppendToOutBuffer (out_buf, buf);
+      }
+    for (ib = 0; ib < polyg->NumInteriors; ib++)
+      {
+	  ring = polyg->Interiors + ib;
+	  for (iv = 0; iv < ring->Points; iv++)
+	    {
+		gaiaGetPoint (ring->Coords, iv, &x, &y);
+		sprintf (buf_x, "%1.15f", x);
+		gaiaOutClean (buf_x);
+		sprintf (buf_y, "%1.15f", y);
+		gaiaOutClean (buf_y);
+		if (iv == 0)
+		    sprintf (buf, ",(%s %s", buf_x, buf_y);
+		else if (iv == (ring->Points - 1))
+		    sprintf (buf, ",%s %s)", buf_x, buf_y);
+		else
+		    sprintf (buf, ",%s %s", buf_x, buf_y);
+		gaiaAppendToOutBuffer (out_buf, buf);
+	    }
+      }
+}
+
+GAIAGEO_DECLARE void
+gaiaOutEwktPolygonZ (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polyg)
+{
+/* formats an EWKT POLYGONZ */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_z[128];
+    char buf[512];
+    int ib;
+    int iv;
+    double x;
+    double y;
+    double z;
+    gaiaRingPtr ring = polyg->Exterior;
+    for (iv = 0; iv < ring->Points; iv++)
+      {
+	  gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);
+	  sprintf (buf_x, "%1.15f", x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%1.15f", y);
+	  gaiaOutClean (buf_y);
+	  sprintf (buf_z, "%1.15f", z);
+	  gaiaOutClean (buf_z);
+	  if (iv == 0)
+	      sprintf (buf, "(%s %s %s", buf_x, buf_y, buf_z);
+	  else if (iv == (ring->Points - 1))
+	      sprintf (buf, ",%s %s %s)", buf_x, buf_y, buf_z);
+	  else
+	      sprintf (buf, ",%s %s %s", buf_x, buf_y, buf_z);
+	  gaiaAppendToOutBuffer (out_buf, buf);
+      }
+    for (ib = 0; ib < polyg->NumInteriors; ib++)
+      {
+	  ring = polyg->Interiors + ib;
+	  for (iv = 0; iv < ring->Points; iv++)
+	    {
+		gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);
+		sprintf (buf_x, "%1.15f", x);
+		gaiaOutClean (buf_x);
+		sprintf (buf_y, "%1.15f", y);
+		gaiaOutClean (buf_y);
+		sprintf (buf_z, "%1.15f", z);
+		gaiaOutClean (buf_z);
+		if (iv == 0)
+		    sprintf (buf, ",(%s %s %s", buf_x, buf_y, buf_z);
+		else if (iv == (ring->Points - 1))
+		    sprintf (buf, ",%s %s %s)", buf_x, buf_y, buf_z);
+		else
+		    sprintf (buf, ",%s %s %s", buf_x, buf_y, buf_z);
+		gaiaAppendToOutBuffer (out_buf, buf);
+	    }
+      }
+}
+
+static void
+gaiaOutEwktPolygonM (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polyg)
+{
+/* formats an EWKT POLYGONM */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_m[128];
+    char buf[512];
+    int ib;
+    int iv;
+    double x;
+    double y;
+    double m;
+    gaiaRingPtr ring = polyg->Exterior;
+    for (iv = 0; iv < ring->Points; iv++)
+      {
+	  gaiaGetPointXYM (ring->Coords, iv, &x, &y, &m);
+	  sprintf (buf_x, "%1.15f", x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%1.15f", y);
+	  gaiaOutClean (buf_y);
+	  sprintf (buf_m, "%1.15f", m);
+	  gaiaOutClean (buf_m);
+	  if (iv == 0)
+	      sprintf (buf, "(%s %s %s", buf_x, buf_y, buf_m);
+	  else if (iv == (ring->Points - 1))
+	      sprintf (buf, ",%s %s %s)", buf_x, buf_y, buf_m);
+	  else
+	      sprintf (buf, ",%s %s %s", buf_x, buf_y, buf_m);
+	  gaiaAppendToOutBuffer (out_buf, buf);
+      }
+    for (ib = 0; ib < polyg->NumInteriors; ib++)
+      {
+	  ring = polyg->Interiors + ib;
+	  for (iv = 0; iv < ring->Points; iv++)
+	    {
+		gaiaGetPointXYM (ring->Coords, iv, &x, &y, &m);
+		sprintf (buf_x, "%1.15f", x);
+		gaiaOutClean (buf_x);
+		sprintf (buf_y, "%1.15f", y);
+		gaiaOutClean (buf_y);
+		sprintf (buf_m, "%1.15f", m);
+		gaiaOutClean (buf_m);
+		if (iv == 0)
+		    sprintf (buf, ",(%s %s %s", buf_x, buf_y, buf_m);
+		else if (iv == (ring->Points - 1))
+		    sprintf (buf, ",%s %s %s)", buf_x, buf_y, buf_m);
+		else
+		    sprintf (buf, ",%s %s %s", buf_x, buf_y, buf_m);
+		gaiaAppendToOutBuffer (out_buf, buf);
+	    }
+      }
+}
+
+static void
+gaiaOutEwktPolygonZM (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polyg)
+{
+/* formats an EWKT POLYGONZM */
+    char buf_x[128];
+    char buf_y[128];
+    char buf_z[128];
+    char buf_m[128];
+    char buf[1024];
+    int ib;
+    int iv;
+    double x;
+    double y;
+    double z;
+    double m;
+    gaiaRingPtr ring = polyg->Exterior;
+    for (iv = 0; iv < ring->Points; iv++)
+      {
+	  gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
+	  sprintf (buf_x, "%1.15f", x);
+	  gaiaOutClean (buf_x);
+	  sprintf (buf_y, "%1.15f", y);
+	  gaiaOutClean (buf_y);
+	  sprintf (buf_z, "%1.15f", z);
+	  gaiaOutClean (buf_z);
+	  sprintf (buf_m, "%1.15f", m);
+	  gaiaOutClean (buf_m);
+	  if (iv == 0)
+	      sprintf (buf, "(%s %s %s %s", buf_x, buf_y, buf_z, buf_m);
+	  else if (iv == (ring->Points - 1))
+	      sprintf (buf, ",%s %s %s %s)", buf_x, buf_y, buf_z, buf_m);
+	  else
+	      sprintf (buf, ",%s %s %s %s", buf_x, buf_y, buf_z, buf_m);
+	  gaiaAppendToOutBuffer (out_buf, buf);
+      }
+    for (ib = 0; ib < polyg->NumInteriors; ib++)
+      {
+	  ring = polyg->Interiors + ib;
+	  for (iv = 0; iv < ring->Points; iv++)
+	    {
+		gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
+		sprintf (buf_x, "%1.15f", x);
+		gaiaOutClean (buf_x);
+		sprintf (buf_y, "%1.15f", y);
+		gaiaOutClean (buf_y);
+		sprintf (buf_z, "%1.15f", z);
+		gaiaOutClean (buf_z);
+		sprintf (buf_m, "%1.15f", m);
+		gaiaOutClean (buf_m);
+		if (iv == 0)
+		    sprintf (buf, ",(%s %s %s %s", buf_x, buf_y, buf_z, buf_m);
+		else if (iv == (ring->Points - 1))
+		    sprintf (buf, ",%s %s %s %s)", buf_x, buf_y, buf_z, buf_m);
+		else
+		    sprintf (buf, ",%s %s %s %s", buf_x, buf_y, buf_z, buf_m);
 		gaiaAppendToOutBuffer (out_buf, buf);
 	    }
       }
@@ -1261,25 +1665,25 @@ gaiaToEWKT (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
 		  {
 		      /* processing POINTZ */
 		      gaiaAppendToOutBuffer (out_buf, "POINT(");
-		      gaiaOutPointZ (out_buf, point);
+		      gaiaOutEwktPointZ (out_buf, point);
 		  }
 		else if (point->DimensionModel == GAIA_XY_M)
 		  {
 		      /* processing POINTM */
 		      gaiaAppendToOutBuffer (out_buf, "POINTM(");
-		      gaiaOutPointM (out_buf, point);
+		      gaiaOutEwktPointM (out_buf, point);
 		  }
 		else if (point->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      /* processing POINTZM */
 		      gaiaAppendToOutBuffer (out_buf, "POINT(");
-		      gaiaOutPointZM (out_buf, point);
+		      gaiaOutEwktPointZM (out_buf, point);
 		  }
 		else
 		  {
 		      /* processing POINT */
 		      gaiaAppendToOutBuffer (out_buf, "POINT(");
-		      gaiaOutPoint (out_buf, point);
+		      gaiaOutEwktPoint (out_buf, point);
 		  }
 		gaiaAppendToOutBuffer (out_buf, ")");
 		point = point->Next;
@@ -1291,25 +1695,25 @@ gaiaToEWKT (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
 		  {
 		      /* processing LINESTRINGZ */
 		      gaiaAppendToOutBuffer (out_buf, "LINESTRING(");
-		      gaiaOutLinestringZ (out_buf, line);
+		      gaiaOutEwktLinestringZ (out_buf, line);
 		  }
 		else if (line->DimensionModel == GAIA_XY_M)
 		  {
 		      /* processing LINESTRINGM */
 		      gaiaAppendToOutBuffer (out_buf, "LINESTRINGM(");
-		      gaiaOutLinestringM (out_buf, line);
+		      gaiaOutEwktLinestringM (out_buf, line);
 		  }
 		else if (line->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      /* processing LINESTRINGZM */
 		      gaiaAppendToOutBuffer (out_buf, "LINESTRING(");
-		      gaiaOutLinestringZM (out_buf, line);
+		      gaiaOutEwktLinestringZM (out_buf, line);
 		  }
 		else
 		  {
 		      /* processing LINESTRING */
 		      gaiaAppendToOutBuffer (out_buf, "LINESTRING(");
-		      gaiaOutLinestring (out_buf, line);
+		      gaiaOutEwktLinestring (out_buf, line);
 		  }
 		gaiaAppendToOutBuffer (out_buf, ")");
 		line = line->Next;
@@ -1321,25 +1725,25 @@ gaiaToEWKT (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
 		  {
 		      /* processing POLYGONZ */
 		      gaiaAppendToOutBuffer (out_buf, "POLYGON(");
-		      gaiaOutPolygonZ (out_buf, polyg);
+		      gaiaOutEwktPolygonZ (out_buf, polyg);
 		  }
 		else if (polyg->DimensionModel == GAIA_XY_M)
 		  {
 		      /* processing POLYGONM */
 		      gaiaAppendToOutBuffer (out_buf, "POLYGONM(");
-		      gaiaOutPolygonM (out_buf, polyg);
+		      gaiaOutEwktPolygonM (out_buf, polyg);
 		  }
 		else if (polyg->DimensionModel == GAIA_XY_Z_M)
 		  {
 		      /* processing POLYGONZM */
 		      gaiaAppendToOutBuffer (out_buf, "POLYGON(");
-		      gaiaOutPolygonZM (out_buf, polyg);
+		      gaiaOutEwktPolygonZM (out_buf, polyg);
 		  }
 		else
 		  {
 		      /* processing POLYGON */
 		      gaiaAppendToOutBuffer (out_buf, "POLYGON(");
-		      gaiaOutPolygon (out_buf, polyg);
+		      gaiaOutEwktPolygon (out_buf, polyg);
 		  }
 		gaiaAppendToOutBuffer (out_buf, ")");
 		polyg = polyg->Next;
@@ -1362,26 +1766,26 @@ gaiaToEWKT (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
 		      if (point->DimensionModel == GAIA_XY_Z)
 			{
 			    if (point != geom->FirstPoint)
-				gaiaAppendToOutBuffer (out_buf, ", ");
-			    gaiaOutPointZ (out_buf, point);
+				gaiaAppendToOutBuffer (out_buf, ",");
+			    gaiaOutEwktPointZ (out_buf, point);
 			}
 		      else if (point->DimensionModel == GAIA_XY_M)
 			{
 			    if (point != geom->FirstPoint)
-				gaiaAppendToOutBuffer (out_buf, ", ");
-			    gaiaOutPointM (out_buf, point);
+				gaiaAppendToOutBuffer (out_buf, ",");
+			    gaiaOutEwktPointM (out_buf, point);
 			}
 		      else if (point->DimensionModel == GAIA_XY_Z_M)
 			{
 			    if (point != geom->FirstPoint)
-				gaiaAppendToOutBuffer (out_buf, ", ");
-			    gaiaOutPointZM (out_buf, point);
+				gaiaAppendToOutBuffer (out_buf, ",");
+			    gaiaOutEwktPointZM (out_buf, point);
 			}
 		      else
 			{
 			    if (point != geom->FirstPoint)
-				gaiaAppendToOutBuffer (out_buf, ", ");
-			    gaiaOutPoint (out_buf, point);
+				gaiaAppendToOutBuffer (out_buf, ",");
+			    gaiaOutEwktPoint (out_buf, point);
 			}
 		      point = point->Next;
 		  }
@@ -1399,27 +1803,27 @@ gaiaToEWKT (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
 		while (line)
 		  {
 		      if (line != geom->FirstLinestring)
-			  gaiaAppendToOutBuffer (out_buf, ", (");
+			  gaiaAppendToOutBuffer (out_buf, ",(");
 		      else
 			  gaiaAppendToOutBuffer (out_buf, "(");
 		      if (line->DimensionModel == GAIA_XY_Z)
 			{
-			    gaiaOutLinestringZ (out_buf, line);
+			    gaiaOutEwktLinestringZ (out_buf, line);
 			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      else if (line->DimensionModel == GAIA_XY_M)
 			{
-			    gaiaOutLinestringM (out_buf, line);
+			    gaiaOutEwktLinestringM (out_buf, line);
 			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      else if (line->DimensionModel == GAIA_XY_Z_M)
 			{
-			    gaiaOutLinestringZM (out_buf, line);
+			    gaiaOutEwktLinestringZM (out_buf, line);
 			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      else
 			{
-			    gaiaOutLinestring (out_buf, line);
+			    gaiaOutEwktLinestring (out_buf, line);
 			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      line = line->Next;
@@ -1438,27 +1842,27 @@ gaiaToEWKT (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
 		while (polyg)
 		  {
 		      if (polyg != geom->FirstPolygon)
-			  gaiaAppendToOutBuffer (out_buf, ", (");
+			  gaiaAppendToOutBuffer (out_buf, ",(");
 		      else
 			  gaiaAppendToOutBuffer (out_buf, "(");
 		      if (polyg->DimensionModel == GAIA_XY_Z)
 			{
-			    gaiaOutPolygonZ (out_buf, polyg);
+			    gaiaOutEwktPolygonZ (out_buf, polyg);
 			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      else if (polyg->DimensionModel == GAIA_XY_M)
 			{
-			    gaiaOutPolygonM (out_buf, polyg);
+			    gaiaOutEwktPolygonM (out_buf, polyg);
 			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      else if (polyg->DimensionModel == GAIA_XY_Z_M)
 			{
-			    gaiaOutPolygonZM (out_buf, polyg);
+			    gaiaOutEwktPolygonZM (out_buf, polyg);
 			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      else
 			{
-			    gaiaOutPolygon (out_buf, polyg);
+			    gaiaOutEwktPolygon (out_buf, polyg);
 			    gaiaAppendToOutBuffer (out_buf, ")");
 			}
 		      polyg = polyg->Next;
@@ -1478,27 +1882,27 @@ gaiaToEWKT (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
 		  {
 		      /* processing POINTs */
 		      if (ie > 0)
-			  gaiaAppendToOutBuffer (out_buf, ", ");
+			  gaiaAppendToOutBuffer (out_buf, ",");
 		      ie++;
 		      if (point->DimensionModel == GAIA_XY_Z)
 			{
 			    gaiaAppendToOutBuffer (out_buf, "POINT(");
-			    gaiaOutPointZ (out_buf, point);
+			    gaiaOutEwktPointZ (out_buf, point);
 			}
 		      else if (point->DimensionModel == GAIA_XY_M)
 			{
 			    gaiaAppendToOutBuffer (out_buf, "POINTM(");
-			    gaiaOutPointM (out_buf, point);
+			    gaiaOutEwktPointM (out_buf, point);
 			}
 		      else if (point->DimensionModel == GAIA_XY_Z_M)
 			{
 			    gaiaAppendToOutBuffer (out_buf, "POINT(");
-			    gaiaOutPointZM (out_buf, point);
+			    gaiaOutEwktPointZM (out_buf, point);
 			}
 		      else
 			{
 			    gaiaAppendToOutBuffer (out_buf, "POINT(");
-			    gaiaOutPoint (out_buf, point);
+			    gaiaOutEwktPoint (out_buf, point);
 			}
 		      gaiaAppendToOutBuffer (out_buf, ")");
 		      point = point->Next;
@@ -1508,27 +1912,27 @@ gaiaToEWKT (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
 		  {
 		      /* processing LINESTRINGs */
 		      if (ie > 0)
-			  gaiaAppendToOutBuffer (out_buf, ", ");
+			  gaiaAppendToOutBuffer (out_buf, ",");
 		      ie++;
 		      if (line->DimensionModel == GAIA_XY_Z)
 			{
 			    gaiaAppendToOutBuffer (out_buf, "LINESTRING(");
-			    gaiaOutLinestringZ (out_buf, line);
+			    gaiaOutEwktLinestringZ (out_buf, line);
 			}
 		      else if (line->DimensionModel == GAIA_XY_M)
 			{
 			    gaiaAppendToOutBuffer (out_buf, "LINESTRINGM(");
-			    gaiaOutLinestringM (out_buf, line);
+			    gaiaOutEwktLinestringM (out_buf, line);
 			}
 		      else if (line->DimensionModel == GAIA_XY_Z_M)
 			{
 			    gaiaAppendToOutBuffer (out_buf, "LINESTRING(");
-			    gaiaOutLinestringZM (out_buf, line);
+			    gaiaOutEwktLinestringZM (out_buf, line);
 			}
 		      else
 			{
 			    gaiaAppendToOutBuffer (out_buf, "LINESTRING(");
-			    gaiaOutLinestring (out_buf, line);
+			    gaiaOutEwktLinestring (out_buf, line);
 			}
 		      gaiaAppendToOutBuffer (out_buf, ")");
 		      line = line->Next;
@@ -1538,27 +1942,27 @@ gaiaToEWKT (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
 		  {
 		      /* processing POLYGONs */
 		      if (ie > 0)
-			  gaiaAppendToOutBuffer (out_buf, ", ");
+			  gaiaAppendToOutBuffer (out_buf, ",");
 		      ie++;
 		      if (polyg->DimensionModel == GAIA_XY_Z)
 			{
 			    gaiaAppendToOutBuffer (out_buf, "POLYGON(");
-			    gaiaOutPolygonZ (out_buf, polyg);
+			    gaiaOutEwktPolygonZ (out_buf, polyg);
 			}
 		      else if (polyg->DimensionModel == GAIA_XY_M)
 			{
 			    gaiaAppendToOutBuffer (out_buf, "POLYGONM(");
-			    gaiaOutPolygonM (out_buf, polyg);
+			    gaiaOutEwktPolygonM (out_buf, polyg);
 			}
 		      else if (polyg->DimensionModel == GAIA_XY_Z_M)
 			{
 			    gaiaAppendToOutBuffer (out_buf, "POLYGON(");
-			    gaiaOutPolygonZM (out_buf, polyg);
+			    gaiaOutEwktPolygonZM (out_buf, polyg);
 			}
 		      else
 			{
 			    gaiaAppendToOutBuffer (out_buf, "POLYGON(");
-			    gaiaOutPolygon (out_buf, polyg);
+			    gaiaOutEwktPolygon (out_buf, polyg);
 			}
 		      gaiaAppendToOutBuffer (out_buf, ")");
 		      polyg = polyg->Next;
@@ -2014,13 +2418,24 @@ out_kml_point (gaiaOutBufferPtr out_buf, gaiaPointPtr point, int precision)
 /* formats POINT as KML [x,y] */
     char buf_x[128];
     char buf_y[128];
-    char buf[256];
+    char buf_z[128];
+    char buf[512];
     sprintf (buf_x, "%.*f", precision, point->X);
     gaiaOutClean (buf_x);
     sprintf (buf_y, "%.*f", precision, point->Y);
     gaiaOutClean (buf_y);
+    if (point->DimensionModel == GAIA_XY_Z
+	|| point->DimensionModel == GAIA_XY_Z_M)
+      {
+	  sprintf (buf_z, "%.*f", precision, point->Z);
+	  gaiaOutClean (buf_z);
+      }
     gaiaAppendToOutBuffer (out_buf, "<Point><coordinates>");
-    sprintf (buf, "%s,%s", buf_x, buf_y);
+    if (point->DimensionModel == GAIA_XY_Z
+	|| point->DimensionModel == GAIA_XY_Z_M)
+	sprintf (buf, "%s,%s,%s", buf_x, buf_y, buf_z);
+    else
+	sprintf (buf, "%s,%s", buf_x, buf_y);
     gaiaAppendToOutBuffer (out_buf, buf);
     gaiaAppendToOutBuffer (out_buf, "</coordinates></Point>");
 }
@@ -2032,7 +2447,8 @@ out_kml_linestring (gaiaOutBuffer * out_buf, int dims, int points,
 /* formats LINESTRING as KML [x,y] */
     char buf_x[128];
     char buf_y[128];
-    char buf[256];
+    char buf_z[128];
+    char buf[512];
     int iv;
     double x;
     double y;
@@ -2062,10 +2478,22 @@ out_kml_linestring (gaiaOutBuffer * out_buf, int dims, int points,
 	  gaiaOutClean (buf_x);
 	  sprintf (buf_y, "%.*f", precision, y);
 	  gaiaOutClean (buf_y);
-	  if (iv == 0)
-	      sprintf (buf, "%s,%s", buf_x, buf_y);
+	  if (dims == GAIA_XY_Z || dims == GAIA_XY_Z_M)
+	    {
+		sprintf (buf_z, "%.*f", precision, z);
+		gaiaOutClean (buf_z);
+		if (iv == 0)
+		    sprintf (buf, "%s,%s,%s", buf_x, buf_y, buf_z);
+		else
+		    sprintf (buf, " %s,%s,%s", buf_x, buf_y, buf_z);
+	    }
 	  else
-	      sprintf (buf, " %s,%s", buf_x, buf_y);
+	    {
+		if (iv == 0)
+		    sprintf (buf, "%s,%s", buf_x, buf_y);
+		else
+		    sprintf (buf, " %s,%s", buf_x, buf_y);
+	    }
 	  gaiaAppendToOutBuffer (out_buf, buf);
       }
     gaiaAppendToOutBuffer (out_buf, "</coordinates></LineString>");
@@ -2078,7 +2506,8 @@ out_kml_polygon (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polygon,
 /* formats POLYGON as KML [x,y] */
     char buf_x[128];
     char buf_y[128];
-    char buf[256];
+    char buf_z[128];
+    char buf[512];
     gaiaRingPtr ring;
     int iv;
     int ib;
@@ -2113,10 +2542,23 @@ out_kml_polygon (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polygon,
 	  gaiaOutClean (buf_x);
 	  sprintf (buf_y, "%.*f", precision, y);
 	  gaiaOutClean (buf_y);
-	  if (iv == 0)
-	      sprintf (buf, "%s,%s", buf_x, buf_y);
+	  if (ring->DimensionModel == GAIA_XY_Z
+	      || ring->DimensionModel == GAIA_XY_Z_M)
+	    {
+		sprintf (buf_z, "%.*f", precision, z);
+		gaiaOutClean (buf_z);
+		if (iv == 0)
+		    sprintf (buf, "%s,%s,%s", buf_x, buf_y, buf_z);
+		else
+		    sprintf (buf, " %s,%s,%s", buf_x, buf_y, buf_z);
+	    }
 	  else
-	      sprintf (buf, " %s,%s", buf_x, buf_y);
+	    {
+		if (iv == 0)
+		    sprintf (buf, "%s,%s", buf_x, buf_y);
+		else
+		    sprintf (buf, " %s,%s", buf_x, buf_y);
+	    }
 	  gaiaAppendToOutBuffer (out_buf, buf);
       }
     gaiaAppendToOutBuffer (out_buf,
@@ -2150,10 +2592,23 @@ out_kml_polygon (gaiaOutBufferPtr out_buf, gaiaPolygonPtr polygon,
 		gaiaOutClean (buf_x);
 		sprintf (buf_y, "%.*f", precision, y);
 		gaiaOutClean (buf_y);
-		if (iv == 0)
-		    sprintf (buf, "%s,%s", buf_x, buf_y);
+		if (ring->DimensionModel == GAIA_XY_Z
+		    || ring->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      sprintf (buf_z, "%.*f", precision, z);
+		      gaiaOutClean (buf_z);
+		      if (iv == 0)
+			  sprintf (buf, "%s,%s,%s", buf_x, buf_y, buf_z);
+		      else
+			  sprintf (buf, " %s,%s,%s", buf_x, buf_y, buf_z);
+		  }
 		else
-		    sprintf (buf, " %s,%s", buf_x, buf_y);
+		  {
+		      if (iv == 0)
+			  sprintf (buf, "%s,%s", buf_x, buf_y);
+		      else
+			  sprintf (buf, " %s,%s", buf_x, buf_y);
+		  }
 		gaiaAppendToOutBuffer (out_buf, buf);
 	    }
 	  gaiaAppendToOutBuffer (out_buf,
@@ -2196,6 +2651,14 @@ gaiaOutFullKml (gaiaOutBufferPtr out_buf, const char *name, const char *desc,
       {
 	  count++;
 	  polyg = polyg->Next;
+      }
+    if (count == 1)
+      {
+	  if (geom->DeclaredType == GAIA_MULTIPOINT ||
+	      geom->DeclaredType == GAIA_MULTILINESTRING ||
+	      geom->DeclaredType == GAIA_MULTIPOLYGON ||
+	      geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      count = 2;
       }
 
     gaiaAppendToOutBuffer (out_buf, "<Placemark><name>");
@@ -2286,6 +2749,14 @@ gaiaOutBareKml (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom, int precision)
       {
 	  count++;
 	  polyg = polyg->Next;
+      }
+    if (count == 1)
+      {
+	  if (geom->DeclaredType == GAIA_MULTIPOINT ||
+	      geom->DeclaredType == GAIA_MULTILINESTRING ||
+	      geom->DeclaredType == GAIA_MULTIPOLYGON ||
+	      geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	      count = 2;
       }
 
     if (count > 1)

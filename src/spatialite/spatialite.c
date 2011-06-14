@@ -8569,6 +8569,8 @@ point_n (sqlite3_context * context, int argc, sqlite3_value ** argv,
     int len;
     double x;
     double y;
+    double z;
+    double m;
     unsigned char *p_result = NULL;
     gaiaGeomCollPtr geo = NULL;
     gaiaGeomCollPtr result;
@@ -8611,10 +8613,35 @@ point_n (sqlite3_context * context, int argc, sqlite3_value ** argv,
 		    vertex -= 1;	/* decreasing the point index by 1, because PointN counts starting at index 1 */
 		if (vertex >= 0 && vertex < line->Points)
 		  {
-		      gaiaGetPoint (line->Coords, vertex, &x, &y);
-		      result = gaiaAllocGeomColl ();
-		      result->Srid = geo->Srid;
-		      gaiaAddPointToGeomColl (result, x, y);
+		      if (line->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaGetPointXYZ (line->Coords, vertex, &x, &y, &z);
+			    result = gaiaAllocGeomCollXYZ ();
+			    result->Srid = geo->Srid;
+			    gaiaAddPointToGeomCollXYZ (result, x, y, z);
+			}
+		      else if (line->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaGetPointXYM (line->Coords, vertex, &x, &y, &m);
+			    result = gaiaAllocGeomCollXYM ();
+			    result->Srid = geo->Srid;
+			    gaiaAddPointToGeomCollXYM (result, x, y, m);
+			}
+		      else if (line->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaGetPointXYZM (line->Coords, vertex, &x, &y, &z,
+					      &m);
+			    result = gaiaAllocGeomCollXYZM ();
+			    result->Srid = geo->Srid;
+			    gaiaAddPointToGeomCollXYZM (result, x, y, z, m);
+			}
+		      else
+			{
+			    gaiaGetPoint (line->Coords, vertex, &x, &y);
+			    result = gaiaAllocGeomColl ();
+			    result->Srid = geo->Srid;
+			    gaiaAddPointToGeomColl (result, x, y);
+			}
 		  }
 		else
 		    result = NULL;
@@ -13206,8 +13233,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -13291,8 +13317,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -13301,8 +13326,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
