@@ -48,7 +48,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
-#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
+#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
 #include <spatialite/sqlite3.h>
 #else
 #include <sqlite3.h>
@@ -62,7 +62,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define strcasecmp	_stricmp
 #endif /* not WIN32 */
 
-#if OMIT_ICONV == 0     /* if ICONV is disabled no SHP support is available */
+#if OMIT_ICONV == 0		/* if ICONV is disabled no SHP support is available */
 
 static struct sqlite3_module my_shape_module;
 
@@ -78,6 +78,20 @@ typedef struct VirtualShapeStruct
 } VirtualShape;
 typedef VirtualShape *VirtualShapePtr;
 
+typedef struct VirtualShapeConstraintStruct
+{
+/* a constraint to be verified for xFilter */
+    int iColumn;		/* Column on left-hand side of constraint */
+    int op;			/* Constraint operator */
+    char valueType;		/* value Type ('I'=int,'D'=double,'T'=text) */
+    sqlite3_int64 intValue;	/* Int64 comparison value */
+    double dblValue;		/* Double comparison value */
+    char *txtValue;		/* Text comparison value */
+    struct VirtualShapeConstraintStruct *next;
+} VirtualShapeConstraint;
+typedef VirtualShapeConstraint *VirtualShapeConstraintPtr;
+
+
 typedef struct VirtualShapeCursorStruct
 {
 /* extends the sqlite3_vtab_cursor struct */
@@ -86,6 +100,8 @@ typedef struct VirtualShapeCursorStruct
     int blobSize;
     unsigned char *blobGeometry;
     int eof;			/* the EOF marker */
+    VirtualShapeConstraintPtr firstConstraint;
+    VirtualShapeConstraintPtr lastConstraint;
 } VirtualShapeCursor;
 typedef VirtualShapeCursor *VirtualShapeCursorPtr;
 
@@ -295,8 +311,33 @@ static int
 vshp_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIndex)
 {
 /* best index selection */
-    if (pVTab || pIndex)
+    int i;
+    int iArg = 0;
+    char str[2048];
+    char buf[64];
+
+    if (pVTab)
 	pVTab = pVTab;		/* unused arg warning suppression */
+
+    *str = '\0';
+    for (i = 0; i < pIndex->nConstraint; i++)
+      {
+	  if (pIndex->aConstraint[i].usable)
+	    {
+		iArg++;
+		pIndex->aConstraintUsage[i].argvIndex = iArg;
+		pIndex->aConstraintUsage[i].omit = 1;
+		sprintf (buf, "%d:%d,", pIndex->aConstraint[i].iColumn,
+			 pIndex->aConstraint[i].op);
+		strcat (str, buf);
+	    }
+      }
+    if (*str != '\0')
+      {
+	  pIndex->idxStr = sqlite3_mprintf ("%s", str);
+	  pIndex->needToFreeIdxStr = 1;
+      }
+
     return SQLITE_OK;
 }
 
@@ -367,6 +408,8 @@ vshp_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
 	(VirtualShapeCursorPtr) sqlite3_malloc (sizeof (VirtualShapeCursor));
     if (cursor == NULL)
 	return SQLITE_ERROR;
+    cursor->firstConstraint = NULL;
+    cursor->lastConstraint = NULL;
     cursor->pVtab = (VirtualShapePtr) pVTab;
     cursor->current_row = 0;
     cursor->blobGeometry = NULL;
@@ -377,6 +420,25 @@ vshp_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
     return SQLITE_OK;
 }
 
+static void
+vshp_free_constraints (VirtualShapeCursorPtr cursor)
+{
+/* memory cleanup - cursor constraints */
+    VirtualShapeConstraintPtr pC;
+    VirtualShapeConstraintPtr pCn;
+    pC = cursor->firstConstraint;
+    while (pC)
+      {
+	  pCn = pC->next;
+	  if (pC->txtValue)
+	      sqlite3_free (pC->txtValue);
+	  sqlite3_free (pC);
+	  pC = pCn;
+      }
+    cursor->firstConstraint = NULL;
+    cursor->lastConstraint = NULL;
+}
+
 static int
 vshp_close (sqlite3_vtab_cursor * pCursor)
 {
@@ -384,8 +446,252 @@ vshp_close (sqlite3_vtab_cursor * pCursor)
     VirtualShapeCursorPtr cursor = (VirtualShapeCursorPtr) pCursor;
     if (cursor->blobGeometry)
 	free (cursor->blobGeometry);
+    vshp_free_constraints (cursor);
     sqlite3_free (pCursor);
     return SQLITE_OK;
+}
+
+static int
+vshp_parse_constraint (const char *str, int index, int *iColumn, int *op)
+{
+/* parsing a constraint string */
+    char buf[64];
+    const char *in = str;
+    char *out = buf;
+    int i = 0;
+    int found = 0;
+
+    *out = '\0';
+    while (*in != '\0')
+      {
+	  if (*in == ',')
+	    {
+		if (index == i)
+		  {
+		      *out = '\0';
+		      found = 1;
+		      break;
+		  }
+		i++;
+		in++;
+		continue;
+	    }
+	  if (index == i)
+	      *out++ = *in;
+	  in++;
+      }
+    if (!found)
+	return 0;
+    in = buf;
+    for (i = 0; i < (int) strlen (buf); i++)
+      {
+	  if (buf[i] == ':')
+	    {
+		buf[i] = '\0';
+		*iColumn = atoi (buf);
+		*op = atoi (buf + i + 1);
+		return 1;
+	    }
+	  in++;
+      }
+    return 0;
+}
+
+static int
+vshp_eval_constraints (VirtualShapeCursorPtr cursor)
+{
+/* evaluating Filter constraints */
+    int nCol;
+    gaiaDbfFieldPtr pFld;
+    VirtualShapeConstraintPtr pC = cursor->firstConstraint;
+    if (pC == NULL)
+	return 1;
+    while (pC)
+      {
+	  int ok = 0;
+	  if (pC->iColumn == 0)
+	    {
+		/* the PRIMARY KEY column */
+		if (pC->valueType == 'I')
+		  {
+		      switch (pC->op)
+			{
+			case SQLITE_INDEX_CONSTRAINT_EQ:
+			    if (cursor->current_row == pC->intValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_GT:
+			    if (cursor->current_row > pC->intValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_LE:
+			    if (cursor->current_row <= pC->intValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_LT:
+			    if (cursor->current_row < pC->intValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_GE:
+			    if (cursor->current_row >= pC->intValue)
+				ok = 1;
+			    break;
+			};
+		  }
+		goto done;
+	    }
+	  nCol = 2;
+	  pFld = cursor->pVtab->Shp->Dbf->First;
+	  while (pFld)
+	    {
+		if (nCol == pC->iColumn)
+		  {
+		      if ((pFld->Value))
+			{
+			    switch (pFld->Value->Type)
+			      {
+			      case GAIA_INT_VALUE:
+				  if (pC->valueType == 'I')
+				    {
+					switch (pC->op)
+					  {
+					  case SQLITE_INDEX_CONSTRAINT_EQ:
+					      if (pFld->Value->IntValue ==
+						  pC->intValue)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_GT:
+					      if (pFld->Value->IntValue >
+						  pC->intValue)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_LE:
+					      if (pFld->Value->IntValue <=
+						  pC->intValue)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_LT:
+					      if (pFld->Value->IntValue <
+						  pC->intValue)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_GE:
+					      if (pFld->Value->IntValue >=
+						  pC->intValue)
+						  ok = 1;
+					      break;
+					  };
+				    }
+				  break;
+			      case GAIA_DOUBLE_VALUE:
+				  if (pC->valueType == 'I')
+				    {
+					switch (pC->op)
+					  {
+					  case SQLITE_INDEX_CONSTRAINT_EQ:
+					      if (pFld->Value->DblValue ==
+						  pC->dblValue)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_GT:
+					      if (pFld->Value->DblValue >
+						  pC->dblValue)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_LE:
+					      if (pFld->Value->DblValue <=
+						  pC->dblValue)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_LT:
+					      if (pFld->Value->DblValue <
+						  pC->dblValue)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_GE:
+					      if (pFld->Value->DblValue >=
+						  pC->dblValue)
+						  ok = 1;
+					      break;
+					  };
+				    }
+				  if (pC->valueType == 'D')
+				    {
+					switch (pC->op)
+					  {
+					  case SQLITE_INDEX_CONSTRAINT_EQ:
+					      if (pFld->Value->DblValue ==
+						  pC->dblValue)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_GT:
+					      if (pFld->Value->DblValue >
+						  pC->dblValue)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_LE:
+					      if (pFld->Value->DblValue <=
+						  pC->dblValue)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_LT:
+					      if (pFld->Value->DblValue <
+						  pC->dblValue)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_GE:
+					      if (pFld->Value->DblValue >=
+						  pC->dblValue)
+						  ok = 1;
+					      break;
+					  }
+				    }
+				  break;
+			      case GAIA_TEXT_VALUE:
+				  if (pC->valueType == 'T' && pC->txtValue)
+				    {
+					int ret;
+					ret =
+					    strcmp (pFld->Value->TxtValue,
+						    pC->txtValue);
+					switch (pC->op)
+					  {
+					  case SQLITE_INDEX_CONSTRAINT_EQ:
+					      if (ret == 0)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_GT:
+					      if (ret == 1)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_LE:
+					      if (ret == -1 || ret == 0)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_LT:
+					      if (ret == -1)
+						  ok = 1;
+					      break;
+					  case SQLITE_INDEX_CONSTRAINT_GE:
+					      if (ret == 1 || ret == 0)
+						  ok = 1;
+					      break;
+					  };
+				    }
+				  break;
+			      };
+			}
+		      goto done;
+		  }
+		nCol++;
+		pFld = pFld->Next;
+	    }
+	done:
+	  if (!ok)
+	      return 0;
+	  pC = pC->next;
+      }
+    return 1;
 }
 
 static int
@@ -393,8 +699,71 @@ vshp_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
 	     int argc, sqlite3_value ** argv)
 {
 /* setting up a cursor filter */
-    if (pCursor || idxNum || idxStr || argc || argv)
-	pCursor = pCursor;	/* unused arg warning suppression */
+    int i;
+    int iColumn;
+    int op;
+    int len;
+    VirtualShapeConstraintPtr pC;
+    VirtualShapeCursorPtr cursor = (VirtualShapeCursorPtr) pCursor;
+    if (idxNum)
+	idxNum = idxNum;	/* unused arg warning suppression */
+
+/* resetting any previously set filter constraint */
+    vshp_free_constraints (cursor);
+
+    for (i = 0; i < argc; i++)
+      {
+	  if (!vshp_parse_constraint (idxStr, i, &iColumn, &op))
+	      continue;
+	  pC = sqlite3_malloc (sizeof (VirtualShapeConstraint));
+	  if (!pC)
+	      continue;
+	  pC->iColumn = iColumn;
+	  pC->op = op;
+	  pC->valueType = '\0';
+	  pC->txtValue = NULL;
+	  pC->next = NULL;
+
+	  if (sqlite3_value_type (argv[i]) == SQLITE_INTEGER)
+	    {
+		pC->valueType = 'I';
+		pC->intValue = sqlite3_value_int64 (argv[i]);
+	    }
+	  if (sqlite3_value_type (argv[i]) == SQLITE_FLOAT)
+	    {
+		pC->valueType = 'D';
+		pC->dblValue = sqlite3_value_double (argv[i]);
+	    }
+	  if (sqlite3_value_type (argv[i]) == SQLITE_TEXT)
+	    {
+		pC->valueType = 'T';
+		len = sqlite3_value_bytes (argv[i]) + 1;
+		pC->txtValue = (char *) sqlite3_malloc (len);
+		if (pC->txtValue)
+		    strcpy (pC->txtValue,
+			    (char *) sqlite3_value_text (argv[i]));
+	    }
+	  if (cursor->firstConstraint == NULL)
+	      cursor->firstConstraint = pC;
+	  if (cursor->lastConstraint != NULL)
+	      cursor->lastConstraint->next = pC;
+	  cursor->lastConstraint = pC;
+      }
+
+    cursor->current_row = 0;
+    if (cursor->blobGeometry)
+	free (cursor->blobGeometry);
+    cursor->blobGeometry = NULL;
+    cursor->blobSize = 0;
+    cursor->eof = 0;
+    while (1)
+      {
+	  vshp_read_row (cursor);
+	  if (cursor->eof)
+	      break;
+	  if (vshp_eval_constraints (cursor))
+	      break;
+      }
     return SQLITE_OK;
 }
 
@@ -403,7 +772,14 @@ vshp_next (sqlite3_vtab_cursor * pCursor)
 {
 /* fetching a next row from cursor */
     VirtualShapeCursorPtr cursor = (VirtualShapeCursorPtr) pCursor;
-    vshp_read_row (cursor);
+    while (1)
+      {
+	  vshp_read_row (cursor);
+	  if (cursor->eof)
+	      break;
+	  if (vshp_eval_constraints (cursor))
+	      break;
+      }
     return SQLITE_OK;
 }
 
@@ -568,5 +944,4 @@ virtualshape_extension_init (sqlite3 * db)
     return sqlite3VirtualShapeInit (db);
 }
 
-#endif  /* ICONV enabled/disabled */
-
+#endif /* ICONV enabled/disabled */

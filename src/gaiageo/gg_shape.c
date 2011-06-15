@@ -279,6 +279,8 @@ gaiaResetDbfEntity (gaiaDbfListPtr list)
 	  p->Value = NULL;
 	  p = p->Next;
       }
+    if (list->Geometry)
+	gaiaFreeGeomColl (list->Geometry);
     list->Geometry = NULL;
 }
 
