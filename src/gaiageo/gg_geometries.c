@@ -2901,21 +2901,21 @@ gaiaMbrsDisjoint (gaiaGeomCollPtr mbr1, gaiaGeomCollPtr mbr2)
 / returns 1 if TRUE
 / 0 if FALSE
 */
-    if (mbr1->MinX >= mbr2->MaxX)
+    if (mbr1->MinX > mbr2->MaxX)
 	return 1;
-    if (mbr1->MinY >= mbr2->MaxY)
+    if (mbr1->MinY > mbr2->MaxY)
 	return 1;
-    if (mbr1->MaxX <= mbr2->MinX)
+    if (mbr1->MaxX < mbr2->MinX)
 	return 1;
-    if (mbr1->MaxY <= mbr2->MinY)
+    if (mbr1->MaxY < mbr2->MinY)
 	return 1;
-    if (mbr2->MinX >= mbr1->MaxX)
+    if (mbr2->MinX > mbr1->MaxX)
 	return 1;
-    if (mbr2->MinY >= mbr1->MaxY)
+    if (mbr2->MinY > mbr1->MaxY)
 	return 1;
-    if (mbr2->MaxX <= mbr1->MinX)
+    if (mbr2->MaxX < mbr1->MinX)
 	return 1;
-    if (mbr2->MaxY <= mbr1->MinY)
+    if (mbr2->MaxY < mbr1->MinY)
 	return 1;
     return 0;
 }

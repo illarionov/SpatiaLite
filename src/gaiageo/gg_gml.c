@@ -62,14 +62,14 @@ int gml_parse_error;
 #define GML_PARSER_SELF_CLOSED_NODE	2
 #define GML_PARSER_CLOSED_NODE		3
 
-#define GAIA_GML_UNKNOWN			0
-#define GAIA_GML_POINT				1
-#define GAIA_GML_LINESTRING			2
-#define GAIA_GML_CURVE				3
-#define GAIA_GML_POLYGON			4
-#define GAIA_GML_MULTIPOINT			5
+#define GAIA_GML_UNKNOWN		0
+#define GAIA_GML_POINT			1
+#define GAIA_GML_LINESTRING		2
+#define GAIA_GML_CURVE			3
+#define GAIA_GML_POLYGON		4
+#define GAIA_GML_MULTIPOINT		5
 #define GAIA_GML_MULTILINESTRING	6
-#define GAIA_GML_MULTICURVE			7
+#define GAIA_GML_MULTICURVE		7
 #define GAIA_GML_MULTIPOLYGON		8
 #define GAIA_GML_MULTISURFACE		9
 #define GAIA_GML_MULTIGEOMETRY		10
@@ -2758,54 +2758,59 @@ gml_build_geometry (gmlNodePtr tree, sqlite3 * sqlite_handle)
 /*
 ** CAVEAT: we must redefine any Lemon/Flex own macro
 */
-#define YYMINORTYPE				GML_MINORTYPE
-#define YY_CHAR					GML_YY_CHAR
-#define	input					gml_input
-#define ParseAlloc				gmlParseAlloc
-#define ParseFree				gmlParseFree
-#define ParseStackPeak			gmlParseStackPeak
-#define Parse					gmlParse
-#define yyStackEntry			gml_yyStackEntry
-#define yyzerominor				gml_yyzerominor
-#define yy_accept				gml_yy_accept
-#define yy_action				gml_yy_action
-#define yy_base					gml_yy_base
-#define yy_buffer_stack			gml_yy_buffer_stack
-#define yy_buffer_stack_max		gml_yy_buffer_stack_max
-#define yy_buffer_stack_top		gml_yy_buffer_stack_top
-#define yy_c_buf_p				gml_yy_c_buf_p
-#define yy_chk					gml_yy_chk
-#define yy_def					gml_yy_def
-#define yy_default				gml_yy_default
-#define yy_destructor			gml_yy_destructor
-#define yy_ec					gml_yy_ec
-#define yy_fatal_error			gml_yy_fatal_error
+#define YYMINORTYPE		GML_MINORTYPE
+#define YY_CHAR			GML_YY_CHAR
+#define	input			gml_input
+#define ParseAlloc		gmlParseAlloc
+#define ParseFree		gmlParseFree
+#define ParseStackPeak		gmlParseStackPeak
+#define Parse			gmlParse
+#define yyStackEntry		gml_yyStackEntry
+#define yyzerominor		gml_yyzerominor
+#define yy_accept		gml_yy_accept
+#define yy_action		gml_yy_action
+#define yy_base			gml_yy_base
+#define yy_buffer_stack		gml_yy_buffer_stack
+#define yy_buffer_stack_max	gml_yy_buffer_stack_max
+#define yy_buffer_stack_top	gml_yy_buffer_stack_top
+#define yy_c_buf_p		gml_yy_c_buf_p
+#define yy_chk			gml_yy_chk
+#define yy_def			gml_yy_def
+#define yy_default		gml_yy_default
+#define yy_destructor		gml_yy_destructor
+#define yy_ec			gml_yy_ec
+#define yy_fatal_error		gml_yy_fatal_error
 #define yy_find_reduce_action	gml_yy_find_reduce_action
 #define yy_find_shift_action	gml_yy_find_shift_action
-#define yy_get_next_buffer		gml_yy_get_next_buffer
+#define yy_get_next_buffer	gml_yy_get_next_buffer
 #define yy_get_previous_state	gml_yy_get_previous_state
-#define yy_init					gml_yy_init
-#define yy_init_globals			gml_yy_init_globals
-#define yy_lookahead			gml_yy_lookahead
-#define yy_meta					gml_yy_meta
-#define yy_nxt					gml_yy_nxt
-#define yy_parse_failed			gml_yy_parse_failed
-#define yy_pop_parser_stack		gml_yy_pop_parser_stack
-#define yy_reduce				gml_yy_reduce
-#define yy_reduce_ofst			gml_yy_reduce_ofst
-#define yy_shift				gml_yy_shift
-#define yy_shift_ofst			gml_yy_shift_ofst
-#define yy_start				gml_yy_start
-#define yy_state_type			gml_yy_state_type
-#define yy_syntax_error			gml_yy_syntax_error
-#define yy_trans_info			gml_yy_trans_info
-#define yy_try_NUL_trans		gml_yy_try_NUL_trans
-#define yyParser				gml_yyParser
-#define yyStackEntry			gml_yyStackEntry
-#define yyStackOverflow			gml_yyStackOverflow
-#define yyRuleInfo				gml_yyRuleInfo
-#define yyunput					gml_yyunput
-#define yyzerominor				gml_yyzerominor
+#define yy_init			gml_yy_init
+#define yy_init_globals		gml_yy_init_globals
+#define yy_lookahead		gml_yy_lookahead
+#define yy_meta			gml_yy_meta
+#define yy_nxt			gml_yy_nxt
+#define yy_parse_failed		gml_yy_parse_failed
+#define yy_pop_parser_stack	gml_yy_pop_parser_stack
+#define yy_reduce		gml_yy_reduce
+#define yy_reduce_ofst		gml_yy_reduce_ofst
+#define yy_shift		gml_yy_shift
+#define yy_shift_ofst		gml_yy_shift_ofst
+#define yy_start		gml_yy_start
+#define yy_state_type		gml_yy_state_type
+#define yy_syntax_error		gml_yy_syntax_error
+#define yy_trans_info		gml_yy_trans_info
+#define yy_try_NUL_trans	gml_yy_try_NUL_trans
+#define yyParser		gml_yyParser
+#define yyStackEntry		gml_yyStackEntry
+#define yyStackOverflow		gml_yyStackOverflow
+#define yyRuleInfo		gml_yyRuleInfo
+#define yyunput			gml_yyunput
+#define yyzerominor		gml_yyzerominor
+#define yyTraceFILE		gml_yyTraceFILE
+#define yyTracePrompt		gml_yyTracePrompt
+#define yyTokenName		gml_yyTokenName
+#define yyRuleName		gml_yyRuleName
+#define ParseTrace		gml_ParseTrace
 
 
 /*
@@ -6063,3 +6068,8 @@ gaiaParseGml (const unsigned char *dirty_buffer, sqlite3 * sqlite_handle)
 #undef YY_MORE_ADJ
 #undef YY_RESTORE_YY_MORE_OFFSET
 #undef YY_LESS_LINENO
+#undef yyTracePrompt
+#undef yyTraceFILE
+#undef yyTokenName
+#undef yyRuleName
+#undef ParseTrace

@@ -1474,54 +1474,59 @@ ewkt_geomColl_xyzm (gaiaGeomCollPtr first)
 /*
 ** CAVEAT: we must redefine any Lemon/Flex own macro
 */
-#define YYMINORTYPE				EWKT_MINORTYPE
-#define YY_CHAR					EWKT_YY_CHAR
-#define	input					ewkt_input
-#define ParseAlloc				ewktParseAlloc
-#define ParseFree				ewktParseFree
-#define ParseStackPeak			ewktParseStackPeak
-#define Parse					ewktParse
-#define yyStackEntry			ewkt_yyStackEntry
-#define yyzerominor				ewkt_yyzerominor
-#define yy_accept				ewkt_yy_accept
-#define yy_action				ewkt_yy_action
-#define yy_base					ewkt_yy_base
-#define yy_buffer_stack			ewkt_yy_buffer_stack
-#define yy_buffer_stack_max		ewkt_yy_buffer_stack_max
-#define yy_buffer_stack_top		ewkt_yy_buffer_stack_top
-#define yy_c_buf_p				ewkt_yy_c_buf_p
-#define yy_chk					ewkt_yy_chk
-#define yy_def					ewkt_yy_def
-#define yy_default				ewkt_yy_default
-#define yy_destructor			ewkt_yy_destructor
-#define yy_ec					ewkt_yy_ec
-#define yy_fatal_error			ewkt_yy_fatal_error
+#define YYMINORTYPE		EWKT_MINORTYPE
+#define YY_CHAR			EWKT_YY_CHAR
+#define	input			ewkt_input
+#define ParseAlloc		ewktParseAlloc
+#define ParseFree		ewktParseFree
+#define ParseStackPeak		ewktParseStackPeak
+#define Parse			ewktParse
+#define yyStackEntry		ewkt_yyStackEntry
+#define yyzerominor		ewkt_yyzerominor
+#define yy_accept		ewkt_yy_accept
+#define yy_action		ewkt_yy_action
+#define yy_base			ewkt_yy_base
+#define yy_buffer_stack		ewkt_yy_buffer_stack
+#define yy_buffer_stack_max	ewkt_yy_buffer_stack_max
+#define yy_buffer_stack_top	ewkt_yy_buffer_stack_top
+#define yy_c_buf_p		ewkt_yy_c_buf_p
+#define yy_chk			ewkt_yy_chk
+#define yy_def			ewkt_yy_def
+#define yy_default		ewkt_yy_default
+#define yy_destructor		ewkt_yy_destructor
+#define yy_ec			ewkt_yy_ec
+#define yy_fatal_error		ewkt_yy_fatal_error
 #define yy_find_reduce_action	ewkt_yy_find_reduce_action
 #define yy_find_shift_action	ewkt_yy_find_shift_action
-#define yy_get_next_buffer		ewkt_yy_get_next_buffer
+#define yy_get_next_buffer	ewkt_yy_get_next_buffer
 #define yy_get_previous_state	ewkt_yy_get_previous_state
-#define yy_init					ewkt_yy_init
-#define yy_init_globals			ewkt_yy_init_globals
-#define yy_lookahead			ewkt_yy_lookahead
-#define yy_meta					ewkt_yy_meta
-#define yy_nxt					ewkt_yy_nxt
-#define yy_parse_failed			ewkt_yy_parse_failed
-#define yy_pop_parser_stack		ewkt_yy_pop_parser_stack
-#define yy_reduce				ewkt_yy_reduce
-#define yy_reduce_ofst			ewkt_yy_reduce_ofst
-#define yy_shift				ewkt_yy_shift
-#define yy_shift_ofst			ewkt_yy_shift_ofst
-#define yy_start				ewkt_yy_start
-#define yy_state_type			ewkt_yy_state_type
-#define yy_syntax_error			ewkt_yy_syntax_error
-#define yy_trans_info			ewkt_yy_trans_info
-#define yy_try_NUL_trans		ewkt_yy_try_NUL_trans
-#define yyParser				ewkt_yyParser
-#define yyStackEntry			ewkt_yyStackEntry
-#define yyStackOverflow			ewkt_yyStackOverflow
-#define yyRuleInfo				ewkt_yyRuleInfo
-#define yyunput					ewkt_yyunput
-#define yyzerominor				ewkt_yyzerominor
+#define yy_init			ewkt_yy_init
+#define yy_init_globals		ewkt_yy_init_globals
+#define yy_lookahead		ewkt_yy_lookahead
+#define yy_meta			ewkt_yy_meta
+#define yy_nxt			ewkt_yy_nxt
+#define yy_parse_failed		ewkt_yy_parse_failed
+#define yy_pop_parser_stack	ewkt_yy_pop_parser_stack
+#define yy_reduce		ewkt_yy_reduce
+#define yy_reduce_ofst		ewkt_yy_reduce_ofst
+#define yy_shift		ewkt_yy_shift
+#define yy_shift_ofst		ewkt_yy_shift_ofst
+#define yy_start		ewkt_yy_start
+#define yy_state_type		ewkt_yy_state_type
+#define yy_syntax_error		ewkt_yy_syntax_error
+#define yy_trans_info		ewkt_yy_trans_info
+#define yy_try_NUL_trans	ewkt_yy_try_NUL_trans
+#define yyParser		ewkt_yyParser
+#define yyStackEntry		ewkt_yyStackEntry
+#define yyStackOverflow		ewkt_yyStackOverflow
+#define yyRuleInfo		ewkt_yyRuleInfo
+#define yyunput			ewkt_yyunput
+#define yyzerominor		ewkt_yyzerominor
+#define yyTraceFILE		ewkt_yyTraceFILE
+#define yyTracePrompt		ewkt_yyTracePrompt
+#define yyTokenName		ewkt_yyTokenName
+#define yyRuleName		ewkt_yyRuleName
+#define ParseTrace		ewkt_ParseTrace
 
 
 /*
@@ -5571,3 +5576,8 @@ gaiaParseEWKT (const unsigned char *dirty_buffer)
 #undef YY_MORE_ADJ
 #undef YY_RESTORE_YY_MORE_OFFSET
 #undef YY_LESS_LINENO
+#undef yyTracePrompt
+#undef yyTraceFILE
+#undef yyTokenName
+#undef yyRuleName
+#undef ParseTrace

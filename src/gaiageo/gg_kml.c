@@ -62,10 +62,10 @@ int kml_parse_error;
 #define KML_PARSER_SELF_CLOSED_NODE	2
 #define KML_PARSER_CLOSED_NODE		3
 
-#define GAIA_KML_UNKNOWN			0
-#define GAIA_KML_POINT				1
-#define GAIA_KML_LINESTRING			2
-#define GAIA_KML_POLYGON			3
+#define GAIA_KML_UNKNOWN		0
+#define GAIA_KML_POINT			1
+#define GAIA_KML_LINESTRING		2
+#define GAIA_KML_POLYGON		3
 #define GAIA_KML_MULTIGEOMETRY		4
 
 /*
@@ -1619,54 +1619,59 @@ kml_build_geometry (kmlNodePtr tree)
 /*
 ** CAVEAT: we must redefine any Lemon/Flex own macro
 */
-#define YYMINORTYPE				KML_MINORTYPE
-#define YY_CHAR					KML_YY_CHAR
-#define	input					kml_input
-#define ParseAlloc				kmlParseAlloc
-#define ParseFree				kmlParseFree
-#define ParseStackPeak			kmlParseStackPeak
-#define Parse					kmlParse
-#define yyStackEntry			kml_yyStackEntry
-#define yyzerominor				kml_yyzerominor
-#define yy_accept				kml_yy_accept
-#define yy_action				kml_yy_action
-#define yy_base					kml_yy_base
-#define yy_buffer_stack			kml_yy_buffer_stack
-#define yy_buffer_stack_max		kml_yy_buffer_stack_max
-#define yy_buffer_stack_top		kml_yy_buffer_stack_top
-#define yy_c_buf_p				kml_yy_c_buf_p
-#define yy_chk					kml_yy_chk
-#define yy_def					kml_yy_def
-#define yy_default				kml_yy_default
-#define yy_destructor			kml_yy_destructor
-#define yy_ec					kml_yy_ec
-#define yy_fatal_error			kml_yy_fatal_error
+#define YYMINORTYPE		KML_MINORTYPE
+#define YY_CHAR			KML_YY_CHAR
+#define	input			kml_input
+#define ParseAlloc		kmlParseAlloc
+#define ParseFree		kmlParseFree
+#define ParseStackPeak		kmlParseStackPeak
+#define Parse			kmlParse
+#define yyStackEntry		kml_yyStackEntry
+#define yyzerominor		kml_yyzerominor
+#define yy_accept		kml_yy_accept
+#define yy_action		kml_yy_action
+#define yy_base			kml_yy_base
+#define yy_buffer_stack		kml_yy_buffer_stack
+#define yy_buffer_stack_max	kml_yy_buffer_stack_max
+#define yy_buffer_stack_top	kml_yy_buffer_stack_top
+#define yy_c_buf_p		kml_yy_c_buf_p
+#define yy_chk			kml_yy_chk
+#define yy_def			kml_yy_def
+#define yy_default		kml_yy_default
+#define yy_destructor		kml_yy_destructor
+#define yy_ec			kml_yy_ec
+#define yy_fatal_error		kml_yy_fatal_error
 #define yy_find_reduce_action	kml_yy_find_reduce_action
 #define yy_find_shift_action	kml_yy_find_shift_action
-#define yy_get_next_buffer		kml_yy_get_next_buffer
+#define yy_get_next_buffer	kml_yy_get_next_buffer
 #define yy_get_previous_state	kml_yy_get_previous_state
-#define yy_init					kml_yy_init
-#define yy_init_globals			kml_yy_init_globals
-#define yy_lookahead			kml_yy_lookahead
-#define yy_meta					kml_yy_meta
-#define yy_nxt					kml_yy_nxt
-#define yy_parse_failed			kml_yy_parse_failed
-#define yy_pop_parser_stack		kml_yy_pop_parser_stack
-#define yy_reduce				kml_yy_reduce
-#define yy_reduce_ofst			kml_yy_reduce_ofst
-#define yy_shift				kml_yy_shift
-#define yy_shift_ofst			kml_yy_shift_ofst
-#define yy_start				kml_yy_start
-#define yy_state_type			kml_yy_state_type
-#define yy_syntax_error			kml_yy_syntax_error
-#define yy_trans_info			kml_yy_trans_info
-#define yy_try_NUL_trans		kml_yy_try_NUL_trans
-#define yyParser				kml_yyParser
-#define yyStackEntry			kml_yyStackEntry
-#define yyStackOverflow			kml_yyStackOverflow
-#define yyRuleInfo				kml_yyRuleInfo
-#define yyunput					kml_yyunput
-#define yyzerominor				kml_yyzerominor
+#define yy_init			kml_yy_init
+#define yy_init_globals		kml_yy_init_globals
+#define yy_lookahead		kml_yy_lookahead
+#define yy_meta			kml_yy_meta
+#define yy_nxt			kml_yy_nxt
+#define yy_parse_failed		kml_yy_parse_failed
+#define yy_pop_parser_stack	kml_yy_pop_parser_stack
+#define yy_reduce		kml_yy_reduce
+#define yy_reduce_ofst		kml_yy_reduce_ofst
+#define yy_shift		kml_yy_shift
+#define yy_shift_ofst		kml_yy_shift_ofst
+#define yy_start		kml_yy_start
+#define yy_state_type		kml_yy_state_type
+#define yy_syntax_error		kml_yy_syntax_error
+#define yy_trans_info		kml_yy_trans_info
+#define yy_try_NUL_trans	kml_yy_try_NUL_trans
+#define yyParser		kml_yyParser
+#define yyStackEntry		kml_yyStackEntry
+#define yyStackOverflow		kml_yyStackOverflow
+#define yyRuleInfo		kml_yyRuleInfo
+#define yyunput			kml_yyunput
+#define yyzerominor		kml_yyzerominor
+#define yyTraceFILE		kml_yyTraceFILE
+#define yyTracePrompt		kml_yyTracePrompt
+#define yyTokenName		kml_yyTokenName
+#define yyRuleName		kml_yyRuleName
+#define ParseTrace		kml_ParseTrace
 
 
 /*
@@ -4849,3 +4854,8 @@ gaiaParseKml (const unsigned char *dirty_buffer)
 #undef YY_MORE_ADJ
 #undef YY_RESTORE_YY_MORE_OFFSET
 #undef YY_LESS_LINENO
+#undef yyTracePrompt
+#undef yyTraceFILE
+#undef yyTokenName
+#undef yyRuleName
+#undef ParseTrace

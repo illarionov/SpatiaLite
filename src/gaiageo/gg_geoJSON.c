@@ -968,54 +968,59 @@ geoJSON_geomColl_xyz (gaiaGeomCollPtr first)
 /*
 ** CAVEAT: we must redefine any Lemon/Flex own macro
 */
-#define YYMINORTYPE				GEO_JSON_MINORTYPE
-#define YY_CHAR					GEO_JSON_YY_CHAR
-#define	input					geoJSON_input
-#define ParseAlloc				geoJSONParseAlloc
-#define ParseFree				geoJSONParseFree
-#define ParseStackPeak			geoJSONParseStackPeak
-#define Parse					geoJSONParse
-#define yyStackEntry			geoJSON_yyStackEntry
-#define yyzerominor				geoJSON_yyzerominor
-#define yy_accept				geoJSON_yy_accept
-#define yy_action				geoJSON_yy_action
-#define yy_base					geoJSON_yy_base
-#define yy_buffer_stack			geoJSON_yy_buffer_stack
-#define yy_buffer_stack_max		geoJSON_yy_buffer_stack_max
-#define yy_buffer_stack_top		geoJSON_yy_buffer_stack_top
-#define yy_c_buf_p				geoJSON_yy_c_buf_p
-#define yy_chk					geoJSON_yy_chk
-#define yy_def					geoJSON_yy_def
-#define yy_default				geoJSON_yy_default
-#define yy_destructor			geoJSON_yy_destructor
-#define yy_ec					geoJSON_yy_ec
-#define yy_fatal_error			geoJSON_yy_fatal_error
+#define YYMINORTYPE		GEO_JSON_MINORTYPE
+#define YY_CHAR			GEO_JSON_YY_CHAR
+#define	input			geoJSON_input
+#define ParseAlloc		geoJSONParseAlloc
+#define ParseFree		geoJSONParseFree
+#define ParseStackPeak		geoJSONParseStackPeak
+#define Parse			geoJSONParse
+#define yyStackEntry		geoJSON_yyStackEntry
+#define yyzerominor		geoJSON_yyzerominor
+#define yy_accept		geoJSON_yy_accept
+#define yy_action		geoJSON_yy_action
+#define yy_base			geoJSON_yy_base
+#define yy_buffer_stack		geoJSON_yy_buffer_stack
+#define yy_buffer_stack_max	geoJSON_yy_buffer_stack_max
+#define yy_buffer_stack_top	geoJSON_yy_buffer_stack_top
+#define yy_c_buf_p		geoJSON_yy_c_buf_p
+#define yy_chk			geoJSON_yy_chk
+#define yy_def			geoJSON_yy_def
+#define yy_default		geoJSON_yy_default
+#define yy_destructor		geoJSON_yy_destructor
+#define yy_ec			geoJSON_yy_ec
+#define yy_fatal_error		geoJSON_yy_fatal_error
 #define yy_find_reduce_action	geoJSON_yy_find_reduce_action
 #define yy_find_shift_action	geoJSON_yy_find_shift_action
-#define yy_get_next_buffer		geoJSON_yy_get_next_buffer
+#define yy_get_next_buffer	geoJSON_yy_get_next_buffer
 #define yy_get_previous_state	geoJSON_yy_get_previous_state
-#define yy_init					geoJSON_yy_init
-#define yy_init_globals			geoJSON_yy_init_globals
-#define yy_lookahead			geoJSON_yy_lookahead
-#define yy_meta					geoJSON_yy_meta
-#define yy_nxt					geoJSON_yy_nxt
-#define yy_parse_failed			geoJSON_yy_parse_failed
-#define yy_pop_parser_stack		geoJSON_yy_pop_parser_stack
-#define yy_reduce				geoJSON_yy_reduce
-#define yy_reduce_ofst			geoJSON_yy_reduce_ofst
-#define yy_shift				geoJSON_yy_shift
-#define yy_shift_ofst			geoJSON_yy_shift_ofst
-#define yy_start				geoJSON_yy_start
-#define yy_state_type			geoJSON_yy_state_type
-#define yy_syntax_error			geoJSON_yy_syntax_error
-#define yy_trans_info			geoJSON_yy_trans_info
-#define yy_try_NUL_trans		geoJSON_yy_try_NUL_trans
-#define yyParser				geoJSON_yyParser
-#define yyStackEntry			geoJSON_yyStackEntry
-#define yyStackOverflow			geoJSON_yyStackOverflow
-#define yyRuleInfo				geoJSON_yyRuleInfo
-#define yyunput					geoJSON_yyunput
-#define yyzerominor				geoJSON_yyzerominor
+#define yy_init			geoJSON_yy_init
+#define yy_init_globals		geoJSON_yy_init_globals
+#define yy_lookahead		geoJSON_yy_lookahead
+#define yy_meta			geoJSON_yy_meta
+#define yy_nxt			geoJSON_yy_nxt
+#define yy_parse_failed		geoJSON_yy_parse_failed
+#define yy_pop_parser_stack	geoJSON_yy_pop_parser_stack
+#define yy_reduce		geoJSON_yy_reduce
+#define yy_reduce_ofst		geoJSON_yy_reduce_ofst
+#define yy_shift		geoJSON_yy_shift
+#define yy_shift_ofst		geoJSON_yy_shift_ofst
+#define yy_start		geoJSON_yy_start
+#define yy_state_type		geoJSON_yy_state_type
+#define yy_syntax_error		geoJSON_yy_syntax_error
+#define yy_trans_info		geoJSON_yy_trans_info
+#define yy_try_NUL_trans	geoJSON_yy_try_NUL_trans
+#define yyParser		geoJSON_yyParser
+#define yyStackEntry		geoJSON_yyStackEntry
+#define yyStackOverflow		geoJSON_yyStackOverflow
+#define yyRuleInfo		geoJSON_yyRuleInfo
+#define yyunput			geoJSON_yyunput
+#define yyzerominor		geoJSON_yyzerominor
+#define yyTraceFILE		geoJSON_yyTraceFILE
+#define yyTracePrompt		geoJSON_yyTracePrompt
+#define yyTokenName		geoJSON_yyTokenName
+#define yyRuleName		geoJSON_yyRuleName
+#define ParseTrace		geoJSON_ParseTrace
 
 
 /*
@@ -5163,3 +5168,8 @@ gaiaParseGeoJSON (const unsigned char *dirty_buffer)
 #undef YY_MORE_ADJ
 #undef YY_RESTORE_YY_MORE_OFFSET
 #undef YY_LESS_LINENO
+#undef yyTracePrompt
+#undef yyTraceFILE
+#undef yyTokenName
+#undef yyRuleName
+#undef ParseTrace
