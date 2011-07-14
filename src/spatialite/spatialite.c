@@ -4187,6 +4187,677 @@ fnct_RebuildGeometryTriggers (sqlite3_context * context, int argc,
     return;
 }
 
+static int
+check_topo_table (sqlite3 * sqlite, const char *table)
+{
+/* checking if some Topology-related table already exists */
+    int exists = 0;
+    char sql[2048];
+    char sqltable[1024];
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    strcpy (sqltable, table);
+    clean_sql_string (sqltable);
+    sprintf (sql,
+	     "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE '%s'",
+	     table);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    if (ret != SQLITE_OK)
+	return 0;
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
+create_topo_nodes (sqlite3 * sqlite, const char *table, int srid, int dims)
+{
+/* creating the topo_nodes table */
+    char sql[2048];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sqltable, table);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "CREATE TABLE %s (\n", sqltable);
+    strcat (sql, "node_id INTEGER PRIMARY KEY AUTOINCREMENT,\n");
+    strcat (sql, "gml_id TEXT)");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    strcpy (sqltable, table);
+    clean_sql_string (sqltable);
+    sprintf (sql,
+	     "SELECT AddGeometryColumn('%s', 'Geometry', %d, 'POINT', '%s')",
+	     sqltable, srid, (dims == GAIA_XY_Z) ? "XYZ" : "XY");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "AddGeometryColumn '%s'.'Geometry' error: %s\n",
+		   table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sprintf (sql, "SELECT CreateSpatialIndex('%s', 'Geometry')", sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CreateSpatialIndex '%s'.'Geometry' error: %s\n",
+		   table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    strcpy (sqltable, table);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "idx_%s_gml", sqltable);
+    double_quoted_sql (sql2);
+    sprintf (sql, "CREATE INDEX %s ON %s (gml_id)", sql2, sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Create Index '%s'('gml_id') error: %s\n", sqltable,
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_topo_edges (sqlite3 * sqlite, const char *table, int srid, int dims)
+{
+/* creating the topo_edges table */
+    char sql[2048];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sqltable, table);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "CREATE TABLE %s (\n", sqltable);
+    strcat (sql, "edge_id INTEGER PRIMARY KEY AUTOINCREMENT,\n");
+    strcat (sql, "node_from_href TEXT,\n");
+    strcat (sql, "node_to_href TEXT,\n");
+    strcat (sql, "gml_id TEXT)");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    strcpy (sqltable, table);
+    clean_sql_string (sqltable);
+    sprintf (sql,
+	     "SELECT AddGeometryColumn('%s', 'Geometry', %d, 'LINESTRING', '%s')",
+	     sqltable, srid, (dims == GAIA_XY_Z) ? "XYZ" : "XY");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "AddGeometryColumn '%s'.'Geometry' error: %s\n",
+		   table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sprintf (sql, "SELECT CreateSpatialIndex('%s', 'Geometry')", sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CreateSpatialIndex '%s'.'Geometry' error: %s\n",
+		   table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    strcpy (sqltable, table);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "idx_%s_gml_id", sqltable);
+    double_quoted_sql (sql2);
+    sprintf (sql, "CREATE INDEX %s ON %s (gml_id)", sql2, sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Create Index '%s'('gml_id') error: %s\n", sqltable,
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    strcpy (sqltable, table);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "idx_%s_from", sqltable);
+    double_quoted_sql (sql2);
+    sprintf (sql, "CREATE INDEX %s ON %s (node_from_href)", sql2, sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Create Index '%s'('node_from_href') error: %s\n",
+		   sqltable, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    strcpy (sqltable, table);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "idx_%s_to", sqltable);
+    double_quoted_sql (sql2);
+    sprintf (sql, "CREATE INDEX %s ON %s (node_to_href)", sql2, sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Create Index '%s'('node_to_href') error: %s\n",
+		   sqltable, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_topo_faces (sqlite3 * sqlite, const char *table, int srid, int dims)
+{
+/* creating the topo_faces table */
+    char sql[2048];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sqltable, table);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "CREATE TABLE %s (\n", sqltable);
+    strcat (sql, "face_id INTEGER PRIMARY KEY AUTOINCREMENT,\n");
+    strcat (sql, "gml_id TEXT)");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    strcpy (sqltable, table);
+    clean_sql_string (sqltable);
+    sprintf (sql,
+	     "SELECT AddGeometryColumn('%s', 'Geometry', %d, 'POLYGON', '%s')",
+	     sqltable, srid, (dims == GAIA_XY_Z) ? "XYZ" : "XY");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "AddGeometryColumn '%s'.'Geometry' error: %s\n",
+		   table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sprintf (sql, "SELECT CreateSpatialIndex('%s', 'Geometry')", sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CreateSpatialIndex '%s'.'Geometry' error: %s\n",
+		   table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    strcpy (sqltable, table);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "idx_%s_gml", sqltable);
+    double_quoted_sql (sql2);
+    sprintf (sql, "CREATE INDEX %s ON %s (gml_id)", sql2, sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Create Index '%s'('gml_id') error: %s\n", sqltable,
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_topo_faces_edges (sqlite3 * sqlite, const char *table,
+			 const char *table2)
+{
+/* creating the topo_faces_edges table */
+    char sql[2048];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sqltable, table);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "CREATE TABLE %s (\n", sqltable);
+    strcat (sql, "face_id INTEGER NOT NULL,\n");
+    strcat (sql, "sub INTEGER NOT NULL,\n");
+    strcat (sql, "gml_id TEXT,\n");
+    strcat (sql, "orientation TEXT,\n");
+    strcat (sql, "CONSTRAINT pk_faces_edges PRIMARY KEY ");
+    strcat (sql, "(face_id, sub),\n");
+    strcat (sql, "CONSTRAINT fk_faces_edges FOREIGN KEY ");
+    strcat (sql, "(face_id) REFERENCES ");
+    strcpy (sql2, table2);
+    double_quoted_sql (sql2);
+    strcat (sql, sql2);
+    strcat (sql, " (face_id))\n");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    strcpy (sqltable, table);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "idx_%s_edge", sqltable);
+    double_quoted_sql (sql2);
+    sprintf (sql, "CREATE INDEX %s ON %s (gml_id)", sql2, sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Create Index '%s'('gml_id') error: %s\n", sqltable,
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_topo_curves (sqlite3 * sqlite, const char *table, const char *table2,
+		    int srid, int dims)
+{
+/* creating the topo_curves table */
+    char sql[2048];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sqltable, table);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "CREATE TABLE %s (\n", sqltable);
+    strcat (sql, "curve_id INTEGER NOT NULL,\n");
+    strcat (sql, "edge_id INTEGER NOT NULL,\n");
+    strcat (sql, "CONSTRAINT pk_curves PRIMARY KEY ");
+    strcat (sql, "(curve_id, edge_id),\n");
+    strcat (sql, "CONSTRAINT fk_curves FOREIGN KEY ");
+    strcat (sql, "(edge_id) REFERENCES ");
+    strcpy (sql2, table2);
+    double_quoted_sql (sql2);
+    strcat (sql, sql2);
+    strcat (sql, " (edge_id))\n");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    strcpy (sqltable, table);
+    clean_sql_string (sqltable);
+    sprintf (sql,
+	     "SELECT AddGeometryColumn('%s', 'Geometry', %d, 'MULTILINESTRING', '%s')",
+	     sqltable, srid, (dims == GAIA_XY_Z) ? "XYZ" : "XY");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "AddGeometryColumn '%s'.'Geometry' error: %s\n",
+		   table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sprintf (sql, "SELECT CreateSpatialIndex('%s', 'Geometry')", sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CreateSpatialIndex '%s'.'Geometry' error: %s\n",
+		   table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    strcpy (sqltable, table);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "idx_%s_edge", sqltable);
+    double_quoted_sql (sql2);
+    sprintf (sql, "CREATE INDEX %s ON %s (edge_id)", sql2, sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Create Index '%s'('edge_id') error: %s\n", sqltable,
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_topo_surfaces (sqlite3 * sqlite, const char *table, const char *table2,
+		      int srid, int dims)
+{
+/* creating the topo_surfaces table */
+    char sql[2048];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sqltable, table);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "CREATE TABLE %s (\n", sqltable);
+    strcat (sql, "surface_id INTEGER NOT NULL,\n");
+    strcat (sql, "face_id INTEGER NOT NULL,\n");
+    strcat (sql, "CONSTRAINT pk_surfaces PRIMARY KEY ");
+    strcat (sql, "(surface_id, face_id),\n");
+    strcat (sql, "CONSTRAINT fk_surfaces FOREIGN KEY ");
+    strcat (sql, "(face_id) REFERENCES ");
+    strcpy (sql2, table2);
+    double_quoted_sql (sql2);
+    strcat (sql, sql2);
+    strcat (sql, " (face_id))\n");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    strcpy (sqltable, table);
+    clean_sql_string (sqltable);
+    sprintf (sql,
+	     "SELECT AddGeometryColumn('%s', 'Geometry', %d, 'MULTIPOLYGON', '%s')",
+	     sqltable, srid, (dims == GAIA_XY_Z) ? "XYZ" : "XY");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "AddGeometryColumn '%s'.'Geometry' error: %s\n",
+		   table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sprintf (sql, "SELECT CreateSpatialIndex('%s', 'Geometry')", sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CreateSpatialIndex '%s'.'Geometry' error: %s\n",
+		   table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    strcpy (sqltable, table);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "idx_%s_face", sqltable);
+    double_quoted_sql (sql2);
+    sprintf (sql, "CREATE INDEX %s ON %s (face_id)", sql2, sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "Create Index '%s'('face_id') error: %s\n", sqltable,
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_topo_master (sqlite3 * sqlite, const char *nodes, const char *edges,
+		    const char *faces, const char *faces_edges,
+		    const char *curves, const char *surfaces, int srid,
+		    int dims)
+{
+/* creating the topo_master table */
+    char sql[4196];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sql, "CREATE TABLE topology_master (\n");
+    strcat (sql, "nodes TEXT NOT NULL,\n");
+    strcat (sql, "edges TEXT NOT NULL,\n");
+    strcat (sql, "faces TEXT NOT NULL,\n");
+    strcat (sql, "faces_edges TEXT NOT NULL,\n");
+    strcat (sql, "curves TEXT NOT NULL,\n");
+    strcat (sql, "surfaces TEXT NOT NULL,\n");
+    strcat (sql, "coord_dimension TEXT NOT NULL,\n");
+    strcat (sql, "srid INTEGER NOT NULL,\n");
+    strcat (sql, "CONSTRAINT fk_topo_master FOREIGN KEY \n");
+    strcat (sql, "(srid) REFERENCES spatial_ref_sys (srid))\n");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE TABLE 'topology_master' error: %s\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+
+/* inserting Topology data into MASTER */
+    strcpy (sql, "INSERT INTO topology_master ");
+    strcat (sql, "(nodes, edges, faces, faces_edges, ");
+    strcat (sql, "curves, surfaces, coord_dimension, srid) ");
+    strcat (sql, "VALUES (");
+    strcpy (sqltable, nodes);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "'%s', ", sqltable);
+    strcat (sql, sql2);
+    strcpy (sqltable, edges);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "'%s', ", sqltable);
+    strcat (sql, sql2);
+    strcpy (sqltable, faces);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "'%s', ", sqltable);
+    strcat (sql, sql2);
+    strcpy (sqltable, faces_edges);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "'%s', ", sqltable);
+    strcat (sql, sql2);
+    strcpy (sqltable, curves);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "'%s', ", sqltable);
+    strcat (sql, sql2);
+    strcpy (sqltable, surfaces);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "'%s', ", sqltable);
+    strcat (sql, sql2);
+    sprintf (sql2, "'%s', %d)", (dims == GAIA_XY_Z) ? "XYZ" : "XY", srid);
+    strcat (sql, sql2);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "INSERT INTO 'topology_master' error: %s\n",
+		   err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static void
+fnct_CreateTopologyTables (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+/* SQL function:
+/ CreateTopologyTables(srid, coord_dims)
+/  or
+/ CreateTopologyTables(prefix, srid, coord_dims)
+/
+/ creates any Topology related table 
+/ returns 1 on success
+/ 0 on failure
+*/
+    const char *prefix = "topo_";
+    const unsigned char *txt_dims;
+    int srid = -1;
+    int dimension;
+    int dims = -1;
+    char *errMsg = NULL;
+    int ret;
+    char table_curves[1024];
+    char table_surfaces[1024];
+    char table_nodes[1024];
+    char table_edges[1024];
+    char table_faces[1024];
+    char table_faces_edges[1024];
+    const char *tables[8];
+    const char **p_tbl;
+    int ok_table;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();
+    if (argc == 3)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		fprintf (stderr,
+			 "CreateTopologyTables() error: argument 1 [table_prefix] is not of the String type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  prefix = (char *) sqlite3_value_text (argv[0]);
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		fprintf (stderr,
+			 "CreateTopologyTables() error: argument 2 [SRID] is not of the Integer type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  srid = sqlite3_value_int (argv[1]);
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		dimension = sqlite3_value_int (argv[2]);
+		if (dimension == 2)
+		    dims = GAIA_XY;
+		if (dimension == 3)
+		    dims = GAIA_XY_Z;
+	    }
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	    {
+		txt_dims = sqlite3_value_text (argv[2]);
+		if (strcasecmp ((char *) txt_dims, "XY") == 0)
+		    dims = GAIA_XY;
+		if (strcasecmp ((char *) txt_dims, "XYZ") == 0)
+		    dims = GAIA_XY_Z;
+	    }
+	  else
+	    {
+		fprintf (stderr,
+			 "CreateTopologyTables() error: argument 3 [dimension] is not of the Integer or Text type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+      }
+    else
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
+	    {
+		fprintf (stderr,
+			 "CreateTopologyTables() error: argument 1 [SRID] is not of the Integer type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  srid = sqlite3_value_int (argv[0]);
+	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		dimension = sqlite3_value_int (argv[1]);
+		if (dimension == 2)
+		    dims = GAIA_XY;
+		if (dimension == 3)
+		    dims = GAIA_XY_Z;
+	    }
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	    {
+		txt_dims = sqlite3_value_text (argv[1]);
+		if (strcasecmp ((char *) txt_dims, "XY") == 0)
+		    dims = GAIA_XY;
+		if (strcasecmp ((char *) txt_dims, "XYZ") == 0)
+		    dims = GAIA_XY_Z;
+	    }
+	  else
+	    {
+		fprintf (stderr,
+			 "CreateTopologyTables() error: argument 2 [dimension] is not of the Integer or Text type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+      }
+    if (dims == GAIA_XY || dims == GAIA_XY_Z)
+	;
+    else
+      {
+	  fprintf (stderr,
+		   "CreateTopologyTables() error: [dimension] ILLEGAL VALUE\n");
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    if (srid <= 0)
+      {
+	  fprintf (stderr,
+		   "CreateTopologyTables() error: [SRID] ILLEGAL VALUE\n");
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+
+/* checking Topology tables */
+    tables[0] = "topology_master";
+    sprintf (table_curves, "%scurves", prefix);
+    tables[1] = table_curves;
+    sprintf (table_surfaces, "%ssurfaces", prefix);
+    tables[2] = table_surfaces;
+    sprintf (table_nodes, "%snodes", prefix);
+    tables[3] = table_nodes;
+    sprintf (table_edges, "%sedges", prefix);
+    tables[4] = table_edges;
+    sprintf (table_faces, "%sfaces", prefix);
+    tables[5] = table_faces;
+    sprintf (table_faces_edges, "%sfaces_edges", prefix);
+    tables[6] = table_faces_edges;
+    tables[7] = NULL;
+    p_tbl = tables;
+    while (*p_tbl != NULL)
+      {
+	  ok_table = check_topo_table (sqlite, "topology_master");
+	  if (ok_table)
+	    {
+		fprintf (stderr,
+			 "CreateTopologyTables() error: table '%s' already exists\n",
+			 *p_tbl);
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  p_tbl++;
+      }
+
+/* creating Topology tables */
+    if (!create_topo_nodes (sqlite, table_nodes, srid, dims))
+	goto error;
+    if (!create_topo_edges (sqlite, table_edges, srid, dims))
+	goto error;
+    if (!create_topo_faces (sqlite, table_faces, srid, dims))
+	goto error;
+    if (!create_topo_faces_edges (sqlite, table_faces_edges, table_faces))
+	goto error;
+    if (!create_topo_curves (sqlite, table_curves, table_edges, srid, dims))
+	goto error;
+    if (!create_topo_surfaces (sqlite, table_surfaces, table_faces, srid, dims))
+	goto error;
+    if (!create_topo_master
+	(sqlite, table_nodes, table_edges, table_faces, table_faces_edges,
+	 table_curves, table_surfaces, srid, dims))
+	goto error;
+    updateSpatiaLiteHistory (sqlite, "*** TOPOLOGY ***", NULL,
+			     "Topology tables succesfully created");
+    sqlite3_result_int (context, 1);
+    return;
+
+  error:
+    sqlite3_result_int (context, 0);
+    return;
+}
+
 static gaiaPointPtr
 simplePoint (gaiaGeomCollPtr geo)
 {
@@ -13685,6 +14356,10 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_DisableSpatialIndex, 0, 0);
     sqlite3_create_function (db, "RebuildGeometryTriggers", 2, SQLITE_ANY, 0,
 			     fnct_RebuildGeometryTriggers, 0, 0);
+    sqlite3_create_function (db, "CreateTopologyTables", 2, SQLITE_ANY, 0,
+			     fnct_CreateTopologyTables, 0, 0);
+    sqlite3_create_function (db, "CreateTopologyTables", 3, SQLITE_ANY, 0,
+			     fnct_CreateTopologyTables, 0, 0);
     sqlite3_create_function (db, "AsText", 1, SQLITE_ANY, 0, fnct_AsText, 0, 0);
     sqlite3_create_function (db, "ST_AsText", 1, SQLITE_ANY, 0, fnct_AsText,
 			     0, 0);
@@ -14621,6 +15296,10 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_DisableSpatialIndex, 0, 0);
     sqlite3_create_function (db, "RebuildGeometryTriggers", 2, SQLITE_ANY, 0,
 			     fnct_RebuildGeometryTriggers, 0, 0);
+    sqlite3_create_function (db, "CreateTopologyTables", 2, SQLITE_ANY, 0,
+			     fnct_CreateTopologyTables, 0, 0);
+    sqlite3_create_function (db, "CreateTopologyTables", 3, SQLITE_ANY, 0,
+			     fnct_CreateTopologyTables, 0, 0);
     sqlite3_create_function (db, "AsText", 1, SQLITE_ANY, 0, fnct_AsText, 0, 0);
     sqlite3_create_function (db, "ST_AsText", 1, SQLITE_ANY, 0, fnct_AsText,
 			     0, 0);
