@@ -4187,10 +4187,11 @@ fnct_RebuildGeometryTriggers (sqlite3_context * context, int argc,
     return;
 }
 
+
 static int
-check_topo_table (sqlite3 * sqlite, const char *table)
+check_topo_table (sqlite3 * sqlite, const char *table, int is_view)
 {
-/* checking if some Topology-related table already exists */
+/* checking if some Topology-related table/view already exists */
     int exists = 0;
     char sql[2048];
     char sqltable[1024];
@@ -4203,8 +4204,8 @@ check_topo_table (sqlite3 * sqlite, const char *table)
     strcpy (sqltable, table);
     clean_sql_string (sqltable);
     sprintf (sql,
-	     "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE '%s'",
-	     table);
+	     "SELECT name FROM sqlite_master WHERE type = '%s' AND name LIKE '%s'",
+	     (!is_view) ? "table" : "view", table);
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
 	return 0;
@@ -4604,9 +4605,299 @@ create_topo_surfaces (sqlite3 * sqlite, const char *table, const char *table2,
 }
 
 static int
+create_check_node_ids (sqlite3 * sqlite, const char *view,
+		       const char *table_nodes)
+{
+/* creating the check node ids VIEW */
+    char sql[2048];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sqltable, view);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "CREATE VIEW %s AS\n", sqltable);
+    strcat (sql, "SELECT gml_id AS gml_id, Count(node_id) AS count\n");
+    strcpy (sqltable, table_nodes);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "FROM %s\n", sqltable);
+    strcat (sql, sql2);
+    strcat (sql, "GROUP BY gml_id\n");
+    strcat (sql, "HAVING count > 1\n");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_check_node_geoms (sqlite3 * sqlite, const char *view,
+			 const char *table_nodes)
+{
+/* creating the check node geoms VIEW */
+    char sql[2048];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sqltable, view);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "CREATE VIEW %s AS\n", sqltable);
+    strcat (sql, "SELECT n1.node_id AS node1_id, n1.gml_id AS node1_gml_id, ");
+    strcat (sql, "n2.node_id AS node2_id, n2.gml_id AS node2_gml_id\n");
+    strcpy (sqltable, table_nodes);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "FROM %s AS n1\n", sqltable);
+    strcat (sql, sql2);
+    sprintf (sql2, "JOIN %s AS n2 ON (\n", sqltable);
+    strcat (sql, sql2);
+    strcat (sql, "  n1.node_id <> n2.node_id AND\n");
+    strcat (sql, "  ST_Equals(n1.Geometry, n2.Geometry) = 1 AND\n");
+    strcat (sql, "  n2.node_id IN (\n");
+    strcat (sql, "	SELECT ROWID FROM SpatialIndex\n");
+    strcpy (sqltable, table_nodes);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "	WHERE f_table_name = '%s' AND\n", sqltable);
+    strcat (sql, sql2);
+    strcat (sql, "	  search_frame = n1.Geometry))\n");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_check_edge_ids (sqlite3 * sqlite, const char *view,
+		       const char *table_edges)
+{
+/* creating the check edge ids VIEW */
+    char sql[2048];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sqltable, view);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "CREATE VIEW %s AS\n", sqltable);
+    strcat (sql, "SELECT gml_id AS gml_id, Count(edge_id) AS count\n");
+    strcpy (sqltable, table_edges);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "FROM %s\n", sqltable);
+    strcat (sql, sql2);
+    strcat (sql, "GROUP BY gml_id\n");
+    strcat (sql, "HAVING count > 1\n");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_check_edge_geoms (sqlite3 * sqlite, const char *view,
+			 const char *table_edges)
+{
+/* creating the check edge geoms VIEW */
+    char sql[2048];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sqltable, view);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "CREATE VIEW %s AS\n", sqltable);
+    strcat (sql, "SELECT e1.edge_id AS edge1_id, e1.gml_id AS edge1_gml_id, ");
+    strcat (sql, "e2.edge_id AS edge2_id, e2.gml_id AS edge2_gml_id\n");
+    strcpy (sqltable, table_edges);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "FROM %s AS e1\n", sqltable);
+    strcat (sql, sql2);
+    sprintf (sql2, "JOIN %s AS e2 ON (\n", sqltable);
+    strcat (sql, sql2);
+    strcat (sql, "  e1.edge_id <> e2.edge_id AND\n");
+    strcat (sql, "NOT (e1.node_from_href = e2.node_from_href ");
+    strcat (sql, "AND e1.node_to_href = e2.node_to_href) AND\n");
+    strcat (sql, "  ST_Crosses(e1.Geometry, e2.Geometry) = 1 AND\n");
+    strcat (sql, "  e2.edge_id IN (\n");
+    strcat (sql, "	SELECT ROWID FROM SpatialIndex\n");
+    strcpy (sqltable, table_edges);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "	WHERE f_table_name = '%s' AND\n", sqltable);
+    strcat (sql, sql2);
+    strcat (sql, "	  search_frame = e1.Geometry))\n");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_check_face_ids (sqlite3 * sqlite, const char *view,
+		       const char *table_faces)
+{
+/* creating the check face ids VIEW */
+    char sql[2048];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sqltable, view);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "CREATE VIEW %s AS\n", sqltable);
+    strcat (sql, "SELECT gml_id AS gml_id, Count(face_id) AS count\n");
+    strcpy (sqltable, table_faces);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "FROM %s\n", sqltable);
+    strcat (sql, sql2);
+    strcat (sql, "GROUP BY gml_id\n");
+    strcat (sql, "HAVING count > 1\n");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_faces_resolved (sqlite3 * sqlite, const char *view, const char *faces,
+		       const char *faces_edges, const char *edges)
+{
+/* creating the Faces Resolved VIEW */
+    char sql[2048];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sqltable, view);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "CREATE VIEW %s AS\n", sqltable);
+    strcat (sql, "SELECT f.face_id AS face_id, ");
+    strcat (sql, "Polygonize(Collect(e.Geometry)) AS Geometry\n");
+    strcpy (sqltable, faces);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "FROM %s AS f\n", sqltable);
+    strcat (sql, sql2);
+    strcat (sql, "LEFT JOIN ");
+    strcpy (sqltable, faces_edges);
+    double_quoted_sql (sqltable);
+    strcat (sql, sqltable);
+    double_quoted_sql (sqltable);
+    strcat (sql, " fe ON (fe.face_id = f.face_id)\n");
+    strcat (sql, "LEFT JOIN ");
+    strcpy (sqltable, edges);
+    double_quoted_sql (sqltable);
+    strcat (sql, sqltable);
+    double_quoted_sql (sqltable);
+    strcat (sql, " e ON (e.gml_id = fe.gml_id)\n");
+    strcat (sql, "GROUP BY f.face_id\n");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_curves_resolved (sqlite3 * sqlite, const char *view, const char *curves,
+			char *edges)
+{
+/* creating the Curves Resolved VIEW */
+    char sql[2048];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sqltable, view);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "CREATE VIEW %s AS\n", sqltable);
+    strcat (sql, "SELECT c.curve_id AS curve_id, ");
+    strcat (sql, "CastToMultiLinestring(Collect(e.Geometry)) AS Geometry\n");
+    strcpy (sqltable, curves);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "FROM %s AS c\n", sqltable);
+    strcat (sql, sql2);
+    strcat (sql, "LEFT JOIN ");
+    strcpy (sqltable, edges);
+    double_quoted_sql (sqltable);
+    strcat (sql, sqltable);
+    double_quoted_sql (sqltable);
+    strcat (sql, " AS e ON (e.edge_id = c.edge_id)\n");
+    strcat (sql, "GROUP BY c.curve_id\n");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_surfaces_resolved (sqlite3 * sqlite, const char *view,
+			  const char *surfaces, const char *faces)
+{
+/* creating the Surfaces Resolved VIEW */
+    char sql[2048];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
+    strcpy (sqltable, view);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "CREATE VIEW %s AS\n", sqltable);
+    strcat (sql, "SELECT s.surface_id AS surface_id, ");
+    strcat (sql, "CastToMultipolygon(Collect(f.Geometry)) AS Geometry\n");
+    strcpy (sqltable, surfaces);
+    double_quoted_sql (sqltable);
+    sprintf (sql2, "FROM %s AS s\n", sqltable);
+    strcat (sql, sql2);
+    strcat (sql, "LEFT JOIN ");
+    strcpy (sqltable, faces);
+    double_quoted_sql (sqltable);
+    strcat (sql, sqltable);
+    double_quoted_sql (sqltable);
+    strcat (sql, " AS f ON (f.face_id = s.face_id)\n");
+    strcat (sql, "GROUP BY s.surface_id\n");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
 create_topo_master (sqlite3 * sqlite, const char *nodes, const char *edges,
 		    const char *faces, const char *faces_edges,
-		    const char *curves, const char *surfaces, int srid,
+		    const char *curves, const char *surfaces,
+		    const char *check_nodes, const char *check_node_geoms,
+		    const char *check_edges, const char *check_edge_geoms,
+		    const char *check_faces, const char *faces_res,
+		    const char *curves_res, const char *surfaces_res, int srid,
 		    int dims)
 {
 /* creating the topo_master table */
@@ -4622,6 +4913,14 @@ create_topo_master (sqlite3 * sqlite, const char *nodes, const char *edges,
     strcat (sql, "faces_edges TEXT NOT NULL,\n");
     strcat (sql, "curves TEXT NOT NULL,\n");
     strcat (sql, "surfaces TEXT NOT NULL,\n");
+    strcat (sql, "check_node_ids TEXT NOT NULL,\n");
+    strcat (sql, "check_node_geoms TEXT NOT NULL,\n");
+    strcat (sql, "check_edge_ids TEXT NOT NULL,\n");
+    strcat (sql, "check_edge_geoms TEXT NOT NULL,\n");
+    strcat (sql, "check_face_ids TEXT NOT NULL,\n");
+    strcat (sql, "faces_resolved TEXT NOT NULL,\n");
+    strcat (sql, "curves_resolved TEXT NOT NULL,\n");
+    strcat (sql, "surfaces_resolved TEXT NOT NULL,\n");
     strcat (sql, "coord_dimension TEXT NOT NULL,\n");
     strcat (sql, "srid INTEGER NOT NULL,\n");
     strcat (sql, "CONSTRAINT fk_topo_master FOREIGN KEY \n");
@@ -4638,7 +4937,12 @@ create_topo_master (sqlite3 * sqlite, const char *nodes, const char *edges,
 /* inserting Topology data into MASTER */
     strcpy (sql, "INSERT INTO topology_master ");
     strcat (sql, "(nodes, edges, faces, faces_edges, ");
-    strcat (sql, "curves, surfaces, coord_dimension, srid) ");
+    strcat (sql, "curves, surfaces, check_node_ids, ");
+    strcat (sql, "check_node_geoms, check_edge_ids, ");
+    strcat (sql, "check_edge_geoms, check_face_ids, ");
+    strcat (sql, "faces_resolved, curves_resolved, ");
+    strcat (sql, "surfaces_resolved, ");
+    strcat (sql, "coord_dimension, srid) ");
     strcat (sql, "VALUES (");
     strcpy (sqltable, nodes);
     clean_sql_string (sqltable);
@@ -4661,6 +4965,38 @@ create_topo_master (sqlite3 * sqlite, const char *nodes, const char *edges,
     sprintf (sql2, "'%s', ", sqltable);
     strcat (sql, sql2);
     strcpy (sqltable, surfaces);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "'%s', ", sqltable);
+    strcat (sql, sql2);
+    strcpy (sqltable, check_nodes);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "'%s', ", sqltable);
+    strcat (sql, sql2);
+    strcpy (sqltable, check_node_geoms);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "'%s', ", sqltable);
+    strcat (sql, sql2);
+    strcpy (sqltable, check_edges);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "'%s', ", sqltable);
+    strcat (sql, sql2);
+    strcpy (sqltable, check_edge_geoms);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "'%s', ", sqltable);
+    strcat (sql, sql2);
+    strcpy (sqltable, check_faces);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "'%s', ", sqltable);
+    strcat (sql, sql2);
+    strcpy (sqltable, faces_res);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "'%s', ", sqltable);
+    strcat (sql, sql2);
+    strcpy (sqltable, curves_res);
+    clean_sql_string (sqltable);
+    sprintf (sql2, "'%s', ", sqltable);
+    strcat (sql, sql2);
+    strcpy (sqltable, surfaces_res);
     clean_sql_string (sqltable);
     sprintf (sql2, "'%s', ", sqltable);
     strcat (sql, sql2);
@@ -4695,15 +5031,23 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
     int srid = -1;
     int dimension;
     int dims = -1;
-    char *errMsg = NULL;
-    int ret;
     char table_curves[1024];
     char table_surfaces[1024];
     char table_nodes[1024];
     char table_edges[1024];
     char table_faces[1024];
     char table_faces_edges[1024];
-    const char *tables[8];
+    char view_check_node_ids[1024];
+    char view_check_node_geoms[1024];
+    char view_check_edge_ids[1024];
+    char view_check_edge_geoms[1024];
+    char view_check_face_ids[1024];
+    char view_faces_resolved[1024];
+    char view_curves_resolved[1024];
+    char view_surfaces_resolved[1024];
+    const char *tables[16];
+    int views[16];
+    int *p_view;
     const char **p_tbl;
     int ok_table;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
@@ -4803,23 +5147,55 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
 
 /* checking Topology tables */
     tables[0] = "topology_master";
+    views[0] = 0;
     sprintf (table_curves, "%scurves", prefix);
     tables[1] = table_curves;
+    views[1] = 0;
     sprintf (table_surfaces, "%ssurfaces", prefix);
     tables[2] = table_surfaces;
+    views[2] = 0;
     sprintf (table_nodes, "%snodes", prefix);
     tables[3] = table_nodes;
+    views[3] = 0;
     sprintf (table_edges, "%sedges", prefix);
     tables[4] = table_edges;
+    views[4] = 0;
     sprintf (table_faces, "%sfaces", prefix);
     tables[5] = table_faces;
+    views[5] = 0;
     sprintf (table_faces_edges, "%sfaces_edges", prefix);
     tables[6] = table_faces_edges;
-    tables[7] = NULL;
+    views[6] = 0;
+    sprintf (view_check_node_ids, "%snodes_check_dupl_ids", prefix);
+    tables[7] = view_check_node_ids;
+    views[7] = 1;
+    sprintf (view_check_node_geoms, "%snodes_check_dupl_geoms", prefix);
+    tables[8] = view_check_node_geoms;
+    views[8] = 1;
+    sprintf (view_check_edge_ids, "%sedges_check_dupl_ids", prefix);
+    tables[9] = view_check_edge_ids;
+    views[9] = 1;
+    sprintf (view_check_edge_geoms, "%sedges_check_dupl_geoms", prefix);
+    tables[10] = view_check_edge_geoms;
+    views[10] = 1;
+    sprintf (view_check_face_ids, "%sfaces_check_dupl_ids", prefix);
+    tables[11] = view_check_face_ids;
+    views[11] = 1;
+    sprintf (view_faces_resolved, "%sfaces_resolved", prefix);
+    tables[12] = view_faces_resolved;
+    views[12] = 1;
+    sprintf (view_curves_resolved, "%scurves_resolved", prefix);
+    tables[13] = view_curves_resolved;
+    views[13] = 1;
+    sprintf (view_surfaces_resolved, "%ssurfaces_resolved", prefix);
+    tables[14] = view_surfaces_resolved;
+    views[14] = 1;
+    tables[15] = NULL;
+    p_view = views;
     p_tbl = tables;
     while (*p_tbl != NULL)
       {
-	  ok_table = check_topo_table (sqlite, "topology_master");
+	  ok_table = check_topo_table (sqlite, *p_tbl, *p_view);
 	  if (ok_table)
 	    {
 		fprintf (stderr,
@@ -4829,6 +5205,7 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
 		return;
 	    }
 	  p_tbl++;
+	  p_view++;
       }
 
 /* creating Topology tables */
@@ -4844,9 +5221,32 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
 	goto error;
     if (!create_topo_surfaces (sqlite, table_surfaces, table_faces, srid, dims))
 	goto error;
+    if (!create_check_node_ids (sqlite, view_check_node_ids, table_nodes))
+	goto error;
+    if (!create_check_node_geoms (sqlite, view_check_node_geoms, table_nodes))
+	goto error;
+    if (!create_check_edge_ids (sqlite, view_check_edge_ids, table_edges))
+	goto error;
+    if (!create_check_edge_geoms (sqlite, view_check_edge_geoms, table_edges))
+	goto error;
+    if (!create_check_face_ids (sqlite, view_check_face_ids, table_faces))
+	goto error;
+    if (!create_faces_resolved
+	(sqlite, view_faces_resolved, table_faces, table_faces_edges,
+	 table_edges))
+	goto error;
+    if (!create_curves_resolved
+	(sqlite, view_curves_resolved, table_curves, table_edges))
+	goto error;
+    if (!create_surfaces_resolved
+	(sqlite, view_surfaces_resolved, table_surfaces, table_faces))
+	goto error;
     if (!create_topo_master
 	(sqlite, table_nodes, table_edges, table_faces, table_faces_edges,
-	 table_curves, table_surfaces, srid, dims))
+	 table_curves, table_surfaces, view_check_node_ids,
+	 view_check_node_geoms, view_check_edge_ids, view_check_edge_geoms,
+	 view_check_face_ids, view_faces_resolved, view_curves_resolved,
+	 view_surfaces_resolved, srid, dims))
 	goto error;
     updateSpatiaLiteHistory (sqlite, "*** TOPOLOGY ***", NULL,
 			     "Topology tables succesfully created");
@@ -8800,6 +9200,12 @@ fnct_RTreeWithin (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
     double xmax;
     double ymin;
     double ymax;
+    float fminx;
+    float fminy;
+    float fmaxx;
+    float fmaxy;
+    double tic;
+    double tic2;
 
     if (p->pUser == 0)
       {
@@ -8829,10 +9235,28 @@ fnct_RTreeWithin (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
 		ymin = p->aParam[3];
 		ymax = p->aParam[1];
 	    }
-	  mbr->minx = xmin;
-	  mbr->miny = ymin;
-	  mbr->maxx = xmax;
-	  mbr->maxy = ymax;
+
+	  /* adjusting the MBR so to compensate for DOUBLE/FLOAT truncations */
+	  fminx = xmin;
+	  fminy = ymin;
+	  fmaxx = xmax;
+	  fmaxy = ymax;
+	  tic = fabs (xmin - fminx);
+	  tic2 = fabs (ymin - fminy);
+	  if (tic2 > tic)
+	      tic = tic2;
+	  tic2 = fabs (xmax - fmaxx);
+	  if (tic2 > tic)
+	      tic = tic2;
+	  tic2 = fabs (ymax - fmaxy);
+	  if (tic2 > tic)
+	      tic = tic2;
+	  tic *= 2.0;
+
+	  mbr->minx = xmin - tic;
+	  mbr->miny = ymin - tic;
+	  mbr->maxx = xmax + tic;
+	  mbr->maxy = ymax + tic;
       }
 
     mbr = (struct gaia_rtree_mbr *) (p->pUser);
@@ -8865,6 +9289,12 @@ fnct_RTreeContains (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
     double xmax;
     double ymin;
     double ymax;
+    float fminx;
+    float fminy;
+    float fmaxx;
+    float fmaxy;
+    double tic;
+    double tic2;
 
     if (p->pUser == 0)
       {
@@ -8894,10 +9324,28 @@ fnct_RTreeContains (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
 		ymin = p->aParam[3];
 		ymax = p->aParam[1];
 	    }
-	  mbr->minx = xmin;
-	  mbr->miny = ymin;
-	  mbr->maxx = xmax;
-	  mbr->maxy = ymax;
+
+	  /* adjusting the MBR so to compensate for DOUBLE/FLOAT truncations */
+	  fminx = xmin;
+	  fminy = ymin;
+	  fmaxx = xmax;
+	  fmaxy = ymax;
+	  tic = fabs (xmin - fminx);
+	  tic2 = fabs (ymin - fminy);
+	  if (tic2 > tic)
+	      tic = tic2;
+	  tic2 = fabs (xmax - fmaxx);
+	  if (tic2 > tic)
+	      tic = tic2;
+	  tic2 = fabs (ymax - fmaxy);
+	  if (tic2 > tic)
+	      tic = tic2;
+	  tic *= 2.0;
+
+	  mbr->minx = xmin - tic;
+	  mbr->miny = ymin - tic;
+	  mbr->maxx = xmax + tic;
+	  mbr->maxy = ymax + tic;
       }
 
     mbr = (struct gaia_rtree_mbr *) (p->pUser);
@@ -8930,6 +9378,12 @@ fnct_RTreeIntersects (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
     double xmax;
     double ymin;
     double ymax;
+    float fminx;
+    float fminy;
+    float fmaxx;
+    float fmaxy;
+    double tic;
+    double tic2;
 
     if (p->pUser == 0)
       {
@@ -8959,10 +9413,28 @@ fnct_RTreeIntersects (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
 		ymin = p->aParam[3];
 		ymax = p->aParam[1];
 	    }
-	  mbr->minx = xmin;
-	  mbr->miny = ymin;
-	  mbr->maxx = xmax;
-	  mbr->maxy = ymax;
+
+	  /* adjusting the MBR so to compensate for DOUBLE/FLOAT truncations */
+	  fminx = xmin;
+	  fminy = ymin;
+	  fmaxx = xmax;
+	  fmaxy = ymax;
+	  tic = fabs (xmin - fminx);
+	  tic2 = fabs (ymin - fminy);
+	  if (tic2 > tic)
+	      tic = tic2;
+	  tic2 = fabs (xmax - fmaxx);
+	  if (tic2 > tic)
+	      tic = tic2;
+	  tic2 = fabs (ymax - fmaxy);
+	  if (tic2 > tic)
+	      tic = tic2;
+	  tic *= 2.0;
+
+	  mbr->minx = xmin - tic;
+	  mbr->miny = ymin - tic;
+	  mbr->maxx = xmax + tic;
+	  mbr->maxy = ymax + tic;
       }
 
     mbr = (struct gaia_rtree_mbr *) (p->pUser);
