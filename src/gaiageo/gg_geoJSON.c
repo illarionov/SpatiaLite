@@ -2,7 +2,7 @@
 
  gg_geoJSON.c -- GeoJSON parser/lexer 
   
- version 2.4, 2011 May 16
+ version 3.0, 2011 July 20
 
  Author: Sandro Furieri a.furieri@lqt.it
 

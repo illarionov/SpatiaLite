@@ -2,7 +2,7 @@
 
  gg_relations.c -- Gaia spatial relations
     
- version 2.4, 2009 September 17
+ version 3.0, 2011 July 20
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -2368,6 +2368,1227 @@ gaiaGeomCollCoveredBy (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeom_destroy (g1);
     GEOSGeom_destroy (g2);
     return ret;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaLineInterpolatePoint (gaiaGeomCollPtr geom, double fraction)
+{
+/*
+ * attempts to intepolate a point on line at dist "fraction" 
+ *
+ * the fraction is expressed into the range from 0.0 to 1.0
+ */
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    gaiaGeomCollPtr result;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    GEOSGeometry *g;
+    GEOSGeometry *g_pt;
+    double length;
+    double projection;
+    if (!geom)
+	return NULL;
+
+/* checking if a single Linestring has been passed */
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  lns++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts == 0 && lns == 1 && pgs == 0)
+	;
+    else
+	return NULL;
+
+    g = gaiaToGeos (geom);
+    if (GEOSLength (g, &length))
+      {
+	  /* transforming fraction to length */
+	  if (fraction < 0.0)
+	      fraction = 0.0;
+	  if (fraction > 1.0)
+	      fraction = 1.0;
+	  projection = length * fraction;
+      }
+    else
+      {
+	  GEOSGeom_destroy (g);
+	  return NULL;
+      }
+    g_pt = GEOSInterpolate (g, projection);
+    GEOSGeom_destroy (g);
+    if (!g_pt)
+	return NULL;
+    if (geom->DimensionModel == GAIA_XY_Z)
+	result = gaiaFromGeos_XYZ (g_pt);
+    else if (geom->DimensionModel == GAIA_XY_M)
+	result = gaiaFromGeos_XYM (g_pt);
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaFromGeos_XYZM (g_pt);
+    else
+	result = gaiaFromGeos_XY (g_pt);
+    GEOSGeom_destroy (g_pt);
+    if (result == NULL)
+	return NULL;
+    result->Srid = geom->Srid;
+    return result;
+}
+
+GAIAGEO_DECLARE double
+gaiaLineLocatePoint (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
+{
+/* 
+ * attempts to compute the location of the closest point on LineString 
+ * to the given Point, as a fraction of total 2d line length 
+ *
+ * the fraction is expressed into the range from 0.0 to 1.0
+ */
+    int pts1 = 0;
+    int lns1 = 0;
+    int pgs1 = 0;
+    int pts2 = 0;
+    int lns2 = 0;
+    int pgs2 = 0;
+    double length;
+    double projection;
+    double result;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    if (!geom1 || !geom2)
+	return -1.0;
+
+/* checking if a single Linestring has been passed */
+    pt = geom1->FirstPoint;
+    while (pt)
+      {
+	  pts1++;
+	  pt = pt->Next;
+      }
+    ln = geom1->FirstLinestring;
+    while (ln)
+      {
+	  lns1++;
+	  ln = ln->Next;
+      }
+    pg = geom1->FirstPolygon;
+    while (pg)
+      {
+	  pgs1++;
+	  pg = pg->Next;
+      }
+    if (pts1 == 0 && lns1 == 1 && pgs1 == 0)
+	;
+    else
+	return -1.0;
+
+/* checking if a single Point has been passed */
+    pt = geom2->FirstPoint;
+    while (pt)
+      {
+	  pts2++;
+	  pt = pt->Next;
+      }
+    ln = geom2->FirstLinestring;
+    while (ln)
+      {
+	  lns2++;
+	  ln = ln->Next;
+      }
+    pg = geom2->FirstPolygon;
+    while (pg)
+      {
+	  pgs2++;
+	  pg = pg->Next;
+      }
+    if (pts2 == 1 && lns2 == 0 && pgs2 == 0)
+	;
+    else
+	return -1.0;
+
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    projection = GEOSProject (g1, g2);
+    if (GEOSLength (g1, &length))
+      {
+	  /* normalizing as a fraction between 0.0 and 1.0 */
+	  result = projection / length;
+      }
+    else
+	result = -1.0;
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    return result;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaLineSubstring (gaiaGeomCollPtr geom, double start_fraction,
+		   double end_fraction)
+{
+/* 
+ * attempts to build a new Linestring being a substring of the input one starting 
+ * and ending at the given fractions of total 2d length 
+ */
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    gaiaGeomCollPtr result;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaLinestringPtr out;
+    gaiaPolygonPtr pg;
+    GEOSGeometry *g;
+    GEOSGeometry *g_start;
+    GEOSGeometry *g_end;
+    GEOSCoordSequence *cs;
+    const GEOSCoordSequence *in_cs;
+    GEOSGeometry *segm;
+    double length;
+    double total = 0.0;
+    double start;
+    double end;
+    int iv;
+    int i_start = -1;
+    int i_end = -1;
+    int points;
+    double x;
+    double y;
+    double z;
+    double m;
+    unsigned int dims;
+    if (!geom)
+	return NULL;
+
+/* checking if a single Linestring has been passed */
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  lns++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts == 0 && lns == 1 && pgs == 0)
+	;
+    else
+	return NULL;
+
+    if (start_fraction < 0.0)
+	start_fraction = 0.0;
+    if (start_fraction > 1.0)
+	start_fraction = 1.0;
+    if (end_fraction < 0.0)
+	end_fraction = 0.0;
+    if (end_fraction > 1.0)
+	end_fraction = 1.0;
+    if (start_fraction >= end_fraction)
+	return NULL;
+    g = gaiaToGeos (geom);
+    if (GEOSLength (g, &length))
+      {
+	  start = length * start_fraction;
+	  end = length * end_fraction;
+      }
+    else
+      {
+	  GEOSGeom_destroy (g);
+	  return NULL;
+      }
+    g_start = GEOSInterpolate (g, start);
+    g_end = GEOSInterpolate (g, end);
+    GEOSGeom_destroy (g);
+    if (!g_start || !g_end)
+	return NULL;
+
+/* identifying first and last valid vertex */
+    ln = geom->FirstLinestring;
+    for (iv = 0; iv < ln->Points; iv++)
+      {
+
+	  double x0;
+	  double y0;
+	  double z0;
+	  double m0;
+	  switch (ln->DimensionModel)
+	    {
+	    case GAIA_XY_Z:
+		gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+		break;
+	    case GAIA_XY_M:
+		gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+		break;
+	    case GAIA_XY_Z_M:
+		gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+		break;
+	    default:
+		gaiaGetPoint (ln->Coords, iv, &x, &y);
+		break;
+	    };
+
+	  if (iv > 0)
+	    {
+		cs = GEOSCoordSeq_create (2, 2);
+		GEOSCoordSeq_setX (cs, 0, x0);
+		GEOSCoordSeq_setY (cs, 0, y0);
+		GEOSCoordSeq_setX (cs, 1, x);
+		GEOSCoordSeq_setY (cs, 1, y);
+		segm = GEOSGeom_createLineString (cs);
+		GEOSLength (segm, &length);
+		total += length;
+		GEOSGeom_destroy (segm);
+		if (total > start && i_start < 0)
+		    i_start = iv;
+		if (total < end)
+		    i_end = iv;
+	    }
+	  x0 = x;
+	  y0 = y;
+	  z0 = z;
+	  m0 = m;
+      }
+    if (i_start < 0 || i_end < 0)
+      {
+	  i_start = -1;
+	  i_end = -1;
+	  points = 2;
+      }
+    else
+	points = i_end - i_start + 3;
+
+/* creating the output geometry */
+    switch (ln->DimensionModel)
+      {
+      case GAIA_XY_Z:
+	  result = gaiaAllocGeomCollXYZ ();
+	  break;
+      case GAIA_XY_M:
+	  result = gaiaAllocGeomCollXYM ();
+	  break;
+      case GAIA_XY_Z_M:
+	  result = gaiaAllocGeomCollXYZM ();
+	  break;
+      default:
+	  result = gaiaAllocGeomColl ();
+	  break;
+      };
+    result->Srid = geom->Srid;
+    out = gaiaAddLinestringToGeomColl (result, points);
+
+/* start vertex */
+    points = 0;
+    in_cs = GEOSGeom_getCoordSeq (g_start);
+    GEOSCoordSeq_getDimensions (in_cs, &dims);
+    if (dims == 3)
+      {
+	  GEOSCoordSeq_getX (in_cs, 0, &x);
+	  GEOSCoordSeq_getY (in_cs, 0, &y);
+	  GEOSCoordSeq_getZ (in_cs, 0, &z);
+	  m = 0.0;
+      }
+    else
+      {
+	  GEOSCoordSeq_getX (in_cs, 0, &x);
+	  GEOSCoordSeq_getY (in_cs, 0, &y);
+	  z = 0.0;
+	  m = 0.0;
+      }
+    GEOSGeom_destroy (g_start);
+    switch (out->DimensionModel)
+      {
+      case GAIA_XY_Z:
+	  gaiaSetPointXYZ (out->Coords, points, x, y, z);
+	  break;
+      case GAIA_XY_M:
+	  gaiaSetPointXYM (out->Coords, points, x, y, 0.0);
+	  break;
+      case GAIA_XY_Z_M:
+	  gaiaSetPointXYZM (out->Coords, points, x, y, z, 0.0);
+	  break;
+      default:
+	  gaiaSetPoint (out->Coords, points, x, y);
+	  break;
+      };
+    points++;
+
+    if (i_start < 0 || i_end < 0)
+	;
+    else
+      {
+	  for (iv = i_start; iv <= i_end; iv++)
+	    {
+		z = 0.0;
+		m = 0.0;
+		switch (ln->DimensionModel)
+		  {
+		  case GAIA_XY_Z:
+		      gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+		      break;
+		  case GAIA_XY_M:
+		      gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+		      break;
+		  case GAIA_XY_Z_M:
+		      gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+		      break;
+		  default:
+		      gaiaGetPoint (ln->Coords, iv, &x, &y);
+		      break;
+		  };
+		switch (out->DimensionModel)
+		  {
+		  case GAIA_XY_Z:
+		      gaiaSetPointXYZ (out->Coords, points, x, y, z);
+		      break;
+		  case GAIA_XY_M:
+		      gaiaSetPointXYM (out->Coords, points, x, y, 0.0);
+		      break;
+		  case GAIA_XY_Z_M:
+		      gaiaSetPointXYZM (out->Coords, points, x, y, z, 0.0);
+		      break;
+		  default:
+		      gaiaSetPoint (out->Coords, points, x, y);
+		      break;
+		  };
+		points++;
+	    }
+      }
+
+/* end vertex */
+    in_cs = GEOSGeom_getCoordSeq (g_end);
+    GEOSCoordSeq_getDimensions (in_cs, &dims);
+    if (dims == 3)
+      {
+	  GEOSCoordSeq_getX (in_cs, 0, &x);
+	  GEOSCoordSeq_getY (in_cs, 0, &y);
+	  GEOSCoordSeq_getZ (in_cs, 0, &z);
+	  m = 0.0;
+      }
+    else
+      {
+	  GEOSCoordSeq_getX (in_cs, 0, &x);
+	  GEOSCoordSeq_getY (in_cs, 0, &y);
+	  z = 0.0;
+	  m = 0.0;
+      }
+    GEOSGeom_destroy (g_end);
+    switch (out->DimensionModel)
+      {
+      case GAIA_XY_Z:
+	  gaiaSetPointXYZ (out->Coords, points, x, y, z);
+	  break;
+      case GAIA_XY_M:
+	  gaiaSetPointXYM (out->Coords, points, x, y, 0.0);
+	  break;
+      case GAIA_XY_Z_M:
+	  gaiaSetPointXYZM (out->Coords, points, x, y, z, 0.0);
+	  break;
+      default:
+	  gaiaSetPoint (out->Coords, points, x, y);
+	  break;
+      };
+    return result;
+}
+
+static GEOSGeometry *
+buildGeosPoints (const gaiaGeomCollPtr gaia)
+{
+/* converting a GAIA Geometry into a GEOS Geometry of POINTS */
+    int pts = 0;
+    unsigned int dims;
+    int iv;
+    int ib;
+    int nItem;
+    double x;
+    double y;
+    double z;
+    double m;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr rng;
+    GEOSGeometry *geos;
+    GEOSGeometry *geos_item;
+    GEOSGeometry **geos_coll;
+    GEOSCoordSequence *cs;
+    if (!gaia)
+	return NULL;
+    pt = gaia->FirstPoint;
+    while (pt)
+      {
+	  /* counting how many POINTs are there */
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = gaia->FirstLinestring;
+    while (ln)
+      {
+	  /* counting how many POINTs are there */
+	  pts += ln->Points;
+	  ln = ln->Next;
+      }
+    pg = gaia->FirstPolygon;
+    while (pg)
+      {
+	  /* counting how many POINTs are there */
+	  rng = pg->Exterior;
+	  pts += rng->Points - 1;	/* exterior ring */
+	  for (ib = 0; ib < pg->NumInteriors; ib++)
+	    {
+		/* interior ring */
+		rng = pg->Interiors + ib;
+		pts += rng->Points - 1;
+	    }
+	  pg = pg->Next;
+      }
+    if (pts == 0)
+	return NULL;
+    switch (gaia->DimensionModel)
+      {
+      case GAIA_XY_Z:
+      case GAIA_XY_Z_M:
+	  dims = 3;
+	  break;
+      default:
+	  dims = 2;
+	  break;
+      };
+    nItem = 0;
+    geos_coll = malloc (sizeof (GEOSGeometry *) * (pts));
+    pt = gaia->FirstPoint;
+    while (pt)
+      {
+	  cs = GEOSCoordSeq_create (1, dims);
+	  switch (pt->DimensionModel)
+	    {
+	    case GAIA_XY_Z:
+	    case GAIA_XY_Z_M:
+		GEOSCoordSeq_setX (cs, 0, pt->X);
+		GEOSCoordSeq_setY (cs, 0, pt->Y);
+		GEOSCoordSeq_setZ (cs, 0, pt->Z);
+		break;
+	    default:
+		GEOSCoordSeq_setX (cs, 0, pt->X);
+		GEOSCoordSeq_setY (cs, 0, pt->Y);
+		break;
+	    };
+	  geos_item = GEOSGeom_createPoint (cs);
+	  *(geos_coll + nItem++) = geos_item;
+	  pt = pt->Next;
+      }
+    ln = gaia->FirstLinestring;
+    while (ln)
+      {
+	  for (iv = 0; iv < ln->Points; iv++)
+	    {
+		z = 0.0;
+		m = 0.0;
+		switch (ln->DimensionModel)
+		  {
+		  case GAIA_XY_Z:
+		      gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+		      break;
+		  case GAIA_XY_M:
+		      gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+		      break;
+		  case GAIA_XY_Z_M:
+		      gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+		      break;
+		  default:
+		      gaiaGetPoint (ln->Coords, iv, &x, &y);
+		      break;
+		  };
+		cs = GEOSCoordSeq_create (1, dims);
+		if (dims == 3)
+		  {
+		      GEOSCoordSeq_setX (cs, 0, x);
+		      GEOSCoordSeq_setY (cs, 0, y);
+		      GEOSCoordSeq_setZ (cs, 0, z);
+		  }
+		else
+		  {
+		      GEOSCoordSeq_setX (cs, 0, x);
+		      GEOSCoordSeq_setY (cs, 0, y);
+		  }
+		geos_item = GEOSGeom_createPoint (cs);
+		*(geos_coll + nItem++) = geos_item;
+	    }
+	  ln = ln->Next;
+      }
+    pg = gaia->FirstPolygon;
+    while (pg)
+      {
+	  rng = pg->Exterior;
+	  for (iv = 1; iv < rng->Points; iv++)
+	    {
+		/* exterior ring */
+		z = 0.0;
+		m = 0.0;
+		switch (rng->DimensionModel)
+		  {
+		  case GAIA_XY_Z:
+		      gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+		      break;
+		  case GAIA_XY_M:
+		      gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+		      break;
+		  case GAIA_XY_Z_M:
+		      gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+		      break;
+		  default:
+		      gaiaGetPoint (rng->Coords, iv, &x, &y);
+		      break;
+		  };
+		cs = GEOSCoordSeq_create (1, dims);
+		if (dims == 3)
+		  {
+		      GEOSCoordSeq_setX (cs, 0, x);
+		      GEOSCoordSeq_setY (cs, 0, y);
+		      GEOSCoordSeq_setZ (cs, 0, z);
+		  }
+		else
+		  {
+		      GEOSCoordSeq_setX (cs, 0, x);
+		      GEOSCoordSeq_setY (cs, 0, y);
+		  }
+		geos_item = GEOSGeom_createPoint (cs);
+		*(geos_coll + nItem++) = geos_item;
+	    }
+	  for (ib = 0; ib < pg->NumInteriors; ib++)
+	    {
+		/* interior ring */
+		rng = pg->Interiors + ib;
+		for (iv = 1; iv < rng->Points; iv++)
+		  {
+		      /* exterior ring */
+		      z = 0.0;
+		      m = 0.0;
+		      switch (rng->DimensionModel)
+			{
+			case GAIA_XY_Z:
+			    gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+			    break;
+			case GAIA_XY_M:
+			    gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+			    break;
+			case GAIA_XY_Z_M:
+			    gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+			    break;
+			default:
+			    gaiaGetPoint (rng->Coords, iv, &x, &y);
+			    break;
+			};
+		      cs = GEOSCoordSeq_create (1, dims);
+		      if (dims == 3)
+			{
+			    GEOSCoordSeq_setX (cs, 0, x);
+			    GEOSCoordSeq_setY (cs, 0, y);
+			    GEOSCoordSeq_setZ (cs, 0, z);
+			}
+		      else
+			{
+			    GEOSCoordSeq_setX (cs, 0, x);
+			    GEOSCoordSeq_setY (cs, 0, y);
+			}
+		      geos_item = GEOSGeom_createPoint (cs);
+		      *(geos_coll + nItem++) = geos_item;
+		  }
+	    }
+	  pg = pg->Next;
+      }
+    geos = GEOSGeom_createCollection (GEOS_MULTIPOINT, geos_coll, pts);
+    free (geos_coll);
+    GEOSSetSRID (geos, gaia->Srid);
+    return geos;
+}
+
+static GEOSGeometry *
+buildGeosSegments (const gaiaGeomCollPtr gaia)
+{
+/* converting a GAIA Geometry into a GEOS Geometry of SEGMENTS */
+    int segms = 0;
+    unsigned int dims;
+    int iv;
+    int ib;
+    int nItem;
+    double x;
+    double y;
+    double z;
+    double m;
+    double x0;
+    double y0;
+    double z0;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr rng;
+    GEOSGeometry *geos;
+    GEOSGeometry *geos_item;
+    GEOSGeometry **geos_coll;
+    GEOSCoordSequence *cs;
+    if (!gaia)
+	return NULL;
+    ln = gaia->FirstLinestring;
+    while (ln)
+      {
+	  /* counting how many SEGMENTs are there */
+	  segms += ln->Points - 1;
+	  ln = ln->Next;
+      }
+    pg = gaia->FirstPolygon;
+    while (pg)
+      {
+	  /* counting how many SEGMENTs are there */
+	  rng = pg->Exterior;
+	  segms += rng->Points - 1;	/* exterior ring */
+	  for (ib = 0; ib < pg->NumInteriors; ib++)
+	    {
+		/* interior ring */
+		rng = pg->Interiors + ib;
+		segms += rng->Points - 1;
+	    }
+	  pg = pg->Next;
+      }
+    if (segms == 0)
+	return NULL;
+    switch (gaia->DimensionModel)
+      {
+      case GAIA_XY_Z:
+      case GAIA_XY_Z_M:
+	  dims = 3;
+	  break;
+      default:
+	  dims = 2;
+	  break;
+      };
+    nItem = 0;
+    geos_coll = malloc (sizeof (GEOSGeometry *) * (segms));
+    ln = gaia->FirstLinestring;
+    while (ln)
+      {
+	  for (iv = 0; iv < ln->Points; iv++)
+	    {
+		z = 0.0;
+		m = 0.0;
+		switch (ln->DimensionModel)
+		  {
+		  case GAIA_XY_Z:
+		      gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+		      break;
+		  case GAIA_XY_M:
+		      gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+		      break;
+		  case GAIA_XY_Z_M:
+		      gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+		      break;
+		  default:
+		      gaiaGetPoint (ln->Coords, iv, &x, &y);
+		      break;
+		  };
+		if (iv > 0)
+		  {
+		      cs = GEOSCoordSeq_create (2, dims);
+		      if (dims == 3)
+			{
+			    GEOSCoordSeq_setX (cs, 0, x0);
+			    GEOSCoordSeq_setY (cs, 0, y0);
+			    GEOSCoordSeq_setZ (cs, 0, z0);
+			    GEOSCoordSeq_setX (cs, 1, x);
+			    GEOSCoordSeq_setY (cs, 1, y);
+			    GEOSCoordSeq_setZ (cs, 1, z);
+			}
+		      else
+			{
+			    GEOSCoordSeq_setX (cs, 0, x0);
+			    GEOSCoordSeq_setY (cs, 0, y0);
+			    GEOSCoordSeq_setX (cs, 1, x);
+			    GEOSCoordSeq_setY (cs, 1, y);
+			}
+		      geos_item = GEOSGeom_createLineString (cs);
+		      *(geos_coll + nItem++) = geos_item;
+		  }
+		x0 = x;
+		y0 = y;
+		z0 = z;
+	    }
+	  ln = ln->Next;
+      }
+    pg = gaia->FirstPolygon;
+    while (pg)
+      {
+	  rng = pg->Exterior;
+	  for (iv = 0; iv < rng->Points; iv++)
+	    {
+		/* exterior ring */
+		z = 0.0;
+		m = 0.0;
+		switch (rng->DimensionModel)
+		  {
+		  case GAIA_XY_Z:
+		      gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+		      break;
+		  case GAIA_XY_M:
+		      gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+		      break;
+		  case GAIA_XY_Z_M:
+		      gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+		      break;
+		  default:
+		      gaiaGetPoint (rng->Coords, iv, &x, &y);
+		      break;
+		  };
+		if (iv > 0)
+		  {
+		      cs = GEOSCoordSeq_create (2, dims);
+		      if (dims == 3)
+			{
+			    GEOSCoordSeq_setX (cs, 0, x0);
+			    GEOSCoordSeq_setY (cs, 0, y0);
+			    GEOSCoordSeq_setZ (cs, 0, z0);
+			    GEOSCoordSeq_setX (cs, 1, x);
+			    GEOSCoordSeq_setY (cs, 1, y);
+			    GEOSCoordSeq_setZ (cs, 1, z);
+			}
+		      else
+			{
+			    GEOSCoordSeq_setX (cs, 0, x0);
+			    GEOSCoordSeq_setY (cs, 0, y0);
+			    GEOSCoordSeq_setX (cs, 1, x);
+			    GEOSCoordSeq_setY (cs, 1, y);
+			}
+		      geos_item = GEOSGeom_createLineString (cs);
+		      *(geos_coll + nItem++) = geos_item;
+		  }
+		x0 = x;
+		y0 = y;
+		z0 = z;
+	    }
+	  for (ib = 0; ib < pg->NumInteriors; ib++)
+	    {
+		/* interior ring */
+		rng = pg->Interiors + ib;
+		for (iv = 0; iv < rng->Points; iv++)
+		  {
+		      /* exterior ring */
+		      z = 0.0;
+		      m = 0.0;
+		      switch (rng->DimensionModel)
+			{
+			case GAIA_XY_Z:
+			    gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+			    break;
+			case GAIA_XY_M:
+			    gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+			    break;
+			case GAIA_XY_Z_M:
+			    gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+			    break;
+			default:
+			    gaiaGetPoint (rng->Coords, iv, &x, &y);
+			    break;
+			};
+		      if (iv > 0)
+			{
+			    cs = GEOSCoordSeq_create (2, dims);
+			    if (dims == 3)
+			      {
+				  GEOSCoordSeq_setX (cs, 0, x0);
+				  GEOSCoordSeq_setY (cs, 0, y0);
+				  GEOSCoordSeq_setZ (cs, 0, z0);
+				  GEOSCoordSeq_setX (cs, 1, x);
+				  GEOSCoordSeq_setY (cs, 1, y);
+				  GEOSCoordSeq_setZ (cs, 1, z);
+			      }
+			    else
+			      {
+				  GEOSCoordSeq_setX (cs, 0, x0);
+				  GEOSCoordSeq_setY (cs, 0, y0);
+				  GEOSCoordSeq_setX (cs, 1, x);
+				  GEOSCoordSeq_setY (cs, 1, y);
+			      }
+			    geos_item = GEOSGeom_createLineString (cs);
+			    *(geos_coll + nItem++) = geos_item;
+			}
+		      x0 = x;
+		      y0 = y;
+		      z0 = z;
+		  }
+	    }
+	  pg = pg->Next;
+      }
+    geos = GEOSGeom_createCollection (GEOS_MULTILINESTRING, geos_coll, segms);
+    free (geos_coll);
+    GEOSSetSRID (geos, gaia->Srid);
+    return geos;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaShortestLine (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
+{
+/* attempts to compute the the shortest line between two geometries */
+    GEOSGeometry *g1_points;
+    GEOSGeometry *g1_segments;
+    const GEOSGeometry *g1_item;
+    GEOSGeometry *g2_points;
+    GEOSGeometry *g2_segments;
+    const GEOSGeometry *g2_item;
+    const GEOSCoordSequence *cs;
+    GEOSGeometry *g_pt;
+    gaiaGeomCollPtr result;
+    gaiaLinestringPtr ln;
+    int nItems1;
+    int nItems2;
+    int it1;
+    int it2;
+    unsigned int dims;
+    double x_ini;
+    double y_ini;
+    double z_ini;
+    double x_fin;
+    double y_fin;
+    double z_fin;
+    double dist;
+    double min_dist = DBL_MAX;
+    double projection;
+    if (!geom1 || !geom2)
+	return NULL;
+
+    g1_points = buildGeosPoints (geom1);
+    g1_segments = buildGeosSegments (geom1);
+    g2_points = buildGeosPoints (geom2);
+    g2_segments = buildGeosSegments (geom2);
+
+    if (g1_points && g2_points)
+      {
+	  /* computing distances between POINTs */
+	  nItems1 = GEOSGetNumGeometries (g1_points);
+	  nItems2 = GEOSGetNumGeometries (g2_points);
+	  for (it1 = 0; it1 < nItems1; it1++)
+	    {
+		g1_item = GEOSGetGeometryN (g1_points, it1);
+		for (it2 = 0; it2 < nItems2; it2++)
+		  {
+		      g2_item = GEOSGetGeometryN (g2_points, it2);
+		      if (GEOSDistance (g1_item, g2_item, &dist))
+			{
+			    if (dist < min_dist)
+			      {
+				  /* saving min-dist points */
+				  min_dist = dist;
+				  cs = GEOSGeom_getCoordSeq (g1_item);
+				  GEOSCoordSeq_getDimensions (cs, &dims);
+				  if (dims == 3)
+				    {
+					GEOSCoordSeq_getX (cs, 0, &x_ini);
+					GEOSCoordSeq_getY (cs, 0, &y_ini);
+					GEOSCoordSeq_getZ (cs, 0, &z_ini);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_getX (cs, 0, &x_ini);
+					GEOSCoordSeq_getY (cs, 0, &y_ini);
+					z_ini = 0.0;
+				    }
+				  cs = GEOSGeom_getCoordSeq (g2_item);
+				  GEOSCoordSeq_getDimensions (cs, &dims);
+				  if (dims == 3)
+				    {
+					GEOSCoordSeq_getX (cs, 0, &x_fin);
+					GEOSCoordSeq_getY (cs, 0, &y_fin);
+					GEOSCoordSeq_getZ (cs, 0, &z_fin);
+				    }
+				  else
+				    {
+					GEOSCoordSeq_getX (cs, 0, &x_fin);
+					GEOSCoordSeq_getY (cs, 0, &y_fin);
+					z_fin = 0.0;
+				    }
+			      }
+			}
+		  }
+	    }
+      }
+
+    if (g1_points && g2_segments)
+      {
+	  /* computing distances between POINTs (g1) and SEGMENTs (g2) */
+	  nItems1 = GEOSGetNumGeometries (g1_points);
+	  nItems2 = GEOSGetNumGeometries (g2_segments);
+	  for (it1 = 0; it1 < nItems1; it1++)
+	    {
+		g1_item = GEOSGetGeometryN (g1_points, it1);
+		for (it2 = 0; it2 < nItems2; it2++)
+		  {
+		      g2_item = GEOSGetGeometryN (g2_segments, it2);
+		      if (GEOSDistance (g1_item, g2_item, &dist))
+			{
+			    if (dist < min_dist)
+			      {
+				  /* saving min-dist points */
+				  projection = GEOSProject (g2_item, g1_item);
+				  g_pt = GEOSInterpolate (g2_item, projection);
+				  if (g_pt)
+				    {
+					min_dist = dist;
+					cs = GEOSGeom_getCoordSeq (g1_item);
+					GEOSCoordSeq_getDimensions (cs, &dims);
+					if (dims == 3)
+					  {
+					      GEOSCoordSeq_getX (cs, 0, &x_ini);
+					      GEOSCoordSeq_getY (cs, 0, &y_ini);
+					      GEOSCoordSeq_getZ (cs, 0, &z_ini);
+					  }
+					else
+					  {
+					      GEOSCoordSeq_getX (cs, 0, &x_ini);
+					      GEOSCoordSeq_getY (cs, 0, &y_ini);
+					      z_ini = 0.0;
+					  }
+					cs = GEOSGeom_getCoordSeq (g_pt);
+					GEOSCoordSeq_getDimensions (cs, &dims);
+					if (dims == 3)
+					  {
+					      GEOSCoordSeq_getX (cs, 0, &x_fin);
+					      GEOSCoordSeq_getY (cs, 0, &y_fin);
+					      GEOSCoordSeq_getZ (cs, 0, &z_fin);
+					  }
+					else
+					  {
+					      GEOSCoordSeq_getX (cs, 0, &x_fin);
+					      GEOSCoordSeq_getY (cs, 0, &y_fin);
+					      z_fin = 0.0;
+					  }
+					GEOSGeom_destroy (g_pt);
+				    }
+			      }
+			}
+		  }
+	    }
+      }
+
+    if (g1_segments && g2_points)
+      {
+	  /* computing distances between SEGMENTs (g1) and POINTs (g2) */
+	  nItems1 = GEOSGetNumGeometries (g1_segments);
+	  nItems2 = GEOSGetNumGeometries (g2_points);
+	  for (it1 = 0; it1 < nItems1; it1++)
+	    {
+		g1_item = GEOSGetGeometryN (g1_segments, it1);
+		for (it2 = 0; it2 < nItems2; it2++)
+		  {
+		      g2_item = GEOSGetGeometryN (g2_points, it2);
+		      if (GEOSDistance (g1_item, g2_item, &dist))
+			{
+			    if (dist < min_dist)
+			      {
+				  /* saving min-dist points */
+				  projection = GEOSProject (g1_item, g2_item);
+				  g_pt = GEOSInterpolate (g1_item, projection);
+				  if (g_pt)
+				    {
+					min_dist = dist;
+					cs = GEOSGeom_getCoordSeq (g_pt);
+					GEOSCoordSeq_getDimensions (cs, &dims);
+					if (dims == 3)
+					  {
+					      GEOSCoordSeq_getX (cs, 0, &x_ini);
+					      GEOSCoordSeq_getY (cs, 0, &y_ini);
+					      GEOSCoordSeq_getZ (cs, 0, &z_ini);
+					  }
+					else
+					  {
+					      GEOSCoordSeq_getX (cs, 0, &x_ini);
+					      GEOSCoordSeq_getY (cs, 0, &y_ini);
+					      z_ini = 0.0;
+					  }
+					cs = GEOSGeom_getCoordSeq (g2_item);
+					GEOSCoordSeq_getDimensions (cs, &dims);
+					if (dims == 3)
+					  {
+					      GEOSCoordSeq_getX (cs, 0, &x_fin);
+					      GEOSCoordSeq_getY (cs, 0, &y_fin);
+					      GEOSCoordSeq_getZ (cs, 0, &z_fin);
+					  }
+					else
+					  {
+					      GEOSCoordSeq_getX (cs, 0, &x_fin);
+					      GEOSCoordSeq_getY (cs, 0, &y_fin);
+					      z_fin = 0.0;
+					  }
+					GEOSGeom_destroy (g_pt);
+				    }
+			      }
+			}
+		  }
+	    }
+      }
+    if (g1_points)
+	GEOSGeom_destroy (g1_points);
+    if (g1_segments)
+	GEOSGeom_destroy (g1_segments);
+    if (g2_points)
+	GEOSGeom_destroy (g2_points);
+    if (g2_segments)
+	GEOSGeom_destroy (g2_segments);
+    if (min_dist == DBL_MAX || min_dist <= 0.0)
+	return NULL;
+
+/* building the shortest line */
+    switch (geom1->DimensionModel)
+      {
+      case GAIA_XY_Z:
+	  result = gaiaAllocGeomCollXYZ ();
+	  break;
+      case GAIA_XY_M:
+	  result = gaiaAllocGeomCollXYM ();
+	  break;
+      case GAIA_XY_Z_M:
+	  result = gaiaAllocGeomCollXYZM ();
+	  break;
+      default:
+	  result = gaiaAllocGeomColl ();
+	  break;
+      };
+    result->Srid = geom1->Srid;
+    ln = gaiaAddLinestringToGeomColl (result, 2);
+    switch (ln->DimensionModel)
+      {
+      case GAIA_XY_Z:
+	  gaiaSetPointXYZ (ln->Coords, 0, x_ini, y_ini, z_ini);
+	  gaiaSetPointXYZ (ln->Coords, 1, x_fin, y_fin, z_fin);
+	  break;
+      case GAIA_XY_M:
+	  gaiaSetPointXYM (ln->Coords, 0, x_ini, y_ini, 0.0);
+	  gaiaSetPointXYM (ln->Coords, 1, x_fin, y_fin, 0.0);
+	  break;
+      case GAIA_XY_Z_M:
+	  gaiaSetPointXYZM (ln->Coords, 0, x_ini, y_ini, z_ini, 0.0);
+	  gaiaSetPointXYZM (ln->Coords, 1, x_fin, y_fin, z_fin, 0.0);
+	  break;
+      default:
+	  gaiaSetPoint (ln->Coords, 0, x_ini, y_ini);
+	  gaiaSetPoint (ln->Coords, 1, x_fin, y_fin);
+	  break;
+      };
+    return result;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaSnap (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double tolerance)
+{
+/* attempts to "snap" geom1 on geom2 using the given tolerance */
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    GEOSGeometry *g3;
+    gaiaGeomCollPtr result;
+    if (!geom1 || !geom2)
+	return NULL;
+
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    g3 = GEOSSnap (g1, g2, tolerance);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    if (!g3)
+	return NULL;
+    if (geom1->DimensionModel == GAIA_XY_Z)
+	result = gaiaFromGeos_XYZ (g3);
+    else if (geom1->DimensionModel == GAIA_XY_M)
+	result = gaiaFromGeos_XYM (g3);
+    else if (geom1->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaFromGeos_XYZM (g3);
+    else
+	result = gaiaFromGeos_XY (g3);
+    GEOSGeom_destroy (g3);
+    if (result == NULL)
+	return NULL;
+    result->Srid = geom1->Srid;
+    return result;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaLineMerge (gaiaGeomCollPtr geom)
+{
+/* attempts to reassemble lines from a collection of sparse fragments */
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr result;
+    if (!geom)
+	return NULL;
+
+    g1 = gaiaToGeos (geom);
+    g2 = GEOSLineMerge (g1);
+    GEOSGeom_destroy (g1);
+    if (!g2)
+	return NULL;
+    if (geom->DimensionModel == GAIA_XY_Z)
+	result = gaiaFromGeos_XYZ (g2);
+    else if (geom->DimensionModel == GAIA_XY_M)
+	result = gaiaFromGeos_XYM (g2);
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaFromGeos_XYZM (g2);
+    else
+	result = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
+    if (result == NULL)
+	return NULL;
+    result->Srid = geom->Srid;
+    return result;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaUnaryUnion (gaiaGeomCollPtr geom)
+{
+/* Unary Union (single Collection) */
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr result;
+    if (!geom)
+	return NULL;
+
+    g1 = gaiaToGeos (geom);
+    g2 = GEOSUnaryUnion (g1);
+    GEOSGeom_destroy (g1);
+    if (!g2)
+	return NULL;
+    if (geom->DimensionModel == GAIA_XY_Z)
+	result = gaiaFromGeos_XYZ (g2);
+    else if (geom->DimensionModel == GAIA_XY_M)
+	result = gaiaFromGeos_XYM (g2);
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaFromGeos_XYZM (g2);
+    else
+	result = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
+    if (result == NULL)
+	return NULL;
+    result->Srid = geom->Srid;
+    return result;
 }
 
 #endif /* end GEOS advanced and experimental features */

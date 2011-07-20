@@ -1,7 +1,7 @@
 /* 
  gaiageo.h -- Gaia common support for geometries
   
- version 2.4, 2009 September 17
+ version 3.0, 2011 July 20
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -958,6 +958,15 @@ extern "C"
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaLinearize (gaiaGeomCollPtr geom,
 						   int force_multi);
 
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaDissolveSegments (gaiaGeomCollPtr geom);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaDissolvePoints (gaiaGeomCollPtr geom);
+    GAIAGEO_DECLARE gaiaGeomCollPtr
+	gaiaExtractPointsFromGeomColl (gaiaGeomCollPtr geom);
+    GAIAGEO_DECLARE gaiaGeomCollPtr
+	gaiaExtractLinestringsFromGeomColl (gaiaGeomCollPtr geom);
+    GAIAGEO_DECLARE gaiaGeomCollPtr
+	gaiaExtractPolygonsFromGeomColl (gaiaGeomCollPtr geom);
+
 #ifndef OMIT_PROJ		/* including PROJ.4 */
 
     GAIAGEO_DECLARE double gaiaRadsToDegs (double rads);
@@ -1051,6 +1060,21 @@ extern "C"
 					    gaiaGeomCollPtr geom2);
     GAIAGEO_DECLARE int gaiaGeomCollCoveredBy (gaiaGeomCollPtr geom1,
 					       gaiaGeomCollPtr geom2);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaLineInterpolatePoint (gaiaGeomCollPtr
+							      ln_geom,
+							      double fraction);
+    GAIAGEO_DECLARE double gaiaLineLocatePoint (gaiaGeomCollPtr ln_geom,
+						gaiaGeomCollPtr pt_geom);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaLineSubstring (gaiaGeomCollPtr ln_geom,
+						       double start_fraction,
+						       double end_fraction);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaShortestLine (gaiaGeomCollPtr geom1,
+						      gaiaGeomCollPtr geom2);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSnap (gaiaGeomCollPtr geom1,
+					      gaiaGeomCollPtr geom2,
+					      double tolerance);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaLineMerge (gaiaGeomCollPtr geom);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaUnaryUnion (gaiaGeomCollPtr geom);
 #endif				/* end GEOS advanced and experimental features */
 
 #endif				/* end including GEOS */

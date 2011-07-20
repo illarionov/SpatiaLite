@@ -52,7 +52,7 @@ do_headers (FILE * out, struct masked_keyword *first)
     fprintf (out,
 	     "** This file is an amalgamation of many separate C source files from SpatiaLite\n");
     fprintf (out,
-	     "** version 2.4.0.  By combining all the individual C code files into this\n");
+	     "** version 3.0.0.  By combining all the individual C code files into this\n");
     fprintf (out,
 	     "** single large file, the entire code can be compiled as a one translation\n");
     fprintf (out,

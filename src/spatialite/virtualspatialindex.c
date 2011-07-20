@@ -2,7 +2,7 @@
 
  virtualspatialindex.c -- SQLite3 extension [VIRTUAL TABLE RTree metahandler]
 
- version 2.4, 2011 March 9
+ version 3.0, 2011 July 20
 
  Author: Sandro Furieri a.furieri@lqt.it
 

@@ -2,7 +2,7 @@
 
  gg_geoscvt.c -- Gaia / GEOS conversion [Geometry]
     
- version 2.4, 2009 September 17
+ version 3.0, 2011 July 20
 
  Author: Sandro Furieri a.furieri@lqt.it
 

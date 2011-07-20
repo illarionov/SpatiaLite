@@ -2,7 +2,7 @@
 
  virtualdbf.c -- SQLite3 extension [VIRTUAL TABLE accessing DBF]
 
- version 2.4, 2009 December 12
+ version 3.0, 2011 July 20
 
  Author: Sandro Furieri a.furieri@lqt.it
 

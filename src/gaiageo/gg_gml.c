@@ -2,7 +2,7 @@
 
  gg_gml.c -- GML parser/lexer 
   
- version 2.4, 2011 June 3
+ version 3.0, 2011 July 20
 
  Author: Sandro Furieri a.furieri@lqt.it
 

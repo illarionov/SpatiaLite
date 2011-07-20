@@ -65,9 +65,9 @@ http://gnuwin32.sourceforge.net/packages/libiconv.htm
 
 Building 'libspatialite' on Linux does not require any special 
 setting; we'll suppose you have unpacked the sources as 
-./libspatialite-2.4.0
+./libspatialite-3.0.0
 
-# cd libspatialite-2.4.0
+# cd libspatialite-3.0.0
 # ./configure
 # make
 # sudo make install
@@ -80,9 +80,9 @@ setting; we'll suppose you have unpacked the sources as
 Building 'libspatialite' on MacOsX is quite the same as for Linux.
 You simply have to set explicitly some ENV variable.
 We'll suppose you have unpacked the sources as 
-./libspatialite-2.4.0
+./libspatialite-3.0.0
 
-# cd libspatialite-2.4.0
+# cd libspatialite-3.0.0
 # export "CFLAGS=-I/opt/local/include"
 # export "LDFLAGS=-I/opt/local/lib"
 # ./configure 
@@ -113,9 +113,9 @@ On Windows systems you can choose using two different compilers:
 We suppose you have already installed the MinGW compiler and the MSYS shell.
 Building 'libspatialite' under Windows is then more or less like building
 on any other UNIX-like system. We'll suppose you have unpacked the sources as 
-C:\libspatialite-2.4.0
+C:\libspatialite-3.0.0
 
-$ cd c:/libspatialite-2.4.0
+$ cd c:/libspatialite-3.0.0
 $ export "CFLAGS=-I/usr/local/include"
 $ export "LDFLAGS=-L/usr/local/lib"
 $ ./configure --target=mingw32
@@ -131,9 +131,9 @@ $ make install-strip
 We suppose you have already installed Visual Studio enabling the command
 line tools [you are expected to use the command prompt shell].
 We'll suppose you have unpacked the sources as 
-C:\libspatialite-2.4.0
+C:\libspatialite-3.0.0
 
-> cd c:\libspatialite-2.4.0
+> cd c:\libspatialite-3.0.0
 > nmake /f makefile.vc
 > nmake /f makefile.vc install
 
