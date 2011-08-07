@@ -52,7 +52,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
-#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
+#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
 #include <spatialite/sqlite3.h>
 #else
 #include <sqlite3.h>
@@ -81,12 +81,27 @@ typedef struct VirtualTextStruct
 } VirtualText;
 typedef VirtualText *VirtualTextPtr;
 
+typedef struct VirtualTextConstraintStruct
+{
+/* a constraint to be verified for xFilter */
+    int iColumn;		/* Column on left-hand side of constraint */
+    int op;			/* Constraint operator */
+    char valueType;		/* value Type ('I'=int,'D'=double,'T'=text) */
+    sqlite3_int64 intValue;	/* Int64 comparison value */
+    double dblValue;		/* Double comparison value */
+    char *txtValue;		/* Text comparison value */
+    struct VirtualTextConstraintStruct *next;
+} VirtualTextConstraint;
+typedef VirtualTextConstraint *VirtualTextConstraintPtr;
+
 typedef struct VirtualTextCursortStruct
 {
 /* extends the sqlite3_vtab_cursor struct */
     VirtualTextPtr pVtab;	/* Virtual table of this cursor */
     long current_row;		/* the current row ID */
     int eof;			/* the EOF marker */
+    VirtualTextConstraintPtr firstConstraint;
+    VirtualTextConstraintPtr lastConstraint;
 } VirtualTextCursor;
 typedef VirtualTextCursor *VirtualTextCursorPtr;
 
@@ -362,6 +377,8 @@ vtxt_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
     cursor->pVtab = (VirtualTextPtr) pVTab;
     cursor->current_row = 0;
     cursor->eof = 0;
+    cursor->firstConstraint = NULL;
+    cursor->lastConstraint = NULL;
     *ppCursor = (sqlite3_vtab_cursor *) cursor;
     text = cursor->pVtab->reader;
     if (!text)
@@ -374,13 +391,305 @@ vtxt_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
     return SQLITE_OK;
 }
 
+
+static void
+vtxt_free_constraints (VirtualTextCursorPtr cursor)
+{
+/* memory cleanup - cursor constraints */
+    VirtualTextConstraintPtr pC;
+    VirtualTextConstraintPtr pCn;
+    pC = cursor->firstConstraint;
+    while (pC)
+      {
+	  pCn = pC->next;
+	  if (pC->txtValue)
+	      sqlite3_free (pC->txtValue);
+	  sqlite3_free (pC);
+	  pC = pCn;
+      }
+    cursor->firstConstraint = NULL;
+    cursor->lastConstraint = NULL;
+}
+
 static int
 vtxt_close (sqlite3_vtab_cursor * pCursor)
 {
 /* closing the cursor */
     VirtualTextCursorPtr cursor = (VirtualTextCursorPtr) pCursor;
+    vtxt_free_constraints (cursor);
     sqlite3_free (cursor);
     return SQLITE_OK;
+}
+
+
+static int
+vtxt_parse_constraint (const char *str, int index, int *iColumn, int *op)
+{
+/* parsing a constraint string */
+    char buf[64];
+    const char *in = str;
+    char *out = buf;
+    int i = 0;
+    int found = 0;
+
+    *out = '\0';
+    while (*in != '\0')
+      {
+	  if (*in == ',')
+	    {
+		if (index == i)
+		  {
+		      *out = '\0';
+		      found = 1;
+		      break;
+		  }
+		i++;
+		in++;
+		continue;
+	    }
+	  if (index == i)
+	      *out++ = *in;
+	  in++;
+      }
+    if (!found)
+	return 0;
+    in = buf;
+    for (i = 0; i < (int) strlen (buf); i++)
+      {
+	  if (buf[i] == ':')
+	    {
+		buf[i] = '\0';
+		*iColumn = atoi (buf);
+		*op = atoi (buf + i + 1);
+		return 1;
+	    }
+	  in++;
+      }
+    return 0;
+}
+
+static int
+vtxt_eval_constraints (VirtualTextCursorPtr cursor)
+{
+/* evaluating Filter constraints */
+    int nCol;
+    int i;
+    char buf[4096];
+    int type;
+    const char *value;
+    sqlite3_int64 int_value;
+    double dbl_value;
+    const char *txt_value;
+    int is_null;
+    int is_int;
+    int is_dbl;
+    int is_txt;
+    gaiaTextReaderPtr text = cursor->pVtab->reader;
+    VirtualTextConstraintPtr pC;
+    if (text->current_line_ready == 0)
+	return SQLITE_ERROR;
+    pC = cursor->firstConstraint;
+    while (pC)
+      {
+	  int ok = 0;
+	  if (pC->iColumn == 0)
+	    {
+		/* the ROWNO column */
+		int_value = cursor->current_row;
+		goto eval;
+	    }
+	  nCol = 1;
+	  for (i = 0; i < text->max_fields; i++)
+	    {
+		is_null = 0;
+		is_int = 0;
+		is_dbl = 0;
+		is_txt = 0;
+		if (nCol == pC->iColumn)
+		  {
+		      if (!gaiaTextReaderFetchField (text, i, &type, &value))
+			  is_null = 1;
+		      else
+			{
+			    if (type == VRTTXT_INTEGER)
+			      {
+				  strcpy (buf, value);
+				  text_clean_integer (buf);
+#if defined(_WIN32) || defined(__MINGW32__)
+/* CAVEAT - M$ runtime has non-standard functions for 64 bits */
+				  int_value = _atoi64 (buf);
+#else
+				  int_value = atoll (buf);
+#endif
+				  is_int = 1;
+			      }
+			    else if (type == VRTTXT_DOUBLE)
+			      {
+				  strcpy (buf, value);
+				  text_clean_double (buf);
+				  dbl_value = atof (buf);
+				  is_dbl = 1;
+			      }
+			    else if (type == VRTTXT_TEXT)
+			      {
+				  txt_value = value;
+				  is_txt = 1;
+			      }
+			    else
+				is_null = 1;
+			}
+		      goto eval;
+		  }
+		nCol++;
+	    }
+	  return 0;
+	eval:
+	  ok = 0;
+	  if (pC->valueType == 'I')
+	    {
+		if (is_int)
+		  {
+		      switch (pC->op)
+			{
+			case SQLITE_INDEX_CONSTRAINT_EQ:
+			    if (int_value == pC->intValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_GT:
+			    if (int_value > pC->intValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_LE:
+			    if (int_value <= pC->intValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_LT:
+			    if (int_value < pC->intValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_GE:
+			    if (int_value >= pC->intValue)
+				ok = 1;
+			    break;
+			};
+		  }
+		if (is_dbl)
+		  {
+		      switch (pC->op)
+			{
+			case SQLITE_INDEX_CONSTRAINT_EQ:
+			    if (dbl_value == pC->intValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_GT:
+			    if (dbl_value > pC->intValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_LE:
+			    if (dbl_value <= pC->intValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_LT:
+			    if (dbl_value < pC->intValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_GE:
+			    if (dbl_value >= pC->intValue)
+				ok = 1;
+			    break;
+			};
+		  }
+	    }
+	  if (pC->valueType == 'D')
+	    {
+		if (is_int)
+		  {
+		      switch (pC->op)
+			{
+			case SQLITE_INDEX_CONSTRAINT_EQ:
+			    if (int_value == pC->dblValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_GT:
+			    if (int_value > pC->dblValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_LE:
+			    if (int_value <= pC->dblValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_LT:
+			    if (int_value < pC->dblValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_GE:
+			    if (int_value >= pC->dblValue)
+				ok = 1;
+			    break;
+			};
+		  }
+		if (is_dbl)
+		  {
+		      switch (pC->op)
+			{
+			case SQLITE_INDEX_CONSTRAINT_EQ:
+			    if (dbl_value == pC->dblValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_GT:
+			    if (dbl_value > pC->dblValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_LE:
+			    if (dbl_value <= pC->dblValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_LT:
+			    if (dbl_value < pC->dblValue)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_GE:
+			    if (dbl_value >= pC->dblValue)
+				ok = 1;
+			    break;
+			};
+		  }
+	    }
+	  if (pC->valueType == 'D')
+	    {
+		if (is_txt)
+		  {
+		      int ret = strcmp (txt_value, pC->txtValue);
+		      switch (pC->op)
+			{
+			case SQLITE_INDEX_CONSTRAINT_EQ:
+			    if (ret == 0)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_GT:
+			    if (ret == 1)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_LE:
+			    if (ret == -1 || ret == 0)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_LT:
+			    if (ret == -1)
+				ok = 1;
+			    break;
+			case SQLITE_INDEX_CONSTRAINT_GE:
+			    if (ret == 1 || ret == 0)
+				ok = 1;
+			    break;
+			};
+		  }
+	    }
+	  if (!ok)
+	      return 0;
+	  pC = pC->next;
+      }
+    return 1;
 }
 
 static int
@@ -388,8 +697,71 @@ vtxt_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
 	     int argc, sqlite3_value ** argv)
 {
 /* setting up a cursor filter */
-    if (pCursor || idxNum || idxStr || argc || argv)
-	pCursor = pCursor;	/* unused arg warning suppression */
+    int i;
+    int iColumn;
+    int op;
+    int len;
+    VirtualTextConstraintPtr pC;
+    VirtualTextCursorPtr cursor = (VirtualTextCursorPtr) pCursor;
+    gaiaTextReaderPtr text = cursor->pVtab->reader;
+    if (idxNum)
+	idxNum = idxNum;	/* unused arg warning suppression */
+
+/* resetting any previously set filter constraint */
+    vtxt_free_constraints (cursor);
+
+    for (i = 0; i < argc; i++)
+      {
+	  if (!vtxt_parse_constraint (idxStr, i, &iColumn, &op))
+	      continue;
+	  pC = sqlite3_malloc (sizeof (VirtualTextConstraint));
+	  if (!pC)
+	      continue;
+	  pC->iColumn = iColumn;
+	  pC->op = op;
+	  pC->valueType = '\0';
+	  pC->txtValue = NULL;
+	  pC->next = NULL;
+
+	  if (sqlite3_value_type (argv[i]) == SQLITE_INTEGER)
+	    {
+		pC->valueType = 'I';
+		pC->intValue = sqlite3_value_int64 (argv[i]);
+	    }
+	  if (sqlite3_value_type (argv[i]) == SQLITE_FLOAT)
+	    {
+		pC->valueType = 'D';
+		pC->dblValue = sqlite3_value_double (argv[i]);
+	    }
+	  if (sqlite3_value_type (argv[i]) == SQLITE_TEXT)
+	    {
+		pC->valueType = 'T';
+		len = sqlite3_value_bytes (argv[i]) + 1;
+		pC->txtValue = (char *) sqlite3_malloc (len);
+		if (pC->txtValue)
+		    strcpy (pC->txtValue,
+			    (char *) sqlite3_value_text (argv[i]));
+	    }
+	  if (cursor->firstConstraint == NULL)
+	      cursor->firstConstraint = pC;
+	  if (cursor->lastConstraint != NULL)
+	      cursor->lastConstraint->next = pC;
+	  cursor->lastConstraint = pC;
+      }
+
+    cursor->current_row = 0;
+    cursor->eof = 0;
+    while (1)
+      {
+	  cursor->current_row++;
+	  if (!gaiaTextReaderGetRow (text, cursor->current_row))
+	    {
+		cursor->eof = 1;
+		break;
+	    }
+	  if (vtxt_eval_constraints (cursor))
+	      break;
+      }
     return SQLITE_OK;
 }
 
@@ -403,9 +775,17 @@ vtxt_next (sqlite3_vtab_cursor * pCursor)
 	cursor->eof = 1;
     else
       {
-	  cursor->current_row++;
-	  if (!gaiaTextReaderGetRow (text, cursor->current_row))
-	      cursor->eof = 1;
+	  while (1)
+	    {
+		cursor->current_row++;
+		if (!gaiaTextReaderGetRow (text, cursor->current_row))
+		  {
+		      cursor->eof = 1;
+		      break;
+		  }
+		if (vtxt_eval_constraints (cursor))
+		    break;
+	    }
       }
     return SQLITE_OK;
 }
@@ -1349,6 +1729,12 @@ gaiaTextReaderFetchField (gaiaTextReaderPtr txt, int field_idx, int *type,
 	  /* converting to UTF-8 */
 	  str = (char *) *value;
 	  len = strlen (str);
+	  if (str[len - 1] == '\r')
+	    {
+		/* skipping trailing CR, if any */
+		str[len - 1] = '\0';
+		len--;
+	    }
 	  if (str[0] == txt->text_separator
 	      && str[len - 1] == txt->text_separator)
 	    {

@@ -147,6 +147,12 @@ do_headers (FILE * out, struct masked_keyword *first)
     fprintf (out, "#include <iconv.h>\n");
     fprintf (out, "#include <langinfo.h>\n");
     fprintf (out, "#endif\n#endif\n\n");
+    fprintf (out, "#if defined(_WIN32) || defined(WIN32)\n");
+    fprintf (out, "# include <io.h>\n");
+    fprintf (out, "#define isatty	_isatty\n");
+    fprintf (out, "#else\n");
+    fprintf (out, "#include <unistd.h>\n");
+    fprintf (out, "#endif\n\n");
     fprintf (out, "#if OMIT_GEOS == 0		/* including GEOS */\n");
     fprintf (out, "#include <geos_c.h>\n");
     fprintf (out, "#endif\n\n");

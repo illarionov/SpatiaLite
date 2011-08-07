@@ -52,6 +52,13 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <locale.h>
 #include <errno.h>
 
+#if defined(_WIN32) || defined(WIN32)
+#include <io.h>
+#define isatty	_isatty
+#else
+#include <unistd.h>
+#endif
+
 #ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
 #include <spatialite/sqlite3ext.h>
 #else
@@ -16243,6 +16250,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 
     sqlite3_create_function (db, "Transform", 2, SQLITE_ANY, 0,
 			     fnct_Transform, 0, 0);
+    sqlite3_create_function (db, "ST_Transform", 2, SQLITE_ANY, 0,
+			     fnct_Transform, 0, 0);
 
 #endif /* end including PROJ.4 */
 
@@ -16466,30 +16475,34 @@ spatialite_init (int verbose)
 {
 /* used when SQLite initializes SpatiaLite via statically linked lib */
     sqlite3_auto_extension ((void (*)(void)) init_static_spatialite);
-    if (verbose)
+    if (isatty (1))
       {
-	  printf ("SpatiaLite version ..: %s", spatialite_version ());
-	  printf ("\tSupported Extensions:\n");
+	  /* printing "hello" message only when stdout is on console */
+	  if (verbose)
+	    {
+		printf ("SpatiaLite version ..: %s", spatialite_version ());
+		printf ("\tSupported Extensions:\n");
 #ifndef OMIT_ICONV		/* ICONV is required by SHP/DBF/TXT */
-	  printf ("\t- 'VirtualShape'\t[direct Shapefile access]\n");
-	  printf ("\t- 'VirtualDbf'\t\t[direct DBF access]\n");
-	  printf ("\t- 'VirtualText'\t\t[direct CSV/TXT access]\n");
+		printf ("\t- 'VirtualShape'\t[direct Shapefile access]\n");
+		printf ("\t- 'VirtualDbf'\t\t[direct DBF access]\n");
+		printf ("\t- 'VirtualText'\t\t[direct CSV/TXT access]\n");
 #endif /* end ICONV conditional */
-	  printf ("\t- 'VirtualNetwork'\t[Dijkstra shortest path]\n");
-	  printf ("\t- 'RTree'\t\t[Spatial Index - R*Tree]\n");
-	  printf ("\t- 'MbrCache'\t\t[Spatial Index - MBR cache]\n");
-	  printf ("\t- 'VirtualSpatialIndex'\t[R*Tree metahandler]\n");
-	  printf ("\t- 'VirtualFDO'\t\t[FDO-OGR interoperability]\n");
-	  printf ("\t- 'SpatiaLite'\t\t[Spatial SQL - OGC]\n");
-      }
+		printf ("\t- 'VirtualNetwork'\t[Dijkstra shortest path]\n");
+		printf ("\t- 'RTree'\t\t[Spatial Index - R*Tree]\n");
+		printf ("\t- 'MbrCache'\t\t[Spatial Index - MBR cache]\n");
+		printf ("\t- 'VirtualSpatialIndex'\t[R*Tree metahandler]\n");
+		printf ("\t- 'VirtualFDO'\t\t[FDO-OGR interoperability]\n");
+		printf ("\t- 'SpatiaLite'\t\t[Spatial SQL - OGC]\n");
+	    }
 #ifndef OMIT_PROJ		/* PROJ.4 version */
-    if (verbose)
-	printf ("PROJ.4 version ......: %s\n", pj_get_release ());
+	  if (verbose)
+	      printf ("PROJ.4 version ......: %s\n", pj_get_release ());
 #endif /* end including PROJ.4 */
 #ifndef OMIT_GEOS		/* GEOS version */
-    if (verbose)
-	printf ("GEOS version ........: %s\n", GEOSversion ());
+	  if (verbose)
+	      printf ("GEOS version ........: %s\n", GEOSversion ());
 #endif /* end GEOS version */
+      }
 }
 
 SPATIALITE_DECLARE int
@@ -17220,6 +17233,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 #ifndef OMIT_PROJ		/* including PROJ.4 */
 
     sqlite3_create_function (db, "Transform", 2, SQLITE_ANY, 0,
+			     fnct_Transform, 0, 0);
+    sqlite3_create_function (db, "ST_Transform", 2, SQLITE_ANY, 0,
 			     fnct_Transform, 0, 0);
 
 #endif /* end including PROJ.4 */
