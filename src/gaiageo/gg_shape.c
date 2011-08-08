@@ -4384,6 +4384,283 @@ gaiaOpenDbfRead (gaiaDbfPtr dbf, const char *path, const char *charFrom,
     return;
 }
 
+GAIAGEO_DECLARE void
+gaiaOpenDbfWrite (gaiaDbfPtr dbf, const char *path, const char *charFrom,
+		  const char *charTo)
+{
+/* trying to create the DBF file */
+    FILE *fl_dbf = NULL;
+    char xpath[1024];
+    unsigned char bf[1024];
+    unsigned char *dbf_buf = NULL;
+    gaiaDbfFieldPtr fld;
+    char *sys_err;
+    char errMsg[1024];
+    short dbf_reclen = 0;
+    unsigned short dbf_size = 0;
+    iconv_t iconv_ret;
+    char buf[2048];
+    char utf8buf[2048];
+#ifdef __MINGW32__
+    const char *pBuf;
+#else /* not MINGW32 */
+    char *pBuf;
+#endif
+    size_t len;
+    size_t utf8len;
+    char *pUtf8buf;
+    int defaultId = 1;
+    if (charFrom && charTo)
+      {
+	  iconv_ret = iconv_open (charTo, charFrom);
+	  if (iconv_ret == (iconv_t) (-1))
+	    {
+		sprintf (errMsg, "conversion from '%s' to '%s' not available\n",
+			 charFrom, charTo);
+		goto unsupported_conversion;
+	    }
+	  dbf->IconvObj = iconv_ret;
+      }
+    else
+      {
+	  sprintf (errMsg, "a NULL charset-name was passed\n");
+	  goto unsupported_conversion;
+      }
+    if (dbf->flDbf != NULL)
+      {
+	  sprintf (errMsg, "attempting to reopen an already opened DBF file\n");
+	  goto unsupported_conversion;
+      }
+/* trying to open the DBF file */
+    sprintf (xpath, "%s", path);
+    fl_dbf = fopen (xpath, "wb");
+    if (!fl_dbf)
+      {
+	  sys_err = strerror (errno);
+	  sprintf (errMsg, "unable to open '%s' for writing: %s", xpath,
+		   sys_err);
+	  goto no_file;
+      }
+/* allocating DBF buffer */
+    dbf_reclen = 1;		/* an extra byte is needed because in DBF rows first byte is a marker for deletion */
+    fld = dbf->Dbf->First;
+    while (fld)
+      {
+	  /* computing the DBF record length */
+	  dbf_reclen += fld->Length;
+	  fld = fld->Next;
+      }
+    dbf_buf = malloc (dbf_reclen);
+/* writing the DBF file header */
+    memset (bf, '\0', 32);
+    fwrite (bf, 1, 32, fl_dbf);
+    dbf_size = 32;		/* note: DBF counts sizes in bytes */
+    fld = dbf->Dbf->First;
+    while (fld)
+      {
+	  /* exporting DBF Fields specifications */
+	  memset (bf, 0, 32);
+	  strcpy (buf, fld->Name);
+	  len = strlen (buf);
+	  utf8len = 2048;
+	  pBuf = buf;
+	  pUtf8buf = utf8buf;
+	  if (iconv
+	      ((iconv_t) (dbf->IconvObj), &pBuf, &len, &pUtf8buf,
+	       &utf8len) == (size_t) (-1))
+	      sprintf (buf, "FLD#%d", defaultId++);
+	  else
+	    {
+		memcpy (buf, utf8buf, 2048 - utf8len);
+		buf[2048 - utf8len] = '\0';
+		if (strlen (buf) > 10)
+		    sprintf (buf, "FLD#%d", defaultId++);
+	    }
+	  memcpy (bf, buf, strlen (buf));
+	  *(bf + 11) = fld->Type;
+	  *(bf + 16) = fld->Length;
+	  *(bf + 17) = fld->Decimals;
+	  fwrite (bf, 1, 32, fl_dbf);
+	  dbf_size += 32;
+	  fld = fld->Next;
+      }
+    fwrite ("\r", 1, 1, fl_dbf);	/* this one is a special DBF delimiter that closes file header */
+    dbf_size++;
+    dbf->Valid = 1;
+    dbf->flDbf = fl_dbf;
+    dbf->BufDbf = dbf_buf;
+    dbf->DbfHdsz = dbf_size + 1;
+    dbf->DbfReclen = dbf_reclen;
+    dbf->DbfSize = dbf_size;
+    dbf->DbfRecno = 0;
+    return;
+  unsupported_conversion:
+/* illegal charset */
+    if (dbf->LastError)
+	free (dbf->LastError);
+    len = strlen (errMsg);
+    dbf->LastError = malloc (len + 1);
+    strcpy (dbf->LastError, errMsg);
+    return;
+  no_file:
+/* the DBF file can't be created/opened */
+    if (dbf->LastError)
+	free (dbf->LastError);
+    len = strlen (errMsg);
+    dbf->LastError = malloc (len + 1);
+    strcpy (dbf->LastError, errMsg);
+    if (dbf_buf)
+	free (dbf_buf);
+    if (fl_dbf)
+	fclose (fl_dbf);
+    return;
+}
+
+GAIAGEO_DECLARE int
+gaiaWriteDbfEntity (gaiaDbfPtr dbf, gaiaDbfListPtr entity)
+{
+/* trying to write an entity into some DBF file */
+    char dummy[128];
+    char fmt[16];
+    gaiaDbfFieldPtr fld;
+#ifdef __MINGW32__
+    const char *pBuf;
+#else /* not MINGW32 */
+    char *pBuf;
+#endif
+    size_t len;
+    size_t utf8len;
+    char *pUtf8buf;
+    char buf[512];
+    char utf8buf[2048];
+/* writing the DBF record */
+    memset (dbf->BufDbf, '\0', dbf->DbfReclen);
+    *(dbf->BufDbf) = ' ';	/* in DBF first byte of each row marks for validity or deletion */
+    fld = entity->First;
+    while (fld)
+      {
+	  /* transferring field values */
+	  switch (fld->Type)
+	    {
+	    case 'L':
+		if (!(fld->Value))
+		    *(dbf->BufDbf + fld->Offset) = '?';
+		else if (fld->Value->Type != GAIA_INT_VALUE)
+		    *(dbf->BufDbf + fld->Offset + 1) = '?';
+		else
+		  {
+		      if (fld->Value->IntValue == 0)
+			  *(dbf->BufDbf + fld->Offset + 1) = 'N';
+		      else
+			  *(dbf->BufDbf + fld->Offset + 1) = 'Y';
+		  }
+		break;
+	    case 'D':
+		memset (dbf->BufDbf + fld->Offset + 1, '0', 8);
+		if (fld->Value)
+		  {
+		      if (fld->Value->Type == GAIA_TEXT_VALUE)
+			{
+			    if (strlen (fld->Value->TxtValue) == 8)
+				memcpy (dbf->BufDbf + fld->Offset + 1,
+					fld->Value->TxtValue, 8);
+			}
+		  }
+		break;
+	    case 'C':
+		memset (dbf->BufDbf + fld->Offset + 1, ' ', fld->Length);
+		if (fld->Value)
+		  {
+		      if (fld->Value->Type == GAIA_TEXT_VALUE)
+			{
+			    strcpy (buf, fld->Value->TxtValue);
+			    len = strlen (buf);
+			    utf8len = 2048;
+			    pBuf = buf;
+			    pUtf8buf = utf8buf;
+			    if (iconv
+				((iconv_t) (dbf->IconvObj), &pBuf, &len,
+				 &pUtf8buf, &utf8len) == (size_t) (-1))
+				goto conversion_error;
+			    memcpy (buf, utf8buf, 2048 - utf8len);
+			    buf[2048 - utf8len] = '\0';
+			    if (strlen (buf) < fld->Length)
+				memcpy (dbf->BufDbf + fld->Offset + 1, buf,
+					strlen (buf));
+			    else
+				memcpy (dbf->BufDbf + fld->Offset + 1, buf,
+					fld->Length);
+			}
+		  }
+		break;
+	    case 'N':
+		memset (dbf->BufDbf + fld->Offset + 1, '\0', fld->Length);
+		if (fld->Value)
+		  {
+		      if (fld->Value->Type == GAIA_INT_VALUE)
+			{
+#if defined(_WIN32) || defined(__MINGW32__)
+/* CAVEAT - M$ runtime doesn't supports %lld for 64 bits */
+			    sprintf (dummy, "%I64d", fld->Value->IntValue);
+#else
+			    sprintf (dummy, "%lld", fld->Value->IntValue);
+#endif
+			    if (strlen (dummy) <= fld->Length)
+				memcpy (dbf->BufDbf + fld->Offset + 1,
+					dummy, strlen (dummy));
+			}
+		      if (fld->Value->Type == GAIA_DOUBLE_VALUE)
+			{
+			    sprintf (fmt, "%%1.%df", fld->Decimals);
+			    sprintf (dummy, fmt, fld->Value->DblValue);
+			    if (strlen (dummy) <= fld->Length)
+				memcpy (dbf->BufDbf + fld->Offset + 1,
+					dummy, strlen (dummy));
+			}
+		  }
+		break;
+	    };
+	  fld = fld->Next;
+      }
+/* inserting entity in DBF file */
+    fwrite (dbf->BufDbf, 1, dbf->DbfReclen, dbf->flDbf);
+    (dbf->DbfRecno)++;
+    return 1;
+  conversion_error:
+    if (dbf->LastError)
+	free (dbf->LastError);
+    sprintf (dummy, "Invalid character sequence");
+    len = strlen (dummy);
+    dbf->LastError = malloc (len + 1);
+    strcpy (dbf->LastError, dummy);
+    return 0;
+}
+
+GAIAGEO_DECLARE void
+gaiaFlushDbfHeader (gaiaDbfPtr dbf)
+{
+/* updates the DBF file header */
+    FILE *fl_dbf = dbf->flDbf;
+    int dbf_size = dbf->DbfSize;
+    int dbf_reclen = dbf->DbfReclen;
+    int dbf_recno = dbf->DbfRecno;
+    int endian_arch = dbf->endian_arch;
+    unsigned char bf[64];
+/* writing the DBF file header */
+    *bf = 0x1a;			/* DBF - this is theEOF marker */
+    fwrite (bf, 1, 1, fl_dbf);
+    fseek (fl_dbf, 0, SEEK_SET);	/* repositioning at DBF file start */
+    memset (bf, '\0', 32);
+    *bf = 0x03;			/* DBF magic number */
+    *(bf + 1) = 1;		/* this is supposed to be the last update date [Year, Month, Day], but we ignore it at all */
+    *(bf + 2) = 1;
+    *(bf + 3) = 1;
+    gaiaExport32 (bf + 4, dbf_recno, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports # records in this DBF */
+    gaiaExport16 (bf + 8, (short) dbf_size, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the file header size */
+    gaiaExport16 (bf + 10, (short) dbf_reclen, GAIA_LITTLE_ENDIAN, endian_arch);	/* exports the record length */
+    fwrite (bf, 1, 32, fl_dbf);
+}
+
 GAIAGEO_DECLARE int
 gaiaReadDbfEntity (gaiaDbfPtr dbf, int current_row, int *deleted)
 {
