@@ -4797,7 +4797,7 @@ create_faces_resolved (sqlite3 * sqlite, const char *view, const char *faces,
     double_quoted_sql (sqltable);
     sprintf (sql, "CREATE VIEW %s AS\n", sqltable);
     strcat (sql, "SELECT f.face_id AS face_id, ");
-    strcat (sql, "Polygonize(Collect(e.Geometry)) AS Geometry\n");
+    strcat (sql, "ST_Polygonize(e.Geometry) AS Geometry\n");
     strcpy (sqltable, faces);
     double_quoted_sql (sqltable);
     sprintf (sql2, "FROM %s AS f\n", sqltable);
@@ -4807,13 +4807,13 @@ create_faces_resolved (sqlite3 * sqlite, const char *view, const char *faces,
     double_quoted_sql (sqltable);
     strcat (sql, sqltable);
     double_quoted_sql (sqltable);
-    strcat (sql, " fe ON (fe.face_id = f.face_id)\n");
+    strcat (sql, " AS fe ON (fe.face_id = f.face_id)\n");
     strcat (sql, "LEFT JOIN ");
     strcpy (sqltable, edges);
     double_quoted_sql (sqltable);
     strcat (sql, sqltable);
     double_quoted_sql (sqltable);
-    strcat (sql, " e ON (e.gml_id = fe.gml_id)\n");
+    strcat (sql, " AS e ON (e.gml_id = fe.gml_id)\n");
     strcat (sql, "GROUP BY f.face_id\n");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
@@ -4898,21 +4898,14 @@ create_surfaces_resolved (sqlite3 * sqlite, const char *view,
 }
 
 static int
-create_topo_master (sqlite3 * sqlite, const char *nodes, const char *edges,
-		    const char *faces, const char *faces_edges,
-		    const char *curves, const char *surfaces,
-		    const char *check_nodes, const char *check_node_geoms,
-		    const char *check_edges, const char *check_edge_geoms,
-		    const char *check_faces, const char *faces_res,
-		    const char *curves_res, const char *surfaces_res, int srid,
-		    int dims)
+create_topo_master (sqlite3 * sqlite)
 {
 /* creating the topo_master table */
     char sql[4196];
-    char sql2[2048];
-    char sqltable[1024];
     int ret;
     char *err_msg = NULL;
+
+/* creating the table */
     strcpy (sql, "CREATE TABLE topology_master (\n");
     strcat (sql, "nodes TEXT NOT NULL,\n");
     strcat (sql, "edges TEXT NOT NULL,\n");
@@ -4940,6 +4933,25 @@ create_topo_master (sqlite3 * sqlite, const char *nodes, const char *edges,
 	  sqlite3_free (err_msg);
 	  return 0;
       }
+    return 1;
+}
+
+static int
+update_topo_master (sqlite3 * sqlite, const char *nodes, const char *edges,
+		    const char *faces, const char *faces_edges,
+		    const char *curves, const char *surfaces,
+		    const char *check_nodes, const char *check_node_geoms,
+		    const char *check_edges, const char *check_edge_geoms,
+		    const char *check_faces, const char *faces_res,
+		    const char *curves_res, const char *surfaces_res, int srid,
+		    int dims)
+{
+/* updating the topo_master table */
+    char sql[4196];
+    char sql2[2048];
+    char sqltable[1024];
+    int ret;
+    char *err_msg = NULL;
 
 /* inserting Topology data into MASTER */
     strcpy (sql, "INSERT INTO topology_master ");
@@ -5057,6 +5069,7 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
     int *p_view;
     const char **p_tbl;
     int ok_table;
+    int create_master = 1;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();
     if (argc == 3)
@@ -5205,17 +5218,27 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
 	  ok_table = check_topo_table (sqlite, *p_tbl, *p_view);
 	  if (ok_table)
 	    {
-		fprintf (stderr,
-			 "CreateTopologyTables() error: table '%s' already exists\n",
-			 *p_tbl);
-		sqlite3_result_int (context, 0);
-		return;
+		if (strcmp (*p_tbl, "topology_master") == 0)
+		    create_master = 0;
+		else
+		  {
+		      fprintf (stderr,
+			       "CreateTopologyTables() error: table '%s' already exists\n",
+			       *p_tbl);
+		      sqlite3_result_int (context, 0);
+		      return;
+		  }
 	    }
 	  p_tbl++;
 	  p_view++;
       }
 
 /* creating Topology tables */
+    if (create_master)
+      {
+	  if (!create_topo_master (sqlite))
+	      goto error;
+      }
     if (!create_topo_nodes (sqlite, table_nodes, srid, dims))
 	goto error;
     if (!create_topo_edges (sqlite, table_edges, srid, dims))
@@ -5248,7 +5271,7 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
     if (!create_surfaces_resolved
 	(sqlite, view_surfaces_resolved, table_surfaces, table_faces))
 	goto error;
-    if (!create_topo_master
+    if (!update_topo_master
 	(sqlite, table_nodes, table_edges, table_faces, table_faces_edges,
 	 table_curves, table_surfaces, view_check_node_ids,
 	 view_check_node_geoms, view_check_edge_ids, view_check_edge_geoms,
