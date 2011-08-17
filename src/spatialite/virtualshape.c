@@ -62,7 +62,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define strcasecmp	_stricmp
 #endif /* not WIN32 */
 
-#if OMIT_ICONV == 0		/* if ICONV is disabled no SHP support is available */
+#ifndef OMIT_ICONV		/* if ICONV is disabled no SHP support is available */
 
 static struct sqlite3_module my_shape_module;
 

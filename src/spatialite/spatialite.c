@@ -1157,7 +1157,7 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
-    updateSpatiaLiteHistory (sqlite, "geometry_table", NULL,
+    updateSpatiaLiteHistory (sqlite, "geometry_columns", NULL,
 			     "table succesfully created");
 /* creating an INDEX corresponding to the SRID FK */
     strcpy (sql, "CREATE INDEX idx_srid_geocols ON geometry_columns\n");
@@ -15137,7 +15137,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -15221,7 +15222,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -15230,7 +15232,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -16479,6 +16482,10 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
     virtualdbf_extension_init (db);
 /* initializing the VirtualText extension */
     virtualtext_extension_init (db);
+#ifndef OMIT_FREEXL
+/* initializing the VirtualXL  extension */
+    virtualXL_extension_init (db);
+#endif /* FreeXL enabled/disable */
 #endif /* ICONV enabled/disabled */
 
 /* initializing the VirtualNetwork  extension */
@@ -16508,6 +16515,9 @@ spatialite_init (int verbose)
 #ifndef OMIT_ICONV		/* ICONV is required by SHP/DBF/TXT */
 		printf ("\t- 'VirtualShape'\t[direct Shapefile access]\n");
 		printf ("\t- 'VirtualDbf'\t\t[direct DBF access]\n");
+#ifndef OMIT_FREEXL
+		printf ("\t- 'VirtualXL'\t\t[direct XLS access]\n");
+#endif /* end FreeXL conditional */
 		printf ("\t- 'VirtualText'\t\t[direct CSV/TXT access]\n");
 #endif /* end ICONV conditional */
 		printf ("\t- 'VirtualNetwork'\t[Dijkstra shortest path]\n");
@@ -17485,6 +17495,10 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
     virtualdbf_extension_init (db);
 /* initializing the VirtualText  extension */
     virtualtext_extension_init (db);
+#ifndef OMIT_FREEXL
+/* initializing the VirtualXL  extension */
+    virtualXL_extension_init (db);
+#endif /* FreeXL enabled/disabled */
 #endif /* ICONV enabled/disabled */
 
 /* initializing the VirtualNetwork  extension */
@@ -17503,6 +17517,10 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 #ifndef OMIT_ICONV		/* ICONV is required by SHP/DBF/TXT */
     printf ("\t- 'VirtualShape'\t[direct Shapefile access]\n");
     printf ("\t- 'VirtualDbf'\t\t[direct Dbf access]\n");
+    printf ("\t- 'VirtualText'\t\t[direct CSV/TXT access]\n");
+#ifndef OMIT_FREEXL
+    printf ("\t- 'VirtualXL'\t\t[direct XLS access]\n");
+#endif /* end FreeXL conditional */
     printf ("\t- 'VirtualText'\t\t[direct CSV/TXT access]\n");
 #endif /* end ICONV conditional */
     printf ("\t- 'VirtualNetwork'\t[Dijkstra shortest path]\n");

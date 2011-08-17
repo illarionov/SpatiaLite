@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(libspatialite, 3.0.0-alpha, a.furieri@lqt.it)
+AC_INIT(libspatialite, 3.0.0-beta, a.furieri@lqt.it)
 AC_LANG(C)
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -158,6 +158,22 @@ else
   OMIT_ICONV_FLAGS=-DOMIT_ICONV
 fi
 AC_SUBST(OMIT_ICONV_FLAGS)
+
+#-----------------------------------------------------------------------
+#   --enable-freexl
+#
+AC_ARG_ENABLE(freexl, [AS_HELP_STRING(
+  [--enable-freexl], [enables FreeXL inclusion [default=yes]])],
+  [], [proj=yes])
+if test x"$enable_freexl" != "xno"; then
+  OMIT_FREEXL_FLAGS=
+  AC_CHECK_HEADERS(freexl.h,, [AC_MSG_ERROR([cannot find freexl.h, bailing out])])
+  AC_SEARCH_LIBS(freexl_open,freexl,,AC_MSG_ERROR(['libfreexl' is required but it doesn't seems to be installed on this system.]),-lm)
+else
+  OMIT_FREEXL_FLAGS=-DOMIT_FREEXL
+fi
+AC_SUBST(OMIT_FREEXL_FLAGS)
+#-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
 #   --enable-epsg

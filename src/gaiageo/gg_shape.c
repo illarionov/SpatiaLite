@@ -4390,7 +4390,6 @@ gaiaOpenDbfWrite (gaiaDbfPtr dbf, const char *path, const char *charFrom,
 {
 /* trying to create the DBF file */
     FILE *fl_dbf = NULL;
-    char xpath[1024];
     unsigned char bf[1024];
     unsigned char *dbf_buf = NULL;
     gaiaDbfFieldPtr fld;
@@ -4432,12 +4431,11 @@ gaiaOpenDbfWrite (gaiaDbfPtr dbf, const char *path, const char *charFrom,
 	  goto unsupported_conversion;
       }
 /* trying to open the DBF file */
-    sprintf (xpath, "%s", path);
-    fl_dbf = fopen (xpath, "wb");
+    fl_dbf = fopen (path, "wb");
     if (!fl_dbf)
       {
 	  sys_err = strerror (errno);
-	  sprintf (errMsg, "unable to open '%s' for writing: %s", xpath,
+	  sprintf (errMsg, "unable to open '%s' for writing: %s", path,
 		   sys_err);
 	  goto no_file;
       }

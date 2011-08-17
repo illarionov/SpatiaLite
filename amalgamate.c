@@ -153,11 +153,14 @@ do_headers (FILE * out, struct masked_keyword *first)
     fprintf (out, "#else\n");
     fprintf (out, "#include <unistd.h>\n");
     fprintf (out, "#endif\n\n");
-    fprintf (out, "#if OMIT_GEOS == 0		/* including GEOS */\n");
+    fprintf (out, "#ifndef OMIT_GEOS	/* including GEOS */\n");
     fprintf (out, "#include <geos_c.h>\n");
     fprintf (out, "#endif\n\n");
-    fprintf (out, "#if OMIT_PROJ == 0		/* including PROJ.4 */\n");
+    fprintf (out, "#ifndef OMIT_PROJ	/* including PROJ.4 */\n");
     fprintf (out, "#include <proj_api.h>\n");
+    fprintf (out, "#endif\n\n");
+    fprintf (out, "#ifndef OMIT_FREEXL	/* including FreeXL */\n");
+    fprintf (out, "#include <freexl.h>\n");
     fprintf (out, "#endif\n\n");
     fprintf (out, "#ifdef _WIN32\n");
     fprintf (out, "#define strcasecmp\t_stricmp\n");
@@ -807,6 +810,7 @@ main ()
     do_copy (out, "/spatialite/", "mbrcache.c");
     do_copy (out, "/spatialite/", "virtualshape.c");
     do_copy (out, "/spatialite/", "virtualdbf.c");
+    do_copy (out, "/spatialite/", "virtualXL.c");
     do_copy (out, "/spatialite/", "virtualnetwork.c");
     do_copy (out, "/spatialite/", "virtualspatialindex.c");
     do_copy (out, "/spatialite/", "virtualfdo.c");
