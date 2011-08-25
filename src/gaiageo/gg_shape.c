@@ -404,15 +404,12 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
     char xpath[1024];
     int rd;
     unsigned char buf_shx[256];
-    int size_shp;
-    int size_shx;
     unsigned char *buf_shp = NULL;
     int buf_size = 1024;
     int shape;
     unsigned char bf[1024];
     int dbf_size;
     int dbf_reclen = 0;
-    int dbf_recno;
     int off_dbf;
     int ind;
     char field_name[2048];
@@ -485,7 +482,6 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
 	goto error;
     if (gaiaImport32 (buf_shx + 0, GAIA_BIG_ENDIAN, endian_arch) != 9994)	/* checks the SHX magic number */
 	goto error;
-    size_shx = gaiaImport32 (buf_shx + 24, GAIA_BIG_ENDIAN, endian_arch);
 /* reading SHP file header */
     buf_shp = malloc (sizeof (unsigned char) * buf_size);
     rd = fread (buf_shp, sizeof (unsigned char), 100, fl_shp);
@@ -493,7 +489,6 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
 	goto error;
     if (gaiaImport32 (buf_shp + 0, GAIA_BIG_ENDIAN, endian_arch) != 9994)	/* checks the SHP magic number */
 	goto error;
-    size_shp = gaiaImport32 (buf_shp + 24, GAIA_BIG_ENDIAN, endian_arch);
     shape = gaiaImport32 (buf_shp + 32, GAIA_LITTLE_ENDIAN, endian_arch);
     if (shape == GAIA_SHP_POINT || shape == GAIA_SHP_POINTZ
 	|| shape == GAIA_SHP_POINTM || shape == GAIA_SHP_POLYLINE
@@ -510,7 +505,6 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
 	goto error;
     if (*bf != 0x03)		/* checks the DBF magic number */
 	goto error;
-    dbf_recno = gaiaImport32 (bf + 4, GAIA_LITTLE_ENDIAN, endian_arch);
     dbf_size = gaiaImport16 (bf + 8, GAIA_LITTLE_ENDIAN, endian_arch);
     dbf_reclen = gaiaImport16 (bf + 10, GAIA_LITTLE_ENDIAN, endian_arch);
     dbf_size--;
@@ -3995,7 +3989,6 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
     double y;
     int polygons;
     int ZM_size;
-    int Z_size;
     int multi = 0;
     int hasM = 0;
     int current_row = 0;
@@ -4049,7 +4042,6 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 		if (shape == GAIA_SHP_POLYLINEZ)
 		  {
 		      ZM_size = 38 + (2 * n) + (n1 * 16);	/* size [in 16 bits words !!!] ZM */
-		      Z_size = 30 + (2 * n) + (n1 * 12);	/* size [in 16 bits words !!!] Z-only */
 		      if (sz == ZM_size)
 			  hasM = 1;
 		  }
@@ -4121,7 +4113,6 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 		if (shape == GAIA_SHP_POLYGONZ)
 		  {
 		      ZM_size = 38 + (2 * n) + (n1 * 16);	/* size [in 16 bits words !!!] ZM */
-		      Z_size = 30 + (2 * n) + (n1 * 12);	/* size [in 16 bits words !!!] Z-only */
 		      if (sz == ZM_size)
 			  hasM = 1;
 		  }
@@ -4140,7 +4131,6 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 		n = gaiaImport32 (shp->BufShp, GAIA_LITTLE_ENDIAN,
 				  shp->endian_arch);
 		ZM_size = 38 + (n * 16);	/* size [in 16 bits words !!!] ZM */
-		Z_size = 30 + (n * 12);	/* size [in 16 bits words !!!] Z-only */
 		if (sz == ZM_size)
 		    hasM = 1;
 	    }
@@ -4230,7 +4220,6 @@ gaiaOpenDbfRead (gaiaDbfPtr dbf, const char *path, const char *charFrom,
     unsigned char bf[1024];
     int dbf_size;
     int dbf_reclen = 0;
-    int dbf_recno;
     int off_dbf;
     int ind;
     char field_name[2048];
@@ -4284,7 +4273,6 @@ gaiaOpenDbfRead (gaiaDbfPtr dbf, const char *path, const char *charFrom,
 	goto error;
     if (*bf != 0x03)		/* checks the DBF magic number */
 	goto error;
-    dbf_recno = gaiaImport32 (bf + 4, GAIA_LITTLE_ENDIAN, endian_arch);
     dbf_size = gaiaImport16 (bf + 8, GAIA_LITTLE_ENDIAN, endian_arch);
     dbf_reclen = gaiaImport16 (bf + 10, GAIA_LITTLE_ENDIAN, endian_arch);
     dbf_size--;

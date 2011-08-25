@@ -315,9 +315,6 @@ vspidx_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIdxInfo)
     int table = 0;
     int geom = 0;
     int mbr = 0;
-    int i_table = -1;
-    int i_geom = -1;
-    int i_mbr = -1;
     if (pVTab)
 	pVTab = pVTab;		/* unused arg warning suppression */
     for (i = 0; i < pIdxInfo->nConstraint; i++)
@@ -327,20 +324,11 @@ vspidx_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIdxInfo)
 	  if (p->usable)
 	    {
 		if (p->iColumn == 0 && p->op == SQLITE_INDEX_CONSTRAINT_EQ)
-		  {
 		      table++;
-		      i_table = i;
-		  }
 		else if (p->iColumn == 1 && p->op == SQLITE_INDEX_CONSTRAINT_EQ)
-		  {
 		      geom++;
-		      i_geom = i;
-		  }
 		else if (p->iColumn == 2 && p->op == SQLITE_INDEX_CONSTRAINT_EQ)
-		  {
 		      mbr++;
-		      i_mbr = i;
-		  }
 		else
 		    errors++;
 	    }

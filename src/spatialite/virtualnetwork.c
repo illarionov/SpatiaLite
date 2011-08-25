@@ -1655,7 +1655,6 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     char **results;
     char *err_msg = NULL;
     char sql[4096];
-    int ok_tbl;
     int ok_id;
     int ok_data;
     char xname[1024];
@@ -1679,7 +1678,6 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
       }
 /* retrieving the base table columns */
     err = 0;
-    ok_tbl = 0;
     ok_id = 0;
     ok_data = 0;
     strcpy (xname, table);
@@ -1693,7 +1691,6 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
       }
     if (n_rows > 1)
       {
-	  ok_tbl = 1;
 	  for (i = 1; i <= n_rows; i++)
 	    {
 		col_name = results[(i * n_columns) + 1];

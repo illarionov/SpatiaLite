@@ -1282,7 +1282,6 @@ GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaFromSpatiaLiteBlobMbr (const unsigned char *blob, unsigned int size)
 {
 /* decoding from SpatiaLite BLOB to GEOMETRY [MBR only] */
-    int type;
     int little_endian;
     int endian_arch = gaiaEndianArch ();
     double minx;
@@ -1306,7 +1305,6 @@ gaiaFromSpatiaLiteBlobMbr (const unsigned char *blob, unsigned int size)
 	little_endian = 0;
     else
 	return NULL;		/* unknown encoding; nor litte-endian neither big-endian */
-    type = gaiaImport32 (blob + 39, little_endian, endian_arch);
     geo = gaiaAllocGeomColl ();
     polyg = gaiaAddPolygonToGeomColl (geo, 5, 0);
     ring = polyg->Exterior;
@@ -5431,8 +5429,6 @@ linestringFromFgf (gaiaGeomCollPtr geom, int endian_arch,
     int iv;
     double x;
     double y;
-    double z;
-    double m;
     unsigned int ln_sz;
     unsigned int sz = size;
     const unsigned char *ptr = blob;
@@ -5490,8 +5486,6 @@ linestringFromFgf (gaiaGeomCollPtr geom, int endian_arch,
 		x = gaiaImport64 (ptr, GAIA_LITTLE_ENDIAN, endian_arch);
 		y = gaiaImport64 (ptr + sizeof (double), GAIA_LITTLE_ENDIAN,
 				  endian_arch);
-		z = gaiaImport64 (ptr + (sizeof (double) * 2),
-				  GAIA_LITTLE_ENDIAN, endian_arch);
 		ptr += (coord_dims * sizeof (double));
 		gaiaSetPoint (ln->Coords, iv, x, y);
 	    }
@@ -5507,8 +5501,6 @@ linestringFromFgf (gaiaGeomCollPtr geom, int endian_arch,
 		x = gaiaImport64 (ptr, GAIA_LITTLE_ENDIAN, endian_arch);
 		y = gaiaImport64 (ptr + sizeof (double), GAIA_LITTLE_ENDIAN,
 				  endian_arch);
-		m = gaiaImport64 (ptr + (sizeof (double) * 2),
-				  GAIA_LITTLE_ENDIAN, endian_arch);
 		ptr += (coord_dims * sizeof (double));
 		gaiaSetPoint (ln->Coords, iv, x, y);
 	    }
@@ -5524,10 +5516,6 @@ linestringFromFgf (gaiaGeomCollPtr geom, int endian_arch,
 		x = gaiaImport64 (ptr, GAIA_LITTLE_ENDIAN, endian_arch);
 		y = gaiaImport64 (ptr + sizeof (double), GAIA_LITTLE_ENDIAN,
 				  endian_arch);
-		z = gaiaImport64 (ptr + (sizeof (double) * 2),
-				  GAIA_LITTLE_ENDIAN, endian_arch);
-		m = gaiaImport64 (ptr + (sizeof (double) * 3),
-				  GAIA_LITTLE_ENDIAN, endian_arch);
 		ptr += (coord_dims * sizeof (double));
 		gaiaSetPoint (ln->Coords, iv, x, y);
 	    }

@@ -1324,7 +1324,6 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
     char col_srid[32];
     char col_index[32];
     char col_dims[64];
-    int srid;
     int index;
     int cached;
     int dims;
@@ -1375,7 +1374,6 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
 	      strcpy (col_srid, results[(i * columns) + 3]);
 	  strcpy (col_index, results[(i * columns) + 4]);
 	  strcpy (col_dims, results[(i * columns) + 5]);
-	  srid = atoi (col_srid);
 	  if (atoi (col_index) == 1)
 	      index = 1;
 	  else

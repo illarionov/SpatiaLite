@@ -1381,6 +1381,8 @@ gaiaPolygonize (gaiaGeomCollPtr geom, int force_multi)
     ok = 1;
     while (ok)
       {
+	  if (dummy == 0)
+	      ok = dummy;	/* simply suppressing stupid compiler warnings */
 	  ok = 0;
 	  for (i = 0; i < lns; i++)
 	    {
@@ -2636,8 +2638,6 @@ gaiaLineSubstring (gaiaGeomCollPtr geom, double start_fraction,
 
 	  double x0;
 	  double y0;
-	  double z0;
-	  double m0;
 	  switch (ln->DimensionModel)
 	    {
 	    case GAIA_XY_Z:
@@ -2672,8 +2672,6 @@ gaiaLineSubstring (gaiaGeomCollPtr geom, double start_fraction,
 	    }
 	  x0 = x;
 	  y0 = y;
-	  z0 = z;
-	  m0 = m;
       }
     if (i_start < 0 || i_end < 0)
       {

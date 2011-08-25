@@ -1433,7 +1433,7 @@ vfdo_convertWKT3D (const char *wkt)
 		extra++;
 		continue;
 	    }
-	  *p++;
+	  p++;
       }
     out = malloc (len + extra + 1);
     o = out;

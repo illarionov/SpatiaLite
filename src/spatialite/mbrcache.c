@@ -890,7 +890,6 @@ mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     char **results;
     char *err_msg = NULL;
     char sql[4096];
-    int ok_tbl;
     int ok_col;
     MbrCachePtr p_vt;
     char xname[1024];
@@ -962,7 +961,6 @@ mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
       }
 /* retrieving the base table columns */
     err = 0;
-    ok_tbl = 0;
     ok_col = 0;
     strcpy (xname, table);
     mbrc_double_quoted_sql (xname);
@@ -975,7 +973,6 @@ mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
       }
     if (n_rows > 1)
       {
-	  ok_tbl = 1;
 	  for (i = 1; i <= n_rows; i++)
 	    {
 		col_name = results[(i * n_columns) + 1];

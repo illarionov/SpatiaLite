@@ -627,14 +627,9 @@ gaiaSanitize (gaiaGeomCollPtr geom)
     double y = 0.0;
     double z = 0.0;
     double m = 0.0;
-    double first_x;
-    double first_y;
-    double first_z;
-    double first_m;
     double last_x = 0.0;
     double last_y = 0.0;
     double last_z = 0.0;
-    double last_m = 0.0;
     int points;
     gaiaPointPtr point;
     gaiaLinestringPtr line;
@@ -702,7 +697,6 @@ gaiaSanitize (gaiaGeomCollPtr geom)
 		last_x = x;
 		last_y = y;
 		last_z = z;
-		last_m = m;
 	    }
 	  if (points < 2)
 	    {
@@ -793,7 +787,6 @@ gaiaSanitize (gaiaGeomCollPtr geom)
 		      last_x = x;
 		      last_y = y;
 		      last_z = z;
-		      last_m = m;
 		  }
 	    }
 	  line = line->Next;
@@ -834,17 +827,10 @@ gaiaSanitize (gaiaGeomCollPtr geom)
 			  points++;
 		  }
 		else
-		  {
-		      first_x = x;
-		      first_y = y;
-		      first_z = z;
-		      first_m = m;
 		      points++;
-		  }
 		last_x = x;
 		last_y = y;
 		last_z = z;
-		last_m = m;
 	    }
 	  if (last_x == x && last_y == y && last_z == z)
 	      ;
@@ -948,7 +934,6 @@ gaiaSanitize (gaiaGeomCollPtr geom)
 		      last_x = x;
 		      last_y = y;
 		      last_z = z;
-		      last_m = m;
 		  }
 	    }
 	  /* PASS III - forcing RING closure */
@@ -1023,17 +1008,10 @@ gaiaSanitize (gaiaGeomCollPtr geom)
 				points++;
 			}
 		      else
-			{
-			    first_x = x;
-			    first_y = y;
-			    first_z = z;
-			    first_m = m;
 			    points++;
-			}
 		      last_x = x;
 		      last_y = y;
 		      last_z = z;
-		      last_m = m;
 		  }
 		if (last_x == x && last_y == y && last_z == z)
 		    ;
@@ -1138,7 +1116,6 @@ gaiaSanitize (gaiaGeomCollPtr geom)
 			    last_x = x;
 			    last_y = y;
 			    last_z = z;
-			    last_m = m;
 			}
 		      /* PASS III - forcing RING closure */
 		      z = 0.0;
