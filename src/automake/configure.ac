@@ -92,7 +92,7 @@ AC_ARG_ENABLE(proj, [AS_HELP_STRING(
 if test x"$enable_proj" != "xno"; then
   OMIT_PROJ_FLAGS=
   AC_CHECK_HEADERS(proj_api.h,, [AC_MSG_ERROR([cannot find proj_api.h, bailing out])])
-  AC_SEARCH_LIBS(pj_init_plus,proj,,AC_MSG_ERROR(['libproj' is required but it doesn't seems to be installed on this system.]),-lm)
+  AC_SEARCH_LIBS(pj_init_plus,proj,,AC_MSG_ERROR(['libproj' is required but it doesn't seem to be installed on this system.]),-lm)
 else
   OMIT_PROJ_FLAGS=-DOMIT_PROJ
 fi
@@ -108,7 +108,7 @@ AC_ARG_ENABLE(geos, [AS_HELP_STRING(
 if test x"$enable_geos" != "xno"; then
   OMIT_GEOS_FLAGS=
   AC_CHECK_HEADERS(geos_c.h,, [AC_MSG_ERROR([cannot find geos_c.h, bailing out])])
-  AC_SEARCH_LIBS(GEOSTopologyPreserveSimplify,geos_c,,AC_MSG_ERROR(['libgeos_c' is required but it doesn't seems to be installed on this system.]),-lm -lgeos)
+  AC_SEARCH_LIBS(GEOSTopologyPreserveSimplify,geos_c,,AC_MSG_ERROR(['libgeos_c' is required but it doesn't seem to be installed on this system.]),-lm -lgeos)
   #-----------------------------------------------------------------------
   #   --enable-geosadvanced
   #
@@ -139,9 +139,9 @@ if test x"$enable_iconv" != "xno"; then
 # on some systems "iconv()" lives in libc. On others it lives in libiconv
 #  on older systems "libiconv()" lives in libiconv
   AC_SEARCH_LIBS(iconv,iconv,,
-    AC_SEARCH_LIBS(libiconv,iconv,,AC_MSG_ERROR(['libiconv' is required but it doesn't seems to be installed on this system.]),))
+    AC_SEARCH_LIBS(libiconv,iconv,,AC_MSG_ERROR(['libiconv' is required but it doesn't seem to be installed on this system.]),))
   AC_SEARCH_LIBS(locale_charset,charset,,
-    AC_SEARCH_LIBS(nl_langinfo,c,,AC_MSG_ERROR(['libcharset' is required but it doesn't seems to be installed on this system.]),))
+    AC_SEARCH_LIBS(nl_langinfo,c,,AC_MSG_ERROR(['libcharset' is required but it doesn't seem to be installed on this system.]),))
 else
   OMIT_ICONV_FLAGS=-DOMIT_ICONV
 fi
@@ -156,7 +156,7 @@ AC_ARG_ENABLE(freexl, [AS_HELP_STRING(
 if test x"$enable_freexl" != "xno"; then
   OMIT_FREEXL_FLAGS=
   AC_CHECK_HEADERS(freexl.h,, [AC_MSG_ERROR([cannot find freexl.h, bailing out])])
-  AC_SEARCH_LIBS(freexl_open,freexl,,AC_MSG_ERROR(['libfreexl' is required but it doesn't seems to be installed on this system.]),-lm)
+  AC_SEARCH_LIBS(freexl_open,freexl,,AC_MSG_ERROR(['libfreexl' is required but it doesn't seem to be installed on this system.]),-lm)
 else
   OMIT_FREEXL_FLAGS=-DOMIT_FREEXL
 fi
