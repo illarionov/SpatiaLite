@@ -16358,7 +16358,7 @@ _ACEOF
   LIBS="-lsqlite3 $LIBS"
 
 else
-  as_fn_error $? "'libsqlite3' is required but it doesn't seems to be installed on this system." "$LINENO" 5
+  as_fn_error $? "'libsqlite3' is required but it doesn't seem to be installed on this system." "$LINENO" 5
 fi
 
 
@@ -16529,7 +16529,7 @@ if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 else
-  as_fn_error $? "'libproj' is required but it doesn't seems to be installed on this system." "$LINENO" 5
+  as_fn_error $? "'libproj' is required but it doesn't seem to be installed on this system." "$LINENO" 5
 fi
 
 else
@@ -16619,7 +16619,7 @@ if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 else
-  as_fn_error $? "'libgeos_c' is required but it doesn't seems to be installed on this system." "$LINENO" 5
+  as_fn_error $? "'libgeos_c' is required but it doesn't seem to be installed on this system." "$LINENO" 5
 fi
 
   #-----------------------------------------------------------------------
@@ -16839,7 +16839,7 @@ if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 else
-  as_fn_error $? "'libiconv' is required but it doesn't seems to be installed on this system." "$LINENO" 5
+  as_fn_error $? "'libiconv' is required but it doesn't seem to be installed on this system." "$LINENO" 5
 fi
 
 fi
@@ -16954,7 +16954,7 @@ if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 else
-  as_fn_error $? "'libcharset' is required but it doesn't seems to be installed on this system." "$LINENO" 5
+  as_fn_error $? "'libcharset' is required but it doesn't seem to be installed on this system." "$LINENO" 5
 fi
 
 fi
@@ -17045,7 +17045,7 @@ if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 else
-  as_fn_error $? "'libfreexl' is required but it doesn't seems to be installed on this system." "$LINENO" 5
+  as_fn_error $? "'libfreexl' is required but it doesn't seem to be installed on this system." "$LINENO" 5
 fi
 
 else
