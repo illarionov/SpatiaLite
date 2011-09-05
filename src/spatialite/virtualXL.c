@@ -264,30 +264,25 @@ vXL_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  /* fetching comun names */
 	  for (col = 0; col < columns; col++)
 	    {
-		unsigned char type;
-		int int_value;
-		double dbl_value;
-		const char *text_value;
-		int ret =
-		    freexl_get_cell_value (handle, 0, col, &type, &int_value,
-					   &dbl_value, &text_value);
+		FreeXL_CellValue cell;
+		int ret = freexl_get_cell_value (handle, 0, col, &cell);
 		if (ret != FREEXL_OK)
 		    sprintf (dummyName, "col_%d", col);
 		else
 		  {
-		      if (type == FREEXL_CELL_INT)
-			  sprintf (dummyName, "%d", int_value);
-		      else if (type == FREEXL_CELL_DOUBLE)
-			  sprintf (dummyName, "%1.2f", dbl_value);
-		      else if (type == FREEXL_CELL_TEXT
-			       || type == FREEXL_CELL_SST_TEXT
-			       || type == FREEXL_CELL_DATE
-			       || type == FREEXL_CELL_DATETIME
-			       || type == FREEXL_CELL_TIME)
+		      if (cell.type == FREEXL_CELL_INT)
+			  sprintf (dummyName, "%d", cell.value.int_value);
+		      else if (cell.type == FREEXL_CELL_DOUBLE)
+			  sprintf (dummyName, "%1.2f", cell.value.double_value);
+		      else if (cell.type == FREEXL_CELL_TEXT
+			       || cell.type == FREEXL_CELL_SST_TEXT
+			       || cell.type == FREEXL_CELL_DATE
+			       || cell.type == FREEXL_CELL_DATETIME
+			       || cell.type == FREEXL_CELL_TIME)
 			{
-			    int len = strlen (text_value);
+			    int len = strlen (cell.value.text_value);
 			    if (len < 256)
-				strcpy (dummyName, text_value);
+				strcpy (dummyName, cell.value.text_value);
 			    else
 				sprintf (dummyName, "col_%d", col);
 			}
@@ -495,10 +490,7 @@ static int
 vXL_eval_constraints (VirtualXLCursorPtr cursor)
 {
 /* evaluating Filter constraints */
-    unsigned char type;
-    int int_value;
-    double dbl_value;
-    const char *text_value;
+    FreeXL_CellValue cell;
     VirtualXLConstraintPtr pC = cursor->firstConstraint;
     if (pC == NULL)
 	return 1;
@@ -544,34 +536,33 @@ vXL_eval_constraints (VirtualXLCursorPtr cursor)
 	      && pC->iColumn <= cursor->pVtab->columns)
 	      freexl_get_cell_value (cursor->pVtab->XL_handle,
 				     cursor->current_row - 1, pC->iColumn - 1,
-				     &type, &int_value, &dbl_value,
-				     &text_value);
+				     &cell);
 	  else
-	      type = FREEXL_CELL_NULL;
-	  if (type == FREEXL_CELL_INT)
+	      cell.type = FREEXL_CELL_NULL;
+	  if (cell.type == FREEXL_CELL_INT)
 	    {
 		if (pC->valueType == 'I')
 		  {
 		      switch (pC->op)
 			{
 			case SQLITE_INDEX_CONSTRAINT_EQ:
-			    if (int_value == pC->intValue)
+			    if (cell.value.int_value == pC->intValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_GT:
-			    if (int_value > pC->intValue)
+			    if (cell.value.int_value > pC->intValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_LE:
-			    if (int_value <= pC->intValue)
+			    if (cell.value.int_value <= pC->intValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_LT:
-			    if (int_value < pC->intValue)
+			    if (cell.value.int_value < pC->intValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_GE:
-			    if (int_value >= pC->intValue)
+			    if (cell.value.int_value >= pC->intValue)
 				ok = 1;
 			    break;
 			};
@@ -581,52 +572,52 @@ vXL_eval_constraints (VirtualXLCursorPtr cursor)
 		      switch (pC->op)
 			{
 			case SQLITE_INDEX_CONSTRAINT_EQ:
-			    if (int_value == pC->dblValue)
+			    if (cell.value.int_value == pC->dblValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_GT:
-			    if (int_value > pC->dblValue)
+			    if (cell.value.int_value > pC->dblValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_LE:
-			    if (int_value <= pC->dblValue)
+			    if (cell.value.int_value <= pC->dblValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_LT:
-			    if (int_value < pC->dblValue)
+			    if (cell.value.int_value < pC->dblValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_GE:
-			    if (int_value >= pC->dblValue)
+			    if (cell.value.int_value >= pC->dblValue)
 				ok = 1;
 			    break;
 			};
 		  }
 	    }
-	  if (type == FREEXL_CELL_DOUBLE)
+	  if (cell.type == FREEXL_CELL_DOUBLE)
 	    {
 		if (pC->valueType == 'I')
 		  {
 		      switch (pC->op)
 			{
 			case SQLITE_INDEX_CONSTRAINT_EQ:
-			    if (dbl_value == pC->intValue)
+			    if (cell.value.double_value == pC->intValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_GT:
-			    if (dbl_value > pC->intValue)
+			    if (cell.value.double_value > pC->intValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_LE:
-			    if (dbl_value <= pC->intValue)
+			    if (cell.value.double_value <= pC->intValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_LT:
-			    if (dbl_value < pC->intValue)
+			    if (cell.value.double_value < pC->intValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_GE:
-			    if (dbl_value >= pC->intValue)
+			    if (cell.value.double_value >= pC->intValue)
 				ok = 1;
 			    break;
 			};
@@ -636,33 +627,35 @@ vXL_eval_constraints (VirtualXLCursorPtr cursor)
 		      switch (pC->op)
 			{
 			case SQLITE_INDEX_CONSTRAINT_EQ:
-			    if (dbl_value == pC->dblValue)
+			    if (cell.value.double_value == pC->dblValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_GT:
-			    if (dbl_value > pC->dblValue)
+			    if (cell.value.double_value > pC->dblValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_LE:
-			    if (dbl_value <= pC->dblValue)
+			    if (cell.value.double_value <= pC->dblValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_LT:
-			    if (dbl_value < pC->dblValue)
+			    if (cell.value.double_value < pC->dblValue)
 				ok = 1;
 			    break;
 			case SQLITE_INDEX_CONSTRAINT_GE:
-			    if (dbl_value >= pC->dblValue)
+			    if (cell.value.double_value >= pC->dblValue)
 				ok = 1;
 			    break;
 			};
 		  }
 	    }
-	  if ((type == FREEXL_CELL_TEXT || type == FREEXL_CELL_SST_TEXT
-	       || type == FREEXL_CELL_DATE || type == FREEXL_CELL_DATETIME
-	       || type == FREEXL_CELL_TIME) && pC->valueType == 'T')
+	  if ((cell.type == FREEXL_CELL_TEXT
+	       || cell.type == FREEXL_CELL_SST_TEXT
+	       || cell.type == FREEXL_CELL_DATE
+	       || cell.type == FREEXL_CELL_DATETIME
+	       || cell.type == FREEXL_CELL_TIME) && pC->valueType == 'T')
 	    {
-		int ret = strcmp (text_value, pC->txtValue);
+		int ret = strcmp (cell.value.text_value, pC->txtValue);
 		switch (pC->op)
 		  {
 		  case SQLITE_INDEX_CONSTRAINT_EQ:
@@ -796,10 +789,7 @@ vXL_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 	    int column)
 {
 /* fetching value for the Nth column */
-    unsigned char type;
-    int int_value;
-    double dbl_value;
-    const char *text_value;
+    FreeXL_CellValue cell;
     VirtualXLCursorPtr cursor = (VirtualXLCursorPtr) pCursor;
     if (column == 0)
       {
@@ -814,25 +804,24 @@ vXL_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 	&& cursor->current_row <= cursor->pVtab->rows
 	&& column <= cursor->pVtab->columns)
 	freexl_get_cell_value (cursor->pVtab->XL_handle,
-			       cursor->current_row - 1, column - 1, &type,
-			       &int_value, &dbl_value, &text_value);
+			       cursor->current_row - 1, column - 1, &cell);
     else
-	type = FREEXL_CELL_NULL;
-    switch (type)
+	cell.type = FREEXL_CELL_NULL;
+    switch (cell.type)
       {
       case FREEXL_CELL_INT:
-	  sqlite3_result_int (pContext, int_value);
+	  sqlite3_result_int (pContext, cell.value.int_value);
 	  break;
       case FREEXL_CELL_DOUBLE:
-	  sqlite3_result_double (pContext, dbl_value);
+	  sqlite3_result_double (pContext, cell.value.double_value);
 	  break;
       case FREEXL_CELL_TEXT:
       case FREEXL_CELL_SST_TEXT:
       case FREEXL_CELL_DATE:
       case FREEXL_CELL_DATETIME:
       case FREEXL_CELL_TIME:
-	  sqlite3_result_text (pContext, text_value, strlen (text_value),
-			       SQLITE_STATIC);
+	  sqlite3_result_text (pContext, cell.value.text_value,
+			       strlen (cell.value.text_value), SQLITE_STATIC);
 	  break;
       default:
 	  sqlite3_result_null (pContext);
@@ -934,4 +923,3 @@ virtualXL_extension_init (sqlite3 * db)
 
 #endif /* FreeXL enabled/disabled */
 #endif /* ICONV enabled/disabled */
-

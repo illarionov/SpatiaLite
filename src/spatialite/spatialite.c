@@ -13400,10 +13400,10 @@ fnct_OffsetCurve (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
-fnct_CommonEdges (sqlite3_context * context, int argc, sqlite3_value ** argv)
+fnct_SharedPaths (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ CommonEdges(BLOBencoded geometry1, BLOBencoded geometry2)
+/ SharedPaths(BLOBencoded geometry1, BLOBencoded geometry2)
 /
 / returns a new geometry representing common (shared) Edges
 / [two LINESTRINGs/MULTILINESTRINGs are expected]
@@ -16427,10 +16427,10 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_OffsetCurve, 0, 0);
     sqlite3_create_function (db, "ST_OffsetCurve", 3, SQLITE_ANY, 0,
 			     fnct_OffsetCurve, 0, 0);
-    sqlite3_create_function (db, "CommonEdges", 2, SQLITE_ANY, 0,
-			     fnct_CommonEdges, 0, 0);
-    sqlite3_create_function (db, "ST_CommonEdges", 2, SQLITE_ANY, 0,
-			     fnct_CommonEdges, 0, 0);
+    sqlite3_create_function (db, "SharedPaths", 2, SQLITE_ANY, 0,
+			     fnct_SharedPaths, 0, 0);
+    sqlite3_create_function (db, "ST_SharedPaths", 2, SQLITE_ANY, 0,
+			     fnct_SharedPaths, 0, 0);
     sqlite3_create_function (db, "Covers", 2, SQLITE_ANY, 0, fnct_Covers, 0, 0);
     sqlite3_create_function (db, "ST_Covers", 2, SQLITE_ANY, 0, fnct_Covers, 0,
 			     0);
@@ -17438,10 +17438,10 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_OffsetCurve, 0, 0);
     sqlite3_create_function (db, "ST_OffsetCurve", 3, SQLITE_ANY, 0,
 			     fnct_OffsetCurve, 0, 0);
-    sqlite3_create_function (db, "CommonEdges", 2, SQLITE_ANY, 0,
-			     fnct_CommonEdges, 0, 0);
-    sqlite3_create_function (db, "ST_CommonEdges", 2, SQLITE_ANY, 0,
-			     fnct_CommonEdges, 0, 0);
+    sqlite3_create_function (db, "SharedPaths", 2, SQLITE_ANY, 0,
+			     fnct_SharedPaths, 0, 0);
+    sqlite3_create_function (db, "ST_SharedPaths", 2, SQLITE_ANY, 0,
+			     fnct_SharedPaths, 0, 0);
     sqlite3_create_function (db, "Covers", 2, SQLITE_ANY, 0, fnct_Covers, 0, 0);
     sqlite3_create_function (db, "ST_Covers", 2, SQLITE_ANY, 0, fnct_Covers, 0,
 			     0);

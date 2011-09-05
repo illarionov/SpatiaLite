@@ -50,7 +50,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include <spatialite.h>
 
-const char spatialiteversion[] = "3.0.0-beta1";
+const char spatialiteversion[] = VERSION;
 
 SPATIALITE_DECLARE const char *
 spatialite_version (void)
