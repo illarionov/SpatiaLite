@@ -838,7 +838,7 @@ output_prj_file (sqlite3 * sqlite, char *path, char *table, char *column)
 }
 
 static void
-double_quoted_sql (char *buf)
+shp_double_quoted_sql (char *buf)
 {
 /* well-formatting a string to be used as an SQL name */
     char tmp[1024];
@@ -1691,7 +1691,7 @@ dump_dbf (sqlite3 * sqlite, char *table, char *dbf_path, char *charset)
 / preparing SQL statement 
 */
     strcpy (xtable, table);
-    double_quoted_sql (xtable);
+    shp_double_quoted_sql (xtable);
     sprintf (sql, "SELECT * FROM %s", xtable);
 /*
 / compiling SQL prepared statement 
@@ -2156,7 +2156,7 @@ check_duplicated_rows (sqlite3 * sqlite, char *table)
 			  first = 0;
 		      else
 			  strcat (col_list, ", ");
-		      double_quoted_sql (xname);
+		      shp_double_quoted_sql (xname);
 		      strcat (col_list, xname);
 		  }
 	    }
@@ -2545,7 +2545,7 @@ remove_duplicated_rows (sqlite3 * sqlite, char *table)
 			  first = 0;
 		      else
 			  strcat (col_list, ", ");
-		      double_quoted_sql (xname);
+		      shp_double_quoted_sql (xname);
 		      strcat (col_list, xname);
 		      add_to_dupl_row (&value_list, xname);
 		  }
@@ -2664,7 +2664,7 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
       }
 /* creating the Table */
     strcpy (xname, table);
-    double_quoted_sql (xname);
+    shp_double_quoted_sql (xname);
     sprintf (sql, "CREATE TABLE %s", xname);
     strcat (sql, " (\nPK_UID INTEGER PRIMARY KEY AUTOINCREMENT");
     for (col = 0; col < columns; col++)
@@ -2699,7 +2699,7 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 			    else
 				sprintf (dummyName, "col_%d", col);
 			}
-		      double_quoted_sql (dummyName);
+		      shp_double_quoted_sql (dummyName);
 		      strcat (sql, ", ");
 		      strcat (sql, dummyName);
 		  }
@@ -2710,7 +2710,7 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 		for (col = 0; col < columns; col++)
 		  {
 		      sprintf (dummyName, "col_%d", col);
-		      double_quoted_sql (dummyName);
+		      shp_double_quoted_sql (dummyName);
 		      strcat (sql, ", ");
 		      strcat (sql, dummyName);
 		  }
@@ -2727,7 +2727,7 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
       }
 /* preparing the INSERT INTO parameterized statement */
     strcpy (xname, table);
-    double_quoted_sql (xname);
+    shp_double_quoted_sql (xname);
     sprintf (sql, "INSERT INTO %s (PK_UID", xname);
     for (col = 0; col < columns; col++)
       {
@@ -2757,7 +2757,7 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 		      else
 			  sprintf (dummyName, "col_%d", col);
 		  }
-		double_quoted_sql (dummyName);
+		shp_double_quoted_sql (dummyName);
 		strcat (sql, ", ");
 		strcat (sql, dummyName);
 	    }
@@ -2765,7 +2765,7 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 	    {
 		/* setting default column names  */
 		sprintf (dummyName, "col_%d", col);
-		double_quoted_sql (dummyName);
+		shp_double_quoted_sql (dummyName);
 		strcat (sql, ", ");
 		strcat (sql, dummyName);
 	    }
