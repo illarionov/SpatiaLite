@@ -16362,7 +16362,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/spatialite/Makefile src/srsinit/Makefile src/virtualtext/Makefile spatialite.pc"
+ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/srsinit/Makefile src/virtualtext/Makefile spatialite.pc"
 
 
 #-----------------------------------------------------------------------
@@ -18209,6 +18209,7 @@ do
     "src/gaiaexif/Makefile") CONFIG_FILES="$CONFIG_FILES src/gaiaexif/Makefile" ;;
     "src/gaiageo/Makefile") CONFIG_FILES="$CONFIG_FILES src/gaiageo/Makefile" ;;
     "src/spatialite/Makefile") CONFIG_FILES="$CONFIG_FILES src/spatialite/Makefile" ;;
+    "src/shapefiles/Makefile") CONFIG_FILES="$CONFIG_FILES src/shapefiles/Makefile" ;;
     "src/srsinit/Makefile") CONFIG_FILES="$CONFIG_FILES src/srsinit/Makefile" ;;
     "src/virtualtext/Makefile") CONFIG_FILES="$CONFIG_FILES src/virtualtext/Makefile" ;;
     "spatialite.pc") CONFIG_FILES="$CONFIG_FILES spatialite.pc" ;;

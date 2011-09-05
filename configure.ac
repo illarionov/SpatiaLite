@@ -62,6 +62,7 @@ AC_CONFIG_FILES([Makefile \
 		src/gaiaexif/Makefile \
 		src/gaiageo/Makefile \
 		src/spatialite/Makefile \
+		src/shapefiles/Makefile \
 		src/srsinit/Makefile \
 		src/virtualtext/Makefile \
 		spatialite.pc])

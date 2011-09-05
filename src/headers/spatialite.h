@@ -79,6 +79,8 @@ extern "C"
     SPATIALITE_DECLARE double math_round (double value);
     SPATIALITE_DECLARE sqlite3_int64 math_llabs (sqlite3_int64 value);
     SPATIALITE_DECLARE int spatial_ref_sys_init (sqlite3 * sqlite, int verbose);
+    SPATIALITE_DECLARE int
+	is_kml_constant (sqlite3 * sqlite, char *table, char *column);
     SPATIALITE_DECLARE int dump_kml (sqlite3 * sqlite, char *table,
 				     char *geom_col, char *kml_path,
 				     char *name_col, char *desc_col,

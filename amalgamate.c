@@ -818,6 +818,7 @@ main ()
     do_copy (out, "/versioninfo/", "version.c");
     do_copy (out, "/gaiageo/", "gg_wkt.c");
     do_copy (out, "/srsinit/", "srs_init.c");
+    do_copy (out, "/shapefiles/", "shapefiles.c");
     do_copy (out, "/gaiageo/", "gg_vanuatu.c");
     do_copy (out, "/gaiageo/", "gg_ewkt.c");
     do_copy (out, "/gaiageo/", "gg_geoJSON.c");

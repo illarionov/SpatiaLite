@@ -505,4 +505,13 @@ math_round
 spatial_ref_sys_init
 spatialite_init
 spatialite_version
+load_shapefile
+dump_shapefile
+load_dbf
+dump_dbf
+is_kml_constant
+dump_kml
+check_duplicated_rows
+remove_duplicated_rows
+load_XL
 sqlite3_extension_init
