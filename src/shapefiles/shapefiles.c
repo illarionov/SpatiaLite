@@ -271,7 +271,7 @@ getDbfField (gaiaDbfListPtr list, char *name)
 SPATIALITE_DECLARE int
 load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 		int srid, char *column, int coerce2d, int compressed,
-		int verbose, int *rows)
+		int verbose, int spatial_index, int *rows, char *err_msg)
 {
     sqlite3_stmt *stmt = NULL;
     int ret;
@@ -305,8 +305,12 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "load shapefile error: <%s>\n",
-		   sqlite3_errmsg (sqlite));
+	  if (!err_msg)
+	      fprintf (stderr, "load shapefile error: <%s>\n",
+		       sqlite3_errmsg (sqlite));
+	  else
+	      sprintf (err_msg, "load shapefile error: <%s>\n",
+		       sqlite3_errmsg (sqlite));
 	  return 0;
       }
     while (1)
@@ -327,8 +331,14 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
     sqlite3_finalize (stmt);
     if (already_exists)
       {
-	  fprintf (stderr, "load shapefile error: table '%s' already exists\n",
-		   table);
+	  if (!err_msg)
+	      fprintf (stderr,
+		       "load shapefile error: table '%s' already exists\n",
+		       table);
+	  else
+	      sprintf (err_msg,
+		       "load shapefile error: table '%s' already exists\n",
+		       table);
 	  return 0;
       }
 /* checking if MetaData GEOMETRY_COLUMNS exists */
@@ -337,8 +347,12 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "load shapefile error: <%s>\n",
-		   sqlite3_errmsg (sqlite));
+	  if (!err_msg)
+	      fprintf (stderr, "load shapefile error: <%s>\n",
+		       sqlite3_errmsg (sqlite));
+	  else
+	      sprintf (err_msg, "load shapefile error: <%s>\n",
+		       sqlite3_errmsg (sqlite));
 	  return 0;
       }
     while (1)
@@ -361,10 +375,24 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
     gaiaOpenShpRead (shp, shp_path, charset, "UTF-8");
     if (!(shp->Valid))
       {
-	  fprintf (stderr, "load shapefile error: cannot open shapefile '%s'\n",
-		   shp_path);
-	  if (shp->LastError)
-	      fprintf (stderr, "\tcause: %s\n", shp->LastError);
+	  if (!err_msg)
+	    {
+		fprintf (stderr,
+			 "load shapefile error: cannot open shapefile '%s'\n",
+			 shp_path);
+		if (shp->LastError)
+		    fprintf (stderr, "\tcause: %s\n", shp->LastError);
+	    }
+	  else
+	    {
+		char extra[512];
+		*extra = '\0';
+		if (shp->LastError)
+		    sprintf (extra, "\n\tcause: %s\n", shp->LastError);
+		sprintf (err_msg,
+			 "load shapefile error: cannot open shapefile '%s'%s",
+			 shp_path, extra);
+	    }
 	  gaiaFreeShapefile (shp);
 	  return 0;
       }
@@ -413,7 +441,10 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
     ret = sqlite3_exec (sqlite, "BEGIN", NULL, 0, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "load shapefile error: <%s>\n", errMsg);
+	  if (!err_msg)
+	      fprintf (stderr, "load shapefile error: <%s>\n", errMsg);
+	  else
+	      sprintf (err_msg, "load shapefile error: <%s>\n", errMsg);
 	  sqlite3_free (errMsg);
 	  sqlError = 1;
 	  goto clean_up;
@@ -470,7 +501,10 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
     ret = sqlite3_exec (sqlite, sql, NULL, 0, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "load shapefile error: <%s>\n", errMsg);
+	  if (!err_msg)
+	      fprintf (stderr, "load shapefile error: <%s>\n", errMsg);
+	  else
+	      sprintf (err_msg, "load shapefile error: <%s>\n", errMsg);
 	  sqlite3_free (errMsg);
 	  sqlError = 1;
 	  goto clean_up;
@@ -533,10 +567,32 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 	  ret = sqlite3_exec (sqlite, sql, NULL, 0, &errMsg);
 	  if (ret != SQLITE_OK)
 	    {
-		fprintf (stderr, "load shapefile error: <%s>\n", errMsg);
+		if (!err_msg)
+		    fprintf (stderr, "load shapefile error: <%s>\n", errMsg);
+		else
+		    sprintf (err_msg, "load shapefile error: <%s>\n", errMsg);
 		sqlite3_free (errMsg);
 		sqlError = 1;
 		goto clean_up;
+	    }
+	  if (spatial_index)
+	    {
+		/* creating the Spatial Index */
+		sprintf (sql, "SELECT CreateSpatialIndex('%s', '%s')",
+			 table, geo_column);
+		ret = sqlite3_exec (sqlite, sql, NULL, 0, &errMsg);
+		if (ret != SQLITE_OK)
+		  {
+		      if (!err_msg)
+			  fprintf (stderr, "load shapefile error: <%s>\n",
+				   errMsg);
+		      else
+			  sprintf (err_msg, "load shapefile error: <%s>\n",
+				   errMsg);
+		      sqlite3_free (errMsg);
+		      sqlError = 1;
+		      goto clean_up;
+		  }
 	    }
       }
     else
@@ -578,8 +634,12 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "load shapefile error: <%s>\n",
-		   sqlite3_errmsg (sqlite));
+	  if (!err_msg)
+	      fprintf (stderr, "load shapefile error: <%s>\n",
+		       sqlite3_errmsg (sqlite));
+	  else
+	      sprintf (err_msg, "load shapefile error: <%s>\n",
+		       sqlite3_errmsg (sqlite));
 	  sqlError = 1;
 	  goto clean_up;
       }
@@ -592,7 +652,10 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 	    {
 		if (!(shp->LastError))	/* normal SHP EOF */
 		    break;
-		fprintf (stderr, "%s\n", shp->LastError);
+		if (!err_msg)
+		    fprintf (stderr, "%s\n", shp->LastError);
+		else
+		    sprintf (err_msg, "%s\n", shp->LastError);
 		sqlError = 1;
 		sqlite3_finalize (stmt);
 		goto clean_up;
@@ -656,8 +719,12 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 	      ;
 	  else
 	    {
-		fprintf (stderr, "load shapefile error: <%s>\n",
-			 sqlite3_errmsg (sqlite));
+		if (!err_msg)
+		    fprintf (stderr, "load shapefile error: <%s>\n",
+			     sqlite3_errmsg (sqlite));
+		else
+		    sprintf (err_msg, "load shapefile error: <%s>\n",
+			     sqlite3_errmsg (sqlite));
 		sqlite3_finalize (stmt);
 		sqlError = 1;
 		goto clean_up;
@@ -696,7 +763,10 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 	  ret = sqlite3_exec (sqlite, "COMMIT", NULL, 0, &errMsg);
 	  if (ret != SQLITE_OK)
 	    {
-		fprintf (stderr, "load shapefile error: <%s>\n", errMsg);
+		if (!err_msg)
+		    fprintf (stderr, "load shapefile error: <%s>\n", errMsg);
+		else
+		    sprintf (err_msg, "load shapefile error: <%s>\n", errMsg);
 		sqlite3_free (errMsg);
 		return 0;
 	    }
@@ -705,6 +775,9 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 	  if (verbose)
 	      fprintf (stderr,
 		       "\nInserted %d rows into '%s' from SHAPEFILE\n========\n",
+		       current_row, table);
+	  if (err_msg)
+	      sprintf (err_msg, "Inserted %d rows into '%s' from SHAPEFILE",
 		       current_row, table);
 	  return 1;
       }
@@ -858,7 +931,8 @@ shp_double_quoted_sql (char *buf)
 
 SPATIALITE_DECLARE int
 dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
-		char *charset, char *geom_type, int verbose, int *xrows)
+		char *charset, char *geom_type, int verbose, int *xrows,
+		char *err_msg)
 {
 /* SHAPEFILE dump */
     char sql[1024];
@@ -911,8 +985,12 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 				 &errMsg);
 	  if (ret != SQLITE_OK)
 	    {
-		fprintf (stderr, "dump shapefile MetaData error: <%s>\n",
-			 errMsg);
+		if (!err_msg)
+		    fprintf (stderr, "dump shapefile MetaData error: <%s>\n",
+			     errMsg);
+		else
+		    sprintf (err_msg, "dump shapefile MetaData error: <%s>\n",
+			     errMsg);
 		sqlite3_free (errMsg);
 		return 0;
 	    }
@@ -997,8 +1075,12 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 				 &errMsg);
 	  if (ret != SQLITE_OK)
 	    {
-		fprintf (stderr, "dump shapefile MetaData error: <%s>\n",
-			 errMsg);
+		if (!err_msg)
+		    fprintf (stderr, "dump shapefile MetaData error: <%s>\n",
+			     errMsg);
+		else
+		    sprintf (err_msg, "dump shapefile MetaData error: <%s>\n",
+			     errMsg);
 		sqlite3_free (errMsg);
 		return 0;
 	    }
@@ -1063,9 +1145,14 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
       }
     if (shape < 0)
       {
-	  fprintf (stderr,
-		   "Unable to detect GeometryType for \"%s\".\"%s\" ... sorry\n",
-		   table, column);
+	  if (!err_msg)
+	      fprintf (stderr,
+		       "Unable to detect GeometryType for \"%s\".\"%s\" ... sorry\n",
+		       table, column);
+	  else
+	      sprintf (err_msg,
+		       "Unable to detect GeometryType for \"%s\".\"%s\" ... sorry\n",
+		       table, column);
 	  return 0;
       }
     if (verbose)
@@ -1322,6 +1409,8 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	fprintf (stderr, "\nExported %d rows into SHAPEFILE\n========\n", rows);
     if (xrows)
 	*xrows = rows;
+    if (err_msg)
+	sprintf (err_msg, "Exported %d rows into SHAPEFILE", rows);
     return 1;
   sql_error:
 /* some SQL error occurred */
@@ -1332,7 +1421,10 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	gaiaFreeDbfList (dbf_list);
     if (shp)
 	gaiaFreeShapefile (shp);
-    fprintf (stderr, "SELECT failed: %s", sqlite3_errmsg (sqlite));
+    if (!err_msg)
+	fprintf (stderr, "SELECT failed: %s", sqlite3_errmsg (sqlite));
+    else
+	sprintf (err_msg, "SELECT failed: %s", sqlite3_errmsg (sqlite));
     return 0;
   no_file:
 /* shapefile can't be created/opened */
@@ -1342,7 +1434,10 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	gaiaFreeDbfList (dbf_list);
     if (shp)
 	gaiaFreeShapefile (shp);
-    fprintf (stderr, "ERROR: unable to open '%s' for writing", shp_path);
+    if (!err_msg)
+	fprintf (stderr, "ERROR: unable to open '%s' for writing", shp_path);
+    else
+	sprintf (err_msg, "ERROR: unable to open '%s' for writing", shp_path);
     return 0;
   empty_result_set:
 /* the result set is empty - nothing to do */
@@ -1353,14 +1448,18 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	gaiaFreeDbfList (dbf_list);
     if (shp)
 	gaiaFreeShapefile (shp);
-    fprintf (stderr,
-	     "The SQL SELECT returned an empty result set ... there is nothing to export ...");
+    if (!err_msg)
+	fprintf (stderr,
+		 "The SQL SELECT returned an empty result set ... there is nothing to export ...");
+    else
+	sprintf (err_msg,
+		 "The SQL SELECT returned an empty result set ... there is nothing to export ...");
     return 0;
 }
 
 SPATIALITE_DECLARE int
 load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
-	  int verbose, int *rows)
+	  int verbose, int *rows, char *err_msg)
 {
     sqlite3_stmt *stmt;
     int ret;
@@ -1387,7 +1486,12 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "load DBF error: <%s>\n", sqlite3_errmsg (sqlite));
+	  if (!err_msg)
+	      fprintf (stderr, "load DBF error: <%s>\n",
+		       sqlite3_errmsg (sqlite));
+	  else
+	      sprintf (err_msg, "load DBF error: <%s>\n",
+		       sqlite3_errmsg (sqlite));
 	  return 0;
       }
     while (1)
@@ -1408,17 +1512,34 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
     sqlite3_finalize (stmt);
     if (already_exists)
       {
-	  fprintf (stderr, "load DBF error: table '%s' already exists\n",
-		   table);
+	  if (!err_msg)
+	      fprintf (stderr, "load DBF error: table '%s' already exists\n",
+		       table);
+	  else
+	      sprintf (err_msg, "load DBF error: table '%s' already exists\n",
+		       table);
 	  return 0;
       }
     dbf = gaiaAllocDbf ();
     gaiaOpenDbfRead (dbf, dbf_path, charset, "UTF-8");
     if (!(dbf->Valid))
       {
-	  fprintf (stderr, "load DBF error: cannot open '%s'\n", dbf_path);
-	  if (dbf->LastError)
-	      fprintf (stderr, "\tcause: %s\n", dbf->LastError);
+	  if (!err_msg)
+	    {
+		fprintf (stderr, "load DBF error: cannot open '%s'\n",
+			 dbf_path);
+		if (dbf->LastError)
+		    fprintf (stderr, "\tcause: %s\n", dbf->LastError);
+	    }
+	  else
+	    {
+		char extra[512];
+		*extra = '\0';
+		if (dbf->LastError)
+		    sprintf (extra, "\n\tcause: %s", dbf->LastError);
+		sprintf (err_msg, "load DBF error: cannot open '%s'%s",
+			 dbf_path, extra);
+	    }
 	  gaiaFreeDbf (dbf);
 	  return 0;
       }
@@ -1465,7 +1586,10 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
     ret = sqlite3_exec (sqlite, "BEGIN", NULL, 0, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "load DBF error: <%s>\n", errMsg);
+	  if (!err_msg)
+	      fprintf (stderr, "load DBF error: <%s>\n", errMsg);
+	  else
+	      sprintf (err_msg, "load DBF error: <%s>\n", errMsg);
 	  sqlite3_free (errMsg);
 	  sqlError = 1;
 	  goto clean_up;
@@ -1515,7 +1639,10 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
     ret = sqlite3_exec (sqlite, sql, NULL, 0, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "load DBF error: <%s>\n", errMsg);
+	  if (!err_msg)
+	      fprintf (stderr, "load DBF error: <%s>\n", errMsg);
+	  else
+	      sprintf (err_msg, "load DBF error: <%s>\n", errMsg);
 	  sqlite3_free (errMsg);
 	  sqlError = 1;
 	  goto clean_up;
@@ -1544,7 +1671,12 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "load DBF error: <%s>\n", sqlite3_errmsg (sqlite));
+	  if (!err_msg)
+	      fprintf (stderr, "load DBF error: <%s>\n",
+		       sqlite3_errmsg (sqlite));
+	  else
+	      sprintf (err_msg, "load DBF error: <%s>\n",
+		       sqlite3_errmsg (sqlite));
 	  sqlError = 1;
 	  goto clean_up;
       }
@@ -1557,7 +1689,10 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 	    {
 		if (!(dbf->LastError))	/* normal DBF EOF */
 		    break;
-		fprintf (stderr, "%s\n", dbf->LastError);
+		if (!err_msg)
+		    fprintf (stderr, "%s\n", dbf->LastError);
+		else
+		    sprintf (err_msg, "%s\n", dbf->LastError);
 		sqlError = 1;
 		goto clean_up;
 	    }
@@ -1610,8 +1745,12 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 	      ;
 	  else
 	    {
-		fprintf (stderr, "load DBF error: <%s>\n",
-			 sqlite3_errmsg (sqlite));
+		if (!err_msg)
+		    fprintf (stderr, "load DBF error: <%s>\n",
+			     sqlite3_errmsg (sqlite));
+		else
+		    sprintf (err_msg, "load DBF error: <%s>\n",
+			     sqlite3_errmsg (sqlite));
 		sqlite3_finalize (stmt);
 		sqlError = 1;
 		goto clean_up;
@@ -1637,7 +1776,7 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 	    {
 		fprintf (stderr, "load DBF error: <%s>\n", errMsg);
 		sqlite3_free (errMsg);
-	    }
+	    };
 	  if (rows)
 	      *rows = current_row;
 	  return 0;
@@ -1660,12 +1799,16 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 	      fprintf (stderr,
 		       "\nInserted %d rows into '%s' from DBF\n========\n",
 		       current_row, table);
+	  if (err_msg)
+	      sprintf (err_msg, "Inserted %d rows into '%s' from DBF",
+		       current_row, table);
 	  return 1;
       }
 }
 
 SPATIALITE_DECLARE int
-dump_dbf (sqlite3 * sqlite, char *table, char *dbf_path, char *charset)
+dump_dbf (sqlite3 * sqlite, char *table, char *dbf_path, char *charset,
+	  char *err_msg)
 {
 /* DBF dump */
     int rows;
@@ -1896,7 +2039,10 @@ dump_dbf (sqlite3 * sqlite, char *table, char *dbf_path, char *charset)
     sqlite3_finalize (stmt);
     gaiaFlushDbfHeader (dbf);
     gaiaFreeDbf (dbf);
-    fprintf (stderr, "Exported %d rows into the DBF file\n", rows);
+    if (!err_msg)
+	fprintf (stderr, "Exported %d rows into the DBF file\n", rows);
+    else
+	sprintf (err_msg, "Exported %d rows into the DBF file\n", rows);
     return 1;
   sql_error:
 /* some SQL error occurred */
@@ -1907,7 +2053,10 @@ dump_dbf (sqlite3 * sqlite, char *table, char *dbf_path, char *charset)
 	gaiaFreeDbfList (dbf_list);
     if (dbf)
 	gaiaFreeDbf (dbf);
-    fprintf (stderr, "dump DBF file error: %s\n", sqlite3_errmsg (sqlite));
+    if (!err_msg)
+	fprintf (stderr, "dump DBF file error: %s\n", sqlite3_errmsg (sqlite));
+    else
+	sprintf (err_msg, "dump DBF file error: %s\n", sqlite3_errmsg (sqlite));
     return 0;
   no_file:
 /* DBF can't be created/opened */
@@ -1917,7 +2066,10 @@ dump_dbf (sqlite3 * sqlite, char *table, char *dbf_path, char *charset)
 	gaiaFreeDbfList (dbf_list);
     if (dbf)
 	gaiaFreeDbf (dbf);
-    fprintf (stderr, "ERROR: unable to open '%s' for writing\n", dbf_path);
+    if (!err_msg)
+	fprintf (stderr, "ERROR: unable to open '%s' for writing\n", dbf_path);
+    else
+	sprintf (err_msg, "ERROR: unable to open '%s' for writing\n", dbf_path);
     return 0;
   empty_result_set:
 /* the result set is empty - nothing to do */
@@ -1928,8 +2080,12 @@ dump_dbf (sqlite3 * sqlite, char *table, char *dbf_path, char *charset)
 	gaiaFreeDbfList (dbf_list);
     if (dbf)
 	gaiaFreeDbf (dbf);
-    fprintf (stderr,
-	     "The SQL SELECT returned an empty result set ... there is nothing to export ...\n");
+    if (!err_msg)
+	fprintf (stderr,
+		 "The SQL SELECT returned an empty result set ... there is nothing to export ...\n");
+    else
+	sprintf (err_msg,
+		 "The SQL SELECT returned an empty result set ... there is nothing to export ...\n");
     return 0;
 }
 
@@ -2576,9 +2732,9 @@ remove_duplicated_rows (sqlite3 * sqlite, char *table)
     clean_dupl_row (&value_list);
 }
 
-SPATIALITE_DECLARE void
+SPATIALITE_DECLARE int
 load_XL (sqlite3 * sqlite, const char *path, const char *table,
-	 unsigned int worksheetIndex, int first_titles)
+	 unsigned int worksheetIndex, int first_titles, char *err_msg)
 {
 /* loading an XL spreadsheet as a new DB table */
     sqlite3_stmt *stmt;
@@ -2603,8 +2759,13 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "load XL error: <%s>\n", sqlite3_errmsg (sqlite));
-	  return;
+	  if (!err_msg)
+	      fprintf (stderr, "load XL error: <%s>\n",
+		       sqlite3_errmsg (sqlite));
+	  else
+	      sprintf (err_msg, "load XL error: <%s>\n",
+		       sqlite3_errmsg (sqlite));
+	  return 0;
       }
     while (1)
       {
@@ -2624,8 +2785,13 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
     sqlite3_finalize (stmt);
     if (already_exists)
       {
-	  fprintf (stderr, "load XL error: table '%s' already exists\n", table);
-	  return;
+	  if (!err_msg)
+	      fprintf (stderr, "load XL error: table '%s' already exists\n",
+		       table);
+	  else
+	      sprintf (err_msg, "load XL error: table '%s' already exists\n",
+		       table);
+	  return 0;
       }
 /* opening the .XLS file [Workbook] */
     ret = freexl_open (path, &xl_handle);
@@ -2861,16 +3027,23 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 	  ret = sqlite3_exec (sqlite, "COMMIT", NULL, 0, &errMsg);
 	  if (ret != SQLITE_OK)
 	    {
-		fprintf (stderr, "load XL error: %s\n", errMsg);
+		if (!err_msg)
+		    fprintf (stderr, "load XL error: %s\n", errMsg);
+		else
+		    sprintf (err_msg, "load XL error: %s\n", errMsg);
 		sqlite3_free (errMsg);
-		return;
+		return 0;
 	    }
 	  fprintf (stderr, "XL loaded\n\n%d inserted rows\n", rows);
       }
     freexl_close (xl_handle);
-    return;
+    return 1;
 
   error:
     freexl_close (xl_handle);
-    fprintf (stderr, "XL datasource '%s' is not valid\n", path);
+    if (!err_msg)
+	fprintf (stderr, "XL datasource '%s' is not valid\n", path);
+    else
+	sprintf (err_msg, "XL datasource '%s' is not valid\n", path);
+    return 0;
 }
