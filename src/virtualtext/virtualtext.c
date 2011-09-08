@@ -749,7 +749,6 @@ vtxt_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
     cursor->eof = 0;
     while (1)
       {
-	  cursor->current_row++;
 	  if (!gaiaTextReaderGetRow (text, cursor->current_row))
 	    {
 		cursor->eof = 1;
@@ -757,6 +756,7 @@ vtxt_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
 	    }
 	  if (vtxt_eval_constraints (cursor))
 	      break;
+	  cursor->current_row++;
       }
     return SQLITE_OK;
 }
