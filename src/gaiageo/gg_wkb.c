@@ -1698,10 +1698,10 @@ gaiaToSpatiaLiteBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_POINT, 1, endian_arch);	/* class POINT */
 	  gaiaExport64 (ptr + 43, point->X, 1, endian_arch);	/* X */
@@ -1712,10 +1712,10 @@ gaiaToSpatiaLiteBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_POINTZ, 1, endian_arch);	/* class POINT XYZ */
 	  gaiaExport64 (ptr + 43, point->X, 1, endian_arch);	/* X */
@@ -1727,10 +1727,10 @@ gaiaToSpatiaLiteBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_POINTM, 1, endian_arch);	/* class POINT XYM */
 	  gaiaExport64 (ptr + 43, point->X, 1, endian_arch);	/* X */
@@ -1742,10 +1742,10 @@ gaiaToSpatiaLiteBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_POINTZM, 1, endian_arch);	/* class POINT XYZM */
 	  gaiaExport64 (ptr + 43, point->X, 1, endian_arch);	/* X */
@@ -1755,13 +1755,13 @@ gaiaToSpatiaLiteBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *(ptr + 75) = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_LINESTRING:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_LINESTRING, 1, endian_arch);	/* class LINESTRING */
 	  gaiaExport32 (ptr + 43, line->Points, 1, endian_arch);	/* # points */
@@ -1776,13 +1776,13 @@ gaiaToSpatiaLiteBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_LINESTRINGZ:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_LINESTRINGZ, 1, endian_arch);	/* class LINESTRING XYZ */
 	  gaiaExport32 (ptr + 43, line->Points, 1, endian_arch);	/* # points */
@@ -1798,13 +1798,13 @@ gaiaToSpatiaLiteBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_LINESTRINGM:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_LINESTRINGM, 1, endian_arch);	/* class LINESTRING XYM */
 	  gaiaExport32 (ptr + 43, line->Points, 1, endian_arch);	/* # points */
@@ -1820,13 +1820,13 @@ gaiaToSpatiaLiteBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_LINESTRINGZM:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_LINESTRINGZM, 1, endian_arch);	/* class LINESTRING XYZM */
 	  gaiaExport32 (ptr + 43, line->Points, 1, endian_arch);	/* # points */
@@ -1843,13 +1843,13 @@ gaiaToSpatiaLiteBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_POLYGON:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_POLYGON, 1, endian_arch);	/* class POLYGON */
 	  gaiaExport32 (ptr + 43, polyg->NumInteriors + 1, 1, endian_arch);	/* # rings */
@@ -1879,13 +1879,13 @@ gaiaToSpatiaLiteBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_POLYGONZ:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_POLYGONZ, 1, endian_arch);	/* class POLYGON XYZ */
 	  gaiaExport32 (ptr + 43, polyg->NumInteriors + 1, 1, endian_arch);	/* # rings */
@@ -1917,13 +1917,13 @@ gaiaToSpatiaLiteBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_POLYGONM:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_POLYGONM, 1, endian_arch);	/* class POLYGON XYM */
 	  gaiaExport32 (ptr + 43, polyg->NumInteriors + 1, 1, endian_arch);	/* # rings */
@@ -1955,13 +1955,13 @@ gaiaToSpatiaLiteBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_POLYGONZM:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_POLYGONZM, 1, endian_arch);	/* class POLYGON */
 	  gaiaExport32 (ptr + 43, polyg->NumInteriors + 1, 1, endian_arch);	/* # rings */
@@ -1996,13 +1996,13 @@ gaiaToSpatiaLiteBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  break;
       default:
 	  /* this one is a MULTIxxxx or a GEOMETRYCOLLECTION - building the main header */
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, type, 1, endian_arch);	/* geometric class */
 	  gaiaExport32 (ptr + 43, entities, 1, endian_arch);	/* # entities */
@@ -2594,10 +2594,10 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_POINT, 1, endian_arch);	/* class POINT */
 	  gaiaExport64 (ptr + 43, point->X, 1, endian_arch);	/* X */
@@ -2608,10 +2608,10 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_POINTZ, 1, endian_arch);	/* class POINT XYZ */
 	  gaiaExport64 (ptr + 43, point->X, 1, endian_arch);	/* X */
@@ -2623,10 +2623,10 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_POINTM, 1, endian_arch);	/* class POINT XYM */
 	  gaiaExport64 (ptr + 43, point->X, 1, endian_arch);	/* X */
@@ -2638,10 +2638,10 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_POINTZM, 1, endian_arch);	/* class POINT XYZM */
 	  gaiaExport64 (ptr + 43, point->X, 1, endian_arch);	/* X */
@@ -2651,13 +2651,13 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *(ptr + 75) = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_LINESTRING:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_COMPRESSED_LINESTRING, 1, endian_arch);	/* class LINESTRING */
 	  gaiaExport32 (ptr + 43, line->Points, 1, endian_arch);	/* # points */
@@ -2687,13 +2687,13 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_LINESTRINGZ:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_COMPRESSED_LINESTRINGZ, 1, endian_arch);	/* class LINESTRING XYZ */
 	  gaiaExport32 (ptr + 43, line->Points, 1, endian_arch);	/* # points */
@@ -2727,13 +2727,13 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_LINESTRINGM:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_COMPRESSED_LINESTRINGM, 1, endian_arch);	/* class LINESTRING XYM */
 	  gaiaExport32 (ptr + 43, line->Points, 1, endian_arch);	/* # points */
@@ -2765,13 +2765,13 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_LINESTRINGZM:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_COMPRESSED_LINESTRINGZM, 1, endian_arch);	/* class LINESTRING XYZM */
 	  gaiaExport32 (ptr + 43, line->Points, 1, endian_arch);	/* # points */
@@ -2807,13 +2807,13 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_POLYGON:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_COMPRESSED_POLYGON, 1, endian_arch);	/* class POLYGON */
 	  gaiaExport32 (ptr + 43, polyg->NumInteriors + 1, 1, endian_arch);	/* # rings */
@@ -2873,13 +2873,13 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_POLYGONZ:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_COMPRESSED_POLYGONZ, 1, endian_arch);	/* class POLYGON XYZ */
 	  gaiaExport32 (ptr + 43, polyg->NumInteriors + 1, 1, endian_arch);	/* # rings */
@@ -2947,13 +2947,13 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_POLYGONM:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_COMPRESSED_POLYGONM, 1, endian_arch);	/* class POLYGON XYM */
 	  gaiaExport32 (ptr + 43, polyg->NumInteriors + 1, 1, endian_arch);	/* # rings */
@@ -3017,13 +3017,13 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  *ptr = GAIA_MARK_END;	/* END signature */
 	  break;
       case GAIA_POLYGONZM:
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, GAIA_COMPRESSED_POLYGONZM, 1, endian_arch);	/* class POLYGON */
 	  gaiaExport32 (ptr + 43, polyg->NumInteriors + 1, 1, endian_arch);	/* # rings */
@@ -3096,13 +3096,13 @@ gaiaToCompressedBlobWkb (gaiaGeomCollPtr geom, unsigned char **result,
 	  break;
       default:
 	  /* this one is a MULTIxxxx or a GEOMETRYCOLLECTION - building the main header */
-	  *ptr = GAIA_MARK_START;	/* START signatue */
+	  *ptr = GAIA_MARK_START;	/* START signature */
 	  *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
 	  gaiaExport32 (ptr + 2, geom->Srid, 1, endian_arch);	/* the SRID */
-	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimun X */
-	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimun Y */
-	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximun X */
-	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximun Y */
+	  gaiaExport64 (ptr + 6, geom->MinX, 1, endian_arch);	/* MBR - minimum X */
+	  gaiaExport64 (ptr + 14, geom->MinY, 1, endian_arch);	/* MBR - minimum Y */
+	  gaiaExport64 (ptr + 22, geom->MaxX, 1, endian_arch);	/* MBR - maximum X */
+	  gaiaExport64 (ptr + 30, geom->MaxY, 1, endian_arch);	/* MBR - maximum Y */
 	  *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
 	  gaiaExport32 (ptr + 39, type, 1, endian_arch);	/* geometric class */
 	  gaiaExport32 (ptr + 43, entities, 1, endian_arch);	/* # entities */

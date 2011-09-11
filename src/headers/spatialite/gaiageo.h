@@ -343,7 +343,7 @@ extern "C"
     {
 /* OpenGis GEOMETRYCOLLECTION */
 	int Srid;		/* the SRID value for this GEOMETRY */
-	char endian_arch;	/* littleEndian - bigEndian arch for targer CPU */
+	char endian_arch;	/* littleEndian - bigEndian arch for target CPU */
 	char endian;		/* littleEndian - bigEndian */
 	const unsigned char *blob;	/* WKB encoded buffer */
 	unsigned long size;	/* buffer size */
@@ -389,7 +389,7 @@ extern "C"
 	char *Name;		/* field name */
 	unsigned char Type;	/* field type */
 	int Offset;		/* buffer offset [this field begins at *buffer+offset* and extends for *length* bytes */
-	unsigned char Length;	/* field total lenght [in bytes] */
+	unsigned char Length;	/* field total length [in bytes] */
 	unsigned char Decimals;	/* decimal positions */
 	gaiaValuePtr Value;	/* the current multitype value for this attribute */
 	struct gaiaDbfFieldStruct *Next;	/* pointer to next element in linked list */
@@ -398,7 +398,7 @@ extern "C"
 
     typedef struct gaiaDbfListStruct
     {
-/* a linked list to containt the DBF fields definitions - shapefile attributes */
+/* a linked list to contain the DBF fields definitions - shapefile attributes */
 	int RowId;		/* the current RowId */
 	gaiaGeomCollPtr Geometry;	/* geometry for current entity */
 	gaiaDbfFieldPtr First;	/* pointer to first element in linked list */
@@ -498,7 +498,7 @@ extern "C"
     struct vrttxt_row_block
     {
 /*
-/ for efficiency sake, individuale Row offsets 
+/ for efficiency sake, individual Row offsets 
 / are grouped in reasonably sized blocks
 */
 	struct vrttxt_row rows[VRTTXT_BLOCK_MAX];
@@ -545,7 +545,7 @@ extern "C"
 
 #endif				/* end ICONV (text reader) */
 
-/* function prototipes */
+/* function prototypes */
 
     GAIAGEO_DECLARE int gaiaEndianArch (void);
     GAIAGEO_DECLARE short gaiaImport16 (const unsigned char *p,

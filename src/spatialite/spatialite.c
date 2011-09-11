@@ -301,7 +301,7 @@ fnct_GeometryConstraints (sqlite3_context * context, int argc,
 	  else if (*(p_blob + 1) == GAIA_BIG_ENDIAN)
 	      little_endian = 0;
 	  else
-	      goto illegal_geometry;	/* unknown encoding; nor litte-endian neither big-endian */
+	      goto illegal_geometry;	/* unknown encoding; neither little-endian nor big-endian */
 	  geom_type = gaiaImport32 (p_blob + 39, little_endian, endian_arch);
 	  geom_srid = gaiaImport32 (p_blob + 2, little_endian, endian_arch);
 	  goto valid_geometry;
@@ -549,7 +549,7 @@ fnct_RTreeAlign (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  /* INSERTing into the R*Tree */
 #if defined(_WIN32) || defined(__MINGW32__)
-/* CAVEAT: M$ rutime doesn't supports %lld for 64 bits */
+/* CAVEAT: M$ runtime doesn't supports %lld for 64 bits */
 	  sprintf (sql, "INSERT INTO %s (pkid, xmin, ymin, xmax, ymax) "
 		   "VALUES (%I64d, %1.12f, %1.12f, %1.12f, %1.12f)",
 		   rtree_table, pkid, geom->MinX, geom->MinY, geom->MaxX,
@@ -1141,7 +1141,7 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     if (ret != SQLITE_OK)
 	goto error;
     updateSpatiaLiteHistory (sqlite, "spatial_ref_sys", NULL,
-			     "table succesfully created");
+			     "table successfully created");
 /* creating the GEOMETRY_COLUMN table */
     strcpy (sql, "CREATE TABLE geometry_columns (\n");
     strcat (sql, "f_table_name TEXT NOT NULL,\n");
@@ -1158,7 +1158,7 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     if (ret != SQLITE_OK)
 	goto error;
     updateSpatiaLiteHistory (sqlite, "geometry_columns", NULL,
-			     "table succesfully created");
+			     "table successfully created");
 /* creating an INDEX corresponding to the SRID FK */
     strcpy (sql, "CREATE INDEX idx_srid_geocols ON geometry_columns\n");
     strcat (sql, "(srid) ");
@@ -1185,7 +1185,7 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 	goto error;
     if (spatial_ref_sys_init (sqlite, 0))
 	updateSpatiaLiteHistory (sqlite, "spatial_ref_sys", NULL,
-				 "table succesfully populated");
+				 "table successfully populated");
     sqlite3_result_int (context, 1);
     return;
   error:
@@ -1496,7 +1496,7 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
 	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
 	  if (ret != SQLITE_OK)
 	      goto error;
-	  /* inserting SpatialIndex infos into the linked list */
+	  /* inserting SpatialIndex information into the linked list */
 	  curr_idx = malloc (sizeof (struct spatial_index_str));
 	  len = strlen (tblname);
 	  curr_idx->TableName = malloc (len + 1);
@@ -1894,7 +1894,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
     if (*tblname == '\0')
       {
 	  fprintf (stderr,
-		   "AddGeometryColumn() error: table '%s' does not exists\n",
+		   "AddGeometryColumn() error: table '%s' does not exist\n",
 		   table);
 	  sqlite3_result_int (context, 0);
 	  return;
@@ -2056,7 +2056,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
       };
     sprintf (sqlcolumn, ",SRID=%d", (srid <= 0) ? -1 : srid);
     strcat (sql, sqlcolumn);
-    strcat (sql, "] succesfully created");
+    strcat (sql, "] successfully created");
     updateSpatiaLiteHistory (sqlite, (const char *) table,
 			     (const char *) column, sql);
     return;
@@ -2219,12 +2219,12 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     if (*tblname == '\0')
       {
 	  fprintf (stderr,
-		   "RecoverGeometryColumn() error: table '%s' does not exists\n",
+		   "RecoverGeometryColumn() error: table '%s' does not exist\n",
 		   table);
 	  sqlite3_result_int (context, 0);
 	  return;
       }
-/* adjusting the actucal GeometryType */
+/* adjusting the actual GeometryType */
     xxtype = xtype;
     xtype = GAIA_UNKNOWN;
     if (xxtype == GAIA_POINT)
@@ -2491,7 +2491,7 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
       };
     sprintf (sqlcolumn, ",SRID=%d", (srid <= 0) ? -1 : srid);
     strcat (sql, sqlcolumn);
-    strcat (sql, "] succesfully recovered");
+    strcat (sql, "] successfully recovered");
     updateSpatiaLiteHistory (sqlite, (const char *) table,
 			     (const char *) column, sql);
     return;
@@ -2509,7 +2509,7 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
 /* SQL function:
 / DiscardGeometryColumn(table, column)
 /
-/ removes TABLE.COLUMN from the Spatial MetaData [thus disablig triggers too]
+/ removes TABLE.COLUMN from the Spatial MetaData [thus disabling triggers too]
 / returns 1 on success
 / 0 on failure
 */
@@ -2627,7 +2627,7 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     /* end deletion old versions [v2.0, v2.2] triggers[if any] */
 
     sqlite3_result_int (context, 1);
-    strcpy (sql, "Geometry succesfully discarded");
+    strcpy (sql, "Geometry successfully discarded");
     updateSpatiaLiteHistory (sqlite, (const char *) table,
 			     (const char *) column, sql);
     return;
@@ -2720,7 +2720,7 @@ recoverFDOGeomColumn (sqlite3 * sqlite, const unsigned char *table,
 	      break;		/* end of result set */
 	  if (ret == SQLITE_ROW)
 	    {
-		/* cecking Geometry features */
+		/* checking Geometry features */
 		geom = NULL;
 		for (i_col = 0; i_col < sqlite3_column_count (stmt); i_col++)
 		  {
@@ -2908,7 +2908,7 @@ fnct_AddFDOGeometryColumn (sqlite3_context * context, int argc,
     if (*tblname == '\0')
       {
 	  fprintf (stderr,
-		   "AddFDOGeometryColumn() error: table '%s' does not exists\n",
+		   "AddFDOGeometryColumn() error: table '%s' does not exist\n",
 		   table);
 	  sqlite3_result_int (context, 0);
 	  return;
@@ -3098,7 +3098,7 @@ fnct_RecoverFDOGeometryColumn (sqlite3_context * context, int argc,
     if (*tblname == '\0')
       {
 	  fprintf (stderr,
-		   "RecoverFDOGeometryColumn() error: table '%s' does not exists\n",
+		   "RecoverFDOGeometryColumn() error: table '%s' does not exist\n",
 		   table);
 	  sqlite3_result_int (context, 0);
 	  return;
@@ -3543,7 +3543,7 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     return 1;
   mismatching:
     sqlite3_finalize (stmt);
-    strcpy (sql, "Check SpatialIndex: INCONSISTENTENCIES detected");
+    strcpy (sql, "Check SpatialIndex: INCONSISTENCIES detected");
     updateSpatiaLiteHistory (sqlite, (const char *) table,
 			     (const char *) geom, sql);
     return 0;
@@ -3720,7 +3720,7 @@ recover_spatial_index (sqlite3 * sqlite, const unsigned char *table,
 	goto error;
 /* populating the R*Tree table from scratch */
     buildSpatialIndex (sqlite, table, (const char *) geom);
-    strcpy (sql, "SpatialIndex: succesfully recovered");
+    strcpy (sql, "SpatialIndex: successfully recovered");
     updateSpatiaLiteHistory (sqlite, (const char *) table,
 			     (const char *) geom, sql);
     return 1;
@@ -3968,7 +3968,7 @@ fnct_CreateSpatialIndex (sqlite3_context * context, int argc,
       }
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
-    strcpy (sql, "R*Tree Spatial Index succesfully created");
+    strcpy (sql, "R*Tree Spatial Index successfully created");
     updateSpatiaLiteHistory (sqlite, (const char *) table,
 			     (const char *) column, sql);
     return;
@@ -4037,7 +4037,7 @@ fnct_CreateMbrCache (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
-    strcpy (sql, "MbrCache succesfully created");
+    strcpy (sql, "MbrCache successfully created");
     updateSpatiaLiteHistory (sqlite, (const char *) table,
 			     (const char *) column, sql);
     return;
@@ -4107,7 +4107,7 @@ fnct_DisableSpatialIndex (sqlite3_context * context, int argc,
       }
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
-    strcpy (sql, "SpatialIndex succesfully disabled");
+    strcpy (sql, "SpatialIndex successfully disabled");
     updateSpatiaLiteHistory (sqlite, (const char *) table,
 			     (const char *) column, sql);
     return;
@@ -4181,7 +4181,7 @@ fnct_RebuildGeometryTriggers (sqlite3_context * context, int argc,
       }
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
-    strcpy (sql, "Geometry Triggers succesfully rebuilt");
+    strcpy (sql, "Geometry Triggers successfully rebuilt");
     updateSpatiaLiteHistory (sqlite, (const char *) table,
 			     (const char *) column, sql);
     return;
@@ -5277,7 +5277,7 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
 	 view_surfaces_resolved, srid, dims))
 	goto error;
     updateSpatiaLiteHistory (sqlite, "*** TOPOLOGY ***", NULL,
-			     "Topology tables succesfully created");
+			     "Topology tables successfully created");
     sqlite3_result_int (context, 1);
     return;
 
@@ -5650,7 +5650,7 @@ fnct_AsKml1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		      sqlite3_result_null (context);
 		      goto stop;
 		  }
-		/* ok, reprojection was succesfull */
+		/* ok, reprojection was successful */
 		gaiaFreeGeomColl (geo);
 		geo = geo_wgs84;
 	    }
@@ -5710,7 +5710,7 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
       case SQLITE_INTEGER:
 	  int_value = sqlite3_value_int64 (argv[0]);
 #if defined(_WIN32) || defined(__MINGW32__)
-/* CAVEAT: M$ rutime doesn't supports %lld for 64 bits */
+/* CAVEAT: M$ runtime doesn't supports %lld for 64 bits */
 	  sprintf (dummy, "%I64d", int_value);
 #else
 	  sprintf (dummy, "%lld", int_value);
@@ -5747,7 +5747,7 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
       case SQLITE_INTEGER:
 	  int_value = sqlite3_value_int64 (argv[1]);
 #if defined(_WIN32) || defined(__MINGW32__)
-/* CAVEAT: M$ rutime doesn't supports %lld for 64 bits */
+/* CAVEAT: M$ runtime doesn't supports %lld for 64 bits */
 	  sprintf (dummy, "%I64d", int_value);
 #else
 	  sprintf (dummy, "%lld", int_value);
@@ -5812,7 +5812,7 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		      sqlite3_result_null (context);
 		      goto stop;
 		  }
-		/* ok, reprojection was succesfull */
+		/* ok, reprojection was successful */
 		gaiaFreeGeomColl (geo);
 		geo = geo_wgs84;
 	    }
@@ -9693,7 +9693,7 @@ fnct_NumPoints (sqlite3_context * context, int argc, sqlite3_value ** argv)
 /* SQL function:
 / NumPoints(BLOB encoded LINESTRING)
 /
-/ returns the numer of vertices for current LINESTRING geometry 
+/ returns the number of vertices for current LINESTRING geometry 
 / or NULL if any error is encountered
 */
     unsigned char *p_blob;
@@ -10737,7 +10737,7 @@ get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
 		    double *rf)
 {
 /* 
-/ retrives the PROJ +ellps=xx [+a=xx +b=xx] params 
+/ retrieves the PROJ +ellps=xx [+a=xx +b=xx] params 
 /from SPATIAL_SYS_REF table, if possible 
 */
     char proj4text[2048];
@@ -10764,7 +10764,7 @@ get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
 	return 0;
     if (p_ellps)
       {
-	  /* tryng to retrieve the ellipsoid params by name */
+	  /* trying to retrieve the ellipsoid params by name */
 	  p_end = strchr (p_ellps, ' ');
 	  if (p_end)
 	      *p_end = '\0';
@@ -12769,7 +12769,7 @@ fnct_PtDistWithin (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / [, boolen use_spheroid])
 /
 / returns TRUE if the distance between GEOM-1 and GEOM-2
-/ is less or equale to dist
+/ is less or equal to dist
 /
 / - if both geom1 and geom2 are in the 4326 (WGS84) SRID,
 /   (and does actually contains a single POINT each one)
@@ -12779,7 +12779,7 @@ fnct_PtDistWithin (sqlite3_context * context, int argc, sqlite3_value ** argv)
 /   computed on the sphere (quickest) or on the spheroid 
 /   default: use_spheroid = FALSE
 / 
-/ in any other case the "plain" distance is evaluted
+/ in any other case the "plain" distance is evaluated
 */
     unsigned char *p_blob;
     int n_bytes;

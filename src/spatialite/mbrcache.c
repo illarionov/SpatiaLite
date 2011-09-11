@@ -197,7 +197,7 @@ positioning parameters while performing a cache search
     int current_cell_index;
     struct mbr_cache_cell *current_cell;
 /* 
-the stategy to use:
+the strategy to use:
     0 = sequential scan
     1 = find rowid
     2 = spatial search
@@ -430,7 +430,7 @@ cache_get_free_page (struct mbr_cache *p)
     pp = p->first;
     while (pp)
       {
-	  /* scanning the page list in order to discover if there is an exixsting page not yet completly filled */
+	  /* scanning the page list in order to discover if there is an existing page not yet completely filled */
 	  if (pp->bitmap != 0xffffffff)
 	    {
 		p->current = pp;
@@ -472,7 +472,7 @@ cache_insert_cell (struct mbr_cache *p, sqlite3_int64 rowid, double minx,
 	pb->miny = miny;
     if (pb->maxy < maxy)
 	pb->maxy = maxy;
-/* updading the cache page MBR */
+/* updating the cache page MBR */
     if (pp->minx > minx)
 	pp->minx = minx;
     if (pp->maxx < maxx)

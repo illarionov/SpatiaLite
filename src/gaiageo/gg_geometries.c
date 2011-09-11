@@ -2372,7 +2372,7 @@ gaiaZRangeGeometry (gaiaGeomCollPtr geom, double *min, double *max)
 GAIAGEO_DECLARE int
 gaiaDimension (gaiaGeomCollPtr geom)
 {
-/* determinates the Dimension for this geometry */
+/* determines the Dimension for this geometry */
     gaiaPointPtr point;
     gaiaLinestringPtr line;
     gaiaPolygonPtr polyg;
@@ -2414,7 +2414,7 @@ gaiaDimension (gaiaGeomCollPtr geom)
 GAIAGEO_DECLARE int
 gaiaGeometryType (gaiaGeomCollPtr geom)
 {
-/* determinates the Class for this geometry */
+/* determines the Class for this geometry */
     gaiaPointPtr point;
     gaiaLinestringPtr line;
     gaiaPolygonPtr polyg;
@@ -2714,7 +2714,7 @@ gaiaGeometryType (gaiaGeomCollPtr geom)
 GAIAGEO_DECLARE int
 gaiaGeometryAliasType (gaiaGeomCollPtr geom)
 {
-/* determinates the AliasClass for this geometry */
+/* determines the AliasClass for this geometry */
     gaiaPointPtr point;
     gaiaLinestringPtr line;
     gaiaPolygonPtr polyg;
@@ -2876,7 +2876,7 @@ GAIAGEO_DECLARE int
 gaiaMbrsEqual (gaiaGeomCollPtr mbr1, gaiaGeomCollPtr mbr2)
 {
 /* 
-/ checks if two MBRs are identicals
+/ checks if two MBRs are identical
 /
 / returns 1 if TRUE
 / 0 if FALSE
@@ -2896,7 +2896,7 @@ GAIAGEO_DECLARE int
 gaiaMbrsDisjoint (gaiaGeomCollPtr mbr1, gaiaGeomCollPtr mbr2)
 {
 /* 
-/ checks if two MBRs are disjoined
+/ checks if two MBRs are disjoint
 /
 / returns 1 if TRUE
 / 0 if FALSE
@@ -2944,7 +2944,7 @@ GAIAGEO_DECLARE int
 gaiaMbrsIntersects (gaiaGeomCollPtr mbr1, gaiaGeomCollPtr mbr2)
 {
 /* 
-/ checks if two MBRs intersects
+/ checks if two MBRs intersect
 /
 / returns 1 if TRUE
 / 0 if FALSE
@@ -2958,7 +2958,7 @@ GAIAGEO_DECLARE int
 gaiaMbrsOverlaps (gaiaGeomCollPtr mbr1, gaiaGeomCollPtr mbr2)
 {
 /* 
-/ checks if two MBRs overlaps
+/ checks if two MBRs overlap
 /
 / returns 1 if TRUE
 / 0 if FALSE
@@ -3040,13 +3040,13 @@ gaiaMakePoint (double x, double y, int srid, unsigned char **result, int *size)
     *result = malloc (*size);
     ptr = *result;
 /* setting the Blob value */
-    *ptr = GAIA_MARK_START;	/* START signatue */
+    *ptr = GAIA_MARK_START;	/* START signature */
     *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
     gaiaExport32 (ptr + 2, srid, 1, endian_arch);	/* the SRID */
-    gaiaExport64 (ptr + 6, x, 1, endian_arch);	/* MBR - minimun X */
-    gaiaExport64 (ptr + 14, y, 1, endian_arch);	/* MBR - minimun Y */
-    gaiaExport64 (ptr + 22, x, 1, endian_arch);	/* MBR - maximun X */
-    gaiaExport64 (ptr + 30, y, 1, endian_arch);	/* MBR - maximun Y */
+    gaiaExport64 (ptr + 6, x, 1, endian_arch);	/* MBR - minimum X */
+    gaiaExport64 (ptr + 14, y, 1, endian_arch);	/* MBR - minimum Y */
+    gaiaExport64 (ptr + 22, x, 1, endian_arch);	/* MBR - maximum X */
+    gaiaExport64 (ptr + 30, y, 1, endian_arch);	/* MBR - maximum Y */
     *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
     gaiaExport32 (ptr + 39, GAIA_POINT, 1, endian_arch);	/* class POINT */
     gaiaExport64 (ptr + 43, x, 1, endian_arch);	/* X */
@@ -3693,13 +3693,13 @@ gaiaBuildMbr (double x1, double y1, double x2, double y2, int srid,
     *result = malloc (*size);
     ptr = *result;
 /* setting the Blob value */
-    *ptr = GAIA_MARK_START;	/* START signatue */
+    *ptr = GAIA_MARK_START;	/* START signature */
     *(ptr + 1) = GAIA_LITTLE_ENDIAN;	/* byte ordering */
     gaiaExport32 (ptr + 2, srid, 1, endian_arch);	/* the SRID */
-    gaiaExport64 (ptr + 6, minx, 1, endian_arch);	/* MBR - minimun X */
-    gaiaExport64 (ptr + 14, miny, 1, endian_arch);	/* MBR - minimun Y */
-    gaiaExport64 (ptr + 22, maxx, 1, endian_arch);	/* MBR - maximun X */
-    gaiaExport64 (ptr + 30, maxy, 1, endian_arch);	/* MBR - maximun Y */
+    gaiaExport64 (ptr + 6, minx, 1, endian_arch);	/* MBR - minimum X */
+    gaiaExport64 (ptr + 14, miny, 1, endian_arch);	/* MBR - minimum Y */
+    gaiaExport64 (ptr + 22, maxx, 1, endian_arch);	/* MBR - maximum X */
+    gaiaExport64 (ptr + 30, maxy, 1, endian_arch);	/* MBR - maximum Y */
     *(ptr + 38) = GAIA_MARK_MBR;	/* MBR signature */
     gaiaExport32 (ptr + 39, GAIA_POLYGON, 1, endian_arch);	/* class POLYGON */
     gaiaExport32 (ptr + 43, 1, 1, endian_arch);	/* # rings */
@@ -3792,23 +3792,23 @@ gaiaBuildFilterMbr (double x1, double y1, double x2, double y2, int mode,
     *result = malloc (*size);
     ptr = *result;
 /* setting the Blob value */
-    *ptr = filter;		/* signatue */
+    *ptr = filter;		/* signature */
     ptr++;
-    gaiaExport64 (ptr, minx, 1, endian_arch);	/* MBR - minimun X */
+    gaiaExport64 (ptr, minx, 1, endian_arch);	/* MBR - minimum X */
     ptr += 8;
-    *ptr = filter;		/* signatue */
+    *ptr = filter;		/* signature */
     ptr++;
-    gaiaExport64 (ptr, miny, 1, endian_arch);	/* MBR - minimun Y */
+    gaiaExport64 (ptr, miny, 1, endian_arch);	/* MBR - minimum Y */
     ptr += 8;
-    *ptr = filter;		/* signatue */
+    *ptr = filter;		/* signature */
     ptr++;
-    gaiaExport64 (ptr, maxx, 1, endian_arch);	/* MBR - maximun X */
+    gaiaExport64 (ptr, maxx, 1, endian_arch);	/* MBR - maximum X */
     ptr += 8;
-    *ptr = filter;		/* signatue */
+    *ptr = filter;		/* signature */
     ptr++;
-    gaiaExport64 (ptr, maxy, 1, endian_arch);	/* MBR - maximun Y */
+    gaiaExport64 (ptr, maxy, 1, endian_arch);	/* MBR - maximum Y */
     ptr += 8;
-    *ptr = filter;		/* signatue */
+    *ptr = filter;		/* signature */
 }
 
 
@@ -3869,7 +3869,7 @@ gaiaGetMbrMinX (const unsigned char *blob, unsigned int size, double *minx)
     else if (*(blob + 1) == GAIA_BIG_ENDIAN)
 	little_endian = 0;
     else
-	return 0;		/* unknown encoding; nor litte-endian neither big-endian */
+	return 0;		/* unknown encoding; neither little-endian nor big-endian */
     *minx = gaiaImport64 (blob + 6, little_endian, endian_arch);
     return 1;
 }
@@ -3893,7 +3893,7 @@ gaiaGetMbrMaxX (const unsigned char *blob, unsigned int size, double *maxx)
     else if (*(blob + 1) == GAIA_BIG_ENDIAN)
 	little_endian = 0;
     else
-	return 0;		/* unknown encoding; nor litte-endian neither big-endian */
+	return 0;		/* unknown encoding; neither little-endian nor big-endian */
     *maxx = gaiaImport64 (blob + 22, little_endian, endian_arch);
     return 1;
 }
@@ -3917,7 +3917,7 @@ gaiaGetMbrMinY (const unsigned char *blob, unsigned int size, double *miny)
     else if (*(blob + 1) == GAIA_BIG_ENDIAN)
 	little_endian = 0;
     else
-	return 0;		/* unknown encoding; nor litte-endian neither big-endian */
+	return 0;		/* unknown encoding; neither little-endian nor big-endian */
     *miny = gaiaImport64 (blob + 14, little_endian, endian_arch);
     return 1;
 }
@@ -3941,7 +3941,7 @@ gaiaGetMbrMaxY (const unsigned char *blob, unsigned int size, double *maxy)
     else if (*(blob + 1) == GAIA_BIG_ENDIAN)
 	little_endian = 0;
     else
-	return 0;		/* unknown encoding; nor litte-endian neither big-endian */
+	return 0;		/* unknown encoding; neither little-endian nor big-endian */
     *maxy = gaiaImport64 (blob + 30, little_endian, endian_arch);
     return 1;
 }
