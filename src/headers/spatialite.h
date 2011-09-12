@@ -92,6 +92,11 @@ extern "C"
 						   char *table);
     SPATIALITE_DECLARE void remove_duplicated_rows (sqlite3 * sqlite,
 						    char *table);
+    SPATIALITE_DECLARE void elementary_geometries (sqlite3 * sqlite,
+						   char *inTable,
+						   char *geometry,
+						   char *outTable, char *pKey,
+						   char *multiId);
 
 #ifdef __cplusplus
 }
