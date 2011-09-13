@@ -56,6 +56,9 @@ extern "C"
 {
 #endif
 
+#define GAIA_SQL_SINGLE_QUOTE	1001
+#define GAIA_SQL_DOUBLE_QUOTE	1002
+
 /* function prototipes */
 
     GAIAAUX_DECLARE const char *gaiaGetLocaleCharset (void);
@@ -68,6 +71,16 @@ extern "C"
     GAIAAUX_DECLARE int gaiaIsReservedSqliteName (const char *name);
     GAIAAUX_DECLARE int gaiaIsReservedSqlName (const char *name);
     GAIAAUX_DECLARE int gaiaIllegalSqlName (const char *name);
+    GAIAAUX_DECLARE char *gaiaSingleQuotedSql (const char *value);
+    GAIAAUX_DECLARE char *gaiaDoubleQuotedSql (const char *value);
+    GAIAAUX_DECLARE char *gaiaQuotedSql (const char *value, int quote);
+
+/*
+/ DEPRECATED FUNCTION: gaiaCleanSqlString()
+/ this function must not be used for any new project
+/ it's still maintained for backward compatibility,
+/ but will be probably removed in future versions
+*/
     GAIAAUX_DECLARE void gaiaCleanSqlString (char *value);
 
 #ifdef __cplusplus

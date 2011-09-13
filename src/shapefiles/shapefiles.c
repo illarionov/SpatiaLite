@@ -2733,25 +2733,6 @@ remove_duplicated_rows (sqlite3 * sqlite, char *table)
     clean_dupl_row (&value_list);
 }
 
-static void
-elem_double_quoted_sql (char *buf)
-{
-/* well-formatting a string to be used as an SQL name */
-    char tmp[1024];
-    char *in = tmp;
-    char *out = buf;
-    strcpy (tmp, buf);
-    *out++ = '"';
-    while (*in != '\0')
-      {
-	  if (*in == '"')
-	      *out++ = '"';
-	  *out++ = *in++;
-      }
-    *out++ = '"';
-    *out = '\0';
-}
-
 static int
 check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
 		  const char *outTable, const char *pKey, const char *multiID,
@@ -2768,18 +2749,24 @@ check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
     int i;
     char *gtp;
     char *dims;
-    char dummy[1024];
+    char *quoted;
 
 /* fetching metadata */
     strcpy (sql, "SELECT type, coord_dimension, srid ");
     strcat (sql, "FROM geometry_columns WHERE f_table_name LIKE '");
-    strcpy (dummy, inTable);
-    gaiaCleanSqlString (dummy);
-    strcat (sql, dummy);
+    quoted = gaiaSingleQuotedSql (inTable);
+    if (quoted)
+      {
+	  strcat (sql, quoted);
+	  free (quoted);
+      }
     strcat (sql, "' AND f_geometry_column LIKE '");
-    strcpy (dummy, geom);
-    gaiaCleanSqlString (dummy);
-    strcat (sql, dummy);
+    quoted = gaiaSingleQuotedSql (geom);
+    if (quoted)
+      {
+	  strcat (sql, quoted);
+	  free (quoted);
+      }
     strcat (sql, "'");
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
@@ -2817,11 +2804,14 @@ check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
 	return 0;
 
 /* checking if PrimaryKey already exists */
-    strcpy (sql, "PRAGMA table_info(");
-    strcpy (dummy, inTable);
-    elem_double_quoted_sql (dummy);
-    strcat (sql, dummy);
-    strcat (sql, ")");
+    strcpy (sql, "PRAGMA table_info(\"");
+    quoted = gaiaDoubleQuotedSql (inTable);
+    if (quoted)
+      {
+	  strcat (sql, quoted);
+	  free (quoted);
+      }
+    strcat (sql, "\")");
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
@@ -2844,11 +2834,14 @@ check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
 	return 0;
 
 /* checking if MultiID already exists */
-    strcpy (sql, "PRAGMA table_info(");
-    strcpy (dummy, inTable);
-    elem_double_quoted_sql (dummy);
-    strcat (sql, dummy);
-    strcat (sql, ")");
+    strcpy (sql, "PRAGMA table_info(\"");
+    quoted = gaiaDoubleQuotedSql (inTable);
+    if (quoted)
+      {
+	  strcat (sql, quoted);
+	  free (quoted);
+      }
+    strcat (sql, "\")");
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
@@ -2873,9 +2866,12 @@ check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
 /* cheching if Output Table already exists */
     strcpy (sql, "SELECT Count(*) FROM sqlite_master WHERE type ");
     strcat (sql, "LIKE 'table' AND tbl_name LIKE '");
-    strcpy (dummy, outTable);
-    gaiaCleanSqlString (dummy);
-    strcat (sql, dummy);
+    quoted = gaiaSingleQuotedSql (outTable);
+    if (quoted)
+      {
+	  strcat (sql, quoted);
+	  free (quoted);
+      }
     strcat (sql, "'");
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
@@ -3132,6 +3128,7 @@ elementary_geometries (sqlite3 * sqlite,
     char sqlx[1024];
     char sql_geom[1024];
     char dummy[1024];
+    char *quoted;
     int ret;
     int comma = 0;
     char *errMsg = NULL;
@@ -3163,37 +3160,56 @@ elementary_geometries (sqlite3 * sqlite,
       }
 
     strcpy (sql, "SELECT ");
-    strcpy (sql2, "INSERT INTO ");
+    strcpy (sql2, "INSERT INTO \"");
     strcpy (sql3, ") VALUES (NULL, ?");
-    strcpy (sql4, "CREATE TABLE ");
-    strcpy (dummy, outTable);
-    elem_double_quoted_sql (dummy);
-    strcat (sql2, dummy);
-    strcat (sql2, " (");
-    strcat (sql4, dummy);
-    strcpy (dummy, pKey);
-    elem_double_quoted_sql (dummy);
-    strcat (sql2, dummy);
-    strcat (sql2, ", ");
-    strcpy (dummy, multiId);
-    elem_double_quoted_sql (dummy);
-    strcat (sql2, dummy);
-    strcat (sql4, " (\n\t");
-    strcpy (dummy, pKey);
-    elem_double_quoted_sql (dummy);
-    strcat (sql4, dummy);
-    strcat (sql4, " INTEGER PRIMARY KEY AUTOINCREMENT");
-    strcat (sql4, ",\n\t");
-    strcpy (dummy, multiId);
-    elem_double_quoted_sql (dummy);
-    strcat (sql4, dummy);
-    strcat (sql4, " INTEGER NOT NULL");
+    strcpy (sql4, "CREATE TABLE \"");
+    quoted = gaiaDoubleQuotedSql (outTable);
+    if (quoted)
+      {
+	  strcat (sql2, quoted);
+	  strcat (sql4, quoted);
+	  free (quoted);
+      }
+    strcat (sql2, "\" (\"");
+    quoted = gaiaDoubleQuotedSql (pKey);
+    if (quoted)
+      {
+	  strcat (sql2, quoted);
+	  free (quoted);
+      }
+    strcat (sql2, "\", \"");
+    quoted = gaiaDoubleQuotedSql (multiId);
+    if (quoted)
+      {
+	  strcat (sql2, quoted);
+	  free (quoted);
+      }
+    strcat (sql2, "\"");
+    strcat (sql4, "\" (\n\t\"");
+    quoted = gaiaDoubleQuotedSql (pKey);
+    if (quoted)
+      {
+	  strcat (sql4, quoted);
+	  free (quoted);
+      }
+    strcat (sql4, "\" INTEGER PRIMARY KEY AUTOINCREMENT");
+    strcat (sql4, ",\n\t\"");
+    quoted = gaiaDoubleQuotedSql (multiId);
+    if (quoted)
+      {
+	  strcat (sql4, quoted);
+	  free (quoted);
+      }
+    strcat (sql4, "\" INTEGER NOT NULL");
 
-    strcpy (sqlx, "PRAGMA table_info(");
-    strcpy (dummy, inTable);
-    elem_double_quoted_sql (dummy);
-    strcat (sqlx, dummy);
-    strcat (sqlx, ")");
+    strcpy (sqlx, "PRAGMA table_info(\"");
+    quoted = gaiaDoubleQuotedSql (inTable);
+    if (quoted)
+      {
+	  strcat (sqlx, quoted);
+	  free (quoted);
+      }
+    strcat (sqlx, "\")");
     ret = sqlite3_get_table (sqlite, sqlx, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
@@ -3207,24 +3223,36 @@ elementary_geometries (sqlite3 * sqlite,
       {
 	  for (i = 1; i <= rows; i++)
 	    {
-		strcpy (dummy, results[(i * columns) + 1]);
-		elem_double_quoted_sql (dummy);
 		if (comma)
-		    strcat (sql, ", ");
+		    strcat (sql, ", \"");
 		else
-		    comma = 1;
-		strcat (sql, dummy);
-		strcat (sql2, ", ");
-		strcat (sql2, dummy);
+		  {
+		      comma = 1;
+		      strcat (sql, "\"");
+		  }
+		strcat (sql2, ", \"");
+		quoted = gaiaDoubleQuotedSql (results[(i * columns) + 1]);
+		if (quoted)
+		  {
+		      strcat (sql, quoted);
+		      strcat (sql2, quoted);
+		      free (quoted);
+		  }
+		strcat (sql2, "\"");
 		strcat (sql3, ", ?");
 
 		if (strcasecmp (geometry, results[(i * columns) + 1]) == 0)
 		    geom_idx = i - 1;
 		else
 		  {
-		      strcat (sql4, ",\n\t");
-		      strcat (sql4, dummy);
-		      strcat (sql4, " ");
+		      strcat (sql4, ",\n\t\"");
+		      quoted = gaiaDoubleQuotedSql (results[(i * columns) + 1]);
+		      if (quoted)
+			{
+			    strcat (sql4, quoted);
+			    free (quoted);
+			}
+		      strcat (sql4, "\" ");
 		      strcat (sql4, results[(i * columns) + 2]);
 		      if (atoi (results[(i * columns) + 3]) != 0)
 			  strcat (sql4, " NOT NULL");
@@ -3235,32 +3263,48 @@ elementary_geometries (sqlite3 * sqlite,
     if (geom_idx < 0)
 	goto abort;
 
-    strcat (sql, " FROM ");
-    strcpy (dummy, inTable);
-    elem_double_quoted_sql (dummy);
-    strcat (sql, dummy);
+    strcat (sql, " FROM \"");
+    quoted = gaiaDoubleQuotedSql (inTable);
+    if (quoted)
+      {
+	  strcat (sql, quoted);
+	  free (quoted);
+      }
+    strcat (sql, "\"");
     strcat (sql2, sql3);
     strcat (sql2, ")");
     strcat (sql4, ")");
 
     strcpy (sql_geom, "SELECT AddGeometryColumn('");
-    strcpy (dummy, outTable);
-    gaiaCleanSqlString (dummy);
-    strcat (sql_geom, dummy);
+    quoted = gaiaSingleQuotedSql (outTable);
+    if (quoted)
+      {
+	  strcat (sql_geom, quoted);
+	  free (quoted);
+      }
     strcat (sql_geom, "', '");
-    strcpy (dummy, geometry);
-    gaiaCleanSqlString (dummy);
-    strcat (sql_geom, dummy);
+    quoted = gaiaSingleQuotedSql (geometry);
+    if (quoted)
+      {
+	  strcat (sql_geom, quoted);
+	  free (quoted);
+      }
     strcat (sql_geom, "', ");
     sprintf (dummy, "%d, '", srid);
     strcat (sql_geom, dummy);
-    strcpy (dummy, type);
-    gaiaCleanSqlString (dummy);
-    strcat (sql_geom, dummy);
+    quoted = gaiaSingleQuotedSql (type);
+    if (quoted)
+      {
+	  strcat (sql_geom, quoted);
+	  free (quoted);
+      }
     strcat (sql_geom, "', '");
-    strcpy (dummy, dims);
-    gaiaCleanSqlString (dummy);
-    strcat (sql_geom, dummy);
+    quoted = gaiaSingleQuotedSql (dims);
+    if (quoted)
+      {
+	  strcat (sql_geom, quoted);
+	  free (quoted);
+      }
     strcat (sql_geom, "')");
 
 /* creating the output table */
@@ -3930,7 +3974,7 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 		return 0;
 	    }
 	  if (first_titles)
-	      *rows = *rows - 1; /* allow for header row */
+	      *rows = *rows - 1;	/* allow for header row */
 	  fprintf (stderr, "XL loaded\n\n%d inserted rows\n", *rows);
       }
     freexl_close (xl_handle);

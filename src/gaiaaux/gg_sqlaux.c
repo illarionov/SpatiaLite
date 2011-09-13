@@ -48,19 +48,19 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
-#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
+#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
 #include <spatialite/sqlite3ext.h>
 #else
 #include <sqlite3ext.h>
 #endif
 
-#include <spatialite/gaiageo.h>
+#include <spatialite/gaiaaux.h>
 
 #ifdef _WIN32
 #define strcasecmp	_stricmp
 #endif /* not WIN32 */
 
-GAIAGEO_DECLARE int
+GAIAAUX_DECLARE int
 gaiaIllegalSqlName (const char *name)
 {
 /* checks if column-name is an SQL illegal name */
@@ -92,7 +92,7 @@ gaiaIllegalSqlName (const char *name)
     return 1;
 }
 
-GAIAGEO_DECLARE int
+GAIAAUX_DECLARE int
 gaiaIsReservedSqliteName (const char *name)
 {
 /* checks if column-name is an SQLite reserved keyword */
@@ -188,7 +188,7 @@ gaiaIsReservedSqliteName (const char *name)
     return 0;
 }
 
-GAIAGEO_DECLARE int
+GAIAAUX_DECLARE int
 gaiaIsReservedSqlName (const char *name)
 {
 /* checks if column-name is an SQL reserved keyword */
@@ -542,7 +542,83 @@ gaiaIsReservedSqlName (const char *name)
     return 0;
 }
 
-GAIAGEO_DECLARE void
+GAIAAUX_DECLARE char *
+gaiaQuotedSql (const char *value, int quote)
+{
+/*
+/ returns a well formatted TEXT value for SQL
+/ 1] strips trailing spaces
+/ 2] masks any QUOTE inside the string, appending another QUOTE
+/ 3] works for both SINGLE- and DOUBLE-QUOTE
+*/
+    const char *p_in;
+    const char *p_end;
+    char qt;
+    char *out;
+    char *p_out;
+    int len = 0;
+    int i;
+
+    if (!value)
+	return NULL;
+    if (quote == GAIA_SQL_SINGLE_QUOTE)
+	qt = '\'';
+    else if (quote == GAIA_SQL_DOUBLE_QUOTE)
+	qt = '"';
+    else
+	return NULL;
+
+    p_end = value;
+    for (i = (strlen (value) - 1); i >= 0; i--)
+      {
+	  /* stripping trailing spaces */
+	  p_end = value + i;
+	  if (value[i] != ' ')
+	      break;
+      }
+
+    p_in = value;
+    while (p_in <= p_end)
+      {
+/* computing the output length */
+	  len++;
+	  if (*p_in == qt)
+	      len++;
+	  p_in++;
+      }
+
+    out = malloc (len + 1);
+    if (!out)
+	return NULL;
+
+    p_out = out;
+    p_in = value;
+    while (p_in <= p_end)
+      {
+/* creating the output string */
+	  if (*p_in == qt)
+	      *p_out++ = '\0';
+	  *p_out++ = *p_in++;
+      }
+    *p_out = '\0';
+    return out;
+}
+
+GAIAAUX_DECLARE char *
+gaiaSingleQuotedSql (const char *value)
+{
+/* convenience method supporting SINGLE-QUOTES */
+    return gaiaQuotedSql (value, GAIA_SQL_SINGLE_QUOTE);
+}
+
+GAIAAUX_DECLARE char *
+gaiaDoubleQuotedSql (const char *value)
+{
+/* convenience method supporting DOUBLE-QUOTES */
+    return gaiaQuotedSql (value, GAIA_SQL_DOUBLE_QUOTE);
+}
+
+GAIAAUX_DECLARE void
 gaiaCleanSqlString (char *value)
 {
 /*
