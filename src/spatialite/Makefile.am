@@ -19,3 +19,4 @@ libsplite_la_SOURCES = mbrcache.c \
 	virtualnetwork.c \
 	virtualshape.c
 
+MOSTLYCLEANFILES = *.gcna *.gcno *.gcda

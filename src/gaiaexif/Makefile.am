@@ -12,3 +12,4 @@ noinst_LTLIBRARIES = libgaiaexif.la
 
 libgaiaexif_la_SOURCES = gaia_exif.c
 
+MOSTLYCLEANFILES = *.gcna *.gcno *.gcda

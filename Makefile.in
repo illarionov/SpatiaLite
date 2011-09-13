@@ -40,7 +40,10 @@ DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure AUTHORS COPYING INSTALL config.guess \
 	config.sub depcomp install-sh ltmain.sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
@@ -254,9 +257,10 @@ top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = dist-zip
 EXTRA_DIST = makefile.vc nmake.opt libspatialite.def
-SUBDIRS = src
+SUBDIRS = src test
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = spatialite.pc
+MOSTLYCLEANFILES = libspatialite_cov.info
 all: all-recursive
 
 .SUFFIXES:
@@ -660,6 +664,7 @@ install-strip:
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
+	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 
@@ -760,6 +765,13 @@ uninstall-am: uninstall-pkgconfigDATA
 	ps ps-am tags tags-recursive uninstall uninstall-am \
 	uninstall-pkgconfigDATA
 
+
+coverage-init:
+	lcov --directory . --capture --initial --output-file libspatialite_cov.info
+
+coverage::
+	lcov --directory . --output-file libspatialite_cov.info --capture
+	genhtml -o covresults libspatialite_cov.info
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

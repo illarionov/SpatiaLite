@@ -58,6 +58,18 @@ extern "C"
 
     SPATIALITE_DECLARE const char *spatialite_version (void);
     SPATIALITE_DECLARE void spatialite_init (int verbose);
+    
+    /**
+     Cleanup spatialite 
+     
+     This function performs general cleanup, essentially undoing the effect
+     of spatialite_init().
+     
+     \sa spatialite_init
+    */
+    SPATIALITE_DECLARE void spatialite_cleanup();
+    
+    
     SPATIALITE_DECLARE int dump_shapefile (sqlite3 * sqlite, char *table,
 					   char *column, char *shp_path,
 					   char *charset, char *geom_type,
@@ -73,12 +85,13 @@ extern "C"
 				     char *table, char *charset, int verbose,
 				     int *rows, char *err_msg);
     SPATIALITE_DECLARE int dump_dbf (sqlite3 * sqlite, char *table,
-				     char *dbf_path, char *charsert,
+				     char *dbf_path, char *charset,
 				     char *err_msg);
     SPATIALITE_DECLARE int load_XL (sqlite3 * sqlite, const char *path,
 				    const char *table,
 				    unsigned int worksheetIndex,
-				    int first_titles, char *err_msg);
+				    int first_titles, unsigned int *rows,
+				    char *err_msg);
     SPATIALITE_DECLARE double math_round (double value);
     SPATIALITE_DECLARE sqlite3_int64 math_llabs (sqlite3_int64 value);
     SPATIALITE_DECLARE int spatial_ref_sys_init (sqlite3 * sqlite, int verbose);
@@ -89,7 +102,7 @@ extern "C"
 				     char *name_col, char *desc_col,
 				     int precision);
     SPATIALITE_DECLARE void check_duplicated_rows (sqlite3 * sqlite,
-						   char *table);
+						  char *table, int *dupl_count);
     SPATIALITE_DECLARE void remove_duplicated_rows (sqlite3 * sqlite,
 						    char *table);
     SPATIALITE_DECLARE void elementary_geometries (sqlite3 * sqlite,

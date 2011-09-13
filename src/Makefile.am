@@ -31,3 +31,4 @@ libspatialite_la_LDFLAGS = -version-info 4:0:0
 libspatialite_la_LIBADD += -lpthread -ldl
 endif
 
+MOSTLYCLEANFILES = *.gcna *.gcno *.gcda

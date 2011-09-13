@@ -2266,7 +2266,7 @@ is_table (sqlite3 * sqlite, const char *table)
 }
 
 SPATIALITE_DECLARE void
-check_duplicated_rows (sqlite3 * sqlite, char *table)
+check_duplicated_rows (sqlite3 * sqlite, char *table, int *dupl_count)
 {
 /* Checking a Table for Duplicate rows */
     char sql[8192];
@@ -2281,7 +2281,8 @@ check_duplicated_rows (sqlite3 * sqlite, char *table)
     int i;
     char *errMsg = NULL;
     sqlite3_stmt *stmt = NULL;
-    int count = 0;
+
+    *dupl_count = 0;
 
     if (is_table (sqlite, table) == 0)
       {
@@ -2342,7 +2343,7 @@ check_duplicated_rows (sqlite3 * sqlite, char *table)
 	  if (ret == SQLITE_ROW)
 	    {
 		/* fetching a row */
-		count += sqlite3_column_int (stmt, 0) - 1;
+		*dupl_count += sqlite3_column_int (stmt, 0) - 1;
 	    }
 	  else
 	    {
@@ -2352,8 +2353,8 @@ check_duplicated_rows (sqlite3 * sqlite, char *table)
 	    }
       }
     sqlite3_finalize (stmt);
-    if (count)
-	fprintf (stderr, "%d duplicated rows found !!!\n", count);
+    if (*dupl_count)
+	fprintf (stderr, "%d duplicated rows found !!!\n", *dupl_count);
     else
 	fprintf (stderr, "No duplicated rows have been identified\n");
 }
@@ -2651,7 +2652,7 @@ do_delete_duplicates (sqlite3 * sqlite, const char *sql1, const char *sql2,
 SPATIALITE_DECLARE void
 remove_duplicated_rows (sqlite3 * sqlite, char *table)
 {
-/* attempting do delete Duplicate rows from a table */
+/* attempting to delete Duplicate rows from a table */
     struct dupl_row value_list;
     char sql[8192];
     char sql2[1024];
@@ -3628,7 +3629,8 @@ elementary_geometries (sqlite3 * sqlite,
 
 SPATIALITE_DECLARE int
 load_XL (sqlite3 * sqlite, const char *path, const char *table,
-	 unsigned int worksheetIndex, int first_titles, char *err_msg)
+	 unsigned int worksheetIndex, int first_titles, unsigned int *rows,
+	 char *err_msg)
 {
 /* loading an XL spreadsheet as a new DB table */
     sqlite3_stmt *stmt;
@@ -3641,7 +3643,6 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
     int sqlError = 0;
     const void *xl_handle;
     unsigned int info;
-    unsigned int rows;
     unsigned short columns;
     unsigned short col;
     FreeXL_CellValue cell;
@@ -3710,7 +3711,7 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
     ret = freexl_select_active_worksheet (xl_handle, worksheetIndex);
     if (ret != FREEXL_OK)
 	goto error;
-    ret = freexl_worksheet_dimensions (xl_handle, &rows, &columns);
+    ret = freexl_worksheet_dimensions (xl_handle, rows, &columns);
     if (ret != FREEXL_OK)
 	goto error;
 /* starting a transaction */
@@ -3731,7 +3732,7 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
       {
 	  if (first_titles)
 	    {
-		/* fetching comun names */
+		/* fetching column names */
 		for (col = 0; col < columns; col++)
 		  {
 		      ret = freexl_get_cell_value (xl_handle, 0, col, &cell);
@@ -3848,7 +3849,7 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 	current_row = 1;
     else
 	current_row = 0;
-    while (current_row < rows)
+    while (current_row < *rows)
       {
 	  /* binding query params */
 	  sqlite3_reset (stmt);
@@ -3928,7 +3929,9 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 		sqlite3_free (errMsg);
 		return 0;
 	    }
-	  fprintf (stderr, "XL loaded\n\n%d inserted rows\n", rows);
+	  if (first_titles)
+	      *rows = *rows - 1; /* allow for header row */
+	  fprintf (stderr, "XL loaded\n\n%d inserted rows\n", *rows);
       }
     freexl_close (xl_handle);
     return 1;

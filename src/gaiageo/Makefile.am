@@ -26,3 +26,4 @@ libgaiageo_la_SOURCES = gg_advanced.c \
 	gg_kml.c \
 	gg_gml.c
 
+MOSTLYCLEANFILES = *.gcna *.gcno *.gcda

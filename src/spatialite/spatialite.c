@@ -16536,6 +16536,14 @@ spatialite_init (int verbose)
       }
 }
 
+void
+spatialite_cleanup()
+{
+#ifndef OMIT_GEOS
+    finishGEOS ();
+#endif
+}
+
 SPATIALITE_DECLARE int
 sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			const sqlite3_api_routines * pApi)

@@ -12,3 +12,4 @@ noinst_LTLIBRARIES = libshapefiles.la
 
 libshapefiles_la_SOURCES = shapefiles.c
 
+MOSTLYCLEANFILES = *.gcna *.gcno *.gcda

@@ -6,7 +6,7 @@ AC_INIT(libspatialite, 3.0.0-beta1, a.furieri@lqt.it)
 AC_LANG(C)
 AC_CONFIG_MACRO_DIR([m4])
 
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
 AM_MAINTAINER_MODE
 
 # Checks for header files.
@@ -65,6 +65,7 @@ AC_CONFIG_FILES([Makefile \
 		src/shapefiles/Makefile \
 		src/srsinit/Makefile \
 		src/virtualtext/Makefile \
+		test/Makefile \
 		spatialite.pc])
 
 #-----------------------------------------------------------------------
@@ -188,6 +189,18 @@ else
   OMIT_EPSG_FLAGS=-DOMIT_EPSG
 fi
 AC_SUBST(OMIT_EPSG_FLAGS)
+#-----------------------------------------------------------------------
+
+
+#-----------------------------------------------------------------------
+#    --enable-gcov
+#
+AC_ARG_ENABLE(gcov, AC_HELP_STRING([--enable-gcov],[turn on code coverage analysis tools]))
+if test "x$enable_gcov" = "xyes"; then
+    dnl Check for -fprofile-arcs and -ftest-coverage option
+    CFLAGS=$CFLAGS" -fprofile-arcs -ftest-coverage -g"
+    GCOV_FLAGS="-lgcov"
+fi
 #-----------------------------------------------------------------------
 
 # Checking for MinGW
