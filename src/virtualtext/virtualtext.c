@@ -1294,7 +1294,7 @@ vrttxt_add_line (gaiaTextReaderPtr txt, struct vrttxt_line *line)
       }
     else if (p_block->num_rows >= VRTTXT_BLOCK_MAX)
       {
-	  /* the currect offset Block is full: expanding the list */
+	  /* the current offset Block is full: expanding the list */
 	  p_block = vrttxt_block_alloc ();
 	  if (!p_block)
 	    {
@@ -1418,7 +1418,7 @@ vrttxt_line_push (gaiaTextReaderPtr txt, char c)
       }
     *(txt->line_buffer + txt->current_buf_off) = c;
     txt->current_buf_off++;
-/* ensuring that input buffer will bel null terminated anyway */
+/* ensuring that input buffer will be null terminated anyway */
     *(txt->line_buffer + txt->current_buf_off) = '\0';
 }
 

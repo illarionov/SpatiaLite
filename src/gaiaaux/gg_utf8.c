@@ -77,7 +77,7 @@ extern const char * locale_charset (void);
 GAIAAUX_DECLARE const char *
 gaiaGetLocaleCharset ()
 {
-/* indentifies the locale charset */
+/* identifies the locale charset */
 #if defined(__MINGW32__) || defined(_WIN32)
     return locale_charset ();
 #else /* not MINGW32 - WIN32 */
@@ -92,7 +92,7 @@ gaiaGetLocaleCharset ()
 GAIAAUX_DECLARE int
 gaiaConvertCharset (char **buf, const char *fromCs, const char *toCs)
 {
-/* converting a string from a charset to another "by-the-fly" */
+/* converting a string from a charset to another "on-the-fly" */
     char utf8buf[65536];
 #if defined(__MINGW32__) || defined(_WIN32)
     const char *pBuf;
@@ -124,7 +124,7 @@ gaiaConvertCharset (char **buf, const char *fromCs, const char *toCs)
 GAIAAUX_DECLARE void *
 gaiaCreateUTF8Converter (const char *fromCS)
 {
-/* creating an UTF8 converter and returning on opaque reference to it */
+/* creating a UTF8 converter and returning an opaque reference to it */
     iconv_t cvt = iconv_open ("UTF-8", fromCS);
     if (cvt == (iconv_t) (-1))
 	return NULL;
@@ -134,7 +134,7 @@ gaiaCreateUTF8Converter (const char *fromCS)
 GAIAAUX_DECLARE void
 gaiaFreeUTF8Converter (void *cvtCS)
 {
-/* destroyng an UTF8 converter */
+/* destroying a UTF8 converter */
     if (cvtCS)
 	iconv_close (cvtCS);
 }
