@@ -580,24 +580,36 @@ gaiaQuotedSql (const char *value, int quote)
     p_in = value;
     while (p_in <= p_end)
       {
-/* computing the output length */
+	  /* computing the output length */
 	  len++;
 	  if (*p_in == qt)
 	      len++;
 	  p_in++;
+      }
+    if (len == 1 && *value == ' ')
+      {
+	  /* empty string */
+	  len = 0;
       }
 
     out = malloc (len + 1);
     if (!out)
 	return NULL;
 
+    if (len == 0)
+      {
+	  /* empty string */
+	  *out = '\0';
+	  return out;
+      }
+
     p_out = out;
     p_in = value;
     while (p_in <= p_end)
       {
-/* creating the output string */
+	  /* creating the output string */
 	  if (*p_in == qt)
-	      *p_out++ = '\0';
+	      *p_out++ = qt;
 	  *p_out++ = *p_in++;
       }
     *p_out = '\0';
