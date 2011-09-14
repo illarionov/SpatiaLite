@@ -47,11 +47,13 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include "sqlite3.h"
 #include "spatialite.h"
+#include "spatialite/gaiaaux.h"
 
 int main (int argc, char *argv[])
 {
     int result;
     char *test_str1;
+    char *quoted_str;
     
     result = gaiaIsReservedSqliteName ("AUTOINCREMENT");
     if (!result) {
@@ -221,5 +223,186 @@ int main (int argc, char *argv[])
 	return -26;
     }
     free(test_str1);
+
+    asprintf(&test_str1, "SELECT %s from %s;", "Foo", "Bar");
+    quoted_str = gaiaSingleQuotedSql(test_str1);
+    if (strcmp(quoted_str, "SELECT Foo from Bar;") != 0) {
+	fprintf(stderr, "gaiaSingleQuotedSql failure: %s\n", quoted_str);
+	free(test_str1);
+	free(quoted_str);
+	return -27;
+    }
+    free(test_str1);
+    free(quoted_str);
+
+    asprintf(&test_str1, "SELECT %s from %s;           ", "Foo", "Bar");
+    quoted_str = gaiaSingleQuotedSql(test_str1);
+    if (strcmp(quoted_str, "SELECT Foo from Bar;") != 0) {
+	fprintf(stderr, "gaiaSingleQuotedSql failure: %s\n", quoted_str);
+	free(test_str1);
+	free(quoted_str);
+	return -28;
+    }
+    free(test_str1);
+    free(quoted_str);
+
+    asprintf(&test_str1, "SELECT %s from %s;", "Foo", "'");
+    quoted_str = gaiaSingleQuotedSql(test_str1);
+    if (strcmp(quoted_str, "SELECT Foo from '';") != 0) {
+	fprintf(stderr, "gaiaSingleQuotedSql failure: %s\n", quoted_str);
+	free(test_str1);
+	free(quoted_str);
+	return -29;
+    }
+    free(test_str1);
+    free(quoted_str);
+
+    asprintf(&test_str1, "SELECT %s from %s   ;    ", "Foo", "Bar");
+    quoted_str = gaiaSingleQuotedSql(test_str1);
+    if (strcmp(quoted_str, "SELECT Foo from Bar   ;") != 0) {
+	fprintf(stderr, "gaiaSingleQuotedSql failure: %s\n", quoted_str);
+	free(test_str1);
+	free(quoted_str);
+	return -30;
+    }
+    free(test_str1);
+    free(quoted_str);
+
+    asprintf(&test_str1, "SELECT %s from %s;", "'", "Bar");
+    quoted_str = gaiaSingleQuotedSql(test_str1);
+    if (strcmp(quoted_str, "SELECT '' from Bar;") != 0) {
+	fprintf(stderr, "gaiaSingleQuotedSql failure: %s\n", quoted_str);
+	free(test_str1);
+	free(quoted_str);
+	return -31;
+    }
+    free(test_str1);
+    free(quoted_str);
+
+    asprintf(&test_str1, "My Name");
+    quoted_str = gaiaDoubleQuotedSql(test_str1);
+    if (strcmp(quoted_str, "My Name") != 0) {
+	fprintf(stderr, "gaiaDoubleQuotedSql failure: %s\n", quoted_str);
+	free(test_str1);
+	free(quoted_str);
+	return -32;
+    }
+    free(test_str1);
+    free(quoted_str);
+
+    quoted_str = gaiaDoubleQuotedSql(NULL);
+    if (quoted_str != NULL) {
+	fprintf(stderr, "gaiaDoubleQuotedSql NULL failure: %s\n", quoted_str);
+	free(quoted_str);
+	return -33;
+    }
+
+    quoted_str = gaiaSingleQuotedSql(NULL);
+    if (quoted_str != NULL) {
+	fprintf(stderr, "gaiaSingleQuotedSql NULL failure: %s\n", quoted_str);
+	free(quoted_str);
+	return -34;
+    }
+
+    quoted_str = gaiaQuotedSql("foo", GAIA_SQL_SINGLE_QUOTE);
+    if (strcmp(quoted_str, "foo") != 0) {
+	fprintf(stderr, "gaiaQuotedSql failure SINGLE_QUOTE: %s\n", quoted_str);
+	free(quoted_str);
+	return -35;
+    }
+    free(quoted_str);
+
+    quoted_str = gaiaQuotedSql("foo", GAIA_SQL_DOUBLE_QUOTE);
+    if (strcmp(quoted_str, "foo") != 0) {
+	fprintf(stderr, "gaiaQuotedSql failure DOUBLE_QUOTE: %s\n", quoted_str);
+	free(quoted_str);
+	return -36;
+    }
+    free(quoted_str);
+
+    quoted_str = gaiaQuotedSql("foo", 1000);
+    if (quoted_str != NULL) {
+	fprintf(stderr, "gaiaQuotedSql failure 1000: %s\n", quoted_str);
+	free(quoted_str);
+	return -37;
+    }
+
+    asprintf(&test_str1, "My \"Name");
+    quoted_str = gaiaDoubleQuotedSql(test_str1);
+    if (strcmp(quoted_str, "My \"\"Name") != 0) {
+	fprintf(stderr, "gaiaDoubleQuotedSql failure: %s\n", quoted_str);
+	free(test_str1);
+	free(quoted_str);
+	return -38;
+    }
+    free(test_str1);
+    free(quoted_str);
+
+    asprintf(&test_str1, "My \"Name                   ");
+    quoted_str = gaiaDoubleQuotedSql(test_str1);
+    if (strcmp(quoted_str, "My \"\"Name") != 0) {
+	fprintf(stderr, "gaiaDoubleQuotedSql failure: %s\n", quoted_str);
+	free(test_str1);
+	free(quoted_str);
+	return -39;
+    }
+    free(test_str1);
+    free(quoted_str);
+
+    asprintf(&test_str1, "");
+    quoted_str = gaiaDoubleQuotedSql(test_str1);
+    if (strcmp(quoted_str, "") != 0) {
+	fprintf(stderr, "gaiaDoubleQuotedSql failure: %s\n", quoted_str);
+	free(test_str1);
+	free(quoted_str);
+	return -40;
+    }
+    free(test_str1);
+    free(quoted_str);
+
+    asprintf(&test_str1, "          ");
+    quoted_str = gaiaDoubleQuotedSql(test_str1);
+    if (strcmp(quoted_str, "") != 0) {
+	fprintf(stderr, "gaiaDoubleQuotedSql failure: |%s|\n", quoted_str);
+	free(test_str1);
+	free(quoted_str);
+	return -41;
+    }
+    free(test_str1);
+    free(quoted_str);
+
+    asprintf(&test_str1, "'          ");
+    quoted_str = gaiaDoubleQuotedSql(test_str1);
+    if (strcmp(quoted_str, "'") != 0) {
+	fprintf(stderr, "gaiaDoubleQuotedSql failure: %s\n", quoted_str);
+	free(test_str1);
+	free(quoted_str);
+	return -42;
+    }
+    free(test_str1);
+    free(quoted_str);
+
+    asprintf(&test_str1, "'");
+    quoted_str = gaiaDoubleQuotedSql(test_str1);
+    if (strcmp(quoted_str, "'") != 0) {
+	fprintf(stderr, "gaiaDoubleQuotedSql failure: %s\n", quoted_str);
+	free(test_str1);
+	free(quoted_str);
+	return -43;
+    }
+    free(test_str1);
+    free(quoted_str);
+
+    asprintf(&test_str1, "\"");
+    quoted_str = gaiaSingleQuotedSql(test_str1);
+    if (strcmp(quoted_str, "\"") != 0) {
+	fprintf(stderr, "gaiaSingleQuotedSql failure: %s\n", quoted_str);
+	free(test_str1);
+	free(quoted_str);
+	return -44;
+    }
+    free(test_str1);
+    free(quoted_str);
+
     return 0;
 }
