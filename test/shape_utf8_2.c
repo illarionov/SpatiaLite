@@ -135,6 +135,7 @@ int main (int argc, char *argv[])
 	unlink(dbname);
 	return -11;
     }
+    unlink(kmlname);
 
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
