@@ -11440,7 +11440,7 @@ fnct_Boundary (sqlite3_context * context, int argc, sqlite3_value ** argv)
 /* SQL function:
 / Boundary(BLOB encoded geometry)
 /
-/ returns the combinatioral boundary for current geometry 
+/ returns the combinatorial boundary for current geometry 
 / or NULL if any error is encountered
 */
     unsigned char *p_blob;
@@ -14032,32 +14032,6 @@ fnct_UnaryUnion (sqlite3_context * context, int argc, sqlite3_value ** argv)
 #ifndef OMIT_MATHSQL		/* supporting SQL math functions */
 
 static void
-fnct_math_abs (sqlite3_context * context, int argc, sqlite3_value ** argv)
-{
-/* SQL function:
-/ abs(double X)
-/
-/ Returns the absolute value of X
-/ or NULL if any error is encountered
-*/
-    sqlite3_int64 int_value;
-    double x;
-    GAIA_UNUSED ();
-    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
-      {
-	  x = fabs (sqlite3_value_double (argv[0]));
-	  sqlite3_result_double (context, x);
-      }
-    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
-      {
-	  int_value = math_llabs (sqlite3_value_int64 (argv[0]));
-	  sqlite3_result_int64 (context, int_value);
-      }
-    else
-	sqlite3_result_null (context);
-}
-
-static void
 fnct_math_acos (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -16218,7 +16192,6 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 #ifndef OMIT_MATHSQL		/* supporting SQL math functions */
 
 /* some extra math functions */
-    sqlite3_create_function (db, "abs", 1, SQLITE_ANY, 0, fnct_math_abs, 0, 0);
     sqlite3_create_function (db, "acos", 1, SQLITE_ANY, 0, fnct_math_acos, 0,
 			     0);
     sqlite3_create_function (db, "asin", 1, SQLITE_ANY, 0, fnct_math_asin, 0,
@@ -17217,7 +17190,6 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 #ifndef OMIT_MATHSQL		/* supporting SQL math functions */
 
 /* some extra math functions */
-    sqlite3_create_function (db, "abs", 1, SQLITE_ANY, 0, fnct_math_abs, 0, 0);
     sqlite3_create_function (db, "acos", 1, SQLITE_ANY, 0, fnct_math_acos, 0,
 			     0);
     sqlite3_create_function (db, "asin", 1, SQLITE_ANY, 0, fnct_math_asin, 0,
