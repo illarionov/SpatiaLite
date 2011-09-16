@@ -12,7 +12,8 @@ check_PROGRAMS = check_version \
 		check_gaia_util \
 		check_gaia_utf8 \
 		check_extension \
-		check_sql_stmt
+		check_sql_stmt \
+		check_virtualtable1
 
 AM_CFLAGS = -I@srcdir@/../src/headers
 AM_LDFLAGS = -L../src -lspatialite -lm $(GCOV_FLAGS)
