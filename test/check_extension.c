@@ -91,7 +91,7 @@ int main (int argc, char *argv[])
 	return  -11;
     }
     if (strcmp(results[1], VERSION) != 0) {
-	fprintf (stderr, "Unexpected error: spatialite_version() bad result: %si.\n", results[1]);
+	fprintf (stderr, "Unexpected error: spatialite_version() bad result: %s.\n", results[1]);
 	return  -12;
     }
     sqlite3_free_table (results);
