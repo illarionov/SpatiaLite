@@ -249,6 +249,7 @@ int main (int argc, char *argv[])
 		break;
 	    }
 	    data = read_one_case(path);
+	    free(path);
 	    
 	    result = do_one_case(data);
 	    
