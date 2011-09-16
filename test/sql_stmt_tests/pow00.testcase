@@ -4,4 +4,4 @@ SELECT pow(0, 0);
 1 # rows (not including the header row)
 1 # columns
 pow(0, 0) # header
-1 # result
+1.0 # result
