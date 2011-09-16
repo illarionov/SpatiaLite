@@ -10,7 +10,9 @@ check_PROGRAMS = check_version \
 		check_xls_load \
 		check_math_funcs \
 		check_gaia_util \
-		check_gaia_utf8
+		check_gaia_utf8 \
+		check_extension \
+		check_sql_stmt
 
 AM_CFLAGS = -I@srcdir@/../src/headers
 AM_LDFLAGS = -L../src -lspatialite -lm $(GCOV_FLAGS)

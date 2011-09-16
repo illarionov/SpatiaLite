@@ -52,14 +52,13 @@ int main (int argc, char *argv[])
 {
     int ret;
     sqlite3 *handle;
-    char *dbname = __FILE__"test.db";
     char *err_msg = NULL;
     int row_count;
 
     spatialite_init (0);
-    ret = sqlite3_open_v2 (dbname, &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
-	fprintf(stderr, "cannot open '%s': %s\n", dbname, sqlite3_errmsg (handle));
+	fprintf(stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -1;
     }
@@ -69,7 +68,6 @@ int main (int argc, char *argv[])
 	fprintf (stderr, "InitSpatialMetadata() error: %s\n", err_msg);
 	sqlite3_free(err_msg);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -2;
     }
 
@@ -77,13 +75,11 @@ int main (int argc, char *argv[])
     if (!ret) {
         fprintf (stderr, "load_XL() error: %s\n", err_msg);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -3;
     }
     if (row_count != 17) {
 	fprintf (stderr, "load_XL() unexpected row count: %u\n", row_count);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -4;
     }
 
@@ -91,13 +87,11 @@ int main (int argc, char *argv[])
     if (!ret) {
         fprintf (stderr, "load_XL() error sheet 2: %s\n", err_msg);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -5;
     }
     if (row_count != 19) {
 	fprintf (stderr, "load_XL() unexpected row count sheet 2: %u\n", row_count);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -6;
     }
 
@@ -105,7 +99,6 @@ int main (int argc, char *argv[])
     if (row_count != 0) {
 	fprintf (stderr, "check_duplicated_rows() unexpected duplicate count: %d\n", row_count);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -8;
     }
 
@@ -113,7 +106,6 @@ int main (int argc, char *argv[])
     if (row_count != 2) {
 	fprintf (stderr, "check_duplicated_rows() unexpected duplicate count sheet 2: %d\n", row_count);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -10;
     }
 
@@ -124,12 +116,10 @@ int main (int argc, char *argv[])
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	unlink(dbname);
 	return -11;
     }
     
     spatialite_cleanup();
     sqlite3_reset_auto_extension();
-    unlink(dbname);
     return 0;
 }

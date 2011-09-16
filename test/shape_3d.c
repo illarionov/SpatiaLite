@@ -70,15 +70,14 @@ int main (int argc, char *argv[])
 {
     int ret;
     sqlite3 *handle;
-    char *dbname = __FILE__"test.db";
     char *dumpname = __FILE__"dump";
     char *err_msg = NULL;
     int row_count;
 
     spatialite_init (0);
-    ret = sqlite3_open_v2 (dbname, &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
-	fprintf(stderr, "cannot open '%s': %s\n", dbname, sqlite3_errmsg (handle));
+	fprintf(stderr, "cannot open in-memory database: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -1;
     }
@@ -88,7 +87,6 @@ int main (int argc, char *argv[])
 	fprintf (stderr, "InitSpatialMetadata() error: %s\n", err_msg);
 	sqlite3_free(err_msg);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -2;
     }
     
@@ -97,13 +95,11 @@ int main (int argc, char *argv[])
     if (!ret) {
         fprintf (stderr, "load_shapefile() error for shp/merano-3d/points: %s\n", err_msg);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -3;
     }
     if (row_count != 20) {
 	fprintf (stderr, "unexpected row count for shp/merano-3d/points: %i\n", row_count);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -4;
     }
 
@@ -112,13 +108,11 @@ int main (int argc, char *argv[])
     if (!ret) {
         fprintf (stderr, "load_shapefile() error for shp/merano-3d/polygons: %s\n", err_msg);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -5;
     }
     if (row_count != 10) {
 	fprintf (stderr, "unexpected row count for shp/merano-3d/polygons: %i\n", row_count);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -6;
     }
 
@@ -127,13 +121,11 @@ int main (int argc, char *argv[])
     if (!ret) {
         fprintf (stderr, "load_shapefile() error for shp/merano-3d/roads: %s\n", err_msg);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -7;
     }
     if (row_count != 18) {
 	fprintf (stderr, "unexpected row count for shp/merano-3d/roads: %i\n", row_count);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -8;
     }
 
@@ -141,14 +133,12 @@ int main (int argc, char *argv[])
     if (!ret) {
         fprintf (stderr, "dump_shapefile() error for 3d roads: %s\n", err_msg);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -9;
     }
     cleanup_shapefile(dumpname);
     if (row_count != 18) {
 	fprintf (stderr, "unexpected row count for 3d roads: %i\n", row_count);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -10;
     }
 
@@ -156,14 +146,12 @@ int main (int argc, char *argv[])
     if (!ret) {
         fprintf (stderr, "dump_shapefile() error for 3d polygons: %s\n", err_msg);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -11;
     }
     cleanup_shapefile(dumpname);
     if (row_count != 10) {
 	fprintf (stderr, "unexpected row count for 3d polygons: %i\n", row_count);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -12;
     }
 
@@ -171,25 +159,21 @@ int main (int argc, char *argv[])
     if (!ret) {
         fprintf (stderr, "dump_shapefile() error for 3d points: %s\n", err_msg);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -13;
     }
     cleanup_shapefile(dumpname);
     if (row_count != 20) {
 	fprintf (stderr, "unexpected row count for 3d points: %i\n", row_count);
 	sqlite3_close(handle);
-	unlink(dbname);
 	return -14;
     }
 
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	unlink(dbname);
 	return -15;
     }
     
-    unlink(dbname);
     spatialite_cleanup();
     sqlite3_reset_auto_extension();
     
