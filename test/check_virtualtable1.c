@@ -1,6 +1,6 @@
 /*
 
- check_virtualtable.c -- SpatiaLite Test Case
+ check_virtualtable1.c -- SpatiaLite Test Case
 
  Author: Brad Hards <bradh@frogmouth.net>
 
