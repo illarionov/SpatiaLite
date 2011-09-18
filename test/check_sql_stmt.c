@@ -257,6 +257,7 @@ int main (int argc, char *argv[])
 	    if (result != 0) {
 		break;
 	    }
+	    free(namelist[i]);
 	}
 	free(namelist);
     }
