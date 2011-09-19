@@ -663,19 +663,19 @@ vXL_eval_constraints (VirtualXLCursorPtr cursor)
 			  ok = 1;
 		      break;
 		  case SQLITE_INDEX_CONSTRAINT_GT:
-		      if (ret == 1)
+		      if (ret > 0)
 			  ok = 1;
 		      break;
 		  case SQLITE_INDEX_CONSTRAINT_LE:
-		      if (ret == -1 || ret == 0)
+		      if (ret <= 0)
 			  ok = 1;
 		      break;
 		  case SQLITE_INDEX_CONSTRAINT_LT:
-		      if (ret == -1)
+		      if (ret < 0)
 			  ok = 1;
 		      break;
 		  case SQLITE_INDEX_CONSTRAINT_GE:
-		      if (ret == 1 || ret == 0)
+		      if (ret >= 0)
 			  ok = 1;
 		      break;
 		  };
