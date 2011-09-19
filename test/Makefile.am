@@ -15,7 +15,8 @@ check_PROGRAMS = check_version \
 		check_sql_stmt \
 		check_virtualtable1 \
 		check_virtualtable2 \
-		check_virtualtable3
+		check_virtualtable3 \
+		check_virtualtable4
 
 AM_CFLAGS = -I@srcdir@/../src/headers
 AM_LDFLAGS = -L../src -lspatialite -lm $(GCOV_FLAGS)
