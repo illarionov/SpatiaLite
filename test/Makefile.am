@@ -53,18 +53,18 @@ EXTRA_DIST = shapetest1.dbf \
 	shp/gaza/route.prj \
 	shp/gaza/route.shp \
 	shp/gaza/route.shx \
-	shp/taiwan/hystoric.dbf
-	shp/taiwan/hystoric.prj
-	shp/taiwan/hystoric.shp
-	shp/taiwan/hystoric.shx
-	shp/taiwan/leisure.dbf
-	shp/taiwan/leisure.prj
-	shp/taiwan/leisure.shp
-	shp/taiwan/leisure.shx
-	shp/taiwan/route.dbf
-	shp/taiwan/route.prj
-	shp/taiwan/route.shp
-	shp/taiwan/route.shx
+	shp/taiwan/hystoric.dbf \
+	shp/taiwan/hystoric.prj \
+	shp/taiwan/hystoric.shp \
+	shp/taiwan/hystoric.shx \
+	shp/taiwan/leisure.dbf \
+	shp/taiwan/leisure.prj \
+	shp/taiwan/leisure.shp \
+	shp/taiwan/leisure.shx \
+	shp/taiwan/route.dbf \
+	shp/taiwan/route.prj \
+	shp/taiwan/route.shp \
+	shp/taiwan/route.shx \
 	shp/merano-3d/points.dbf \
 	shp/merano-3d/points.prj \
 	shp/merano-3d/points.shp \
@@ -76,4 +76,33 @@ EXTRA_DIST = shapetest1.dbf \
 	shp/merano-3d/roads.dbf \
 	shp/merano-3d/roads.prj \
 	shp/merano-3d/roads.shp \
-	shp/merano-3d/roads.shx
+	shp/merano-3d/roads.shx \
+	testcase1.xls \
+	testcase1.csv \
+	sql_stmt_tests/acos10.testcase \
+	sql_stmt_tests/acos20.testcase \
+	sql_stmt_tests/acos2.testcase \
+	sql_stmt_tests/acos.testcase \
+	sql_stmt_tests/acos-text.testcase \
+	sql_stmt_tests/asin10.testcase \
+	sql_stmt_tests/asin1.testcase \
+	sql_stmt_tests/asin20.testcase \
+	sql_stmt_tests/asin2.testcase \
+	sql_stmt_tests/asin-text.testcase \
+	sql_stmt_tests/exp00.testcase \
+	sql_stmt_tests/exp0.testcase \
+	sql_stmt_tests/exp10.testcase \
+	sql_stmt_tests/exp1.testcase \
+	sql_stmt_tests/expneg.testcase \
+	sql_stmt_tests/exptext.testcase \
+	sql_stmt_tests/pi.testcase \
+	sql_stmt_tests/pow00-1.testcase \
+	sql_stmt_tests/pow00-2.testcase \
+	sql_stmt_tests/pow00double.testcase \
+	sql_stmt_tests/pow00.testcase \
+	sql_stmt_tests/pow-badarg1.testcase \
+	sql_stmt_tests/pow-badarg2.testcase \
+	sql_stmt_tests/pow-edom.testcase \
+	sql_stmt_tests/pow-fp.testcase \
+	sql_stmt_tests/rad0.testcase \
+	sql_stmt_tests/radpi.testcase
