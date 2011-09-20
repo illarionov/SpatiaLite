@@ -38,7 +38,10 @@ check_PROGRAMS = check_version$(EXEEXT) check_init$(EXEEXT) \
 	check_shp_load$(EXEEXT) shape_cp1252$(EXEEXT) \
 	shape_utf8_1$(EXEEXT) shape_utf8_2$(EXEEXT) shape_3d$(EXEEXT) \
 	check_xls_load$(EXEEXT) check_math_funcs$(EXEEXT) \
-	check_gaia_util$(EXEEXT) check_gaia_utf8$(EXEEXT)
+	check_gaia_util$(EXEEXT) check_gaia_utf8$(EXEEXT) \
+	check_extension$(EXEEXT) check_sql_stmt$(EXEEXT) \
+	check_virtualtable1$(EXEEXT) check_virtualtable2$(EXEEXT) \
+	check_virtualtable3$(EXEEXT) check_virtualtable4$(EXEEXT)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -54,6 +57,9 @@ check_create_LDADD = $(LDADD)
 check_dbf_load_SOURCES = check_dbf_load.c
 check_dbf_load_OBJECTS = check_dbf_load.$(OBJEXT)
 check_dbf_load_LDADD = $(LDADD)
+check_extension_SOURCES = check_extension.c
+check_extension_OBJECTS = check_extension.$(OBJEXT)
+check_extension_LDADD = $(LDADD)
 check_gaia_utf8_SOURCES = check_gaia_utf8.c
 check_gaia_utf8_OBJECTS = check_gaia_utf8.$(OBJEXT)
 check_gaia_utf8_LDADD = $(LDADD)
@@ -69,9 +75,24 @@ check_math_funcs_LDADD = $(LDADD)
 check_shp_load_SOURCES = check_shp_load.c
 check_shp_load_OBJECTS = check_shp_load.$(OBJEXT)
 check_shp_load_LDADD = $(LDADD)
+check_sql_stmt_SOURCES = check_sql_stmt.c
+check_sql_stmt_OBJECTS = check_sql_stmt.$(OBJEXT)
+check_sql_stmt_LDADD = $(LDADD)
 check_version_SOURCES = check_version.c
 check_version_OBJECTS = check_version.$(OBJEXT)
 check_version_LDADD = $(LDADD)
+check_virtualtable1_SOURCES = check_virtualtable1.c
+check_virtualtable1_OBJECTS = check_virtualtable1.$(OBJEXT)
+check_virtualtable1_LDADD = $(LDADD)
+check_virtualtable2_SOURCES = check_virtualtable2.c
+check_virtualtable2_OBJECTS = check_virtualtable2.$(OBJEXT)
+check_virtualtable2_LDADD = $(LDADD)
+check_virtualtable3_SOURCES = check_virtualtable3.c
+check_virtualtable3_OBJECTS = check_virtualtable3.$(OBJEXT)
+check_virtualtable3_LDADD = $(LDADD)
+check_virtualtable4_SOURCES = check_virtualtable4.c
+check_virtualtable4_OBJECTS = check_virtualtable4.$(OBJEXT)
+check_virtualtable4_LDADD = $(LDADD)
 check_xls_load_SOURCES = check_xls_load.c
 check_xls_load_OBJECTS = check_xls_load.$(OBJEXT)
 check_xls_load_LDADD = $(LDADD)
@@ -100,14 +121,18 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = check_create.c check_dbf_load.c check_gaia_utf8.c \
-	check_gaia_util.c check_init.c check_math_funcs.c \
-	check_shp_load.c check_version.c check_xls_load.c shape_3d.c \
-	shape_cp1252.c shape_utf8_1.c shape_utf8_2.c
-DIST_SOURCES = check_create.c check_dbf_load.c check_gaia_utf8.c \
-	check_gaia_util.c check_init.c check_math_funcs.c \
-	check_shp_load.c check_version.c check_xls_load.c shape_3d.c \
-	shape_cp1252.c shape_utf8_1.c shape_utf8_2.c
+SOURCES = check_create.c check_dbf_load.c check_extension.c \
+	check_gaia_utf8.c check_gaia_util.c check_init.c \
+	check_math_funcs.c check_shp_load.c check_sql_stmt.c \
+	check_version.c check_virtualtable1.c check_virtualtable2.c \
+	check_virtualtable3.c check_virtualtable4.c check_xls_load.c \
+	shape_3d.c shape_cp1252.c shape_utf8_1.c shape_utf8_2.c
+DIST_SOURCES = check_create.c check_dbf_load.c check_extension.c \
+	check_gaia_utf8.c check_gaia_util.c check_init.c \
+	check_math_funcs.c check_shp_load.c check_sql_stmt.c \
+	check_version.c check_virtualtable1.c check_virtualtable2.c \
+	check_virtualtable3.c check_virtualtable4.c check_xls_load.c \
+	shape_3d.c shape_cp1252.c shape_utf8_1.c shape_utf8_2.c
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -159,7 +184,6 @@ LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
-MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -192,7 +216,6 @@ abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
-ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
@@ -226,6 +249,7 @@ libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
+lt_ECHO = @lt_ECHO@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
@@ -324,6 +348,9 @@ check_create$(EXEEXT): $(check_create_OBJECTS) $(check_create_DEPENDENCIES)
 check_dbf_load$(EXEEXT): $(check_dbf_load_OBJECTS) $(check_dbf_load_DEPENDENCIES) 
 	@rm -f check_dbf_load$(EXEEXT)
 	$(LINK) $(check_dbf_load_OBJECTS) $(check_dbf_load_LDADD) $(LIBS)
+check_extension$(EXEEXT): $(check_extension_OBJECTS) $(check_extension_DEPENDENCIES) 
+	@rm -f check_extension$(EXEEXT)
+	$(LINK) $(check_extension_OBJECTS) $(check_extension_LDADD) $(LIBS)
 check_gaia_utf8$(EXEEXT): $(check_gaia_utf8_OBJECTS) $(check_gaia_utf8_DEPENDENCIES) 
 	@rm -f check_gaia_utf8$(EXEEXT)
 	$(LINK) $(check_gaia_utf8_OBJECTS) $(check_gaia_utf8_LDADD) $(LIBS)
@@ -339,9 +366,24 @@ check_math_funcs$(EXEEXT): $(check_math_funcs_OBJECTS) $(check_math_funcs_DEPEND
 check_shp_load$(EXEEXT): $(check_shp_load_OBJECTS) $(check_shp_load_DEPENDENCIES) 
 	@rm -f check_shp_load$(EXEEXT)
 	$(LINK) $(check_shp_load_OBJECTS) $(check_shp_load_LDADD) $(LIBS)
+check_sql_stmt$(EXEEXT): $(check_sql_stmt_OBJECTS) $(check_sql_stmt_DEPENDENCIES) 
+	@rm -f check_sql_stmt$(EXEEXT)
+	$(LINK) $(check_sql_stmt_OBJECTS) $(check_sql_stmt_LDADD) $(LIBS)
 check_version$(EXEEXT): $(check_version_OBJECTS) $(check_version_DEPENDENCIES) 
 	@rm -f check_version$(EXEEXT)
 	$(LINK) $(check_version_OBJECTS) $(check_version_LDADD) $(LIBS)
+check_virtualtable1$(EXEEXT): $(check_virtualtable1_OBJECTS) $(check_virtualtable1_DEPENDENCIES) 
+	@rm -f check_virtualtable1$(EXEEXT)
+	$(LINK) $(check_virtualtable1_OBJECTS) $(check_virtualtable1_LDADD) $(LIBS)
+check_virtualtable2$(EXEEXT): $(check_virtualtable2_OBJECTS) $(check_virtualtable2_DEPENDENCIES) 
+	@rm -f check_virtualtable2$(EXEEXT)
+	$(LINK) $(check_virtualtable2_OBJECTS) $(check_virtualtable2_LDADD) $(LIBS)
+check_virtualtable3$(EXEEXT): $(check_virtualtable3_OBJECTS) $(check_virtualtable3_DEPENDENCIES) 
+	@rm -f check_virtualtable3$(EXEEXT)
+	$(LINK) $(check_virtualtable3_OBJECTS) $(check_virtualtable3_LDADD) $(LIBS)
+check_virtualtable4$(EXEEXT): $(check_virtualtable4_OBJECTS) $(check_virtualtable4_DEPENDENCIES) 
+	@rm -f check_virtualtable4$(EXEEXT)
+	$(LINK) $(check_virtualtable4_OBJECTS) $(check_virtualtable4_LDADD) $(LIBS)
 check_xls_load$(EXEEXT): $(check_xls_load_OBJECTS) $(check_xls_load_DEPENDENCIES) 
 	@rm -f check_xls_load$(EXEEXT)
 	$(LINK) $(check_xls_load_OBJECTS) $(check_xls_load_LDADD) $(LIBS)
@@ -366,12 +408,18 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_create.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_dbf_load.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_extension.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gaia_utf8.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gaia_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_math_funcs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_shp_load.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_sql_stmt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_version.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable4.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_xls_load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_3d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_cp1252.Po@am__quote@
