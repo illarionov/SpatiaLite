@@ -54,7 +54,7 @@ struct test_step
     const int num_rows;
 };
 
-#define NUMSTEPS 35
+#define NUMSTEPS 36
 
 struct test_step steps[NUMSTEPS] = {
     { "select col_2, col_4, col_5, col_7 from xltest WHERE col_2 > \"Canary Creek\";", 9 },
