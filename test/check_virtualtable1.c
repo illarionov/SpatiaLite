@@ -117,6 +117,14 @@ int main (int argc, char *argv[])
 	return -21;
     }
 
+    ret = sqlite3_exec (db_handle, "DELETE FROM places WHERE col015 > 100000;", NULL, NULL, &err_msg);
+    if (ret != SQLITE_READONLY) {
+	fprintf (stderr, "UPDATE error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -21;
+    }
+    sqlite3_free (err_msg);
+
     ret = sqlite3_exec (db_handle, "ROLLBACK;", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "ROLLBACK error: %s\n", err_msg);
