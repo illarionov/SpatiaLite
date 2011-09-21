@@ -196,6 +196,8 @@ vXL_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     ret = freexl_open (path, &handle);
     if (ret != FREEXL_OK)
       {
+	  /* free memory */
+	  freexl_close(handle);
 	  /* something is going the wrong way; creating a stupid default table */
 	  strcpy (dummyName, argv[2]);
 	  vXL_double_quoted_sql (dummyName);
@@ -214,6 +216,8 @@ vXL_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     freexl_get_info (handle, FREEXL_BIFF_PASSWORD, &info);
     if (info != FREEXL_BIFF_PLAIN)
       {
+	  /* free memory */
+	  freexl_close(handle);
 	  /* Obfuscated: creating a stupid default table */
 	  strcpy (dummyName, argv[2]);
 	  vXL_double_quoted_sql (dummyName);
@@ -232,6 +236,8 @@ vXL_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     freexl_get_info (handle, FREEXL_BIFF_SHEET_COUNT, &max_worksheet);
     if (worksheet >= max_worksheet)
       {
+	  /* free memory */
+	  freexl_close(handle);
 	  /* no such Worksheet: creating a stupid default table */
 	  strcpy (dummyName, argv[2]);
 	  vXL_double_quoted_sql (dummyName);
@@ -322,7 +328,7 @@ static int
 vXL_connect (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	     sqlite3_vtab ** ppVTab, char **pzErr)
 {
-/* connects the virtual table to some DBF - simply aliases vdbf_create() */
+/* connects the virtual table to a .xls file - simply aliases vXL_create() */
     return vXL_create (db, pAux, argc, argv, ppVTab, pzErr);
 }
 
