@@ -261,7 +261,7 @@ vXL_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     strcat (buf, " (row_no INTEGER");
     if (firstLineTitles == 'Y')
       {
-	  /* fetching comun names */
+	  /* fetching column names */
 	  for (col = 0; col < columns; col++)
 	    {
 		FreeXL_CellValue cell;
