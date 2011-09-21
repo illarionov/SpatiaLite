@@ -1061,6 +1061,13 @@ extern "C"
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaOffsetCurve (gaiaGeomCollPtr geom,
 						     double radius, int points,
 						     int left_right);
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSingleSidedBuffer (gaiaGeomCollPtr geom,
+							   double radius,
+							   int points,
+							   int left_right);
+    GAIAGEO_DECLARE int gaiaHausdorffDistance (gaiaGeomCollPtr geom1,
+					       gaiaGeomCollPtr geom2,
+					       double *dist);
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSharedPaths (gaiaGeomCollPtr geom1,
 						     gaiaGeomCollPtr geom2);
     GAIAGEO_DECLARE int gaiaGeomCollCovers (gaiaGeomCollPtr geom1,

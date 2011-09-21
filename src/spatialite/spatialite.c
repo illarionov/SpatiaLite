@@ -13400,6 +13400,118 @@ fnct_OffsetCurve (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_SingleSidedBuffer (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ SingleSidedBuffer(BLOBencoded geometry, radius, left-or-right-side)
+/
+/ returns a new geometry representing the SingleSided BUFFER 
+/ for current geometry [a LINESTRING is expected]
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr result;
+    double radius;
+    int int_value;
+    int left_right;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	radius = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  radius = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	left_right = sqlite3_value_int (argv[2]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  result = gaiaSingleSidedBuffer (geo, radius, 16, left_right);
+	  if (!result)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
+fnct_HausdorffDistance (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ HausdorffDistance(BLOBencoded geom1, BLOBencoded geom2)
+/
+/ returns the discrete Hausdorff distance between GEOM-1 and GEOM-2
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo1 = NULL;
+    gaiaGeomCollPtr geo2 = NULL;
+    double dist;
+    int ret;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+    n_bytes = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo1 || !geo2)
+	sqlite3_result_null (context);
+    else
+      {
+	  ret = gaiaHausdorffDistance (geo1, geo2, &dist);
+	  if (!ret)
+	      sqlite3_result_null (context);
+	  sqlite3_result_double (context, dist);
+      }
+    gaiaFreeGeomColl (geo1);
+    gaiaFreeGeomColl (geo2);
+}
+
+static void
 fnct_SharedPaths (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -16400,6 +16512,14 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_OffsetCurve, 0, 0);
     sqlite3_create_function (db, "ST_OffsetCurve", 3, SQLITE_ANY, 0,
 			     fnct_OffsetCurve, 0, 0);
+    sqlite3_create_function (db, "SingleSidedBuffer", 3, SQLITE_ANY, 0,
+			     fnct_SingleSidedBuffer, 0, 0);
+    sqlite3_create_function (db, "ST_SingleSidedBuffer", 3, SQLITE_ANY, 0,
+			     fnct_SingleSidedBuffer, 0, 0);
+    sqlite3_create_function (db, "HausdorffDistance", 2, SQLITE_ANY, 0,
+			     fnct_HausdorffDistance, 0, 0);
+    sqlite3_create_function (db, "ST_HausdorffDistance", 2, SQLITE_ANY, 0,
+			     fnct_HausdorffDistance, 0, 0);
     sqlite3_create_function (db, "SharedPaths", 2, SQLITE_ANY, 0,
 			     fnct_SharedPaths, 0, 0);
     sqlite3_create_function (db, "ST_SharedPaths", 2, SQLITE_ANY, 0,
@@ -16510,7 +16630,7 @@ spatialite_init (int verbose)
 }
 
 void
-spatialite_cleanup()
+spatialite_cleanup ()
 {
 #ifndef OMIT_GEOS
     finishGEOS ();
@@ -17418,6 +17538,14 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_OffsetCurve, 0, 0);
     sqlite3_create_function (db, "ST_OffsetCurve", 3, SQLITE_ANY, 0,
 			     fnct_OffsetCurve, 0, 0);
+    sqlite3_create_function (db, "SingleSidedBuffer", 3, SQLITE_ANY, 0,
+			     fnct_SingleSidedBuffer, 0, 0);
+    sqlite3_create_function (db, "ST_SingleSidedBuffer", 3, SQLITE_ANY, 0,
+			     fnct_SingleSidedBuffer, 0, 0);
+    sqlite3_create_function (db, "HausdorffDistance", 2, SQLITE_ANY, 0,
+			     fnct_HausdorffDistance, 0, 0);
+    sqlite3_create_function (db, "ST_HausdorffDistance", 2, SQLITE_ANY, 0,
+			     fnct_HausdorffDistance, 0, 0);
     sqlite3_create_function (db, "SharedPaths", 2, SQLITE_ANY, 0,
 			     fnct_SharedPaths, 0, 0);
     sqlite3_create_function (db, "ST_SharedPaths", 2, SQLITE_ANY, 0,

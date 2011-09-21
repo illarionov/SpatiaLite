@@ -1711,6 +1711,117 @@ gaiaOffsetCurve (gaiaGeomCollPtr geom, double radius, int points,
     return geo;
 }
 
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaSingleSidedBuffer (gaiaGeomCollPtr geom, double radius, int points,
+		       int left_right)
+{
+/*
+// builds a geometry that is the SingleSided BUFFER of GEOM 
+// (which is expected to be of the LINESTRING type)
+//
+*/
+    gaiaGeomCollPtr geo;
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    GEOSBufferParams *params = NULL;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    int closed = 0;
+    if (!geom)
+	return NULL;
+
+/* checking the input geometry for validity */
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  /* counting how many POINTs are there */
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  /* counting how many LINESTRINGs are there */
+	  lns++;
+	  if (gaiaIsClosed (ln))
+	      closed++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  /* counting how many POLYGON are there */
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts > 0 || pgs > 0 || lns > 1 || closed > 0)
+	return NULL;
+
+/* all right: this one simply is a LINESTRING */
+    geom->DeclaredType = GAIA_LINESTRING;
+
+    g1 = gaiaToGeos (geom);
+/* setting up Buffer params */
+    params = GEOSBufferParams_create ();
+    GEOSBufferParams_setJoinStyle (params, GEOSBUF_JOIN_ROUND);
+    GEOSBufferParams_setMitreLimit (params, 5.0);
+    GEOSBufferParams_setQuadrantSegments (params, points);
+    GEOSBufferParams_setSingleSided (params, 1);
+
+/* creating the SingleSided Buffer */
+    if (left_right == 0)
+      {
+	  /* right-sided requires NEGATIVE radius */
+	  radius *= -1.0;
+      }
+    g2 = GEOSBufferWithParams (g1, params, radius);
+    GEOSGeom_destroy (g1);
+    GEOSBufferParams_destroy (params);
+    if (!g2)
+	return NULL;
+    if (geom->DimensionModel == GAIA_XY_Z)
+	geo = gaiaFromGeos_XYZ (g2);
+    else if (geom->DimensionModel == GAIA_XY_M)
+	geo = gaiaFromGeos_XYM (g2);
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	geo = gaiaFromGeos_XYZM (g2);
+    else
+	geo = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
+    if (geo == NULL)
+	return NULL;
+    geo->Srid = geom->Srid;
+    return geo;
+}
+
+GAIAGEO_DECLARE int
+gaiaHausdorffDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
+		       double *xdist)
+{
+/* 
+/ computes the (discrete) Hausdorff distance intercurring 
+/ between GEOM-1 and GEOM-2 
+*/
+    double dist;
+    int ret;
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    if (!geom1 || !geom2)
+	return 0;
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    ret = GEOSHausdorffDistance (g1, g2, &dist);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    if (ret)
+	*xdist = dist;
+    return ret;
+}
+
 static gaiaGeomCollPtr
 geom_as_lines (gaiaGeomCollPtr geom)
 {
