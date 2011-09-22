@@ -146,4 +146,12 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/pow-fp.testcase \
 	sql_stmt_tests/rad0.testcase \
 	sql_stmt_tests/radpi.testcase \
-	sql_stmt_tests/rad-text.testcase
+	sql_stmt_tests/rad-text.testcase \
+	test/sql_stmt_tests/sign00.testcase \
+	test/sql_stmt_tests/sign01.testcase \
+	test/sql_stmt_tests/sign0.testcase \
+	test/sql_stmt_tests/sign10.testcase \
+	test/sql_stmt_tests/signeg2int.testcase \
+	test/sql_stmt_tests/signeg2.testcase \
+	test/sql_stmt_tests/signeg.testcase \
+	test/sql_stmt_tests/signtext.testcase
