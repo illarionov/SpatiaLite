@@ -89,12 +89,52 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/asin20.testcase \
 	sql_stmt_tests/asin2.testcase \
 	sql_stmt_tests/asin-text.testcase \
+	sql_stmt_tests/atan00.testcase \
+	sql_stmt_tests/atan0.testcase \
+	sql_stmt_tests/atan-text.testcase \
+	sql_stmt_tests/ceilfloat2.testcase \
+	sql_stmt_tests/ceilfloat.testcase \
+	sql_stmt_tests/ceil-int.testcase \
+	sql_stmt_tests/ceilnull.testcase \
+	sql_stmt_tests/cos00.testcase \
+	sql_stmt_tests/cos0.testcase \
+	sql_stmt_tests/cos-text.testcase \
+	sql_stmt_tests/cot0.testcase \
+	sql_stmt_tests/cot00.testcase \
+	sql_stmt_tests/cotpi2.testcase \
+	sql_stmt_tests/cot-text.testcase \
+	sql_stmt_tests/degrees45.testcase \
+	sql_stmt_tests/degrees.testcase \
+	sql_stmt_tests/degreestext.testcase \
 	sql_stmt_tests/exp00.testcase \
 	sql_stmt_tests/exp0.testcase \
 	sql_stmt_tests/exp10.testcase \
 	sql_stmt_tests/exp1.testcase \
 	sql_stmt_tests/expneg.testcase \
 	sql_stmt_tests/exptext.testcase \
+	sql_stmt_tests/log10-0.0.testcase \
+	sql_stmt_tests/log10-100.0.testcase \
+	sql_stmt_tests/log10-100.testcase \
+	sql_stmt_tests/log10-text.testcase \
+	sql_stmt_tests/log2-0.0.testcase \
+	sql_stmt_tests/log2-0.testcase \
+	sql_stmt_tests/log2-4.0.testcase \
+	sql_stmt_tests/log2-4.testcase \
+	sql_stmt_tests/log2-text.testcase \
+	sql_stmt_tests/logn00.testcase \
+	sql_stmt_tests/logn0.testcase \
+	sql_stmt_tests/logn10.testcase \
+	sql_stmt_tests/logn1.testcase \
+	sql_stmt_tests/logn2-01.testcase \
+	sql_stmt_tests/logn2-02.testcase \
+	sql_stmt_tests/logn2-2.2.testcase \
+	sql_stmt_tests/logn2-4.2int.testcase \
+	sql_stmt_tests/logn2-4.2.testcase \
+	sql_stmt_tests/logn2-text2.testcase \
+	sql_stmt_tests/logn2-text3.testcase \
+	sql_stmt_tests/logn2-text4.testcase \
+	sql_stmt_tests/logn2-text.testcase \
+	sql_stmt_tests/logn-text.testcase \
 	sql_stmt_tests/pi.testcase \
 	sql_stmt_tests/pow00-1.testcase \
 	sql_stmt_tests/pow00-2.testcase \
@@ -105,4 +145,5 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/pow-edom.testcase \
 	sql_stmt_tests/pow-fp.testcase \
 	sql_stmt_tests/rad0.testcase \
-	sql_stmt_tests/radpi.testcase
+	sql_stmt_tests/radpi.testcase \
+	sql_stmt_tests/rad-text.testcase
