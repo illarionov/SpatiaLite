@@ -79,11 +79,11 @@ EXTRA_DIST = shapetest1.dbf \
 	shp/merano-3d/roads.shx \
 	testcase1.xls \
 	testcase1.csv \
-	sql_stmt_tests/acos10.testcase \
 	sql_stmt_tests/acos20.testcase \
 	sql_stmt_tests/acos2.testcase \
 	sql_stmt_tests/acos.testcase \
 	sql_stmt_tests/acos-text.testcase \
+	sql_stmt_tests/acos10.testcase \
 	sql_stmt_tests/asin10.testcase \
 	sql_stmt_tests/asin1.testcase \
 	sql_stmt_tests/asin20.testcase \
@@ -147,11 +147,39 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/rad0.testcase \
 	sql_stmt_tests/radpi.testcase \
 	sql_stmt_tests/rad-text.testcase \
-	test/sql_stmt_tests/sign00.testcase \
-	test/sql_stmt_tests/sign01.testcase \
-	test/sql_stmt_tests/sign0.testcase \
-	test/sql_stmt_tests/sign10.testcase \
-	test/sql_stmt_tests/signeg2int.testcase \
-	test/sql_stmt_tests/signeg2.testcase \
-	test/sql_stmt_tests/signeg.testcase \
-	test/sql_stmt_tests/signtext.testcase
+	sql_stmt_tests/round-text.testcase \
+	sql_stmt_tests/round-31.testcase \
+	sql_stmt_tests/round30.testcase \
+	sql_stmt_tests/round0.testcase \
+	sql_stmt_tests/round-29.testcase \
+	sql_stmt_tests/round29.testcase \
+	sql_stmt_tests/round31.testcase \
+	sql_stmt_tests/round3.testcase \
+	sql_stmt_tests/sign00.testcase \
+	sql_stmt_tests/sign01.testcase \
+	sql_stmt_tests/sign0.testcase \
+	sql_stmt_tests/sign10.testcase \
+	sql_stmt_tests/signeg2int.testcase \
+	sql_stmt_tests/signeg2.testcase \
+	sql_stmt_tests/signeg.testcase \
+	sql_stmt_tests/signtext.testcase \
+	sql_stmt_tests/sin-text.testcase \
+	sql_stmt_tests/sin-pi2.testcase \
+	sql_stmt_tests/sin-pi.testcase \
+	sql_stmt_tests/sinpi2.testcase \
+	sql_stmt_tests/sin00.testcase \
+	sql_stmt_tests/sin0.testcase \
+	sql_stmt_tests/sinpi.testcase \
+	sql_stmt_tests/sqrt-10.testcase \
+	sql_stmt_tests/sqrt0.testcase \
+	sql_stmt_tests/sqrt00.testcase \
+	sql_stmt_tests/sqrt-640.testcase \
+	sql_stmt_tests/sqrt-text.testcase \
+	sql_stmt_tests/sqrt-64.testcase \
+	sql_stmt_tests/sqrt-1.testcase \
+	sql_stmt_tests/tan-pi.testcase \
+	sql_stmt_tests/tanpi.testcase \
+	sql_stmt_tests/tan00.testcase \
+	sql_stmt_tests/tan-text.testcase \
+	sql_stmt_tests/tan0.testcase \
+	sql_stmt_tests/tanpi4.testcase

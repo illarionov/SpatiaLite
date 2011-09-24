@@ -1,7 +1,7 @@
-acos(1.0)
+sin(-pi/2)
 :memory: #use in-memory database
-SELECT acos(1.0);
+SELECT sin(-pi()/2);
 1 # rows (not including the header row)
 1 # columns
-acos(1.0) # header
-0.0 #result
+sin(-pi()/2) # header
+-1.0 #result
