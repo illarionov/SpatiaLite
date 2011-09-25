@@ -69,7 +69,7 @@ int main (int argc, char *argv[])
 	return -1;
     }
     
-    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE dbftest USING VirtualDBF(\"shapetest1.dbf\", UTF8);", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE dbftest USING VirtualDBF(shapetest1.dbf, UTF8);", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "VirtualDBF error: %s\n", err_msg);
 	sqlite3_free (err_msg);
@@ -524,6 +524,51 @@ int main (int argc, char *argv[])
 	sqlite3_free (err_msg);
 	return -49;
     }
+
+    /* error cases */
+    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE toofewargs USING VirtualDBF(\"shapetest1.dbf\");", NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR) {
+	fprintf (stderr, "VirtualDBF unexpected result: %i\n", ret);
+	return -95;
+    }
+    sqlite3_free (err_msg);
+
+    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE toomanyargs USING VirtualDBF(\"shapetest1.dbf\", UTF8, 1);", NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR) {
+	fprintf (stderr, "VirtualDBF unexpected result: %i\n", ret);
+	return -96;
+    }
+    sqlite3_free (err_msg);
+
+    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE nosuchfile USING VirtualDBF(\"not_a_file.dbf\", UTF8);", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "VirtualDBF error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -97;
+    }
+    ret = sqlite3_get_table (db_handle, "SELECT * from nosuchfile;", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -98;
+    }
+    if ((rows != 0) || (columns != 0)) {
+	fprintf (stderr, "Unexpected error: select columns no suchfile: %i/%i.\n", rows, columns);
+	return  -99;
+    }
+    ret = sqlite3_exec (db_handle, "DROP TABLE nosuchfile;", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "DROP TABLE error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -100;
+    }
+
+    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE onesidedquote USING VirtualDBF('shapetest1.dbf, UTF8);", NULL, NULL, &err_msg);
+    if (ret != SQLITE_ERROR) {
+	fprintf (stderr, "VirtualDBF unexpected result: %i\n", ret);
+	return -101;
+    }
+    sqlite3_free (err_msg);
 
     sqlite3_close (db_handle);
     spatialite_cleanup();
