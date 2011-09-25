@@ -590,27 +590,27 @@ vshp_eval_constraints (VirtualShapeCursorPtr cursor)
 					  {
 					  case SQLITE_INDEX_CONSTRAINT_EQ:
 					      if (pFld->Value->DblValue ==
-						  pC->dblValue)
+						  pC->intValue)
 						  ok = 1;
 					      break;
 					  case SQLITE_INDEX_CONSTRAINT_GT:
 					      if (pFld->Value->DblValue >
-						  pC->dblValue)
+						  pC->intValue)
 						  ok = 1;
 					      break;
 					  case SQLITE_INDEX_CONSTRAINT_LE:
 					      if (pFld->Value->DblValue <=
-						  pC->dblValue)
+						  pC->intValue)
 						  ok = 1;
 					      break;
 					  case SQLITE_INDEX_CONSTRAINT_LT:
 					      if (pFld->Value->DblValue <
-						  pC->dblValue)
+						  pC->intValue)
 						  ok = 1;
 					      break;
 					  case SQLITE_INDEX_CONSTRAINT_GE:
 					      if (pFld->Value->DblValue >=
-						  pC->dblValue)
+						  pC->intValue)
 						  ok = 1;
 					      break;
 					  };
