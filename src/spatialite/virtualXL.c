@@ -197,7 +197,7 @@ vXL_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (ret != FREEXL_OK)
       {
 	  /* free memory */
-	  freexl_close(handle);
+	  freexl_close (handle);
 	  /* something is going the wrong way; creating a stupid default table */
 	  strcpy (dummyName, argv[2]);
 	  vXL_double_quoted_sql (dummyName);
@@ -217,7 +217,7 @@ vXL_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (info != FREEXL_BIFF_PLAIN)
       {
 	  /* free memory */
-	  freexl_close(handle);
+	  freexl_close (handle);
 	  /* Obfuscated: creating a stupid default table */
 	  strcpy (dummyName, argv[2]);
 	  vXL_double_quoted_sql (dummyName);
@@ -237,7 +237,7 @@ vXL_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (worksheet >= max_worksheet)
       {
 	  /* free memory */
-	  freexl_close(handle);
+	  freexl_close (handle);
 	  /* no such Worksheet: creating a stupid default table */
 	  strcpy (dummyName, argv[2]);
 	  vXL_double_quoted_sql (dummyName);
