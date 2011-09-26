@@ -41,7 +41,9 @@ check_PROGRAMS = check_version$(EXEEXT) check_init$(EXEEXT) \
 	check_gaia_util$(EXEEXT) check_gaia_utf8$(EXEEXT) \
 	check_extension$(EXEEXT) check_sql_stmt$(EXEEXT) \
 	check_virtualtable1$(EXEEXT) check_virtualtable2$(EXEEXT) \
-	check_virtualtable3$(EXEEXT) check_virtualtable4$(EXEEXT)
+	check_virtualtable3$(EXEEXT) check_virtualtable4$(EXEEXT) \
+	check_virtualtable5$(EXEEXT) check_virtualtable6$(EXEEXT) \
+	check_mbrcache$(EXEEXT) check_spatialindex$(EXEEXT)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -72,9 +74,15 @@ check_init_LDADD = $(LDADD)
 check_math_funcs_SOURCES = check_math_funcs.c
 check_math_funcs_OBJECTS = check_math_funcs.$(OBJEXT)
 check_math_funcs_LDADD = $(LDADD)
+check_mbrcache_SOURCES = check_mbrcache.c
+check_mbrcache_OBJECTS = check_mbrcache.$(OBJEXT)
+check_mbrcache_LDADD = $(LDADD)
 check_shp_load_SOURCES = check_shp_load.c
 check_shp_load_OBJECTS = check_shp_load.$(OBJEXT)
 check_shp_load_LDADD = $(LDADD)
+check_spatialindex_SOURCES = check_spatialindex.c
+check_spatialindex_OBJECTS = check_spatialindex.$(OBJEXT)
+check_spatialindex_LDADD = $(LDADD)
 check_sql_stmt_SOURCES = check_sql_stmt.c
 check_sql_stmt_OBJECTS = check_sql_stmt.$(OBJEXT)
 check_sql_stmt_LDADD = $(LDADD)
@@ -93,6 +101,12 @@ check_virtualtable3_LDADD = $(LDADD)
 check_virtualtable4_SOURCES = check_virtualtable4.c
 check_virtualtable4_OBJECTS = check_virtualtable4.$(OBJEXT)
 check_virtualtable4_LDADD = $(LDADD)
+check_virtualtable5_SOURCES = check_virtualtable5.c
+check_virtualtable5_OBJECTS = check_virtualtable5.$(OBJEXT)
+check_virtualtable5_LDADD = $(LDADD)
+check_virtualtable6_SOURCES = check_virtualtable6.c
+check_virtualtable6_OBJECTS = check_virtualtable6.$(OBJEXT)
+check_virtualtable6_LDADD = $(LDADD)
 check_xls_load_SOURCES = check_xls_load.c
 check_xls_load_OBJECTS = check_xls_load.$(OBJEXT)
 check_xls_load_LDADD = $(LDADD)
@@ -123,15 +137,19 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = check_create.c check_dbf_load.c check_extension.c \
 	check_gaia_utf8.c check_gaia_util.c check_init.c \
-	check_math_funcs.c check_shp_load.c check_sql_stmt.c \
-	check_version.c check_virtualtable1.c check_virtualtable2.c \
-	check_virtualtable3.c check_virtualtable4.c check_xls_load.c \
+	check_math_funcs.c check_mbrcache.c check_shp_load.c \
+	check_spatialindex.c check_sql_stmt.c check_version.c \
+	check_virtualtable1.c check_virtualtable2.c \
+	check_virtualtable3.c check_virtualtable4.c \
+	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
 	shape_3d.c shape_cp1252.c shape_utf8_1.c shape_utf8_2.c
 DIST_SOURCES = check_create.c check_dbf_load.c check_extension.c \
 	check_gaia_utf8.c check_gaia_util.c check_init.c \
-	check_math_funcs.c check_shp_load.c check_sql_stmt.c \
-	check_version.c check_virtualtable1.c check_virtualtable2.c \
-	check_virtualtable3.c check_virtualtable4.c check_xls_load.c \
+	check_math_funcs.c check_mbrcache.c check_shp_load.c \
+	check_spatialindex.c check_sql_stmt.c check_version.c \
+	check_virtualtable1.c check_virtualtable2.c \
+	check_virtualtable3.c check_virtualtable4.c \
+	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
 	shape_3d.c shape_cp1252.c shape_utf8_1.c shape_utf8_2.c
 ETAGS = etags
 CTAGS = ctags
@@ -323,22 +341,62 @@ EXTRA_DIST = shapetest1.dbf \
 	shp/merano-3d/roads.shx \
 	testcase1.xls \
 	testcase1.csv \
-	sql_stmt_tests/acos10.testcase \
 	sql_stmt_tests/acos20.testcase \
 	sql_stmt_tests/acos2.testcase \
 	sql_stmt_tests/acos.testcase \
 	sql_stmt_tests/acos-text.testcase \
+	sql_stmt_tests/acos10.testcase \
 	sql_stmt_tests/asin10.testcase \
 	sql_stmt_tests/asin1.testcase \
 	sql_stmt_tests/asin20.testcase \
 	sql_stmt_tests/asin2.testcase \
 	sql_stmt_tests/asin-text.testcase \
+	sql_stmt_tests/atan00.testcase \
+	sql_stmt_tests/atan0.testcase \
+	sql_stmt_tests/atan-text.testcase \
+	sql_stmt_tests/ceilfloat2.testcase \
+	sql_stmt_tests/ceilfloat.testcase \
+	sql_stmt_tests/ceil-int.testcase \
+	sql_stmt_tests/ceilnull.testcase \
+	sql_stmt_tests/cos00.testcase \
+	sql_stmt_tests/cos0.testcase \
+	sql_stmt_tests/cos-text.testcase \
+	sql_stmt_tests/cot0.testcase \
+	sql_stmt_tests/cot00.testcase \
+	sql_stmt_tests/cotpi2.testcase \
+	sql_stmt_tests/cot-text.testcase \
+	sql_stmt_tests/degrees45.testcase \
+	sql_stmt_tests/degrees.testcase \
+	sql_stmt_tests/degreestext.testcase \
 	sql_stmt_tests/exp00.testcase \
 	sql_stmt_tests/exp0.testcase \
 	sql_stmt_tests/exp10.testcase \
 	sql_stmt_tests/exp1.testcase \
 	sql_stmt_tests/expneg.testcase \
 	sql_stmt_tests/exptext.testcase \
+	sql_stmt_tests/log10-0.0.testcase \
+	sql_stmt_tests/log10-100.0.testcase \
+	sql_stmt_tests/log10-100.testcase \
+	sql_stmt_tests/log10-text.testcase \
+	sql_stmt_tests/log2-0.0.testcase \
+	sql_stmt_tests/log2-0.testcase \
+	sql_stmt_tests/log2-4.0.testcase \
+	sql_stmt_tests/log2-4.testcase \
+	sql_stmt_tests/log2-text.testcase \
+	sql_stmt_tests/logn00.testcase \
+	sql_stmt_tests/logn0.testcase \
+	sql_stmt_tests/logn10.testcase \
+	sql_stmt_tests/logn1.testcase \
+	sql_stmt_tests/logn2-01.testcase \
+	sql_stmt_tests/logn2-02.testcase \
+	sql_stmt_tests/logn2-2.2.testcase \
+	sql_stmt_tests/logn2-4.2int.testcase \
+	sql_stmt_tests/logn2-4.2.testcase \
+	sql_stmt_tests/logn2-text2.testcase \
+	sql_stmt_tests/logn2-text3.testcase \
+	sql_stmt_tests/logn2-text4.testcase \
+	sql_stmt_tests/logn2-text.testcase \
+	sql_stmt_tests/logn-text.testcase \
 	sql_stmt_tests/pi.testcase \
 	sql_stmt_tests/pow00-1.testcase \
 	sql_stmt_tests/pow00-2.testcase \
@@ -349,7 +407,44 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/pow-edom.testcase \
 	sql_stmt_tests/pow-fp.testcase \
 	sql_stmt_tests/rad0.testcase \
-	sql_stmt_tests/radpi.testcase
+	sql_stmt_tests/radpi.testcase \
+	sql_stmt_tests/rad-text.testcase \
+	sql_stmt_tests/round-text.testcase \
+	sql_stmt_tests/round-31.testcase \
+	sql_stmt_tests/round30.testcase \
+	sql_stmt_tests/round0.testcase \
+	sql_stmt_tests/round-29.testcase \
+	sql_stmt_tests/round29.testcase \
+	sql_stmt_tests/round31.testcase \
+	sql_stmt_tests/round3.testcase \
+	sql_stmt_tests/sign00.testcase \
+	sql_stmt_tests/sign01.testcase \
+	sql_stmt_tests/sign0.testcase \
+	sql_stmt_tests/sign10.testcase \
+	sql_stmt_tests/signeg2int.testcase \
+	sql_stmt_tests/signeg2.testcase \
+	sql_stmt_tests/signeg.testcase \
+	sql_stmt_tests/signtext.testcase \
+	sql_stmt_tests/sin-text.testcase \
+	sql_stmt_tests/sin-pi2.testcase \
+	sql_stmt_tests/sin-pi.testcase \
+	sql_stmt_tests/sinpi2.testcase \
+	sql_stmt_tests/sin00.testcase \
+	sql_stmt_tests/sin0.testcase \
+	sql_stmt_tests/sinpi.testcase \
+	sql_stmt_tests/sqrt-10.testcase \
+	sql_stmt_tests/sqrt0.testcase \
+	sql_stmt_tests/sqrt00.testcase \
+	sql_stmt_tests/sqrt-640.testcase \
+	sql_stmt_tests/sqrt-text.testcase \
+	sql_stmt_tests/sqrt-64.testcase \
+	sql_stmt_tests/sqrt-1.testcase \
+	sql_stmt_tests/tan-pi.testcase \
+	sql_stmt_tests/tanpi.testcase \
+	sql_stmt_tests/tan00.testcase \
+	sql_stmt_tests/tan-text.testcase \
+	sql_stmt_tests/tan0.testcase \
+	sql_stmt_tests/tanpi4.testcase
 
 all: all-am
 
@@ -415,9 +510,15 @@ check_init$(EXEEXT): $(check_init_OBJECTS) $(check_init_DEPENDENCIES)
 check_math_funcs$(EXEEXT): $(check_math_funcs_OBJECTS) $(check_math_funcs_DEPENDENCIES) 
 	@rm -f check_math_funcs$(EXEEXT)
 	$(LINK) $(check_math_funcs_OBJECTS) $(check_math_funcs_LDADD) $(LIBS)
+check_mbrcache$(EXEEXT): $(check_mbrcache_OBJECTS) $(check_mbrcache_DEPENDENCIES) 
+	@rm -f check_mbrcache$(EXEEXT)
+	$(LINK) $(check_mbrcache_OBJECTS) $(check_mbrcache_LDADD) $(LIBS)
 check_shp_load$(EXEEXT): $(check_shp_load_OBJECTS) $(check_shp_load_DEPENDENCIES) 
 	@rm -f check_shp_load$(EXEEXT)
 	$(LINK) $(check_shp_load_OBJECTS) $(check_shp_load_LDADD) $(LIBS)
+check_spatialindex$(EXEEXT): $(check_spatialindex_OBJECTS) $(check_spatialindex_DEPENDENCIES) 
+	@rm -f check_spatialindex$(EXEEXT)
+	$(LINK) $(check_spatialindex_OBJECTS) $(check_spatialindex_LDADD) $(LIBS)
 check_sql_stmt$(EXEEXT): $(check_sql_stmt_OBJECTS) $(check_sql_stmt_DEPENDENCIES) 
 	@rm -f check_sql_stmt$(EXEEXT)
 	$(LINK) $(check_sql_stmt_OBJECTS) $(check_sql_stmt_LDADD) $(LIBS)
@@ -436,6 +537,12 @@ check_virtualtable3$(EXEEXT): $(check_virtualtable3_OBJECTS) $(check_virtualtabl
 check_virtualtable4$(EXEEXT): $(check_virtualtable4_OBJECTS) $(check_virtualtable4_DEPENDENCIES) 
 	@rm -f check_virtualtable4$(EXEEXT)
 	$(LINK) $(check_virtualtable4_OBJECTS) $(check_virtualtable4_LDADD) $(LIBS)
+check_virtualtable5$(EXEEXT): $(check_virtualtable5_OBJECTS) $(check_virtualtable5_DEPENDENCIES) 
+	@rm -f check_virtualtable5$(EXEEXT)
+	$(LINK) $(check_virtualtable5_OBJECTS) $(check_virtualtable5_LDADD) $(LIBS)
+check_virtualtable6$(EXEEXT): $(check_virtualtable6_OBJECTS) $(check_virtualtable6_DEPENDENCIES) 
+	@rm -f check_virtualtable6$(EXEEXT)
+	$(LINK) $(check_virtualtable6_OBJECTS) $(check_virtualtable6_LDADD) $(LIBS)
 check_xls_load$(EXEEXT): $(check_xls_load_OBJECTS) $(check_xls_load_DEPENDENCIES) 
 	@rm -f check_xls_load$(EXEEXT)
 	$(LINK) $(check_xls_load_OBJECTS) $(check_xls_load_LDADD) $(LIBS)
@@ -465,13 +572,17 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gaia_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_math_funcs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_mbrcache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_shp_load.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_spatialindex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_sql_stmt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable4.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable5.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable6.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_xls_load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_3d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_cp1252.Po@am__quote@

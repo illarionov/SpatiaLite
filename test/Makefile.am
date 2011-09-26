@@ -19,7 +19,8 @@ check_PROGRAMS = check_version \
 		check_virtualtable4 \
 		check_virtualtable5 \
 		check_virtualtable6 \
-		check_mbrcache
+		check_mbrcache \
+		check_spatialindex
 
 AM_CFLAGS = -I@srcdir@/../src/headers
 AM_LDFLAGS = -L../src -lspatialite -lm $(GCOV_FLAGS)
