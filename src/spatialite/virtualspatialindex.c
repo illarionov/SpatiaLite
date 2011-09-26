@@ -505,10 +505,10 @@ vspidx_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
     gaiaMbrGeometry (geom);
 
 /* adjusting the MBR so to compensate for DOUBLE/FLOAT truncations */
-    minx = geom->MinX;
-    miny = geom->MinY;
-    maxx = geom->MaxX;
-    maxy = geom->MaxY;
+    minx = (float)(geom->MinX);
+    miny = (float)(geom->MinY);
+    maxx = (float)(geom->MaxX);
+    maxy = (float)(geom->MaxY);
     tic = fabs (geom->MinX - minx);
     tic2 = fabs (geom->MinY - miny);
     if (tic2 > tic)

@@ -30,11 +30,12 @@ spatialite.lib:	$(LIBOBJ)
 
 $(SPATIALITE_DLL):	spatialite_i.lib
 
-spatialite_i.lib:	$(LIBOBJ)
-	link /debug /dll /def:libspatialite.def /out:$(SPATIALITE_DLL) \
+spatialite_i.lib:     $(LIBOBJ)
+	link /debug /dll /out:$(SPATIALITE_DLL) \
 		/implib:spatialite_i.lib $(LIBOBJ) \
 		C:\OSGeo4W\lib\proj_i.lib C:\OSGeo4W\lib\geos_c_i.lib \
-		C:\OSGeo4w\lib\iconv.lib C:\OSGeo4W\lib\sqlite_i.lib
+		C:\OSGeo4w\lib\freexl.lib C:\OSGeo4w\lib\iconv.lib \
+		C:\OSGeo4W\lib\sqlite_i.lib
 	if exist $(SPATIALITE_DLL).manifest mt -manifest \
 		$(SPATIALITE_DLL).manifest -outputresource:$(SPATIALITE_DLL);2
 		

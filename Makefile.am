@@ -2,7 +2,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 AUTOMAKE_OPTIONS = dist-zip
 
-EXTRA_DIST = makefile.vc nmake.opt libspatialite.def
+EXTRA_DIST = makefile.vc nmake.opt 
 
 SUBDIRS = src test examples
 

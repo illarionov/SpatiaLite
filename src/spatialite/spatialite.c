@@ -3209,8 +3209,8 @@ eval_rtree_entry (int ok_geom, double geom_value, int ok_rtree,
 	return 1;
     if (ok_geom && ok_rtree)
       {
-	  float g = geom_value;
-	  float r = rtree_value;
+	  float g = (float)geom_value;
+	  float r = (float)rtree_value;
 	  if (g != r)
 	      return 0;
 	  return 1;
@@ -9265,10 +9265,10 @@ fnct_RTreeWithin (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
 	    }
 
 	  /* adjusting the MBR so to compensate for DOUBLE/FLOAT truncations */
-	  fminx = xmin;
-	  fminy = ymin;
-	  fmaxx = xmax;
-	  fmaxy = ymax;
+	  fminx = (float)xmin;
+	  fminy = (float)ymin;
+	  fmaxx = (float)xmax;
+	  fmaxy = (float)ymax;
 	  tic = fabs (xmin - fminx);
 	  tic2 = fabs (ymin - fminy);
 	  if (tic2 > tic)
@@ -9354,10 +9354,10 @@ fnct_RTreeContains (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
 	    }
 
 	  /* adjusting the MBR so to compensate for DOUBLE/FLOAT truncations */
-	  fminx = xmin;
-	  fminy = ymin;
-	  fmaxx = xmax;
-	  fmaxy = ymax;
+	  fminx = (float)xmin;
+	  fminy = (float)ymin;
+	  fmaxx = (float)xmax;
+	  fmaxy = (float)ymax;
 	  tic = fabs (xmin - fminx);
 	  tic2 = fabs (ymin - fminy);
 	  if (tic2 > tic)
@@ -9443,10 +9443,10 @@ fnct_RTreeIntersects (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
 	    }
 
 	  /* adjusting the MBR so to compensate for DOUBLE/FLOAT truncations */
-	  fminx = xmin;
-	  fminy = ymin;
-	  fmaxx = xmax;
-	  fmaxy = ymax;
+	  fminx = (float)xmin;
+	  fminy = (float)ymin;
+	  fmaxx = (float)xmax;
+	  fmaxy = (float)ymax;
 	  tic = fabs (xmin - fminx);
 	  tic2 = fabs (ymin - fminy);
 	  if (tic2 > tic)

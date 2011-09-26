@@ -59,6 +59,12 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include <spatialite/gaiageo.h>
 
+#if defined(_WIN32) || defined(WIN32)
+# include <io.h>
+#define isatty  _isatty
+#define fileno  _fileno
+#endif
+
 int vanuatu_parse_error;
 
 static int

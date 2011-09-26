@@ -62,6 +62,12 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define atoll	_atoi64
 #endif /* not WIN32 */
 
+#if defined(_WIN32) || defined(WIN32)
+# include <io.h>
+#define isatty	_isatty
+#define fileno	_fileno
+#endif
+
 int ewkt_parse_error;
 
 static int
