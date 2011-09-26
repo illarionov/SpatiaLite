@@ -35,10 +35,11 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 subdir = .
-DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(srcdir)/spatialite.pc.in \
-	$(top_srcdir)/configure AUTHORS COPYING INSTALL config.guess \
-	config.sub depcomp install-sh ltmain.sh missing
+DIST_COMMON = README $(am__configure_deps) $(srcdir)/Doxyfile.in \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(srcdir)/spatialite.pc.in $(top_srcdir)/configure AUTHORS \
+	COPYING INSTALL config.guess config.sub depcomp install-sh \
+	ltmain.sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -46,7 +47,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
-CONFIG_CLEAN_FILES = spatialite.pc
+CONFIG_CLEAN_FILES = Doxyfile spatialite.pc
 CONFIG_CLEAN_VPATH_FILES =
 SOURCES =
 DIST_SOURCES =
@@ -254,7 +255,7 @@ top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = dist-zip
 EXTRA_DIST = makefile.vc nmake.opt libspatialite.def
-SUBDIRS = src test
+SUBDIRS = src test examples
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = spatialite.pc
 MOSTLYCLEANFILES = libspatialite_cov.info
@@ -295,6 +296,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	$(am__cd) $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 $(am__aclocal_m4_deps):
+Doxyfile: $(top_builddir)/config.status $(srcdir)/Doxyfile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 spatialite.pc: $(top_builddir)/config.status $(srcdir)/spatialite.pc.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 

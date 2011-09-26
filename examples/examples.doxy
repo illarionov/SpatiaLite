@@ -1,0 +1,126 @@
+/** \example demo1.c
+
+This is a sample C source showing how to use SQLite / SpatiaLite 
+from C. 
+
+This program shows the  basic functionality that will be required for most
+SpatiaLite programs:
+ - how to connect an SQLite+SpatiaLite database
+ - executing an SQL query 
+ - fetching values from a result set
+ - transforming BLOB-values into GEOMETRY
+ - elementary processing GEOMETRY 
+
+The typical output of this demo is shown below, when run against the sample
+database.
+\verbatim
+SQLite version: 3.7.4
+SpatiaLite version: 3.0.0-beta1
+
+
+========= table 'HighWays' ========================
+row #1
+        PK_UID     = 1
+        Name       = 'Unknown'
+        Geometry   = LINESTRING SRID=32632 length=8697.57
+row #2
+        PK_UID     = 2
+        Name       = 'Unknown'
+        Geometry   = LINESTRING SRID=32632 length=39.79
+row #3
+        PK_UID     = 3
+        Name       = 'Unknown'
+        Geometry   = LINESTRING SRID=32632 length=14610.39
+row #4
+        PK_UID     = 4
+        Name       = 'Unknown'
+        Geometry   = LINESTRING SRID=32632 length=878.01
+row #5
+        PK_UID     = 5
+        Name       = 'Unknown'
+        Geometry   = LINESTRING SRID=32632 length=10.05
+
+
+========= table 'Regions' ========================
+row #1
+        PK_UID     = 1
+        Name       = 'VENETO'
+        Geometry   = MULTIPOLYGON SRID=32632 area=646397.81
+row #2
+        PK_UID     = 2
+        Name       = 'VENETO'
+        Geometry   = MULTIPOLYGON SRID=32632 area=1290337.69
+row #3
+        PK_UID     = 3
+        Name       = 'VENETO'
+        Geometry   = MULTIPOLYGON SRID=32632 area=8784619.92
+row #4
+        PK_UID     = 4
+        Name       = 'VENETO'
+        Geometry   = MULTIPOLYGON SRID=32632 area=530524.68
+row #5
+        PK_UID     = 5
+        Name       = 'LIGURIA'
+        Geometry   = MULTIPOLYGON SRID=32632 area=5450277374.12
+
+
+========= table 'Towns' ========================
+row #1
+        PK_UID     = 1
+        Name       = 'Brozolo'
+        Peoples    = 435
+        LocalCounc = 1
+        County     = 0
+        Region     = 0
+        Geometry   = POINT SRID=32632
+row #2
+        PK_UID     = 2
+        Name       = 'Campiglione-Fenile'
+        Peoples    = 1284
+        LocalCounc = 1
+        County     = 0
+        Region     = 0
+        Geometry   = POINT SRID=32632
+row #3
+        PK_UID     = 3
+        Name       = 'Canischio'
+        Peoples    = 274
+        LocalCounc = 1
+        County     = 0
+        Region     = 0
+        Geometry   = POINT SRID=32632
+row #4
+        PK_UID     = 4
+        Name       = 'Cavagnolo'
+        Peoples    = 2281
+        LocalCounc = 1
+        County     = 0
+        Region     = 0
+        Geometry   = POINT SRID=32632
+row #5
+        PK_UID     = 5
+        Name       = 'Magliano Alfieri'
+        Peoples    = 1674
+        LocalCounc = 1
+        County     = 0
+        Region     = 0
+        Geometry   = POINT SRID=32632
+
+
+
+
+sample successfully terminated
+\endverbatim
+
+*/
+
+/** \example demo2.c
+
+This is a sample C source showing how to manipulate GEOMETRY within
+Spatialite. It essentially follows on from the functionality shown in the
+demo1.c example, and covers:
+ - creating geometries
+ - exploring geometries
+ - querying the basic properties of a geometry
+*/
+

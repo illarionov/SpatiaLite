@@ -66,6 +66,8 @@ AC_CONFIG_FILES([Makefile \
 		src/srsinit/Makefile \
 		src/virtualtext/Makefile \
 		test/Makefile \
+		examples/Makefile \
+		Doxyfile \
 		spatialite.pc])
 
 #-----------------------------------------------------------------------

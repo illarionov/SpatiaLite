@@ -16364,7 +16364,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/srsinit/Makefile src/virtualtext/Makefile test/Makefile spatialite.pc"
+ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/srsinit/Makefile src/virtualtext/Makefile test/Makefile examples/Makefile Doxyfile spatialite.pc"
 
 
 #-----------------------------------------------------------------------
@@ -18230,6 +18230,8 @@ do
     "src/srsinit/Makefile") CONFIG_FILES="$CONFIG_FILES src/srsinit/Makefile" ;;
     "src/virtualtext/Makefile") CONFIG_FILES="$CONFIG_FILES src/virtualtext/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
+    "examples/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
+    "Doxyfile") CONFIG_FILES="$CONFIG_FILES Doxyfile" ;;
     "spatialite.pc") CONFIG_FILES="$CONFIG_FILES spatialite.pc" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5 ;;
