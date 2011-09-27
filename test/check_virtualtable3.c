@@ -69,7 +69,7 @@ int main (int argc, char *argv[])
 	return -1;
     }
     
-    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE dbftest USING VirtualDBF(shapetest1.dbf, UTF8);", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE dbftest USING VirtualDBF(shapetest1.dbf, UTF-8);", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "VirtualDBF error: %s\n", err_msg);
 	sqlite3_free (err_msg);
@@ -533,14 +533,14 @@ int main (int argc, char *argv[])
     }
     sqlite3_free (err_msg);
 
-    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE toomanyargs USING VirtualDBF(\"shapetest1.dbf\", UTF8, 1);", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE toomanyargs USING VirtualDBF(\"shapetest1.dbf\", UTF-8, 1);", NULL, NULL, &err_msg);
     if (ret != SQLITE_ERROR) {
 	fprintf (stderr, "VirtualDBF unexpected result: %i\n", ret);
 	return -96;
     }
     sqlite3_free (err_msg);
 
-    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE nosuchfile USING VirtualDBF(\"not_a_file.dbf\", UTF8);", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE nosuchfile USING VirtualDBF(\"not_a_file.dbf\", UTF-8);", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "VirtualDBF error: %s\n", err_msg);
 	sqlite3_free (err_msg);
@@ -563,7 +563,7 @@ int main (int argc, char *argv[])
 	return -100;
     }
 
-    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE onesidedquote USING VirtualDBF('shapetest1.dbf, UTF8);", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE onesidedquote USING VirtualDBF('shapetest1.dbf, UTF-8);", NULL, NULL, &err_msg);
     if (ret != SQLITE_ERROR) {
 	fprintf (stderr, "VirtualDBF unexpected result: %i\n", ret);
 	return -101;

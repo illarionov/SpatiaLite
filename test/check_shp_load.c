@@ -71,7 +71,7 @@ int main (int argc, char *argv[])
 	return -2;
     }
 
-    ret = load_shapefile (handle, "./shapetest1", "test1", "UTF8", 4326, 
+    ret = load_shapefile (handle, "./shapetest1", "test1", "UTF-8", 4326, 
 			  "col1", 1, 0, 1, 0, &row_count, err_msg);
     if (!ret) {
         fprintf (stderr, "load_shapefile() error: %s\n", err_msg);

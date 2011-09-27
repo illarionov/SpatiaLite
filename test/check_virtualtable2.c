@@ -69,7 +69,7 @@ int main (int argc, char *argv[])
 	return -1;
     }
     
-    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE shapetest USING VirtualShape(\"shapetest1\", UTF8, 4326);", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE shapetest USING VirtualShape(\"shapetest1\", UTF-8, 4326);", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "VirtualShape error: %s\n", err_msg);
 	sqlite3_free (err_msg);

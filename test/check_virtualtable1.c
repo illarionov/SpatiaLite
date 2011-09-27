@@ -69,7 +69,7 @@ int main (int argc, char *argv[])
 	return -1;
     }
     
-    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE places USING VirtualText(\"testcase1.csv\", UTF8, 0, POINT, DOUBLEQUOTE);", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE places USING VirtualText(\"testcase1.csv\", UTF-8, 0, POINT, DOUBLEQUOTE);", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "VirtualText error: %s\n", err_msg);
 	sqlite3_free (err_msg);

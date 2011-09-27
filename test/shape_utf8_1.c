@@ -90,7 +90,7 @@ int main (int argc, char *argv[])
 	return -2;
     }
     
-    ret = load_shapefile (handle, "./shp/gaza/barrier", "barrier", "UTF8", 4326, 
+    ret = load_shapefile (handle, "./shp/gaza/barrier", "barrier", "UTF-8", 4326, 
 			  NULL, 1, 0, 1, 1, &row_count, err_msg);
     if (!ret) {
         fprintf (stderr, "load_shapefile() error for shp/gaza/barrier: %s\n", err_msg);
@@ -103,7 +103,7 @@ int main (int argc, char *argv[])
 	return -4;
     }
 
-    ret = load_shapefile (handle, "./shp/gaza/aeroway", "aeroway", "UTF8", 4326, 
+    ret = load_shapefile (handle, "./shp/gaza/aeroway", "aeroway", "UTF-8", 4326, 
 			  "col1", 1, 0, 0, 0, &row_count, err_msg);
     if (!ret) {
         fprintf (stderr, "load_shapefile() error for shp/gaza/aeroway: %s\n", err_msg);
@@ -116,7 +116,7 @@ int main (int argc, char *argv[])
 	return -6;
     }
 
-    ret = load_shapefile (handle, "./shp/gaza/route", "route", "UTF8", 4326, 
+    ret = load_shapefile (handle, "./shp/gaza/route", "route", "UTF-8", 4326, 
 			  NULL, 1, 0, 1, 1, &row_count, err_msg);
     if (!ret) {
         fprintf (stderr, "load_shapefile() error for shp/gaza/route: %s\n", err_msg);
@@ -129,28 +129,28 @@ int main (int argc, char *argv[])
 	return -8;
     }
 
-    ret = dump_shapefile (handle, "route", "Geometry", dumpname, "UTF8", "", 1, &row_count, err_msg);
+    ret = dump_shapefile (handle, "route", "Geometry", dumpname, "UTF-8", "", 1, &row_count, err_msg);
     if (!ret) {
-        fprintf (stderr, "dump_shapefile() error for UTF8_1 route: %s\n", err_msg);
+        fprintf (stderr, "dump_shapefile() error for UTF-8_1 route: %s\n", err_msg);
 	sqlite3_close(handle);
 	return -9;
     }
     cleanup_shapefile(dumpname);
     if (row_count != 2) {
-	fprintf (stderr, "unexpected dump row count for UTF8_1 route: %i\n", row_count);
+	fprintf (stderr, "unexpected dump row count for UTF-8_1 route: %i\n", row_count);
 	sqlite3_close(handle);
 	return -10;
     }
 
-    ret = dump_shapefile (handle, "route", "Geometry", dumpname, "UTF8", "LINESTRING", 1, &row_count, err_msg);
+    ret = dump_shapefile (handle, "route", "Geometry", dumpname, "UTF-8", "LINESTRING", 1, &row_count, err_msg);
     if (!ret) {
-        fprintf (stderr, "dump_shapefile() error for UTF8_1 route: %s\n", err_msg);
+        fprintf (stderr, "dump_shapefile() error for UTF-8_1 route: %s\n", err_msg);
 	sqlite3_close(handle);
 	return -13;
     }
     cleanup_shapefile(dumpname);
     if (row_count != 2) {
-	fprintf (stderr, "unexpected dump row count for UTF8_1 route LINESTRING: %i\n", row_count);
+	fprintf (stderr, "unexpected dump row count for UTF-8_1 route LINESTRING: %i\n", row_count);
 	sqlite3_close(handle);
 	return -14;
     }

@@ -72,7 +72,7 @@ int main (int argc, char *argv[])
 	return -2;
     }
     
-    ret = load_shapefile (handle, "./shp/taiwan/hystoric", "hystoric", "UTF8", 4326, 
+    ret = load_shapefile (handle, "./shp/taiwan/hystoric", "hystoric", "UTF-8", 4326, 
 			  "col1", 1, 0, 1, 0, &row_count, err_msg);
     if (!ret) {
         fprintf (stderr, "load_shapefile() error for shp/taiwan/hystoric: %s\n", err_msg);
@@ -85,7 +85,7 @@ int main (int argc, char *argv[])
 	return -4;
     }
 
-    ret = load_shapefile (handle, "./shp/taiwan/leisure", "leisure", "UTF8", 4326, 
+    ret = load_shapefile (handle, "./shp/taiwan/leisure", "leisure", "UTF-8", 4326, 
 			  "col1", 1, 0, 1, 0, &row_count, err_msg);
     if (!ret) {
         fprintf (stderr, "load_shapefile() error for shp/taiwan/leisure: %s\n", err_msg);
@@ -98,7 +98,7 @@ int main (int argc, char *argv[])
 	return -6;
     }
 
-    ret = load_shapefile (handle, "./shp/taiwan/route", "route", "UTF8", 4326, 
+    ret = load_shapefile (handle, "./shp/taiwan/route", "route", "UTF-8", 4326, 
 			  "col1", 1, 0, 1, 0, &row_count, err_msg);
     if (!ret) {
         fprintf (stderr, "load_shapefile() error for shp/taiwan/route: %s\n", err_msg);
