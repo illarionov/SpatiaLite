@@ -1,23 +1,8 @@
 /* 
 
-demo1:
-
-version 2.2, 2008 September 13
+demo1.c
 
 Author: Sandro Furieri a-furieri@lqt.it
-
-------------------------------------------------------------------------------
-  
-this is a sample C source showing how to use SQLite / SpatiaLite 
-[ at least, the very basic things you absolutely need to know ...]
-
-1. how to connect an SQLite+SpatiaLite database
-2. executing an SQL query 
-3. fetching values from a result set
-4. transforming BLOB-values into GEOMETRY
-5. elementary processing GEOMETRY 
-
-------------------------------------------------------------------------------
  
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the author be held liable for any
@@ -93,7 +78,7 @@ BEFORE attempting to perform any other SQLite call
 /* 
 trying to connect the test DB: 
 - this demo was designed in order to connect the standard 
-  TEST-2.1.SQLITE sample DB
+  TEST-2.3.SQLITE sample DB
 - but you can try to use any SQLite/SpatiaLite DB at your will
 
 Please notice: we'll establish a READ ONLY connection 
@@ -137,7 +122,7 @@ isn't possible at all to retrieve true column types
       }
     if (n_rows > 1)
       {
-/* first row always contains column names and is meaningles in this context */
+/* first row always contains column names and is meaningless in this context */
 	  n_geotables = n_rows;
 /* allocating a dynamic pointer array to store geotable names */
 	  p_geotables = malloc (sizeof (char *) * n_geotables);
@@ -146,7 +131,7 @@ isn't possible at all to retrieve true column types
 /* 
 now we'll fetch one row at each time [and we have only one column to fetch] 
 
-this one is is a simplified demo; but when writing a real app 
+this one is is a simplified demo; but when writing a real application 
 you always must check for NULL values !!!!
 */
 		table_name = results[(i * n_columns) + 0];
@@ -201,7 +186,7 @@ but no result set row is really yet available
 
 	  while (1)
 	    {
-/* this one is an infinitive loop, intended to fetch any row */
+/* this is an infinite loop, intended to fetch any row */
 
 /* we are now trying to fetch the next available row */
 		ret = sqlite3_step (stmt);
@@ -225,8 +210,7 @@ and now we'll fetch column values
 for each column we'll then get:
 - the column name
 - a column value, that can be of type: SQLITE_NULL, SQLITE_INTEGER, 
- SQLITE_FLOAT, SQLITE_TEXT or SQLITE_BLOB, accordingly to
-  internal DB storage type
+ SQLITE_FLOAT, SQLITE_TEXT or SQLITE_BLOB, according to internal DB storage type
 */
 			    printf ("\t%-10s = ",
 				    sqlite3_column_name (stmt, ic));
@@ -293,7 +277,7 @@ for each column we'll then get:
 						{
 						    gaiaGeomCollLength (geom,
 									&measure);
-						    printf (" lenght=%1.2f",
+						    printf (" length=%1.2f",
 							    measure);
 						}
 					      if (geom_type == GAIA_POLYGON ||
@@ -317,7 +301,7 @@ for each column we'll then get:
 
 		      if (row_no >= 5)
 			{
-/* we'll exit the loop after we've retrieved the first 5 rows - this one is only a demo :-) */
+/* we'll exit the loop after the first 5 rows - this is only a demo :-) */
 			    break;
 			}
 		  }

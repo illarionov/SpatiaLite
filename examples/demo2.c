@@ -1,20 +1,9 @@
 /* 
 
-demo2:
-
-version 2.2, 2008 September 13
+demo2.c
 
 Author: Sandro Furieri a-furieri@lqt.it
 
-------------------------------------------------------------------------------
-  
-this is a sample C source showing how to manipulate GEOMETRY
-1. creating geometries
-2. exploring geometries
-3. enquiring their basic properties
-
-------------------------------------------------------------------------------
- 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the author be held liable for any
 damages arising from the use of this software.
@@ -43,7 +32,7 @@ SQLite/SpatiaLite
 static char *
 geom_type (int type)
 {
-/* utility funtion returning corresponding GeometryType as a string */
+/* utility function returning corresponding GeometryType as a string */
     static char *name = "EMPTY / NULL GEOMETRY";
     if (type == GAIA_POINT)
 	name = "POINT";
@@ -106,7 +95,7 @@ geometry_printout (gaiaGeomCollPtr geom)
 
     if (n_pts)
       {
-/* printing POINTs coords */
+/* printing POINTs coordinates */
 	  cnt = 0;
 	  pt = geom->FirstPoint;
 	  while (pt)
@@ -122,7 +111,7 @@ geometry_printout (gaiaGeomCollPtr geom)
 
     if (n_lns)
       {
-/* printing LINESTRINGs coords */
+/* printing LINESTRINGs coordinates */
 	  cnt = 0;
 	  ln = geom->FirstLinestring;
 	  while (ln)
@@ -132,7 +121,7 @@ geometry_printout (gaiaGeomCollPtr geom)
 			cnt, n_lns, ln->Points);
 		for (iv = 0; iv < ln->Points; iv++)
 		  {
-/* we'll now retrieve coords for each vertex */
+/* we'll now retrieve coordinates for each vertex */
 		      gaiaGetPoint (ln->Coords, iv, &x, &y);
 		      printf ("\t\t\t\tvertex %d/%d x=%1.4f y=%1.4f\n",
 			      iv, ln->Points, x, y);
@@ -145,7 +134,7 @@ geometry_printout (gaiaGeomCollPtr geom)
 
     if (n_pgs)
       {
-/* printing POLYGONs coords */
+/* printing POLYGONs coordinates */
 	  cnt = 0;
 	  pg = geom->FirstPolygon;
 	  while (pg)
@@ -163,7 +152,7 @@ now we'll print out the Exterior ring
 		printf ("\t\t\t\tExteriorRing has %d vertices\n", rng->Points);
 		for (iv = 0; iv < rng->Points; iv++)
 		  {
-/* we'll now retrieve coords for each vertex */
+/* we'll now retrieve coordinates for each vertex */
 		      gaiaGetPoint (rng->Coords, iv, &x, &y);
 		      printf ("\t\t\t\t\tvertex %d/%d x=%1.4f y=%1.4f\n",
 			      iv, rng->Points, x, y);
@@ -172,15 +161,14 @@ now we'll print out the Exterior ring
 		for (ir = 0; ir < pg->NumInteriors; ir++)
 		  {
 /* 
-a POLYGON can contain any arbitrary number of Interior rings 
-[this including ZERO]  
+a POLYGON can contain an arbitrary number of Interior rings (including zero)
 */
 		      rng = pg->Interiors + ir;
 		      printf ("\t\t\t\tInteriorRing %d/%d has %d vertices\n",
 			      ir, pg->NumInteriors, rng->Points);
 		      for (iv = 0; iv < rng->Points; iv++)
 			{
-/* we'll now retrieve coords for each vertex */
+/* we'll now retrieve coordinates for each vertex */
 			    gaiaGetPoint (rng->Coords, iv, &x, &y);
 			    printf
 				("\t\t\t\t\tvertex %d/%d x=%1.4f y=%1.4f\n",
@@ -214,9 +202,9 @@ main (int argc, char *argv[])
 
 /*
 
-this demo does not stricly requires any DB connection to be established
+this demo does not strictly require any DB connection to be established
 
-anyway you must initialize the SpatiaLite extension [and related]
+However you must initialize the SpatiaLite extension [and related]
 and you *must* establish a "fake" DB connection in order to 
 properly initialize SpatiaLite and GEOS libraries
 
@@ -239,7 +227,7 @@ creating and checking a POINT Geometry
 
 /* we'll allocate a Geometry object */
     geo_pt = gaiaAllocGeomColl ();
-/* then we insert a POINT, directly passing its coords */
+/* then we insert a POINT, directly passing its coordinates */
     gaiaAddPointToGeomColl (geo_pt, 1.5, 2.75);
 /* now we'll print the main attributes for this geometry */
     printf ("step#1: %s\t\tDimension=%d IsValid=%d\n",
@@ -254,11 +242,11 @@ Step #2
 creating and checking a LINESTRING Geometry
 */
     geo_ln = gaiaAllocGeomColl ();
-/* then we insert a  LINESTRING, specifing how many vertices it contains */
+/* then we insert a  LINESTRING, specifying how many vertices it contains */
     line = gaiaAddLinestringToGeomColl (geo_ln, 5);
 /* 
 we've got a pointer referencing the linestring we've just inserted
-now we'll set coords for each vertex
+now we'll set coordinates for each vertex
 */
     gaiaSetPoint (line->Coords, 0, 1.0, 1.0);
     gaiaSetPoint (line->Coords, 1, 2.0, 1.0);
@@ -280,7 +268,7 @@ creating and checking a POLYGON Geometry
 */
     geo_pg = gaiaAllocGeomColl ();
 /* 
-then we insert a  POLYGON, specifing:
+then we insert a  POLYGON, specifying:
 - how many vertices have to be allocated for the Exterior Ring
 - how many Interior Rings it has 
 */
@@ -292,21 +280,21 @@ now we'll get a pointer referencing its Exterior ring
     ring = polyg->Exterior;
 
 
-/* now we'll set coord for each Exterior ring vertex */
+/* now we'll set coordinates for each Exterior ring vertex */
     gaiaSetPoint (ring->Coords, 0, 0.0, 0.0);
     gaiaSetPoint (ring->Coords, 1, 50.0, 0.0);
     gaiaSetPoint (ring->Coords, 2, 50.0, 50.0);
     gaiaSetPoint (ring->Coords, 3, 0.0, 50.0);
-/* please note: a Ring is a CLOSED figure, so last and first vertex has to be coincident */
+/* please note: a Ring is a CLOSED figure, so last and first vertex have to be coincident */
     gaiaSetPoint (ring->Coords, 4, 0.0, 0.0);
 
 
 /* 
 we'll now get a pointer referencing the FIRST interior ring,
-specifing how vertices have to be allocated
+specifying how vertices have to be allocated
 */
     ring = gaiaAddInteriorRing (polyg, 0, 5);
-/* then setting coords for each Interior ring vertex */
+/* then setting coordinates for each Interior ring vertex */
     gaiaSetPoint (ring->Coords, 0, 40.0, 40.0);
     gaiaSetPoint (ring->Coords, 1, 41.0, 40.0);
     gaiaSetPoint (ring->Coords, 2, 41.0, 41.0);
@@ -316,10 +304,10 @@ specifing how vertices have to be allocated
 
 /* 
 we'll now get a pointer referencing the SECOND interior ring,
-specifing how vertices have to be allocated
+specifying how vertices have to be allocated
 */
     ring = gaiaAddInteriorRing (polyg, 1, 5);
-/* then setting coords for each Interior ring vertex */
+/* then setting coordinates for each Interior ring vertex */
     gaiaSetPoint (ring->Coords, 0, 30.0, 30.0);
     gaiaSetPoint (ring->Coords, 1, 31.0, 30.0);
     gaiaSetPoint (ring->Coords, 2, 31.0, 31.0);
@@ -450,18 +438,17 @@ creating and checking a GEOMETRYCOLLECTION Geometry
 
 /*
 Step #8
-printing each geometry as WKT
+printing each geometry as Well Known Text (WKT)
 */
 
     printf ("\nstep#8: checking WKT representations\n");
 
-/* first we'll get the WKT correspondig to geometry */
+/* first we'll get the WKT corresponding to geometry */
     gaiaOutBufferInitialize (&wkt);
     gaiaOutWkt (&wkt, geo_pt);
+/* we have to check wkt is not NULL */
     if (wkt.Error == 0 && wkt.Buffer != NULL)
       {
-/* we have to check wkt is not NULL */
-
 /* printing the WKT */
 	  printf ("\n%s\n", wkt.Buffer);
 

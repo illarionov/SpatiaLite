@@ -1,23 +1,8 @@
 /* 
 
-demo3:
-
-version 2.2, 2008 September 13
+demo3.c
 
 Author: Sandro Furieri a-furieri@lqt.it
-
-------------------------------------------------------------------------------
-  
-this is a sample C source showing how to use  theSQLite / SpatiaLite 
-Spatial Index [RTree]
-
-1. creating a new database
-2. creating a sample geo-table 
-3. inserting 1 million rows into this table
-4. performing some spatial query [without Spatial Index]
-5. and then performing the same queries using the Spatial Index
-
-------------------------------------------------------------------------------
  
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the author be held liable for any
@@ -113,7 +98,7 @@ so we have to create the Spatial Metadata
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-/* some error occurred */
+/* an error occurred */
 	  printf ("InitSpatialMetadata() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  goto abort;
@@ -129,7 +114,7 @@ for simplicity we'll define only one column, the primary key
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-/* some error occurred */
+/* an error occurred */
 	  printf ("CREATE TABLE 'test' error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  goto abort;
@@ -137,13 +122,13 @@ for simplicity we'll define only one column, the primary key
 
 
 /*
-... we'll add to the test table a Geometry column of POINT type
+... we'll add a Geometry column of POINT type to the test table 
 */
     strcpy (sql, "SELECT AddGeometryColumn('test', 'geom', 3003, 'POINT', 2)");
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-/* some error occurred */
+/* an error occurred */
 	  printf ("AddGeometryColumn() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  goto abort;
@@ -157,7 +142,7 @@ and finally we'll enable this geo-column to have a Spatial Index based on R*Tree
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-/* some error occurred */
+/* an error occurred */
 	  printf ("CreateSpatialIndex() error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  goto abort;
@@ -168,7 +153,7 @@ and finally we'll enable this geo-column to have a Spatial Index based on R*Tree
 
     t0 = clock ();
 /*
-begining a transaction
+beginning a transaction
 
 *** this step is absolutely critical ***
 
@@ -180,7 +165,7 @@ otherwise performance will be surely very poor
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-/* some error occurred */
+/* an error occurred */
 	  printf ("BEGIN error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  goto abort;
@@ -196,7 +181,7 @@ we'll use a Prepared Statement we can reuse in order to insert each row
     ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-/* some error occurred */
+/* an error occurred */
 	  printf ("INSERT SQL error: %s\n", sqlite3_errmsg (handle));
 	  goto abort;
       }
@@ -207,7 +192,7 @@ we'll use a Prepared Statement we can reuse in order to insert each row
 	  x = 1000000.0 + (ix * 10.0);
 	  for (iy = 0; iy < 1000; iy++)
 	    {
-/* this double loop is intended to insert 1 million rows into the the test table */
+/* this double loop will insert 1 million rows into the the test table */
 
 		y = 4000000.0 + (iy * 10.0);
 		pk++;
@@ -226,7 +211,7 @@ we'll use a Prepared Statement we can reuse in order to insert each row
 /* transforming this geometry into the SpatiaLite BLOB format */
 		gaiaToSpatiaLiteBlobWkb (geo, &blob, &blob_size);
 
-/* we can now destroy the geomety object */
+/* we can now destroy the geometry object */
 		gaiaFreeGeomColl (geo);
 
 /* resetting Prepared Statement and bindings */
@@ -243,7 +228,7 @@ we'll use a Prepared Statement we can reuse in order to insert each row
 		    ;
 		else
 		  {
-/* some unexpected error occurred */
+/* an unexpected error occurred */
 		      printf ("sqlite3_step() error: %s\n",
 			      sqlite3_errmsg (handle));
 		      sqlite3_finalize (stmt);
@@ -269,7 +254,7 @@ any update will be lost
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-/* some error occurred */
+/* an error occurred */
 	  printf ("COMMIT error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  goto abort;
@@ -284,7 +269,7 @@ now we'll optimize the table
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-/* some error occurred */
+/* an error occurred */
 	  printf ("ANALYZE error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  goto abort;
@@ -307,7 +292,7 @@ we'll loop 3 times in order to avoid buffering-caching side effects
 				   &err_msg);
 	  if (ret != SQLITE_OK)
 	    {
-/* some error occurred */
+/* an error occurred */
 		printf ("NoSpatialIndex SQL error: %s\n", err_msg);
 		sqlite3_free (err_msg);
 		goto abort;
@@ -351,7 +336,7 @@ the idea is simply to simulate exactly the same conditions as above
 				   &err_msg);
 	  if (ret != SQLITE_OK)
 	    {
-/* some error occurred */
+/* an error occurred */
 		printf ("SpatialIndex SQL error: %s\n", err_msg);
 		sqlite3_free (err_msg);
 		goto abort;
