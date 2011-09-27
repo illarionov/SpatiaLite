@@ -71,7 +71,7 @@ int main (int argc, char *argv[])
 	return -2;
     }
     
-    ret = load_dbf (handle, "./shapetest1.dbf", "test1", "UTF8", 1, &row_count, err_msg);
+    ret = load_dbf (handle, "./shapetest1.dbf", "test1", "UTF-8", 1, &row_count, err_msg);
     if (!ret) {
         fprintf (stderr, "load_dbf() error: %s\n", err_msg);
 	sqlite3_close(handle);
