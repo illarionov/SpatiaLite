@@ -27,6 +27,7 @@ the Initial Developer. All Rights Reserved.
 
 Contributor(s):
 Brad Hards <bradh@frogmouth.net>
+Ahmadou Dicko <dicko.ahmadou@gmail.com>
 
 Alternatively, the contents of this file may be used under the terms of
 either the GNU General Public License Version 2 or later (the "GPL"), or
