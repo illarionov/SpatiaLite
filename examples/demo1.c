@@ -1,9 +1,24 @@
 /* 
 
-demo1.c
+demo1:
+
+version 2.2, 2008 September 13
 
 Author: Sandro Furieri a-furieri@lqt.it
 
+------------------------------------------------------------------------------
+  
+this is a sample C source showing how to use SQLite / SpatiaLite 
+[ at least, the very basic things you absolutely need to know ...]
+
+1. how to connect an SQLite+SpatiaLite database
+2. executing an SQL query 
+3. fetching values from a result set
+4. transforming BLOB-values into GEOMETRY
+5. elementary processing GEOMETRY 
+
+------------------------------------------------------------------------------
+ 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the author be held liable for any
 damages arising from the use of this software.
@@ -59,29 +74,30 @@ main (int argc, char *argv[])
 
 
 
-    /* 
-    VERY IMPORTANT: 
-    you must initialize the SpatiaLite extension
-    BEFORE attempting to perform any other SQLite call 
-    */
+/* 
+VERY IMPORTANT: 
+you must initialize the SpatiaLite extension [and related]
+BEFORE attempting to perform any other SQLite call 
+*/
     spatialite_init (0);
 
 
-    /* showing the SQLite version */
+/* showing the SQLite version */
     printf ("SQLite version: %s\n", sqlite3_libversion ());
-    /* showing the SpatiaLite version */
+/* showing the SpatiaLite version */
     printf ("SpatiaLite version: %s\n", spatialite_version ());
     printf ("\n\n");
 
 
 
-    /* 
-    trying to connect the test DB: 
-    - this demo is designed to connect the standard test database, but you can
-    try this with any SQLite/SpatiaLite DB that you may have
+/* 
+trying to connect the test DB: 
+- this demo was designed in order to connect the standard 
+  TEST-2.1.SQLITE sample DB
+- but you can try to use any SQLite/SpatiaLite DB at your will
 
-    Please note that this will establish a READ ONLY connection 
-    */
+Please notice: we'll establish a READ ONLY connection 
+*/
     ret = sqlite3_open_v2 (argv[1], &handle, SQLITE_OPEN_READONLY, NULL);
     if (ret != SQLITE_OK)
       {
@@ -92,53 +108,54 @@ main (int argc, char *argv[])
 
 
 
-    /* 
-    SQL query #1.
-    We'll retrieve GEOMETRY tables from Spatial Metadata. We are assuming this
-    query will return only few rows, so this time we'll use the
-    sqlite3_get_table() interface.
+/* 
+SQL query #1 
+we'll retrieve GEOMETRY tables from Spatial Metadata 
+we are assuming this query will return only few rows, 
+so this time we'll use the sqlite3_get_table() interface
 
-    This interface is very simple to use, with the result set being returned as
-    a rectangular array [n_rows by n_columns] allocated in a temporary memory
-    storage. So this interface is well suited for small sized result sets,
-    but performs badly when accessing a large sized result set.
+this interface is very simple to use
+the result set is returned as a rectangular array [rows/columns]
+allocated in a temporary memory storage
+so, this interface is well suited for small sized result sets,
+but performs badly when accessing a large sized resul set
 
-    As a side effect of the API, each cell value is returned as text, and it
-    is not possible to retrieve the true column types (e.g. INTEGER, FLOAT ...)
-    */
+as a side effect, each column value is returned as text, and
+isn't possible at all to retrieve true column types
+(INTEGER, FLOAT ...)
+*/
     strcpy (sql,
 	    "SELECT DISTINCT f_table_name FROM geometry_columns ORDER BY 1");
     ret = sqlite3_get_table (handle, sql, &results, &n_rows, &n_columns,
 			     &err_msg);
     if (ret != SQLITE_OK)
       {
-	  /* some error occurred */
+/* some error occurred */
 	  printf ("query#1 SQL error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  goto abort;
       }
     if (n_rows > 1)
       {
-	  /* first row always contains column names and is meaningless in this
-	     context */
+/* first row always contains column names and is meaningles in this context */
 	  n_geotables = n_rows;
-	  /* allocating a dynamic pointer array to store geotable names */
+/* allocating a dynamic pointer array to store geotable names */
 	  p_geotables = malloc (sizeof (char *) * n_geotables);
 	  for (i = 1; i <= n_rows; i++)
 	    {
-		/* now we'll fetch one row at each time (we have only one
-		column) 
+/* 
+now we'll fetch one row at each time [and we have only one column to fetch] 
 
-		This is is a simplified demo; but when writing a real
-		application you always must check for NULL values.
-		*/
+this one is is a simplified demo; but when writing a real app 
+you always must check for NULL values !!!!
+*/
 		table_name = results[(i * n_columns) + 0];
-		/* then store each geotable name into the dynamic pointer array */
+/* and we'll store each geotable name into the dynamic pointer array */
 		len = strlen (table_name);
 		p_geotables[i - 1] = malloc (len + 1);
 		strcpy (p_geotables[i - 1], table_name);
 	    }
-	  /* we can now free the table results */
+/* we can now free the table results */
 	  sqlite3_free_table (results);
       }
 
@@ -146,71 +163,71 @@ main (int argc, char *argv[])
 
     for (i = 0; i < n_geotables; i++)
       {
-	  /* now we'll scan each geotable we've found in Spatial Metadata */
+/* now we'll scan each geotable we've found in Spatial Metadata */
 	  printf ("========= table '%s' ========================\n",
 		  p_geotables[i]);
 
 
 
-	  /*
-	  SQL query #2 
-	  we'll retrieve any column from the current geotable we are assuming
-	  this query will return lots of rows, so we have to use
-	  sqlite3_prepare_v2() interface
+/*
+SQL query #2 
+we'll retrieve any column from the current geotable 
+we are assuming this query will return lots of rows, 
+so we have to use sqlite3_prepare_v2() interface
 
-	  This interface is a more complex one, but is well suited in order to
-	  access huge sized result sets and also provides true value.
-	  */
+this interface is a more complex one, but is well
+suited in order to access huge sized result sets
+and true value type control is supported
+*/
 	  sprintf (sql, "SELECT * FROM %s", p_geotables[i]);
 	  ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
 	  if (ret != SQLITE_OK)
 	    {
-		/* an error occurred */
+/* some error occurred */
 		printf ("query#2 SQL error: %s\n", sqlite3_errmsg (handle));
 		goto abort;
 	    }
 
-	  /* 
-	  the sqlite3_prepare_v2() call simply parses the SQL statement,
-	  checking for syntax validity, allocating internal structures etc
-	  but no result set row is really yet available
-	  */
+/* 
+the sqlite3_prepare_v2() call simply parses the SQL statement,
+checking for syntax validity, allocating internal structs etc
+but no result set row is really yet available
+*/
 
-	  /* we'll now save the number of columns within the result set */
+/* we'll now save the #columns within the result set */
 	  n_columns = sqlite3_column_count (stmt);
 	  row_no = 0;
 
 
 	  while (1)
 	    {
-		/* this one is an infinite loop, intended to fetch any row */
+/* this one is an infinitive loop, intended to fetch any row */
 
-		/* we are now trying to fetch the next available row */
+/* we are now trying to fetch the next available row */
 		ret = sqlite3_step (stmt);
 		if (ret == SQLITE_DONE)
 		  {
-		      /* there are no rows left to fetch, so we exit the loop */
+/* there are no more rows to fetch - we can stop looping */
 		      break;
 		  }
 		if (ret == SQLITE_ROW)
 		  {
-		      /* ok, we've just fetched a valid row to process */
+/* ok, we've just fetched a valid row to process */
 		      row_no++;
 		      printf ("row #%d\n", row_no);
 
 
 		      for (ic = 0; ic < n_columns; ic++)
 			{
-			    /* 
-			    and now we'll fetch column values
+/* 
+and now we'll fetch column values
 
-			    for each column we'll then get:
-			    - the column name
-			    - a column value, that can be of type: SQLITE_NULL,
-			    SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT or
-			    SQLITE_BLOB, accordingly to the internal DB storage
-			    type
-			    */
+for each column we'll then get:
+- the column name
+- a column value, that can be of type: SQLITE_NULL, SQLITE_INTEGER, 
+ SQLITE_FLOAT, SQLITE_TEXT or SQLITE_BLOB, accordingly to
+  internal DB storage type
+*/
 			    printf ("\t%-10s = ",
 				    sqlite3_column_name (stmt, ic));
 			    switch (sqlite3_column_type (stmt, ic))
@@ -222,7 +239,7 @@ main (int argc, char *argv[])
 				  printf ("%d", sqlite3_column_int (stmt, ic));
 				  break;
 			      case SQLITE_FLOAT:
-				  printf ("%1.4lf",
+				  printf ("%1.4f",
 					  sqlite3_column_double (stmt, ic));
 				  break;
 			      case SQLITE_TEXT:
@@ -233,13 +250,13 @@ main (int argc, char *argv[])
 				  blob = sqlite3_column_blob (stmt, ic);
 				  blob_size = sqlite3_column_bytes (stmt, ic);
 
-				  /* checking if this BLOB is a GEOMETRY */
+/* checking if this BLOB actually is a GEOMETRY */
 				  geom =
 				      gaiaFromSpatiaLiteBlobWkb (blob,
 								 blob_size);
 				  if (!geom)
 				    {
-					/* this is not a GEOMETRY */
+/* for sure this one is not a GEOMETRY */
 					printf ("BLOB [%d bytes]", blob_size);
 				    }
 				  else
@@ -276,7 +293,7 @@ main (int argc, char *argv[])
 						{
 						    gaiaGeomCollLength (geom,
 									&measure);
-						    printf (" length=%1.2lf",
+						    printf (" lenght=%1.2f",
 							    measure);
 						}
 					      if (geom_type == GAIA_POLYGON ||
@@ -285,11 +302,11 @@ main (int argc, char *argv[])
 						{
 						    gaiaGeomCollArea (geom,
 								      &measure);
-						    printf (" area=%1.2lf",
+						    printf (" area=%1.2f",
 							    measure);
 						}
 					  }
-					/* we have now to free the GEOMETRY */
+/* we have now to free the GEOMETRY */
 					gaiaFreeGeomColl (geom);
 				    }
 
@@ -300,28 +317,28 @@ main (int argc, char *argv[])
 
 		      if (row_no >= 5)
 			{
-			    /* we'll exit the loop after we've retrieved the
-			       first 5 rows - this one is only a demo :-) */
+/* we'll exit the loop after we've retrieved the first 5 rows - this one is only a demo :-) */
 			    break;
 			}
 		  }
 		else
 		  {
-		      /* some unexpected error occurred */
+/* some unexpected error occurred */
 		      printf ("sqlite3_step() error: %s\n",
 			      sqlite3_errmsg (handle));
 		      sqlite3_finalize (stmt);
 		      goto abort;
 		  }
 	    }
-	  /* we have now to finalize the query, releasing memory */
+/* we have now to finalize the query [memory cleanup] */
 	  sqlite3_finalize (stmt);
 	  printf ("\n\n");
+
       }
 
 
 
-    /* disconnecting the test DB */
+/* disconnecting the test DB */
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK)
       {
@@ -329,10 +346,10 @@ main (int argc, char *argv[])
 	  return -1;
       }
     printf ("\n\nsample successfully terminated\n");
-    /* we have to free the dynamic pointer array used to store geotable names */
+/* we have to free the dynamic pointer array used to store geotable names */
     for (i = 0; i < n_geotables; i++)
       {
-	  /* freeing each tablename */
+/* freeing each tablename */
 	  free (p_geotables[i]);
       }
     free (p_geotables);
@@ -342,11 +359,10 @@ main (int argc, char *argv[])
     sqlite3_close (handle);
     if (p_geotables)
       {
-	  /* we have to free the dynamic pointer array used to store geotable
-	     names */
+/* we have to free the dynamic pointer array used to store geotable names */
 	  for (i = 0; i < n_geotables; i++)
 	    {
-		/* freeing each tablename */
+/* freeing each tablename */
 		free (p_geotables[i]);
 	    }
 	  free (p_geotables);

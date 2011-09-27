@@ -124,3 +124,96 @@ demo1.c example, and covers:
  - querying the basic properties of a geometry
 */
 
+/** \example demo3.c
+
+This is a sample C source showing how to use the SQLite / SpatiaLite 
+Spatial Index [RTree].
+
+It follows on from demo1.c.
+
+The main steps in this example are:
+ - creating a new database
+ - creating a sample geo-table 
+ - inserting 1 million rows into this table
+ - performing some spatial queries without Spatial Indexing
+ - performing the same queries using the Spatial Index
+
+The typical output of this demo is shown below (where test.sqlite does not
+exist before the run).
+
+\verbatim
+bradh@saxicola:~/libspatialite-svn/examples$ ./demo3 test.sqlite
+SQLite version: 3.7.4
+SpatiaLite version: 3.0.0-beta1
+
+
+
+now we are going to insert 1 million POINTs; wait, please ...
+
+insert row: 25000               [elapsed time: 1.900]
+insert row: 50000               [elapsed time: 3.990]
+insert row: 75000               [elapsed time: 6.110]
+insert row: 100000              [elapsed time: 8.230]
+insert row: 125000              [elapsed time: 10.360]
+insert row: 150000              [elapsed time: 12.520]
+insert row: 175000              [elapsed time: 14.660]
+insert row: 200000              [elapsed time: 16.800]
+insert row: 225000              [elapsed time: 18.950]
+insert row: 250000              [elapsed time: 21.100]
+insert row: 275000              [elapsed time: 23.290]
+insert row: 300000              [elapsed time: 25.440]
+insert row: 325000              [elapsed time: 27.610]
+insert row: 350000              [elapsed time: 29.780]
+insert row: 375000              [elapsed time: 31.960]
+insert row: 400000              [elapsed time: 34.140]
+insert row: 425000              [elapsed time: 36.330]
+insert row: 450000              [elapsed time: 38.520]
+insert row: 475000              [elapsed time: 40.730]
+insert row: 500000              [elapsed time: 42.930]
+insert row: 525000              [elapsed time: 45.150]
+insert row: 550000              [elapsed time: 47.360]
+insert row: 575000              [elapsed time: 49.560]
+insert row: 600000              [elapsed time: 51.780]
+insert row: 625000              [elapsed time: 53.990]
+insert row: 650000              [elapsed time: 56.200]
+insert row: 675000              [elapsed time: 58.420]
+insert row: 700000              [elapsed time: 60.650]
+insert row: 725000              [elapsed time: 62.870]
+insert row: 750000              [elapsed time: 65.100]
+insert row: 775000              [elapsed time: 67.330]
+insert row: 800000              [elapsed time: 69.550]
+insert row: 825000              [elapsed time: 71.790]
+insert row: 850000              [elapsed time: 74.030]
+insert row: 875000              [elapsed time: 76.290]
+insert row: 900000              [elapsed time: 78.530]
+insert row: 925000              [elapsed time: 80.780]
+insert row: 950000              [elapsed time: 83.030]
+insert row: 975000              [elapsed time: 85.260]
+insert row: 1000000             [elapsed time: 87.550]
+
+performing test#0 - not using Spatial Index
+Count(*) = 25           [elapsed time: 1.2300]
+
+performing test#1 - not using Spatial Index
+Count(*) = 25           [elapsed time: 1.2400]
+
+performing test#2 - not using Spatial Index
+Count(*) = 25           [elapsed time: 1.2300]
+
+performing test#0 - using the R*Tree Spatial Index
+Count(*) = 25           [elapsed time: 0.0000]
+
+performing test#1 - using the R*Tree Spatial Index
+Count(*) = 25           [elapsed time: 0.0000]
+
+performing test#2 - using the R*Tree Spatial Index
+Count(*) = 25           [elapsed time: 0.0000]
+
+
+sample successfully terminated
+\endverbatim
+
+Note the significant difference in elapsed time associated with use of an 
+appropriate index.
+
+*/

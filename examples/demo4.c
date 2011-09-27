@@ -119,25 +119,6 @@ so we have to create the Spatial Metadata
 	  goto abort;
       }
 
-/*
-and then we have to insert at least one row into the spatial_ref_sys table 
-usually this is done by importing the init_spatialite.sql script,
-but for simplicity we'll insert one row directly
-*/
-    strcpy (sql, "INSERT INTO spatial_ref_sys ");
-    strcat (sql, "(srid, auth_name, auth_srid, ref_sys_name, proj4text) ");
-    strcat (sql, "VALUES (3003, 'epsg', 3003, 'Monte Mario / Italy zone 1', ");
-    strcat (sql, "'+proj=tmerc +lat_0=0 +lon_0=9 +k=0.9996 +x_0=1500000 ");
-    strcat (sql, "+y_0=0 +ellps=intl +units=m +no_defs')");
-    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK)
-      {
-/* some error occurred */
-	  printf ("INSERT INTO 'spatial_ref_sys' error: %s\n", err_msg);
-	  sqlite3_free (err_msg);
-	  goto abort;
-      }
-
 
 /*
 now we can create the test table
@@ -182,8 +163,9 @@ and finally we'll enable this geo-column to have a Spatial Index based on MBR ca
 	  goto abort;
       }
 
-	printf("\nnow we are going to insert 1 million POINTs; wait, please ...\n\n");
-	
+    printf
+	("\nnow we are going to insert 1 million POINTs; wait, please ...\n\n");
+
     t0 = clock ();
 /*
 begining a transaction
@@ -232,7 +214,7 @@ we'll use a Prepared Statement we can reuse in order to insert each row
 		if ((pk % 25000) == 0)
 		  {
 		      t1 = clock ();
-		      printf ("insert row: %d\t\t[elapsed time: %1.3lf]\n",
+		      printf ("insert row: %d\t\t[elapsed time: %1.3f]\n",
 			      pk, (double) (t1 - t0) / CLOCKS_PER_SEC);
 		  }
 
@@ -336,7 +318,7 @@ we'll loop 3 times in order to avoid buffering-caching side effects
 		count = results[(i * n_columns) + 0];
 	    }
 	  t1 = clock ();
-	  printf ("Count(*) = %d\t\t[elapsed time: %1.4lf]\n", atoi (count),
+	  printf ("Count(*) = %d\t\t[elapsed time: %1.4f]\n", atoi (count),
 		  (double) (t1 - t0) / CLOCKS_PER_SEC);
 /* we can now free the table results */
 	  sqlite3_free_table (results);
@@ -345,7 +327,8 @@ we'll loop 3 times in order to avoid buffering-caching side effects
 
     for (ix = 0; ix < 3; ix++)
       {
-	  printf ("\nperforming test#%d - using the MBR cache Spatial Index\n", ix);
+	  printf ("\nperforming test#%d - using the MBR cache Spatial Index\n",
+		  ix);
 /* 
 now we'll perform the spatial query USING the MBR cache Spatial Index
 we'll loop 3 times in order to avoid buffering-caching side effects
@@ -353,8 +336,9 @@ we'll loop 3 times in order to avoid buffering-caching side effects
 	  strcpy (sql, "SELECT Count(*) FROM test ");
 	  strcat (sql, "WHERE ROWID IN (");
 	  strcat (sql, "SELECT rowid FROM cache_test_geom WHERE ");
-	  strcat (sql, "mbr = FilterMbrWithin(1000400.5, 4000400.5, 1000450.5, 4000450.5))");
-	  
+	  strcat (sql,
+		  "mbr = FilterMbrWithin(1000400.5, 4000400.5, 1000450.5, 4000450.5))");
+
 /*
 YES, this query is a very unhappy one
 the idea is simply to simulate exactly the same conditions as above
@@ -375,7 +359,7 @@ the idea is simply to simulate exactly the same conditions as above
 		count = results[(i * n_columns) + 0];
 	    }
 	  t1 = clock ();
-	  printf ("Count(*) = %d\t\t[elapsed time: %1.4lf]\n", atoi (count),
+	  printf ("Count(*) = %d\t\t[elapsed time: %1.4f]\n", atoi (count),
 		  (double) (t1 - t0) / CLOCKS_PER_SEC);
 /* we can now free the table results */
 	  sqlite3_free_table (results);

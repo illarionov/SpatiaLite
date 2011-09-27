@@ -1,8 +1,19 @@
 /* 
 
-demo2.c
+demo2:
+
+version 2.2, 2008 September 13
 
 Author: Sandro Furieri a-furieri@lqt.it
+
+------------------------------------------------------------------------------
+  
+this is a sample C source showing how to manipulate GEOMETRY
+1. creating geometries
+2. exploring geometries
+3. enquiring their basic properties
+
+------------------------------------------------------------------------------
  
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the author be held liable for any
@@ -101,7 +112,7 @@ geometry_printout (gaiaGeomCollPtr geom)
 	  while (pt)
 	    {
 /* we'll now scan the linked list of POINTs */
-		printf ("\t\t\tPOINT %d/%d x=%1.4lf y=%1.4lf\n",
+		printf ("\t\t\tPOINT %d/%d x=%1.4f y=%1.4f\n",
 			cnt, n_pts, pt->X, pt->Y);
 		cnt++;
 		pt = pt->Next;
@@ -123,7 +134,7 @@ geometry_printout (gaiaGeomCollPtr geom)
 		  {
 /* we'll now retrieve coords for each vertex */
 		      gaiaGetPoint (ln->Coords, iv, &x, &y);
-		      printf ("\t\t\t\tvertex %d/%d x=%1.4lf y=%1.4lf\n",
+		      printf ("\t\t\t\tvertex %d/%d x=%1.4f y=%1.4f\n",
 			      iv, ln->Points, x, y);
 		  }
 		cnt++;
@@ -154,7 +165,7 @@ now we'll print out the Exterior ring
 		  {
 /* we'll now retrieve coords for each vertex */
 		      gaiaGetPoint (rng->Coords, iv, &x, &y);
-		      printf ("\t\t\t\t\tvertex %d/%d x=%1.4lf y=%1.4lf\n",
+		      printf ("\t\t\t\t\tvertex %d/%d x=%1.4f y=%1.4f\n",
 			      iv, rng->Points, x, y);
 		  }
 
@@ -172,7 +183,7 @@ a POLYGON can contain any arbitrary number of Interior rings
 /* we'll now retrieve coords for each vertex */
 			    gaiaGetPoint (rng->Coords, iv, &x, &y);
 			    printf
-				("\t\t\t\t\tvertex %d/%d x=%1.4lf y=%1.4lf\n",
+				("\t\t\t\t\tvertex %d/%d x=%1.4f y=%1.4f\n",
 				 iv, rng->Points, x, y);
 			}
 		  }
@@ -196,14 +207,30 @@ main (int argc, char *argv[])
     gaiaLinestringPtr line;
     gaiaPolygonPtr polyg;
     gaiaRingPtr ring;
-    char *wkt;
+    gaiaOutBuffer wkt;
+    int ret;
+    sqlite3 *handle;
 
 
 /*
 
-this demo does not require any DB connection to be established
+this demo does not stricly requires any DB connection to be established
+
+anyway you must initialize the SpatiaLite extension [and related]
+and you *must* establish a "fake" DB connection in order to 
+properly initialize SpatiaLite and GEOS libraries
 
 */
+    spatialite_init (0);
+    ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READONLY, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  printf ("cannot open '%s': %s\n", ":memory:",
+		  sqlite3_errmsg (handle));
+	  sqlite3_close (handle);
+	  return -1;
+      }
+
 
 /*
 Step #1
@@ -429,64 +456,71 @@ printing each geometry as WKT
     printf ("\nstep#8: checking WKT representations\n");
 
 /* first we'll get the WKT correspondig to geometry */
-    gaiaOutWkt (geo_pt, &wkt);
-    if (wkt)
+    gaiaOutBufferInitialize (&wkt);
+    gaiaOutWkt (&wkt, geo_pt);
+    if (wkt.Error == 0 && wkt.Buffer != NULL)
       {
 /* we have to check wkt is not NULL */
 
 /* printing the WKT */
-	  printf ("\n%s\n", wkt);
+	  printf ("\n%s\n", wkt.Buffer);
 
 /* finally freeing the wkt temporary storage allocation */
-	  free (wkt);
+	  gaiaOutBufferReset (&wkt);
       }
 
 
-    gaiaOutWkt (geo_ln, &wkt);
-    if (wkt)
+    gaiaOutBufferInitialize (&wkt);
+    gaiaOutWkt (&wkt, geo_ln);
+    if (wkt.Error == 0 && wkt.Buffer != NULL)
       {
-	  printf ("\n%s\n", wkt);
-	  free (wkt);
+	  printf ("\n%s\n", wkt.Buffer);
+	  gaiaOutBufferReset (&wkt);
       }
 
 
-    gaiaOutWkt (geo_pg, &wkt);
-    if (wkt)
+    gaiaOutBufferInitialize (&wkt);
+    gaiaOutWkt (&wkt, geo_pg);
+    if (wkt.Error == 0 && wkt.Buffer != NULL)
       {
-	  printf ("\n%s\n", wkt);
-	  free (wkt);
+	  printf ("\n%s\n", wkt.Buffer);
+	  gaiaOutBufferReset (&wkt);
       }
 
 
-    gaiaOutWkt (geo_mpt, &wkt);
-    if (wkt)
+    gaiaOutBufferInitialize (&wkt);
+    gaiaOutWkt (&wkt, geo_mpt);
+    if (wkt.Error == 0 && wkt.Buffer != NULL)
       {
-	  printf ("\n%s\n", wkt);
-	  free (wkt);
+	  printf ("\n%s\n", wkt.Buffer);
+	  gaiaOutBufferReset (&wkt);
       }
 
 
-    gaiaOutWkt (geo_mln, &wkt);
-    if (wkt)
+    gaiaOutBufferInitialize (&wkt);
+    gaiaOutWkt (&wkt, geo_mln);
+    if (wkt.Error == 0 && wkt.Buffer != NULL)
       {
-	  printf ("\n%s\n", wkt);
-	  free (wkt);
+	  printf ("\n%s\n", wkt.Buffer);
+	  gaiaOutBufferReset (&wkt);
       }
 
 
-    gaiaOutWkt (geo_mpg, &wkt);
-    if (wkt)
+    gaiaOutBufferInitialize (&wkt);
+    gaiaOutWkt (&wkt, geo_mpg);
+    if (wkt.Error == 0 && wkt.Buffer != NULL)
       {
-	  printf ("\n%s\n", wkt);
-	  free (wkt);
+	  printf ("\n%s\n", wkt.Buffer);
+	  gaiaOutBufferReset (&wkt);
       }
 
 
-    gaiaOutWkt (geo_coll, &wkt);
-    if (wkt)
+    gaiaOutBufferInitialize (&wkt);
+    gaiaOutWkt (&wkt, geo_coll);
+    if (wkt.Error == 0 && wkt.Buffer != NULL)
       {
-	  printf ("\n%s\n", wkt);
-	  free (wkt);
+	  printf ("\n%s\n", wkt.Buffer);
+	  gaiaOutBufferReset (&wkt);
       }
 
 /* 
@@ -507,5 +541,6 @@ we have to destroy each object using temporary storage before exit
 	gaiaFreeGeomColl (geo_mpg);
     if (geo_coll)
 	gaiaFreeGeomColl (geo_coll);
+    sqlite3_close (handle);
     return 0;
 }
