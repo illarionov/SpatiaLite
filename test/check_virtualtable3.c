@@ -557,6 +557,7 @@ int main (int argc, char *argv[])
 	fprintf (stderr, "Unexpected error: select columns no suchfile: %i/%i.\n", rows, columns);
 	return  -99;
     }
+    sqlite3_free_table (results);
     ret = sqlite3_exec (db_handle, "DROP TABLE nosuchfile;", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "DROP TABLE error: %s\n", err_msg);
