@@ -387,9 +387,9 @@ vdbf_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
     while (1)
       {
 	  vdbf_read_row (cursor, &deleted);
-	  if (!deleted)
-	      break;
 	  if (cursor->eof)
+	      break;
+	  if (!deleted)
 	      break;
       }
     return SQLITE_OK;
