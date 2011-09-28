@@ -35,8 +35,9 @@ build_triplet = @build@
 host_triplet = @host@
 check_PROGRAMS = check_version$(EXEEXT) check_init$(EXEEXT) \
 	check_create$(EXEEXT) check_dbf_load$(EXEEXT) \
-	check_shp_load$(EXEEXT) shape_cp1252$(EXEEXT) \
-	shape_utf8_1$(EXEEXT) shape_utf8_2$(EXEEXT) shape_3d$(EXEEXT) \
+	check_shp_load$(EXEEXT) check_shp_load_3d$(EXEEXT) \
+	shape_cp1252$(EXEEXT) shape_utf8_1$(EXEEXT) \
+	shape_utf8_2$(EXEEXT) shape_3d$(EXEEXT) \
 	check_xls_load$(EXEEXT) check_math_funcs$(EXEEXT) \
 	check_gaia_util$(EXEEXT) check_gaia_utf8$(EXEEXT) \
 	check_extension$(EXEEXT) check_sql_stmt$(EXEEXT) \
@@ -80,6 +81,9 @@ check_mbrcache_LDADD = $(LDADD)
 check_shp_load_SOURCES = check_shp_load.c
 check_shp_load_OBJECTS = check_shp_load.$(OBJEXT)
 check_shp_load_LDADD = $(LDADD)
+check_shp_load_3d_SOURCES = check_shp_load_3d.c
+check_shp_load_3d_OBJECTS = check_shp_load_3d.$(OBJEXT)
+check_shp_load_3d_LDADD = $(LDADD)
 check_spatialindex_SOURCES = check_spatialindex.c
 check_spatialindex_OBJECTS = check_spatialindex.$(OBJEXT)
 check_spatialindex_LDADD = $(LDADD)
@@ -138,16 +142,16 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 SOURCES = check_create.c check_dbf_load.c check_extension.c \
 	check_gaia_utf8.c check_gaia_util.c check_init.c \
 	check_math_funcs.c check_mbrcache.c check_shp_load.c \
-	check_spatialindex.c check_sql_stmt.c check_version.c \
-	check_virtualtable1.c check_virtualtable2.c \
+	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
+	check_version.c check_virtualtable1.c check_virtualtable2.c \
 	check_virtualtable3.c check_virtualtable4.c \
 	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
 	shape_3d.c shape_cp1252.c shape_utf8_1.c shape_utf8_2.c
 DIST_SOURCES = check_create.c check_dbf_load.c check_extension.c \
 	check_gaia_utf8.c check_gaia_util.c check_init.c \
 	check_math_funcs.c check_mbrcache.c check_shp_load.c \
-	check_spatialindex.c check_sql_stmt.c check_version.c \
-	check_virtualtable1.c check_virtualtable2.c \
+	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
+	check_version.c check_virtualtable1.c check_virtualtable2.c \
 	check_virtualtable3.c check_virtualtable4.c \
 	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
 	shape_3d.c shape_cp1252.c shape_utf8_1.c shape_utf8_2.c
@@ -516,6 +520,9 @@ check_mbrcache$(EXEEXT): $(check_mbrcache_OBJECTS) $(check_mbrcache_DEPENDENCIES
 check_shp_load$(EXEEXT): $(check_shp_load_OBJECTS) $(check_shp_load_DEPENDENCIES) 
 	@rm -f check_shp_load$(EXEEXT)
 	$(LINK) $(check_shp_load_OBJECTS) $(check_shp_load_LDADD) $(LIBS)
+check_shp_load_3d$(EXEEXT): $(check_shp_load_3d_OBJECTS) $(check_shp_load_3d_DEPENDENCIES) 
+	@rm -f check_shp_load_3d$(EXEEXT)
+	$(LINK) $(check_shp_load_3d_OBJECTS) $(check_shp_load_3d_LDADD) $(LIBS)
 check_spatialindex$(EXEEXT): $(check_spatialindex_OBJECTS) $(check_spatialindex_DEPENDENCIES) 
 	@rm -f check_spatialindex$(EXEEXT)
 	$(LINK) $(check_spatialindex_OBJECTS) $(check_spatialindex_LDADD) $(LIBS)
@@ -574,6 +581,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_math_funcs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_mbrcache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_shp_load.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_shp_load_3d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_spatialindex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_sql_stmt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_version.Po@am__quote@

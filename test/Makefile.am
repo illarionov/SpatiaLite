@@ -187,4 +187,59 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/tan00.testcase \
 	sql_stmt_tests/tan-text.testcase \
 	sql_stmt_tests/tan0.testcase \
-	sql_stmt_tests/tanpi4.testcase
+	sql_stmt_tests/tanpi4.testcase \
+	sql_stmt_tests/aswkt-text.testcase \ \
+	sql_stmt_tests/cm_m.testcase \
+	sql_stmt_tests/dm_m.testcase \
+	sql_stmt_tests/fath_m.testcase \
+	sql_stmt_tests/ft_m.testcase \
+	sql_stmt_tests/geomfromtext1.testcase \
+	sql_stmt_tests/geomfromtext2.testcase \
+	sql_stmt_tests/geomfromtext3.testcase \
+	sql_stmt_tests/geomfromtext4.testcase \
+	sql_stmt_tests/geomfromtext5.testcase \
+	sql_stmt_tests/geomfromtext6.testcase \
+	sql_stmt_tests/geomfromtext7.testcase \
+	sql_stmt_tests/geomfromtext8.testcase \
+	sql_stmt_tests/geomfromtext9.testcase \
+	sql_stmt_tests/in_m.testcase \
+	sql_stmt_tests/km_m.testcase \
+	sql_stmt_tests/link_m.testcase \
+	sql_stmt_tests/makepoint1.testcase \
+	sql_stmt_tests/makepoint2.testcase \
+	sql_stmt_tests/makepoint3.testcase \
+	sql_stmt_tests/makepoint4.testcase \
+	sql_stmt_tests/makepoint5.testcase \
+	sql_stmt_tests/makepoint6.testcase \
+	sql_stmt_tests/makepoint7.testcase \
+	sql_stmt_tests/makepoint-null1.testcase \
+	sql_stmt_tests/makepoint-null2.testcase \
+	sql_stmt_tests/makepoint-null3.testcase \
+	sql_stmt_tests/makepoint-null4.testcase \
+	sql_stmt_tests/makepoint-null5.testcase \
+	sql_stmt_tests/makepoint-null6.testcase \
+	sql_stmt_tests/makepoint-null7.testcase \
+	sql_stmt_tests/m_ch.testcase \
+	sql_stmt_tests/m_cm.testcase \
+	sql_stmt_tests/m_dm.testcase \
+	sql_stmt_tests/m_fath.testcase \
+	sql_stmt_tests/m_ft.testcase \
+	sql_stmt_tests/m_ft-text.testcase \
+	sql_stmt_tests/mi_m.testcase \
+	sql_stmt_tests/m_ind_ch.testcase \
+	sql_stmt_tests/m_ind_ft.testcase \
+	sql_stmt_tests/m_ind_yd.testcase \
+	sql_stmt_tests/m_in.testcase \
+	sql_stmt_tests/m_in_us.testcase \
+	sql_stmt_tests/m_km.testcase \
+	sql_stmt_tests/m_ln.testcase \
+	sql_stmt_tests/m_mi.testcase \
+	sql_stmt_tests/m_mm.testcase \
+	sql_stmt_tests/mm_m.testcase \
+	sql_stmt_tests/m_nm.testcase \
+	sql_stmt_tests/m_us_ch.testcase \
+	sql_stmt_tests/m_us_ft.testcase \
+	sql_stmt_tests/m_yd.testcase \
+	sql_stmt_tests/m_yd_us.testcase \
+	sql_stmt_tests/nm_m.testcase \
+	sql_stmt_tests/yd_m.testcase
