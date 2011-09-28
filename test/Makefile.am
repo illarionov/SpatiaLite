@@ -3,6 +3,7 @@ check_PROGRAMS = check_version \
 		check_create \
 		check_dbf_load \
 		check_shp_load \
+		check_shp_load_3d \
 		shape_cp1252 \
 		shape_utf8_1 \
 		shape_utf8_2 \
