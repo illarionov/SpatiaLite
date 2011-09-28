@@ -242,4 +242,17 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/m_yd.testcase \
 	sql_stmt_tests/m_yd_us.testcase \
 	sql_stmt_tests/nm_m.testcase \
-	sql_stmt_tests/yd_m.testcase
+	sql_stmt_tests/yd_m.testcase \
+	sql_stmt_tests/ch_m.testcase \
+	sql_stmt_tests/greatcircle-poly2.testcase \
+	sql_stmt_tests/greatcircle-poly.testcase \
+	sql_stmt_tests/greatcircle.testcase \
+	sql_stmt_tests/greatcircle-text.testcase \
+	sql_stmt_tests/ind_ch_m.testcase \
+	sql_stmt_tests/ind_ft_m.testcase \
+	sql_stmt_tests/ind_yd_m.testcase \
+	sql_stmt_tests/us_ch_m.testcase \
+	sql_stmt_tests/us_ft_m.testcase \
+	sql_stmt_tests/us_in_m.testcase \
+	sql_stmt_tests/us_mi_m.testcase \
+	sql_stmt_tests/us_yd_m.testcase
