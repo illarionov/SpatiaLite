@@ -98,7 +98,21 @@ int main (int argc, char *argv[])
     elementary_geometries (handle, "points", "geom", "elem_point", "pk_elem", "mul_id");
     elementary_geometries (handle, "roads", "geom", "elem_linestring", "pk_elem", "mul_id");
     elementary_geometries (handle, "polygons", "geom", "elem_poly", "pk_elem", "mul_id");
+
+    ret = sqlite3_exec (handle, "DROP TABLE polygons", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "DROP polygons error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -6;
+    }
     
+    ret = sqlite3_close (handle);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
+	return -7;
+    }
+
     spatialite_cleanup();
     sqlite3_reset_auto_extension();
     return 0;
