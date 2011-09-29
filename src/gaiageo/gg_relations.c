@@ -840,6 +840,8 @@ gaiaGeomCollBuffer (gaiaGeomCollPtr geom, double radius, int points)
     GEOSGeometry *g2;
     if (!geom)
 	return NULL;
+    if (gaiaIsToxic (geom))
+	return NULL;
     g1 = gaiaToGeos (geom);
     g2 = GEOSBuffer (g1, radius, points);
     GEOSGeom_destroy (g1);
