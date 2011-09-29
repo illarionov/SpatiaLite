@@ -255,4 +255,28 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/us_ft_m.testcase \
 	sql_stmt_tests/us_in_m.testcase \
 	sql_stmt_tests/us_mi_m.testcase \
-	sql_stmt_tests/us_yd_m.testcase
+	sql_stmt_tests/us_yd_m.testcase \
+	sql_stmt_tests/st_m1.testcase \
+	sql_stmt_tests/st_m2.testcase \
+	sql_stmt_tests/st_m3.testcase \
+	sql_stmt_tests/st_m4.testcase \
+	sql_stmt_tests/st_m5.testcase \
+	sql_stmt_tests/st_m6.testcase \
+	sql_stmt_tests/st_x1.testcase \
+	sql_stmt_tests/st_x2.testcase \
+	sql_stmt_tests/st_x3.testcase \
+	sql_stmt_tests/st_x4.testcase \
+	sql_stmt_tests/st_x5.testcase \
+	sql_stmt_tests/st_x6.testcase \
+	sql_stmt_tests/st_y1.testcase \
+	sql_stmt_tests/st_y2.testcase \
+	sql_stmt_tests/st_y3.testcase \
+	sql_stmt_tests/st_y4.testcase \
+	sql_stmt_tests/st_y5.testcase \
+	sql_stmt_tests/st_z1.testcase \
+	sql_stmt_tests/st_z2.testcase \
+	sql_stmt_tests/st_z3.testcase \
+	sql_stmt_tests/st_z4.testcase \
+	sql_stmt_tests/st_z5.testcase \
+	sql_stmt_tests/st_z6.testcase
+

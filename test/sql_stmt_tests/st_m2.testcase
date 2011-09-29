@@ -1,0 +1,8 @@
+ST_M2
+:memory: #use in-memory database
+SELECT ST_M(GeomFromText("POINTZ(136 -35 635.2)"));
+1 # rows (not including the header row)
+1 # columns
+ST_M(GeomFromText("POINTZ(136 -35 635.2)"))
+(NULL)
+
