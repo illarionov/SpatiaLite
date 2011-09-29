@@ -645,6 +645,8 @@ gaiaIsSimple (gaiaGeomCollPtr geom)
     GEOSGeometry *g;
     if (!geom)
 	return -1;
+    if (gaiaIsToxic (geom))
+	return 0;
     g = gaiaToGeos (geom);
     ret = GEOSisSimple (g);
     GEOSGeom_destroy (g);
