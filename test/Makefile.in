@@ -539,7 +539,39 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/st_z3.testcase \
 	sql_stmt_tests/st_z4.testcase \
 	sql_stmt_tests/st_z5.testcase \
-	sql_stmt_tests/st_z6.testcase
+	sql_stmt_tests/st_z6.testcase \
+	sql_stmt_tests/issimple5.testcase \
+	sql_stmt_tests/makeline5.testcase \
+	sql_stmt_tests/isvalid3.testcase \
+	sql_stmt_tests/makeline14.testcase \
+	sql_stmt_tests/makeline6.testcase \
+	sql_stmt_tests/isring1.testcase \
+	sql_stmt_tests/isvalid4.testcase \
+	sql_stmt_tests/makeline15.testcase \
+	sql_stmt_tests/makeline7.testcase \
+	sql_stmt_tests/isring2.testcase \
+	sql_stmt_tests/isvalid5.testcase \
+	sql_stmt_tests/makeline16.testcase \
+	sql_stmt_tests/makeline8.testcase \
+	sql_stmt_tests/isvalid6.testcase \
+	sql_stmt_tests/makeline.testcase \
+	sql_stmt_tests/makeline17.testcase \
+	sql_stmt_tests/issimple1.testcase \
+	sql_stmt_tests/makeline9.testcase \
+	sql_stmt_tests/isring4.testcase \
+	sql_stmt_tests/makeline10.testcase \
+	sql_stmt_tests/makeline18.testcase \
+	sql_stmt_tests/issimple2.testcase \
+	sql_stmt_tests/makeline2.testcase \
+	sql_stmt_tests/makeline11.testcase \
+	sql_stmt_tests/issimple3.testcase \
+	sql_stmt_tests/makeline3.testcase \
+	sql_stmt_tests/isvalid1.testcase \
+	sql_stmt_tests/makeline12.testcase \
+	sql_stmt_tests/issimple4.testcase \
+	sql_stmt_tests/makeline4.testcase \
+	sql_stmt_tests/isvalid2.testcase \
+	sql_stmt_tests/makeline13.testcase
 
 all: all-am
 
