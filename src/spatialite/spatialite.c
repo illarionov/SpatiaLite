@@ -16805,7 +16805,7 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_PolyFromText2, 0, 0);
     sqlite3_create_function (db, "PolygonFromText", 1, SQLITE_ANY, 0,
 			     fnct_PolyFromText1, 0, 0);
-    sqlite3_create_function (db, "PolygomFromText", 2, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "PolygonFromText", 2, SQLITE_ANY, 0,
 			     fnct_PolyFromText2, 0, 0);
     sqlite3_create_function (db, "GeomFromWKB", 1, SQLITE_ANY, 0,
 			     fnct_GeomFromWkb1, 0, 0);
@@ -16853,7 +16853,7 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_MPolyFromWkb2, 0, 0);
     sqlite3_create_function (db, "MultiPolygonFromWKB", 1, SQLITE_ANY, 0,
 			     fnct_MPolyFromWkb1, 0, 0);
-    sqlite3_create_function (db, "MultiPolygomFromWKB", 2, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "MultiPolygonFromWKB", 2, SQLITE_ANY, 0,
 			     fnct_MPolyFromWkb2, 0, 0);
     sqlite3_create_function (db, "PointFromWKB", 1, SQLITE_ANY, 0,
 			     fnct_PointFromWkb1, 0, 0);
@@ -17555,8 +17555,6 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     0);
     sqlite3_create_function (db, "CoveredBy", 2, SQLITE_ANY, 0, fnct_CoveredBy,
 			     0, 0);
-    sqlite3_create_function (db, "ST_CoveredBy", 2, SQLITE_ANY, 0,
-			     fnct_CoveredBy, 0, 0);
     sqlite3_create_function (db, "ST_CoveredBy", 2, SQLITE_ANY, 0,
 			     fnct_CoveredBy, 0, 0);
     sqlite3_create_function (db, "Line_Interpolate_Point", 2, SQLITE_ANY, 0,
