@@ -352,7 +352,94 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/us_in_m.testcase \
 	sql_stmt_tests/us_mi_m.testcase \
 	sql_stmt_tests/us_yd_m.testcase \
-	sql_stmt_tests/yd_m.testcase
+	sql_stmt_tests/yd_m.testcase \
+	sql_stmt_tests/endpoint1.testcase \
+	sql_stmt_tests/pointn10.testcase \
+	sql_stmt_tests/pointn11.testcase \
+	sql_stmt_tests/pointn12.testcase \
+	sql_stmt_tests/pointn13.testcase \
+	sql_stmt_tests/pointn14.testcase \
+	sql_stmt_tests/pointn1.testcase \
+	sql_stmt_tests/pointn2.testcase \
+	sql_stmt_tests/pointn3.testcase \
+	sql_stmt_tests/pointn4.testcase \
+	sql_stmt_tests/pointn5.testcase \
+	sql_stmt_tests/pointn6.testcase \
+	sql_stmt_tests/pointn7.testcase \
+	sql_stmt_tests/pointn8.testcase \
+	sql_stmt_tests/pointn9.testcase \
+	sql_stmt_tests/startpoint1.testcase \
+	sql_stmt_tests/startpoint2.testcase \
+	sql_stmt_tests/startpoint3.testcase \
+	sql_stmt_tests/collectextract1.testcase \
+	sql_stmt_tests/collectextract2.testcase \
+	sql_stmt_tests/collectextract3.testcase \
+	sql_stmt_tests/collectextract4.testcase \
+	sql_stmt_tests/collectextract5.testcase \
+	sql_stmt_tests/collectextract6.testcase \
+	sql_stmt_tests/collectextract7.testcase \
+	sql_stmt_tests/collectextract8.testcase \
+	sql_stmt_tests/collectextract9.testcase \
+	sql_stmt_tests/endpoint1.testcase \
+	sql_stmt_tests/isring3.testcase \
+	sql_stmt_tests/pointn10.testcase \
+	sql_stmt_tests/pointn11.testcase \
+	sql_stmt_tests/pointn12.testcase \
+	sql_stmt_tests/pointn13.testcase \
+	sql_stmt_tests/pointn14.testcase \
+	sql_stmt_tests/pointn1.testcase \
+	sql_stmt_tests/pointn2.testcase \
+	sql_stmt_tests/pointn3.testcase \
+	sql_stmt_tests/pointn4.testcase \
+	sql_stmt_tests/pointn5.testcase \
+	sql_stmt_tests/pointn6.testcase \
+	sql_stmt_tests/pointn7.testcase \
+	sql_stmt_tests/pointn8.testcase \
+	sql_stmt_tests/pointn9.testcase \
+	sql_stmt_tests/ring10.testcase \
+	sql_stmt_tests/ring11.testcase \
+	sql_stmt_tests/ring12.testcase \
+	sql_stmt_tests/ring13.testcase \
+	sql_stmt_tests/ring14.testcase \
+	sql_stmt_tests/ring15.testcase \
+	sql_stmt_tests/ring16.testcase \
+	sql_stmt_tests/ring17.testcase \
+	sql_stmt_tests/ring18.testcase \
+	sql_stmt_tests/ring19.testcase \
+	sql_stmt_tests/ring1.testcase \
+	sql_stmt_tests/ring20.testcase \
+	sql_stmt_tests/ring21.testcase \
+	sql_stmt_tests/ring22.testcase \
+	sql_stmt_tests/ring23.testcase \
+	sql_stmt_tests/ring24.testcase \
+	sql_stmt_tests/ring25.testcase \
+	sql_stmt_tests/ring26.testcase \
+	sql_stmt_tests/ring2.testcase \
+	sql_stmt_tests/ring3.testcase \
+	sql_stmt_tests/ring4.testcase \
+	sql_stmt_tests/ring5.testcase \
+	sql_stmt_tests/ring6.testcase \
+	sql_stmt_tests/ring7.testcase \
+	sql_stmt_tests/ring8.testcase \
+	sql_stmt_tests/ring9.testcase \
+	sql_stmt_tests/st_area1.testcase \
+	sql_stmt_tests/st_area2.testcase \
+	sql_stmt_tests/st_area3.testcase \
+	sql_stmt_tests/st_area4.testcase \
+	sql_stmt_tests/st_area5.testcase \
+	sql_stmt_tests/st_area6.testcase \
+	sql_stmt_tests/st_area7.testcase \
+	sql_stmt_tests/st_area8.testcase \
+	sql_stmt_tests/startpoint1.testcase \
+	sql_stmt_tests/startpoint2.testcase \
+	sql_stmt_tests/startpoint3.testcase \
+	sql_stmt_tests/st_length1.testcase \
+	sql_stmt_tests/st_length2.testcase \
+	sql_stmt_tests/st_length3.testcase \
+	sql_stmt_tests/st_length4.testcase \
+	sql_stmt_tests/st_length5.testcase \
+	sql_stmt_tests/st_length6.testcase \
+	sql_stmt_tests/st_length7.testcase
 
 
 
