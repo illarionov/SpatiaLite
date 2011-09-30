@@ -338,13 +338,6 @@ int main (int argc, char *argv[])
     }
     sqlite3_free_table (results);
 
-    ret = sqlite3_exec (handle, "DROP TABLE cache_Councils_geom;", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf (stderr, "DROP TABLE cache error: %s\n", err_msg);
-	sqlite3_free (err_msg);
-	return -43;
-    }
-
     ret = sqlite3_exec (handle, "DROP TABLE Councils;", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "DROP TABLE Councils error: %s\n", err_msg);

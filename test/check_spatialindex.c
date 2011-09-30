@@ -307,25 +307,25 @@ int main (int argc, char *argv[])
 	sqlite3_close(handle);
 	return -47;
     }
-
     sqlite3_free_table (results);
-    ret = sqlite3_exec (handle, "SELECT RebuildGeometryTriggers('Councils', 'geom');", NULL, NULL, &err_msg);
+
+    ret = sqlite3_exec (handle, "SELECT CheckSpatialIndex('Councils', 'geom');", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
-	fprintf (stderr, "Disable index error: %s\n", err_msg);
+	fprintf (stderr, "CheckSpatialIndex error: %s\n", err_msg);
 	sqlite3_free (err_msg);
 	return -48;
+    }
+
+    ret = sqlite3_exec (handle, "SELECT RebuildGeometryTriggers('Councils', 'geom');", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Rebuild triggers error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -49;
     }
 
     ret = sqlite3_exec (handle, "SELECT DisableSpatialIndex('Councils', 'geom');", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Disable index error: %s\n", err_msg);
-	sqlite3_free (err_msg);
-	return -49;
-    }
-
-    ret = sqlite3_exec (handle, "DROP TABLE idx_Councils_geom;", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf (stderr, "DROP TABLE idx error: %s\n", err_msg);
 	sqlite3_free (err_msg);
 	return -50;
     }
@@ -334,20 +334,20 @@ int main (int argc, char *argv[])
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Disable index error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -48;
+	return -51;
     }
 
     ret = sqlite3_exec (handle, "DROP TABLE Councils;", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "DROP TABLE Councils error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -51;
+	return -52;
     }
 
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -52;
+	return -53;
     }
     
     spatialite_cleanup();
