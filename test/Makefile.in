@@ -408,6 +408,9 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/expneg.testcase \
 	sql_stmt_tests/exptext.testcase \
 	sql_stmt_tests/fath_m.testcase \
+	sql_stmt_tests/floor32.testcase \
+	sql_stmt_tests/floorint.testcase \
+	sql_stmt_tests/floornull.testcase \
 	sql_stmt_tests/ft_m.testcase \
 	sql_stmt_tests/geomfromtext1.testcase \
 	sql_stmt_tests/geomfromtext2.testcase \
@@ -525,6 +528,13 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/m_yd.testcase \
 	sql_stmt_tests/m_yd_us.testcase \
 	sql_stmt_tests/nm_m.testcase \
+	sql_stmt_tests/NumPoints2.testcase \
+	sql_stmt_tests/NumPoints3.testcase \
+	sql_stmt_tests/NumPoints4.testcase \
+	sql_stmt_tests/NumPoints5.testcase \
+	sql_stmt_tests/NumPoints6.testcase \
+	sql_stmt_tests/NumPoints7.testcase \
+	sql_stmt_tests/NumPoints.testcase \
 	sql_stmt_tests/pi.testcase \
 	sql_stmt_tests/pow00-1.testcase \
 	sql_stmt_tests/pow00-2.testcase \
