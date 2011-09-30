@@ -379,6 +379,24 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/cot0.testcase \
 	sql_stmt_tests/cotpi2.testcase \
 	sql_stmt_tests/cot-text.testcase \
+	sql_stmt_tests/createtopo10.testcase \
+	sql_stmt_tests/createtopo11.testcase \
+	sql_stmt_tests/createtopo12.testcase \
+	sql_stmt_tests/createtopo13.testcase \
+	sql_stmt_tests/createtopo14.testcase \
+	sql_stmt_tests/createtopo15.testcase \
+	sql_stmt_tests/createtopo16.testcase \
+	sql_stmt_tests/createtopo17.testcase \
+	sql_stmt_tests/createtopo18.testcase \
+	sql_stmt_tests/createtopo1.testcase \
+	sql_stmt_tests/createtopo2.testcase \
+	sql_stmt_tests/createtopo3.testcase \
+	sql_stmt_tests/createtopo4.testcase \
+	sql_stmt_tests/createtopo5.testcase \
+	sql_stmt_tests/createtopo6.testcase \
+	sql_stmt_tests/createtopo7.testcase \
+	sql_stmt_tests/createtopo8.testcase \
+	sql_stmt_tests/createtopo9.testcase \
 	sql_stmt_tests/degrees45.testcase \
 	sql_stmt_tests/degrees.testcase \
 	sql_stmt_tests/degreestext.testcase \
