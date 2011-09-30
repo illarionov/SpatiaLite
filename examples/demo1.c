@@ -22,7 +22,7 @@ redistribute it freely
 these headers are required in order to support
 SQLite/SpatiaLite
 */
-#include <spatialite/sqlite3.h>
+#include <sqlite3.h>
 #include <spatialite/gaiageo.h>
 #include <spatialite.h>
 
@@ -275,19 +275,29 @@ for each column we'll then get:
 						  || geom_type ==
 						  GAIA_MULTILINESTRING)
 						{
+#ifndef OMIT_GEOS		/* GEOS is required */
 						    gaiaGeomCollLength (geom,
 									&measure);
 						    printf (" length=%1.2f",
 							    measure);
+#else
+						    printf
+							(" length=?? [no GEOS support available]");
+#endif /* GEOS enabled/disabled */
 						}
 					      if (geom_type == GAIA_POLYGON ||
 						  geom_type ==
 						  GAIA_MULTIPOLYGON)
 						{
+#ifndef OMIT_GEOS		/* GEOS is required */
 						    gaiaGeomCollArea (geom,
 								      &measure);
 						    printf (" area=%1.2f",
 							    measure);
+#else
+						    printf
+							("area=?? [no GEOS support available]");
+#endif /* GEOS enabled/disabled */
 						}
 					  }
 /* we have now to free the GEOMETRY */

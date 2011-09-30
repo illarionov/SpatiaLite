@@ -82,6 +82,10 @@ EXTRA_DIST = shapetest1.dbf \
 	shp/merano-3d/roads.prj \
 	shp/merano-3d/roads.shp \
 	shp/merano-3d/roads.shx \
+	shp/foggia/local_councils.dbf \
+	shp/foggia/local_councils.prj \
+	shp/foggia/local_councils.shp \
+	shp/foggia/local_councils.shx \
 	testcase1.xls \
 	testcase1.csv \
 	sql_stmt_tests/acos10.testcase \
@@ -94,7 +98,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/asin20.testcase \
 	sql_stmt_tests/asin2.testcase \
 	sql_stmt_tests/asin-text.testcase \
-	sql_stmt_tests/aswkt-text.testcase \ \
+	sql_stmt_tests/aswkt-text.testcase \
 	sql_stmt_tests/atan00.testcase \
 	sql_stmt_tests/atan0.testcase \
 	sql_stmt_tests/atan-text.testcase \

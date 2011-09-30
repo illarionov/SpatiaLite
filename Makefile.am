@@ -2,7 +2,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 AUTOMAKE_OPTIONS = dist-zip
 
-EXTRA_DIST = makefile.vc nmake.opt 
+EXTRA_DIST = makefile.vc nmake.opt README.coverage
 
 SUBDIRS = src test examples
 

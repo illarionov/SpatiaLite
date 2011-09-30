@@ -268,6 +268,8 @@ getDbfField (gaiaDbfListPtr list, char *name)
     return NULL;
 }
 
+#ifndef OMIT_ICONV		/* ICONV enabled: supporting SHP */
+
 SPATIALITE_DECLARE int
 load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 		int srid, char *column, int coerce2d, int compressed,
@@ -605,7 +607,11 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 	      || shp->Shape == GAIA_SHP_POLYGONM
 	      || shp->Shape == GAIA_SHP_POLYGONZ)
 	    {
-		/* fixing anyway the Geometry type for LINESTRING/MULTILINESTRING or POLYGON/MULTIPOLYGON */
+		/* 
+		/ fixing anyway the Geometry type for 
+		/ LINESTRING/MULTILINESTRING or 
+		/ POLYGON/MULTIPOLYGON
+		*/
 		gaiaShpAnalyze (shp);
 	    }
       }
@@ -783,6 +789,8 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
       }
 }
 
+#endif				/* end ICONV (SHP) */
+
 static void
 output_prj_file (sqlite3 * sqlite, char *path, char *table, char *column)
 {
@@ -928,6 +936,8 @@ shp_double_quoted_sql (char *buf)
     *out++ = '"';
     *out = '\0';
 }
+
+#ifndef OMIT_ICONV	/* ICONV enabled: supporting SHAPEFILE and DBF */
 
 SPATIALITE_DECLARE int
 dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
@@ -2088,6 +2098,8 @@ dump_dbf (sqlite3 * sqlite, char *table, char *dbf_path, char *charset,
 		 "The SQL SELECT returned an empty result set ... there is nothing to export ...\n");
     return 0;
 }
+
+#endif				/* end ICONV (SHP and DBF) */
 
 SPATIALITE_DECLARE int
 is_kml_constant (sqlite3 * sqlite, char *table, char *column)
@@ -3671,6 +3683,8 @@ elementary_geometries (sqlite3 * sqlite,
 	sqlite3_finalize (stmt_out);
 }
 
+#ifndef OMIT_FREEXL	/* including FreeXL */
+
 SPATIALITE_DECLARE int
 load_XL (sqlite3 * sqlite, const char *path, const char *table,
 	 unsigned int worksheetIndex, int first_titles, unsigned int *rows,
@@ -3988,3 +4002,5 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 	sprintf (err_msg, "XL datasource '%s' is not valid\n", path);
     return 0;
 }
+
+#endif /* FreeXL enabled/disabled */

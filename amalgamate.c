@@ -704,44 +704,6 @@ do_makefile (FILE * out)
 }
 
 static void
-do_output_dll_defs (FILE * out, struct masked_keyword *first,
-		    struct masked_keyword *first_defn)
-{
-    struct masked_keyword *p;
-    fprintf (out, "LIBRARY spatialite.dll\r\n");
-    fprintf (out, "EXPORTS\r\n");
-/* exporting symbols not found by automatic search */
-    fprintf (out, "gaiaAddLinestringToGeomColl\r\n");
-    fprintf (out, "gaiaAppendPointToDynamicLine\r\n");
-    fprintf (out, "gaiaPrependPointToDynamicLine\r\n");
-    fprintf (out, "gaiaReverseDynamicLine\r\n");
-    fprintf (out, "gaiaDynamicLineSplitBefore\r\n");
-    fprintf (out, "gaiaDynamicLineSplitAfter\r\n");
-    fprintf (out, "gaiaDynamicLineJoinAfter\r\n");
-    fprintf (out, "gaiaDynamicLineJoinBefore\r\n");
-    fprintf (out, "gaiaGeomCollSimplifyPreserveTopology");
-    p = first_defn;
-    while (p)
-      {
-/* SpatiaLite Symbols */
-	  fprintf (out, "%s\r\n", p->keyword);
-	  p = p->next;
-      }
-    p = first;
-    while (p)
-      {
-/* SQLite Symbols */
-	  char alias[1024];
-	  strcpy (alias, p->keyword);
-	  alias[0] = 'S';
-	  alias[1] = 'P';
-	  alias[2] = 'L';
-	  fprintf (out, "%s\r\n", alias);
-	  p = p->next;
-      }
-}
-
-static void
 free_masked_keywords (struct masked_keyword *first,
 		      struct masked_keyword *first_defn)
 {
@@ -977,22 +939,6 @@ main ()
 	  return 1;
       }
     do_copy_plain (out, "/automake/nmake.opt");
-    out = fopen ("amalgamation/libspatialite.def", "wb");
-    if (!out)
-      {
-	  fprintf (stderr, "Error opening amalgamation/libspatialite.def\n");
-	  return 1;
-      }
-    do_copy_plain (out, "/automake/libspatialite.def");
-    fclose (out);
-    out = fopen ("amalgamation/libspatialite.def-update", "wb");
-    if (!out)
-      {
-	  fprintf (stderr, "Error opening amalgamation/libspatialite.def\n");
-	  return 1;
-      }
-    do_output_dll_defs (out, first, first_def);
-    fclose (out);
     out = fopen ("amalgamation/spatialite.pc.in", "wb");
     if (!out)
       {

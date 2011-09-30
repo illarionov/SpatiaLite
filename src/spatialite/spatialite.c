@@ -1530,6 +1530,8 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
 		sprintf (dummy, "DELETE FROM %s WHERE pkid=NEW.ROWID;\n",
 			 xindex);
 		strcat (trigger, dummy);
+		sprintf (xindex, "idx_%s_%s", tblname, colname);
+		clean_sql_string (xindex);
 		sprintf (dummy, "SELECT RTreeAlign('%s', NEW.ROWID, NEW.%s);",
 			 xindex, xcolname);
 		strcat (trigger, dummy);
@@ -1556,6 +1558,8 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
 		sprintf (dummy, "DELETE FROM %s WHERE pkid=NEW.ROWID;\n",
 			 xindex);
 		strcat (trigger, dummy);
+		sprintf (xindex, "idx_%s_%s", tblname, colname);
+		clean_sql_string (xindex);
 		sprintf (dummy, "SELECT RTreeAlign('%s', NEW.ROWID, NEW.%s);",
 			 xindex, xcolname);
 		strcat (trigger, dummy);
@@ -3209,8 +3213,8 @@ eval_rtree_entry (int ok_geom, double geom_value, int ok_rtree,
 	return 1;
     if (ok_geom && ok_rtree)
       {
-	  float g = (float)geom_value;
-	  float r = (float)rtree_value;
+	  float g = (float) geom_value;
+	  float r = (float) rtree_value;
 	  if (g != r)
 	      return 0;
 	  return 1;
@@ -9265,10 +9269,10 @@ fnct_RTreeWithin (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
 	    }
 
 	  /* adjusting the MBR so to compensate for DOUBLE/FLOAT truncations */
-	  fminx = (float)xmin;
-	  fminy = (float)ymin;
-	  fmaxx = (float)xmax;
-	  fmaxy = (float)ymax;
+	  fminx = (float) xmin;
+	  fminy = (float) ymin;
+	  fmaxx = (float) xmax;
+	  fmaxy = (float) ymax;
 	  tic = fabs (xmin - fminx);
 	  tic2 = fabs (ymin - fminy);
 	  if (tic2 > tic)
@@ -9354,10 +9358,10 @@ fnct_RTreeContains (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
 	    }
 
 	  /* adjusting the MBR so to compensate for DOUBLE/FLOAT truncations */
-	  fminx = (float)xmin;
-	  fminy = (float)ymin;
-	  fmaxx = (float)xmax;
-	  fmaxy = (float)ymax;
+	  fminx = (float) xmin;
+	  fminy = (float) ymin;
+	  fmaxx = (float) xmax;
+	  fmaxy = (float) ymax;
 	  tic = fabs (xmin - fminx);
 	  tic2 = fabs (ymin - fminy);
 	  if (tic2 > tic)
@@ -9443,10 +9447,10 @@ fnct_RTreeIntersects (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
 	    }
 
 	  /* adjusting the MBR so to compensate for DOUBLE/FLOAT truncations */
-	  fminx = (float)xmin;
-	  fminy = (float)ymin;
-	  fmaxx = (float)xmax;
-	  fmaxy = (float)ymax;
+	  fminx = (float) xmin;
+	  fminy = (float) ymin;
+	  fmaxx = (float) xmax;
+	  fmaxy = (float) ymax;
 	  tic = fabs (xmin - fminx);
 	  tic2 = fabs (ymin - fminy);
 	  if (tic2 > tic)
@@ -11078,6 +11082,8 @@ fnct_LinesFromRings (sqlite3_context * context, int argc, sqlite3_value ** argv)
     sqlite3_result_null (context);
 }
 
+#ifndef OMIT_GEOS		/* including GEOS */
+
 static void
 fnct_BuildArea (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
@@ -11122,6 +11128,7 @@ fnct_BuildArea (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     gaiaFreeGeomColl (geo);
 }
+
 
 static void
 fnct_Polygonize_step (sqlite3_context * context, int argc,
@@ -11203,6 +11210,8 @@ fnct_Polygonize_final (sqlite3_context * context)
 	  gaiaFreeGeomColl (result);
       }
 }
+
+#endif /* end including GEOS */
 
 static void
 fnct_DissolveSegments (sqlite3_context * context, int argc,
@@ -16161,6 +16170,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_LinesFromRings, 0, 0);
     sqlite3_create_function (db, "LinesFromRings", 2, SQLITE_ANY, 0,
 			     fnct_LinesFromRings, 0, 0);
+
+#ifndef OMIT_GEOS		/* including GEOS */
     sqlite3_create_function (db, "BuildArea", 1, SQLITE_ANY, 0, fnct_BuildArea,
 			     0, 0);
     sqlite3_create_function (db, "ST_BuildArea", 1, SQLITE_ANY, 0,
@@ -16169,6 +16180,8 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 			     fnct_Polygonize_step, fnct_Polygonize_final);
     sqlite3_create_function (db, "ST_Polygonize", 1, SQLITE_ANY, 0, 0,
 			     fnct_Polygonize_step, fnct_Polygonize_final);
+#endif /* end including GEOS */
+
     sqlite3_create_function (db, "DissolveSegments", 1, SQLITE_ANY, 0,
 			     fnct_DissolveSegments, 0, 0);
     sqlite3_create_function (db, "ST_DissolveSegments", 1, SQLITE_ANY, 0,
@@ -17511,6 +17524,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_BdMPolyFromWKB1, 0, 0);
     sqlite3_create_function (db, "ST_BdMPolyFromWKB", 2, SQLITE_ANY, 0,
 			     fnct_BdMPolyFromWKB2, 0, 0);
+
+#ifndef OMIT_GEOS		/* including GEOS */
     sqlite3_create_function (db, "BuildArea", 1, SQLITE_ANY, 0,
 			     fnct_BuildArea, 0, 0);
     sqlite3_create_function (db, "ST_BuildArea", 1, SQLITE_ANY, 0,
@@ -17519,6 +17534,8 @@ sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
 			     fnct_Polygonize_step, fnct_Polygonize_final);
     sqlite3_create_function (db, "ST_Polygonize", 1, SQLITE_ANY, 0, 0,
 			     fnct_Polygonize_step, fnct_Polygonize_final);
+#endif /* end including GEOS */
+
     sqlite3_create_function (db, "DissolveSegments", 1, SQLITE_ANY, 0,
 			     fnct_DissolveSegments, 0, 0);
     sqlite3_create_function (db, "ST_DissolveSegments", 1, SQLITE_ANY, 0,

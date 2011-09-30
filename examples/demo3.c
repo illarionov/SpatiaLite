@@ -23,7 +23,7 @@ redistribute it freely
 these headers are required in order to support
 SQLite/SpatiaLite
 */
-#include <spatialite/sqlite3.h>
+#include <sqlite3.h>
 #include <spatialite/gaiageo.h>
 #include <spatialite.h>
 

@@ -25,7 +25,7 @@ SQLite/SpatiaLite
 
 #include <geos_c.h>
 
-#include <spatialite/sqlite3.h>
+#include <sqlite3.h>
 #include <spatialite/gaiageo.h>
 #include <spatialite.h>
 
@@ -219,6 +219,8 @@ properly initialize SpatiaLite and GEOS libraries
 	  return -1;
       }
 
+
+#ifndef OMIT_GEOS		/* GEOS must be enabled */
 
 /*
 Step #1
@@ -509,6 +511,10 @@ printing each geometry as Well Known Text (WKT)
 	  printf ("\n%s\n", wkt.Buffer);
 	  gaiaOutBufferReset (&wkt);
       }
+
+#else
+    printf ("no GEOS support available: skipping any test\n");
+#endif /* GEOS enabled/disabled */
 
 /* 
 memory cleanup
