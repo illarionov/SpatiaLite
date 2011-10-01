@@ -11645,7 +11645,7 @@ static void
 fnct_Length (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ Length(BLOB encoded GEOMETRYCOLLECTION)
+/ GLength(BLOB encoded GEOMETRYCOLLECTION)
 /
 / returns  the total length for current geometry 
 / or NULL if any error is encountered
