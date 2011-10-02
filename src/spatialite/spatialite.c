@@ -5636,8 +5636,15 @@ fnct_AsKml1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
+	  gaiaOutBufferInitialize (&out_buf);
 	  if (geo->Srid == 4326)
 	      ;			/* already WGS84 */
+	  else if (geo->Srid == -1)
+	    {
+		/* unknown SRID: giving up */
+		sqlite3_result_null (context);
+		goto stop;
+	    }
 	  else
 	    {
 		/* attempting to reproject into WGS84 */
@@ -5659,7 +5666,6 @@ fnct_AsKml1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		geo = geo_wgs84;
 	    }
 	  /* produce KML-notation - actual work is done in gaiageo/gg_wkt.c */
-	  gaiaOutBufferInitialize (&out_buf);
 	  gaiaOutBareKml (&out_buf, geo, precision);
 	  if (out_buf.Error || out_buf.Buffer == NULL)
 	      sqlite3_result_null (context);
@@ -5798,8 +5804,15 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
+	  gaiaOutBufferInitialize (&out_buf);
 	  if (geo->Srid == 4326)
 	      ;			/* already WGS84 */
+	  else if (geo->Srid == -1)
+	    {
+		/* unknown SRID: giving up */
+		sqlite3_result_null (context);
+		goto stop;
+	    }
 	  else
 	    {
 		/* attempting to reproject into WGS84 */
@@ -5821,7 +5834,6 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		geo = geo_wgs84;
 	    }
 	  /* produce KML-notation - actual work is done in gaiageo/gg_wkt.c */
-	  gaiaOutBufferInitialize (&out_buf);
 	  gaiaOutFullKml (&out_buf, name, desc, geo, precision);
 	  if (out_buf.Error || out_buf.Buffer == NULL)
 	      sqlite3_result_null (context);
@@ -5942,21 +5954,26 @@ fnct_AsGml (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
 	  n_bytes = sqlite3_value_bytes (argv[0]);
       }
+    gaiaOutBufferInitialize (&out_buf);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
 	sqlite3_result_null (context);
     else
       {
-	  /* produce GML-notation - actual work is done in gaiageo/gg_wkt.c */
-	  gaiaOutBufferInitialize (&out_buf);
-	  gaiaOutGml (&out_buf, version, precision, geo);
-	  if (out_buf.Error || out_buf.Buffer == NULL)
-	      sqlite3_result_null (context);
+	  if (geo->Srid == -1)
+	      sqlite3_result_null (context);	/* unknown SRID: giving up */
 	  else
 	    {
-		len = out_buf.WriteOffset;
-		sqlite3_result_text (context, out_buf.Buffer, len, free);
-		out_buf.Buffer = NULL;
+		/* produce GML-notation - actual work is done in gaiageo/gg_wkt.c */
+		gaiaOutGml (&out_buf, version, precision, geo);
+		if (out_buf.Error || out_buf.Buffer == NULL)
+		    sqlite3_result_null (context);
+		else
+		  {
+		      len = out_buf.WriteOffset;
+		      sqlite3_result_text (context, out_buf.Buffer, len, free);
+		      out_buf.Buffer = NULL;
+		  }
 	    }
       }
     gaiaFreeGeomColl (geo);
@@ -6041,21 +6058,26 @@ fnct_AsGeoJSON (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
 	  n_bytes = sqlite3_value_bytes (argv[0]);
       }
+    gaiaOutBufferInitialize (&out_buf);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
 	sqlite3_result_null (context);
     else
       {
-	  /* produce GeoJSON-notation - actual work is done in gaiageo/gg_wkt.c */
-	  gaiaOutBufferInitialize (&out_buf);
-	  gaiaOutGeoJSON (&out_buf, geo, precision, options);
-	  if (out_buf.Error || out_buf.Buffer == NULL)
-	      sqlite3_result_null (context);
+	  if (geo->Srid == -1)
+	      sqlite3_result_null (context);	/* unknown SRID: giving up */
 	  else
 	    {
-		len = out_buf.WriteOffset;
-		sqlite3_result_text (context, out_buf.Buffer, len, free);
-		out_buf.Buffer = NULL;
+		/* produce GeoJSON-notation - actual work is done in gaiageo/gg_wkt.c */
+		gaiaOutGeoJSON (&out_buf, geo, precision, options);
+		if (out_buf.Error || out_buf.Buffer == NULL)
+		    sqlite3_result_null (context);
+		else
+		  {
+		      len = out_buf.WriteOffset;
+		      sqlite3_result_text (context, out_buf.Buffer, len, free);
+		      out_buf.Buffer = NULL;
+		  }
 	    }
       }
     gaiaFreeGeomColl (geo);
@@ -15230,7 +15252,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -15314,7 +15337,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -15323,7 +15347,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
