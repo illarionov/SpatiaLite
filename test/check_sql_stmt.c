@@ -112,10 +112,14 @@ int do_one_case (const struct test_data *data)
 		fprintf (stderr, "Expected value was: %s\n", data->expected_results[i]);
 		return  -12;
 	    }
+	} else if (strlen(results[i]) == 0) {
+	    fprintf (stderr, "zero length result at %i\n", i);
+	    fprintf (stderr, "Expected value was    : %s|\n", data->expected_results[i]);
+	    return -13;
 	} else if (strncmp(results[i], data->expected_results[i], data->expected_precision[i]) != 0) {
 	    fprintf (stderr, "Unexpected value at %i: %s|\n", i, results[i]);
 	    fprintf (stderr, "Expected value was    : %s|\n", data->expected_results[i]);
-	    return  -13;
+	    return  -14;
 	}
     }
     sqlite3_free_table (results);
