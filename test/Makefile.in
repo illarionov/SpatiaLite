@@ -714,7 +714,79 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/st_length4.testcase \
 	sql_stmt_tests/st_length5.testcase \
 	sql_stmt_tests/st_length6.testcase \
-	sql_stmt_tests/st_length7.testcase
+	sql_stmt_tests/st_length7.testcase \
+	sql_stmt_tests/geometryn1.testcase \
+	sql_stmt_tests/geometryn2.testcase \
+	sql_stmt_tests/geometryn3.testcase \
+	sql_stmt_tests/geometryn4.testcase \
+	sql_stmt_tests/geometryn5.testcase \
+	sql_stmt_tests/geometryn6.testcase \
+	sql_stmt_tests/geometryn.testcase \
+	sql_stmt_tests/greatcircle-badblob.testcase \
+	sql_stmt_tests/linesfromrings1.testcase \
+	sql_stmt_tests/linesfromrings2.testcase \
+	sql_stmt_tests/linesfromrings3.testcase \
+	sql_stmt_tests/linesfromrings4.testcase \
+	sql_stmt_tests/linesfromrings5.testcase \
+	sql_stmt_tests/linesfromrings6.testcase \
+	sql_stmt_tests/linesfromrings7.testcase \
+	sql_stmt_tests/mbr10.testcase \
+	sql_stmt_tests/mbr11.testcase \
+	sql_stmt_tests/mbr12.testcase \
+	sql_stmt_tests/mbr13.testcase \
+	sql_stmt_tests/mbr14.testcase \
+	sql_stmt_tests/mbr15.testcase \
+	sql_stmt_tests/mbr16.testcase \
+	sql_stmt_tests/mbr17.testcase \
+	sql_stmt_tests/mbr18.testcase \
+	sql_stmt_tests/mbr19.testcase \
+	sql_stmt_tests/mbr1.testcase \
+	sql_stmt_tests/mbr20.testcase \
+	sql_stmt_tests/mbr21.testcase \
+	sql_stmt_tests/mbr22.testcase \
+	sql_stmt_tests/mbr23.testcase \
+	sql_stmt_tests/mbr24.testcase \
+	sql_stmt_tests/mbr25.testcase \
+	sql_stmt_tests/mbr26.testcase \
+	sql_stmt_tests/mbr27.testcase \
+	sql_stmt_tests/mbr28.testcase \
+	sql_stmt_tests/mbr29.testcase \
+	sql_stmt_tests/mbr2.testcase \
+	sql_stmt_tests/mbr30.testcase \
+	sql_stmt_tests/mbr31.testcase \
+	sql_stmt_tests/mbr32.testcase \
+	sql_stmt_tests/mbr3.testcase \
+	sql_stmt_tests/mbr4.testcase \
+	sql_stmt_tests/mbr5.testcase \
+	sql_stmt_tests/mbr6.testcase \
+	sql_stmt_tests/mbr7.testcase \
+	sql_stmt_tests/mbr8.testcase \
+	sql_stmt_tests/mbr9.testcase \
+	sql_stmt_tests/m_usmi.testcase \
+	sql_stmt_tests/output1.testcase \
+	sql_stmt_tests/output2.testcase \
+	sql_stmt_tests/output3.testcase \
+	sql_stmt_tests/output4.testcase \
+	sql_stmt_tests/output5.testcase \
+	sql_stmt_tests/output6.testcase \
+	sql_stmt_tests/output7.testcase \
+	sql_stmt_tests/polygonize1.testcase \
+	sql_stmt_tests/polygonize2.testcase \
+	sql_stmt_tests/polygonize3.testcase \
+	sql_stmt_tests/polygonize4.testcase \
+	sql_stmt_tests/relations1.testcase \
+	sql_stmt_tests/relations2.testcase \
+	sql_stmt_tests/relations3.testcase \
+	sql_stmt_tests/relations4.testcase \
+	sql_stmt_tests/relations5.testcase \
+	sql_stmt_tests/relations6.testcase \
+	sql_stmt_tests/shiftcoords1.testcase \
+	sql_stmt_tests/shiftcoords2.testcase \
+	sql_stmt_tests/shiftcoords3.testcase \
+	sql_stmt_tests/shiftcoords4.testcase \
+	sql_stmt_tests/shiftcoords5.testcase \
+	sql_stmt_tests/shiftcoords6.testcase \
+	sql_stmt_tests/shiftcoords7.testcase
 
 all: all-am
 

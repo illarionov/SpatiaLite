@@ -1,0 +1,20 @@
+Output format tests - POLYGON, no SRID
+:memory: #use in-memory database
+SELECT AsText(geom), AsKML(geom), AsKML("myname", "mydesc", geom), AsGML(geom), AsGeoJSON(geom), AsWkt(geom), AsEWkt(geom) FROM (SELECT GeomFromText("POLYGON((0 0, 1 1, 0 2, -1 1, 0 0))") as geom) dummy;
+1 # rows (not including the header row)
+7 # columns
+AsText(geom)
+AsKML(geom)
+AsKML("myname", "mydesc", geom)
+AsGML(geom)
+AsGeoJSON(geom)
+AsWkt(geom)
+AsEWkt(geom)
+POLYGON((0 0, 1 1, 0 2, -1 1, 0 0))
+(NULL)
+(NULL)
+(NULL)
+(NULL)
+POLYGON((0 0,1 1,0 2,-1 1,0 0))
+SRID=-1;POLYGON((0 0,1 1,0 2,-1 1,0 0))
+

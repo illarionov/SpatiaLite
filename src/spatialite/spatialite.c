@@ -5396,12 +5396,12 @@ fnct_AsText (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
+    gaiaOutBufferInitialize (&out_buf);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
 	sqlite3_result_null (context);
     else
       {
-	  gaiaOutBufferInitialize (&out_buf);
 	  gaiaOutWkt (&out_buf, geo);
 	  if (out_buf.Error || out_buf.Buffer == NULL)
 	      sqlite3_result_null (context);
@@ -5631,12 +5631,12 @@ fnct_AsKml1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		return;
 	    }
       }
+    gaiaOutBufferInitialize (&out_buf);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
 	sqlite3_result_null (context);
     else
       {
-	  gaiaOutBufferInitialize (&out_buf);
 	  if (geo->Srid == 4326)
 	      ;			/* already WGS84 */
 	  else if (geo->Srid == -1)
@@ -5799,12 +5799,12 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		return;
 	    }
       }
+    gaiaOutBufferInitialize (&out_buf);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
 	sqlite3_result_null (context);
     else
       {
-	  gaiaOutBufferInitialize (&out_buf);
 	  if (geo->Srid == 4326)
 	      ;			/* already WGS84 */
 	  else if (geo->Srid == -1)
@@ -10909,12 +10909,12 @@ fnct_ToEWKT (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
+    gaiaOutBufferInitialize (&out_buf);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
 	sqlite3_result_null (context);
     else
       {
-	  gaiaOutBufferInitialize (&out_buf);
 	  gaiaToEWKT (&out_buf, geo);
 	  if (out_buf.Error || out_buf.Buffer == NULL)
 	      sqlite3_result_null (context);
