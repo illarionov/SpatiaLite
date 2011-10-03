@@ -428,6 +428,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/ring24.testcase \
 	sql_stmt_tests/ring25.testcase \
 	sql_stmt_tests/ring26.testcase \
+	sql_stmt_tests/ring27.testcase \
 	sql_stmt_tests/ring2.testcase \
 	sql_stmt_tests/ring3.testcase \
 	sql_stmt_tests/ring4.testcase \
@@ -525,8 +526,48 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/shiftcoords4.testcase \
 	sql_stmt_tests/shiftcoords5.testcase \
 	sql_stmt_tests/shiftcoords6.testcase \
-	sql_stmt_tests/shiftcoords7.testcase
-
+	sql_stmt_tests/shiftcoords7.testcase \
+	sql_stmt_tests/closestpoint10.testcase \
+	sql_stmt_tests/closestpoint11.testcase \
+	sql_stmt_tests/closestpoint12.testcase \
+	sql_stmt_tests/closestpoint13.testcase \
+	sql_stmt_tests/closestpoint14.testcase \
+	sql_stmt_tests/closestpoint1.testcase \
+	sql_stmt_tests/closestpoint2.testcase \
+	sql_stmt_tests/closestpoint3.testcase \
+	sql_stmt_tests/closestpoint4.testcase \
+	sql_stmt_tests/closestpoint5.testcase \
+	sql_stmt_tests/closestpoint6.testcase \
+	sql_stmt_tests/closestpoint7.testcase \
+	sql_stmt_tests/closestpoint8.testcase \
+	sql_stmt_tests/closestpoint9.testcase \
+	sql_stmt_tests/rotatecoords10.testcase \
+	sql_stmt_tests/rotatecoords11.testcase \
+	sql_stmt_tests/rotatecoords12.testcase \
+	sql_stmt_tests/rotatecoords13.testcase \
+	sql_stmt_tests/rotatecoords14.testcase \
+	sql_stmt_tests/rotatecoords1.testcase \
+	sql_stmt_tests/rotatecoords2.testcase \
+	sql_stmt_tests/rotatecoords3.testcase \
+	sql_stmt_tests/rotatecoords4.testcase \
+	sql_stmt_tests/rotatecoords5.testcase \
+	sql_stmt_tests/rotatecoords6.testcase \
+	sql_stmt_tests/rotatecoords7.testcase \
+	sql_stmt_tests/rotatecoords8.testcase \
+	sql_stmt_tests/rotatecoords9.testcase \
+	sql_stmt_tests/scalecoords10.testcase \
+	sql_stmt_tests/scalecoords11.testcase \
+	sql_stmt_tests/scalecoords12.testcase \
+	sql_stmt_tests/scalecoords13.testcase \
+	sql_stmt_tests/scalecoords1.testcase \
+	sql_stmt_tests/scalecoords2.testcase \
+	sql_stmt_tests/scalecoords3.testcase \
+	sql_stmt_tests/scalecoords4.testcase \
+	sql_stmt_tests/scalecoords5.testcase \
+	sql_stmt_tests/scalecoords6.testcase \
+	sql_stmt_tests/scalecoords7.testcase \
+	sql_stmt_tests/scalecoords8.testcase \
+	sql_stmt_tests/scalecoords9.testcase
 
 
 
