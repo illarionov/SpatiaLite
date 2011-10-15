@@ -3654,6 +3654,8 @@ gaiaLineMerge (gaiaGeomCollPtr geom)
     gaiaGeomCollPtr result;
     if (!geom)
 	return NULL;
+    if (gaiaIsToxic (geom))
+	return NULL;
 
     g1 = gaiaToGeos (geom);
     g2 = GEOSLineMerge (g1);
@@ -3684,7 +3686,8 @@ gaiaUnaryUnion (gaiaGeomCollPtr geom)
     gaiaGeomCollPtr result;
     if (!geom)
 	return NULL;
-
+    if (gaiaIsToxic (geom))
+	return NULL;
     g1 = gaiaToGeos (geom);
     g2 = GEOSUnaryUnion (g1);
     GEOSGeom_destroy (g1);
