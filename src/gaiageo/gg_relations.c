@@ -2613,7 +2613,7 @@ gaiaLineLocatePoint (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 	  pgs1++;
 	  pg = pg->Next;
       }
-    if (pts1 == 0 && lns1 == 1 && pgs1 == 0)
+    if (pts1 == 0 && lns1 >= 1 && pgs1 == 0)
 	;
     else
 	return -1.0;
