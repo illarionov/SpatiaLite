@@ -767,10 +767,10 @@ uninstall-am: uninstall-pkgconfigDATA
 
 
 coverage-init:
-	lcov --directory . --capture --initial --output-file libspatialite_cov.info
+	lcov --directory src --capture --initial --output-file libspatialite_cov.info
 
 coverage::
-	lcov --directory . --output-file libspatialite_cov.info --capture
+	lcov --directory src --output-file libspatialite_cov.info --capture
 	genhtml -o covresults libspatialite_cov.info
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

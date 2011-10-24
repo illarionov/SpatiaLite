@@ -10,10 +10,10 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = spatialite.pc
 
 coverage-init:
-	lcov --directory . --capture --initial --output-file libspatialite_cov.info
+	lcov --directory src --capture --initial --output-file libspatialite_cov.info
 
 coverage::
-	lcov --directory . --output-file libspatialite_cov.info --capture
+	lcov --directory src --output-file libspatialite_cov.info --capture
 	genhtml -o covresults libspatialite_cov.info
 
 MOSTLYCLEANFILES = libspatialite_cov.info

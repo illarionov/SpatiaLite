@@ -73,7 +73,13 @@ int do_one_case (const struct test_data *data)
     int columns;
 
     fprintf(stderr, "Test case: %s\n", data->test_case_name);
-    ret = sqlite3_open_v2 (data->database_name, &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    // This hack checks if the name ends with _RO
+    if (strncmp("_RO", data->database_name + strlen(data->database_name) - 3, strlen("_RO")) == 0) {
+	fprintf(stderr, "opening read_only\n");
+	ret = sqlite3_open_v2 (data->database_name, &db_handle, SQLITE_OPEN_READONLY, NULL);
+    } else {
+	ret = sqlite3_open_v2 (data->database_name, &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    }
     if (ret != SQLITE_OK) {
       fprintf (stderr, "cannot open %s db: %s\n", data->database_name, sqlite3_errmsg (db_handle));
       sqlite3_close (db_handle);
