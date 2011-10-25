@@ -698,6 +698,13 @@ do_makefile (FILE * out)
     fprintf (out, "\tspatialite/gaiaexif.h \\\n");
     fprintf (out, "\tspatialite/gaiaaux.h \\\n");
     fprintf (out, "\tspatialite/gaiageo.h \\\n");
+    fprintf (out, "\tspatialite/gg_const.h \\\n");
+    fprintf (out, "\tspatialite/gg_structs.h \\\n");
+    fprintf (out, "\tspatialite/gg_core.h \\\n");
+    fprintf (out, "\tspatialite/gg_mbr.h \\\n");
+    fprintf (out, "\tspatialite/gg_formats.h \\\n");
+    fprintf (out, "\tspatialite/gg_dynamic.h \\\n");
+    fprintf (out, "\tspatialite/gg_advanced.h \\\n");
     fprintf (out, "\tspatialite/sqlite3.h \\\n");
     fprintf (out, "\tspatialite/sqlite3ext.h \\\n");
     fprintf (out, "\tspatialite/spatialite.h\n");
@@ -756,6 +763,13 @@ main ()
     do_copy (out, "/headers/spatialite/", "gaiaaux.h");
     do_copy (out, "/headers/spatialite/", "gaiaexif.h");
     do_copy (out, "/headers/spatialite/", "gaiageo.h");
+    do_copy (out, "/headers/spatialite/", "gg_const.h");
+    do_copy (out, "/headers/spatialite/", "gg_structs.h");
+    do_copy (out, "/headers/spatialite/", "gg_core.h");
+    do_copy (out, "/headers/spatialite/", "gg_mbr.h");
+    do_copy (out, "/headers/spatialite/", "gg_formats.h");
+    do_copy (out, "/headers/spatialite/", "gg_dynamic.h");
+    do_copy (out, "/headers/spatialite/", "gg_advanced.h");
     do_copy (out, "/headers/spatialite/", "spatialite.h");
     do_copy (out, "/gaiaaux/", "gg_sqlaux.c");
     do_copy (out, "/gaiaaux/", "gg_utf8.c");
@@ -836,6 +850,75 @@ main ()
 	  return 1;
       }
     do_copy_export (out, "/headers/spatialite/gaiageo.h", &first_def,
+		    &last_def);
+    fclose (out);
+    out = fopen ("amalgamation/headers/spatialite/gg_const.h", "wb");
+    if (!out)
+      {
+	  fprintf (stderr,
+		   "Error opening amalgamation/headers/spatialite/gg_const.h\n");
+	  return 1;
+      }
+    do_copy_export (out, "/headers/spatialite/gg_const.h", &first_def,
+		    &last_def);
+    fclose (out);
+    out = fopen ("amalgamation/headers/spatialite/gg_structs.h", "wb");
+    if (!out)
+      {
+	  fprintf (stderr,
+		   "Error opening amalgamation/headers/spatialite/gg_structs.h\n");
+	  return 1;
+      }
+    do_copy_export (out, "/headers/spatialite/gg_structs.h", &first_def,
+		    &last_def);
+    fclose (out);
+    out = fopen ("amalgamation/headers/spatialite/gg_core.h", "wb");
+    if (!out)
+      {
+	  fprintf (stderr,
+		   "Error opening amalgamation/headers/spatialite/gg_core.h\n");
+	  return 1;
+      }
+    do_copy_export (out, "/headers/spatialite/gg_core.h", &first_def,
+		    &last_def);
+    fclose (out);
+    out = fopen ("amalgamation/headers/spatialite/gg_mbr.h", "wb");
+    if (!out)
+      {
+	  fprintf (stderr,
+		   "Error opening amalgamation/headers/spatialite/gg_mbr.h\n");
+	  return 1;
+      }
+    do_copy_export (out, "/headers/spatialite/gg_mbr.h", &first_def, &last_def);
+    fclose (out);
+    out = fopen ("amalgamation/headers/spatialite/gg_formats.h", "wb");
+    if (!out)
+      {
+	  fprintf (stderr,
+		   "Error opening amalgamation/headers/spatialite/gg_formats.h\n");
+	  return 1;
+      }
+    do_copy_export (out, "/headers/spatialite/gg_formats.h", &first_def,
+		    &last_def);
+    fclose (out);
+    out = fopen ("amalgamation/headers/spatialite/gg_dynamic.h", "wb");
+    if (!out)
+      {
+	  fprintf (stderr,
+		   "Error opening amalgamation/headers/spatialite/gg_dynamic.h\n");
+	  return 1;
+      }
+    do_copy_export (out, "/headers/spatialite/gg_dynamic.h", &first_def,
+		    &last_def);
+    fclose (out);
+    out = fopen ("amalgamation/headers/spatialite/gg_advanced.h", "wb");
+    if (!out)
+      {
+	  fprintf (stderr,
+		   "Error opening amalgamation/headers/spatialite/gg_advanced.h\n");
+	  return 1;
+      }
+    do_copy_export (out, "/headers/spatialite/gg_advanced.h", &first_def,
 		    &last_def);
     fclose (out);
     out = fopen ("amalgamation/headers/spatialite/gaiaexif.h", "wb");
