@@ -4737,7 +4737,7 @@ gaiaToEWKB (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom)
 /* prints the GEOS/PostGIS EWKB text representation of current geometry */
     char buf[2048];
     unsigned char endian_buf[16];
-    char byte[2];
+    char byte[3];
     char *ptr;
     int size;
     int type;

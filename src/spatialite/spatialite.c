@@ -10869,14 +10869,17 @@ fnct_ToEWKB (sqlite3_context * context, int argc, sqlite3_value ** argv)
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
-	  sqlite3_result_int (context, -1);
+	  sqlite3_result_null (context);
 	  return;
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
-	sqlite3_result_int (context, -1);
+      {
+	sqlite3_result_null (context);
+	return;
+      }
     else
       {
 	  gaiaOutBufferInitialize (&out_buf);
