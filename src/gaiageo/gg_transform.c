@@ -51,7 +51,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <proj_api.h>
 #endif
 
-#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
+#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
 #include <spatialite/sqlite3ext.h>
 #else
 #include <sqlite3ext.h>
@@ -1042,7 +1042,7 @@ gaiaTransform (gaiaGeomCollPtr org, char *proj_from, char *proj_to)
 		  }
 		else if (ln->DimensionModel == GAIA_XY_M)
 		  {
-		      gaiaGetPointXYZ (ln->Coords, i, &x, &y, &m);
+		      gaiaGetPointXYM (ln->Coords, i, &x, &y, &m);
 		  }
 		else if (ln->DimensionModel == GAIA_XY_Z_M)
 		  {
@@ -1151,7 +1151,7 @@ gaiaTransform (gaiaGeomCollPtr org, char *proj_from, char *proj_to)
 		  }
 		else if (rng->DimensionModel == GAIA_XY_M)
 		  {
-		      gaiaGetPointXYZ (rng->Coords, i, &x, &y, &m);
+		      gaiaGetPointXYM (rng->Coords, i, &x, &y, &m);
 		  }
 		else if (rng->DimensionModel == GAIA_XY_Z_M)
 		  {
@@ -1256,7 +1256,7 @@ gaiaTransform (gaiaGeomCollPtr org, char *proj_from, char *proj_to)
 			}
 		      else if (rng->DimensionModel == GAIA_XY_M)
 			{
-			    gaiaGetPointXYZ (rng->Coords, i, &x, &y, &m);
+			    gaiaGetPointXYM (rng->Coords, i, &x, &y, &m);
 			}
 		      else if (rng->DimensionModel == GAIA_XY_Z_M)
 			{
@@ -1289,10 +1289,7 @@ gaiaTransform (gaiaGeomCollPtr org, char *proj_from, char *proj_to)
 		if (pj_transform (from_cs, to_cs, cnt, 0, xx, yy, zz) == 0)
 		  {
 		      /* inserting the reprojected POLYGON in the new GEOMETRY */
-		      dst_rng = dst_pg->Interiors + ib;
-		      dst_rng->Points = cnt;
-		      dst_rng->Coords =
-			  malloc (sizeof (double) * (dst_rng->Points * 2));
+		      dst_rng = gaiaAddInteriorRing (dst_pg, ib, cnt);
 		      for (i = 0; i < cnt; i++)
 			{
 			    /* setting INTERIOR RING points */
