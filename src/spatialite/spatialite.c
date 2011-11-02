@@ -9251,184 +9251,6 @@ gaia_mbr_del (void *p)
 }
 
 static int
-fnct_RTreeWithin (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
-		  int *pRes)
-{
-/* R*Tree Geometry callback function:
-/ ... MATCH RTreeWithin(double x1, double y1, double x2, double y2)
-*/
-    struct gaia_rtree_mbr *mbr;
-    double xmin;
-    double xmax;
-    double ymin;
-    double ymax;
-    float fminx;
-    float fminy;
-    float fmaxx;
-    float fmaxy;
-    double tic;
-    double tic2;
-
-    if (p->pUser == 0)
-      {
-	  /* first call: we must check args and then initialize the MBR struct */
-	  if (nCoord != 4)
-	      return SQLITE_ERROR;
-	  if (p->nParam != 4)
-	      return SQLITE_ERROR;
-	  mbr = (struct gaia_rtree_mbr *) (p->pUser =
-					   sqlite3_malloc (sizeof
-							   (struct
-							    gaia_rtree_mbr)));
-	  if (!mbr)
-	      return SQLITE_NOMEM;
-	  p->xDelUser = gaia_mbr_del;
-	  xmin = p->aParam[0];
-	  ymin = p->aParam[1];
-	  xmax = p->aParam[2];
-	  ymax = p->aParam[3];
-	  if (xmin > xmax)
-	    {
-		xmin = p->aParam[2];
-		xmax = p->aParam[0];
-	    }
-	  if (ymin > ymax)
-	    {
-		ymin = p->aParam[3];
-		ymax = p->aParam[1];
-	    }
-
-	  /* adjusting the MBR so to compensate for DOUBLE/FLOAT truncations */
-	  fminx = (float) xmin;
-	  fminy = (float) ymin;
-	  fmaxx = (float) xmax;
-	  fmaxy = (float) ymax;
-	  tic = fabs (xmin - fminx);
-	  tic2 = fabs (ymin - fminy);
-	  if (tic2 > tic)
-	      tic = tic2;
-	  tic2 = fabs (xmax - fmaxx);
-	  if (tic2 > tic)
-	      tic = tic2;
-	  tic2 = fabs (ymax - fmaxy);
-	  if (tic2 > tic)
-	      tic = tic2;
-	  tic *= 2.0;
-
-	  mbr->minx = xmin - tic;
-	  mbr->miny = ymin - tic;
-	  mbr->maxx = xmax + tic;
-	  mbr->maxy = ymax + tic;
-      }
-
-    mbr = (struct gaia_rtree_mbr *) (p->pUser);
-    xmin = aCoord[0];
-    xmax = aCoord[1];
-    ymin = aCoord[2];
-    ymax = aCoord[3];
-    *pRes = 1;
-/* evaluating Within relationship */
-    if (xmin < mbr->minx)
-	*pRes = 0;
-    if (xmax > mbr->maxx)
-	*pRes = 0;
-    if (ymin < mbr->miny)
-	*pRes = 0;
-    if (ymax > mbr->maxy)
-	*pRes = 0;
-    return SQLITE_OK;
-}
-
-static int
-fnct_RTreeContains (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
-		    int *pRes)
-{
-/* R*Tree Geometry callback function:
-/ ... MATCH RTreeContains(double x1, double y1, double x2, double y2)
-*/
-    struct gaia_rtree_mbr *mbr;
-    double xmin;
-    double xmax;
-    double ymin;
-    double ymax;
-    float fminx;
-    float fminy;
-    float fmaxx;
-    float fmaxy;
-    double tic;
-    double tic2;
-
-    if (p->pUser == 0)
-      {
-	  /* first call: we must check args and then initialize the MBR struct */
-	  if (nCoord != 4)
-	      return SQLITE_ERROR;
-	  if (p->nParam != 4)
-	      return SQLITE_ERROR;
-	  mbr = (struct gaia_rtree_mbr *) (p->pUser =
-					   sqlite3_malloc (sizeof
-							   (struct
-							    gaia_rtree_mbr)));
-	  if (!mbr)
-	      return SQLITE_NOMEM;
-	  p->xDelUser = gaia_mbr_del;
-	  xmin = p->aParam[0];
-	  ymin = p->aParam[1];
-	  xmax = p->aParam[2];
-	  ymax = p->aParam[3];
-	  if (xmin > xmax)
-	    {
-		xmin = p->aParam[2];
-		xmax = p->aParam[0];
-	    }
-	  if (ymin > ymax)
-	    {
-		ymin = p->aParam[3];
-		ymax = p->aParam[1];
-	    }
-
-	  /* adjusting the MBR so to compensate for DOUBLE/FLOAT truncations */
-	  fminx = (float) xmin;
-	  fminy = (float) ymin;
-	  fmaxx = (float) xmax;
-	  fmaxy = (float) ymax;
-	  tic = fabs (xmin - fminx);
-	  tic2 = fabs (ymin - fminy);
-	  if (tic2 > tic)
-	      tic = tic2;
-	  tic2 = fabs (xmax - fmaxx);
-	  if (tic2 > tic)
-	      tic = tic2;
-	  tic2 = fabs (ymax - fmaxy);
-	  if (tic2 > tic)
-	      tic = tic2;
-	  tic *= 2.0;
-
-	  mbr->minx = xmin - tic;
-	  mbr->miny = ymin - tic;
-	  mbr->maxx = xmax + tic;
-	  mbr->maxy = ymax + tic;
-      }
-
-    mbr = (struct gaia_rtree_mbr *) (p->pUser);
-    xmin = aCoord[0];
-    xmax = aCoord[1];
-    ymin = aCoord[2];
-    ymax = aCoord[3];
-    *pRes = 1;
-/* evaluating Contains relationship */
-    if (mbr->minx < xmin)
-	*pRes = 0;
-    if (mbr->maxx > xmax)
-	*pRes = 0;
-    if (mbr->miny < ymin)
-	*pRes = 0;
-    if (mbr->maxy > ymax)
-	*pRes = 0;
-    return SQLITE_OK;
-}
-
-static int
 fnct_RTreeIntersects (sqlite3_rtree_geometry * p, int nCoord, double *aCoord,
 		      int *pRes)
 {
@@ -15263,8 +15085,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -15348,8 +15169,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -15358,8 +15178,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -16223,8 +16042,9 @@ register_spatialite_sql_functions (sqlite3 * db)
     sqlite3_create_function (db, "ST_CollectionExtract", 2, SQLITE_ANY, 0,
 			     fnct_CollectionExtract, 0, 0);
 #ifndef OMIT_GEOCALLBACKS	/* supporting RTree geometry callbacks */
-    sqlite3_rtree_geometry_callback (db, "RTreeWithin", fnct_RTreeWithin, 0);
-    sqlite3_rtree_geometry_callback (db, "RTreeContains", fnct_RTreeContains,
+    sqlite3_rtree_geometry_callback (db, "RTreeWithin", fnct_RTreeIntersects,
+				     0);
+    sqlite3_rtree_geometry_callback (db, "RTreeContains", fnct_RTreeIntersects,
 				     0);
     sqlite3_rtree_geometry_callback (db, "RTreeIntersects",
 				     fnct_RTreeIntersects, 0);
