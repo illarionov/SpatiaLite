@@ -651,7 +651,7 @@ vtxt_eval_constraints (VirtualTextCursorPtr cursor)
 			};
 		  }
 	    }
-	  if (pC->valueType == 'D')
+	  if (pC->valueType == 'T')
 	    {
 		if (is_txt)
 		  {
