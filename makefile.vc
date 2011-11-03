@@ -11,6 +11,7 @@ LIBOBJ = src\gaiaaux\gg_sqlaux.obj src\gaiaaux\gg_utf8.obj \
 	src\gaiageo\gg_relations.obj src\gaiageo\gg_shape.obj \
 	src\gaiageo\gg_transform.obj src\gaiageo\gg_wkb.obj \
 	src\gaiageo\gg_wkt.obj src\spatialite\mbrcache.obj \
+	src\shapefiles\shapefiles.obj \
 	src\spatialite\spatialite.obj src\spatialite\virtualdbf.obj \
 	src\spatialite\virtualfdo.obj src\spatialite\virtualnetwork.obj \
 	src\spatialite\virtualshape.obj src\srsinit\srs_init.obj \
