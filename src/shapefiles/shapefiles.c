@@ -27,7 +27,7 @@ The Initial Developer of the Original Code is Alessandro Furieri
 Portions created by the Initial Developer are Copyright (C) 2008
 the Initial Developer. All Rights Reserved.
 
-Contributor(s):
+Contributor(s): Brad Hards <bradh@frogmouth.net>
 
 Alternatively, the contents of this file may be used under the terms of
 either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -608,10 +608,10 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 	      || shp->Shape == GAIA_SHP_POLYGONZ)
 	    {
 		/* 
-		/ fixing anyway the Geometry type for 
-		/ LINESTRING/MULTILINESTRING or 
-		/ POLYGON/MULTIPOLYGON
-		*/
+		   / fixing anyway the Geometry type for 
+		   / LINESTRING/MULTILINESTRING or 
+		   / POLYGON/MULTIPOLYGON
+		 */
 		gaiaShpAnalyze (shp);
 	    }
       }
@@ -693,8 +693,8 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->Value->
-						       TxtValue),
+					       strlen (dbf_field->
+						       Value->TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -789,7 +789,7 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
       }
 }
 
-#endif				/* end ICONV (SHP) */
+#endif /* end ICONV (SHP) */
 
 static void
 output_prj_file (sqlite3 * sqlite, char *path, char *table, char *column)
@@ -937,7 +937,7 @@ shp_double_quoted_sql (char *buf)
     *out = '\0';
 }
 
-#ifndef OMIT_ICONV	/* ICONV enabled: supporting SHAPEFILE and DBF */
+#ifndef OMIT_ICONV		/* ICONV enabled: supporting SHAPEFILE and DBF */
 
 SPATIALITE_DECLARE int
 dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
@@ -1738,8 +1738,8 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->Value->
-						       TxtValue),
+					       strlen (dbf_field->
+						       Value->TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -2099,7 +2099,7 @@ dump_dbf (sqlite3 * sqlite, char *table, char *dbf_path, char *charset,
     return 0;
 }
 
-#endif				/* end ICONV (SHP and DBF) */
+#endif /* end ICONV (SHP and DBF) */
 
 SPATIALITE_DECLARE int
 is_kml_constant (sqlite3 * sqlite, char *table, char *column)
@@ -2224,7 +2224,6 @@ dump_kml (sqlite3 * sqlite, char *table, char *geom_col, char *kml_path,
 	sqlite3_finalize (stmt);
     if (out)
 	fclose (out);
-    sqlite3_finalize (stmt);
     fprintf (stderr, "Dump KML error: %s\n", sqlite3_errmsg (sqlite));
     return 0;
   no_file:
@@ -3683,7 +3682,7 @@ elementary_geometries (sqlite3 * sqlite,
 	sqlite3_finalize (stmt_out);
 }
 
-#ifndef OMIT_FREEXL	/* including FreeXL */
+#ifndef OMIT_FREEXL		/* including FreeXL */
 
 SPATIALITE_DECLARE int
 load_XL (sqlite3 * sqlite, const char *path, const char *table,
@@ -4004,3 +4003,94 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 }
 
 #endif /* FreeXL enabled/disabled */
+
+SPATIALITE_DECLARE int
+dump_geojson (sqlite3 * sqlite, char *table, char *geom_col, char *outfile_path,
+	      int precision, int option)
+{
+/* dumping a  geometry table as GeoJSON - Brad Hards 2011-11-09 */
+    char sql[4096];
+    sqlite3_stmt *stmt = NULL;
+    FILE *out = NULL;
+    int ret;
+    int rows = 0;
+    int is_const = 1;
+
+/* opening/creating the GeoJSON output file */
+    out = fopen (outfile_path, "wb");
+    if (!out)
+	goto no_file;
+
+/* preparing SQL statement */
+    sprintf (sql, "SELECT AsGeoJSON(%s, %d, %d) FROM %s WHERE %s IS NOT > NULL",
+	     geom_col, precision, option, table, geom_col);
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+	goto sql_error;
+
+    while (1)
+      {
+	  /* scrolling the result set */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	    {
+		break;		/* end of result set */
+	    }
+	  if (ret == SQLITE_ROW)
+	    {
+		rows++;
+		fprintf (out, "%s\r\n", sqlite3_column_text (stmt, 0));
+	    }
+	  else
+	    {
+		goto sql_error;
+	    }
+      }
+    if (rows == 0)
+      {
+	  goto empty_result_set;
+      }
+
+    sqlite3_finalize (stmt);
+    fclose (out);
+    return 1;
+
+  sql_error:
+/* an SQL error occurred */
+    if (stmt)
+      {
+	  sqlite3_finalize (stmt);
+      }
+    if (out)
+      {
+	  fclose (out);
+      }
+    fprintf (stderr, "Dump GeoJSON error: %s\n", sqlite3_errmsg (sqlite));
+    return 0;
+
+  no_file:
+/* Output file could not be created / opened */
+    if (stmt)
+      {
+	  sqlite3_finalize (stmt);
+      }
+    if (out)
+      {
+	  fclose (out);
+      }
+    fprintf (stderr, "ERROR: unable to open '%s' for writing\n", outfile_path);
+    return 0;
+
+  empty_result_set:
+/* the result set is empty - nothing to do */
+    if (stmt)
+      {
+	  sqlite3_finalize (stmt);
+      }
+    if (out)
+      {
+	  fclose (out);
+      }
+    fprintf (stderr, "The SQL SELECT returned no data to export...\n");
+    return 0;
+}

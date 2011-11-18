@@ -304,6 +304,30 @@ extern "C"
 						   char *outTable, char *pKey,
 						   char *multiId);
 
+/**
+ Dumps a full geometry-table into an external GeoJSON file
+
+ \param sqlite handle to current DB connection
+ \param table the name of the table to be exported
+ \param geom_col the name of the geometry column
+ \param outfile_path pathname for the GeoJSON file to be written to
+ \param precision number of decimal digits for coordinates
+ \param option the format to use for output
+
+ \note valid values for option are:
+   - 0 no option
+   - 1 GeoJSON MBR
+   - 2 GeoJSON Short CRS (e.g EPSG:4326)
+   - 3 MBR + Short CRS
+   - 4 GeoJSON Long CRS (e.g urn:ogc:def:crs:EPSG::4326)
+   - 5 MBR + Long CRS
+
+ \return 0 on failure, any other value on success
+ */
+    SPATIALITE_DECLARE int dump_geojson (sqlite3 * sqlite, char *table,
+					 char *geom_col, char *outfile_path,
+					 int precision, int option);
+
 #ifdef __cplusplus
 }
 #endif

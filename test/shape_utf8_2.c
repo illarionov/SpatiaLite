@@ -54,6 +54,7 @@ int main (int argc, char *argv[])
     int ret;
     sqlite3 *handle;
     char *kmlname = __FILE__"test.kml";
+    char *geojsonname = __FILE__"test.geojson"; 
     char *err_msg = NULL;
     int row_count;
 
@@ -123,16 +124,24 @@ int main (int argc, char *argv[])
     
     ret = dump_kml (handle, "route", "col1", kmlname, NULL, NULL, 10);
     if (!ret) {
-        fprintf (stderr, "load_shapefile() error for shp/taiwan/route: %s\n", err_msg);
+        fprintf (stderr, "dump_kml() error for shp/taiwan/route: %s\n", err_msg);
 	sqlite3_close(handle);
 	return -11;
     }
     unlink(kmlname);
 
+    ret = dump_geojson(handle, "route", "col1", geojsonname, 10, 5);
+    if (!ret) {
+        fprintf (stderr, "dump_geojson() error for shp/taiwan/route: %s\n", err_msg);
+       sqlite3_close(handle);
+       return -12;
+    }
+    unlink(geojsonname);
+
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -12;
+	return -13;
     }
     
     spatialite_cleanup();
