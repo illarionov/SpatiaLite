@@ -4022,7 +4022,7 @@ dump_geojson (sqlite3 * sqlite, char *table, char *geom_col, char *outfile_path,
 	goto no_file;
 
 /* preparing SQL statement */
-    sprintf (sql, "SELECT AsGeoJSON(%s, %d, %d) FROM %s WHERE %s IS NOT > NULL",
+    sprintf (sql, "SELECT AsGeoJSON(%s, %d, %d) FROM %s WHERE %s IS NOT NULL",
 	     geom_col, precision, option, table, geom_col);
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
