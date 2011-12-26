@@ -5297,6 +5297,60 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
     return;
 }
 
+static void
+fnct_UpdateLayerStatistics (sqlite3_context * context, int argc,
+			    sqlite3_value ** argv)
+{
+/* SQL function:
+/ UpdateLayerStatistics(table, column )
+/
+/ Updates LAYER_STATISTICS [based on Column and Table]
+/ returns 1 on success
+/ 0 on failure
+*/
+    const char *sql;
+    const unsigned char *table = NULL;
+    const unsigned char *column = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();
+    if (argc >= 1)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		fprintf (stderr,
+			 "UpdateLayerStatistics() error: argument 1 [table_name] is not of the String type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  table = sqlite3_value_text (argv[0]);
+      }
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+	    {
+		fprintf (stderr,
+			 "UpdateLayerStatistics() error: argument 2 [column_name] is not of the String type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  column = sqlite3_value_text (argv[1]);
+      }
+    if (!update_layer_statistics (sqlite, table, column))
+	goto error;
+    sqlite3_result_int (context, 1);
+    sql = "UpdateLayerStatistics";
+    if (table == NULL)
+	table = "ALL-TABLES";
+    if (column == NULL)
+	column = "ALL-GEOMETRY-COLUMNS";
+    updateSpatiaLiteHistory (sqlite, (const char *) table,
+			     (const char *) column, sql);
+    return;
+  error:
+    sqlite3_result_int (context, 0);
+    return;
+}
+
 static gaiaPointPtr
 simplePoint (gaiaGeomCollPtr geo)
 {
@@ -15536,6 +15590,12 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_CreateTopologyTables, 0, 0);
     sqlite3_create_function (db, "CreateTopologyTables", 3, SQLITE_ANY, 0,
 			     fnct_CreateTopologyTables, 0, 0);
+    sqlite3_create_function (db, "UpdateLayerStatistics", 0, SQLITE_ANY, 0,
+			     fnct_UpdateLayerStatistics, 0, 0);
+    sqlite3_create_function (db, "UpdateLayerStatistics", 1, SQLITE_ANY, 0,
+			     fnct_UpdateLayerStatistics, 0, 0);
+    sqlite3_create_function (db, "UpdateLayerStatistics", 2, SQLITE_ANY, 0,
+			     fnct_UpdateLayerStatistics, 0, 0);
     sqlite3_create_function (db, "AsText", 1, SQLITE_ANY, 0, fnct_AsText, 0, 0);
     sqlite3_create_function (db, "ST_AsText", 1, SQLITE_ANY, 0, fnct_AsText,
 			     0, 0);
@@ -16550,4 +16610,786 @@ math_round (double value)
     if (fabs (value - min) < 0.5)
 	return min;
     return min + 1.0;
+}
+
+static int
+check_layer_statistics (sqlite3 * sqlite)
+{
+/*
+/ checks the LAYER_STATISTICS table for validity;
+/ if the table doesn't exist, attempts to create
+*/
+    char sql[8192];
+    char **results;
+    int rows;
+    int columns;
+    int ret;
+    int raster_layer = 0;
+    int table_name = 0;
+    int geometry_column = 0;
+    int row_count = 0;
+    int extent_min_x = 0;
+    int extent_min_y = 0;
+    int extent_max_x = 0;
+    int extent_max_y = 0;
+    int i;
+    const char *name;
+
+/* checking the LAYER_STATISTICS table */
+    strcpy (sql, "PRAGMA table_info(layer_statistics)");
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		name = results[(i * columns) + 1];
+		if (strcasecmp (name, "raster_layer") == 0)
+		    raster_layer = 1;
+		if (strcasecmp (name, "table_name") == 0)
+		    table_name = 1;
+		if (strcasecmp (name, "geometry_column") == 0)
+		    geometry_column = 1;
+		if (strcasecmp (name, "row_count") == 0)
+		    row_count = 1;
+		if (strcasecmp (name, "extent_min_x") == 0)
+		    extent_min_x = 1;
+		if (strcasecmp (name, "extent_min_y") == 0)
+		    extent_min_x = 1;
+		if (strcasecmp (name, "extent_max_x") == 0)
+		    extent_max_x = 1;
+		if (strcasecmp (name, "extent_max_y") == 0)
+		    extent_max_y = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+
+/* LAYER_STATISTICS already exists and has a valid layout */
+    if (raster_layer && table_name && geometry_column && row_count
+	&& extent_min_x && extent_max_x && extent_max_y)
+	return 1;
+/* LAYER_STATISTICS already exists, but has an invalid layout */
+    if (raster_layer || table_name || geometry_column || row_count
+	|| extent_min_x || extent_max_x || extent_max_y)
+	return 0;
+
+/* attempting to create LAYER_STATISTICS */
+    strcpy (sql, "CREATE TABLE layer_statistics (\n");
+    strcat (sql, "raster_layer INTEGER NOT NULL,\n");
+    strcat (sql, "table_name TEXT NOT NULL,\n");
+    strcat (sql, "geometry_column TEXT NOT NULL,\n");
+    strcat (sql, "row_count INTEGER,\n");
+    strcat (sql, "extent_min_x DOUBLE,\n");
+    strcat (sql, "extent_min_y DOUBLE,\n");
+    strcat (sql, "extent_max_x DOUBLE,\n");
+    strcat (sql, "extent_max_y DOUBLE,\n");
+    strcat (sql, "CONSTRAINT pk_layer_statistics PRIMARY KEY ");
+    strcat (sql, "(raster_layer, table_name, geometry_column),\n");
+    strcat (sql, "CONSTRAINT fk_layer_statistics FOREIGN KEY ");
+    strcat (sql, "(table_name, geometry_column) REFERENCES ");
+    strcat (sql, "geometry_columns (f_table_name, f_geometry_column) ");
+    strcat (sql, "ON DELETE CASCADE)");
+    ret = sqlite3_exec (sqlite, sql, NULL, 0, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    return 1;
+}
+
+static int
+do_update_layer_statistics (sqlite3 * sqlite, const char *table,
+			    const char *column, int count, int has_coords,
+			    double min_x, double min_y, double max_x,
+			    double max_y)
+{
+/* update LAYER_STATISTICS [single table/geometry] */
+    char sql[8192];
+    int ret;
+    int error = 0;
+    sqlite3_stmt *stmt;
+
+    if (!check_layer_statistics (sqlite))
+	return 0;
+    strcpy (sql, "INSERT OR REPLACE INTO layer_statistics ");
+    strcat (sql, "(raster_layer, table_name, geometry_column, ");
+    strcat (sql, "row_count, extent_min_x, extent_min_y, ");
+    strcat (sql, "extent_max_x, extent_max_y) ");
+    strcat (sql, "VALUES (0, ?, ?, ?, ?, ?, ?, ?)");
+
+/* compiling SQL prepared statement */
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+
+/* binding INSERT params */
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, column, strlen (column), SQLITE_STATIC);
+    sqlite3_bind_int (stmt, 3, count);
+    if (has_coords)
+      {
+	  sqlite3_bind_double (stmt, 4, min_x);
+	  sqlite3_bind_double (stmt, 5, min_y);
+	  sqlite3_bind_double (stmt, 6, max_x);
+	  sqlite3_bind_double (stmt, 7, max_y);
+      }
+    else
+      {
+	  sqlite3_bind_null (stmt, 4);
+	  sqlite3_bind_null (stmt, 5);
+	  sqlite3_bind_null (stmt, 6);
+	  sqlite3_bind_null (stmt, 7);
+      }
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+	error = 1;
+    ret = sqlite3_finalize (stmt);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (error)
+	return 0;
+    return 1;
+}
+
+static int
+check_views_layer_statistics (sqlite3 * sqlite)
+{
+/*
+/ checks the VIEWS_LAYER_STATISTICS table for validity;
+/ if the table doesn't exist, attempts to create
+*/
+    char sql[8192];
+    char **results;
+    int rows;
+    int columns;
+    int ret;
+    int view_name = 0;
+    int view_geometry = 0;
+    int row_count = 0;
+    int extent_min_x = 0;
+    int extent_min_y = 0;
+    int extent_max_x = 0;
+    int extent_max_y = 0;
+    int i;
+    const char *name;
+
+/* checking the VIEWS_LAYER_STATISTICS table */
+    strcpy (sql, "PRAGMA table_info(views_layer_statistics)");
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		name = results[(i * columns) + 1];
+		if (strcasecmp (name, "view_name") == 0)
+		    view_name = 1;
+		if (strcasecmp (name, "view_geometry") == 0)
+		    view_geometry = 1;
+		if (strcasecmp (name, "row_count") == 0)
+		    row_count = 1;
+		if (strcasecmp (name, "extent_min_x") == 0)
+		    extent_min_x = 1;
+		if (strcasecmp (name, "extent_min_y") == 0)
+		    extent_min_x = 1;
+		if (strcasecmp (name, "extent_max_x") == 0)
+		    extent_max_x = 1;
+		if (strcasecmp (name, "extent_max_y") == 0)
+		    extent_max_y = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+
+/* VIEWS_LAYER_STATISTICS already exists and has a valid layout */
+    if (view_name && view_geometry && row_count && extent_min_x && extent_max_x
+	&& extent_max_y)
+	return 1;
+/* VIEWS_LAYER_STATISTICS already exists, but has an invalid layout */
+    if (view_name || view_geometry || row_count || extent_min_x || extent_max_x
+	|| extent_max_y)
+	return 0;
+
+/* attempting to create VIEWS_LAYER_STATISTICS */
+    strcpy (sql, "CREATE TABLE views_layer_statistics (\n");
+    strcat (sql, "view_name TEXT NOT NULL,\n");
+    strcat (sql, "view_geometry TEXT NOT NULL,\n");
+    strcat (sql, "row_count INTEGER,\n");
+    strcat (sql, "extent_min_x DOUBLE,\n");
+    strcat (sql, "extent_min_y DOUBLE,\n");
+    strcat (sql, "extent_max_x DOUBLE,\n");
+    strcat (sql, "extent_max_y DOUBLE,\n");
+    strcat (sql, "CONSTRAINT pk_views_layer_statistics PRIMARY KEY ");
+    strcat (sql, "(view_name, view_geometry),\n");
+    strcat (sql, "CONSTRAINT fk_views_layer_statistics FOREIGN KEY ");
+    strcat (sql, "(view_name, view_geometry) REFERENCES ");
+    strcat (sql, "views_geometry_columns (view_name, view_geometry) ");
+    strcat (sql, "ON DELETE CASCADE)");
+    ret = sqlite3_exec (sqlite, sql, NULL, 0, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    return 1;
+}
+
+static int
+do_update_views_layer_statistics (sqlite3 * sqlite, const char *table,
+				  const char *column, int count, int has_coords,
+				  double min_x, double min_y, double max_x,
+				  double max_y)
+{
+/* update VIEWS_LAYER_STATISTICS [single table/geometry] */
+    char sql[8192];
+    int ret;
+    int error = 0;
+    sqlite3_stmt *stmt;
+
+    if (!check_views_layer_statistics (sqlite))
+	return 0;
+    strcpy (sql, "INSERT OR REPLACE INTO views_layer_statistics ");
+    strcat (sql, "(view_name, view_geometry, ");
+    strcat (sql, "row_count, extent_min_x, extent_min_y, ");
+    strcat (sql, "extent_max_x, extent_max_y) ");
+    strcat (sql, "VALUES (?, ?, ?, ?, ?, ?, ?)");
+
+/* compiling SQL prepared statement */
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+
+/* binding INSERT params */
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, column, strlen (column), SQLITE_STATIC);
+    sqlite3_bind_int (stmt, 3, count);
+    if (has_coords)
+      {
+	  sqlite3_bind_double (stmt, 4, min_x);
+	  sqlite3_bind_double (stmt, 5, min_y);
+	  sqlite3_bind_double (stmt, 6, max_x);
+	  sqlite3_bind_double (stmt, 7, max_y);
+      }
+    else
+      {
+	  sqlite3_bind_null (stmt, 4);
+	  sqlite3_bind_null (stmt, 5);
+	  sqlite3_bind_null (stmt, 6);
+	  sqlite3_bind_null (stmt, 7);
+      }
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+	error = 1;
+    ret = sqlite3_finalize (stmt);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (error)
+	return 0;
+    return 1;
+}
+
+static int
+check_virts_layer_statistics (sqlite3 * sqlite)
+{
+/*
+/ checks the VIRTS_LAYER_STATISTICS table for validity;
+/ if the table doesn't exist, attempts to create
+*/
+    char sql[8192];
+    char **results;
+    int rows;
+    int columns;
+    int ret;
+    int virt_name = 0;
+    int virt_geometry = 0;
+    int row_count = 0;
+    int extent_min_x = 0;
+    int extent_min_y = 0;
+    int extent_max_x = 0;
+    int extent_max_y = 0;
+    int i;
+    const char *name;
+
+/* checking the VIRTS_LAYER_STATISTICS table */
+    strcpy (sql, "PRAGMA table_info(virts_layer_statistics)");
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		name = results[(i * columns) + 1];
+		if (strcasecmp (name, "virt_name") == 0)
+		    virt_name = 1;
+		if (strcasecmp (name, "virt_geometry") == 0)
+		    virt_geometry = 1;
+		if (strcasecmp (name, "row_count") == 0)
+		    row_count = 1;
+		if (strcasecmp (name, "extent_min_x") == 0)
+		    extent_min_x = 1;
+		if (strcasecmp (name, "extent_min_y") == 0)
+		    extent_min_x = 1;
+		if (strcasecmp (name, "extent_max_x") == 0)
+		    extent_max_x = 1;
+		if (strcasecmp (name, "extent_max_y") == 0)
+		    extent_max_y = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+
+/* VIRTS_LAYER_STATISTICS already exists and has a valid layout */
+    if (virt_name && virt_geometry && row_count && extent_min_x && extent_max_x
+	&& extent_max_y)
+	return 1;
+/* VIRTS_LAYER_STATISTICS already exists, but has an invalid layout */
+    if (virt_name || virt_geometry || row_count || extent_min_x || extent_max_x
+	|| extent_max_y)
+	return 0;
+
+/* attempting to create VIRTS_LAYER_STATISTICS */
+    strcpy (sql, "CREATE TABLE virts_layer_statistics (\n");
+    strcat (sql, "virt_name TEXT NOT NULL,\n");
+    strcat (sql, "virt_geometry TEXT NOT NULL,\n");
+    strcat (sql, "row_count INTEGER,\n");
+    strcat (sql, "extent_min_x DOUBLE,\n");
+    strcat (sql, "extent_min_y DOUBLE,\n");
+    strcat (sql, "extent_max_x DOUBLE,\n");
+    strcat (sql, "extent_max_y DOUBLE,\n");
+    strcat (sql, "CONSTRAINT pk_virts_layer_statistics PRIMARY KEY ");
+    strcat (sql, "(virt_name, virt_geometry),\n");
+    strcat (sql, "CONSTRAINT fk_virts_layer_statistics FOREIGN KEY ");
+    strcat (sql, "(virt_name, virt_geometry) REFERENCES ");
+    strcat (sql, "virts_geometry_columns (virt_name, virt_geometry) ");
+    strcat (sql, "ON DELETE CASCADE)");
+    ret = sqlite3_exec (sqlite, sql, NULL, 0, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    return 1;
+}
+
+static int
+do_update_virts_layer_statistics (sqlite3 * sqlite, const char *table,
+				  const char *column, int count, int has_coords,
+				  double min_x, double min_y, double max_x,
+				  double max_y)
+{
+/* update VIRTS_LAYER_STATISTICS [single table/geometry] */
+    char sql[8192];
+    int ret;
+    int error = 0;
+    sqlite3_stmt *stmt;
+
+    if (!check_virts_layer_statistics (sqlite))
+	return 0;
+    strcpy (sql, "INSERT OR REPLACE INTO virts_layer_statistics ");
+    strcat (sql, "(virt_name, virt_geometry, ");
+    strcat (sql, "row_count, extent_min_x, extent_min_y, ");
+    strcat (sql, "extent_max_x, extent_max_y) ");
+    strcat (sql, "VALUES (?, ?, ?, ?, ?, ?, ?)");
+
+/* compiling SQL prepared statement */
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+
+/* binding INSERT params */
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, column, strlen (column), SQLITE_STATIC);
+    sqlite3_bind_int (stmt, 3, count);
+    if (has_coords)
+      {
+	  sqlite3_bind_double (stmt, 4, min_x);
+	  sqlite3_bind_double (stmt, 5, min_y);
+	  sqlite3_bind_double (stmt, 6, max_x);
+	  sqlite3_bind_double (stmt, 7, max_y);
+      }
+    else
+      {
+	  sqlite3_bind_null (stmt, 4);
+	  sqlite3_bind_null (stmt, 5);
+	  sqlite3_bind_null (stmt, 6);
+	  sqlite3_bind_null (stmt, 7);
+      }
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+	error = 1;
+    ret = sqlite3_finalize (stmt);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (error)
+	return 0;
+    return 1;
+}
+
+#define SPATIALITE_STATISTICS_GENUINE	1
+#define SPATIALITE_STATISTICS_VIEWS	2
+#define SPATIALITE_STATISTICS_VIRTS	3
+
+static int
+do_compute_layer_statistics (sqlite3 * sqlite, const char *table,
+			     const char *column, int stat_type)
+{
+/* computes LAYER_STATISTICS [single table/geometry] */
+    char xtable[1024];
+    char xgeom[1024];
+    char sql[8192];
+    char sql2[2048];
+    int ret;
+    int error = 0;
+    int count;
+    double min_x;
+    double min_y;
+    double max_x;
+    double max_y;
+    int has_coords = 1;
+    sqlite3_stmt *stmt;
+
+    strcpy (xtable, table);
+    double_quoted_sql (xtable);
+    strcpy (xgeom, column);
+    double_quoted_sql (xgeom);
+    strcpy (sql, "SELECT Count(*), ");
+    sprintf (sql2, "Min(MbrMinX(%s)), ", xgeom);
+    strcat (sql, sql2);
+    sprintf (sql2, "Min(MbrMinY(%s)), ", xgeom);
+    strcat (sql, sql2);
+    sprintf (sql2, "Max(MbrMaxX(%s)), ", xgeom);
+    strcat (sql, sql2);
+    sprintf (sql2, "Max(MbrMaxY(%s)) ", xgeom);
+    strcat (sql, sql2);
+    sprintf (sql2, "FROM %s", xtable);
+    strcat (sql, sql2);
+
+/* compiling SQL prepared statement */
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		count = sqlite3_column_int (stmt, 0);
+		if (sqlite3_column_type (stmt, 1) == SQLITE_NULL)
+		    has_coords = 0;
+		else
+		    min_x = sqlite3_column_double (stmt, 1);
+		if (sqlite3_column_type (stmt, 2) == SQLITE_NULL)
+		    has_coords = 0;
+		else
+		    min_y = sqlite3_column_double (stmt, 2);
+		if (sqlite3_column_type (stmt, 3) == SQLITE_NULL)
+		    has_coords = 0;
+		else
+		    max_x = sqlite3_column_double (stmt, 3);
+		if (sqlite3_column_type (stmt, 4) == SQLITE_NULL)
+		    has_coords = 0;
+		else
+		    max_y = sqlite3_column_double (stmt, 4);
+		switch (stat_type)
+		  {
+		  case SPATIALITE_STATISTICS_GENUINE:
+		      if (!do_update_layer_statistics
+			  (sqlite, table, column, count, has_coords, min_x,
+			   min_y, max_x, max_y))
+			  error = 1;
+		      break;
+		  case SPATIALITE_STATISTICS_VIEWS:
+		      if (!do_update_views_layer_statistics
+			  (sqlite, table, column, count, has_coords, min_x,
+			   min_y, max_x, max_y))
+			  error = 1;
+		      break;
+		  case SPATIALITE_STATISTICS_VIRTS:
+		      if (!do_update_virts_layer_statistics
+			  (sqlite, table, column, count, has_coords, min_x,
+			   min_y, max_x, max_y))
+			  error = 1;
+		      break;
+		  };
+	    }
+	  else
+	      error = 1;
+      }
+    ret = sqlite3_finalize (stmt);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (error)
+	return 0;
+    return 1;
+}
+
+static int
+genuine_layer_statistics (sqlite3 * sqlite, const char *table,
+			  const char *column)
+{
+/* updating genuine LAYER_STATISTICS metadata */
+    int count = 0;
+    char xtable[1024];
+    char xgeom[1024];
+    char sql[8192];
+    char sql2[2048];
+    int ret;
+    const char *f_table_name;
+    const char *f_geometry_column;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    int error = 0;
+
+    sqlite3_stmt *stmt;
+
+    if (table == NULL && column == NULL)
+      {
+	  /* processing any table/geometry found in GEOMETRY_COLUMNS */
+	  strcpy (sql, "SELECT f_table_name, f_geometry_column ");
+	  strcat (sql, "FROM geometry_columns");
+      }
+    else if (column == NULL)
+      {
+	  /* processing any geometry belonging to this table */
+	  strcpy (xtable, table);
+	  clean_sql_string (xtable);
+	  strcpy (sql, "SELECT f_table_name, f_geometry_column ");
+	  strcat (sql, "FROM geometry_columns ");
+	  sprintf (sql2, "WHERE f_table_name LIKE '%s'", xtable);
+	  strcat (sql, sql2);
+      }
+    else
+      {
+	  /* processing a single table/geometry entry */
+	  strcpy (xtable, table);
+	  clean_sql_string (xtable);
+	  strcpy (xgeom, column);
+	  clean_sql_string (xgeom);
+	  strcpy (sql, "SELECT f_table_name, f_geometry_column ");
+	  strcat (sql, "FROM geometry_columns ");
+	  sprintf (sql2, "WHERE f_table_name LIKE '%s' ", xtable);
+	  strcat (sql, sql2);
+	  sprintf (sql2, "AND f_geometry_column LIKE '%s'", xgeom);
+	  strcat (sql2, sql);
+      }
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return -1;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		f_table_name = results[(i * columns) + 0];
+		f_geometry_column = results[(i * columns) + 1];
+		if (!do_compute_layer_statistics
+		    (sqlite, f_table_name, f_geometry_column,
+		     SPATIALITE_STATISTICS_GENUINE))
+		  {
+		      error = 1;
+		      break;
+		  }
+		else
+		    count++;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (error)
+	return -1;
+    return count;
+}
+
+static int
+views_layer_statistics (sqlite3 * sqlite, const char *table, const char *column)
+{
+/* updating VIEWS_LAYER_STATISTICS metadata */
+    int count = 0;
+    char xtable[1024];
+    char xgeom[1024];
+    char sql[8192];
+    char sql2[2048];
+    int ret;
+    const char *view_name;
+    const char *view_geometry;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    int error = 0;
+
+    sqlite3_stmt *stmt;
+
+    if (table == NULL && column == NULL)
+      {
+	  /* processing any table/geometry found in VIEWS_GEOMETRY_COLUMNS */
+	  strcpy (sql, "SELECT view_name, view_geometry ");
+	  strcat (sql, "FROM views_geometry_columns");
+      }
+    else if (column == NULL)
+      {
+	  /* processing any geometry belonging to this table */
+	  strcpy (xtable, table);
+	  clean_sql_string (xtable);
+	  strcpy (sql, "SELECT view_name, view_geometry ");
+	  strcat (sql, "FROM views_geometry_columns ");
+	  sprintf (sql2, "WHERE view_name LIKE '%s'", xtable);
+	  strcat (sql, sql2);
+      }
+    else
+      {
+	  /* processing a single table/geometry entry */
+	  strcpy (xtable, table);
+	  clean_sql_string (xtable);
+	  strcpy (xgeom, column);
+	  clean_sql_string (xgeom);
+	  strcpy (sql, "SELECT view_name, view_geometry ");
+	  strcat (sql, "FROM views_geometry_columns ");
+	  sprintf (sql2, "WHERE view_name LIKE '%s' ", xtable);
+	  strcat (sql, sql2);
+	  sprintf (sql2, "AND view_geometry LIKE '%s'", xgeom);
+	  strcat (sql2, sql);
+      }
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return -1;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		view_name = results[(i * columns) + 0];
+		view_geometry = results[(i * columns) + 1];
+		if (!do_compute_layer_statistics
+		    (sqlite, view_name, view_geometry,
+		     SPATIALITE_STATISTICS_VIEWS))
+		  {
+		      error = 1;
+		      break;
+		  }
+		else
+		    count++;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (error)
+	return -1;
+    return count;
+}
+
+static int
+virts_layer_statistics (sqlite3 * sqlite, const char *table, const char *column)
+{
+/* updating VIRTS_LAYER_STATISTICS metadata */
+    int count = 0;
+    char xtable[1024];
+    char xgeom[1024];
+    char sql[8192];
+    char sql2[2048];
+    int ret;
+    const char *f_table_name;
+    const char *f_geometry_column;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    int error = 0;
+
+    sqlite3_stmt *stmt;
+
+    if (table == NULL && column == NULL)
+      {
+	  /* processing any table/geometry found in GEOMETRY_COLUMNS */
+	  strcpy (sql, "SELECT virt_name, virt_geometry ");
+	  strcat (sql, "FROM virts_geometry_columns");
+      }
+    else if (column == NULL)
+      {
+	  /* processing any geometry belonging to this table */
+	  strcpy (xtable, table);
+	  clean_sql_string (xtable);
+	  strcpy (sql, "SELECT virt_name, virt_geometry ");
+	  strcat (sql, "FROM virts_geometry_columns ");
+	  sprintf (sql2, "WHERE virt_name LIKE '%s'", xtable);
+	  strcat (sql, sql2);
+      }
+    else
+      {
+	  /* processing a single table/geometry entry */
+	  strcpy (xtable, table);
+	  clean_sql_string (xtable);
+	  strcpy (xgeom, column);
+	  clean_sql_string (xgeom);
+	  strcpy (sql, "SELECT virt_name, virt_geometry ");
+	  strcat (sql, "FROM virts_geometry_columns ");
+	  sprintf (sql2, "WHERE virt_name LIKE '%s' ", xtable);
+	  strcat (sql, sql2);
+	  sprintf (sql2, "AND virt_geometry LIKE '%s'", xgeom);
+	  strcat (sql2, sql);
+      }
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return -1;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		f_table_name = results[(i * columns) + 0];
+		f_geometry_column = results[(i * columns) + 1];
+		if (!do_compute_layer_statistics
+		    (sqlite, f_table_name, f_geometry_column,
+		     SPATIALITE_STATISTICS_VIRTS))
+		  {
+		      error = 1;
+		      break;
+		  }
+		else
+		    count++;
+	    }
+      }
+    sqlite3_free_table (results);
+    if (error)
+	return -1;
+    return count;
+}
+
+SPATIALITE_DECLARE int
+update_layer_statistics (sqlite3 * sqlite, const char *table,
+			 const char *column)
+{
+/* updating LAYER_STATISTICS metadata [main] */
+    int ret;
+    int count = 0;
+    ret = genuine_layer_statistics (sqlite, table, column);
+    if (ret < 0)
+	return 0;
+    count += ret;
+    ret = views_layer_statistics (sqlite, table, column);
+    if (ret < 0)
+	return 0;
+    count += ret;
+    ret = virts_layer_statistics (sqlite, table, column);
+    if (ret < 0)
+	return 0;
+    count += ret;
+    return count;
 }

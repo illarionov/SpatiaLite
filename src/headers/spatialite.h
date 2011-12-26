@@ -328,6 +328,31 @@ extern "C"
 					 char *geom_col, char *outfile_path,
 					 int precision, int option);
 
+/**
+ Updates the LAYER_STATICS metadata table
+
+ \param sqlite handle to current DB connection
+ \param table name of the table to be processed
+ \param column name of the geometry to be processed
+
+ \note this function will explore the given table/geometry determining
+ the number of rows and the full layer extent; a corresponding table/geometry
+ entry is expected to be already declared in the GEOMETRY_COLUMNS table.
+ These informations will be permanently stored into the LAYER_STATISTICS
+ table; if such table does not yet exists will be implicitly created.
+   - if table is NULL, any entry found within GEOMETRY_COLUMNS
+     will be processed.
+   - if table is not NULL and column is NULL, any geometry
+     belonging to the given table will be processed.
+   - if both table and column are not NULL, then only the
+     given entry will be processed.
+
+ \return 0 on failure, the total count of processed entries on success
+ */
+    SPATIALITE_DECLARE int update_layer_statistic (sqlite3 * sqlite,
+						   const char *table,
+						   const char *column);
+
 #ifdef __cplusplus
 }
 #endif

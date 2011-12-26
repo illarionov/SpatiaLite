@@ -96,6 +96,7 @@ int main (int argc, char *argv[])
     char **results;
     int rows;
     int columns;
+    const char *sql;
 
     spatialite_init (0);
 
@@ -113,7 +114,7 @@ int main (int argc, char *argv[])
 	sqlite3_free (err_msg);
 	return -2;
     }
-    
+
     ret = sqlite3_exec (db_handle, "DROP TABLE shapetest;", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "DROP TABLE error: %s\n", err_msg);
