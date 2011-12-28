@@ -94,9 +94,9 @@ gaiaConvertCharset (char **buf, const char *fromCs, const char *toCs)
 {
 /* converting a string from a charset to another "on-the-fly" */
     char utf8buf[65536];
-#if defined(__MINGW32__) || defined(_WIN32)
+#if !defined(__MINGW32__) && defined(_WIN32)
     const char *pBuf;
-#else /* not MINGW32 - WIN32 */
+#else /* not WIN32 */
     char *pBuf;
 #endif
     size_t len;
@@ -144,7 +144,7 @@ gaiaConvertToUTF8 (void *cvtCS, const char *buf, int buflen, int *err)
 {
 /* converting a string to UTF8 */
     char *utf8buf = 0;
-#if defined(__MINGW32__) || defined(_WIN32)
+#if !defined(__MINGW32__) && defined(_WIN32)
     const char *pBuf;
 #else
     char *pBuf;

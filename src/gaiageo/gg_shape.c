@@ -417,9 +417,9 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
     char errMsg[1024];
     iconv_t iconv_ret;
     char utf8buf[2048];
-#ifdef __MINGW32__
+#if !defined(__MINGW32__) && defined(_WIN32)
     const char *pBuf;
-#else /* not MINGW32 */
+#else /* not WIN32 */
     char *pBuf;
 #endif
     size_t len;
@@ -710,9 +710,9 @@ gaiaOpenShpWrite (gaiaShapefilePtr shp, const char *path, int shape,
     int endian_arch = gaiaEndianArch ();
     char buf[2048];
     char utf8buf[2048];
-#ifdef __MINGW32__
+#if !defined(__MINGW32__) && defined(_WIN32)
     const char *pBuf;
-#else /* not MINGW32 */
+#else /* not WIN32 */
     char *pBuf;
 #endif
     size_t len;
@@ -1063,9 +1063,9 @@ parseDbfField (unsigned char *buf_dbf, void *iconv_obj, gaiaDbfFieldPtr pFld)
 /* parsing a generic DBF field */
     unsigned char buf[512];
     char utf8buf[2048];
-#ifdef __MINGW32__
+#if !defined(__MINGW32__) && defined(_WIN32)
     const char *pBuf;
-#else /* not MINGW32 */
+#else /* not WIN32 */
     char *pBuf;
 #endif
     size_t len;
@@ -2255,9 +2255,9 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
     double maxZ;
     double minM;
     double maxM;
-#ifdef __MINGW32__
+#if !defined(__MINGW32__) && defined(_WIN32)
     const char *pBuf;
-#else /* not MINGW32 */
+#else /* not WIN32 */
     char *pBuf;
 #endif
     size_t len;
@@ -4227,9 +4227,9 @@ gaiaOpenDbfRead (gaiaDbfPtr dbf, const char *path, const char *charFrom,
     char errMsg[1024];
     iconv_t iconv_ret;
     char utf8buf[2048];
-#ifdef __MINGW32__
+#if !defined(__MINGW32__) && defined(_WIN32)
     const char *pBuf;
-#else /* not MINGW32 */
+#else /* not WIN32 */
     char *pBuf;
 #endif
     size_t len;
@@ -4388,9 +4388,9 @@ gaiaOpenDbfWrite (gaiaDbfPtr dbf, const char *path, const char *charFrom,
     iconv_t iconv_ret;
     char buf[2048];
     char utf8buf[2048];
-#ifdef __MINGW32__
+#if !defined(__MINGW32__) && defined(_WIN32)
     const char *pBuf;
-#else /* not MINGW32 */
+#else /* not WIN32 */
     char *pBuf;
 #endif
     size_t len;
@@ -4509,9 +4509,9 @@ gaiaWriteDbfEntity (gaiaDbfPtr dbf, gaiaDbfListPtr entity)
     char dummy[128];
     char fmt[16];
     gaiaDbfFieldPtr fld;
-#ifdef __MINGW32__
+#if !defined(__MINGW32__) && defined(_WIN32)
     const char *pBuf;
-#else /* not MINGW32 */
+#else /* not WIN32 */
     char *pBuf;
 #endif
     size_t len;
