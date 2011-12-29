@@ -17156,8 +17156,6 @@ genuine_layer_statistics (sqlite3 * sqlite, const char *table,
     int columns;
     int error = 0;
 
-    sqlite3_stmt *stmt;
-
     if (table == NULL && column == NULL)
       {
 	  /* processing any table/geometry found in GEOMETRY_COLUMNS */
@@ -17234,8 +17232,6 @@ views_layer_statistics (sqlite3 * sqlite, const char *table, const char *column)
     int columns;
     int error = 0;
 
-    sqlite3_stmt *stmt;
-
     if (table == NULL && column == NULL)
       {
 	  /* processing any table/geometry found in VIEWS_GEOMETRY_COLUMNS */
@@ -17311,8 +17307,6 @@ virts_layer_statistics (sqlite3 * sqlite, const char *table, const char *column)
     int rows;
     int columns;
     int error = 0;
-
-    sqlite3_stmt *stmt;
 
     if (table == NULL && column == NULL)
       {

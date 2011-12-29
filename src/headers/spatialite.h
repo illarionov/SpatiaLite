@@ -349,9 +349,9 @@ extern "C"
 
  \return 0 on failure, the total count of processed entries on success
  */
-    SPATIALITE_DECLARE int update_layer_statistic (sqlite3 * sqlite,
-						   const char *table,
-						   const char *column);
+    SPATIALITE_DECLARE int update_layer_statistics (sqlite3 * sqlite,
+						    const char *table,
+						    const char *column);
 
 #ifdef __cplusplus
 }
