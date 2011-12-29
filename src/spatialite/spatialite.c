@@ -508,6 +508,7 @@ fnct_RTreeAlign (sqlite3_context * context, int argc, sqlite3_value ** argv)
     const unsigned char *rtree_table;
     gaiaGeomCollPtr geom = NULL;
     int ret;
+    char *table_name;
     char sql[4192];
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();
@@ -548,19 +549,21 @@ fnct_RTreeAlign (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  /* INSERTing into the R*Tree */
+	  table_name = gaiaDoubleQuotedSql (rtree_table);
 #if defined(_WIN32) || defined(__MINGW32__)
 /* CAVEAT: M$ runtime doesn't supports %lld for 64 bits */
-	  sprintf (sql, "INSERT INTO %s (pkid, xmin, ymin, xmax, ymax) "
+	  sprintf (sql, "INSERT INTO \"%s\" (pkid, xmin, ymin, xmax, ymax) "
 		   "VALUES (%I64d, %1.12f, %1.12f, %1.12f, %1.12f)",
-		   rtree_table, pkid, geom->MinX, geom->MinY, geom->MaxX,
+		   table_name, pkid, geom->MinX, geom->MinY, geom->MaxX,
 		   geom->MaxY);
 #else
-	  sprintf (sql, "INSERT INTO %s (pkid, xmin, ymin, xmax, ymax) "
+	  sprintf (sql, "INSERT INTO \"%s\" (pkid, xmin, ymin, xmax, ymax) "
 		   "VALUES (%lld, %1.12f, %1.12f, %1.12f, %1.12f)",
-		   rtree_table, pkid, geom->MinX, geom->MinY, geom->MaxX,
+		   table_name, pkid, geom->MinX, geom->MinY, geom->MaxX,
 		   geom->MaxY);
 #endif
 	  gaiaFreeGeomColl (geom);
+	  free (table_name);
 	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
 	  if (ret != SQLITE_OK)
 	      sqlite3_result_int (context, 0);
@@ -15139,7 +15142,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -15223,7 +15227,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -15232,7 +15237,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
