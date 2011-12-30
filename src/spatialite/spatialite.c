@@ -65,6 +65,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <sqlite3ext.h>
 #endif
 
+#include <spatialite/gaiaaux.h>
 #include <spatialite/gaiageo.h>
 #include <spatialite/gaiaexif.h>
 #include <spatialite/spatialite.h>
@@ -508,7 +509,7 @@ fnct_RTreeAlign (sqlite3_context * context, int argc, sqlite3_value ** argv)
     const unsigned char *rtree_table;
     gaiaGeomCollPtr geom = NULL;
     int ret;
-    char *table_name;
+    char table_name[1024];
     char sql[4192];
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();
@@ -549,21 +550,25 @@ fnct_RTreeAlign (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  /* INSERTing into the R*Tree */
-	  table_name = gaiaDoubleQuotedSql (rtree_table);
+	  strcpy (table_name, rtree_table);
+	  if (*(table_name + 0) == '"'
+	      && *(table_name + strlen (table_name) - 1) == '"')
+	      ;			/* earlier versions may pass an already quoted name */
+	  else
+	      double_quoted_sql (table_name);
 #if defined(_WIN32) || defined(__MINGW32__)
 /* CAVEAT: M$ runtime doesn't supports %lld for 64 bits */
-	  sprintf (sql, "INSERT INTO \"%s\" (pkid, xmin, ymin, xmax, ymax) "
+	  sprintf (sql, "INSERT INTO %s (pkid, xmin, ymin, xmax, ymax) "
 		   "VALUES (%I64d, %1.12f, %1.12f, %1.12f, %1.12f)",
 		   table_name, pkid, geom->MinX, geom->MinY, geom->MaxX,
 		   geom->MaxY);
 #else
-	  sprintf (sql, "INSERT INTO \"%s\" (pkid, xmin, ymin, xmax, ymax) "
+	  sprintf (sql, "INSERT INTO %s (pkid, xmin, ymin, xmax, ymax) "
 		   "VALUES (%lld, %1.12f, %1.12f, %1.12f, %1.12f)",
 		   table_name, pkid, geom->MinX, geom->MinY, geom->MaxX,
 		   geom->MaxY);
 #endif
 	  gaiaFreeGeomColl (geom);
-	  free (table_name);
 	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
 	  if (ret != SQLITE_OK)
 	      sqlite3_result_int (context, 0);
