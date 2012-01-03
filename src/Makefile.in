@@ -279,8 +279,8 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./spatialite/libsplite.la ./shapefiles/libshapefiles.la \
 	./srsinit/libsrsinit.la ./virtualtext/libvirtualtext.la \
 	$(am__append_1)
-@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 4:0:1
-@MINGW_TRUE@libspatialite_la_LDFLAGS = -version-info 4:0:1 -no-undefined
+@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 4:0:2
+@MINGW_TRUE@libspatialite_la_LDFLAGS = -version-info 4:0:2 -no-undefined
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-recursive
 

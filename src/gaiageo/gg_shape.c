@@ -2140,7 +2140,14 @@ gaiaSaneClockwise (gaiaPolygonPtr polyg)
     if (!(ring->Clockwise))
       {
 	  /* exterior ring needs inversion */
-	  new_ring = gaiaAllocRing (ring->Points);
+	  if (ring->DimensionModel == GAIA_XY_Z)
+	      new_ring = gaiaAllocRingXYZ (ring->Points);
+	  else if (ring->DimensionModel == GAIA_XY_M)
+	      new_ring = gaiaAllocRingXYM (ring->Points);
+	  else if (ring->DimensionModel == GAIA_XY_Z_M)
+	      new_ring = gaiaAllocRingXYZM (ring->Points);
+	  else
+	      new_ring = gaiaAllocRing (ring->Points);
 	  iv2 = 0;
 	  for (iv = ring->Points - 1; iv >= 0; iv--)
 	    {
@@ -2176,7 +2183,14 @@ gaiaSaneClockwise (gaiaPolygonPtr polyg)
 	  if (ring->Clockwise)
 	    {
 		/* interior ring needs inversion */
-		new_ring = gaiaAllocRing (ring->Points);
+		if (ring->DimensionModel == GAIA_XY_Z)
+		    new_ring = gaiaAllocRingXYZ (ring->Points);
+		else if (ring->DimensionModel == GAIA_XY_M)
+		    new_ring = gaiaAllocRingXYM (ring->Points);
+		else if (ring->DimensionModel == GAIA_XY_Z_M)
+		    new_ring = gaiaAllocRingXYZM (ring->Points);
+		else
+		    new_ring = gaiaAllocRing (ring->Points);
 		iv2 = 0;
 		for (iv = ring->Points - 1; iv >= 0; iv--)
 		  {

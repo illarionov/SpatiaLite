@@ -25,9 +25,9 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 
 
 if MINGW
-libspatialite_la_LDFLAGS = -version-info 4:0:1 -no-undefined
+libspatialite_la_LDFLAGS = -version-info 4:0:2 -no-undefined
 else
-libspatialite_la_LDFLAGS = -version-info 4:0:1
+libspatialite_la_LDFLAGS = -version-info 4:0:2
 libspatialite_la_LIBADD += -lpthread -ldl
 endif
 
