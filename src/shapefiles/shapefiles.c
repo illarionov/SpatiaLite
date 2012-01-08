@@ -3249,6 +3249,7 @@ elementary_geometries (sqlite3 * sqlite,
 		      strcat (sql2, quoted);
 		      free (quoted);
 		  }
+		strcat (sql, "\"");
 		strcat (sql2, "\"");
 		strcat (sql3, ", ?");
 
