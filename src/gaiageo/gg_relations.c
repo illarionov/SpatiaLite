@@ -3708,6 +3708,440 @@ gaiaUnaryUnion (gaiaGeomCollPtr geom)
     return result;
 }
 
+static void
+rotateRingBeforeCut (gaiaLinestringPtr ln, gaiaPointPtr node)
+{
+/* rotating a Ring, so to ensure that Start/End points match the node */
+    int io = 0;
+    int iv;
+    int copy = 0;
+    int base_idx = -1;
+    double x;
+    double y;
+    double z;
+    double m;
+    gaiaLinestringPtr new_ln = NULL;
+
+    if (ln->DimensionModel == GAIA_XY_Z)
+	new_ln = gaiaAllocLinestringXYZ (ln->Points);
+    else if (ln->DimensionModel == GAIA_XY_M)
+	new_ln = gaiaAllocLinestringXYM (ln->Points);
+    else if (ln->DimensionModel == GAIA_XY_Z_M)
+	new_ln = gaiaAllocLinestringXYZM (ln->Points);
+    else
+	new_ln = gaiaAllocLinestring (ln->Points);
+
+/* first pass */
+    for (iv = 0; iv < ln->Points; iv++)
+      {
+	  if (ln->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln->Coords, iv, &x, &y);
+	    }
+	  if (!copy)		/* CAZZO */
+	    {
+		if (ln->DimensionModel == GAIA_XY_Z
+		    || ln->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      if (node->X == x && node->Y == y && node->Z == z)
+			{
+			    base_idx = iv;
+			    copy = 1;
+			}
+		  }
+		else if (node->X == x && node->Y == y)
+		  {
+		      base_idx = iv;
+		      copy = 1;
+		  }
+	    }
+	  if (copy)
+	    {
+		/* copying points */
+		if (ln->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaSetPointXYZ (new_ln->Coords, io, x, y, z);
+		  }
+		else if (ln->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaSetPointXYM (new_ln->Coords, io, x, y, m);
+		  }
+		else if (ln->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaSetPointXYZM (new_ln->Coords, io, x, y, z, m);
+		  }
+		else
+		  {
+		      gaiaSetPoint (new_ln->Coords, io, x, y);
+		  }
+		io++;
+	    }
+      }
+    if (base_idx <= 0)
+      {
+	  gaiaFreeLinestring (new_ln);
+	  return;
+      }
+
+/* second pass */
+    for (iv = 1; iv <= base_idx; iv++)
+      {
+	  if (ln->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln->Coords, iv, &x, &y);
+	    }
+	  if (ln->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaSetPointXYZ (new_ln->Coords, io, x, y, z);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaSetPointXYM (new_ln->Coords, io, x, y, m);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZM (new_ln->Coords, io, x, y, z, m);
+	    }
+	  else
+	    {
+		gaiaSetPoint (new_ln->Coords, io, x, y);
+	    }
+	  io++;
+      }
+
+/* copying back */
+    for (iv = 0; iv < new_ln->Points; iv++)
+      {
+	  if (ln->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (new_ln->Coords, iv, &x, &y, &z);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (new_ln->Coords, iv, &x, &y, &m);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (new_ln->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (new_ln->Coords, iv, &x, &y);
+	    }
+	  if (ln->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaSetPointXYZ (ln->Coords, iv, x, y, z);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaSetPointXYM (ln->Coords, iv, x, y, m);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZM (ln->Coords, iv, x, y, z, m);
+	    }
+	  else
+	    {
+		gaiaSetPoint (ln->Coords, iv, x, y);
+	    }
+      }
+    gaiaFreeLinestring (new_ln);
+}
+
+static void
+extractSubLine (gaiaGeomCollPtr result, gaiaLinestringPtr ln, int i_start,
+		int i_end)
+{
+/* extracting s SubLine */
+    int iv;
+    int io = 0;
+    int pts = i_end - i_start + 1;
+    gaiaLinestringPtr new_ln = NULL;
+    double x;
+    double y;
+    double z;
+    double m;
+
+    new_ln = gaiaAddLinestringToGeomColl (result, pts);
+
+    for (iv = i_start; iv <= i_end; iv++)
+      {
+	  if (ln->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln->Coords, iv, &x, &y);
+	    }
+	  if (ln->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaSetPointXYZ (new_ln->Coords, io, x, y, z);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaSetPointXYM (new_ln->Coords, io, x, y, m);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZM (new_ln->Coords, io, x, y, z, m);
+	    }
+	  else
+	    {
+		gaiaSetPoint (new_ln->Coords, io, x, y);
+	    }
+	  io++;
+      }
+}
+
+static void
+cutLineAtNodes (gaiaLinestringPtr ln, gaiaPointPtr pt_base,
+		gaiaGeomCollPtr result)
+{
+/* attempts to cut a single Line accordingly to given nodes */
+    int closed = 0;
+    int match = 0;
+    int iv;
+    int i_start;
+    double x;
+    double y;
+    double z;
+    double m;
+    gaiaPointPtr pt;
+    gaiaPointPtr node = NULL;
+
+    if (gaiaIsClosed (ln))
+	closed = 1;
+/* pre-check */
+    for (iv = 0; iv < ln->Points; iv++)
+      {
+	  if (ln->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln->Coords, iv, &x, &y);
+	    }
+	  pt = pt_base;
+	  while (pt)
+	    {
+		if (ln->DimensionModel == GAIA_XY_Z
+		    || ln->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      if (pt->X == x && pt->Y == y && pt->Z == z)
+			{
+			    node = pt;
+			    match++;
+			}
+		  }
+		else if (pt->X == x && pt->Y == y)
+		  {
+		      node = pt;
+		      match++;
+		  }
+		pt = pt->Next;
+	    }
+      }
+
+    if (closed && node)
+	rotateRingBeforeCut (ln, node);
+
+    i_start = 0;
+    for (iv = 1; iv < ln->Points - 1; iv++)
+      {
+	  /* identifying sub-linestrings */
+	  if (ln->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln->Coords, iv, &x, &y);
+	    }
+	  match = 0;
+	  pt = pt_base;
+	  while (pt)
+	    {
+		if (ln->DimensionModel == GAIA_XY_Z
+		    || ln->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      if (pt->X == x && pt->Y == y && pt->Z == z)
+			{
+			    match = 1;
+			    break;
+			}
+		  }
+		else if (pt->X == x && pt->Y == y)
+		  {
+		      match = 1;
+		      break;
+		  }
+		pt = pt->Next;
+	    }
+	  if (match)
+	    {
+		/* cutting the line */
+		extractSubLine (result, ln, i_start, iv);
+		i_start = iv;
+	    }
+      }
+    if (i_start != 0 && i_start != ln->Points - 1)
+      {
+	  /* extracting the last SubLine */
+	  extractSubLine (result, ln, i_start, ln->Points - 1);
+      }
+    else
+      {
+	  /* cloning the untouched Line */
+	  extractSubLine (result, ln, 0, ln->Points - 1);
+      }
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaLinesCutAtNodes (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
+{
+/* attempts to cut lines accordingly to nodes */
+    int pts1 = 0;
+    int lns1 = 0;
+    int pgs1 = 0;
+    int pts2 = 0;
+    int lns2 = 0;
+    int pgs2 = 0;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    gaiaGeomCollPtr result = NULL;
+
+    if (!geom1)
+	return NULL;
+    if (!geom2)
+	return NULL;
+
+/* both Geometryes should have identical Dimensions */
+    if (geom1->DimensionModel != geom2->DimensionModel)
+	return NULL;
+
+    pt = geom1->FirstPoint;
+    while (pt)
+      {
+	  pts1++;
+	  pt = pt->Next;
+      }
+    ln = geom1->FirstLinestring;
+    while (ln)
+      {
+	  lns1++;
+	  ln = ln->Next;
+      }
+    pg = geom1->FirstPolygon;
+    while (pg)
+      {
+	  pgs1++;
+	  pg = pg->Next;
+      }
+    pt = geom2->FirstPoint;
+    while (pt)
+      {
+	  pts2++;
+	  pt = pt->Next;
+      }
+    ln = geom2->FirstLinestring;
+    while (ln)
+      {
+	  lns2++;
+	  ln = ln->Next;
+      }
+    pg = geom2->FirstPolygon;
+    while (pg)
+      {
+	  pgs2++;
+	  pg = pg->Next;
+      }
+
+/* the first Geometry is expected to contain one or more Linestring(s) */
+    if (pts1 == 0 && lns1 > 0 && pgs1 == 0)
+	;
+    else
+	return NULL;
+/* the second Geometry is expected to contain one or more Point(s) */
+    if (pts2 > 0 && lns2 == 0 && pgs2 == 0)
+	;
+    else
+	return NULL;
+
+/* attempting to cut Lines accordingly to Nodes */
+    if (geom1->DimensionModel == GAIA_XY_Z)
+	result = gaiaAllocGeomCollXYZ ();
+    else if (geom1->DimensionModel == GAIA_XY_M)
+	result = gaiaAllocGeomCollXYM ();
+    else if (geom1->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaAllocGeomCollXYZM ();
+    else
+	result = gaiaAllocGeomColl ();
+    ln = geom1->FirstLinestring;
+    while (ln)
+      {
+	  cutLineAtNodes (ln, geom2->FirstPoint, result);
+	  ln = ln->Next;
+      }
+    if (result->FirstLinestring == NULL)
+      {
+	  gaiaFreeGeomColl (result);
+	  return NULL;
+      }
+    result->Srid = geom1->Srid;
+    return result;
+}
+
 #endif /* end GEOS advanced and experimental features */
 
 #endif /* end including GEOS */

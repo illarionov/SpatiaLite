@@ -920,6 +920,26 @@ extern "C"
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaLineMerge (gaiaGeomCollPtr geom);
 
 /**
+ Spatial operator: Line Cut At Nodes
+
+ \param geom1 pointer to input Geometry object [Linestring or MultiLinestring].
+ \param geom2 pointer to input Geometry object [Point or MultiPoint].
+
+ \return the pointer to newly created Geometry object; NULL on failure.
+ \n if possible, any input Linestring will be split accordingly to given Node(s):
+ no point will be interpolated, existing Linestring Vertices will be evaluated.
+
+ \sa gaiaFreeGeomColl
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaLinesCutAtNodes()
+
+ \remark \b GEOS-ADVANCED support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaLinesCutAtNodes (gaiaGeomCollPtr geom1,
+							 gaiaGeomCollPtr geom2);
+
+/**
  Spatial operator: Unary Union
 
  \param geom the input Geometry object.

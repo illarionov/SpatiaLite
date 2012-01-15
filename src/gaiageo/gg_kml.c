@@ -57,9 +57,13 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/gaiageo.h>
 
 #if defined(_WIN32) || defined(WIN32)
-# include <io.h>
-#define isatty  _isatty
-#define fileno  _fileno
+#include <io.h>
+#ifndef isatty
+#define isatty	_isatty
+#endif
+#ifndef fileno
+#define fileno	_fileno
+#endif
 #endif
 
 int kml_parse_error;

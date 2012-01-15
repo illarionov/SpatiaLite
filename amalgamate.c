@@ -148,9 +148,13 @@ do_headers (FILE * out, struct masked_keyword *first)
     fprintf (out, "#include <langinfo.h>\n");
     fprintf (out, "#endif\n#endif\n\n");
     fprintf (out, "#if defined(_WIN32) || defined(WIN32)\n");
-    fprintf (out, "# include <io.h>\n");
+    fprintf (out, "#include <io.h>\n");
+    fprintf (out, "#ifndef isatty\n");
     fprintf (out, "#define isatty	_isatty\n");
+    fprintf (out, "#endif\n");
+    fprintf (out, "#ifndef fileno\n");
     fprintf (out, "#define fileno	_fileno\n");
+    fprintf (out, "#endif\n");
     fprintf (out, "#else\n");
     fprintf (out, "#include <unistd.h>\n");
     fprintf (out, "#endif\n\n");

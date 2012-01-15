@@ -63,9 +63,13 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #endif /* not WIN32 */
 
 #if defined(_WIN32) || defined(WIN32)
-# include <io.h>
+#include <io.h>
+#ifndef isatty
 #define isatty	_isatty
+#endif
+#ifndef fileno
 #define fileno	_fileno
+#endif
 #endif
 
 int ewkt_parse_error;
