@@ -3331,6 +3331,8 @@ gaiaMergeGeometries (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 
     if (geom1 == NULL || geom2 == NULL)
 	return NULL;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	return NULL;
     dims1 = geom1->DimensionModel;
     dims2 = geom2->DimensionModel;
 /* building a new Geometry */
@@ -3492,11 +3494,11 @@ gaiaMergeGeometries (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 		  {
 		      gaiaSetPointXYZM (new_ln->Coords, iv, x, y, z, m);
 		  }
-		else if (ln->DimensionModel == GAIA_XY_Z)
+		else if (new_ln->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaSetPointXYZ (new_ln->Coords, iv, x, y, z);
 		  }
-		else if (ln->DimensionModel == GAIA_XY_M)
+		else if (new_ln->DimensionModel == GAIA_XY_M)
 		  {
 		      gaiaSetPointXYM (new_ln->Coords, iv, x, y, m);
 		  }
@@ -3537,11 +3539,11 @@ gaiaMergeGeometries (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 		  {
 		      gaiaSetPointXYZM (new_ln->Coords, iv, x, y, z, m);
 		  }
-		else if (ln->DimensionModel == GAIA_XY_Z)
+		else if (new_ln->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaSetPointXYZ (new_ln->Coords, iv, x, y, z);
 		  }
-		else if (ln->DimensionModel == GAIA_XY_M)
+		else if (new_ln->DimensionModel == GAIA_XY_M)
 		  {
 		      gaiaSetPointXYM (new_ln->Coords, iv, x, y, m);
 		  }
