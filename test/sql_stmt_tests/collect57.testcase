@@ -1,0 +1,7 @@
+collect - empty geometrycollection first arg
+:memory: #use in-memory database
+SELECT AsText(COLLECT(GeomFromText("GEOMETRYCOLLECTION()"),makepoint(1,2)))
+1 # rows (not including the header row)
+1 # columns
+AsText(COLLECT(GeomFromText("GEOMETRYCOLLECTION()"),makepoint(1,2)))
+(NULL)

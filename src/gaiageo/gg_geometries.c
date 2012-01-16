@@ -3588,11 +3588,11 @@ gaiaMergeGeometries (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 		  {
 		      gaiaSetPointXYZM (new_rng->Coords, iv, x, y, z, m);
 		  }
-		else if (rng->DimensionModel == GAIA_XY_Z)
+		else if (new_rng->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaSetPointXYZ (new_rng->Coords, iv, x, y, z);
 		  }
-		else if (rng->DimensionModel == GAIA_XY_M)
+		else if (new_rng->DimensionModel == GAIA_XY_M)
 		  {
 		      gaiaSetPointXYM (new_rng->Coords, iv, x, y, m);
 		  }
@@ -3630,11 +3630,11 @@ gaiaMergeGeometries (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 			{
 			    gaiaSetPointXYZM (new_rng->Coords, iv, x, y, z, m);
 			}
-		      else if (rng->DimensionModel == GAIA_XY_Z)
+		      else if (new_rng->DimensionModel == GAIA_XY_Z)
 			{
 			    gaiaSetPointXYZ (new_rng->Coords, iv, x, y, z);
 			}
-		      else if (rng->DimensionModel == GAIA_XY_M)
+		      else if (new_rng->DimensionModel == GAIA_XY_M)
 			{
 			    gaiaSetPointXYM (new_rng->Coords, iv, x, y, m);
 			}
@@ -3680,11 +3680,11 @@ gaiaMergeGeometries (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 		  {
 		      gaiaSetPointXYZM (new_rng->Coords, iv, x, y, z, m);
 		  }
-		else if (rng->DimensionModel == GAIA_XY_Z)
+		else if (new_rng->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaSetPointXYZ (new_rng->Coords, iv, x, y, z);
 		  }
-		else if (rng->DimensionModel == GAIA_XY_M)
+		else if (new_rng->DimensionModel == GAIA_XY_M)
 		  {
 		      gaiaSetPointXYM (new_rng->Coords, iv, x, y, m);
 		  }
@@ -3722,11 +3722,11 @@ gaiaMergeGeometries (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 			{
 			    gaiaSetPointXYZM (new_rng->Coords, iv, x, y, z, m);
 			}
-		      else if (rng->DimensionModel == GAIA_XY_Z)
+		      else if (new_rng->DimensionModel == GAIA_XY_Z)
 			{
 			    gaiaSetPointXYZ (new_rng->Coords, iv, x, y, z);
 			}
-		      else if (rng->DimensionModel == GAIA_XY_M)
+		      else if (new_rng->DimensionModel == GAIA_XY_M)
 			{
 			    gaiaSetPointXYM (new_rng->Coords, iv, x, y, m);
 			}

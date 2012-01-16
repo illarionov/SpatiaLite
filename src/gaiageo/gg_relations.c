@@ -411,6 +411,8 @@ gaiaGeometryIntersection (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g3;
     if (!geom1 || !geom2)
 	return NULL;
+    if (gaiaIsToxic(geom1) || gaiaIsToxic(geom2))
+	return NULL;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     g3 = GEOSIntersection (g1, g2);
@@ -442,6 +444,8 @@ gaiaGeometryUnion (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g2;
     GEOSGeometry *g3;
     if (!geom1 || !geom2)
+	return NULL;
+    if (gaiaIsToxic(geom1) || gaiaIsToxic(geom2))
 	return NULL;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
@@ -481,6 +485,8 @@ gaiaGeometryDifference (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g2;
     GEOSGeometry *g3;
     if (!geom1 || !geom2)
+	return NULL;
+    if (gaiaIsToxic(geom1) || gaiaIsToxic(geom2))
 	return NULL;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
@@ -574,6 +580,10 @@ gaiaGeomCollCentroid (gaiaGeomCollPtr geom, double *x, double *y)
     GEOSGeometry *g2;
     if (!geom)
 	return 0;
+    if (gaiaIsToxic(geom))
+    {
+	return 0;
+    }
     g1 = gaiaToGeos (geom);
     g2 = GEOSGetCentroid (g1);
     GEOSGeom_destroy (g1);
@@ -610,6 +620,10 @@ gaiaGetPointOnSurface (gaiaGeomCollPtr geom, double *x, double *y)
     GEOSGeometry *g2;
     if (!geom)
 	return 0;
+    if (gaiaIsToxic(geom))
+    {
+	return 0;
+    }
     g1 = gaiaToGeos (geom);
     g2 = GEOSPointOnSurface (g1);
     GEOSGeom_destroy (g1);
