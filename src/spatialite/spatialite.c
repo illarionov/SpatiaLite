@@ -506,7 +506,7 @@ fnct_RTreeAlign (sqlite3_context * context, int argc, sqlite3_value ** argv)
     unsigned char *p_blob = NULL;
     int n_bytes = 0;
     sqlite3_int64 pkid;
-    const unsigned char *rtree_table;
+    const char *rtree_table;
     gaiaGeomCollPtr geom = NULL;
     int ret;
     char table_name[1024];
@@ -514,7 +514,7 @@ fnct_RTreeAlign (sqlite3_context * context, int argc, sqlite3_value ** argv)
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
-	rtree_table = sqlite3_value_text (argv[0]);
+	rtree_table = (const char *) sqlite3_value_text (argv[0]);
     else
       {
 	  sqlite3_result_int (context, -1);
@@ -4386,7 +4386,7 @@ create_topo_edges (sqlite3 * sqlite, const char *table, int srid, int dims)
 }
 
 static int
-create_topo_faces (sqlite3 * sqlite, const char *table, int srid, int dims)
+create_topo_faces (sqlite3 * sqlite, const char *table)
 {
 /* creating the topo_faces table */
     char sql[2048];
@@ -4470,8 +4470,7 @@ create_topo_faces_edges (sqlite3 * sqlite, const char *table,
 }
 
 static int
-create_topo_curves (sqlite3 * sqlite, const char *table, const char *table2,
-		    int srid, int dims)
+create_topo_curves (sqlite3 * sqlite, const char *table)
 {
 /* creating the topo_curves table */
     char sql[2048];
@@ -4511,8 +4510,7 @@ create_topo_curves (sqlite3 * sqlite, const char *table, const char *table2,
 }
 
 static int
-create_topo_surfaces (sqlite3 * sqlite, const char *table, const char *table2,
-		      int srid, int dims)
+create_topo_surfaces (sqlite3 * sqlite, const char *table)
 {
 /* creating the topo_surfaces table */
     char sql[2048];
@@ -4906,7 +4904,7 @@ create_dangling_nodes (sqlite3 * sqlite, const char *view,
     double_quoted_sql (sqltable);
     strcat (sql, " AS e ON (n.node_code = e.node_from_code)\n");
     strcat (sql, "WHERE e.edge_id IS NULL\n");
-    strcat (sql, "UNION\n");
+    strcat (sql, "INTERSECT\n");
     strcat (sql, "SELECT n.node_id AS node_id\n");
     strcpy (sqltable, nodes);
     double_quoted_sql (sqltable);
@@ -5447,13 +5445,13 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
 	goto error;
     if (!create_topo_edges (sqlite, table_edges, srid, dims))
 	goto error;
-    if (!create_topo_faces (sqlite, table_faces, srid, dims))
+    if (!create_topo_faces (sqlite, table_faces))
 	goto error;
     if (!create_topo_faces_edges (sqlite, table_faces_edges, table_faces))
 	goto error;
-    if (!create_topo_curves (sqlite, table_curves, table_edges, srid, dims))
+    if (!create_topo_curves (sqlite, table_curves))
 	goto error;
-    if (!create_topo_surfaces (sqlite, table_surfaces, table_faces, srid, dims))
+    if (!create_topo_surfaces (sqlite, table_surfaces))
 	goto error;
     if (!create_check_node_codes (sqlite, view_check_node_codes, table_nodes))
 	goto error;
@@ -5518,8 +5516,8 @@ fnct_UpdateLayerStatistics (sqlite3_context * context, int argc,
 / 0 on failure
 */
     const char *sql;
-    const unsigned char *table = NULL;
-    const unsigned char *column = NULL;
+    const char *table = NULL;
+    const char *column = NULL;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();
     if (argc >= 1)
@@ -5531,7 +5529,7 @@ fnct_UpdateLayerStatistics (sqlite3_context * context, int argc,
 		sqlite3_result_int (context, 0);
 		return;
 	    }
-	  table = sqlite3_value_text (argv[0]);
+	  table = (const char *) sqlite3_value_text (argv[0]);
       }
     if (argc >= 2)
       {
@@ -5542,7 +5540,7 @@ fnct_UpdateLayerStatistics (sqlite3_context * context, int argc,
 		sqlite3_result_int (context, 0);
 		return;
 	    }
-	  column = sqlite3_value_text (argv[1]);
+	  column = (const char *) sqlite3_value_text (argv[1]);
       }
     if (!update_layer_statistics (sqlite, table, column))
 	goto error;
@@ -6539,6 +6537,410 @@ fnct_MakePoint2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     gaiaMakePoint (x, y, srid, &p_result, &len);
+    if (!p_result)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, p_result, len, free);
+}
+
+static void
+fnct_MakePointZ1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ MakePointZ(double X, double Y, double Z)
+/
+/ builds a POINT Z 
+/ or NULL if any error is encountered
+*/
+    int len;
+    int int_value;
+    unsigned char *p_result = NULL;
+    double x;
+    double y;
+    double z;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	x = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[0]);
+	  x = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	y = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  y = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	z = sqlite3_value_double (argv[2]);
+    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[2]);
+	  z = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    gaiaMakePointZ (x, y, z, -1, &p_result, &len);
+    if (!p_result)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, p_result, len, free);
+}
+
+static void
+fnct_MakePointZ2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ MakePointZ(double X, double Y, double Z, int SRID)
+/
+/ builds a POINT Z
+/ or NULL if any error is encountered
+*/
+    int len;
+    int int_value;
+    unsigned char *p_result = NULL;
+    double x;
+    double y;
+    double z;
+    int srid;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	x = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[0]);
+	  x = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	y = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  y = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	z = sqlite3_value_double (argv[2]);
+    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[2]);
+	  z = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	srid = sqlite3_value_int (argv[3]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    gaiaMakePointZ (x, y, z, srid, &p_result, &len);
+    if (!p_result)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, p_result, len, free);
+}
+
+static void
+fnct_MakePointM1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ MakePointM(double X, double Y, double M)
+/
+/ builds a POINT M
+/ or NULL if any error is encountered
+*/
+    int len;
+    int int_value;
+    unsigned char *p_result = NULL;
+    double x;
+    double y;
+    double m;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	x = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[0]);
+	  x = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	y = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  y = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	m = sqlite3_value_double (argv[2]);
+    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[2]);
+	  m = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    gaiaMakePointM (x, y, m, -1, &p_result, &len);
+    if (!p_result)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, p_result, len, free);
+}
+
+static void
+fnct_MakePointM2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ MakePointM(double X, double Y, double M, int SRID)
+/
+/ builds a POINT M
+/ or NULL if any error is encountered
+*/
+    int len;
+    int int_value;
+    unsigned char *p_result = NULL;
+    double x;
+    double y;
+    double m;
+    int srid;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	x = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[0]);
+	  x = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	y = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  y = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	m = sqlite3_value_double (argv[2]);
+    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[2]);
+	  m = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	srid = sqlite3_value_int (argv[3]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    gaiaMakePointM (x, y, m, srid, &p_result, &len);
+    if (!p_result)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, p_result, len, free);
+}
+
+static void
+fnct_MakePointZM1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ MakePointZM(double X, double Y, double Z, double M)
+/
+/ builds a POINT ZM 
+/ or NULL if any error is encountered
+*/
+    int len;
+    int int_value;
+    unsigned char *p_result = NULL;
+    double x;
+    double y;
+    double z;
+    double m;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	x = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[0]);
+	  x = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	y = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  y = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	z = sqlite3_value_double (argv[2]);
+    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[2]);
+	  z = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
+	m = sqlite3_value_double (argv[3]);
+    else if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[3]);
+	  m = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    gaiaMakePointZM (x, y, z, m, -1, &p_result, &len);
+    if (!p_result)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, p_result, len, free);
+}
+
+static void
+fnct_MakePointZM2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ MakePointZM(double X, double Y, double Z, double M, int SRID)
+/
+/ builds a POINT 
+/ or NULL if any error is encountered
+*/
+    int len;
+    int int_value;
+    unsigned char *p_result = NULL;
+    double x;
+    double y;
+    double z;
+    double m;
+    int srid;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	x = sqlite3_value_double (argv[0]);
+    else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[0]);
+	  x = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	y = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  y = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	z = sqlite3_value_double (argv[2]);
+    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[2]);
+	  z = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
+	m = sqlite3_value_double (argv[3]);
+    else if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[3]);
+	  m = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+	srid = sqlite3_value_int (argv[4]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    gaiaMakePointZM (x, y, z, m, srid, &p_result, &len);
     if (!p_result)
 	sqlite3_result_null (context);
     else
@@ -15409,8 +15811,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -15494,8 +15895,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -15504,8 +15904,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -16326,6 +16725,18 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     0, 0);
     sqlite3_create_function (db, "MakePoint", 3, SQLITE_ANY, 0, fnct_MakePoint2,
 			     0, 0);
+    sqlite3_create_function (db, "MakePointZ", 3, SQLITE_ANY, 0,
+			     fnct_MakePointZ1, 0, 0);
+    sqlite3_create_function (db, "MakePointZ", 4, SQLITE_ANY, 0,
+			     fnct_MakePointZ2, 0, 0);
+    sqlite3_create_function (db, "MakePointM", 3, SQLITE_ANY, 0,
+			     fnct_MakePointM1, 0, 0);
+    sqlite3_create_function (db, "MakePointM", 4, SQLITE_ANY, 0,
+			     fnct_MakePointM2, 0, 0);
+    sqlite3_create_function (db, "MakePointZM", 4, SQLITE_ANY, 0,
+			     fnct_MakePointZM1, 0, 0);
+    sqlite3_create_function (db, "MakePointZM", 5, SQLITE_ANY, 0,
+			     fnct_MakePointZM2, 0, 0);
     sqlite3_create_function (db, "MakeLine", 1, SQLITE_ANY, 0, 0,
 			     fnct_MakeLine_step, fnct_MakeLine_final);
     sqlite3_create_function (db, "MakeLine", 2, SQLITE_ANY, 0, fnct_MakeLine, 0,
@@ -16939,7 +17350,7 @@ check_layer_statistics (sqlite3 * sqlite)
 		if (strcasecmp (name, "extent_min_x") == 0)
 		    extent_min_x = 1;
 		if (strcasecmp (name, "extent_min_y") == 0)
-		    extent_min_x = 1;
+		    extent_min_y = 1;
 		if (strcasecmp (name, "extent_max_x") == 0)
 		    extent_max_x = 1;
 		if (strcasecmp (name, "extent_max_y") == 0)
@@ -16950,11 +17361,11 @@ check_layer_statistics (sqlite3 * sqlite)
 
 /* LAYER_STATISTICS already exists and has a valid layout */
     if (raster_layer && table_name && geometry_column && row_count
-	&& extent_min_x && extent_max_x && extent_max_y)
+	&& extent_min_x && extent_max_x && extent_min_y && extent_max_y)
 	return 1;
 /* LAYER_STATISTICS already exists, but has an invalid layout */
     if (raster_layer || table_name || geometry_column || row_count
-	|| extent_min_x || extent_max_x || extent_max_y)
+	|| extent_min_x || extent_max_x || extent_min_y || extent_max_y)
 	return 0;
 
 /* attempting to create LAYER_STATISTICS */
@@ -17080,7 +17491,7 @@ check_views_layer_statistics (sqlite3 * sqlite)
 		if (strcasecmp (name, "extent_min_x") == 0)
 		    extent_min_x = 1;
 		if (strcasecmp (name, "extent_min_y") == 0)
-		    extent_min_x = 1;
+		    extent_min_y = 1;
 		if (strcasecmp (name, "extent_max_x") == 0)
 		    extent_max_x = 1;
 		if (strcasecmp (name, "extent_max_y") == 0)
@@ -17091,11 +17502,11 @@ check_views_layer_statistics (sqlite3 * sqlite)
 
 /* VIEWS_LAYER_STATISTICS already exists and has a valid layout */
     if (view_name && view_geometry && row_count && extent_min_x && extent_max_x
-	&& extent_max_y)
+	&& extent_min_y && extent_max_y)
 	return 1;
 /* VIEWS_LAYER_STATISTICS already exists, but has an invalid layout */
     if (view_name || view_geometry || row_count || extent_min_x || extent_max_x
-	|| extent_max_y)
+	|| extent_min_y || extent_max_y)
 	return 0;
 
 /* attempting to create VIEWS_LAYER_STATISTICS */
@@ -17220,7 +17631,7 @@ check_virts_layer_statistics (sqlite3 * sqlite)
 		if (strcasecmp (name, "extent_min_x") == 0)
 		    extent_min_x = 1;
 		if (strcasecmp (name, "extent_min_y") == 0)
-		    extent_min_x = 1;
+		    extent_min_y = 1;
 		if (strcasecmp (name, "extent_max_x") == 0)
 		    extent_max_x = 1;
 		if (strcasecmp (name, "extent_max_y") == 0)
@@ -17231,11 +17642,11 @@ check_virts_layer_statistics (sqlite3 * sqlite)
 
 /* VIRTS_LAYER_STATISTICS already exists and has a valid layout */
     if (virt_name && virt_geometry && row_count && extent_min_x && extent_max_x
-	&& extent_max_y)
+	&& extent_min_y && extent_max_y)
 	return 1;
 /* VIRTS_LAYER_STATISTICS already exists, but has an invalid layout */
     if (virt_name || virt_geometry || row_count || extent_min_x || extent_max_x
-	|| extent_max_y)
+	|| extent_min_y || extent_max_y)
 	return 0;
 
 /* attempting to create VIRTS_LAYER_STATISTICS */

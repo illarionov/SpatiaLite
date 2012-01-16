@@ -319,6 +319,68 @@ extern "C"
 					unsigned char **result, int *size);
 
 /**
+ Creates a BLOB-Geometry representing a PointZ
+
+ \param x Point X coordinate.
+ \param y Point Y coordinate.
+ \param z Point Z coordinate.
+ \param srid the SRID to be set for the Point.
+ \param result on completion will containt a pointer to BLOB-Geometry:
+ NULL on failure.
+ \param size on completion this variable will contain the BLOB's size (in bytes)
+
+ \sa gaiaFromSpatiaLiteBlobWkb
+
+ \note the BLOB buffer corresponds to dynamically allocated memory:
+ so you are responsible to free() it [unless SQLite will take care
+ of memory cleanup via buffer binding].
+ */
+    GAIAGEO_DECLARE void gaiaMakePointZ (double x, double y, double z, int srid,
+					 unsigned char **result, int *size);
+
+/**
+ Creates a BLOB-Geometry representing a PointM
+
+ \param x Point X coordinate.
+ \param y Point Y coordinate.
+ \param m Point M coordinate.
+ \param srid the SRID to be set for the Point.
+ \param result on completion will containt a pointer to BLOB-Geometry:
+ NULL on failure.
+ \param size on completion this variable will contain the BLOB's size (in bytes)
+
+ \sa gaiaFromSpatiaLiteBlobWkb
+
+ \note the BLOB buffer corresponds to dynamically allocated memory:
+ so you are responsible to free() it [unless SQLite will take care
+ of memory cleanup via buffer binding].
+ */
+    GAIAGEO_DECLARE void gaiaMakePointM (double x, double y, double m, int srid,
+					 unsigned char **result, int *size);
+
+/**
+ Creates a BLOB-Geometry representing a PointZM
+
+ \param x Point X coordinate.
+ \param y Point Y coordinate.
+ \param z Point Z coordinate.
+ \param m Point M coordinate.
+ \param srid the SRID to be set for the Point.
+ \param result on completion will containt a pointer to BLOB-Geometry:
+ NULL on failure.
+ \param size on completion this variable will contain the BLOB's size (in bytes)
+
+ \sa gaiaFromSpatiaLiteBlobWkb
+
+ \note the BLOB buffer corresponds to dynamically allocated memory:
+ so you are responsible to free() it [unless SQLite will take care
+ of memory cleanup via buffer binding].
+ */
+    GAIAGEO_DECLARE void gaiaMakePointZM (double x, double y, double z,
+					  double m, int srid,
+					  unsigned char **result, int *size);
+
+/**
  Creates a BLOB-Geometry representing a Segment (2-Points Linestring)
 
  \param geom1 pointer to first Geometry object (expected to represent a Point).
