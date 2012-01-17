@@ -9214,7 +9214,7 @@ fnct_SetSRID (sqlite3_context * context, int argc, sqlite3_value ** argv)
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    if (!geo)
+    if ((!geo) || !gaiaIsValid(geo))
 	sqlite3_result_null (context);
     else
       {
