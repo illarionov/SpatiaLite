@@ -9285,7 +9285,7 @@ fnct_Envelope (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
-	  if (gaiaIsEmpty (geo))
+	  if (!gaiaIsValid (geo))
 	      sqlite3_result_null (context);
 	  else
 	    {
