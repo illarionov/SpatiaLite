@@ -61,9 +61,13 @@ AC_CONFIG_FILES([Makefile \
 		src/gaiaaux/Makefile \
 		src/gaiaexif/Makefile \
 		src/gaiageo/Makefile \
+		src/gaiageo/flex/Makefile \
+		src/gaiageo/lemon/Makefile \
+		src/gaiageo/lemon/lemon_src/Makefile \
 		src/spatialite/Makefile \
 		src/shapefiles/Makefile \
 		src/srsinit/Makefile \
+		src/srsinit/epsg_update/Makefile \
 		src/virtualtext/Makefile \
 		test/Makefile \
 		examples/Makefile \

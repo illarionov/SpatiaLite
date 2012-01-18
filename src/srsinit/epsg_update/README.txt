@@ -1,0 +1,56 @@
+HOW-TO: UPDATE spatial_ref_sys SELF-INITIALIZING C CODE
+============================================================================
+When updating is required: each time a new GDAL version will be released.
+============================================================================
+
+STEP #1: getting the basic EPSG files
+--------
+- download the latest GDAL sources
+- build and install 
+  be sure to set: ./configure --with-python=yes
+
+# cd {gdal-sources}/data 
+# rm epsg
+# epsg_tr.py -proj4 -skip -list gcs.csv > epsg
+# epsg_tr.py -proj4 -skip -list pcs.csv >> epsg
+# rm wkt
+# epsg_tr.py -wkt -skip -list gcs.csv > wkt
+# epsg_tr.py -wkt -skip -list pcs.csv >> wkt
+
+all right: these "epsg" and "wkt" files will be used as "seeds" into the
+next step:
+- copy both "epsg" and "wkt" files into: 
+  {libspatialite-source}/src/srcinit/epsg_update
+
+
+
+STEP #2: compiling the C generator tool
+--------
+# cd {libspatialite-source}/src/srcinit/epsg_update
+
+Linux:
+# gcc auto_epsg.c -o auto_epsg
+
+Windows [MinGW]:
+# gcc auto_epsg.c -o auto_epsg.exe
+
+
+
+STEP #4: generating the C code [inlined EPSG dataset]
+--------
+# rm epsg_inlined.c
+# ./auto_epsg
+
+at the end of this step the "epsg_inlined.c" file will be generated
+
+
+
+STEP #5: final setup
+--------
+- edit this source file: 
+  {libspatialite-sources}/src/srsinit/srs_init.c
+- identify the epsg_inlined.c delimiters (comments)
+- completely remove the previous implementation
+- replace with the full code of the latest epsg_inlined.c
+- save and exit
+- commit into the repository
