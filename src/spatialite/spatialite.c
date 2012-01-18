@@ -5771,7 +5771,10 @@ fnct_AsSvg (sqlite3_context * context, int argc, sqlite3_value ** argv,
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
+      {
 	sqlite3_result_null (context);
+	return;
+      }
     else
       {
 	  /* make sure relative is 0 or 1 */
