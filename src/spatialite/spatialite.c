@@ -5772,8 +5772,8 @@ fnct_AsSvg (sqlite3_context * context, int argc, sqlite3_value ** argv,
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
       {
-	sqlite3_result_null (context);
-	return;
+	  sqlite3_result_null (context);
+	  return;
       }
     else
       {
@@ -9217,7 +9217,7 @@ fnct_SetSRID (sqlite3_context * context, int argc, sqlite3_value ** argv)
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    if ((!geo) || !gaiaIsValid(geo))
+    if ((!geo) || !gaiaIsValid (geo))
 	sqlite3_result_null (context);
     else
       {
@@ -11267,6 +11267,7 @@ get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
     char proj4text[2048];
     char *p_proj;
     char *p_ellps;
+    char *p_datum;
     char *p_a;
     char *p_b;
     char *p_end;
@@ -11275,6 +11276,7 @@ get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
 	return 0;
 /* parsing the proj4text geodesic string */
     p_proj = strstr (proj4text, "+proj=");
+    p_datum = strstr (proj4text, "+datum=");
     p_ellps = strstr (proj4text, "+ellps=");
     p_a = strstr (proj4text, "+a=");
     p_b = strstr (proj4text, "+b=");
@@ -11293,6 +11295,19 @@ get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
 	  if (p_end)
 	      *p_end = '\0';
 	  if (gaiaEllipseParams (p_ellps + 7, a, b, rf))
+	      return 1;
+      }
+    else if (p_datum)
+      {
+	  /*
+	     / starting since GDAL 1.9.0 the WGS84 [4326] PROJ.4 def doesn't 
+	     / declares any longer the "+ellps=" param
+	     / in this case we'll attempt to recover using "+datum=".
+	   */
+	  p_end = strchr (p_datum, ' ');
+	  if (p_end)
+	      *p_end = '\0';
+	  if (gaiaEllipseParams (p_datum + 7, a, b, rf))
 	      return 1;
       }
     if (p_a && p_b)
