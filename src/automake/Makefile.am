@@ -15,7 +15,7 @@ libspatialite_la_SOURCES = spatialite.c \
 	sqlite3.c
 
 if MINGW
-libspatialite_la_LDFLAGS = -version-info 4:0:2 -no-undefined
+libspatialite_la_LDFLAGS = -no-undefined
 libspatialite_la_LIBADD = 
 else
 libspatialite_la_LDFLAGS = -version-info 4:0:2
