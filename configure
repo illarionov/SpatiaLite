@@ -1410,7 +1410,7 @@ Optional Features:
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --enable-mathsql        enables SQL math functions [default=yes]
-  --enable-geocallbacks   enables geometry callbacks [default=yes]
+  --enable-geocallbacks   enables geometry callbacks [default=no]
   --enable-proj           enables PROJ.4 inclusion [default=yes]
   --enable-geos           enables GEOS inclusion [default=yes]
   --enable-geosadvanced   enables GEOS advanced features [default=yes]
@@ -16980,7 +16980,7 @@ ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src
 if test "${enable_mathsql+set}" = set; then :
   enableval=$enable_mathsql;
 else
-  mathsql=yes
+  enable_mathsql=yes
 fi
 
 if test x"$enable_mathsql" != "xno"; then
@@ -16998,10 +16998,10 @@ fi
 if test "${enable_geocallbacks+set}" = set; then :
   enableval=$enable_geocallbacks;
 else
-  geocallbacks=yes
+  enable_geocallbacks=no
 fi
 
-if test x"$enable_geocallbacks" != "xno"; then
+if test x"$enable_geocallbacks" == "xyes"; then
   OMIT_GEOCALLBACKS_FLAGS=
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_rtree_geometry_callback in -lsqlite3" >&5
 $as_echo_n "checking for sqlite3_rtree_geometry_callback in -lsqlite3... " >&6; }
@@ -17063,7 +17063,7 @@ fi
 if test "${enable_proj+set}" = set; then :
   enableval=$enable_proj;
 else
-  proj=yes
+  enable_proj=yes
 fi
 
 if test x"$enable_proj" != "xno"; then
@@ -17153,7 +17153,7 @@ fi
 if test "${enable_geos+set}" = set; then :
   enableval=$enable_geos;
 else
-  geos=yes
+  enable_geos=yes
 fi
 
 if test x"$enable_geos" != "xno"; then
@@ -17237,7 +17237,7 @@ fi
 if test "${enable_geosadvanced+set}" = set; then :
   enableval=$enable_geosadvanced;
 else
-  geosadvanced=yes
+  enable_geosadvanced=yes
 fi
 
   if test x"$enable_geosadvanced" != "xno"; then
@@ -17316,7 +17316,7 @@ fi
 if test "${enable_iconv+set}" = set; then :
   enableval=$enable_iconv;
 else
-  geos=yes
+  enable_iconv=yes
 fi
 
 if test x"$enable_iconv" != "xno"; then
@@ -17579,7 +17579,7 @@ fi
 if test "${enable_freexl+set}" = set; then :
   enableval=$enable_freexl;
 else
-  proj=yes
+  enable_freexl=yes
 fi
 
 if test x"$enable_freexl" != "xno"; then
@@ -17669,7 +17669,7 @@ fi
 if test "${enable_epsg+set}" = set; then :
   enableval=$enable_epsg;
 else
-  epsg=yes
+  enable_epsg=yes
 fi
 
 if test x"$enable_epsg" != "xno"; then

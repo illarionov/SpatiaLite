@@ -62,7 +62,9 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/gaiageo.h>
 #include <spatialite.h>
 
+#ifndef OMIT_FREEXL
 #include <freexl.h>
+#endif
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #define strcasecmp	_stricmp

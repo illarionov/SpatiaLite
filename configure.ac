@@ -79,7 +79,7 @@ AC_CONFIG_FILES([Makefile \
 #
 AC_ARG_ENABLE(mathsql, [AS_HELP_STRING(
   [--enable-mathsql], [enables SQL math functions [default=yes]])],
-  [], [mathsql=yes])
+  [], [enable_mathsql=yes])
 if test x"$enable_mathsql" != "xno"; then
   OMIT_MATHSQL_FLAGS=
 else
@@ -92,9 +92,9 @@ AC_SUBST(OMIT_MATHSQL_FLAGS)
 #   --enable-geocallbacks
 #
 AC_ARG_ENABLE(geocallbacks, [AS_HELP_STRING(
-  [--enable-geocallbacks], [enables geometry callbacks [default=yes]])],
-  [], [geocallbacks=yes])
-if test x"$enable_geocallbacks" != "xno"; then
+  [--enable-geocallbacks], [enables geometry callbacks [default=no]])],
+  [], [enable_geocallbacks=no])
+if test x"$enable_geocallbacks" == "xyes"; then
   OMIT_GEOCALLBACKS_FLAGS=
   AC_CHECK_LIB(sqlite3,sqlite3_rtree_geometry_callback,,AC_MSG_ERROR([obsolete 'libsqlite3' (< v.3.7.3). please retry specifying: --disable-geocallbacks]),-lm)
 else
@@ -108,7 +108,7 @@ AC_SUBST(OMIT_GEOCALLBACKS_FLAGS)
 #
 AC_ARG_ENABLE(proj, [AS_HELP_STRING(
   [--enable-proj], [enables PROJ.4 inclusion [default=yes]])],
-  [], [proj=yes])
+  [], [enable_proj=yes])
 if test x"$enable_proj" != "xno"; then
   OMIT_PROJ_FLAGS=
   AC_CHECK_HEADERS(proj_api.h,, [AC_MSG_ERROR([cannot find proj_api.h, bailing out])])
@@ -124,7 +124,7 @@ AC_SUBST(OMIT_PROJ_FLAGS)
 #
 AC_ARG_ENABLE(geos, [AS_HELP_STRING(
   [--enable-geos], [enables GEOS inclusion [default=yes]])],
-  [], [geos=yes])
+  [], [enable_geos=yes])
 if test x"$enable_geos" != "xno"; then
   OMIT_GEOS_FLAGS=
   AC_CHECK_HEADERS(geos_c.h,, [AC_MSG_ERROR([cannot find geos_c.h, bailing out])])
@@ -134,7 +134,7 @@ if test x"$enable_geos" != "xno"; then
   #
   AC_ARG_ENABLE(geosadvanced, [AS_HELP_STRING(
 	  [--enable-geosadvanced], [enables GEOS advanced features [default=yes]])],
-	  [], [geosadvanced=yes])
+	  [], [enable_geosadvanced=yes])
   if test x"$enable_geosadvanced" != "xno"; then
 	  GEOSADVANCED_FLAGS=-DGEOS_ADVANCED
 	  AC_SEARCH_LIBS(GEOSCoveredBy,geos_c,,AC_MSG_ERROR([obsolete 'libgeos_c' (< v.3.3.0). please retry specifying: --disable-geosadvanced.]),-lm -lgeos)
@@ -152,7 +152,7 @@ AC_SUBST(OMIT_GEOS_FLAGS)
 #
 AC_ARG_ENABLE(iconv, [AS_HELP_STRING(
   [--enable-iconv], [enables ICONV inclusion [default=yes]])],
-  [], [geos=yes])
+  [], [enable_iconv=yes])
 if test x"$enable_iconv" != "xno"; then
   OMIT_ICONV_FLAGS=
   AC_CHECK_HEADERS(iconv.h,, [AC_MSG_ERROR([cannot find iconv.h, bailing out])])
@@ -172,7 +172,7 @@ AC_SUBST(OMIT_ICONV_FLAGS)
 #
 AC_ARG_ENABLE(freexl, [AS_HELP_STRING(
   [--enable-freexl], [enables FreeXL inclusion [default=yes]])],
-  [], [proj=yes])
+  [], [enable_freexl=yes])
 if test x"$enable_freexl" != "xno"; then
   OMIT_FREEXL_FLAGS=
   AC_CHECK_HEADERS(freexl.h,, [AC_MSG_ERROR([cannot find freexl.h, bailing out])])
@@ -188,7 +188,7 @@ AC_SUBST(OMIT_FREEXL_FLAGS)
 #
 AC_ARG_ENABLE(epsg, [AS_HELP_STRING(
   [--enable-epsg], [enables full EPSG dataset support [default=yes]])],
-  [], [epsg=yes])
+  [], [enable_epsg=yes])
 if test x"$enable_epsg" != "xno"; then
   OMIT_EPSG_FLAGS=
 else
