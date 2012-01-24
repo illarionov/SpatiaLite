@@ -251,7 +251,7 @@ populate_spatial_ref_sys (sqlite3 * handle)
     p = first;
     while (p)
       {
-	  if (p->srid < 0 || p->auth_name == NULL)
+	  if (p->auth_name == NULL)
 	      break;
 	  sqlite3_reset (stmt);
 	  sqlite3_clear_bindings (stmt);

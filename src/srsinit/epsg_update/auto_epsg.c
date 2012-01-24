@@ -412,9 +412,6 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 	  if (def_cnt > 100)
 	    {
 		/* function footer */
-		fprintf (out, "    if (first == last)\n");
-		fprintf (out,
-			 "        last = first;    /* suppressing stupid compiler warnings */\n");
 		fprintf (out, "}\n\n");
 		pending_footer = 0;
 	    }
@@ -422,9 +419,6 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
     if (pending_footer)
       {
 	  /* function footer */
-	  fprintf (out, "    if (first == last)\n");
-	  fprintf (out,
-		   "        last = first;    /* suppressing stupid compiler warnings */\n");
 	  fprintf (out, "}\n\n");
       }
 
@@ -485,9 +479,6 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
     fprintf (out, "    add_srs_wkt (p, 0, \"\");\n");
 
 /* function footer */
-    fprintf (out, "    if (first == last)\n");
-    fprintf (out,
-	     "        last = first;    /* suppressing stupid compiler warnings */\n");
     fprintf (out, "}\n\n");
 
     fprintf (out, "#endif /* full EPSG initialization enabled/disabled */\n\n");
@@ -586,9 +577,6 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 	  if (def_cnt > 100)
 	    {
 		/* function footer */
-		fprintf (out, "    if (first == last)\n");
-		fprintf (out,
-			 "        last = first;    /* suppressing stupid compiler warnings */\n");
 		fprintf (out, "}\n\n");
 		pending_footer = 0;
 	    }
@@ -596,9 +584,6 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
     if (pending_footer)
       {
 	  /* function footer */
-	  fprintf (out, "    if (first == last)\n");
-	  fprintf (out,
-		   "        last = first;    /* suppressing stupid compiler warnings */\n");
 	  fprintf (out, "}\n\n");
       }
 
@@ -607,6 +592,12 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
     fprintf (out,
 	     "initialize_epsg (struct epsg_defs **first, struct epsg_defs **last)\n");
     fprintf (out, "{\n/* initializing the EPSG defs list */\n");
+    fprintf (out, "    struct epsg_defs *p;\n");
+    fprintf (out, "/* initializing the EPSG UNKNOWN def [-1] */\n");
+    fprintf (out,
+	     "    p = add_epsg_def (first, last, -1, \"NONE\", -1, \"UNKNOWN SRS\");\n");
+    fprintf (out, "    add_proj4text (p, 0, \"\");\n");
+    fprintf (out, "    add_srs_wkt (p, 0, \"\");\n\n");
     fprintf (out,
 	     "#ifndef OMIT_EPSG    /* full EPSG initialization enabled */\n");
     for (i = 0; i < sect; i++)
