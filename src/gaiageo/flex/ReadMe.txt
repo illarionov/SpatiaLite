@@ -9,12 +9,8 @@ flex -L vanuatuLexer.l
 
 3) a source file named "lex.VanuatuWkt.c" will be
 generated during the above step.
-Please, copy the whole file content and
-then replace [i.e. using cut&paste] the
-correspondign section into "gg_vanuatu.c"
-Search for "VANUATU_FLEX" in order to
-identify the appropriate place where
-to paste the generated code.
+Now you should copy this file into the parent dir:
+cp lex.VanuatuWkt.c ..
 
 
 
@@ -30,12 +26,8 @@ flex -L ewktLexer.l
 
 3) a source file named "lex.Ewkt.c" will be
 generated during the above step.
-Please, copy the whole file content and
-then replace [i.e. using cut&paste] the
-correspondign section into "gg_ewkt.c"
-Search for "EWKT_FLEX" in order to 
-identify the appropriate place where
-to paste the generated code.
+Now you should copy this file into the parent dir:
+cp lex.Ewkt.c ..
 
 
 
@@ -51,12 +43,8 @@ flex -L geoJsonLexer.l
 
 3) a source file named "lex.GeoJson.c" will be
 generated during the above step.
-Please, copy the whole file content and
-then replace [i.e. using cut&paste] the
-correspondign section into "gg_geoJSON.c"
-Search for "GEOJSON_FLEX" in order to 
-identify the appropriate place where
-to paste the generated code.
+Now you should copy this file into the parent dir:
+cp lex.geoJsonLexer.c ..
 
 
 
@@ -72,12 +60,8 @@ flex -L kmlLexer.l
 
 3) a source file named "lex.Kml.c" will be
 generated during the above step.
-Please, copy the whole file content and
-then replace [i.e. using cut&paste] the
-correspondign section into "gg_kml.c"
-Search for "KML_FLEX" in order to 
-identify the appropriate place where
-to paste the generated code.
+Now you should copy this file into the parent dir:
+cp lex.Kml.c ..
 
 
 
@@ -93,9 +77,5 @@ flex -L gmlLexer.l
 
 3) a source file named "lex.Gml.c" will be
 generated during the above step.
-Please, copy the whole file content and
-then replace [i.e. using cut&paste] the
-correspondign section into "gg_gml.c"
-Search for "GML_FLEX" in order to 
-identify the appropriate place where
-to paste the generated code.
+Now you should copy this file into the parent dir:
+cp lex.Gml.c ..

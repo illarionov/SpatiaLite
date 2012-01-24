@@ -29,3 +29,10 @@ libgaiageo_la_SOURCES = gg_advanced.c \
 	gg_gml.c
 
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
+
+EXTRA_DIST = Ewkt.h Ewkt.c lex.Ewkt.c \
+	geoJSON.h geoJSON.c lex.GeoJson.c \
+	Gml.h Gml.c lex.Gml.c \
+	Kml.h Kml.c lex.Kml.c \
+	vanuatuWkt.h vanuatuWkt.c lex.VanuatuWkt.c
+

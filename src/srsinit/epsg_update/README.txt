@@ -36,21 +36,17 @@ Windows [MinGW]:
 
 
 
-STEP #4: generating the C code [inlined EPSG dataset]
+STEP #3: generating the C code [inlined EPSG dataset]
 --------
-# rm epsg_inlined.c
+# rm epsg_inlined.h
 # ./auto_epsg
 
 at the end of this step the "epsg_inlined.c" file will be generated
 
 
 
-STEP #5: final setup
+STEP #4: final setup
 --------
-- edit this source file: 
-  {libspatialite-sources}/src/srsinit/srs_init.c
-- identify the epsg_inlined.c delimiters (comments)
-- completely remove the previous implementation
-- replace with the full code of the latest epsg_inlined.c
-- save and exit
-- commit into the repository
+- copy the generated file into the parent dir:
+  cp epsg_inlined.c ..
+- and finally commit into the repository

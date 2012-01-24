@@ -283,7 +283,7 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./srsinit/libsrsinit.la ./virtualtext/libvirtualtext.la \
 	$(am__append_1)
 @MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 4:0:2
-@MINGW_TRUE@libspatialite_la_LDFLAGS = -no-undefined
+@MINGW_TRUE@libspatialite_la_LDFLAGS = -version-info 3:0:0 -no-undefined
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-recursive
 
