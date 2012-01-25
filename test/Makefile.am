@@ -5,6 +5,7 @@ check_PROGRAMS = check_version \
 		check_shp_load \
 		check_shp_load_3d \
 		shape_cp1252 \
+		shape_primitives \
 		shape_utf8_1 \
 		shape_utf8_2 \
 		shape_3d \
@@ -771,10 +772,5 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/us_yd_m.testcase \
 	sql_stmt_tests/variance.testcase\
 	sql_stmt_tests/yd_m.testcase
-
-
-
-
-
 
 
