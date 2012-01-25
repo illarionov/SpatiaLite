@@ -36,8 +36,8 @@ host_triplet = @host@
 check_PROGRAMS = check_version$(EXEEXT) check_init$(EXEEXT) \
 	check_create$(EXEEXT) check_dbf_load$(EXEEXT) \
 	check_shp_load$(EXEEXT) check_shp_load_3d$(EXEEXT) \
-	shape_cp1252$(EXEEXT) shape_utf8_1$(EXEEXT) \
-	shape_utf8_2$(EXEEXT) shape_3d$(EXEEXT) \
+	shape_cp1252$(EXEEXT) shape_primitives$(EXEEXT) \
+	shape_utf8_1$(EXEEXT) shape_utf8_2$(EXEEXT) shape_3d$(EXEEXT) \
 	check_xls_load$(EXEEXT) check_math_funcs$(EXEEXT) \
 	check_gaia_util$(EXEEXT) check_gaia_utf8$(EXEEXT) \
 	check_extension$(EXEEXT) check_sql_stmt$(EXEEXT) \
@@ -123,6 +123,9 @@ shape_3d_LDADD = $(LDADD)
 shape_cp1252_SOURCES = shape_cp1252.c
 shape_cp1252_OBJECTS = shape_cp1252.$(OBJEXT)
 shape_cp1252_LDADD = $(LDADD)
+shape_primitives_SOURCES = shape_primitives.c
+shape_primitives_OBJECTS = shape_primitives.$(OBJEXT)
+shape_primitives_LDADD = $(LDADD)
 shape_utf8_1_SOURCES = shape_utf8_1.c
 shape_utf8_1_OBJECTS = shape_utf8_1.$(OBJEXT)
 shape_utf8_1_LDADD = $(LDADD)
@@ -149,7 +152,8 @@ SOURCES = check_create.c check_dbf_load.c check_extension.c \
 	check_version.c check_virtualtable1.c check_virtualtable2.c \
 	check_virtualtable3.c check_virtualtable4.c \
 	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
-	shape_3d.c shape_cp1252.c shape_utf8_1.c shape_utf8_2.c
+	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	shape_utf8_2.c
 DIST_SOURCES = check_create.c check_dbf_load.c check_extension.c \
 	check_gaia_utf8.c check_gaia_util.c check_init.c \
 	check_math_funcs.c check_mbrcache.c check_shp_load.c \
@@ -157,7 +161,8 @@ DIST_SOURCES = check_create.c check_dbf_load.c check_extension.c \
 	check_version.c check_virtualtable1.c check_virtualtable2.c \
 	check_virtualtable3.c check_virtualtable4.c \
 	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
-	shape_3d.c shape_cp1252.c shape_utf8_1.c shape_utf8_2.c
+	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	shape_utf8_2.c
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -1146,6 +1151,9 @@ shape_3d$(EXEEXT): $(shape_3d_OBJECTS) $(shape_3d_DEPENDENCIES)
 shape_cp1252$(EXEEXT): $(shape_cp1252_OBJECTS) $(shape_cp1252_DEPENDENCIES) 
 	@rm -f shape_cp1252$(EXEEXT)
 	$(LINK) $(shape_cp1252_OBJECTS) $(shape_cp1252_LDADD) $(LIBS)
+shape_primitives$(EXEEXT): $(shape_primitives_OBJECTS) $(shape_primitives_DEPENDENCIES) 
+	@rm -f shape_primitives$(EXEEXT)
+	$(LINK) $(shape_primitives_OBJECTS) $(shape_primitives_LDADD) $(LIBS)
 shape_utf8_1$(EXEEXT): $(shape_utf8_1_OBJECTS) $(shape_utf8_1_DEPENDENCIES) 
 	@rm -f shape_utf8_1$(EXEEXT)
 	$(LINK) $(shape_utf8_1_OBJECTS) $(shape_utf8_1_LDADD) $(LIBS)
@@ -1181,6 +1189,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_xls_load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_3d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_cp1252.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_primitives.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_utf8_1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_utf8_2.Po@am__quote@
 

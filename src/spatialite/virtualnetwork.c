@@ -51,11 +51,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <math.h>
 #include <float.h>
 
-#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
-#include <spatialite/sqlite3.h>
-#else
-#include <sqlite3.h>
-#endif
+#include <spatialite/sqlite.h>
 
 #include <spatialite/spatialite.h>
 #include <spatialite/gaiaaux.h>
@@ -1066,8 +1062,8 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 					      double x;
 					      double y;
 					      gaiaGetPoint
-						  (geom->FirstLinestring->Coords,
-						   iv, &x, &y);
+						  (geom->FirstLinestring->
+						   Coords, iv, &x, &y);
 					      *(coords + ((iv * 2) + 0)) = x;
 					      *(coords + ((iv * 2) + 1)) = y;
 					  }
@@ -1079,7 +1075,8 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 								      to_id,
 								      points,
 								      coords,
-								      geom->Srid,
+								      geom->
+								      Srid,
 								      name);
 				    }
 				  else

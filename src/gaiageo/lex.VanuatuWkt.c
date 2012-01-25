@@ -1868,7 +1868,7 @@ YY_BUFFER_STATE VanuatuWkt_scan_bytes  (yyconst char * yybytes, int  _yybytes_le
 
 static void yy_fatal_error (yyconst char* msg )
 {
-    	(void) fprintf( stderr, "%s\n", msg );
+    	spatialite_e("%s\n", msg );
 	exit( YY_EXIT_FAILURE );
 }
 
@@ -2088,7 +2088,7 @@ void vanuatu_reset_lexer(void)
  */
 void VanuatuWkterror(char *s)
 {
-  printf("error: %s at line: %d col: %d\n",s,vanuatu_line,vanuatu_col);
+  spatialite_e("error: %s at line: %d col: %d\n",s,vanuatu_line,vanuatu_col);
 
 }
 

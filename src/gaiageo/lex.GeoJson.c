@@ -1799,7 +1799,7 @@ YY_BUFFER_STATE GeoJson_scan_bytes  (yyconst char * yybytes, int  _yybytes_len )
 
 static void yy_fatal_error (yyconst char* msg )
 {
-    	(void) fprintf( stderr, "%s\n", msg );
+    	spatialite_e("%s\n", msg );
 	exit( YY_EXIT_FAILURE );
 }
 
@@ -2019,7 +2019,7 @@ void geoJSON_reset_lexer(void)
  */
 void GeoJsonError(char *s)
 {
-  printf("error: %s at line: %d col: %d\n",s,geoJSON_line,geoJSON_col);
+  spatialite_e("error: %s at line: %d col: %d\n",s,geoJSON_line,geoJSON_col);
 
 }
 

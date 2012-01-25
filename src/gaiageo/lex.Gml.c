@@ -1636,7 +1636,7 @@ YY_BUFFER_STATE Gml_scan_bytes  (yyconst char * yybytes, int  _yybytes_len )
 
 static void yy_fatal_error (yyconst char* msg )
 {
-    	(void) fprintf( stderr, "%s\n", msg );
+    	spatialite_e("%s\n", msg );
 	exit( YY_EXIT_FAILURE );
 }
 
@@ -1856,7 +1856,7 @@ void gml_reset_lexer(void)
  */
 void GmlError(char *s)
 {
-  printf("error: %s at line: %d col: %d\n",s,gml_line,gml_col);
+  spatialite_e("error: %s at line: %d col: %d\n",s,gml_line,gml_col);
 
 }
 

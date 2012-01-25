@@ -48,11 +48,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include <assert.h>
 
-#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
-#include <spatialite/sqlite3.h>
-#else
-#include <sqlite3.h>
-#endif
+#include <spatialite/sqlite.h>
+#include <spatialite/debug.h>
 
 #include <spatialite/gaiageo.h>
 
@@ -152,14 +149,14 @@ gml_proj_params (sqlite3 * sqlite, int srid, char *proj_params)
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "unknown SRID: %d\t<%s>\n", srid, errMsg);
+	  spatialite_e ("unknown SRID: %d\t<%s>\n", srid, errMsg);
 	  sqlite3_free (errMsg);
 	  return;
       }
     for (i = 1; i <= rows; i++)
 	strcpy (proj_params, results[(i * columns)]);
     if (*proj_params == '\0')
-	fprintf (stderr, "unknown SRID: %d\n", srid);
+	spatialite_e ("unknown SRID: %d\n", srid);
     sqlite3_free_table (results);
 }
 

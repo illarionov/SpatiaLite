@@ -49,11 +49,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <string.h>
 #include <math.h>
 
-#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
-#include <spatialite/sqlite3.h>
-#else
-#include <sqlite3.h>
-#endif
+#include <spatialite/sqlite.h>
 
 #include <spatialite/spatialite.h>
 #include <spatialite/gaiaaux.h>
@@ -324,11 +320,11 @@ vspidx_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIdxInfo)
 	  if (p->usable)
 	    {
 		if (p->iColumn == 0 && p->op == SQLITE_INDEX_CONSTRAINT_EQ)
-		      table++;
+		    table++;
 		else if (p->iColumn == 1 && p->op == SQLITE_INDEX_CONSTRAINT_EQ)
-		      geom++;
+		    geom++;
 		else if (p->iColumn == 2 && p->op == SQLITE_INDEX_CONSTRAINT_EQ)
-		      mbr++;
+		    mbr++;
 		else
 		    errors++;
 	    }
@@ -505,10 +501,10 @@ vspidx_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
     gaiaMbrGeometry (geom);
 
 /* adjusting the MBR so to compensate for DOUBLE/FLOAT truncations */
-    minx = (float)(geom->MinX);
-    miny = (float)(geom->MinY);
-    maxx = (float)(geom->MaxX);
-    maxy = (float)(geom->MaxY);
+    minx = (float) (geom->MinX);
+    miny = (float) (geom->MinY);
+    maxx = (float) (geom->MaxX);
+    maxy = (float) (geom->MaxY);
     tic = fabs (geom->MinX - minx);
     tic2 = fabs (geom->MinY - miny);
     if (tic2 > tic)

@@ -142,7 +142,7 @@ void vanuatu_reset_lexer(void)
  */
 void VanuatuWkterror(char *s)
 {
-  printf("error: %s at line: %d col: %d\n",s,vanuatu_line,vanuatu_col);
+  spatialite_e("error: %s at line: %d col: %d\n",s,vanuatu_line,vanuatu_col);
 
 }
 

@@ -10,4 +10,6 @@ nobase_include_HEADERS = spatialite.h \
 	spatialite/gg_formats.h \
 	spatialite/gg_dynamic.h \
 	spatialite/gg_advanced.h \
-	spatialite/spatialite.h
+	spatialite/spatialite.h \
+	spatialite/sqlite.h \
+	spatialite/debug.h

@@ -48,11 +48,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
-#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
-#include <spatialite/sqlite3.h>
-#else
-#include <sqlite3.h>
-#endif
+#include <spatialite/sqlite.h>
 
 #include <spatialite/spatialite.h>
 #include <spatialite/gaiaaux.h>

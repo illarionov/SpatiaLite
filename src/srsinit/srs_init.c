@@ -47,11 +47,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
-#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
-#include <spatialite/sqlite3.h>
-#else
-#include <sqlite3.h>
-#endif
+#include <spatialite/sqlite.h>
+#include <spatialite/debug.h>
 
 #ifdef _WIN32
 #define strcasecmp	_stricmp
@@ -232,7 +229,7 @@ populate_spatial_ref_sys (sqlite3 * handle)
     ret = sqlite3_exec (handle, "BEGIN", NULL, 0, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "%s\n", errMsg);
+	  spatialite_e ("%s\n", errMsg);
 	  sqlite3_free (errMsg);
 	  goto error;
       }
@@ -245,7 +242,7 @@ populate_spatial_ref_sys (sqlite3 * handle)
     ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "%s\n", sqlite3_errmsg (handle));
+	  spatialite_e ("%s\n", sqlite3_errmsg (handle));
 	  goto error;
       }
     p = first;
@@ -273,7 +270,7 @@ populate_spatial_ref_sys (sqlite3 * handle)
 	      ;
 	  else
 	    {
-		fprintf (stderr, "%s\n", sqlite3_errmsg (handle));
+		spatialite_e ("%s\n", sqlite3_errmsg (handle));
 		sqlite3_finalize (stmt);
 		goto error;
 	    }
@@ -285,7 +282,7 @@ populate_spatial_ref_sys (sqlite3 * handle)
     ret = sqlite3_exec (handle, "COMMIT", NULL, 0, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "%s\n", errMsg);
+	  spatialite_e ("%s\n", errMsg);
 	  sqlite3_free (errMsg);
 	  goto error;
       }
@@ -299,7 +296,7 @@ populate_spatial_ref_sys (sqlite3 * handle)
     ret = sqlite3_exec (handle, "ROLLBACK", NULL, 0, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "%s\n", errMsg);
+	  spatialite_e ("%s\n", errMsg);
 	  sqlite3_free (errMsg);
       }
 
@@ -329,7 +326,7 @@ exists_spatial_ref_sys (sqlite3 * handle)
     if (ret != SQLITE_OK)
       {
 /* some error occurred */
-	  fprintf (stderr, "XX %s\n", err_msg);
+	  spatialite_e ("XX %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -365,7 +362,7 @@ check_spatial_ref_sys (sqlite3 * handle)
     if (ret != SQLITE_OK)
       {
 /* some error occurred */
-	  fprintf (stderr, "%s\n", err_msg);
+	  spatialite_e ("%s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -417,7 +414,7 @@ spatial_ref_sys_count (sqlite3 * handle)
     if (ret != SQLITE_OK)
       {
 /* some error occurred */
-	  fprintf (stderr, "%s\n", err_msg);
+	  spatialite_e ("%s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -439,28 +436,28 @@ spatial_ref_sys_init (sqlite3 * handle, int verbose)
     if (!exists_spatial_ref_sys (handle))
       {
 	  if (verbose)
-	      fprintf (stderr, "the SPATIAL_REF_SYS table doesn't exists\n");
+	      spatialite_e ("the SPATIAL_REF_SYS table doesn't exists\n");
 	  return 0;
       }
     if (!check_spatial_ref_sys (handle))
       {
 	  if (verbose)
-	      fprintf (stderr,
-		       "the SPATIAL_REF_SYS table has an unsupported layout\n");
+	      spatialite_e
+		  ("the SPATIAL_REF_SYS table has an unsupported layout\n");
 	  return 0;
       }
     if (spatial_ref_sys_count (handle))
       {
 	  if (verbose)
-	      fprintf (stderr,
-		       "the SPATIAL_REF_SYS table already contains some row(s)\n");
+	      spatialite_e
+		  ("the SPATIAL_REF_SYS table already contains some row(s)\n");
 	  return 0;
       }
     if (populate_spatial_ref_sys (handle))
       {
 	  if (verbose)
-	      fprintf (stderr,
-		       "OK: the SPATIAL_REF_SYS table was successfully populated\n");
+	      spatialite_e
+		  ("OK: the SPATIAL_REF_SYS table was successfully populated\n");
 	  return 1;
       }
     return 0;

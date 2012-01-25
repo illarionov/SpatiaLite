@@ -49,7 +49,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <string.h>
 #include <errno.h>
 
-#if OMIT_ICONV == 0     /* ICONV is absolutely required */
+#if OMIT_ICONV == 0		/* ICONV is absolutely required */
 
 #if defined(__MINGW32__) || defined(_WIN32)
 #define LIBICONV_STATIC
@@ -58,7 +58,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #ifdef _MSC_VER
 /* <localcharset.h> isn't supported on OSGeo4W */
 /* applying a tricky workaround to fix this issue */
-extern const char * locale_charset (void);
+extern const char *locale_charset (void);
 #else /* sane Windows - not OSGeo4W */
 #include <localcharset.h>
 #endif /* end localcharset */
@@ -174,5 +174,4 @@ gaiaConvertToUTF8 (void *cvtCS, const char *buf, int buflen, int *err)
     return utf8buf;
 }
 
-#endif  /* ICONV enabled/disabled */
-
+#endif /* ICONV enabled/disabled */

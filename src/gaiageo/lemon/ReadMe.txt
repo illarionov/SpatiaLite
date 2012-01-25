@@ -32,7 +32,7 @@ you have to edit first the definitions file
 vanuatuWkt.y
 
 2) then run:
-lemon -l vanuatuWkt.y
+lemon_src/lemon -l vanuatuWkt.y
 
 3) during the above step the following files will be
 generated:
@@ -40,7 +40,13 @@ vanuatuWkt.c [the C code implementing the parser]
 vanuatuWkt.h [C header file]
 vanuatuWkt.out [check file - useful for debugging]
 
-3.1] and finally you must copy both generated files
+3.1] IMPORTANT NOTICE: carefully check the generated *.c 
+code; you should manually replace any occurrence of:
+sprintf(stderr, .....
+with:
+spatialite_e(.....
+
+3.2] and finally you must copy both generated files
 into the parent dir:
 cp vanuatuWkt.h ..
 cp vanuatuWkt.c ..
@@ -53,7 +59,7 @@ you have to edit first the definitions file
 Ewkt.y
 
 2) then run:
-lemon -l Ewkt.y
+lemon_src/lemon -l Ewkt.y
 
 3) during the above step the following files will be
 generated:
@@ -61,7 +67,13 @@ Ewkt.c [the C code implementing the parser]
 Ewkt.h [C header file]
 Ewkt.out [check file - useful for debugging]
 
-3.1] and finally you must copy both generated files
+3.1] IMPORTANT NOTICE: carefully check the generated *.c 
+code; you should manually replace any occurrence of:
+sprintf(stderr, .....
+with:
+spatialite_e(.....
+
+3.2] and finally you must copy both generated files
 into the parent dir:
 cp Ewkt.h ..
 cp Ewkt.c ..
@@ -74,7 +86,7 @@ you have to edit first the definitions file
 geoJSON.y
 
 2) then run:
-lemon -l geoJSON.y
+lemon_src/lemon -l geoJSON.y
 
 3) during the above step the following files will be
 generated:
@@ -82,7 +94,13 @@ geoJSON.c [the C code implementing the parser]
 geoJSON.h [C header file]
 geoJSON.out [check file - useful for debugging]
 
-3.1] and finally you must copy both generated files
+3.1] IMPORTANT NOTICE: carefully check the generated *.c 
+code; you should manually replace any occurrence of:
+sprintf(stderr, .....
+with:
+spatialite_e(.....
+
+3.2] and finally you must copy both generated files
 into the parent dir:
 cp geoJSON.h ..
 cp geoJSON.c ..
@@ -95,7 +113,7 @@ you have to edit first the definitions file
 Kml.y
 
 2) then run:
-lemon -l Kml.y
+lemon_src/lemon -l Kml.y
 
 3) during the above step the following files will be
 generated:
@@ -103,7 +121,13 @@ Kml.c [the C code implementing the parser]
 Kml.h [C header file]
 Kml.out [check file - useful for debugging]
 
-3.1] and finally you must copy both generated files
+3.1] IMPORTANT NOTICE: carefully check the generated *.c 
+code; you should manually replace any occurrence of:
+sprintf(stderr, .....
+with:
+spatialite_e(.....
+
+3.2] and finally you must copy both generated files
 into the -/lemon/include dir:
 cp Kml.h ..
 cp Kml.c ..
@@ -116,7 +140,7 @@ you have to edit first the definitions file
 Gml.y
 
 2) then run:
-lemon -l Gml.y
+lemon_src/lemon -l Gml.y
 
 3) during the above step the following files will be
 generated:
@@ -124,7 +148,13 @@ Gml.c [the C code implementing the parser]
 Gml.h [C header file]
 Gml.out [check file - useful for debugging]
 
-3.1] and finally you must copy both generated files
+3.1] IMPORTANT NOTICE: carefully check the generated *.c 
+code; you should manually replace any occurrence of:
+sprintf(stderr, .....
+with:
+spatialite_e(.....
+
+3.2] and finally you must copy both generated files
 into the -/lemon/include dir:
 cp Gml.h ..
 cp Gml.c ..

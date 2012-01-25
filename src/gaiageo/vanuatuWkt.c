@@ -843,7 +843,7 @@ static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
    /* Here code is inserted which will execute if the parser
    ** stack every overflows */
 
-     fprintf(stderr,"Giving up.  Parser stack overflow\n");
+     spatialite_e("Giving up.  Parser stack overflow\n");
    ParseARG_STORE; /* Suppress warning about unused %extra_argument var */
 }
 

@@ -45,7 +45,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 // Output to stderr when stack overflows
 %stack_overflow {
-     fprintf(stderr,"Giving up.  Parser stack overflow\n");
+     fprintf(stderr, "Giving up.  Parser stack overflow\n");
 }
 
 // Increase this number if necessary

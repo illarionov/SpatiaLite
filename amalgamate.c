@@ -409,7 +409,7 @@ do_copy (FILE * out, const char *basedir, const char *file)
 		      row[strlen (row) - 1] = '\0';
 		      fprintf (out, "/* %s */\n", row);
 		      if (auto_path != NULL)
-			    do_copy_plain (out, auto_path);
+			  do_copy_plain (out, auto_path);
 		      continue;
 		  }
 		fprintf (out, "%s", row);
@@ -770,7 +770,9 @@ do_makefile (FILE * out)
     fprintf (out, "\tspatialite/gg_advanced.h \\\n");
     fprintf (out, "\tspatialite/sqlite3.h \\\n");
     fprintf (out, "\tspatialite/sqlite3ext.h \\\n");
-    fprintf (out, "\tspatialite/spatialite.h\n");
+    fprintf (out, "\tspatialite/spatialite.h \\\n");
+    fprintf (out, "\tspatialite/sqlite.h \\\n");
+    fprintf (out, "\tspatialite/debug.h\n");
 }
 
 static void
@@ -834,6 +836,8 @@ main ()
     do_copy (out, "/headers/spatialite/", "gg_dynamic.h");
     do_copy (out, "/headers/spatialite/", "gg_advanced.h");
     do_copy (out, "/headers/spatialite/", "spatialite.h");
+    do_copy (out, "/headers/spatialite/", "sqlite.h");
+    do_copy (out, "/headers/spatialite/", "debug.h");
     do_copy (out, "/gaiaaux/", "gg_sqlaux.c");
     do_copy (out, "/gaiaaux/", "gg_utf8.c");
     do_copy (out, "/gaiaexif/", "gaia_exif.c");
@@ -1003,6 +1007,24 @@ main ()
       }
     do_copy_export (out, "/headers/spatialite/spatialite.h", &first_def,
 		    &last_def);
+    fclose (out);
+    out = fopen ("amalgamation/headers/spatialite/sqlite.h", "wb");
+    if (!out)
+      {
+	  fprintf (stderr,
+		   "Error opening amalgamation/headers/spatialite/sqlite.h\n");
+	  return 1;
+      }
+    do_copy_export (out, "/headers/spatialite/sqlite.h", &first_def, &last_def);
+    fclose (out);
+    out = fopen ("amalgamation/headers/spatialite/debug.h", "wb");
+    if (!out)
+      {
+	  fprintf (stderr,
+		   "Error opening amalgamation/headers/spatialite/debug.h\n");
+	  return 1;
+      }
+    do_copy_export (out, "/headers/spatialite/debug.h", &first_def, &last_def);
     fclose (out);
     out = fopen ("amalgamation/headers/spatialite.h", "wb");
     if (!out)

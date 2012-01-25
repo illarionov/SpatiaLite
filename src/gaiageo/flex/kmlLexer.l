@@ -95,7 +95,7 @@ void kml_reset_lexer(void)
  */
 void KmlError(char *s)
 {
-  printf("error: %s at line: %d col: %d\n",s,kml_line,kml_col);
+  spatialite_e("error: %s at line: %d col: %d\n",s,kml_line,kml_col);
 
 }
 

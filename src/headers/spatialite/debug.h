@@ -1,7 +1,7 @@
-/*
- version.c -- Gaia spatial support for SQLite
-
- version 3.0, 2011 July 20
+/* 
+ debug.h -- abstract defs for standard output functions
+  
+ version 3.0, 2012 January 25
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -23,10 +23,11 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2008
+Portions created by the Initial Developer are Copyright (C) 2012
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
+Pepijn Van Eeckhoudt <pepijnvaneeckhoudt@luciad.com>
 
 Alternatively, the contents of this file may be used under the terms of
 either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -42,14 +43,35 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
-#include <spatialite/sqlite.h>
+#ifndef SPATIALITE_DEBUG_H
+#define SPATIALITE_DEBUG_H
 
-#include <spatialite.h>
+#ifdef __ANDROID__		/* Android specific */
 
-const char spatialiteversion[] = VERSION;
+#include <android/log.h>
 
-SPATIALITE_DECLARE const char *
-spatialite_version (void)
-{
-    return spatialiteversion;
-}
+#ifdef DEBUG
+#define spatialite_d(...)
+#else
+#define spatialite_d(...) __android_log_print(ANDROID_LOG_DEBUG, "Spatialite", __VA_ARGS__)
+#endif
+
+#define spatialite_i(...) __android_log_print(ANDROID_LOG_INFO, "Spatialite", __VA_ARGS__)
+#define spatialite_e(...) __android_log_print(ANDROID_LOG_ERROR, "Spatialite", __VA_ARGS__)
+
+#else /* any other standard platform (Win, Linux, Mac) */
+
+#include <stdio.h>
+
+#ifdef DEBUG
+#define spatialite_d(...)
+#else
+#define spatialite_d(...) fprintf(stdout, __VA_ARGS__)
+#endif
+
+#define spatialite_i(...) fprintf(stdout, __VA_ARGS__)
+#define spatialite_e(...) fprintf(stderr, __VA_ARGS__)
+
+#endif /* platform specific */
+
+#endif

@@ -28,6 +28,8 @@ Portions created by the Initial Developer are Copyright (C) 2008
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
+Pepijn Van Eeckhoudt <pepijnvaneeckhoudt@luciad.com>
+(implementing Android support)
 
 Alternatively, the contents of this file may be used under the terms of
 either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -59,11 +61,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <unistd.h>
 #endif
 
-#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
-#include <spatialite/sqlite3ext.h>
-#else
-#include <sqlite3ext.h>
-#endif
+#include <spatialite/sqlite.h>
+#include <spatialite/debug.h>
 
 #include <spatialite/gaiaaux.h>
 #include <spatialite/gaiageo.h>
@@ -96,7 +95,7 @@ struct gaia_rtree_mbr
 };
 #endif /* end RTree geometry callbacks */
 
-static SQLITE_EXTENSION_INIT1 struct spatial_index_str
+SQLITE_EXTENSION_INIT1 struct spatial_index_str
 {
 /* a struct to implement a linked list of spatial-indexes */
     char ValidRtree;
@@ -993,7 +992,7 @@ updateSpatiaLiteHistory (sqlite3 * sqlite, const char *table,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "SQL error: %s\n%s\n", sql, sqlite3_errmsg (sqlite));
+	  spatialite_e ("SQL error: %s\n%s\n", sql, sqlite3_errmsg (sqlite));
 	  goto stop;
       }
     sqlite3_reset (stmt);
@@ -1007,7 +1006,7 @@ updateSpatiaLiteHistory (sqlite3 * sqlite, const char *table,
     ret = sqlite3_step (stmt);
     if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 	goto stop;
-    fprintf (stderr, "SQL error: %s\n", sqlite3_errmsg (sqlite));
+    spatialite_e ("SQL error: %s\n", sqlite3_errmsg (sqlite));
 
   stop:
     if (stmt)
@@ -1197,7 +1196,7 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     sqlite3_result_int (context, 1);
     return;
   error:
-    fprintf (stderr, " InitSpatiaMetaData ()error:\"%s\"\n", errMsg);
+    spatialite_e (" InitSpatiaMetaData ()error:\"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -1228,8 +1227,8 @@ recoverGeomColumn (sqlite3 * sqlite, const unsigned char *table,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "recoverGeomColumn: error %d \"%s\"\n",
-		   sqlite3_errcode (sqlite), sqlite3_errmsg (sqlite));
+	  spatialite_e ("recoverGeomColumn: error %d \"%s\"\n",
+			sqlite3_errcode (sqlite), sqlite3_errmsg (sqlite));
 	  return 0;
       }
     while (1)
@@ -1280,8 +1279,8 @@ recoverGeomColumn (sqlite3 * sqlite, const unsigned char *table,
     ret = sqlite3_finalize (stmt);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "recoverGeomColumn: error %d \"%s\"\n",
-		   sqlite3_errcode (sqlite), sqlite3_errmsg (sqlite));
+	  spatialite_e ("recoverGeomColumn: error %d \"%s\"\n",
+			sqlite3_errcode (sqlite), sqlite3_errmsg (sqlite));
 	  return 0;
       }
     return ok;
@@ -1314,7 +1313,7 @@ buildSpatialIndex (sqlite3 * sqlite, const unsigned char *table,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "buildSpatialIndex error: \"%s\"\n", errMsg);
+	  spatialite_e ("buildSpatialIndex error: \"%s\"\n", errMsg);
 	  sqlite3_free (errMsg);
       }
 }
@@ -1365,7 +1364,7 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "updateTableTriggers: \"%s\"\n", errMsg);
+	  spatialite_e ("updateTableTriggers: \"%s\"\n", errMsg);
 	  sqlite3_free (errMsg);
 	  return;
       }
@@ -1734,7 +1733,7 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
       }
     goto index_cleanup;
   error:
-    fprintf (stderr, "updateTableTriggers: \"%s\"\n", errMsg);
+    spatialite_e ("updateTableTriggers: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
   index_cleanup:
     curr_idx = first_idx;
@@ -1786,32 +1785,32 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "AddGeometryColumn() error: argument 1 [table_name] is not of the String type\n");
+	  spatialite_e
+	      ("AddGeometryColumn() error: argument 1 [table_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     table = sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "AddGeometryColumn() error: argument 2 [column_name] is not of the String type\n");
+	  spatialite_e
+	      ("AddGeometryColumn() error: argument 2 [column_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     column = sqlite3_value_text (argv[1]);
     if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
       {
-	  fprintf (stderr,
-		   "AddGeometryColumn() error: argument 3 [SRID] is not of the Integer type\n");
+	  spatialite_e
+	      ("AddGeometryColumn() error: argument 3 [SRID] is not of the Integer type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     srid = sqlite3_value_int (argv[2]);
     if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "AddGeometryColumn() error: argument 4 [geometry_type] is not of the String type\n");
+	  spatialite_e
+	      ("AddGeometryColumn() error: argument 4 [geometry_type] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -1838,8 +1837,8 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
       }
     else
       {
-	  fprintf (stderr,
-		   "AddGeometryColumn() error: argument 5 [dimension] is not of the Integer or Text type\n");
+	  spatialite_e
+	      ("AddGeometryColumn() error: argument 5 [dimension] is not of the Integer or Text type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -1848,8 +1847,8 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 	  /* optional NOT NULL arg */
 	  if (sqlite3_value_type (argv[5]) != SQLITE_INTEGER)
 	    {
-		fprintf (stderr,
-			 "AddGeometryColumn() error: argument 6 [not null] is not of the Integer type\n");
+		spatialite_e
+		    ("AddGeometryColumn() error: argument 6 [not null] is not of the Integer type\n");
 		sqlite3_result_int (context, 0);
 		return;
 	    }
@@ -1874,8 +1873,8 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 	xtype = -1;
     if (xtype == GAIA_UNKNOWN)
       {
-	  fprintf (stderr,
-		   "AddGeometryColumn() error: argument 4 [geometry_type] has an illegal value\n");
+	  spatialite_e
+	      ("AddGeometryColumn() error: argument 4 [geometry_type] has an illegal value\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -1884,8 +1883,8 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 	;
     else
       {
-	  fprintf (stderr,
-		   "AddGeometryColumn() error: argument 5 [dimension] ILLEGAL VALUE\n");
+	  spatialite_e
+	      ("AddGeometryColumn() error: argument 5 [dimension] ILLEGAL VALUE\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -1900,7 +1899,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "AddGeometryColumn: \"%s\"\n", errMsg);
+	  spatialite_e ("AddGeometryColumn: \"%s\"\n", errMsg);
 	  sqlite3_free (errMsg);
 	  return;
       }
@@ -1910,9 +1909,8 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
     sqlite3_free_table (results);
     if (*tblname == '\0')
       {
-	  fprintf (stderr,
-		   "AddGeometryColumn() error: table '%s' does not exist\n",
-		   table);
+	  spatialite_e
+	      ("AddGeometryColumn() error: table '%s' does not exist\n", table);
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -2078,7 +2076,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 			     (const char *) column, sql);
     return;
   error:
-    fprintf (stderr, "AddGeometryColumn() error: \"%s\"\n", errMsg);
+    spatialite_e ("AddGeometryColumn() error: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -2120,32 +2118,32 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "RecoverGeometryColumn() error: argument 1 [table_name] is not of the String type\n");
+	  spatialite_e
+	      ("RecoverGeometryColumn() error: argument 1 [table_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     table = sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "RecoverGeometryColumn() error: argument 2 [column_name] is not of the String type\n");
+	  spatialite_e
+	      ("RecoverGeometryColumn() error: argument 2 [column_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     column = sqlite3_value_text (argv[1]);
     if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
       {
-	  fprintf (stderr,
-		   "RecoverGeometryColumn() error: argument 3 [SRID] is not of the Integer type\n");
+	  spatialite_e
+	      ("RecoverGeometryColumn() error: argument 3 [SRID] is not of the Integer type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     srid = sqlite3_value_int (argv[2]);
     if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "RecoverGeometryColumn() error: argument 4 [geometry_type] is not of the String type\n");
+	  spatialite_e
+	      ("RecoverGeometryColumn() error: argument 4 [geometry_type] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -2172,8 +2170,8 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
       }
     else
       {
-	  fprintf (stderr,
-		   "RecoverGeometryColumn() error: argument 5 [dimension] is not of the Integer or Text type\n");
+	  spatialite_e
+	      ("RecoverGeometryColumn() error: argument 5 [dimension] is not of the Integer or Text type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -2196,8 +2194,8 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 	xtype = -1;
     if (xtype == GAIA_UNKNOWN)
       {
-	  fprintf (stderr,
-		   "RecoverGeometryColumn() error: argument 4 [geometry_type] has an illegal value\n");
+	  spatialite_e
+	      ("RecoverGeometryColumn() error: argument 4 [geometry_type] has an illegal value\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -2206,8 +2204,8 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 	;
     else
       {
-	  fprintf (stderr,
-		   "RecoverGeometryColumn() error: argument 5 [dimension] ILLEGAL VALUE\n");
+	  spatialite_e
+	      ("RecoverGeometryColumn() error: argument 5 [dimension] ILLEGAL VALUE\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -2222,7 +2220,7 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "RecoverGeometryColumn: \"%s\"\n", errMsg);
+	  spatialite_e ("RecoverGeometryColumn: \"%s\"\n", errMsg);
 	  sqlite3_free (errMsg);
 	  return;
       }
@@ -2235,9 +2233,9 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     sqlite3_free_table (results);
     if (*tblname == '\0')
       {
-	  fprintf (stderr,
-		   "RecoverGeometryColumn() error: table '%s' does not exist\n",
-		   table);
+	  spatialite_e
+	      ("RecoverGeometryColumn() error: table '%s' does not exist\n",
+	       table);
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -2374,7 +2372,7 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 	xtype = -1;		/* GEOMETRY */
     if (!recoverGeomColumn (sqlite, table, column, xtype, dims, srid))
       {
-	  fprintf (stderr, "RecoverGeometryColumn(): validation failed\n");
+	  spatialite_e ("RecoverGeometryColumn(): validation failed\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -2515,7 +2513,7 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 			     (const char *) column, sql);
     return;
   error:
-    fprintf (stderr, "RecoverGeometryColumn() error: \"%s\"\n", errMsg);
+    spatialite_e ("RecoverGeometryColumn() error: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -2544,16 +2542,16 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "DiscardGeometryColumn() error: argument 1 [table_name] is not of the String type\n");
+	  spatialite_e
+	      ("DiscardGeometryColumn() error: argument 1 [table_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     table = sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "DiscardGeometryColumn() error: argument 2 [column_name] is not of the String type\n");
+	  spatialite_e
+	      ("DiscardGeometryColumn() error: argument 2 [column_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -2651,7 +2649,7 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
 			     (const char *) column, sql);
     return;
   error:
-    fprintf (stderr, "DiscardGeometryColumn() error: \"%s\"\n", errMsg);
+    spatialite_e ("DiscardGeometryColumn() error: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -2695,8 +2693,8 @@ fnct_InitFDOSpatialMetaData (sqlite3_context * context, int argc,
 	goto error;
     sqlite3_result_int (context, 1);
     return;
-  error:fprintf (stderr, "InitFDOSpatiaMetaData() error: \"%s\"\n",
-	     errMsg);
+  error:
+    spatialite_e ("InitFDOSpatiaMetaData() error: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -2727,8 +2725,8 @@ recoverFDOGeomColumn (sqlite3 * sqlite, const unsigned char *table,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "recoverFDOGeomColumn: error %d \"%s\"\n",
-		   sqlite3_errcode (sqlite), sqlite3_errmsg (sqlite));
+	  spatialite_e ("recoverFDOGeomColumn: error %d \"%s\"\n",
+			sqlite3_errcode (sqlite), sqlite3_errmsg (sqlite));
 	  return 0;
       }
     while (1)
@@ -2772,8 +2770,8 @@ recoverFDOGeomColumn (sqlite3 * sqlite, const unsigned char *table,
     ret = sqlite3_finalize (stmt);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "recoverFDOGeomColumn: error %d \"%s\"\n",
-		   sqlite3_errcode (sqlite), sqlite3_errmsg (sqlite));
+	  spatialite_e ("recoverFDOGeomColumn: error %d \"%s\"\n",
+			sqlite3_errcode (sqlite), sqlite3_errmsg (sqlite));
 	  return 0;
       }
     return ok;
@@ -2814,48 +2812,48 @@ fnct_AddFDOGeometryColumn (sqlite3_context * context, int argc,
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "AddFDOGeometryColumn() error: argument 1 [table_name] is not of the String type\n");
+	  spatialite_e
+	      ("AddFDOGeometryColumn() error: argument 1 [table_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     table = (const char *) sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "AddFDOGeometryColumn() error: argument 2 [column_name] is not of the String type\n");
+	  spatialite_e
+	      ("AddFDOGeometryColumn() error: argument 2 [column_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     column = (const char *) sqlite3_value_text (argv[1]);
     if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
       {
-	  fprintf (stderr,
-		   "AddFDOGeometryColumn() error: argument 3 [SRID] is not of the Integer type\n");
+	  spatialite_e
+	      ("AddFDOGeometryColumn() error: argument 3 [SRID] is not of the Integer type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     srid = sqlite3_value_int (argv[2]);
     if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
       {
-	  fprintf (stderr,
-		   "AddFDOGeometryColumn() error: argument 4 [geometry_type] is not of the Integer type\n");
+	  spatialite_e
+	      ("AddFDOGeometryColumn() error: argument 4 [geometry_type] is not of the Integer type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     type = sqlite3_value_int (argv[3]);
     if (sqlite3_value_type (argv[4]) != SQLITE_INTEGER)
       {
-	  fprintf (stderr,
-		   "AddFDOGeometryColumn() error: argument 5 [dimension] is not of the Integer type\n");
+	  spatialite_e
+	      ("AddFDOGeometryColumn() error: argument 5 [dimension] is not of the Integer type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     dimension = sqlite3_value_int (argv[4]);
     if (sqlite3_value_type (argv[5]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "AddFDOGeometryColumn() error: argument 6 [geometry_format] is not of the String type\n");
+	  spatialite_e
+	      ("AddFDOGeometryColumn() error: argument 6 [geometry_format] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -2874,15 +2872,15 @@ fnct_AddFDOGeometryColumn (sqlite3_context * context, int argc,
 	;
     else
       {
-	  fprintf (stderr,
-		   "AddFDOGeometryColumn() error: argument 4 [geometry_type] has an illegal value\n");
+	  spatialite_e
+	      ("AddFDOGeometryColumn() error: argument 4 [geometry_type] has an illegal value\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     if (dimension < 2 || dimension > 4)
       {
-	  fprintf (stderr,
-		   "AddFDOGeometryColumn() error: argument 5 [dimension] current version only accepts dimension=2,3,4\n");
+	  spatialite_e
+	      ("AddFDOGeometryColumn() error: argument 5 [dimension] current version only accepts dimension=2,3,4\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -2894,8 +2892,8 @@ fnct_AddFDOGeometryColumn (sqlite3_context * context, int argc,
 	strcpy (xformat, "FGF");
     else
       {
-	  fprintf (stderr,
-		   "AddFDOGeometryColumn() error: argument 6 [geometry_format] has to be one of: WKT,WKB,FGF\n");
+	  spatialite_e
+	      ("AddFDOGeometryColumn() error: argument 6 [geometry_format] has to be one of: WKT,WKB,FGF\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -2914,7 +2912,7 @@ fnct_AddFDOGeometryColumn (sqlite3_context * context, int argc,
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "AddFDOGeometryColumn: \"%s\"\n", errMsg);
+	  spatialite_e ("AddFDOGeometryColumn: \"%s\"\n", errMsg);
 	  sqlite3_free (errMsg);
 	  return;
       }
@@ -2926,9 +2924,9 @@ fnct_AddFDOGeometryColumn (sqlite3_context * context, int argc,
     sqlite3_free_table (results);
     if (*tblname == '\0')
       {
-	  fprintf (stderr,
-		   "AddFDOGeometryColumn() error: table '%s' does not exist\n",
-		   table);
+	  spatialite_e
+	      ("AddFDOGeometryColumn() error: table '%s' does not exist\n",
+	       table);
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -2968,7 +2966,7 @@ fnct_AddFDOGeometryColumn (sqlite3_context * context, int argc,
     sqlite3_result_int (context, 1);
     return;
   error:
-    fprintf (stderr, "AddFDOGeometryColumn() error: \"%s\"\n", errMsg);
+    spatialite_e ("AddFDOGeometryColumn() error: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -3008,48 +3006,48 @@ fnct_RecoverFDOGeometryColumn (sqlite3_context * context, int argc,
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "RecoverFDOGeometryColumn() error: argument 1 [table_name] is not of the String type\n");
+	  spatialite_e
+	      ("RecoverFDOGeometryColumn() error: argument 1 [table_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     table = (const char *) sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "RecoverFDOGeometryColumn() error: argument 2 [column_name] is not of the String type\n");
+	  spatialite_e
+	      ("RecoverFDOGeometryColumn() error: argument 2 [column_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     column = (const char *) sqlite3_value_text (argv[1]);
     if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
       {
-	  fprintf (stderr,
-		   "RecoverFDOGeometryColumn() error: argument 3 [SRID] is not of the Integer type\n");
+	  spatialite_e
+	      ("RecoverFDOGeometryColumn() error: argument 3 [SRID] is not of the Integer type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     srid = sqlite3_value_int (argv[2]);
     if (sqlite3_value_type (argv[3]) != SQLITE_INTEGER)
       {
-	  fprintf (stderr,
-		   "RecoverFDOGeometryColumn() error: argument 4 [geometry_type] is not of the Integer type\n");
+	  spatialite_e
+	      ("RecoverFDOGeometryColumn() error: argument 4 [geometry_type] is not of the Integer type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     type = sqlite3_value_int (argv[3]);
     if (sqlite3_value_type (argv[4]) != SQLITE_INTEGER)
       {
-	  fprintf (stderr,
-		   "RecoverFDOGeometryColumn() error: argument 5 [dimension] is not of the Integer type\n");
+	  spatialite_e
+	      ("RecoverFDOGeometryColumn() error: argument 5 [dimension] is not of the Integer type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     dimension = sqlite3_value_int (argv[4]);
     if (sqlite3_value_type (argv[5]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "RecoverFDOGeometryColumn() error: argument 6 [geometry_format] is not of the String type\n");
+	  spatialite_e
+	      ("RecoverFDOGeometryColumn() error: argument 6 [geometry_format] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -3068,15 +3066,15 @@ fnct_RecoverFDOGeometryColumn (sqlite3_context * context, int argc,
 	;
     else
       {
-	  fprintf (stderr,
-		   "RecoverFDOGeometryColumn() error: argument 4 [geometry_type] has an illegal value\n");
+	  spatialite_e
+	      ("RecoverFDOGeometryColumn() error: argument 4 [geometry_type] has an illegal value\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     if (dimension < 2 || dimension > 4)
       {
-	  fprintf (stderr,
-		   "RecoverFDOGeometryColumn() error: argument 5 [dimension] current version only accepts dimension=2,3,4\n");
+	  spatialite_e
+	      ("RecoverFDOGeometryColumn() error: argument 5 [dimension] current version only accepts dimension=2,3,4\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -3088,8 +3086,8 @@ fnct_RecoverFDOGeometryColumn (sqlite3_context * context, int argc,
 	strcpy (xformat, "FGF");
     else
       {
-	  fprintf (stderr,
-		   "RecoverFDOGeometryColumn() error: argument 6 [geometry_format] has to be one of: WKT,WKB,FGF\n");
+	  spatialite_e
+	      ("RecoverFDOGeometryColumn() error: argument 6 [geometry_format] has to be one of: WKT,WKB,FGF\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -3104,7 +3102,7 @@ fnct_RecoverFDOGeometryColumn (sqlite3_context * context, int argc,
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "RecoverFDOGeometryColumn: \"%s\"\n", errMsg);
+	  spatialite_e ("RecoverFDOGeometryColumn: \"%s\"\n", errMsg);
 	  sqlite3_free (errMsg);
 	  return;
       }
@@ -3116,9 +3114,9 @@ fnct_RecoverFDOGeometryColumn (sqlite3_context * context, int argc,
     sqlite3_free_table (results);
     if (*tblname == '\0')
       {
-	  fprintf (stderr,
-		   "RecoverFDOGeometryColumn() error: table '%s' does not exist\n",
-		   table);
+	  spatialite_e
+	      ("RecoverFDOGeometryColumn() error: table '%s' does not exist\n",
+	       table);
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -3126,7 +3124,7 @@ fnct_RecoverFDOGeometryColumn (sqlite3_context * context, int argc,
 	(sqlite, (const unsigned char *) table,
 	 (const unsigned char *) column, type, srid))
       {
-	  fprintf (stderr, "RecoverFDOGeometryColumn(): validation failed\n");
+	  spatialite_e ("RecoverFDOGeometryColumn(): validation failed\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -3158,7 +3156,7 @@ fnct_RecoverFDOGeometryColumn (sqlite3_context * context, int argc,
     sqlite3_result_int (context, 1);
     return;
   error:
-    fprintf (stderr, "RecoverFDOGeometryColumn() error: \"%s\"\n", errMsg);
+    spatialite_e ("RecoverFDOGeometryColumn() error: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -3186,16 +3184,16 @@ fnct_DiscardFDOGeometryColumn (sqlite3_context * context, int argc,
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "DiscardFDOGeometryColumn() error: argument 1 [table_name] is not of the String type\n");
+	  spatialite_e
+	      ("DiscardFDOGeometryColumn() error: argument 1 [table_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     table = sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "DiscardFDOGeometryColumn() error: argument 2 [column_name] is not of the String type\n");
+	  spatialite_e
+	      ("DiscardFDOGeometryColumn() error: argument 2 [column_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -3213,7 +3211,7 @@ fnct_DiscardFDOGeometryColumn (sqlite3_context * context, int argc,
     sqlite3_result_int (context, 1);
     return;
   error:
-    fprintf (stderr, "DiscardFDOGeometryColumn() error: \"%s\"\n", errMsg);
+    spatialite_e ("DiscardFDOGeometryColumn() error: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -3283,8 +3281,8 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CheckSpatialIndex SQL error: %s\n",
-		   sqlite3_errmsg (sqlite));
+	  spatialite_e ("CheckSpatialIndex SQL error: %s\n",
+			sqlite3_errmsg (sqlite));
 	  return -1;
       }
     while (1)
@@ -3319,8 +3317,8 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CheckSpatialIndex SQL error: %s\n",
-		   sqlite3_errmsg (sqlite));
+	  spatialite_e ("CheckSpatialIndex SQL error: %s\n",
+			sqlite3_errmsg (sqlite));
 	  return -1;
       }
     while (1)
@@ -3344,8 +3342,8 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CheckSpatialIndex SQL error: %s\n",
-		   sqlite3_errmsg (sqlite));
+	  spatialite_e ("CheckSpatialIndex SQL error: %s\n",
+			sqlite3_errmsg (sqlite));
 	  return -1;
       }
     while (1)
@@ -3388,8 +3386,8 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CheckSpatialIndex SQL error: %s\n",
-		   sqlite3_errmsg (sqlite));
+	  spatialite_e ("CheckSpatialIndex SQL error: %s\n",
+			sqlite3_errmsg (sqlite));
 	  return -1;
       }
     while (1)
@@ -3483,8 +3481,8 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CheckSpatialIndex SQL error: %s\n",
-		   sqlite3_errmsg (sqlite));
+	  spatialite_e ("CheckSpatialIndex SQL error: %s\n",
+			sqlite3_errmsg (sqlite));
 	  return -1;
       }
     while (1)
@@ -3587,8 +3585,8 @@ check_any_spatial_index (sqlite3 * sqlite)
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CheckSpatialIndex SQL error: %s\n",
-		   sqlite3_errmsg (sqlite));
+	  spatialite_e ("CheckSpatialIndex SQL error: %s\n",
+			sqlite3_errmsg (sqlite));
 	  return -1;
       }
     while (1)
@@ -3656,16 +3654,16 @@ fnct_CheckSpatialIndex (sqlite3_context * context, int argc,
 
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "CheckSpatialIndex() error: argument 1 [table_name] is not of the String type\n");
+	  spatialite_e
+	      ("CheckSpatialIndex() error: argument 1 [table_name] is not of the String type\n");
 	  sqlite3_result_null (context);
 	  return;
       }
     table = sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "CheckSpatialIndex() error: argument 2 [column_name] is not of the String type\n");
+	  spatialite_e
+	      ("CheckSpatialIndex() error: argument 2 [column_name] is not of the String type\n");
 	  sqlite3_result_null (context);
 	  return;
       }
@@ -3708,8 +3706,8 @@ recover_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "RecoverSpatialIndex SQL error: %s\n",
-		   sqlite3_errmsg (sqlite));
+	  spatialite_e ("RecoverSpatialIndex SQL error: %s\n",
+			sqlite3_errmsg (sqlite));
 	  return -1;
       }
     while (1)
@@ -3744,7 +3742,7 @@ recover_spatial_index (sqlite3 * sqlite, const unsigned char *table,
 			     (const char *) geom, sql);
     return 1;
   error:
-    fprintf (stderr, "RecoverSpatialIndex() error: \"%s\"\n", errMsg);
+    spatialite_e ("RecoverSpatialIndex() error: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     return 0;
 }
@@ -3768,8 +3766,8 @@ recover_any_spatial_index (sqlite3 * sqlite, int no_check)
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "RecoverSpatialIndex SQL error: %s\n",
-		   sqlite3_errmsg (sqlite));
+	  spatialite_e ("RecoverSpatialIndex SQL error: %s\n",
+			sqlite3_errmsg (sqlite));
 	  return -1;
       }
     while (1)
@@ -3857,8 +3855,8 @@ fnct_RecoverSpatialIndex (sqlite3_context * context, int argc,
 		    no_check = sqlite3_value_int (argv[0]);
 		else
 		  {
-		      fprintf (stderr,
-			       "RecoverSpatialIndex() error: argument 1 [no_check] is not of the Integer type\n");
+		      spatialite_e
+			  ("RecoverSpatialIndex() error: argument 1 [no_check] is not of the Integer type\n");
 		      sqlite3_result_null (context);
 		      return;
 		  }
@@ -3875,16 +3873,16 @@ fnct_RecoverSpatialIndex (sqlite3_context * context, int argc,
 
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "RecoverSpatialIndex() error: argument 1 [table_name] is not of the String type\n");
+	  spatialite_e
+	      ("RecoverSpatialIndex() error: argument 1 [table_name] is not of the String type\n");
 	  sqlite3_result_null (context);
 	  return;
       }
     table = sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "RecoverSpatialIndex() error: argument 2 [column_name] is not of the String type\n");
+	  spatialite_e
+	      ("RecoverSpatialIndex() error: argument 2 [column_name] is not of the String type\n");
 	  sqlite3_result_null (context);
 	  return;
       }
@@ -3895,8 +3893,8 @@ fnct_RecoverSpatialIndex (sqlite3_context * context, int argc,
 	      no_check = sqlite3_value_int (argv[2]);
 	  else
 	    {
-		fprintf (stderr,
-			 "RecoverSpatialIndex() error: argument 2 [no_check] is not of the Integer type\n");
+		spatialite_e
+		    ("RecoverSpatialIndex() error: argument 2 [no_check] is not of the Integer type\n");
 		sqlite3_result_null (context);
 		return;
 	    }
@@ -3950,16 +3948,16 @@ fnct_CreateSpatialIndex (sqlite3_context * context, int argc,
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "CreateSpatialIndex() error: argument 1 [table_name] is not of the String type\n");
+	  spatialite_e
+	      ("CreateSpatialIndex() error: argument 1 [table_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     table = sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "CreateSpatialIndex() error: argument 2 [column_name] is not of the String type\n");
+	  spatialite_e
+	      ("CreateSpatialIndex() error: argument 2 [column_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -3979,9 +3977,9 @@ fnct_CreateSpatialIndex (sqlite3_context * context, int argc,
 	goto error;
     if (sqlite3_changes (sqlite) == 0)
       {
-	  fprintf (stderr,
-		   "CreateSpatialIndex() error: either \"%s\".\"%s\" isn't a Geometry column or a SpatialIndex is already defined\n",
-		   table, column);
+	  spatialite_e
+	      ("CreateSpatialIndex() error: either \"%s\".\"%s\" isn't a Geometry column or a SpatialIndex is already defined\n",
+	       table, column);
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -3992,7 +3990,7 @@ fnct_CreateSpatialIndex (sqlite3_context * context, int argc,
 			     (const char *) column, sql);
     return;
   error:
-    fprintf (stderr, "CreateSpatialIndex() error: \"%s\"\n", errMsg);
+    spatialite_e ("CreateSpatialIndex() error: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -4019,16 +4017,16 @@ fnct_CreateMbrCache (sqlite3_context * context, int argc, sqlite3_value ** argv)
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "CreateMbrCache() error: argument 1 [table_name] is not of the String type\n");
+	  spatialite_e
+	      ("CreateMbrCache() error: argument 1 [table_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     table = sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "CreateMbrCache() error: argument 2 [column_name] is not of the String type\n");
+	  spatialite_e
+	      ("CreateMbrCache() error: argument 2 [column_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -4048,9 +4046,9 @@ fnct_CreateMbrCache (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	goto error;
     if (sqlite3_changes (sqlite) == 0)
       {
-	  fprintf (stderr,
-		   "CreateMbrCache() error: either \"%s\".\"%s\" isn't a Geometry column or a SpatialIndex is already defined\n",
-		   table, column);
+	  spatialite_e
+	      ("CreateMbrCache() error: either \"%s\".\"%s\" isn't a Geometry column or a SpatialIndex is already defined\n",
+	       table, column);
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -4061,7 +4059,7 @@ fnct_CreateMbrCache (sqlite3_context * context, int argc, sqlite3_value ** argv)
 			     (const char *) column, sql);
     return;
   error:
-    fprintf (stderr, "CreateMbrCache() error: \"%s\"\n", errMsg);
+    spatialite_e ("CreateMbrCache() error: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -4089,16 +4087,16 @@ fnct_DisableSpatialIndex (sqlite3_context * context, int argc,
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "DisableSpatialIndex() error: argument 1 [table_name] is not of the String type\n");
+	  spatialite_e
+	      ("DisableSpatialIndex() error: argument 1 [table_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     table = sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "DisableSpatialIndex() error: argument 2 [column_name] is not of the String type\n");
+	  spatialite_e
+	      ("DisableSpatialIndex() error: argument 2 [column_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -4118,9 +4116,9 @@ fnct_DisableSpatialIndex (sqlite3_context * context, int argc,
 	goto error;
     if (sqlite3_changes (sqlite) == 0)
       {
-	  fprintf (stderr,
-		   "DisableSpatialIndex() error: either \"%s\".\"%s\" isn't a Geometry column or no SpatialIndex is defined\n",
-		   table, column);
+	  spatialite_e
+	      ("DisableSpatialIndex() error: either \"%s\".\"%s\" isn't a Geometry column or no SpatialIndex is defined\n",
+	       table, column);
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -4131,7 +4129,7 @@ fnct_DisableSpatialIndex (sqlite3_context * context, int argc,
 			     (const char *) column, sql);
     return;
   error:
-    fprintf (stderr, "DisableSpatialIndex() error: \"%s\"\n", errMsg);
+    spatialite_e ("DisableSpatialIndex() error: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -4162,16 +4160,16 @@ fnct_RebuildGeometryTriggers (sqlite3_context * context, int argc,
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "RebuildGeometryTriggers() error: argument 1 [table_name] is not of the String type\n");
+	  spatialite_e
+	      ("RebuildGeometryTriggers() error: argument 1 [table_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     table = sqlite3_value_text (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  fprintf (stderr,
-		   "RebuildGeometryTriggers() error: argument 2 [column_name] is not of the String type\n");
+	  spatialite_e
+	      ("RebuildGeometryTriggers() error: argument 2 [column_name] is not of the String type\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -4192,9 +4190,9 @@ fnct_RebuildGeometryTriggers (sqlite3_context * context, int argc,
     sqlite3_free_table (results);
     if (rows <= 0)
       {
-	  fprintf (stderr,
-		   "RebuildGeometryTriggers() error: \"%s\".\"%s\" isn't a Geometry column\n",
-		   table, column);
+	  spatialite_e
+	      ("RebuildGeometryTriggers() error: \"%s\".\"%s\" isn't a Geometry column\n",
+	       table, column);
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -4205,7 +4203,7 @@ fnct_RebuildGeometryTriggers (sqlite3_context * context, int argc,
 			     (const char *) column, sql);
     return;
   error:
-    fprintf (stderr, "RebuildGeometryTriggers() error: \"%s\"\n", errMsg);
+    spatialite_e ("RebuildGeometryTriggers() error: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -4256,7 +4254,7 @@ create_topo_nodes (sqlite3 * sqlite, const char *table, int srid, int dims)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4268,8 +4266,8 @@ create_topo_nodes (sqlite3 * sqlite, const char *table, int srid, int dims)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "AddGeometryColumn '%s'.'Geometry' error: %s\n",
-		   table, err_msg);
+	  spatialite_e ("AddGeometryColumn '%s'.'Geometry' error: %s\n",
+			table, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4277,8 +4275,8 @@ create_topo_nodes (sqlite3 * sqlite, const char *table, int srid, int dims)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CreateSpatialIndex '%s'.'Geometry' error: %s\n",
-		   table, err_msg);
+	  spatialite_e ("CreateSpatialIndex '%s'.'Geometry' error: %s\n",
+			table, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4290,8 +4288,8 @@ create_topo_nodes (sqlite3 * sqlite, const char *table, int srid, int dims)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Create Index '%s'('node_code') error: %s\n",
-		   sqltable, err_msg);
+	  spatialite_e ("Create Index '%s'('node_code') error: %s\n",
+			sqltable, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4317,7 +4315,7 @@ create_topo_edges (sqlite3 * sqlite, const char *table, int srid, int dims)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4329,8 +4327,8 @@ create_topo_edges (sqlite3 * sqlite, const char *table, int srid, int dims)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "AddGeometryColumn '%s'.'Geometry' error: %s\n",
-		   table, err_msg);
+	  spatialite_e ("AddGeometryColumn '%s'.'Geometry' error: %s\n",
+			table, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4338,8 +4336,8 @@ create_topo_edges (sqlite3 * sqlite, const char *table, int srid, int dims)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CreateSpatialIndex '%s'.'Geometry' error: %s\n",
-		   table, err_msg);
+	  spatialite_e ("CreateSpatialIndex '%s'.'Geometry' error: %s\n",
+			table, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4351,8 +4349,8 @@ create_topo_edges (sqlite3 * sqlite, const char *table, int srid, int dims)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Create Index '%s'('edge_code') error: %s\n",
-		   sqltable, err_msg);
+	  spatialite_e ("Create Index '%s'('edge_code') error: %s\n",
+			sqltable, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4364,8 +4362,8 @@ create_topo_edges (sqlite3 * sqlite, const char *table, int srid, int dims)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Create Index '%s'('node_from_code') error: %s\n",
-		   sqltable, err_msg);
+	  spatialite_e ("Create Index '%s'('node_from_code') error: %s\n",
+			sqltable, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4377,8 +4375,8 @@ create_topo_edges (sqlite3 * sqlite, const char *table, int srid, int dims)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Create Index '%s'('node_to_code') error: %s\n",
-		   sqltable, err_msg);
+	  spatialite_e ("Create Index '%s'('node_to_code') error: %s\n",
+			sqltable, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4402,7 +4400,7 @@ create_topo_faces (sqlite3 * sqlite, const char *table)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4414,8 +4412,8 @@ create_topo_faces (sqlite3 * sqlite, const char *table)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Create Index '%s'('face_code') error: %s\n",
-		   sqltable, err_msg);
+	  spatialite_e ("Create Index '%s'('face_code') error: %s\n",
+			sqltable, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4449,7 +4447,7 @@ create_topo_faces_edges (sqlite3 * sqlite, const char *table,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4461,8 +4459,8 @@ create_topo_faces_edges (sqlite3 * sqlite, const char *table,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Create Index '%s'('edge_code') error: %s\n",
-		   sqltable, err_msg);
+	  spatialite_e ("Create Index '%s'('edge_code') error: %s\n",
+			sqltable, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4489,7 +4487,7 @@ create_topo_curves (sqlite3 * sqlite, const char *table)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4501,8 +4499,8 @@ create_topo_curves (sqlite3 * sqlite, const char *table)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Create Index '%s'('edge_code') error: %s\n",
-		   sqltable, err_msg);
+	  spatialite_e ("Create Index '%s'('edge_code') error: %s\n",
+			sqltable, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4529,7 +4527,7 @@ create_topo_surfaces (sqlite3 * sqlite, const char *table)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4541,8 +4539,8 @@ create_topo_surfaces (sqlite3 * sqlite, const char *table)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "Create Index '%s'('face_code') error: %s\n",
-		   sqltable, err_msg);
+	  spatialite_e ("Create Index '%s'('face_code') error: %s\n",
+			sqltable, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4572,7 +4570,7 @@ create_check_node_codes (sqlite3 * sqlite, const char *view,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4612,7 +4610,7 @@ create_check_node_geoms (sqlite3 * sqlite, const char *view,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4642,7 +4640,7 @@ create_check_edge_codes (sqlite3 * sqlite, const char *view,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4684,7 +4682,7 @@ create_check_edge_geoms (sqlite3 * sqlite, const char *view,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4727,7 +4725,7 @@ create_check_edge_node_geoms (sqlite3 * sqlite, const char *view,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4757,7 +4755,7 @@ create_check_face_codes (sqlite3 * sqlite, const char *view,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4799,7 +4797,7 @@ create_faces_resolved (sqlite3 * sqlite, const char *view, const char *faces,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4835,7 +4833,7 @@ create_curves_resolved (sqlite3 * sqlite, const char *view, const char *curves,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4872,7 +4870,7 @@ create_surfaces_resolved (sqlite3 * sqlite, const char *view,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4920,7 +4918,7 @@ create_dangling_nodes (sqlite3 * sqlite, const char *view,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -4969,7 +4967,7 @@ create_dangling_edges (sqlite3 * sqlite, const char *view,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -5052,7 +5050,7 @@ create_check_edges_from_to (sqlite3 * sqlite, const char *view,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -5094,8 +5092,7 @@ create_topo_master (sqlite3 * sqlite)
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "CREATE TABLE 'topology_master' error: %s\n",
-		   err_msg);
+	  spatialite_e ("CREATE TABLE 'topology_master' error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -5210,8 +5207,7 @@ update_topo_master (sqlite3 * sqlite, const char *nodes, const char *edges,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "INSERT INTO 'topology_master' error: %s\n",
-		   err_msg);
+	  spatialite_e ("INSERT INTO 'topology_master' error: %s\n", err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;
       }
@@ -5266,16 +5262,16 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
       {
 	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
 	    {
-		fprintf (stderr,
-			 "CreateTopologyTables() error: argument 1 [table_prefix] is not of the String type\n");
+		spatialite_e
+		    ("CreateTopologyTables() error: argument 1 [table_prefix] is not of the String type\n");
 		sqlite3_result_int (context, 0);
 		return;
 	    }
 	  prefix = (char *) sqlite3_value_text (argv[0]);
 	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
 	    {
-		fprintf (stderr,
-			 "CreateTopologyTables() error: argument 2 [SRID] is not of the Integer type\n");
+		spatialite_e
+		    ("CreateTopologyTables() error: argument 2 [SRID] is not of the Integer type\n");
 		sqlite3_result_int (context, 0);
 		return;
 	    }
@@ -5298,8 +5294,8 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
 	    }
 	  else
 	    {
-		fprintf (stderr,
-			 "CreateTopologyTables() error: argument 3 [dimension] is not of the Integer or Text type\n");
+		spatialite_e
+		    ("CreateTopologyTables() error: argument 3 [dimension] is not of the Integer or Text type\n");
 		sqlite3_result_int (context, 0);
 		return;
 	    }
@@ -5308,8 +5304,8 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
       {
 	  if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
 	    {
-		fprintf (stderr,
-			 "CreateTopologyTables() error: argument 1 [SRID] is not of the Integer type\n");
+		spatialite_e
+		    ("CreateTopologyTables() error: argument 1 [SRID] is not of the Integer type\n");
 		sqlite3_result_int (context, 0);
 		return;
 	    }
@@ -5332,8 +5328,8 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
 	    }
 	  else
 	    {
-		fprintf (stderr,
-			 "CreateTopologyTables() error: argument 2 [dimension] is not of the Integer or Text type\n");
+		spatialite_e
+		    ("CreateTopologyTables() error: argument 2 [dimension] is not of the Integer or Text type\n");
 		sqlite3_result_int (context, 0);
 		return;
 	    }
@@ -5342,15 +5338,14 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
 	;
     else
       {
-	  fprintf (stderr,
-		   "CreateTopologyTables() error: [dimension] ILLEGAL VALUE\n");
+	  spatialite_e
+	      ("CreateTopologyTables() error: [dimension] ILLEGAL VALUE\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
     if (srid <= 0)
       {
-	  fprintf (stderr,
-		   "CreateTopologyTables() error: [SRID] ILLEGAL VALUE\n");
+	  spatialite_e ("CreateTopologyTables() error: [SRID] ILLEGAL VALUE\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -5424,9 +5419,9 @@ fnct_CreateTopologyTables (sqlite3_context * context, int argc,
 		    create_master = 0;
 		else
 		  {
-		      fprintf (stderr,
-			       "CreateTopologyTables() error: table '%s' already exists\n",
-			       *p_tbl);
+		      spatialite_e
+			  ("CreateTopologyTables() error: table '%s' already exists\n",
+			   *p_tbl);
 		      sqlite3_result_int (context, 0);
 		      return;
 		  }
@@ -5524,8 +5519,8 @@ fnct_UpdateLayerStatistics (sqlite3_context * context, int argc,
       {
 	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
 	    {
-		fprintf (stderr,
-			 "UpdateLayerStatistics() error: argument 1 [table_name] is not of the String type\n");
+		spatialite_e
+		    ("UpdateLayerStatistics() error: argument 1 [table_name] is not of the String type\n");
 		sqlite3_result_int (context, 0);
 		return;
 	    }
@@ -5535,8 +5530,8 @@ fnct_UpdateLayerStatistics (sqlite3_context * context, int argc,
       {
 	  if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
 	    {
-		fprintf (stderr,
-			 "UpdateLayerStatistics() error: argument 2 [column_name] is not of the String type\n");
+		spatialite_e
+		    ("UpdateLayerStatistics() error: argument 2 [column_name] is not of the String type\n");
 		sqlite3_result_int (context, 0);
 		return;
 	    }
@@ -5853,14 +5848,14 @@ proj_params (sqlite3 * sqlite, int srid, char *proj_params)
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
-	  fprintf (stderr, "unknown SRID: %d\t<%s>\n", srid, errMsg);
+	  spatialite_e ("unknown SRID: %d\t<%s>\n", srid, errMsg);
 	  sqlite3_free (errMsg);
 	  return;
       }
     for (i = 1; i <= rows; i++)
 	strcpy (proj_params, results[(i * columns)]);
     if (*proj_params == '\0')
-	fprintf (stderr, "unknown SRID: %d\n", srid);
+	spatialite_e ("unknown SRID: %d\n", srid);
     sqlite3_free_table (results);
 }
 
@@ -6416,8 +6411,8 @@ fnct_AsFGF (sqlite3_context * context, int argc, sqlite3_value ** argv)
     n_bytes = sqlite3_value_bytes (argv[0]);
     if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
       {
-	  fprintf (stderr,
-		   "AsFGF() error: argument 2 [geom_coords] is not of the Integer type\n");
+	  spatialite_e
+	      ("AsFGF() error: argument 2 [geom_coords] is not of the Integer type\n");
 	  sqlite3_result_null (context);
 	  return;
       }
@@ -6427,8 +6422,8 @@ fnct_AsFGF (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	;
     else
       {
-	  fprintf (stderr,
-		   "AsFGF() error: argument 2 [geom_coords] out of range [0,1,2,3]\n");
+	  spatialite_e
+	      ("AsFGF() error: argument 2 [geom_coords] out of range [0,1,2,3]\n");
 	  sqlite3_result_null (context);
 	  return;
       }
@@ -13493,7 +13488,7 @@ geos_error (const char *fmt, ...)
     va_start (ap, fmt);
     vsprintf (msg, fmt, ap);
     va_end (ap);
-    fprintf (stderr, "GEOS error: %s\n", msg);
+    spatialite_e ("GEOS error: %s\n", msg);
     gaiaSetGeosErrorMsg (msg);
 }
 
@@ -13507,7 +13502,7 @@ geos_warning (const char *fmt, ...)
     va_start (ap, fmt);
     vsprintf (msg, fmt, ap);
     va_end (ap);
-    fprintf (stderr, "GEOS warning: %s\n", msg);
+    spatialite_e ("GEOS warning: %s\n", msg);
     gaiaSetGeosWarningMsg (msg);
 }
 
@@ -17224,9 +17219,9 @@ init_spatialite_virtualtables (sqlite3 * db)
     virtual_spatialindex_extension_init (db);
 }
 
-static void
-init_static_spatialite (sqlite3 * db, char **pzErrMsg,
-			const sqlite3_api_routines * pApi)
+static int
+init_spatialite_extension (sqlite3 * db, char **pzErrMsg,
+			   const sqlite3_api_routines * pApi)
 {
     SQLITE_EXTENSION_INIT2 (pApi);
 /* setting the POSIX locale for numeric */
@@ -17239,70 +17234,72 @@ init_static_spatialite (sqlite3 * db, char **pzErrMsg,
 
 /* setting a timeout handler */
     sqlite3_busy_timeout (db, 5000);
+
+    return 0;
 }
 
-void
+SPATIALITE_DECLARE void
 spatialite_init (int verbose)
 {
 /* used when SQLite initializes SpatiaLite via statically linked lib */
-    sqlite3_auto_extension ((void (*)(void)) init_static_spatialite);
+    sqlite3_auto_extension ((void (*)(void)) init_spatialite_extension);
     if (isatty (1))
       {
 	  /* printing "hello" message only when stdout is on console */
 	  if (verbose)
 	    {
-		printf ("SpatiaLite version ..: %s", spatialite_version ());
-		printf ("\tSupported Extensions:\n");
+		spatialite_i ("SpatiaLite version ..: %s",
+			      spatialite_version ());
+		spatialite_i ("\tSupported Extensions:\n");
 #ifndef OMIT_ICONV		/* ICONV is required by SHP/DBF/TXT */
-		printf ("\t- 'VirtualShape'\t[direct Shapefile access]\n");
-		printf ("\t- 'VirtualDbf'\t\t[direct DBF access]\n");
+		spatialite_i
+		    ("\t- 'VirtualShape'\t[direct Shapefile access]\n");
+		spatialite_i ("\t- 'VirtualDbf'\t\t[direct DBF access]\n");
 #ifndef OMIT_FREEXL
-		printf ("\t- 'VirtualXL'\t\t[direct XLS access]\n");
+		spatialite_i ("\t- 'VirtualXL'\t\t[direct XLS access]\n");
 #endif /* end FreeXL conditional */
-		printf ("\t- 'VirtualText'\t\t[direct CSV/TXT access]\n");
+		spatialite_i ("\t- 'VirtualText'\t\t[direct CSV/TXT access]\n");
 #endif /* end ICONV conditional */
-		printf ("\t- 'VirtualNetwork'\t[Dijkstra shortest path]\n");
-		printf ("\t- 'RTree'\t\t[Spatial Index - R*Tree]\n");
-		printf ("\t- 'MbrCache'\t\t[Spatial Index - MBR cache]\n");
-		printf ("\t- 'VirtualSpatialIndex'\t[R*Tree metahandler]\n");
-		printf ("\t- 'VirtualFDO'\t\t[FDO-OGR interoperability]\n");
-		printf ("\t- 'SpatiaLite'\t\t[Spatial SQL - OGC]\n");
+		spatialite_i
+		    ("\t- 'VirtualNetwork'\t[Dijkstra shortest path]\n");
+		spatialite_i ("\t- 'RTree'\t\t[Spatial Index - R*Tree]\n");
+		spatialite_i
+		    ("\t- 'MbrCache'\t\t[Spatial Index - MBR cache]\n");
+		spatialite_i
+		    ("\t- 'VirtualSpatialIndex'\t[R*Tree metahandler]\n");
+		spatialite_i
+		    ("\t- 'VirtualFDO'\t\t[FDO-OGR interoperability]\n");
+		spatialite_i ("\t- 'SpatiaLite'\t\t[Spatial SQL - OGC]\n");
 	    }
 #ifndef OMIT_PROJ		/* PROJ.4 version */
 	  if (verbose)
-	      printf ("PROJ.4 version ......: %s\n", pj_get_release ());
+	      spatialite_i ("PROJ.4 version ......: %s\n", pj_get_release ());
 #endif /* end including PROJ.4 */
 #ifndef OMIT_GEOS		/* GEOS version */
 	  if (verbose)
-	      printf ("GEOS version ........: %s\n", GEOSversion ());
+	      spatialite_i ("GEOS version ........: %s\n", GEOSversion ());
 #endif /* end GEOS version */
       }
 }
 
 void
-spatialite_cleanup ()
+SPATIALITE_DECLARE spatialite_cleanup ()
 {
 #ifndef OMIT_GEOS
     finishGEOS ();
 #endif
 }
 
-SPATIALITE_DECLARE int
-sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
-			const sqlite3_api_routines * pApi)
+#if !(defined _WIN32) || defined(__MINGW__)
+/* MSVC is unable to understand this declaration */
+__attribute__ ((visibility ("default")))
+#endif
+     SPATIALITE_DECLARE int
+	 sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
+				 const sqlite3_api_routines * pApi)
 {
 /* SQLite invokes this routine once when it dynamically loads the extension. */
-    SQLITE_EXTENSION_INIT2 (pApi);
-    setlocale (LC_NUMERIC, "POSIX");
-    *pzErrMsg = NULL;
-
-    register_spatialite_sql_functions (db);
-
-    init_spatialite_virtualtables (db);
-
-    /* setting a timeout handler */
-    sqlite3_busy_timeout (db, 5000);
-    return 0;
+    return init_spatialite_extension (db, pzErrMsg, pApi);
 }
 
 SPATIALITE_DECLARE sqlite3_int64

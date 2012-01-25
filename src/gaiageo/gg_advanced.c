@@ -49,11 +49,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <math.h>
 #include <float.h>
 
-#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
-#include <spatialite/sqlite3ext.h>
-#else
-#include <sqlite3ext.h>
-#endif
+#include <spatialite/sqlite.h>
 
 #include <spatialite/gaiageo.h>
 
@@ -827,7 +823,7 @@ gaiaSanitize (gaiaGeomCollPtr geom)
 			  points++;
 		  }
 		else
-		      points++;
+		    points++;
 		last_x = x;
 		last_y = y;
 		last_z = z;
@@ -1008,7 +1004,7 @@ gaiaSanitize (gaiaGeomCollPtr geom)
 				points++;
 			}
 		      else
-			    points++;
+			  points++;
 		      last_x = x;
 		      last_y = y;
 		      last_z = z;

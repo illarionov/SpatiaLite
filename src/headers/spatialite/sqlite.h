@@ -1,7 +1,7 @@
-/*
- version.c -- Gaia spatial support for SQLite
-
- version 3.0, 2011 July 20
+/* 
+ sqlite.h -- supporting SQLite headers in a flexible way
+  
+ version 3.0, 2012 January 25
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -23,10 +23,11 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2008
+Portions created by the Initial Developer are Copyright (C) 2012
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
+Pepijn Van Eeckhoudt <pepijnvaneeckhoudt@luciad.com>
 
 Alternatively, the contents of this file may be used under the terms of
 either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -42,14 +43,16 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
-#include <spatialite/sqlite.h>
+#ifndef _SPATIALITE_SQLITE_H
+#define _SPATIALITE_SQLITE_H
 
-#include <spatialite.h>
+#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
+#include <spatialite/sqlite3ext.h>
+#else
+#include <sqlite3ext.h>
 
-const char spatialiteversion[] = VERSION;
+  /* We can't use SQLITE_EXTENSION_INIT1 as this is an intializer in recent version of sqlite */
+extern const sqlite3_api_routines *sqlite3_api;
+#endif
 
-SPATIALITE_DECLARE const char *
-spatialite_version (void)
-{
-    return spatialiteversion;
-}
+#endif

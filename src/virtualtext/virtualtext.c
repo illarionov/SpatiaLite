@@ -52,11 +52,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
-#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
-#include <spatialite/sqlite3.h>
-#else
-#include <sqlite3.h>
-#endif
+#include <spatialite/sqlite.h>
+#include <spatialite/debug.h>
 
 #include <spatialite/spatialite.h>
 #include <spatialite/gaiaaux.h>
@@ -266,8 +263,7 @@ vtxt_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (!text)
       {
 	  /* something is going the wrong way; creating a stupid default table */
-	  fprintf (stderr, "VirtualText: invalid data source\n");
-	  fflush (stderr);
+	  spatialite_e ("VirtualText: invalid data source\n");
 	  sprintf (sql, "CREATE TABLE %s (ROWNO INTEGER)", vtable);
 	  if (sqlite3_declare_vtab (db, sql) != SQLITE_OK)
 	    {

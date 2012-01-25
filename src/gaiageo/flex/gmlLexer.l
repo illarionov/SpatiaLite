@@ -95,7 +95,7 @@ void gml_reset_lexer(void)
  */
 void GmlError(char *s)
 {
-  printf("error: %s at line: %d col: %d\n",s,gml_line,gml_col);
+  spatialite_e("error: %s at line: %d col: %d\n",s,gml_line,gml_col);
 
 }
 

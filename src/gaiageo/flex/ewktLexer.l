@@ -106,7 +106,7 @@ void ewkt_reset_lexer(void)
  */
 void EwktError(char *s)
 {
-  printf("error: %s at line: %d col: %d\n",s,ewkt_line,ewkt_col);
+  spatialite_e("error: %s at line: %d col: %d\n",s,ewkt_line,ewkt_col);
 
 }
 

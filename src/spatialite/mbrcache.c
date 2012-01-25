@@ -49,11 +49,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <string.h>
 #include <float.h>
 
-#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
-#include <spatialite/sqlite3.h>
-#else
-#include <sqlite3.h>
-#endif
+#include <spatialite/sqlite.h>
+#include <spatialite/debug.h>
 
 #include <spatialite/spatialite.h>
 #include <spatialite/gaiageo.h>
@@ -524,7 +521,7 @@ retrieving any existing entity from the main table
     if (ret != SQLITE_OK)
       {
 /* some error occurred */
-	  fprintf (stderr, "cache SQL error: %s\n", sqlite3_errmsg (handle));
+	  spatialite_e ("cache SQL error: %s\n", sqlite3_errmsg (handle));
 	  return NULL;
       }
     p_cache = cache_alloc ();
@@ -565,7 +562,8 @@ retrieving any existing entity from the main table
 	  else
 	    {
 /* some unexpected error occurred */
-		printf ("sqlite3_step() error: %s\n", sqlite3_errmsg (handle));
+		spatialite_e ("sqlite3_step() error: %s\n",
+			      sqlite3_errmsg (handle));
 		sqlite3_finalize (stmt);
 		cache_destroy (p_cache);
 		return NULL;

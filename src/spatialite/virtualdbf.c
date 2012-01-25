@@ -48,11 +48,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
-#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
-#include <spatialite/sqlite3.h>
-#else
-#include <sqlite3.h>
-#endif
+#include <spatialite/sqlite.h>
+#include <spatialite/debug.h>
 
 #include <spatialite/spatialite.h>
 #include <spatialite/gaiaaux.h>
@@ -361,7 +358,7 @@ vdbf_read_row (VirtualDbfCursorPtr cursor, int *deleted_row)
 		return;
 	    }
 	  /* an error occurred */
-	  fprintf (stderr, "%s\n", cursor->pVtab->dbf->LastError);
+	  spatialite_e ("%s\n", cursor->pVtab->dbf->LastError);
 	  cursor->eof = 1;
 	  return;
       }

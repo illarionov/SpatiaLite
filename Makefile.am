@@ -2,7 +2,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 AUTOMAKE_OPTIONS = dist-zip
 
-EXTRA_DIST = makefile.vc nmake.opt mainpage.doxy README.coverage
+EXTRA_DIST = makefile.vc nmake.opt Android.mk mainpage.doxy README.coverage
 
 SUBDIRS = src test examples
 

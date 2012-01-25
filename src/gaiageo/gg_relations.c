@@ -53,11 +53,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <geos_c.h>
 #endif
 
-#ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
-#include <spatialite/sqlite3ext.h>
-#else
-#include <sqlite3ext.h>
-#endif
+#include <spatialite/sqlite.h>
 
 #include <spatialite/gaiageo.h>
 
@@ -411,7 +407,7 @@ gaiaGeometryIntersection (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g3;
     if (!geom1 || !geom2)
 	return NULL;
-    if (gaiaIsToxic(geom1) || gaiaIsToxic(geom2))
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return NULL;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
@@ -445,7 +441,7 @@ gaiaGeometryUnion (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g3;
     if (!geom1 || !geom2)
 	return NULL;
-    if (gaiaIsToxic(geom1) || gaiaIsToxic(geom2))
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return NULL;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
@@ -486,7 +482,7 @@ gaiaGeometryDifference (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g3;
     if (!geom1 || !geom2)
 	return NULL;
-    if (gaiaIsToxic(geom1) || gaiaIsToxic(geom2))
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return NULL;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
@@ -580,10 +576,10 @@ gaiaGeomCollCentroid (gaiaGeomCollPtr geom, double *x, double *y)
     GEOSGeometry *g2;
     if (!geom)
 	return 0;
-    if (gaiaIsToxic(geom))
-    {
-	return 0;
-    }
+    if (gaiaIsToxic (geom))
+      {
+	  return 0;
+      }
     g1 = gaiaToGeos (geom);
     g2 = GEOSGetCentroid (g1);
     GEOSGeom_destroy (g1);
@@ -620,10 +616,10 @@ gaiaGetPointOnSurface (gaiaGeomCollPtr geom, double *x, double *y)
     GEOSGeometry *g2;
     if (!geom)
 	return 0;
-    if (gaiaIsToxic(geom))
-    {
-	return 0;
-    }
+    if (gaiaIsToxic (geom))
+      {
+	  return 0;
+      }
     g1 = gaiaToGeos (geom);
     g2 = GEOSPointOnSurface (g1);
     GEOSGeom_destroy (g1);

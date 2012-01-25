@@ -50,11 +50,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <float.h>
 #include <string.h>
 
-#ifdef SPL_AMALGAMATION	/* spatialite-amalgamation */
-#include <spatialite/sqlite3ext.h>
-#else
-#include <sqlite3ext.h>
-#endif
+#include <spatialite/sqlite.h>
 
 #include <spatialite/gaiageo.h>
 

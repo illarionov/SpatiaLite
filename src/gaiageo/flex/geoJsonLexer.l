@@ -111,7 +111,7 @@ void geoJSON_reset_lexer(void)
  */
 void GeoJsonError(char *s)
 {
-  printf("error: %s at line: %d col: %d\n",s,geoJSON_line,geoJSON_col);
+  spatialite_e("error: %s at line: %d col: %d\n",s,geoJSON_line,geoJSON_col);
 
 }
 
