@@ -14740,6 +14740,296 @@ fnct_LinesCutAtNodes (sqlite3_context * context, int argc,
     gaiaFreeGeomColl (geom2);
 }
 
+static int
+cmp_pt_coords (const void *p1, const void *p2)
+{
+/* compares two nodes  by ID [for QSORT] */
+    gaiaPointPtr pt1 = *((gaiaPointPtr *) p1);
+    gaiaPointPtr pt2 = *((gaiaPointPtr *) p2);
+    if (pt1->X == pt2->X && pt1->Y == pt2->Y && pt1->Z == pt2->Z)
+	return 0;
+    if (pt1->X > pt2->X)
+	return 1;
+    if (pt1->X == pt2->X && pt1->Y > pt2->Y)
+	return 1;
+    if (pt1->X == pt2->X && pt1->Y == pt2->Y && pt1->Z > pt2->Z)
+	return 1;
+    return -1;
+}
+
+static gaiaGeomCollPtr
+auxPolygNodes (gaiaGeomCollPtr geom)
+{
+/* attempting to identify Ring-Nodes */
+    gaiaGeomCollPtr result = NULL;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr rng;
+    gaiaPointPtr pt;
+    gaiaPointPtr prev_pt;
+    gaiaPointPtr *sorted = NULL;
+    int count = 0;
+    int iv;
+    int ib;
+    double x;
+    double y;
+    double z;
+    double m;
+
+/* inserting all Points into a Dynamic Line */
+    gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  rng = pg->Exterior;
+	  /* CAVEAT: first point needs to be skipped (closed ring) */
+	  for (iv = 1; iv < rng->Points; iv++)
+	    {
+		/* exterior ring */
+		if (geom->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+		      gaiaAppendPointZToDynamicLine (dyn, x, y, z);
+		  }
+		else if (geom->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+		      gaiaAppendPointMToDynamicLine (dyn, x, y, m);
+		  }
+		else if (geom->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+		      gaiaAppendPointZMToDynamicLine (dyn, x, y, z, m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (rng->Coords, iv, &x, &y);
+		      gaiaAppendPointToDynamicLine (dyn, x, y);
+		  }
+	    }
+
+	  for (ib = 0; ib < pg->NumInteriors; ib++)
+	    {
+		rng = pg->Interiors + ib;
+		/* CAVEAT: first point needs to be skipped (closed ring) */
+		for (iv = 1; iv < rng->Points; iv++)
+		  {
+		      /* interior ring */
+		      if (geom->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+			    gaiaAppendPointZToDynamicLine (dyn, x, y, z);
+			}
+		      else if (geom->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+			    gaiaAppendPointMToDynamicLine (dyn, x, y, m);
+			}
+		      else if (geom->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+			    gaiaAppendPointZMToDynamicLine (dyn, x, y, z, m);
+			}
+		      else
+			{
+			    gaiaGetPoint (rng->Coords, iv, &x, &y);
+			    gaiaAppendPointToDynamicLine (dyn, x, y);
+			}
+		  }
+	    }
+	  pg = pg->Next;
+      }
+
+    pt = dyn->First;
+    while (pt)
+      {
+	  /* counting how many points */
+	  count++;
+	  pt = pt->Next;
+      }
+    if (count == 0)
+      {
+	  gaiaFreeDynamicLine (dyn);
+	  return NULL;
+      }
+
+/* allocating and initializing an array of pointers */
+    sorted = malloc (sizeof (gaiaPointPtr) * count);
+    iv = 0;
+    pt = dyn->First;
+    while (pt)
+      {
+	  *(sorted + iv++) = pt;
+	  pt = pt->Next;
+      }
+
+/* sorting points by coords */
+    qsort (sorted, count, sizeof (gaiaPointPtr), cmp_pt_coords);
+
+    if (geom->DimensionModel == GAIA_XY_Z)
+	result = gaiaAllocGeomCollXYZ ();
+    else if (geom->DimensionModel == GAIA_XY_M)
+	result = gaiaAllocGeomCollXYM ();
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaAllocGeomCollXYZM ();
+    else
+	result = gaiaAllocGeomColl ();
+    result->Srid = geom->Srid;
+
+/* identifying nodes */
+    prev_pt = NULL;
+    for (iv = 0; iv < count; iv++)
+      {
+	  pt = *(sorted + iv);
+	  if (prev_pt != NULL)
+	    {
+		if (prev_pt->X == pt->X && prev_pt->Y == pt->Y
+		    && prev_pt->Z == pt->Z)
+		  {
+		      if (result->LastPoint != NULL)
+			{
+			    if (result->LastPoint->X == pt->X
+				&& result->LastPoint->Y == pt->Y
+				&& result->LastPoint->Z == pt->Z)
+				continue;
+			}
+		      /* Node found */
+		      if (result->DimensionModel == GAIA_XY_Z)
+			  gaiaAddPointToGeomCollXYZ (result, pt->X,
+						     pt->Y, pt->Z);
+		      else if (result->DimensionModel == GAIA_XY_M)
+			  gaiaAddPointToGeomCollXYM (result, pt->X,
+						     pt->Y, pt->M);
+		      else if (result->DimensionModel == GAIA_XY_Z_M)
+			  gaiaAddPointToGeomCollXYZM (result, pt->X,
+						      pt->Y, pt->Z, pt->M);
+		      else
+			  gaiaAddPointToGeomColl (result, pt->X, pt->Y);
+		  }
+	    }
+	  prev_pt = pt;
+      }
+
+    if (result->FirstPoint == NULL)
+      {
+	  gaiaFreeGeomColl (result);
+	  result = NULL;
+      }
+    free (sorted);
+    gaiaFreeDynamicLine (dyn);
+    return result;
+}
+
+static void
+fnct_RingsCutAtNodes (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
+{
+/* SQL function:
+/ RingsCutAtNodes(BLOBencoded geometry)
+/
+/ This function will attempt to return a collection of lines
+/ representing Polygon/Rings: the input geometry is expected
+/ to be a Polygon or MultiPolygon.
+/ Each Ring will be cut accordingly to any identified "node"
+/ i.e. self-intersections or intersections between two Rings.
+/
+/ NULL is returned for invalid arguments
+*/
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    gaiaGeomCollPtr geom = NULL;
+    gaiaGeomCollPtr geom1 = NULL;
+    gaiaGeomCollPtr geom2 = NULL;
+    gaiaGeomCollPtr result;
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geom == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+/* checking if Geometry is a Polygon or MultiPolyhon */
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  lns++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts > 0 || lns > 0 || pgs == 0)
+      {
+	  /* not Polygon/MultiPolygon */
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+/* transforming Rings into Linestrings */
+    geom1 = gaiaLinearize (geom, 1);
+    if (geom1 == NULL)
+      {
+	  gaiaFreeGeomColl (geom);
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+/* identifying the Nodes */
+    geom2 = auxPolygNodes (geom);
+    if (geom2 == NULL)
+      {
+	  /* there is no need to cut any Ring [no Nodes] */
+	  int len;
+	  unsigned char *p_result = NULL;
+	  geom1->Srid = geom->Srid;
+	  gaiaToSpatiaLiteBlobWkb (geom1, &p_result, &len);
+	  sqlite3_result_blob (context, p_result, len, free);
+	  gaiaFreeGeomColl (geom);
+	  gaiaFreeGeomColl (geom1);
+	  return;
+      }
+
+/* attempting to cut Rings */
+    result = gaiaLinesCutAtNodes (geom1, geom2);
+    if (result == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  /* builds the BLOB geometry to be returned */
+	  int len;
+	  unsigned char *p_result = NULL;
+	  result->Srid = geom->Srid;
+	  gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+	  sqlite3_result_blob (context, p_result, len, free);
+	  gaiaFreeGeomColl (result);
+      }
+    gaiaFreeGeomColl (geom);
+    gaiaFreeGeomColl (geom1);
+    gaiaFreeGeomColl (geom2);
+}
+
 #endif /* end GEOS advanced and experimental features */
 
 #endif /* end including GEOS */
@@ -17187,6 +17477,10 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_LinesCutAtNodes, 0, 0);
     sqlite3_create_function (db, "ST_LinesCutAtNodes", 2, SQLITE_ANY, 0,
 			     fnct_LinesCutAtNodes, 0, 0);
+    sqlite3_create_function (db, "RingsCutAtNodes", 1, SQLITE_ANY, 0,
+			     fnct_RingsCutAtNodes, 0, 0);
+    sqlite3_create_function (db, "ST_RingsCutAtNodes", 1, SQLITE_ANY, 0,
+			     fnct_RingsCutAtNodes, 0, 0);
 
 #endif /* end GEOS advanced and experimental features */
 
@@ -17282,8 +17576,8 @@ spatialite_init (int verbose)
       }
 }
 
-void
-SPATIALITE_DECLARE spatialite_cleanup ()
+void SPATIALITE_DECLARE
+spatialite_cleanup ()
 {
 #ifndef OMIT_GEOS
     finishGEOS ();

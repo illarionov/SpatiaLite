@@ -1246,7 +1246,6 @@ gaiaLinearize (gaiaGeomCollPtr geom, int force_multi)
     double y;
     double m;
     double z;
-
     if (!geom)
 	return NULL;
     pt = geom->FirstPoint;
