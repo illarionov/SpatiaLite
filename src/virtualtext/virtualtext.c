@@ -1714,7 +1714,11 @@ gaiaTextReaderFetchField (gaiaTextReaderPtr txt, int field_idx, int *type,
 	    txt->field_lens[field_idx]);
     *(txt->field_buffer + txt->field_lens[field_idx]) = '\0';
     *value = txt->field_buffer;
-    if (*value == '\0')
+/* sandro 2012-02-01: fixing CR handling for last column [windows] */
+    if (*(txt->field_buffer) == '\r' && txt->field_lens[field_idx] == 1
+	&& (field_idx + 1) == txt->max_fields)
+	*(txt->field_buffer) = '\0';
+    if (*(txt->field_buffer) == '\0')
 	*type = VRTTXT_NULL;
     else if (*type == VRTTXT_TEXT)
       {
