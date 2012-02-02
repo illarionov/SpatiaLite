@@ -1,7 +1,7 @@
-collect - empty geometrycollection first arg
+collect - step point
 :memory: #use in-memory database
-SELECT AsText(COLLECT(GeomFromText("GEOMETRYCOLLECTION()"),makepoint(1,2)))
+SELECT AsText(Collect(geom)) FROM (SELECT MakePoint(1,2) as geom) dummy;
 1 # rows (not including the header row)
 1 # columns
-AsText(COLLECT(GeomFromText("GEOMETRYCOLLECTION()"),makepoint(1,2)))
-(NULL)
+AsText(Collect(geom))
+POINT(1 2)
