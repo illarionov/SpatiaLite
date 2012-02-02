@@ -337,7 +337,7 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 		/* function header */
 		fprintf (out, "static void\n");
 		fprintf (out,
-			 "initialize_epsg_%02d (struct epsg_defs **first, struct epsg_defs **last)\n",
+			 "initialize_epsg_%02d (int filter, struct epsg_defs **first, struct epsg_defs **last)\n",
 			 sect++);
 		fprintf (out, "{\n/* initializing the EPSG defs list */\n");
 		fprintf (out, "    struct epsg_defs *p;\n");
@@ -348,7 +348,7 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 	  /* inserting the main EPSG def */
 	  def_cnt++;
 	  fprintf (out,
-		   "    p = add_epsg_def (first, last, %d, \"epsg\", %d,\n",
+		   "    p = add_epsg_def (filter, first, last, %d, \"epsg\", %d,\n",
 		   p->srid, p->srid);
 	  fprintf (out, "        \"%s\");\n", p->ref_sys_name);
 
@@ -425,12 +425,12 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 /* function header */
     fprintf (out, "static void\n");
     fprintf (out,
-	     "initialize_epsg_extras (struct epsg_defs **first, struct epsg_defs **last)\n");
+	     "initialize_epsg_extras (int filter, struct epsg_defs **first, struct epsg_defs **last)\n");
     fprintf (out, "{\n/* initializing the EPSG defs list [EXTRA] */\n");
     fprintf (out, "    struct epsg_defs *p;\n");
 
     fprintf (out,
-	     "    p = add_epsg_def (first, last, 40000, \"gfoss.it\", 1,\n");
+	     "    p = add_epsg_def (filter, first, last, 40000, \"gfoss.it\", 1,\n");
     fprintf (out, "        \"Italy mainland zone 1 GB Roma40\");\n");
     fprintf (out, "    add_proj4text (p, 0,\n");
     fprintf (out,
@@ -442,7 +442,7 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 	     "    add_proj4text (p, 2, \"1,-2.917,0.714,-11.68 +no_defs\");\n");
     fprintf (out, "    add_srs_wkt (p, 0, \"\");\n");
     fprintf (out,
-	     "    p = add_epsg_def (first, last, 40001, \"gfoss.it\", 2,\n");
+	     "    p = add_epsg_def (filter, first, last, 40001, \"gfoss.it\", 2,\n");
     fprintf (out, "        \"Italy mainland zone 2 GB Roma40\");\n");
     fprintf (out, "    add_proj4text (p, 0,\n");
     fprintf (out,
@@ -454,7 +454,7 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 	     "    add_proj4text (p, 2, \"71,-2.917,0.714,-11.68 +no_defs\");\n");
     fprintf (out, "    add_srs_wkt (p, 0, \"\");\n");
     fprintf (out,
-	     "    p = add_epsg_def (first, last, 40002, \"gfoss.it\", 3,\n");
+	     "    p = add_epsg_def (filter, first, last, 40002, \"gfoss.it\", 3,\n");
     fprintf (out, "        \"Italy Sardinia GB Roma40\");\n");
     fprintf (out, "    add_proj4text (p, 0,\n");
     fprintf (out,
@@ -466,7 +466,7 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 	     "    add_proj4text (p, 2, \"374,-0.679,-1.379,-9.48 +no_defs\");\n");
     fprintf (out, "    add_srs_wkt (p, 0, \"\");\n");
     fprintf (out,
-	     "    p = add_epsg_def (first, last, 40003, \"gfoss.it\", 4,\n");
+	     "    p = add_epsg_def (filter, first, last, 40003, \"gfoss.it\", 4,\n");
     fprintf (out, "        \"Italy Sicily GB Roma40\");\n");
     fprintf (out, "    add_proj4text (p, 0,\n");
     fprintf (out,
@@ -501,7 +501,7 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 		/* function header */
 		fprintf (out, "static void\n");
 		fprintf (out,
-			 "initialize_epsg_wgs84_%d (struct epsg_defs **first, struct epsg_defs **last)\n",
+			 "initialize_epsg_wgs84_%d (int filter, struct epsg_defs **first, struct epsg_defs **last)\n",
 			 wgs84_sect++);
 		fprintf (out,
 			 "{\n/* initializing the EPSG defs list [WGS84] */\n");
@@ -513,7 +513,7 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 	  /* inserting the main EPSG def */
 	  def_cnt++;
 	  fprintf (out,
-		   "    p = add_epsg_def (first, last, %d, \"epsg\", %d,\n",
+		   "    p = add_epsg_def (filter, first, last, %d, \"epsg\", %d,\n",
 		   p->srid, p->srid);
 	  fprintf (out, "        \"%s\");\n", p->ref_sys_name);
 
@@ -590,22 +590,27 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 /* inserting the pilot function */
     fprintf (out, "static void\n");
     fprintf (out,
-	     "initialize_epsg (struct epsg_defs **first, struct epsg_defs **last)\n");
+	     "initialize_epsg (int filter, struct epsg_defs **first, struct epsg_defs **last)\n");
     fprintf (out, "{\n/* initializing the EPSG defs list */\n");
-    fprintf (out, "    struct epsg_defs *p;\n");
+    fprintf (out, "    struct epsg_defs *p;\n ");
     fprintf (out, "/* initializing the EPSG UNKNOWN def [-1] */\n");
     fprintf (out,
-	     "    p = add_epsg_def (first, last, -1, \"NONE\", -1, \"UNKNOWN SRS\");\n");
+	     "    p = add_epsg_def (filter, first, last, -1, \"NONE\", -1, \"UNKNOWN SRS\");\n");
     fprintf (out, "    add_proj4text (p, 0, \"\");\n");
     fprintf (out, "    add_srs_wkt (p, 0, \"\");\n\n");
+    fprintf (out, "    if (filter != GAIA_EPSG_WGS84_ONLY)\n    {\n");
     fprintf (out,
 	     "#ifndef OMIT_EPSG    /* full EPSG initialization enabled */\n");
     for (i = 0; i < sect; i++)
-	fprintf (out, "    initialize_epsg_%02d (first, last);\n", i);
-    fprintf (out, "    initialize_epsg_extras (first, last);\n");
+	fprintf (out,
+		 "        initialize_epsg_%02d (filter, first, last);\n", i);
+    fprintf (out, "        initialize_epsg_extras (filter, first, last);\n");
     fprintf (out, "#endif /* full EPSG initialization enabled/disabled */\n");
+
+    fprintf (out, "    }\n");
     for (i = 0; i < wgs84_sect; i++)
-	fprintf (out, "    initialize_epsg_wgs84_%d (first, last);\n", i);
+	fprintf (out,
+		 "    initialize_epsg_wgs84_%d (filter, first, last);\n", i);
     fprintf (out, "}\n");
 }
 
@@ -627,13 +632,11 @@ main (int argc, char *argv[])
     FILE *fl_wkt = NULL;
     FILE *fl_out = NULL;
     struct epsg_dict epsg;
-
 /* initializing the EPSG dictionary */
     epsg.first = NULL;
     epsg.last = NULL;
     epsg.sorted = NULL;
     epsg.count = 0;
-
 /* opening the EPSG input file */
     fl_epsg = fopen ("epsg", "rb");
     if (fl_epsg == NULL)
@@ -678,7 +681,6 @@ main (int argc, char *argv[])
       }
 
     output_c_code (fl_out, &epsg);
-
   stop:
     free_epsg (&epsg);
     if (fl_epsg)

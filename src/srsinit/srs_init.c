@@ -83,12 +83,20 @@ free_epsg_def (struct epsg_defs *ptr)
 }
 
 static struct epsg_defs *
-add_epsg_def (struct epsg_defs **first, struct epsg_defs **last, int srid,
-	      const char *auth_name, int auth_srid, const char *ref_sys_name)
+add_epsg_def (int filter_srid, struct epsg_defs **first,
+	      struct epsg_defs **last, int srid, const char *auth_name,
+	      int auth_srid, const char *ref_sys_name)
 {
 /* appending an EPSG def to the list */
     int len;
-    struct epsg_defs *p = malloc (sizeof (struct epsg_defs));
+    struct epsg_defs *p;
+    if (filter_srid == GAIA_EPSG_NONE)
+	return NULL;
+    if (filter_srid == GAIA_EPSG_ANY || filter_srid == GAIA_EPSG_WGS84_ONLY)
+	;
+    else if (srid != filter_srid)
+	return NULL;
+    p = malloc (sizeof (struct epsg_defs));
     if (!p)
 	return NULL;
     p->srid = srid;
@@ -138,7 +146,7 @@ add_proj4text (struct epsg_defs *p, int count, const char *text)
     int len;
     int olen;
     char *string;
-    if (text == NULL)
+    if (p == NULL || text == NULL)
 	return;
     len = strlen (text);
     if (!count)
@@ -168,7 +176,7 @@ add_srs_wkt (struct epsg_defs *p, int count, const char *text)
     int len;
     int olen;
     char *string;
-    if (text == NULL)
+    if (p == NULL || text == NULL)
 	return;
     len = strlen (text);
     if (!count)
@@ -211,7 +219,7 @@ free_epsg (struct epsg_defs *first)
 }
 
 static int
-populate_spatial_ref_sys (sqlite3 * handle)
+populate_spatial_ref_sys (sqlite3 * handle, int mode)
 {
 /* populating the EPSG dataset into the SPATIAL_REF_SYS table */
     struct epsg_defs *first = NULL;
@@ -223,7 +231,7 @@ populate_spatial_ref_sys (sqlite3 * handle)
     sqlite3_stmt *stmt;
 
 /* initializing the EPSG defs list */
-    initialize_epsg (&first, &last);
+    initialize_epsg (mode, &first, &last);
 
 /* starting a transaction */
     ret = sqlite3_exec (handle, "BEGIN", NULL, 0, &errMsg);
@@ -430,7 +438,7 @@ spatial_ref_sys_count (sqlite3 * handle)
 }
 
 SPATIALITE_DECLARE int
-spatial_ref_sys_init (sqlite3 * handle, int verbose)
+spatial_ref_sys_init (sqlite3 * handle, int mode, int verbose)
 {
 /* populating the EPSG dataset into the SPATIAL_REF_SYS table */
     if (!exists_spatial_ref_sys (handle))
@@ -453,12 +461,98 @@ spatial_ref_sys_init (sqlite3 * handle, int verbose)
 		  ("the SPATIAL_REF_SYS table already contains some row(s)\n");
 	  return 0;
       }
-    if (populate_spatial_ref_sys (handle))
+    if (mode == GAIA_EPSG_ANY || mode == GAIA_EPSG_NONE
+	|| mode == GAIA_EPSG_WGS84_ONLY)
+	;
+    else
+	mode = GAIA_EPSG_ANY;
+    if (populate_spatial_ref_sys (handle, mode))
       {
-	  if (verbose)
+	  if (verbose && mode != GAIA_EPSG_NONE)
 	      spatialite_e
 		  ("OK: the SPATIAL_REF_SYS table was successfully populated\n");
 	  return 1;
       }
     return 0;
+}
+
+SPATIALITE_DECLARE int
+insert_epsg_srid (sqlite3 * handle, int srid)
+{
+/* inserting a single EPSG definition into the SPATIAL_REF_SYS table */
+    struct epsg_defs *first = NULL;
+    struct epsg_defs *last = NULL;
+    struct epsg_defs *p;
+    char sql[1024];
+    char *errMsg = NULL;
+    int ret;
+    int error = 0;
+    sqlite3_stmt *stmt;
+
+    if (!exists_spatial_ref_sys (handle))
+      {
+	  spatialite_e ("the SPATIAL_REF_SYS table doesn't exists\n");
+	  return 0;
+      }
+    if (!check_spatial_ref_sys (handle))
+      {
+	  spatialite_e
+	      ("the SPATIAL_REF_SYS table has an unsupported layout\n");
+	  return 0;
+      }
+
+/* initializing the EPSG defs list */
+    initialize_epsg (srid, &first, &last);
+    if (first == NULL)
+      {
+	  spatialite_e ("SRID=%d isn't defined in the EPSG inlined dataset\n",
+			srid);
+	  return 0;
+      }
+
+/* preparing the SQL parameterized statement */
+    strcpy (sql, "INSERT INTO spatial_ref_sys ");
+    strcat (sql,
+	    "(srid, auth_name, auth_srid, ref_sys_name, proj4text, srs_wkt) ");
+    strcat (sql, "VALUES (?, ?, ?, ?, ?, ?)");
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("%s\n", sqlite3_errmsg (handle));
+	  error = 1;
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_int (stmt, 1, first->srid);
+    sqlite3_bind_text (stmt, 2, first->auth_name, strlen (first->auth_name),
+		       SQLITE_STATIC);
+    sqlite3_bind_int (stmt, 3, first->auth_srid);
+    sqlite3_bind_text (stmt, 4, first->ref_sys_name,
+		       strlen (first->ref_sys_name), SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 5, first->proj4text, strlen (first->proj4text),
+		       SQLITE_STATIC);
+    if (strlen (first->srs_wkt) == 0)
+	sqlite3_bind_null (stmt, 6);
+    else
+	sqlite3_bind_text (stmt, 6, first->srs_wkt, strlen (first->srs_wkt),
+			   SQLITE_STATIC);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("%s\n", sqlite3_errmsg (handle));
+	  error = 1;
+	  goto stop;
+      }
+  stop:
+    if (stmt != NULL)
+	sqlite3_finalize (stmt);
+
+/* freeing the EPSG defs list */
+    free_epsg (first);
+    if (error)
+	return 0;
+    return 1;
 }

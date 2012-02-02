@@ -1120,7 +1120,7 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
 {
 /* SQL function:
-/ InitSpatialMetaData(void)
+/ InitSpatialMetaData([text mode])
 /
 / creates the SPATIAL_REF_SYS and GEOMETRY_COLUMNS tables
 / returns 1 on success
@@ -1129,8 +1129,27 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     char sql[1024];
     char *errMsg = NULL;
     int ret;
+    unsigned const char *xmode;
+    int mode = GAIA_EPSG_ANY;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();
+    if (argc == 1)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		spatialite_e
+		    ("InitSpatialMetaData() error: argument 1 [mode] is not of the String type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  xmode = sqlite3_value_text (argv[0]);
+	  if (strcasecmp (xmode, "NONE") == 0
+	      || strcasecmp (xmode, "EMPTY") == 0)
+	      mode = GAIA_EPSG_NONE;
+	  if (strcasecmp (xmode, "WGS84") == 0
+	      || strcasecmp (xmode, "WGS84_ONLY") == 0)
+	      mode = GAIA_EPSG_WGS84_ONLY;
+      }
 /* creating the SPATIAL_REF_SYS table */
     strcpy (sql, "CREATE TABLE spatial_ref_sys (\n");
     strcat (sql, "srid INTEGER NOT NULL PRIMARY KEY,\n");
@@ -1190,9 +1209,15 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
-    if (spatial_ref_sys_init (sqlite, 0))
-	updateSpatiaLiteHistory (sqlite, "spatial_ref_sys", NULL,
-				 "table successfully populated");
+    if (spatial_ref_sys_init (sqlite, mode, 0))
+      {
+	  if (mode == GAIA_EPSG_NONE)
+	      updateSpatiaLiteHistory (sqlite, "spatial_ref_sys", NULL,
+				       "table successfully created [empty]");
+	  else
+	      updateSpatiaLiteHistory (sqlite, "spatial_ref_sys", NULL,
+				       "table successfully populated");
+      }
     sqlite3_result_int (context, 1);
     return;
   error:
@@ -1200,6 +1225,33 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
+}
+
+static void
+fnct_InsertEpsgSrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ InsertEpsgSrid(int srid)
+/
+/ returns 1 on success: 0 on failure
+*/
+    int srid;
+    int ret;
+    unsigned char *p_result = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	srid = sqlite3_value_int (argv[0]);
+    else
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    ret = insert_epsg_srid (sqlite, srid);
+    if (!ret)
+	sqlite3_result_int (context, 0);
+    else
+	sqlite3_result_int (context, 1);
 }
 
 static int
@@ -16533,6 +16585,10 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_DiscardFDOGeometryColumn, 0, 0);
     sqlite3_create_function (db, "InitSpatialMetaData", 0, SQLITE_ANY, 0,
 			     fnct_InitSpatialMetaData, 0, 0);
+    sqlite3_create_function (db, "InitSpatialMetaData", 1, SQLITE_ANY, 0,
+			     fnct_InitSpatialMetaData, 0, 0);
+    sqlite3_create_function (db, "InsertEpsgSrid", 1, SQLITE_ANY, 0,
+			     fnct_InsertEpsgSrid, 0, 0);
     sqlite3_create_function (db, "AddGeometryColumn", 5, SQLITE_ANY, 0,
 			     fnct_AddGeometryColumn, 0, 0);
     sqlite3_create_function (db, "AddGeometryColumn", 6, SQLITE_ANY, 0,

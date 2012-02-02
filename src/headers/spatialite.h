@@ -65,6 +65,10 @@ extern "C"
 {
 #endif
 
+#define GAIA_EPSG_ANY -9999
+#define GAIA_EPSG_WGS84_ONLY -9998
+#define GAIA_EPSG_NONE -9997
+
 /**
  Return the current library version.
  */
@@ -210,6 +214,7 @@ extern "C"
  Inserts the inlined EPSG dataset into the "spatial_ref_sys" table
 
  \param sqlite handle to current DB connection
+ \param mode can be one of GAIA_EPSG_ANY, GAIA_EPSG_NONE or GAIA_EPSG_WGS84_ONLY
  \param verbose if TRUE a short report is shown on stderr
 
  \return 0 on failure, any other value on success
@@ -217,7 +222,18 @@ extern "C"
  \note this function is internally invoked by the SQL function 
   InitSpatialMetadata(), and is not usually intended for direct use.
  */
-    SPATIALITE_DECLARE int spatial_ref_sys_init (sqlite3 * sqlite, int verbose);
+    SPATIALITE_DECLARE int spatial_ref_sys_init (sqlite3 * sqlite, int mode,
+						 int verbose);
+
+/**
+ Inserts some inlined EPSG definition into the "spatial_ref_sys" table
+
+ \param sqlite handle to current DB connection
+ \param srid the SRID value uniquely identifying the required EPSG definition 
+
+ \return 0 on failure, any other value on success
+ */
+    SPATIALITE_DECLARE int insert_epsg_srid (sqlite3 * sqlite, int srid);
 
 /**
  Checks if a column is actually defined into the given table
