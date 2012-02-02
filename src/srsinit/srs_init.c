@@ -438,7 +438,17 @@ spatial_ref_sys_count (sqlite3 * handle)
 }
 
 SPATIALITE_DECLARE int
-spatial_ref_sys_init (sqlite3 * handle, int mode, int verbose)
+spatial_ref_sys_init (sqlite3 * handle, int verbose)
+{
+/* 
+/ deprecated function 
+/ [still supported simply not to break API-level back-compatibility] 
+*/
+    return spatial_ref_sys_init2 (handle, GAIA_EPSG_ANY, verbose);
+}
+
+SPATIALITE_DECLARE int
+spatial_ref_sys_init2 (sqlite3 * handle, int mode, int verbose)
 {
 /* populating the EPSG dataset into the SPATIAL_REF_SYS table */
     if (!exists_spatial_ref_sys (handle))

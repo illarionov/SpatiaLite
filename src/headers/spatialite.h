@@ -65,8 +65,14 @@ extern "C"
 {
 #endif
 
+/** spatial_ref_sys_init2: will create the "spatial_ref_sys" table
+ and will populate this table with any supported EPSG SRID definition */
 #define GAIA_EPSG_ANY -9999
+/** spatial_ref_sys_init2: will create the "spatial_ref_sys" table
+ and will populate this table only inserting WGS84-related definitions */
 #define GAIA_EPSG_WGS84_ONLY -9998
+/** spatial_ref_sys_init2: will create the "spatial_ref_sys" table
+ but will avoid to insert any row at all */
 #define GAIA_EPSG_NONE -9997
 
 /**
@@ -214,6 +220,23 @@ extern "C"
  Inserts the inlined EPSG dataset into the "spatial_ref_sys" table
 
  \param sqlite handle to current DB connection
+ \param verbose if TRUE a short report is shown on stderr
+
+ \return 0 on failure, any other value on success
+
+ \sa spatial_ref_sys_init2
+
+ \note this function is internally invoked by the SQL function 
+  InitSpatialMetadata(), and is not usually intended for direct use.
+  This functions is now deprecated, and will simply call
+  spatial_ref_sys_init2(sqlite, GAIA_EPSG_ANY, verbose).
+ */
+    SPATIALITE_DECLARE int spatial_ref_sys_init (sqlite3 * sqlite, int verbose);
+
+/**
+ Inserts the inlined EPSG dataset into the "spatial_ref_sys" table
+
+ \param sqlite handle to current DB connection
  \param mode can be one of GAIA_EPSG_ANY, GAIA_EPSG_NONE or GAIA_EPSG_WGS84_ONLY
  \param verbose if TRUE a short report is shown on stderr
 
@@ -222,8 +245,8 @@ extern "C"
  \note this function is internally invoked by the SQL function 
   InitSpatialMetadata(), and is not usually intended for direct use.
  */
-    SPATIALITE_DECLARE int spatial_ref_sys_init (sqlite3 * sqlite, int mode,
-						 int verbose);
+    SPATIALITE_DECLARE int spatial_ref_sys_init2 (sqlite3 * sqlite, int mode,
+						  int verbose);
 
 /**
  Inserts some inlined EPSG definition into the "spatial_ref_sys" table
