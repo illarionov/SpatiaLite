@@ -10853,8 +10853,32 @@ fnct_GeometryN (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		      for (iv = 0; iv < ring_out->Points; iv++)
 			{
 			    /* copying the exterior ring POINTs */
-			    gaiaGetPoint (ring_in->Coords, iv, &x, &y);
-			    gaiaSetPoint (ring_out->Coords, iv, x, y);
+			    if (ring_in->DimensionModel == GAIA_XY_Z)
+			      {
+				gaiaGetPointXYZ (ring_in->Coords, iv,
+							 &x, &y, &z);
+				gaiaSetPointXYZ (ring_out->Coords, iv,
+							 x, y, z);
+			      }
+			    else if (ring_in->DimensionModel == GAIA_XY_M)
+			      {
+				gaiaGetPointXYM (ring_in->Coords, iv,
+							 &x, &y, &m);
+				gaiaSetPointXYM (ring_out->Coords, iv,
+							 x, y, m);
+			      }
+			    else if (ring_in->DimensionModel == GAIA_XY_Z_M)
+			      {
+				gaiaGetPointXYZM (ring_in->Coords, iv,
+						    &x, &y, &z, &m);
+				gaiaSetPointXYZM (ring_out->Coords,
+						    iv, x, y, z, m);
+			      }
+			    else
+			      {
+				gaiaGetPoint (ring_in->Coords, iv, &x, &y);
+				gaiaSetPoint (ring_out->Coords, iv, x, y);
+			      }
 			}
 		      for (ib = 0; ib < polyg2->NumInteriors; ib++)
 			{
