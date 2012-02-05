@@ -4282,7 +4282,10 @@ check_topo_table (sqlite3 * sqlite, const char *table, int is_view)
 	     (!is_view) ? "table" : "view", table);
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
-	return 0;
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
     for (i = 1; i <= rows; i++)
 	exists = 1;
     sqlite3_free_table (results);
@@ -13655,6 +13658,7 @@ fnct_BdPolyFromText1 (sqlite3_context * context, int argc,
       }
     if (geo->DeclaredType != GAIA_MULTILINESTRING)
       {
+	  gaiaFreeGeomColl (geo);
 	  sqlite3_result_null (context);
 	  return;
       }
@@ -13696,6 +13700,7 @@ fnct_BdPolyFromText2 (sqlite3_context * context, int argc,
       }
     if (geo->DeclaredType != GAIA_MULTILINESTRING)
       {
+	  gaiaFreeGeomColl (geo);
 	  sqlite3_result_null (context);
 	  return;
       }
@@ -13732,6 +13737,7 @@ fnct_BdMPolyFromText1 (sqlite3_context * context, int argc,
       }
     if (geo->DeclaredType != GAIA_MULTILINESTRING)
       {
+	  gaiaFreeGeomColl (geo);
 	  sqlite3_result_null (context);
 	  return;
       }
@@ -13773,6 +13779,7 @@ fnct_BdMPolyFromText2 (sqlite3_context * context, int argc,
       }
     if (geo->DeclaredType != GAIA_MULTILINESTRING)
       {
+	  gaiaFreeGeomColl (geo);
 	  sqlite3_result_null (context);
 	  return;
       }
@@ -13812,6 +13819,7 @@ fnct_BdPolyFromWKB1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     if (geo->DeclaredType != GAIA_MULTILINESTRING)
       {
+	  gaiaFreeGeomColl (geo);
 	  sqlite3_result_null (context);
 	  return;
       }
@@ -13856,6 +13864,7 @@ fnct_BdPolyFromWKB2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     if (geo->DeclaredType != GAIA_MULTILINESTRING)
       {
+	  gaiaFreeGeomColl (geo);
 	  sqlite3_result_null (context);
 	  return;
       }
@@ -13896,6 +13905,7 @@ fnct_BdMPolyFromWKB1 (sqlite3_context * context, int argc,
       }
     if (geo->DeclaredType != GAIA_MULTILINESTRING)
       {
+	  gaiaFreeGeomColl (geo);
 	  sqlite3_result_null (context);
 	  return;
       }
@@ -13941,6 +13951,7 @@ fnct_BdMPolyFromWKB2 (sqlite3_context * context, int argc,
       }
     if (geo->DeclaredType != GAIA_MULTILINESTRING)
       {
+	  gaiaFreeGeomColl (geo);
 	  sqlite3_result_null (context);
 	  return;
       }
