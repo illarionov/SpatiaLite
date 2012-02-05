@@ -11659,7 +11659,7 @@ fnct_LinesFromRings (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaGeomCollPtr geo = NULL;
     gaiaGeomCollPtr geom_new = NULL;
     int len;
-    int multi_linestring;
+    int multi_linestring = 0;
     unsigned char *p_result = NULL;
     GAIA_UNUSED ();
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
