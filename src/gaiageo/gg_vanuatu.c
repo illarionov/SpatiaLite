@@ -68,6 +68,139 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 int vanuatu_parse_error;
 
+#define VANUATU_DYN_NONE	0
+#define VANUATU_DYN_POINT	1
+#define VANUATU_DYN_LINESTRING	2
+#define VANUATU_DYN_POLYGON	3
+#define VANUATU_DYN_RING	4
+#define VANUATU_DYN_GEOMETRY	5
+
+#define VANUATU_DYN_BLOCK 1024
+
+struct vanuatu_dyn_block
+{
+/* a struct taking trace of dynamic allocations */
+    int type[VANUATU_DYN_BLOCK];
+    void *ptr[VANUATU_DYN_BLOCK];
+    int index;
+    struct vanuatu_dyn_block *next;
+};
+
+struct vanuatu_dyn_block *vanuatu_first_dyn_block;
+struct vanuatu_dyn_block *vanuatu_last_dyn_block;
+
+static struct vanuatu_dyn_block *
+vanuatuCreateDynBlock (void)
+{
+/* allocating a new block to trace dynamic allocations */
+    int i;
+    struct vanuatu_dyn_block *p = malloc (sizeof (struct vanuatu_dyn_block));
+    for (i = 0; i < VANUATU_DYN_BLOCK; i++)
+      {
+	  /* initializing map entries */
+	  p->type[i] = VANUATU_DYN_NONE;
+	  p->ptr[i] = NULL;
+      }
+    p->index = 0;
+    p->next = NULL;
+    return p;
+}
+
+static void
+vanuatuMapDynAlloc (int type, void *ptr)
+{
+/* appending a dynamic allocation into the map */
+    struct vanuatu_dyn_block *p;
+    if (vanuatu_first_dyn_block == NULL)
+      {
+	  /* inserting the first block of the map */
+	  p = vanuatuCreateDynBlock ();
+	  vanuatu_first_dyn_block = p;
+	  vanuatu_last_dyn_block = p;
+      }
+    if (vanuatu_last_dyn_block->index >= VANUATU_DYN_BLOCK)
+      {
+	  /* adding a further block to the map */
+	  p = vanuatuCreateDynBlock ();
+	  vanuatu_last_dyn_block->next = p;
+	  vanuatu_last_dyn_block = p;
+      }
+    vanuatu_last_dyn_block->type[vanuatu_last_dyn_block->index] = type;
+    vanuatu_last_dyn_block->ptr[vanuatu_last_dyn_block->index] = ptr;
+    vanuatu_last_dyn_block->index++;
+}
+
+static void
+vanuatuMapDynClean (void *ptr)
+{
+/* deleting a dynamic allocation from the map */
+    int i;
+    struct vanuatu_dyn_block *p = vanuatu_first_dyn_block;
+    while (p)
+      {
+	  for (i = 0; i < VANUATU_DYN_BLOCK; i++)
+	    {
+		switch (p->type[i])
+		  {
+		  case VANUATU_DYN_POINT:
+		  case VANUATU_DYN_LINESTRING:
+		  case VANUATU_DYN_POLYGON:
+		  case VANUATU_DYN_RING:
+		      if (p->ptr[i] == ptr)
+			{
+			    p->type[i] = VANUATU_DYN_NONE;
+			    return;
+			}
+		      break;
+		  };
+	    }
+	  p = p->next;
+      }
+
+}
+
+static void
+vanuatuCleanMapDynAlloc (int clean_all)
+{
+/* cleaning the dynamic allocations map */
+    int i;
+    struct vanuatu_dyn_block *pn;
+    struct vanuatu_dyn_block *p = vanuatu_first_dyn_block;
+    while (p)
+      {
+	  if (clean_all)
+	    {
+		for (i = 0; i < VANUATU_DYN_BLOCK; i++)
+		  {
+		      /* deleting Geometry objects */
+		      switch (p->type[i])
+			{
+			case VANUATU_DYN_POINT:
+			    gaiaFreePoint ((gaiaPointPtr) (p->ptr[i]));
+			    break;
+			case VANUATU_DYN_LINESTRING:
+			    gaiaFreeLinestring ((gaiaLinestringPtr)
+						(p->ptr[i]));
+			    break;
+			case VANUATU_DYN_POLYGON:
+			    gaiaFreePolygon ((gaiaPolygonPtr) (p->ptr[i]));
+			    break;
+			case VANUATU_DYN_RING:
+			    gaiaFreeRing ((gaiaRingPtr) (p->ptr[i]));
+			    break;
+			case VANUATU_DYN_GEOMETRY:
+			    gaiaFreeGeomColl ((gaiaGeomCollPtr) (p->ptr[i]));
+			    break;
+			};
+		  }
+	    }
+	  /* deleting the map block */
+	  pn = p->next;
+	  free (p);
+	  p = pn;
+      }
+}
+
 static int
 vanuatuCheckValidity (gaiaGeomCollPtr geom)
 {
@@ -121,8 +254,10 @@ gaiaGeometryFromPoint (gaiaPointPtr point)
 /* builds a GEOMETRY containing a POINT */
     gaiaGeomCollPtr geom = NULL;
     geom = gaiaAllocGeomColl ();
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_POINT;
     gaiaAddPointToGeomColl (geom, point->X, point->Y);
+    vanuatuMapDynClean (point);
     gaiaFreePoint (point);
     return geom;
 }
@@ -133,8 +268,10 @@ gaiaGeometryFromPointZ (gaiaPointPtr point)
 /* builds a GEOMETRY containing a POINTZ */
     gaiaGeomCollPtr geom = NULL;
     geom = gaiaAllocGeomCollXYZ ();
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_POINTZ;
     gaiaAddPointToGeomCollXYZ (geom, point->X, point->Y, point->Z);
+    vanuatuMapDynClean (point);
     gaiaFreePoint (point);
     return geom;
 }
@@ -145,8 +282,10 @@ gaiaGeometryFromPointM (gaiaPointPtr point)
 /* builds a GEOMETRY containing a POINTM */
     gaiaGeomCollPtr geom = NULL;
     geom = gaiaAllocGeomCollXYM ();
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_POINTM;
     gaiaAddPointToGeomCollXYM (geom, point->X, point->Y, point->M);
+    vanuatuMapDynClean (point);
     gaiaFreePoint (point);
     return geom;
 }
@@ -157,8 +296,10 @@ gaiaGeometryFromPointZM (gaiaPointPtr point)
 /* builds a GEOMETRY containing a POINTZM */
     gaiaGeomCollPtr geom = NULL;
     geom = gaiaAllocGeomCollXYZM ();
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_POINTZM;
     gaiaAddPointToGeomCollXYZM (geom, point->X, point->Y, point->Z, point->M);
+    vanuatuMapDynClean (point);
     gaiaFreePoint (point);
     return geom;
 }
@@ -173,6 +314,7 @@ gaiaGeometryFromLinestring (gaiaLinestringPtr line)
     double x;
     double y;
     geom = gaiaAllocGeomColl ();
+    vanuatuMapDynAlloc (VANUATU_DYN_LINESTRING, geom);
     geom->DeclaredType = GAIA_LINESTRING;
     line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
     for (iv = 0; iv < line2->Points; iv++)
@@ -181,6 +323,7 @@ gaiaGeometryFromLinestring (gaiaLinestringPtr line)
 	  gaiaGetPoint (line->Coords, iv, &x, &y);
 	  gaiaSetPoint (line2->Coords, iv, x, y);
       }
+    vanuatuMapDynClean (line);
     gaiaFreeLinestring (line);
     return geom;
 }
@@ -196,6 +339,7 @@ gaiaGeometryFromLinestringZ (gaiaLinestringPtr line)
     double y;
     double z;
     geom = gaiaAllocGeomCollXYZ ();
+    vanuatuMapDynAlloc (VANUATU_DYN_LINESTRING, geom);
     geom->DeclaredType = GAIA_LINESTRING;
     line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
     for (iv = 0; iv < line2->Points; iv++)
@@ -204,6 +348,7 @@ gaiaGeometryFromLinestringZ (gaiaLinestringPtr line)
 	  gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
 	  gaiaSetPointXYZ (line2->Coords, iv, x, y, z);
       }
+    vanuatuMapDynClean (line);
     gaiaFreeLinestring (line);
     return geom;
 }
@@ -220,6 +365,7 @@ gaiaGeometryFromLinestringM (gaiaLinestringPtr line)
     double y;
     double m;
     geom = gaiaAllocGeomCollXYM ();
+    vanuatuMapDynAlloc (VANUATU_DYN_LINESTRING, geom);
     geom->DeclaredType = GAIA_LINESTRING;
     line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
     for (iv = 0; iv < line2->Points; iv++)
@@ -228,6 +374,7 @@ gaiaGeometryFromLinestringM (gaiaLinestringPtr line)
 	  gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
 	  gaiaSetPointXYM (line2->Coords, iv, x, y, m);
       }
+    vanuatuMapDynClean (line);
     gaiaFreeLinestring (line);
     return geom;
 }
@@ -244,6 +391,7 @@ gaiaGeometryFromLinestringZM (gaiaLinestringPtr line)
     double z;
     double m;
     geom = gaiaAllocGeomCollXYZM ();
+    vanuatuMapDynAlloc (VANUATU_DYN_LINESTRING, geom);
     geom->DeclaredType = GAIA_LINESTRING;
     line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
     for (iv = 0; iv < line2->Points; iv++)
@@ -252,6 +400,7 @@ gaiaGeometryFromLinestringZM (gaiaLinestringPtr line)
 	  gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
 	  gaiaSetPointXYZM (line2->Coords, iv, x, y, z, m);
       }
+    vanuatuMapDynClean (line);
     gaiaFreeLinestring (line);
     return geom;
 }
@@ -290,7 +439,9 @@ Greg Wilson			gvwilson@cs.toronto.ca
 static gaiaPointPtr
 vanuatu_point_xy (double *x, double *y)
 {
-    return gaiaAllocPoint (*x, *y);
+    gaiaPointPtr pt = gaiaAllocPoint (*x, *y);
+    vanuatuMapDynAlloc (VANUATU_DYN_POINT, pt);
+    return pt;
 }
 
 /* 
@@ -305,7 +456,9 @@ vanuatu_point_xy (double *x, double *y)
 static gaiaPointPtr
 vanuatu_point_xyz (double *x, double *y, double *z)
 {
-    return gaiaAllocPointXYZ (*x, *y, *z);
+    gaiaPointPtr pt = gaiaAllocPointXYZ (*x, *y, *z);
+    vanuatuMapDynAlloc (VANUATU_DYN_POINT, pt);
+    return pt;
 }
 
 /* 
@@ -318,7 +471,9 @@ vanuatu_point_xyz (double *x, double *y, double *z)
 static gaiaPointPtr
 vanuatu_point_xym (double *x, double *y, double *m)
 {
-    return gaiaAllocPointXYM (*x, *y, *m);
+    gaiaPointPtr pt = gaiaAllocPointXYM (*x, *y, *m);
+    vanuatuMapDynAlloc (VANUATU_DYN_POINT, pt);
+    return pt;
 }
 
 /* 
@@ -331,7 +486,9 @@ vanuatu_point_xym (double *x, double *y, double *m)
 gaiaPointPtr
 vanuatu_point_xyzm (double *x, double *y, double *z, double *m)
 {
-    return gaiaAllocPointXYZM (*x, *y, *z, *m);
+    gaiaPointPtr pt = gaiaAllocPointXYZM (*x, *y, *z, *m);
+    vanuatuMapDynAlloc (VANUATU_DYN_POINT, pt);
+    return pt;
 }
 
 /*
@@ -345,20 +502,29 @@ vanuatu_point_xyzm (double *x, double *y, double *z, double *m)
 static gaiaGeomCollPtr
 vanuatu_buildGeomFromPoint (gaiaPointPtr point)
 {
+    gaiaGeomCollPtr geom;
     switch (point->DimensionModel)
       {
       case GAIA_XY:
-	  return gaiaGeometryFromPoint (point);
-	  break;
+	  geom = gaiaGeometryFromPoint (point);
+	  vanuatuMapDynClean (point);
+	  vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
+	  return geom;
       case GAIA_XY_Z:
-	  return gaiaGeometryFromPointZ (point);
-	  break;
+	  geom = gaiaGeometryFromPointZ (point);
+	  vanuatuMapDynClean (point);
+	  vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
+	  return geom;
       case GAIA_XY_M:
-	  return gaiaGeometryFromPointM (point);
-	  break;
+	  geom = gaiaGeometryFromPointM (point);
+	  vanuatuMapDynClean (point);
+	  vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
+	  return geom;
       case GAIA_XY_Z_M:
-	  return gaiaGeometryFromPointZM (point);
-	  break;
+	  geom = gaiaGeometryFromPointZM (point);
+	  vanuatuMapDynClean (point);
+	  vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
+	  return geom;
       }
     return NULL;
 }
@@ -387,12 +553,14 @@ vanuatu_linestring_xy (gaiaPointPtr first)
       }
 
     linestring = gaiaAllocLinestring (points);
+    vanuatuMapDynAlloc (VANUATU_DYN_LINESTRING, linestring);
 
     p = first;
     while (p != NULL)
       {
 	  gaiaSetPoint (linestring->Coords, i, p->X, p->Y);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
 	  i++;
@@ -425,12 +593,14 @@ vanuatu_linestring_xyz (gaiaPointPtr first)
       }
 
     linestring = gaiaAllocLinestringXYZ (points);
+    vanuatuMapDynAlloc (VANUATU_DYN_LINESTRING, linestring);
 
     p = first;
     while (p != NULL)
       {
 	  gaiaSetPointXYZ (linestring->Coords, i, p->X, p->Y, p->Z);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
 	  i++;
@@ -463,12 +633,14 @@ vanuatu_linestring_xym (gaiaPointPtr first)
       }
 
     linestring = gaiaAllocLinestringXYM (points);
+    vanuatuMapDynAlloc (VANUATU_DYN_LINESTRING, linestring);
 
     p = first;
     while (p != NULL)
       {
 	  gaiaSetPointXYM (linestring->Coords, i, p->X, p->Y, p->M);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
 	  i++;
@@ -501,12 +673,14 @@ vanuatu_linestring_xyzm (gaiaPointPtr first)
       }
 
     linestring = gaiaAllocLinestringXYZM (points);
+    vanuatuMapDynAlloc (VANUATU_DYN_LINESTRING, linestring);
 
     p = first;
     while (p != NULL)
       {
 	  gaiaSetPointXYZM (linestring->Coords, i, p->X, p->Y, p->Z, p->M);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
 	  i++;
@@ -521,20 +695,29 @@ vanuatu_linestring_xyzm (gaiaPointPtr first)
 static gaiaGeomCollPtr
 vanuatu_buildGeomFromLinestring (gaiaLinestringPtr line)
 {
+    gaiaGeomCollPtr geom;
     switch (line->DimensionModel)
       {
       case GAIA_XY:
-	  return gaiaGeometryFromLinestring (line);
-	  break;
+	  geom = gaiaGeometryFromLinestring (line);
+	  vanuatuMapDynClean (line);
+	  vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
+	  return geom;
       case GAIA_XY_Z:
-	  return gaiaGeometryFromLinestringZ (line);
-	  break;
+	  geom = gaiaGeometryFromLinestringZ (line);
+	  vanuatuMapDynClean (line);
+	  vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
+	  return geom;
       case GAIA_XY_M:
-	  return gaiaGeometryFromLinestringM (line);
-	  break;
+	  geom = gaiaGeometryFromLinestringM (line);
+	  vanuatuMapDynClean (line);
+	  vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
+	  return geom;
       case GAIA_XY_Z_M:
-	  return gaiaGeometryFromLinestringZM (line);
-	  break;
+	  geom = gaiaGeometryFromLinestringZM (line);
+	  vanuatuMapDynClean (line);
+	  vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
+	  return geom;
       }
     return NULL;
 }
@@ -586,6 +769,7 @@ vanuatu_ring_xy (gaiaPointPtr first)
     ring = gaiaAllocRing (numpoints);
     if (ring == NULL)
 	return NULL;
+    vanuatuMapDynAlloc (VANUATU_DYN_RING, ring);
 
     /* Adds every point into the ring structure. */
     p = first;
@@ -593,6 +777,7 @@ vanuatu_ring_xy (gaiaPointPtr first)
       {
 	  gaiaSetPoint (ring->Coords, index, p->X, p->Y);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -630,6 +815,7 @@ vanuatu_ring_xyz (gaiaPointPtr first)
     ring = gaiaAllocRingXYZ (numpoints);
     if (ring == NULL)
 	return NULL;
+    vanuatuMapDynAlloc (VANUATU_DYN_RING, ring);
 
     /* Adds every point into the ring structure. */
     p = first;
@@ -637,6 +823,7 @@ vanuatu_ring_xyz (gaiaPointPtr first)
       {
 	  gaiaSetPointXYZ (ring->Coords, index, p->X, p->Y, p->Z);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -674,6 +861,7 @@ vanuatu_ring_xym (gaiaPointPtr first)
     ring = gaiaAllocRingXYM (numpoints);
     if (ring == NULL)
 	return NULL;
+    vanuatuMapDynAlloc (VANUATU_DYN_RING, ring);
 
     /* Adds every point into the ring structure. */
     p = first;
@@ -681,6 +869,7 @@ vanuatu_ring_xym (gaiaPointPtr first)
       {
 	  gaiaSetPointXYM (ring->Coords, index, p->X, p->Y, p->M);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -718,6 +907,7 @@ vanuatu_ring_xyzm (gaiaPointPtr first)
     ring = gaiaAllocRingXYZM (numpoints);
     if (ring == NULL)
 	return NULL;
+    vanuatuMapDynAlloc (VANUATU_DYN_RING, ring);
 
     /* Adds every point into the ring structure. */
     p = first;
@@ -725,6 +915,7 @@ vanuatu_ring_xyzm (gaiaPointPtr first)
       {
 	  gaiaSetPointXYZM (ring->Coords, index, p->X, p->Y, p->Z, p->M);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -755,12 +946,14 @@ vanuatu_polygon_any_type (gaiaRingPtr first)
     polygon = gaiaCreatePolygon (first);
     if (polygon == NULL)
 	return NULL;
+    vanuatuMapDynAlloc (VANUATU_DYN_POLYGON, polygon);
 
     /* Adds all interior rings into the polygon structure. */
     p = first;
     while (p != NULL)
       {
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  if (p == first)
 	      gaiaFreeRing (p);
 	  else
@@ -868,12 +1061,14 @@ vanuatu_buildGeomFromPolygon (gaiaPolygonPtr polygon)
       {
 	  return NULL;
       }
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_POLYGON;
 
     /* Stores the location of the first and last polygons in the linked list. */
     geom->FirstPolygon = polygon;
     while (polygon != NULL)
       {
+	  vanuatuMapDynClean (polygon);
 	  geom->LastPolygon = polygon;
 	  polygon = polygon->Next;
       }
@@ -903,6 +1098,7 @@ vanuatu_multipoint_xy (gaiaPointPtr first)
     geom = gaiaAllocGeomColl ();
     if (geom == NULL)
 	return NULL;
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_MULTIPOINT;
 
     /* For every 2D (xy) point, add it to the geometry collection. */
@@ -910,6 +1106,7 @@ vanuatu_multipoint_xy (gaiaPointPtr first)
       {
 	  gaiaAddPointToGeomColl (geom, p->X, p->Y);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -939,6 +1136,7 @@ vanuatu_multipoint_xyz (gaiaPointPtr first)
     geom = gaiaAllocGeomCollXYZ ();
     if (geom == NULL)
 	return NULL;
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_MULTIPOINT;
 
     /* For every 3D (xyz) point, add it to the geometry collection. */
@@ -946,6 +1144,7 @@ vanuatu_multipoint_xyz (gaiaPointPtr first)
       {
 	  gaiaAddPointToGeomCollXYZ (geom, p->X, p->Y, p->Z);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -975,6 +1174,7 @@ vanuatu_multipoint_xym (gaiaPointPtr first)
     geom = gaiaAllocGeomCollXYM ();
     if (geom == NULL)
 	return NULL;
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_MULTIPOINT;
 
     /* For every 2D (xym) point, add it to the geometry collection. */
@@ -982,6 +1182,7 @@ vanuatu_multipoint_xym (gaiaPointPtr first)
       {
 	  gaiaAddPointToGeomCollXYM (geom, p->X, p->Y, p->M);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -1011,6 +1212,7 @@ vanuatu_multipoint_xyzm (gaiaPointPtr first)
     geom = gaiaAllocGeomCollXYZM ();
     if (geom == NULL)
 	return NULL;
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_MULTIPOINT;
 
     /* For every 3D (xyzm) point, add it to the geometry collection. */
@@ -1018,6 +1220,7 @@ vanuatu_multipoint_xyzm (gaiaPointPtr first)
       {
 	  gaiaAddPointToGeomCollXYZM (geom, p->X, p->Y, p->Z, p->M);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -1040,6 +1243,7 @@ vanuatu_multilinestring_xy (gaiaLinestringPtr first)
     gaiaLinestringPtr p_n;
     gaiaLinestringPtr new_line;
     gaiaGeomCollPtr a = gaiaAllocGeomColl ();
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, a);
     a->DeclaredType = GAIA_MULTILINESTRING;
     a->DimensionModel = GAIA_XY;
 
@@ -1048,6 +1252,7 @@ vanuatu_multilinestring_xy (gaiaLinestringPtr first)
 	  new_line = gaiaAddLinestringToGeomColl (a, p->Points);
 	  gaiaCopyLinestringCoords (new_line, p);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreeLinestring (p);
 	  p = p_n;
       }
@@ -1071,6 +1276,7 @@ vanuatu_multilinestring_xyz (gaiaLinestringPtr first)
     gaiaLinestringPtr p_n;
     gaiaLinestringPtr new_line;
     gaiaGeomCollPtr a = gaiaAllocGeomCollXYZ ();
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, a);
     a->DeclaredType = GAIA_MULTILINESTRING;
     a->DimensionModel = GAIA_XY_Z;
 
@@ -1079,6 +1285,7 @@ vanuatu_multilinestring_xyz (gaiaLinestringPtr first)
 	  new_line = gaiaAddLinestringToGeomColl (a, p->Points);
 	  gaiaCopyLinestringCoords (new_line, p);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreeLinestring (p);
 	  p = p_n;
       }
@@ -1101,6 +1308,7 @@ vanuatu_multilinestring_xym (gaiaLinestringPtr first)
     gaiaLinestringPtr p_n;
     gaiaLinestringPtr new_line;
     gaiaGeomCollPtr a = gaiaAllocGeomCollXYM ();
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, a);
     a->DeclaredType = GAIA_MULTILINESTRING;
     a->DimensionModel = GAIA_XY_M;
 
@@ -1109,6 +1317,7 @@ vanuatu_multilinestring_xym (gaiaLinestringPtr first)
 	  new_line = gaiaAddLinestringToGeomColl (a, p->Points);
 	  gaiaCopyLinestringCoords (new_line, p);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreeLinestring (p);
 	  p = p_n;
       }
@@ -1132,6 +1341,7 @@ vanuatu_multilinestring_xyzm (gaiaLinestringPtr first)
     gaiaLinestringPtr p_n;
     gaiaLinestringPtr new_line;
     gaiaGeomCollPtr a = gaiaAllocGeomCollXYZM ();
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, a);
     a->DeclaredType = GAIA_MULTILINESTRING;
     a->DimensionModel = GAIA_XY_Z_M;
 
@@ -1140,6 +1350,7 @@ vanuatu_multilinestring_xyzm (gaiaLinestringPtr first)
 	  new_line = gaiaAddLinestringToGeomColl (a, p->Points);
 	  gaiaCopyLinestringCoords (new_line, p);
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreeLinestring (p);
 	  p = p_n;
       }
@@ -1169,6 +1380,7 @@ vanuatu_multipolygon_xy (gaiaPolygonPtr first)
     gaiaRingPtr i_ring;
     gaiaRingPtr o_ring;
     gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
 
     geom->DeclaredType = GAIA_MULTIPOLYGON;
 
@@ -1188,6 +1400,7 @@ vanuatu_multipolygon_xy (gaiaPolygonPtr first)
 	    }
 
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePolygon (p);
 	  p = p_n;
       }
@@ -1218,6 +1431,7 @@ vanuatu_multipolygon_xyz (gaiaPolygonPtr first)
     gaiaRingPtr i_ring;
     gaiaRingPtr o_ring;
     gaiaGeomCollPtr geom = gaiaAllocGeomCollXYZ ();
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
 
     geom->DeclaredType = GAIA_MULTIPOLYGON;
 
@@ -1237,6 +1451,7 @@ vanuatu_multipolygon_xyz (gaiaPolygonPtr first)
 	    }
 
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePolygon (p);
 	  p = p_n;
       }
@@ -1267,6 +1482,7 @@ vanuatu_multipolygon_xym (gaiaPolygonPtr first)
     gaiaRingPtr i_ring;
     gaiaRingPtr o_ring;
     gaiaGeomCollPtr geom = gaiaAllocGeomCollXYM ();
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
 
     geom->DeclaredType = GAIA_MULTIPOLYGON;
 
@@ -1286,6 +1502,7 @@ vanuatu_multipolygon_xym (gaiaPolygonPtr first)
 	    }
 
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePolygon (p);
 	  p = p_n;
       }
@@ -1316,6 +1533,7 @@ vanuatu_multipolygon_xyzm (gaiaPolygonPtr first)
     gaiaRingPtr i_ring;
     gaiaRingPtr o_ring;
     gaiaGeomCollPtr geom = gaiaAllocGeomCollXYZM ();
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
 
     geom->DeclaredType = GAIA_MULTIPOLYGON;
 
@@ -1335,6 +1553,7 @@ vanuatu_multipolygon_xyzm (gaiaPolygonPtr first)
 	    }
 
 	  p_n = p->Next;
+	  vanuatuMapDynClean (p);
 	  gaiaFreePolygon (p);
 	  p = p_n;
       }
@@ -1402,6 +1621,7 @@ vanuatu_geomColl_common (gaiaGeomCollPtr org, gaiaGeomCollPtr dst)
 	  p->LastLinestring = NULL;
 	  p->FirstPolygon = NULL;
 	  p->LastPolygon = NULL;
+	  vanuatuMapDynClean (p);
 	  gaiaFreeGeomColl (p);
 	  p = p_n;
       }
@@ -1435,6 +1655,7 @@ vanuatu_geomColl_xy (gaiaGeomCollPtr first)
     gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
     if (geom == NULL)
 	return NULL;
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     geom->DimensionModel = GAIA_XY;
     vanuatu_geomColl_common (first, geom);
@@ -1456,6 +1677,7 @@ vanuatu_geomColl_xyz (gaiaGeomCollPtr first)
     gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
     if (geom == NULL)
 	return NULL;
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     geom->DimensionModel = GAIA_XY_Z;
     vanuatu_geomColl_common (first, geom);
@@ -1477,6 +1699,7 @@ vanuatu_geomColl_xym (gaiaGeomCollPtr first)
     gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
     if (geom == NULL)
 	return NULL;
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     geom->DimensionModel = GAIA_XY_M;
     vanuatu_geomColl_common (first, geom);
@@ -1498,6 +1721,7 @@ vanuatu_geomColl_xyzm (gaiaGeomCollPtr first)
     gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
     if (geom == NULL)
 	return NULL;
+    vanuatuMapDynAlloc (VANUATU_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     geom->DimensionModel = GAIA_XY_Z_M;
     vanuatu_geomColl_common (first, geom);
@@ -1643,6 +1867,10 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
     int yv;
     gaiaGeomCollPtr result = NULL;
 
+/* initializing the allocation map */
+    vanuatu_first_dyn_block = NULL;
+    vanuatu_last_dyn_block = NULL;
+
     tokens->Next = NULL;
     /*
      ** Sandro Furieri 2010 Apr 4
@@ -1691,9 +1919,11 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
       {
 	  if (result)
 	      gaiaFreeGeomColl (result);
+	  vanuatuCleanMapDynAlloc (1);
 	  return NULL;
       }
 
+    vanuatuCleanMapDynAlloc (0);
     /*
      ** Sandro Furieri 2010 Apr 4
      ** final checkup for validity
