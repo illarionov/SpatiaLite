@@ -146,6 +146,7 @@ vanuatuMapDynClean (void *ptr)
 		  case VANUATU_DYN_LINESTRING:
 		  case VANUATU_DYN_POLYGON:
 		  case VANUATU_DYN_RING:
+		  case VANUATU_DYN_GEOMETRY:
 		      if (p->ptr[i] == ptr)
 			{
 			    p->type[i] = VANUATU_DYN_NONE;
@@ -1918,8 +1919,16 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
     if (vanuatu_parse_error)
       {
 	  if (result)
-	      gaiaFreeGeomColl (result);
-	  vanuatuCleanMapDynAlloc (1);
+	    {
+		/* if a Geometry-result has been produced, the stack is already cleaned */
+		gaiaFreeGeomColl (result);
+		vanuatuCleanMapDynAlloc (0);
+	    }
+	  else
+	    {
+		/* otherwise we are required to clean the stack */
+		vanuatuCleanMapDynAlloc (1);
+	    }
 	  return NULL;
       }
 
