@@ -34,6 +34,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 check_PROGRAMS = check_version$(EXEEXT) check_init$(EXEEXT) \
+	check_init2$(EXEEXT) check_geometry_cols$(EXEEXT) \
 	check_create$(EXEEXT) check_dbf_load$(EXEEXT) \
 	check_shp_load$(EXEEXT) check_shp_load_3d$(EXEEXT) \
 	shape_cp1252$(EXEEXT) shape_primitives$(EXEEXT) \
@@ -72,9 +73,15 @@ check_gaia_utf8_LDADD = $(LDADD)
 check_gaia_util_SOURCES = check_gaia_util.c
 check_gaia_util_OBJECTS = check_gaia_util.$(OBJEXT)
 check_gaia_util_LDADD = $(LDADD)
+check_geometry_cols_SOURCES = check_geometry_cols.c
+check_geometry_cols_OBJECTS = check_geometry_cols.$(OBJEXT)
+check_geometry_cols_LDADD = $(LDADD)
 check_init_SOURCES = check_init.c
 check_init_OBJECTS = check_init.$(OBJEXT)
 check_init_LDADD = $(LDADD)
+check_init2_SOURCES = check_init2.c
+check_init2_OBJECTS = check_init2.$(OBJEXT)
+check_init2_LDADD = $(LDADD)
 check_math_funcs_SOURCES = check_math_funcs.c
 check_math_funcs_OBJECTS = check_math_funcs.$(OBJEXT)
 check_math_funcs_LDADD = $(LDADD)
@@ -146,22 +153,24 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = check_create.c check_dbf_load.c check_extension.c \
-	check_gaia_utf8.c check_gaia_util.c check_init.c \
-	check_math_funcs.c check_mbrcache.c check_shp_load.c \
-	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
-	check_version.c check_virtualtable1.c check_virtualtable2.c \
-	check_virtualtable3.c check_virtualtable4.c \
-	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
-	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	check_gaia_utf8.c check_gaia_util.c check_geometry_cols.c \
+	check_init.c check_init2.c check_math_funcs.c check_mbrcache.c \
+	check_shp_load.c check_shp_load_3d.c check_spatialindex.c \
+	check_sql_stmt.c check_version.c check_virtualtable1.c \
+	check_virtualtable2.c check_virtualtable3.c \
+	check_virtualtable4.c check_virtualtable5.c \
+	check_virtualtable6.c check_xls_load.c shape_3d.c \
+	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
 	shape_utf8_2.c
 DIST_SOURCES = check_create.c check_dbf_load.c check_extension.c \
-	check_gaia_utf8.c check_gaia_util.c check_init.c \
-	check_math_funcs.c check_mbrcache.c check_shp_load.c \
-	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
-	check_version.c check_virtualtable1.c check_virtualtable2.c \
-	check_virtualtable3.c check_virtualtable4.c \
-	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
-	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	check_gaia_utf8.c check_gaia_util.c check_geometry_cols.c \
+	check_init.c check_init2.c check_math_funcs.c check_mbrcache.c \
+	check_shp_load.c check_shp_load_3d.c check_spatialindex.c \
+	check_sql_stmt.c check_version.c check_virtualtable1.c \
+	check_virtualtable2.c check_virtualtable3.c \
+	check_virtualtable4.c check_virtualtable5.c \
+	check_virtualtable6.c check_xls_load.c shape_3d.c \
+	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
 	shape_utf8_2.c
 ETAGS = etags
 CTAGS = ctags
@@ -1496,9 +1505,15 @@ check_gaia_utf8$(EXEEXT): $(check_gaia_utf8_OBJECTS) $(check_gaia_utf8_DEPENDENC
 check_gaia_util$(EXEEXT): $(check_gaia_util_OBJECTS) $(check_gaia_util_DEPENDENCIES) 
 	@rm -f check_gaia_util$(EXEEXT)
 	$(LINK) $(check_gaia_util_OBJECTS) $(check_gaia_util_LDADD) $(LIBS)
+check_geometry_cols$(EXEEXT): $(check_geometry_cols_OBJECTS) $(check_geometry_cols_DEPENDENCIES) 
+	@rm -f check_geometry_cols$(EXEEXT)
+	$(LINK) $(check_geometry_cols_OBJECTS) $(check_geometry_cols_LDADD) $(LIBS)
 check_init$(EXEEXT): $(check_init_OBJECTS) $(check_init_DEPENDENCIES) 
 	@rm -f check_init$(EXEEXT)
 	$(LINK) $(check_init_OBJECTS) $(check_init_LDADD) $(LIBS)
+check_init2$(EXEEXT): $(check_init2_OBJECTS) $(check_init2_DEPENDENCIES) 
+	@rm -f check_init2$(EXEEXT)
+	$(LINK) $(check_init2_OBJECTS) $(check_init2_LDADD) $(LIBS)
 check_math_funcs$(EXEEXT): $(check_math_funcs_OBJECTS) $(check_math_funcs_DEPENDENCIES) 
 	@rm -f check_math_funcs$(EXEEXT)
 	$(LINK) $(check_math_funcs_OBJECTS) $(check_math_funcs_LDADD) $(LIBS)
@@ -1568,7 +1583,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_extension.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gaia_utf8.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gaia_util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_geometry_cols.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_init.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_init2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_math_funcs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_mbrcache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_shp_load.Po@am__quote@

@@ -1,5 +1,7 @@
 check_PROGRAMS = check_version \
 		check_init \
+		check_init2 \
+		check_geometry_cols \
 		check_create \
 		check_dbf_load \
 		check_shp_load \
