@@ -99,7 +99,7 @@ extern "C"
      
      \sa spatialite_init
     */
-    SPATIALITE_DECLARE void spatialite_cleanup ();
+    SPATIALITE_DECLARE void spatialite_cleanup (void);
 
 /**
  Dumps a full geometry-table into an external Shapefile
