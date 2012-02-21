@@ -1,4 +1,5 @@
-check_PROGRAMS = check_version \
+check_PROGRAMS = check_endian \
+		check_version \
 		check_init \
 		check_init2 \
 		check_geometry_cols \
