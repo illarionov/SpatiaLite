@@ -75,6 +75,15 @@ int kml_parse_error;
 #define GAIA_KML_POLYGON		3
 #define GAIA_KML_MULTIGEOMETRY		4
 
+#define KML_DYN_NONE	0
+#define KML_DYN_POINT	1
+#define KML_DYN_LINESTRING	2
+#define KML_DYN_POLYGON	3
+#define KML_DYN_RING	4
+#define KML_DYN_GEOMETRY	5
+
+#define KML_DYN_BLOCK 1024
+
 /*
 ** This is a linked-list struct to store all the values for each token.
 */
@@ -125,6 +134,130 @@ typedef struct kml_dynamic_polygon
     struct kml_dynamic_ring *last;
 } kmlDynamicPolygon;
 typedef kmlDynamicPolygon *kmlDynamicPolygonPtr;
+
+struct kml_dyn_block
+{
+/* a struct taking trace of dynamic allocations */
+    int type[KML_DYN_BLOCK];
+    void *ptr[KML_DYN_BLOCK];
+    int index;
+    struct kml_dyn_block *next;
+};
+
+struct kml_dyn_block *kml_first_dyn_block;
+struct kml_dyn_block *kml_last_dyn_block;
+
+static struct kml_dyn_block *
+kmlCreateDynBlock (void)
+{
+/* allocating a new block to trace dynamic allocations */
+    int i;
+    struct kml_dyn_block *p = malloc (sizeof (struct kml_dyn_block));
+    for (i = 0; i < KML_DYN_BLOCK; i++)
+      {
+	  /* initializing map entries */
+	  p->type[i] = KML_DYN_NONE;
+	  p->ptr[i] = NULL;
+      }
+    p->index = 0;
+    p->next = NULL;
+    return p;
+}
+
+static void
+kmlMapDynAlloc (int type, void *ptr)
+{
+/* appending a dynamic allocation into the map */
+    struct kml_dyn_block *p;
+    if (kml_first_dyn_block == NULL)
+      {
+	  /* inserting the first block of the map */
+	  p = kmlCreateDynBlock ();
+	  kml_first_dyn_block = p;
+	  kml_last_dyn_block = p;
+      }
+    if (kml_last_dyn_block->index >= KML_DYN_BLOCK)
+      {
+	  /* adding a further block to the map */
+	  p = kmlCreateDynBlock ();
+	  kml_last_dyn_block->next = p;
+	  kml_last_dyn_block = p;
+      }
+    kml_last_dyn_block->type[kml_last_dyn_block->index] = type;
+    kml_last_dyn_block->ptr[kml_last_dyn_block->index] = ptr;
+    kml_last_dyn_block->index++;
+}
+
+static void
+kmlMapDynClean (void *ptr)
+{
+/* deleting a dynamic allocation from the map */
+    int i;
+    struct kml_dyn_block *p = kml_first_dyn_block;
+    while (p)
+      {
+	  for (i = 0; i < KML_DYN_BLOCK; i++)
+	    {
+		switch (p->type[i])
+		  {
+		  case KML_DYN_POINT:
+		  case KML_DYN_LINESTRING:
+		  case KML_DYN_POLYGON:
+		  case KML_DYN_RING:
+		  case KML_DYN_GEOMETRY:
+		      if (p->ptr[i] == ptr)
+			{
+			    p->type[i] = KML_DYN_NONE;
+			    return;
+			}
+		      break;
+		  };
+	    }
+	  p = p->next;
+      }
+}
+
+static void
+kmlCleanMapDynAlloc (int clean_all)
+{
+/* cleaning the dynamic allocations map */
+    int i;
+    struct kml_dyn_block *pn;
+    struct kml_dyn_block *p = kml_first_dyn_block;
+    while (p)
+      {
+	  if (clean_all)
+	    {
+		for (i = 0; i < KML_DYN_BLOCK; i++)
+		  {
+		      /* deleting Geometry objects */
+		      switch (p->type[i])
+			{
+			case KML_DYN_POINT:
+			    gaiaFreePoint ((gaiaPointPtr) (p->ptr[i]));
+			    break;
+			case KML_DYN_LINESTRING:
+			    gaiaFreeLinestring ((gaiaLinestringPtr)
+						(p->ptr[i]));
+			    break;
+			case KML_DYN_POLYGON:
+			    gaiaFreePolygon ((gaiaPolygonPtr) (p->ptr[i]));
+			    break;
+			case KML_DYN_RING:
+			    gaiaFreeRing ((gaiaRingPtr) (p->ptr[i]));
+			    break;
+			case KML_DYN_GEOMETRY:
+			    gaiaFreeGeomColl ((gaiaGeomCollPtr) (p->ptr[i]));
+			    break;
+			};
+		  }
+	    }
+	  /* deleting the map block */
+	  pn = p->next;
+	  free (p);
+	  p = pn;
+      }
+}
 
 static kmlDynamicPolygonPtr
 kml_alloc_dyn_polygon (void)
@@ -1729,6 +1862,10 @@ gaiaParseKml (const unsigned char *dirty_buffer)
     kmlNodePtr result = NULL;
     gaiaGeomCollPtr geom = NULL;
 
+/* initializing the allocation map */
+    kml_first_dyn_block = NULL;
+    kml_last_dyn_block = NULL;
+
     KmlLval.pval = NULL;
     tokens->value = NULL;
     tokens->Next = NULL;
@@ -1770,9 +1907,22 @@ gaiaParseKml (const unsigned char *dirty_buffer)
     if (kml_parse_error)
       {
 	  if (result)
-	      kml_freeTree (result);
+	    {
+		/* if a Geometry-result has been produced, the stack is already cleaned */
+		kml_freeTree (result);
+		kmlCleanMapDynAlloc (0);
+	    }
+	  else
+	    {
+		/* otherwise we are required to clean the stack */
+		kmlCleanMapDynAlloc (1);
+	    }
 	  return NULL;
       }
+
+    kmlCleanMapDynAlloc (0);
+    if (!result)
+	return NULL;
 
     /* attempting to build a geometry from KML */
     geom = kml_build_geometry (result);

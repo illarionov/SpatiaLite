@@ -157,7 +157,6 @@ vanuatuMapDynClean (void *ptr)
 	    }
 	  p = p->next;
       }
-
 }
 
 static void

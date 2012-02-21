@@ -81,6 +81,15 @@ int gml_parse_error;
 #define GAIA_GML_MULTISURFACE		9
 #define GAIA_GML_MULTIGEOMETRY		10
 
+#define GML_DYN_NONE	0
+#define GML_DYN_POINT	1
+#define GML_DYN_LINESTRING	2
+#define GML_DYN_POLYGON	3
+#define GML_DYN_RING	4
+#define GML_DYN_GEOMETRY	5
+
+#define GML_DYN_BLOCK 1024
+
 /*
 ** This is a linked-list struct to store all the values for each token.
 */
@@ -131,6 +140,130 @@ typedef struct gml_dynamic_polygon
     struct gml_dynamic_ring *last;
 } gmlDynamicPolygon;
 typedef gmlDynamicPolygon *gmlDynamicPolygonPtr;
+
+struct gml_dyn_block
+{
+/* a struct taking trace of dynamic allocations */
+    int type[GML_DYN_BLOCK];
+    void *ptr[GML_DYN_BLOCK];
+    int index;
+    struct gml_dyn_block *next;
+};
+
+struct gml_dyn_block *gml_first_dyn_block;
+struct gml_dyn_block *gml_last_dyn_block;
+
+static struct gml_dyn_block *
+gmlCreateDynBlock (void)
+{
+/* allocating a new block to trace dynamic allocations */
+    int i;
+    struct gml_dyn_block *p = malloc (sizeof (struct gml_dyn_block));
+    for (i = 0; i < GML_DYN_BLOCK; i++)
+      {
+	  /* initializing map entries */
+	  p->type[i] = GML_DYN_NONE;
+	  p->ptr[i] = NULL;
+      }
+    p->index = 0;
+    p->next = NULL;
+    return p;
+}
+
+static void
+gmlMapDynAlloc (int type, void *ptr)
+{
+/* appending a dynamic allocation into the map */
+    struct gml_dyn_block *p;
+    if (gml_first_dyn_block == NULL)
+      {
+	  /* inserting the first block of the map */
+	  p = gmlCreateDynBlock ();
+	  gml_first_dyn_block = p;
+	  gml_last_dyn_block = p;
+      }
+    if (gml_last_dyn_block->index >= GML_DYN_BLOCK)
+      {
+	  /* adding a further block to the map */
+	  p = gmlCreateDynBlock ();
+	  gml_last_dyn_block->next = p;
+	  gml_last_dyn_block = p;
+      }
+    gml_last_dyn_block->type[gml_last_dyn_block->index] = type;
+    gml_last_dyn_block->ptr[gml_last_dyn_block->index] = ptr;
+    gml_last_dyn_block->index++;
+}
+
+static void
+gmlMapDynClean (void *ptr)
+{
+/* deleting a dynamic allocation from the map */
+    int i;
+    struct gml_dyn_block *p = gml_first_dyn_block;
+    while (p)
+      {
+	  for (i = 0; i < GML_DYN_BLOCK; i++)
+	    {
+		switch (p->type[i])
+		  {
+		  case GML_DYN_POINT:
+		  case GML_DYN_LINESTRING:
+		  case GML_DYN_POLYGON:
+		  case GML_DYN_RING:
+		  case GML_DYN_GEOMETRY:
+		      if (p->ptr[i] == ptr)
+			{
+			    p->type[i] = GML_DYN_NONE;
+			    return;
+			}
+		      break;
+		  };
+	    }
+	  p = p->next;
+      }
+}
+
+static void
+gmlCleanMapDynAlloc (int clean_all)
+{
+/* cleaning the dynamic allocations map */
+    int i;
+    struct gml_dyn_block *pn;
+    struct gml_dyn_block *p = gml_first_dyn_block;
+    while (p)
+      {
+	  if (clean_all)
+	    {
+		for (i = 0; i < GML_DYN_BLOCK; i++)
+		  {
+		      /* deleting Geometry objects */
+		      switch (p->type[i])
+			{
+			case GML_DYN_POINT:
+			    gaiaFreePoint ((gaiaPointPtr) (p->ptr[i]));
+			    break;
+			case GML_DYN_LINESTRING:
+			    gaiaFreeLinestring ((gaiaLinestringPtr)
+						(p->ptr[i]));
+			    break;
+			case GML_DYN_POLYGON:
+			    gaiaFreePolygon ((gaiaPolygonPtr) (p->ptr[i]));
+			    break;
+			case GML_DYN_RING:
+			    gaiaFreeRing ((gaiaRingPtr) (p->ptr[i]));
+			    break;
+			case GML_DYN_GEOMETRY:
+			    gaiaFreeGeomColl ((gaiaGeomCollPtr) (p->ptr[i]));
+			    break;
+			};
+		  }
+	    }
+	  /* deleting the map block */
+	  pn = p->next;
+	  free (p);
+	  p = pn;
+      }
+}
 
 static void
 gml_proj_params (sqlite3 * sqlite, int srid, char *proj_params)
@@ -2868,6 +3001,10 @@ gaiaParseGml (const unsigned char *dirty_buffer, sqlite3 * sqlite_handle)
     gmlNodePtr result = NULL;
     gaiaGeomCollPtr geom = NULL;
 
+/* initializing the allocation map */
+    gml_first_dyn_block = NULL;
+    gml_last_dyn_block = NULL;
+
     GmlLval.pval = NULL;
     tokens->value = NULL;
     tokens->Next = NULL;
@@ -2909,9 +3046,22 @@ gaiaParseGml (const unsigned char *dirty_buffer, sqlite3 * sqlite_handle)
     if (gml_parse_error)
       {
 	  if (result)
-	      gml_freeTree (result);
+	    {
+		/* if a Geometry-result has been produced, the stack is already cleaned */
+		gml_freeTree (result);
+		gmlCleanMapDynAlloc (0);
+	    }
+	  else
+	    {
+		/* otherwise we are required to clean the stack */
+		gmlCleanMapDynAlloc (1);
+	    }
 	  return NULL;
       }
+
+    gmlCleanMapDynAlloc (0);
+    if (!result)
+	return NULL;
 
     /* attempting to build a geometry from GML */
     geom = gml_build_geometry (result, sqlite_handle);

@@ -71,6 +71,139 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 int ewkt_parse_error;
 
+#define EWKT_DYN_NONE	0
+#define EWKT_DYN_POINT	1
+#define EWKT_DYN_LINESTRING	2
+#define EWKT_DYN_POLYGON	3
+#define EWKT_DYN_RING	4
+#define EWKT_DYN_GEOMETRY	5
+
+#define EWKT_DYN_BLOCK 1024
+
+struct ewkt_dyn_block
+{
+/* a struct taking trace of dynamic allocations */
+    int type[EWKT_DYN_BLOCK];
+    void *ptr[EWKT_DYN_BLOCK];
+    int index;
+    struct ewkt_dyn_block *next;
+};
+
+struct ewkt_dyn_block *ewkt_first_dyn_block;
+struct ewkt_dyn_block *ewkt_last_dyn_block;
+
+static struct ewkt_dyn_block *
+ewktCreateDynBlock (void)
+{
+/* allocating a new block to trace dynamic allocations */
+    int i;
+    struct ewkt_dyn_block *p = malloc (sizeof (struct ewkt_dyn_block));
+    for (i = 0; i < EWKT_DYN_BLOCK; i++)
+      {
+	  /* initializing map entries */
+	  p->type[i] = EWKT_DYN_NONE;
+	  p->ptr[i] = NULL;
+      }
+    p->index = 0;
+    p->next = NULL;
+    return p;
+}
+
+static void
+ewktMapDynAlloc (int type, void *ptr)
+{
+/* appending a dynamic allocation into the map */
+    struct ewkt_dyn_block *p;
+    if (ewkt_first_dyn_block == NULL)
+      {
+	  /* inserting the first block of the map */
+	  p = ewktCreateDynBlock ();
+	  ewkt_first_dyn_block = p;
+	  ewkt_last_dyn_block = p;
+      }
+    if (ewkt_last_dyn_block->index >= EWKT_DYN_BLOCK)
+      {
+	  /* adding a further block to the map */
+	  p = ewktCreateDynBlock ();
+	  ewkt_last_dyn_block->next = p;
+	  ewkt_last_dyn_block = p;
+      }
+    ewkt_last_dyn_block->type[ewkt_last_dyn_block->index] = type;
+    ewkt_last_dyn_block->ptr[ewkt_last_dyn_block->index] = ptr;
+    ewkt_last_dyn_block->index++;
+}
+
+static void
+ewktMapDynClean (void *ptr)
+{
+/* deleting a dynamic allocation from the map */
+    int i;
+    struct ewkt_dyn_block *p = ewkt_first_dyn_block;
+    while (p)
+      {
+	  for (i = 0; i < EWKT_DYN_BLOCK; i++)
+	    {
+		switch (p->type[i])
+		  {
+		  case EWKT_DYN_POINT:
+		  case EWKT_DYN_LINESTRING:
+		  case EWKT_DYN_POLYGON:
+		  case EWKT_DYN_RING:
+		  case EWKT_DYN_GEOMETRY:
+		      if (p->ptr[i] == ptr)
+			{
+			    p->type[i] = EWKT_DYN_NONE;
+			    return;
+			}
+		      break;
+		  };
+	    }
+	  p = p->next;
+      }
+}
+
+static void
+ewktCleanMapDynAlloc (int clean_all)
+{
+/* cleaning the dynamic allocations map */
+    int i;
+    struct ewkt_dyn_block *pn;
+    struct ewkt_dyn_block *p = ewkt_first_dyn_block;
+    while (p)
+      {
+	  if (clean_all)
+	    {
+		for (i = 0; i < EWKT_DYN_BLOCK; i++)
+		  {
+		      /* deleting Geometry objects */
+		      switch (p->type[i])
+			{
+			case EWKT_DYN_POINT:
+			    gaiaFreePoint ((gaiaPointPtr) (p->ptr[i]));
+			    break;
+			case EWKT_DYN_LINESTRING:
+			    gaiaFreeLinestring ((gaiaLinestringPtr)
+						(p->ptr[i]));
+			    break;
+			case EWKT_DYN_POLYGON:
+			    gaiaFreePolygon ((gaiaPolygonPtr) (p->ptr[i]));
+			    break;
+			case EWKT_DYN_RING:
+			    gaiaFreeRing ((gaiaRingPtr) (p->ptr[i]));
+			    break;
+			case EWKT_DYN_GEOMETRY:
+			    gaiaFreeGeomColl ((gaiaGeomCollPtr) (p->ptr[i]));
+			    break;
+			};
+		  }
+	    }
+	  /* deleting the map block */
+	  pn = p->next;
+	  free (p);
+	  p = pn;
+      }
+}
+
 static int
 ewktCheckValidity (gaiaGeomCollPtr geom)
 {
@@ -124,8 +257,10 @@ gaiaEwktGeometryFromPoint (gaiaPointPtr point)
 /* builds a GEOMETRY containing a POINT */
     gaiaGeomCollPtr geom = NULL;
     geom = gaiaAllocGeomColl ();
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_POINT;
     gaiaAddPointToGeomColl (geom, point->X, point->Y);
+    ewktMapDynClean (point);
     gaiaFreePoint (point);
     return geom;
 }
@@ -136,8 +271,10 @@ gaiaEwktGeometryFromPointZ (gaiaPointPtr point)
 /* builds a GEOMETRY containing a POINTZ */
     gaiaGeomCollPtr geom = NULL;
     geom = gaiaAllocGeomCollXYZ ();
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_POINTZ;
     gaiaAddPointToGeomCollXYZ (geom, point->X, point->Y, point->Z);
+    ewktMapDynClean (point);
     gaiaFreePoint (point);
     return geom;
 }
@@ -148,8 +285,10 @@ gaiaEwktGeometryFromPointM (gaiaPointPtr point)
 /* builds a GEOMETRY containing a POINTM */
     gaiaGeomCollPtr geom = NULL;
     geom = gaiaAllocGeomCollXYM ();
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_POINTM;
     gaiaAddPointToGeomCollXYM (geom, point->X, point->Y, point->M);
+    ewktMapDynClean (point);
     gaiaFreePoint (point);
     return geom;
 }
@@ -160,8 +299,10 @@ gaiaEwktGeometryFromPointZM (gaiaPointPtr point)
 /* builds a GEOMETRY containing a POINTZM */
     gaiaGeomCollPtr geom = NULL;
     geom = gaiaAllocGeomCollXYZM ();
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_POINTZM;
     gaiaAddPointToGeomCollXYZM (geom, point->X, point->Y, point->Z, point->M);
+    ewktMapDynClean (point);
     gaiaFreePoint (point);
     return geom;
 }
@@ -176,6 +317,7 @@ gaiaEwktGeometryFromLinestring (gaiaLinestringPtr line)
     double x;
     double y;
     geom = gaiaAllocGeomColl ();
+    ewktMapDynAlloc (EWKT_DYN_LINESTRING, geom);
     geom->DeclaredType = GAIA_LINESTRING;
     line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
     for (iv = 0; iv < line2->Points; iv++)
@@ -184,6 +326,7 @@ gaiaEwktGeometryFromLinestring (gaiaLinestringPtr line)
 	  gaiaGetPoint (line->Coords, iv, &x, &y);
 	  gaiaSetPoint (line2->Coords, iv, x, y);
       }
+    ewktMapDynClean (line);
     gaiaFreeLinestring (line);
     return geom;
 }
@@ -199,6 +342,7 @@ gaiaEwktGeometryFromLinestringZ (gaiaLinestringPtr line)
     double y;
     double z;
     geom = gaiaAllocGeomCollXYZ ();
+    ewktMapDynAlloc (EWKT_DYN_LINESTRING, geom);
     geom->DeclaredType = GAIA_LINESTRING;
     line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
     for (iv = 0; iv < line2->Points; iv++)
@@ -207,6 +351,7 @@ gaiaEwktGeometryFromLinestringZ (gaiaLinestringPtr line)
 	  gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
 	  gaiaSetPointXYZ (line2->Coords, iv, x, y, z);
       }
+    ewktMapDynClean (line);
     gaiaFreeLinestring (line);
     return geom;
 }
@@ -223,6 +368,7 @@ gaiaEwktGeometryFromLinestringM (gaiaLinestringPtr line)
     double y;
     double m;
     geom = gaiaAllocGeomCollXYM ();
+    ewktMapDynAlloc (EWKT_DYN_LINESTRING, geom);
     geom->DeclaredType = GAIA_LINESTRING;
     line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
     for (iv = 0; iv < line2->Points; iv++)
@@ -231,6 +377,7 @@ gaiaEwktGeometryFromLinestringM (gaiaLinestringPtr line)
 	  gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
 	  gaiaSetPointXYM (line2->Coords, iv, x, y, m);
       }
+    ewktMapDynClean (line);
     gaiaFreeLinestring (line);
     return geom;
 }
@@ -247,6 +394,7 @@ gaiaEwktGeometryFromLinestringZM (gaiaLinestringPtr line)
     double z;
     double m;
     geom = gaiaAllocGeomCollXYZM ();
+    ewktMapDynAlloc (EWKT_DYN_LINESTRING, geom);
     geom->DeclaredType = GAIA_LINESTRING;
     line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
     for (iv = 0; iv < line2->Points; iv++)
@@ -255,6 +403,7 @@ gaiaEwktGeometryFromLinestringZM (gaiaLinestringPtr line)
 	  gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
 	  gaiaSetPointXYZM (line2->Coords, iv, x, y, z, m);
       }
+    ewktMapDynClean (line);
     gaiaFreeLinestring (line);
     return geom;
 }
@@ -262,7 +411,9 @@ gaiaEwktGeometryFromLinestringZM (gaiaLinestringPtr line)
 static gaiaPointPtr
 ewkt_point_xy (double *x, double *y)
 {
-    return gaiaAllocPoint (*x, *y);
+    gaiaPointPtr pt = gaiaAllocPoint (*x, *y);
+    ewktMapDynAlloc (EWKT_DYN_POINT, pt);
+    return pt;
 }
 
 /* 
@@ -277,7 +428,9 @@ ewkt_point_xy (double *x, double *y)
 static gaiaPointPtr
 ewkt_point_xyz (double *x, double *y, double *z)
 {
-    return gaiaAllocPointXYZ (*x, *y, *z);
+    gaiaPointPtr pt = gaiaAllocPointXYZ (*x, *y, *z);
+    ewktMapDynAlloc (EWKT_DYN_POINT, pt);
+    return pt;
 }
 
 /* 
@@ -290,7 +443,9 @@ ewkt_point_xyz (double *x, double *y, double *z)
 static gaiaPointPtr
 ewkt_point_xym (double *x, double *y, double *m)
 {
-    return gaiaAllocPointXYM (*x, *y, *m);
+    gaiaPointPtr pt = gaiaAllocPointXYM (*x, *y, *m);
+    ewktMapDynAlloc (EWKT_DYN_POINT, pt);
+    return pt;
 }
 
 /* 
@@ -303,7 +458,9 @@ ewkt_point_xym (double *x, double *y, double *m)
 gaiaPointPtr
 ewkt_point_xyzm (double *x, double *y, double *z, double *m)
 {
-    return gaiaAllocPointXYZM (*x, *y, *z, *m);
+    gaiaPointPtr pt = gaiaAllocPointXYZM (*x, *y, *z, *m);
+    ewktMapDynAlloc (EWKT_DYN_POINT, pt);
+    return pt;
 }
 
 /*
@@ -317,20 +474,29 @@ ewkt_point_xyzm (double *x, double *y, double *z, double *m)
 static gaiaGeomCollPtr
 ewkt_buildGeomFromPoint (gaiaPointPtr point)
 {
+    gaiaGeomCollPtr geom;
     switch (point->DimensionModel)
       {
       case GAIA_XY:
-	  return gaiaEwktGeometryFromPoint (point);
-	  break;
+	  geom = gaiaEwktGeometryFromPoint (point);
+	  ewktMapDynClean (point);
+	  ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
+	  return geom;
       case GAIA_XY_Z:
-	  return gaiaEwktGeometryFromPointZ (point);
-	  break;
+	  geom = gaiaEwktGeometryFromPointZ (point);
+	  ewktMapDynClean (point);
+	  ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
+	  return geom;
       case GAIA_XY_M:
-	  return gaiaEwktGeometryFromPointM (point);
-	  break;
+	  geom = gaiaEwktGeometryFromPointM (point);
+	  ewktMapDynClean (point);
+	  ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
+	  return geom;
       case GAIA_XY_Z_M:
-	  return gaiaEwktGeometryFromPointZM (point);
-	  break;
+	  geom = gaiaEwktGeometryFromPointZM (point);
+	  ewktMapDynClean (point);
+	  ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
+	  return geom;
       }
     return NULL;
 }
@@ -359,12 +525,14 @@ ewkt_linestring_xy (gaiaPointPtr first)
       }
 
     linestring = gaiaAllocLinestring (points);
+    ewktMapDynAlloc (EWKT_DYN_LINESTRING, linestring);
 
     p = first;
     while (p != NULL)
       {
 	  gaiaSetPoint (linestring->Coords, i, p->X, p->Y);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
 	  i++;
@@ -397,12 +565,14 @@ ewkt_linestring_xyz (gaiaPointPtr first)
       }
 
     linestring = gaiaAllocLinestringXYZ (points);
+    ewktMapDynAlloc (EWKT_DYN_LINESTRING, linestring);
 
     p = first;
     while (p != NULL)
       {
 	  gaiaSetPointXYZ (linestring->Coords, i, p->X, p->Y, p->Z);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
 	  i++;
@@ -435,12 +605,14 @@ ewkt_linestring_xym (gaiaPointPtr first)
       }
 
     linestring = gaiaAllocLinestringXYM (points);
+    ewktMapDynAlloc (EWKT_DYN_LINESTRING, linestring);
 
     p = first;
     while (p != NULL)
       {
 	  gaiaSetPointXYM (linestring->Coords, i, p->X, p->Y, p->M);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
 	  i++;
@@ -473,12 +645,14 @@ ewkt_linestring_xyzm (gaiaPointPtr first)
       }
 
     linestring = gaiaAllocLinestringXYZM (points);
+    ewktMapDynAlloc (EWKT_DYN_LINESTRING, linestring);
 
     p = first;
     while (p != NULL)
       {
 	  gaiaSetPointXYZM (linestring->Coords, i, p->X, p->Y, p->Z, p->M);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
 	  i++;
@@ -493,20 +667,29 @@ ewkt_linestring_xyzm (gaiaPointPtr first)
 static gaiaGeomCollPtr
 ewkt_buildGeomFromLinestring (gaiaLinestringPtr line)
 {
+    gaiaGeomCollPtr geom;
     switch (line->DimensionModel)
       {
       case GAIA_XY:
-	  return gaiaEwktGeometryFromLinestring (line);
-	  break;
+	  geom = gaiaEwktGeometryFromLinestring (line);
+	  ewktMapDynClean (line);
+	  ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
+	  return geom;
       case GAIA_XY_Z:
-	  return gaiaEwktGeometryFromLinestringZ (line);
-	  break;
+	  geom = gaiaEwktGeometryFromLinestringZ (line);
+	  ewktMapDynClean (line);
+	  ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
+	  return geom;
       case GAIA_XY_M:
-	  return gaiaEwktGeometryFromLinestringM (line);
-	  break;
+	  geom = gaiaEwktGeometryFromLinestringM (line);
+	  ewktMapDynClean (line);
+	  ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
+	  return geom;
       case GAIA_XY_Z_M:
-	  return gaiaEwktGeometryFromLinestringZM (line);
-	  break;
+	  geom = gaiaEwktGeometryFromLinestringZM (line);
+	  ewktMapDynClean (line);
+	  ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
+	  return geom;
       }
     return NULL;
 }
@@ -558,6 +741,7 @@ ewkt_ring_xy (gaiaPointPtr first)
     ring = gaiaAllocRing (numpoints);
     if (ring == NULL)
 	return NULL;
+    ewktMapDynAlloc (EWKT_DYN_RING, ring);
 
     /* Adds every point into the ring structure. */
     p = first;
@@ -565,6 +749,7 @@ ewkt_ring_xy (gaiaPointPtr first)
       {
 	  gaiaSetPoint (ring->Coords, index, p->X, p->Y);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -602,6 +787,7 @@ ewkt_ring_xyz (gaiaPointPtr first)
     ring = gaiaAllocRingXYZ (numpoints);
     if (ring == NULL)
 	return NULL;
+    ewktMapDynAlloc (EWKT_DYN_RING, ring);
 
     /* Adds every point into the ring structure. */
     p = first;
@@ -609,6 +795,7 @@ ewkt_ring_xyz (gaiaPointPtr first)
       {
 	  gaiaSetPointXYZ (ring->Coords, index, p->X, p->Y, p->Z);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -646,6 +833,7 @@ ewkt_ring_xym (gaiaPointPtr first)
     ring = gaiaAllocRingXYM (numpoints);
     if (ring == NULL)
 	return NULL;
+    ewktMapDynAlloc (EWKT_DYN_RING, ring);
 
     /* Adds every point into the ring structure. */
     p = first;
@@ -653,6 +841,7 @@ ewkt_ring_xym (gaiaPointPtr first)
       {
 	  gaiaSetPointXYM (ring->Coords, index, p->X, p->Y, p->M);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -690,6 +879,7 @@ ewkt_ring_xyzm (gaiaPointPtr first)
     ring = gaiaAllocRingXYZM (numpoints);
     if (ring == NULL)
 	return NULL;
+    ewktMapDynAlloc (EWKT_DYN_RING, ring);
 
     /* Adds every point into the ring structure. */
     p = first;
@@ -697,6 +887,7 @@ ewkt_ring_xyzm (gaiaPointPtr first)
       {
 	  gaiaSetPointXYZM (ring->Coords, index, p->X, p->Y, p->Z, p->M);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -727,12 +918,14 @@ ewkt_polygon_any_type (gaiaRingPtr first)
     polygon = gaiaCreatePolygon (first);
     if (polygon == NULL)
 	return NULL;
+    ewktMapDynAlloc (EWKT_DYN_POLYGON, polygon);
 
     /* Adds all interior rings into the polygon structure. */
     p = first;
     while (p != NULL)
       {
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  if (p == first)
 	      gaiaFreeRing (p);
 	  else
@@ -840,12 +1033,14 @@ ewkt_buildGeomFromPolygon (gaiaPolygonPtr polygon)
       {
 	  return NULL;
       }
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_POLYGON;
 
     /* Stores the location of the first and last polygons in the linked list. */
     geom->FirstPolygon = polygon;
     while (polygon != NULL)
       {
+	  ewktMapDynClean (polygon);
 	  geom->LastPolygon = polygon;
 	  polygon = polygon->Next;
       }
@@ -875,6 +1070,7 @@ ewkt_multipoint_xy (gaiaPointPtr first)
     geom = gaiaAllocGeomColl ();
     if (geom == NULL)
 	return NULL;
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_MULTIPOINT;
 
     /* For every 2D (xy) point, add it to the geometry collection. */
@@ -882,6 +1078,7 @@ ewkt_multipoint_xy (gaiaPointPtr first)
       {
 	  gaiaAddPointToGeomColl (geom, p->X, p->Y);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -911,6 +1108,7 @@ ewkt_multipoint_xyz (gaiaPointPtr first)
     geom = gaiaAllocGeomCollXYZ ();
     if (geom == NULL)
 	return NULL;
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_MULTIPOINT;
 
     /* For every 3D (xyz) point, add it to the geometry collection. */
@@ -918,6 +1116,7 @@ ewkt_multipoint_xyz (gaiaPointPtr first)
       {
 	  gaiaAddPointToGeomCollXYZ (geom, p->X, p->Y, p->Z);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -947,6 +1146,7 @@ ewkt_multipoint_xym (gaiaPointPtr first)
     geom = gaiaAllocGeomCollXYM ();
     if (geom == NULL)
 	return NULL;
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_MULTIPOINT;
 
     /* For every 2D (xym) point, add it to the geometry collection. */
@@ -954,6 +1154,7 @@ ewkt_multipoint_xym (gaiaPointPtr first)
       {
 	  gaiaAddPointToGeomCollXYM (geom, p->X, p->Y, p->M);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -983,6 +1184,7 @@ ewkt_multipoint_xyzm (gaiaPointPtr first)
     geom = gaiaAllocGeomCollXYZM ();
     if (geom == NULL)
 	return NULL;
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_MULTIPOINT;
 
     /* For every 3D (xyzm) point, add it to the geometry collection. */
@@ -990,6 +1192,7 @@ ewkt_multipoint_xyzm (gaiaPointPtr first)
       {
 	  gaiaAddPointToGeomCollXYZM (geom, p->X, p->Y, p->Z, p->M);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -1012,6 +1215,7 @@ ewkt_multilinestring_xy (gaiaLinestringPtr first)
     gaiaLinestringPtr p_n;
     gaiaLinestringPtr new_line;
     gaiaGeomCollPtr a = gaiaAllocGeomColl ();
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, a);
     a->DeclaredType = GAIA_MULTILINESTRING;
     a->DimensionModel = GAIA_XY;
 
@@ -1020,6 +1224,7 @@ ewkt_multilinestring_xy (gaiaLinestringPtr first)
 	  new_line = gaiaAddLinestringToGeomColl (a, p->Points);
 	  gaiaCopyLinestringCoords (new_line, p);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreeLinestring (p);
 	  p = p_n;
       }
@@ -1043,6 +1248,7 @@ ewkt_multilinestring_xyz (gaiaLinestringPtr first)
     gaiaLinestringPtr p_n;
     gaiaLinestringPtr new_line;
     gaiaGeomCollPtr a = gaiaAllocGeomCollXYZ ();
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, a);
     a->DeclaredType = GAIA_MULTILINESTRING;
     a->DimensionModel = GAIA_XY_Z;
 
@@ -1051,6 +1257,7 @@ ewkt_multilinestring_xyz (gaiaLinestringPtr first)
 	  new_line = gaiaAddLinestringToGeomColl (a, p->Points);
 	  gaiaCopyLinestringCoords (new_line, p);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreeLinestring (p);
 	  p = p_n;
       }
@@ -1073,6 +1280,7 @@ ewkt_multilinestring_xym (gaiaLinestringPtr first)
     gaiaLinestringPtr p_n;
     gaiaLinestringPtr new_line;
     gaiaGeomCollPtr a = gaiaAllocGeomCollXYM ();
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, a);
     a->DeclaredType = GAIA_MULTILINESTRING;
     a->DimensionModel = GAIA_XY_M;
 
@@ -1081,6 +1289,7 @@ ewkt_multilinestring_xym (gaiaLinestringPtr first)
 	  new_line = gaiaAddLinestringToGeomColl (a, p->Points);
 	  gaiaCopyLinestringCoords (new_line, p);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreeLinestring (p);
 	  p = p_n;
       }
@@ -1104,6 +1313,7 @@ ewkt_multilinestring_xyzm (gaiaLinestringPtr first)
     gaiaLinestringPtr p_n;
     gaiaLinestringPtr new_line;
     gaiaGeomCollPtr a = gaiaAllocGeomCollXYZM ();
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, a);
     a->DeclaredType = GAIA_MULTILINESTRING;
     a->DimensionModel = GAIA_XY_Z_M;
 
@@ -1112,6 +1322,7 @@ ewkt_multilinestring_xyzm (gaiaLinestringPtr first)
 	  new_line = gaiaAddLinestringToGeomColl (a, p->Points);
 	  gaiaCopyLinestringCoords (new_line, p);
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreeLinestring (p);
 	  p = p_n;
       }
@@ -1141,6 +1352,7 @@ ewkt_multipolygon_xy (gaiaPolygonPtr first)
     gaiaRingPtr i_ring;
     gaiaRingPtr o_ring;
     gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
 
     geom->DeclaredType = GAIA_MULTIPOLYGON;
 
@@ -1160,6 +1372,7 @@ ewkt_multipolygon_xy (gaiaPolygonPtr first)
 	    }
 
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePolygon (p);
 	  p = p_n;
       }
@@ -1190,6 +1403,7 @@ ewkt_multipolygon_xyz (gaiaPolygonPtr first)
     gaiaRingPtr i_ring;
     gaiaRingPtr o_ring;
     gaiaGeomCollPtr geom = gaiaAllocGeomCollXYZ ();
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
 
     geom->DeclaredType = GAIA_MULTIPOLYGON;
 
@@ -1209,6 +1423,7 @@ ewkt_multipolygon_xyz (gaiaPolygonPtr first)
 	    }
 
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePolygon (p);
 	  p = p_n;
       }
@@ -1239,6 +1454,7 @@ ewkt_multipolygon_xym (gaiaPolygonPtr first)
     gaiaRingPtr i_ring;
     gaiaRingPtr o_ring;
     gaiaGeomCollPtr geom = gaiaAllocGeomCollXYM ();
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
 
     geom->DeclaredType = GAIA_MULTIPOLYGON;
 
@@ -1258,6 +1474,7 @@ ewkt_multipolygon_xym (gaiaPolygonPtr first)
 	    }
 
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePolygon (p);
 	  p = p_n;
       }
@@ -1288,6 +1505,7 @@ ewkt_multipolygon_xyzm (gaiaPolygonPtr first)
     gaiaRingPtr i_ring;
     gaiaRingPtr o_ring;
     gaiaGeomCollPtr geom = gaiaAllocGeomCollXYZM ();
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
 
     geom->DeclaredType = GAIA_MULTIPOLYGON;
 
@@ -1307,6 +1525,7 @@ ewkt_multipolygon_xyzm (gaiaPolygonPtr first)
 	    }
 
 	  p_n = p->Next;
+	  ewktMapDynClean (p);
 	  gaiaFreePolygon (p);
 	  p = p_n;
       }
@@ -1374,6 +1593,7 @@ ewkt_geomColl_common (gaiaGeomCollPtr org, gaiaGeomCollPtr dst)
 	  p->LastLinestring = NULL;
 	  p->FirstPolygon = NULL;
 	  p->LastPolygon = NULL;
+	  ewktMapDynClean (p);
 	  gaiaFreeGeomColl (p);
 	  p = p_n;
       }
@@ -1407,6 +1627,7 @@ ewkt_geomColl_xy (gaiaGeomCollPtr first)
     gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
     if (geom == NULL)
 	return NULL;
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     geom->DimensionModel = GAIA_XY;
     ewkt_geomColl_common (first, geom);
@@ -1428,6 +1649,7 @@ ewkt_geomColl_xyz (gaiaGeomCollPtr first)
     gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
     if (geom == NULL)
 	return NULL;
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     geom->DimensionModel = GAIA_XY_Z;
     ewkt_geomColl_common (first, geom);
@@ -1449,6 +1671,7 @@ ewkt_geomColl_xym (gaiaGeomCollPtr first)
     gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
     if (geom == NULL)
 	return NULL;
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     geom->DimensionModel = GAIA_XY_M;
     ewkt_geomColl_common (first, geom);
@@ -1470,6 +1693,7 @@ ewkt_geomColl_xyzm (gaiaGeomCollPtr first)
     gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
     if (geom == NULL)
 	return NULL;
+    ewktMapDynAlloc (EWKT_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     geom->DimensionModel = GAIA_XY_Z_M;
     ewkt_geomColl_common (first, geom);
@@ -1675,6 +1899,10 @@ gaiaParseEWKT (const unsigned char *dirty_buffer)
     int base_offset;
     gaiaGeomCollPtr result = NULL;
 
+/* initializing the allocation map */
+    ewkt_first_dyn_block = NULL;
+    ewkt_last_dyn_block = NULL;
+
     tokens->Next = NULL;
     ewkt_parse_error = 0;
 
@@ -1715,9 +1943,20 @@ gaiaParseEWKT (const unsigned char *dirty_buffer)
     if (ewkt_parse_error)
       {
 	  if (result)
-	      gaiaFreeGeomColl (result);
+	    {
+		/* if a Geometry-result has been produced, the stack is already cleaned */
+		gaiaFreeGeomColl (result);
+		ewktCleanMapDynAlloc (0);
+	    }
+	  else
+	    {
+		/* otherwise we are required to clean the stack */
+		ewktCleanMapDynAlloc (1);
+	    }
 	  return NULL;
       }
+
+    ewktCleanMapDynAlloc (0);
 
     if (!result)
 	return NULL;
