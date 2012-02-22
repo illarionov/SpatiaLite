@@ -57,6 +57,7 @@ int main (int argc, char *argv[])
     char **results;
     int rows;
     int columns;
+    char sql[1024];
 
     spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
@@ -311,43 +312,165 @@ int main (int argc, char *argv[])
 
     ret = sqlite3_exec (handle, "SELECT CheckSpatialIndex('Councils', 'geom');", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
-	fprintf (stderr, "CheckSpatialIndex error: %s\n", err_msg);
+	fprintf (stderr, "CheckSpatialIndex (1) error: %s\n", err_msg);
 	sqlite3_free (err_msg);
 	return -48;
+    }
+
+    ret = sqlite3_exec (handle, "SELECT CheckSpatialIndex();", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CheckSpatialIndex (2) error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -49;
+    }
+
+    ret = sqlite3_exec (handle, "SELECT RecoverSpatialIndex('Councils', 'geom');", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "RecoverSpatialIndex (1) error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -50;
+    }
+
+    ret = sqlite3_exec (handle, "SELECT RecoverSpatialIndex();", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "RecoverSpatialIndex (2) error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -51;
+    }
+
+/*
+/ going to create a broken/corrupted SpatialIndex 
+/
+/ - we'll create a new table (with no Primary Key)
+/ - then we'll delete some rows
+/ - and finally we'll perform a Vacuum
+/ - all this notoriously causes R*Tree corruption
+*/
+    ret = sqlite3_exec (handle, "CREATE TABLE bad_councils AS SELECT lc_name, geom FROM Councils", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CREATE TABLE bad_councils error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -52;
+    }
+
+    ret = sqlite3_exec (handle, "SELECT RecoverGeometryColumn('bad_councils', 'geom', 23032, 'MULTIPOLYGON', 'XY')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "RecoverGeometryColumn(bad_councils) error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -54;
+    }
+
+    ret = sqlite3_exec (handle, "SELECT CreateSpatialIndex('bad_councils', 'geom')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CreateSpatialIndex(bad_councils) error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -55;
+    }
+
+    ret = sqlite3_exec (handle, "DELETE FROM bad_councils WHERE lc_name LIKE 'C%'", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "DELETE FROM bad_councils error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -56;
+    }
+
+    ret = sqlite3_exec (handle, "VACUUM", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "VACUUM error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -57;
+    }
+    ret = sqlite3_exec (handle, "SELECT CheckSpatialIndex('bad_councils', 'geom');", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CheckSpatialIndex (3) error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -58;
+    }
+
+    ret = sqlite3_exec (handle, "SELECT RecoverSpatialIndex('bad_councils', 'geom');", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "RecoverSpatialIndex (3) error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -59;
+    }
+
+    ret = sqlite3_exec (handle, "SELECT UpdateLayerStatistics('bad_councils', 'geom');", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "UpdateLayerStatistics (1) error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -60;
+    }
+
+    ret = sqlite3_exec (handle, "SELECT UpdateLayerStatistics();", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "UpdateLayerStatistics (2) error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -61;
+    }
+/* END broken SpatialIndex check/recover */
+
+    ret = sqlite3_exec (handle, "SELECT Extent(geom) FROM Councils;", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Extent (1) error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -62;
+    }
+
+    strcpy (sql, "SELECT Count(*) FROM Councils WHERE ROWID IN (");
+    strcat (sql, "SELECT ROWID FROM SpatialIndex WHERE ");
+    strcat (sql, "f_table_name = 'Councils' AND search_frame = ");
+    strcat (sql, "BuildMbr(10, 10, 20, 20));");
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "VirtualSpatialIndex (1) error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -63;
+    }
+
+    strcpy (sql, "SELECT Count(*) FROM Councils WHERE ROWID IN (");
+    strcat (sql, "SELECT ROWID FROM SpatialIndex WHERE ");
+    strcat (sql, "f_table_name = 'Councils' AND f_geometry_column = ");
+    strcat (sql, "'geom' AND search_frame = BuildCircleMbr(1019000, ");
+    strcat (sql, "4592000, 10000));");
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "VirtualSpatialIndex (2) error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -64;
     }
 
     ret = sqlite3_exec (handle, "SELECT RebuildGeometryTriggers('Councils', 'geom');", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Rebuild triggers error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -49;
+	return -65;
     }
 
     ret = sqlite3_exec (handle, "SELECT DisableSpatialIndex('Councils', 'geom');", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Disable index error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -50;
+	return -66;
     }
 
     ret = sqlite3_exec (handle, "SELECT RebuildGeometryTriggers('Councils', 'geom');", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Disable index error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -51;
+	return -67;
     }
 
     ret = sqlite3_exec (handle, "DROP TABLE Councils;", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "DROP TABLE Councils error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -52;
+	return -68;
     }
 
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -53;
+	return -69;
     }
     
     spatialite_cleanup();
