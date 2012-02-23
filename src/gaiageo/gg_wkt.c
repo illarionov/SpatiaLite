@@ -2350,6 +2350,22 @@ gaiaOutSvg (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom, int relative,
 		  }
 	    }
       }
+
+    if (out_buf->Error == 0 && out_buf->WriteOffset > 0)
+      {
+	  /* sandro 2012-02-23 cleaning extra trailing spaces */
+	  int i;
+	  for (i = out_buf->WriteOffset - 1; i >= 0; i--)
+	    {
+		if (*(out_buf->Buffer + i) == ' ')
+		  {
+		      *(out_buf->Buffer + i) = '\0';
+		      out_buf->WriteOffset -= 1;
+		  }
+		else
+		    break;
+	    }
+      }
 }
 
 /* END of Klaus Foerster SVG implementation */

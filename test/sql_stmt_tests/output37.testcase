@@ -1,0 +1,13 @@
+Output format tests - GEOMETRYCOLLECTION XYM (POINT LINESTRING)
+:memory: #use in-memory database
+SELECT AsText(geom), AsKML(geom), AsWkt(geom), AsEWkt(geom) FROM (SELECT GeomFromText("GEOMETRYCOLLECTIONM(POINTM(1 2 10), LINESTRINGM(3 4 10, 4 5 11))", 4326) AS geom) dummy;
+1 # rows (not including the header row)
+4 # columns
+AsText(geom)
+AsKML(geom)
+AsWkt(geom)
+AsEWkt(geom)
+GEOMETRYCOLLECTION M(POINT M(1 2 10), LINESTRING M(3 4 10, 4 5 11))
+<MultiGeometry><Point><coordinates>1,2</coordinates></Point><LineString><coordinates>3,4 4,5</coordinates></LineString></MultiGeometry>
+GEOMETRYCOLLECTION(POINT(1 2),LINESTRING(3 4,4 5))
+SRID=4326;GEOMETRYCOLLECTIONM(POINTM(1 2 10),LINESTRINGM(3 4 10,4 5 11))
