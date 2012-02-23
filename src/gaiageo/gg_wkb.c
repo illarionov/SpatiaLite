@@ -583,7 +583,7 @@ ParseCompressedWkbLineM (gaiaGeomCollPtr geo)
 				  geo->endian_arch);
 		y = gaiaImport64 (geo->blob + (geo->offset + 8), geo->endian,
 				  geo->endian_arch);
-		m = gaiaImport64 (geo->blob + (geo->offset + 24), geo->endian,
+		m = gaiaImport64 (geo->blob + (geo->offset + 16), geo->endian,
 				  geo->endian_arch);
 		geo->offset += 24;
 	    }
@@ -860,7 +860,7 @@ ParseCompressedWkbPolygonM (gaiaGeomCollPtr geo)
 					geo->endian_arch);
 		      y = gaiaImport64 (geo->blob + (geo->offset + 8),
 					geo->endian, geo->endian_arch);
-		      m = gaiaImport64 (geo->blob + (geo->offset + 24),
+		      m = gaiaImport64 (geo->blob + (geo->offset + 16),
 					geo->endian, geo->endian_arch);
 		      geo->offset += 24;
 		  }
