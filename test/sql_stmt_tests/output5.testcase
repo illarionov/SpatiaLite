@@ -13,8 +13,8 @@ AsEWkt(geom)
 POINT(1 2)
 (NULL)
 (NULL)
-(NULL)
-(NULL)
+<gml:Point><gml:coordinates>1,2</gml:coordinates></gml:Point>:0" required to avoid truncation !!
+{"type":"Point","coordinates":[1,2]}:0" required to avoid truncation !!
 POINT(1 2)
 SRID=-1;POINT(1 2)
 

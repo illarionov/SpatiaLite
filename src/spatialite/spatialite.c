@@ -6280,20 +6280,15 @@ fnct_AsGml (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
-	  if (geo->Srid == -1)
-	      sqlite3_result_null (context);	/* unknown SRID: giving up */
+	  /* produce GML-notation - actual work is done in gaiageo/gg_wkt.c */
+	  gaiaOutGml (&out_buf, version, precision, geo);
+	  if (out_buf.Error || out_buf.Buffer == NULL)
+	      sqlite3_result_null (context);
 	  else
 	    {
-		/* produce GML-notation - actual work is done in gaiageo/gg_wkt.c */
-		gaiaOutGml (&out_buf, version, precision, geo);
-		if (out_buf.Error || out_buf.Buffer == NULL)
-		    sqlite3_result_null (context);
-		else
-		  {
-		      len = out_buf.WriteOffset;
-		      sqlite3_result_text (context, out_buf.Buffer, len, free);
-		      out_buf.Buffer = NULL;
-		  }
+		len = out_buf.WriteOffset;
+		sqlite3_result_text (context, out_buf.Buffer, len, free);
+		out_buf.Buffer = NULL;
 	    }
       }
     gaiaFreeGeomColl (geo);
@@ -6384,20 +6379,15 @@ fnct_AsGeoJSON (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
-	  if (geo->Srid == -1)
-	      sqlite3_result_null (context);	/* unknown SRID: giving up */
+	  /* produce GeoJSON-notation - actual work is done in gaiageo/gg_wkt.c */
+	  gaiaOutGeoJSON (&out_buf, geo, precision, options);
+	  if (out_buf.Error || out_buf.Buffer == NULL)
+	      sqlite3_result_null (context);
 	  else
 	    {
-		/* produce GeoJSON-notation - actual work is done in gaiageo/gg_wkt.c */
-		gaiaOutGeoJSON (&out_buf, geo, precision, options);
-		if (out_buf.Error || out_buf.Buffer == NULL)
-		    sqlite3_result_null (context);
-		else
-		  {
-		      len = out_buf.WriteOffset;
-		      sqlite3_result_text (context, out_buf.Buffer, len, free);
-		      out_buf.Buffer = NULL;
-		  }
+		len = out_buf.WriteOffset;
+		sqlite3_result_text (context, out_buf.Buffer, len, free);
+		out_buf.Buffer = NULL;
 	    }
       }
     gaiaFreeGeomColl (geo);
