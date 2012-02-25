@@ -124,7 +124,7 @@ int do_one_case (const struct test_data *data)
 	    return -13;
 	} else if (strncmp(results[i], data->expected_results[i], data->expected_precision[i]) != 0) {
 	    fprintf (stderr, "Unexpected value at %i: %s|\n", i, results[i]);
-	    fprintf (stderr, "Expected value was    : %s|\n", data->expected_results[i]);
+	    fprintf (stderr, "Expected value was   : %s|\n", data->expected_results[i]);
 	    return  -14;
 	}
     }
