@@ -541,7 +541,7 @@ gaiaGeometrySymDifference (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaBoundary (gaiaGeomCollPtr geom)
 {
-/* builds a new geometry representing the conbinatorial boundary of GEOM */
+/* builds a new geometry representing the combinatorial boundary of GEOM */
     gaiaGeomCollPtr geo;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
