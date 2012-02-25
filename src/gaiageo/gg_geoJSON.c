@@ -285,7 +285,7 @@ gaiaGeoJsonGeometryFromLinestring (gaiaLinestringPtr line, int srid)
     double x;
     double y;
     geom = gaiaAllocGeomColl ();
-    geoJsonMapDynAlloc (GEOJSON_DYN_LINESTRING, geom);
+    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_LINESTRING;
     geom->Srid = srid;
     line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
@@ -311,7 +311,7 @@ gaiaGeoJsonGeometryFromLinestringZ (gaiaLinestringPtr line, int srid)
     double y;
     double z;
     geom = gaiaAllocGeomCollXYZ ();
-    geoJsonMapDynAlloc (GEOJSON_DYN_LINESTRING, geom);
+    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_LINESTRING;
     geom->Srid = srid;
     line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
@@ -362,19 +362,12 @@ geoJSON_point_xyz (double *x, double *y, double *z)
 static gaiaGeomCollPtr
 geoJSON_buildGeomFromPoint (gaiaPointPtr point)
 {
-    gaiaGeomCollPtr geom;
     switch (point->DimensionModel)
       {
       case GAIA_XY:
-	  geom = gaiaGeoJsonGeometryFromPoint (point, -1);
-	  geoJsonMapDynClean (point);
-	  geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
-	  return geom;
+	  return gaiaGeoJsonGeometryFromPoint (point, -1);
       case GAIA_XY_Z:
-	  geom = gaiaGeoJsonGeometryFromPointZ (point, -1);
-	  geoJsonMapDynClean (point);
-	  geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
-	  return geom;
+	  return gaiaGeoJsonGeometryFromPointZ (point, -1);
       }
     return NULL;
 }
@@ -382,19 +375,12 @@ geoJSON_buildGeomFromPoint (gaiaPointPtr point)
 static gaiaGeomCollPtr
 geoJSON_buildGeomFromPointSrid (gaiaPointPtr point, int *srid)
 {
-    gaiaGeomCollPtr geom;
     switch (point->DimensionModel)
       {
       case GAIA_XY:
-	  geom = gaiaGeoJsonGeometryFromPoint (point, *srid);
-	  geoJsonMapDynClean (point);
-	  geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
-	  return geom;
+	  return gaiaGeoJsonGeometryFromPoint (point, *srid);
       case GAIA_XY_Z:
-	  geom = gaiaGeoJsonGeometryFromPointZ (point, *srid);
-	  geoJsonMapDynClean (point);
-	  geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
-	  return geom;
+	  return gaiaGeoJsonGeometryFromPointZ (point, *srid);
       }
     return NULL;
 }
@@ -486,19 +472,12 @@ geoJSON_linestring_xyz (gaiaPointPtr first)
 static gaiaGeomCollPtr
 geoJSON_buildGeomFromLinestring (gaiaLinestringPtr line)
 {
-    gaiaGeomCollPtr geom;
     switch (line->DimensionModel)
       {
       case GAIA_XY:
-	  geom = gaiaGeoJsonGeometryFromLinestring (line, -1);
-	  geoJsonMapDynClean (line);
-	  geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
-	  return geom;
+	  return gaiaGeoJsonGeometryFromLinestring (line, -1);
       case GAIA_XY_Z:
-	  geom = gaiaGeoJsonGeometryFromLinestringZ (line, -1);
-	  geoJsonMapDynClean (line);
-	  geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
-	  return geom;
+	  return gaiaGeoJsonGeometryFromLinestringZ (line, -1);
       }
     return NULL;
 }
@@ -506,19 +485,12 @@ geoJSON_buildGeomFromLinestring (gaiaLinestringPtr line)
 static gaiaGeomCollPtr
 geoJSON_buildGeomFromLinestringSrid (gaiaLinestringPtr line, int *srid)
 {
-    gaiaGeomCollPtr geom;
     switch (line->DimensionModel)
       {
       case GAIA_XY:
-	  geom = gaiaGeoJsonGeometryFromLinestring (line, *srid);
-	  geoJsonMapDynClean (line);
-	  geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
-	  return geom;
+	  return gaiaGeoJsonGeometryFromLinestring (line, *srid);
       case GAIA_XY_Z:
-	  geom = gaiaGeoJsonGeometryFromLinestringZ (line, *srid);
-	  geoJsonMapDynClean (line);
-	  geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
-	  return geom;
+	  return gaiaGeoJsonGeometryFromLinestringZ (line, *srid);
       }
     return NULL;
 }
