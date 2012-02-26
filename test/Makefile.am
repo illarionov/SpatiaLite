@@ -1475,6 +1475,42 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/us_mi_m.testcase \
 	sql_stmt_tests/us_yd_m.testcase \
 	sql_stmt_tests/variance.testcase \
+	sql_stmt_tests/wkb10.testcase \
+	sql_stmt_tests/wkb11.testcase \
+	sql_stmt_tests/wkb12.testcase \
+	sql_stmt_tests/wkb13.testcase \
+	sql_stmt_tests/wkb14.testcase \
+	sql_stmt_tests/wkb15.testcase \
+	sql_stmt_tests/wkb16.testcase \
+	sql_stmt_tests/wkb17.testcase \
+	sql_stmt_tests/wkb18.testcase \
+	sql_stmt_tests/wkb19.testcase \
+	sql_stmt_tests/wkb1.testcase \
+	sql_stmt_tests/wkb20.testcase \
+	sql_stmt_tests/wkb21.testcase \
+	sql_stmt_tests/wkb22.testcase \
+	sql_stmt_tests/wkb23.testcase \
+	sql_stmt_tests/wkb24.testcase \
+	sql_stmt_tests/wkb25.testcase \
+	sql_stmt_tests/wkb26.testcase \
+	sql_stmt_tests/wkb27.testcase \
+	sql_stmt_tests/wkb28.testcase \
+	sql_stmt_tests/wkb29.testcase \
+	sql_stmt_tests/wkb2.testcase \
+	sql_stmt_tests/wkb30.testcase \
+	sql_stmt_tests/wkb31.testcase \
+	sql_stmt_tests/wkb32.testcase \
+	sql_stmt_tests/wkb33.testcase \
+	sql_stmt_tests/wkb34.testcase \
+	sql_stmt_tests/wkb35.testcase \
+	sql_stmt_tests/wkb36.testcase \
+	sql_stmt_tests/wkb3.testcase \
+	sql_stmt_tests/wkb4.testcase \
+	sql_stmt_tests/wkb5.testcase \
+	sql_stmt_tests/wkb6.testcase \
+	sql_stmt_tests/wkb7.testcase \
+	sql_stmt_tests/wkb8.testcase \
+	sql_stmt_tests/wkb9.testcase \
 	sql_stmt_tests/yd_m.testcase
 
 
