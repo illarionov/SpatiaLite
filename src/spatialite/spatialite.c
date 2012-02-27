@@ -15059,6 +15059,7 @@ fnct_RingsCutAtNodes (sqlite3_context * context, int argc,
     if (pts > 0 || lns > 0 || pgs == 0)
       {
 	  /* not Polygon/MultiPolygon */
+	  gaiaFreeGeomColl (geom);
 	  sqlite3_result_null (context);
 	  return;
       }
