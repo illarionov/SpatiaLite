@@ -1263,6 +1263,11 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/round31.testcase \
 	sql_stmt_tests/round3.testcase \
 	sql_stmt_tests/round-text.testcase \
+	sql_stmt_tests/routing1.testcase \
+	sql_stmt_tests/routing2.testcase \
+	sql_stmt_tests/routing3.testcase \
+	sql_stmt_tests/routing4.testcase \
+	sql_stmt_tests/routing5.testcase \
 	sql_stmt_tests/sanitizeGeometry10.testcase \
 	sql_stmt_tests/sanitizeGeometry11.testcase \
 	sql_stmt_tests/sanitizeGeometry12.testcase \
