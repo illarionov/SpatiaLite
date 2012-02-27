@@ -991,7 +991,6 @@ ParseWkbGeometry (gaiaGeomCollPtr geo)
 		ParseWkbPoint (geo);
 		break;
 	    case GAIA_POINTZ:
-	    case GAIA_GEOSWKB_POINTZ:
 		ParseWkbPointZ (geo);
 		break;
 	    case GAIA_POINTM:
@@ -1004,7 +1003,6 @@ ParseWkbGeometry (gaiaGeomCollPtr geo)
 		ParseWkbLine (geo);
 		break;
 	    case GAIA_LINESTRINGZ:
-	    case GAIA_GEOSWKB_LINESTRINGZ:
 		ParseWkbLineZ (geo);
 		break;
 	    case GAIA_LINESTRINGM:
@@ -1017,7 +1015,6 @@ ParseWkbGeometry (gaiaGeomCollPtr geo)
 		ParseWkbPolygon (geo);
 		break;
 	    case GAIA_POLYGONZ:
-	    case GAIA_GEOSWKB_POLYGONZ:
 		ParseWkbPolygonZ (geo);
 		break;
 	    case GAIA_POLYGONM:
@@ -3440,12 +3437,7 @@ gaiaFromWkb (const unsigned char *blob, unsigned int size)
     type = gaiaImport32 (blob + 1, little_endian, endian_arch);
     if (type == GAIA_POINTZ || type == GAIA_LINESTRINGZ || type == GAIA_POLYGONZ
 	|| type == GAIA_MULTIPOINTZ || type == GAIA_MULTILINESTRINGZ
-	|| type == GAIA_MULTIPOLYGONZ || type == GAIA_GEOMETRYCOLLECTIONZ
-	|| type == GAIA_GEOSWKB_POINTZ || type == GAIA_GEOSWKB_LINESTRINGZ
-	|| type == GAIA_GEOSWKB_POLYGONZ || type == GAIA_GEOSWKB_MULTIPOINTZ
-	|| type == GAIA_GEOSWKB_MULTILINESTRINGZ
-	|| type == GAIA_GEOSWKB_MULTIPOLYGONZ
-	|| type == GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ)
+	|| type == GAIA_MULTIPOLYGONZ || type == GAIA_GEOMETRYCOLLECTIONZ)
 	geo = gaiaAllocGeomCollXYZ ();
     else if (type == GAIA_POINTM || type == GAIA_LINESTRINGM
 	     || type == GAIA_POLYGONM || type == GAIA_MULTIPOINTM
@@ -3471,7 +3463,6 @@ gaiaFromWkb (const unsigned char *blob, unsigned int size)
 	  ParseWkbPoint (geo);
 	  break;
       case GAIA_POINTZ:
-      case GAIA_GEOSWKB_POINTZ:
 	  ParseWkbPointZ (geo);
 	  break;
       case GAIA_POINTM:
@@ -3484,7 +3475,6 @@ gaiaFromWkb (const unsigned char *blob, unsigned int size)
 	  ParseWkbLine (geo);
 	  break;
       case GAIA_LINESTRINGZ:
-      case GAIA_GEOSWKB_LINESTRINGZ:
 	  ParseWkbLineZ (geo);
 	  break;
       case GAIA_LINESTRINGM:
@@ -3497,7 +3487,6 @@ gaiaFromWkb (const unsigned char *blob, unsigned int size)
 	  ParseWkbPolygon (geo);
 	  break;
       case GAIA_POLYGONZ:
-      case GAIA_GEOSWKB_POLYGONZ:
 	  ParseWkbPolygonZ (geo);
 	  break;
       case GAIA_POLYGONM:
@@ -3514,10 +3503,6 @@ gaiaFromWkb (const unsigned char *blob, unsigned int size)
       case GAIA_MULTILINESTRINGZ:
       case GAIA_MULTIPOLYGONZ:
       case GAIA_GEOMETRYCOLLECTIONZ:
-      case GAIA_GEOSWKB_MULTIPOINTZ:
-      case GAIA_GEOSWKB_MULTILINESTRINGZ:
-      case GAIA_GEOSWKB_MULTIPOLYGONZ:
-      case GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ:
       case GAIA_MULTIPOINTM:
       case GAIA_MULTILINESTRINGM:
       case GAIA_MULTIPOLYGONM:
@@ -3536,49 +3521,42 @@ gaiaFromWkb (const unsigned char *blob, unsigned int size)
       {
       case GAIA_POINT:
       case GAIA_POINTZ:
-      case GAIA_GEOSWKB_POINTZ:
       case GAIA_POINTM:
       case GAIA_POINTZM:
 	  geo->DeclaredType = GAIA_POINT;
 	  break;
       case GAIA_LINESTRING:
       case GAIA_LINESTRINGZ:
-      case GAIA_GEOSWKB_LINESTRINGZ:
       case GAIA_LINESTRINGM:
       case GAIA_LINESTRINGZM:
 	  geo->DeclaredType = GAIA_LINESTRING;
 	  break;
       case GAIA_POLYGON:
       case GAIA_POLYGONZ:
-      case GAIA_GEOSWKB_POLYGONZ:
       case GAIA_POLYGONM:
       case GAIA_POLYGONZM:
 	  geo->DeclaredType = GAIA_POLYGON;
 	  break;
       case GAIA_MULTIPOINT:
       case GAIA_MULTIPOINTZ:
-      case GAIA_GEOSWKB_MULTIPOINTZ:
       case GAIA_MULTIPOINTM:
       case GAIA_MULTIPOINTZM:
 	  geo->DeclaredType = GAIA_MULTIPOINT;
 	  break;
       case GAIA_MULTILINESTRING:
       case GAIA_MULTILINESTRINGZ:
-      case GAIA_GEOSWKB_MULTILINESTRINGZ:
       case GAIA_MULTILINESTRINGM:
       case GAIA_MULTILINESTRINGZM:
 	  geo->DeclaredType = GAIA_MULTILINESTRING;
 	  break;
       case GAIA_MULTIPOLYGON:
       case GAIA_MULTIPOLYGONZ:
-      case GAIA_GEOSWKB_MULTIPOLYGONZ:
       case GAIA_MULTIPOLYGONM:
       case GAIA_MULTIPOLYGONZM:
 	  geo->DeclaredType = GAIA_MULTIPOLYGON;
 	  break;
       case GAIA_GEOMETRYCOLLECTION:
       case GAIA_GEOMETRYCOLLECTIONZ:
-      case GAIA_GEOSWKB_GEOMETRYCOLLECTIONZ:
       case GAIA_GEOMETRYCOLLECTIONM:
       case GAIA_GEOMETRYCOLLECTIONZM:
 	  geo->DeclaredType = GAIA_GEOMETRYCOLLECTION;
@@ -4455,7 +4433,7 @@ ewkbGetMultiGeometry (gaiaGeomCollPtr geom, unsigned char *blob,
 				  endian_arch, dims);
 		if (off < 0)
 		    return -1;
-		offset += off;
+		offset = off;
 		break;
 	    case GAIA_LINESTRING:
 		off =
@@ -4463,7 +4441,7 @@ ewkbGetMultiGeometry (gaiaGeomCollPtr geom, unsigned char *blob,
 				       endian_arch, dims);
 		if (off < 0)
 		    return -1;
-		offset += off;
+		offset = off;
 		break;
 	    case GAIA_POLYGON:
 		off =
@@ -4471,7 +4449,10 @@ ewkbGetMultiGeometry (gaiaGeomCollPtr geom, unsigned char *blob,
 				    endian_arch, dims);
 		if (off < 0)
 		    return -1;
-		offset += off;
+		offset = off;
+		break;
+	    default:		/* unexpected: invalid EWKB */
+		return -1;
 	    };
       }
     return offset;
@@ -4654,6 +4635,7 @@ gaiaFromEWKB (const unsigned char *in_buffer)
     int has_m = 0;
     int dims = GAIA_XY;
     int srid;
+    int ret;
     int endian;
     int endian_arch = gaiaEndianArch ();
     gaiaGeomCollPtr geom = NULL;
@@ -4709,21 +4691,32 @@ gaiaFromEWKB (const unsigned char *in_buffer)
     switch (type)
       {
       case GAIA_POINT:
-	  ewkbGetPoint (geom, blob, 9, blob_size, endian, endian_arch, dims);
+	  ret =
+	      ewkbGetPoint (geom, blob, 9, blob_size, endian, endian_arch,
+			    dims);
 	  break;
       case GAIA_LINESTRING:
-	  ewkbGetLinestring (geom, blob, 9, blob_size, endian, endian_arch,
-			     dims);
+	  ret =
+	      ewkbGetLinestring (geom, blob, 9, blob_size, endian, endian_arch,
+				 dims);
 	  break;
       case GAIA_POLYGON:
-	  ewkbGetPolygon (geom, blob, 9, blob_size, endian, endian_arch, dims);
+	  ret =
+	      ewkbGetPolygon (geom, blob, 9, blob_size, endian, endian_arch,
+			      dims);
 	  break;
       default:
-	  ewkbGetMultiGeometry (geom, blob, 9, blob_size, endian, endian_arch,
-				dims);
+	  ret =
+	      ewkbGetMultiGeometry (geom, blob, 9, blob_size, endian,
+				    endian_arch, dims);
 	  break;
       };
-
+    if (ret < 0)
+      {
+	  /* invalid EWKB !!! */
+	  gaiaFreeGeomColl (geom);
+	  return NULL;
+      }
     return geom;
 }
 
