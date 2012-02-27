@@ -237,39 +237,71 @@ int test_case_filter(const struct dirent *entry)
     return (fnmatch("*.testcase", entry->d_name, FNM_PERIOD) == 0);
 }
 
-int main (int argc, char *argv[])
+int run_all_testcases()
 {
     struct dirent **namelist;
     int n;
     int i;
     int result = 0;
-
-    spatialite_init (0);
-
+    
     n = scandir("sql_stmt_tests", &namelist, test_case_filter, alphasort);
     if (n < 0) {
 	perror("scandir");
 	return -1;
-    } else {
-	for (i = 0; i < n; ++i) {
-	    struct test_data *data;
-	    char *path;
-	    if (asprintf(&path, "sql_stmt_tests/%s", namelist[i]->d_name) < 0) {
-		result = -1;
-		break;
-	    }
-	    data = read_one_case(path);
-	    free(path);
-	    
-	    result = do_one_case(data);
-	    
-	    cleanup_test_data(data);
-	    if (result != 0) {
-		break;
-	    }
-	    free(namelist[i]);
+    }
+
+    for (i = 0; i < n; ++i) {
+	struct test_data *data;
+	char *path;
+	if (asprintf(&path, "sql_stmt_tests/%s", namelist[i]->d_name) < 0) {
+	    return -1;
 	}
-	free(namelist);
+	data = read_one_case(path);
+	free(path);
+	
+	result = do_one_case(data);
+	
+	cleanup_test_data(data);
+	if (result != 0) {
+	    break;
+	}
+	free(namelist[i]);
+    }
+    free(namelist);
+    return result;
+}
+
+int run_specified_testcases(int argc, char *argv[])
+{
+    int result = 0;
+    int i = 0;
+    
+    for (i = 1; i < argc; ++i)
+    {
+	struct test_data *data;
+	data = read_one_case(argv[i]);
+	result = do_one_case(data);
+	cleanup_test_data(data);
+	if (result != 0) {
+	    break;
+	}
+    }
+    return result;
+}
+
+int main (int argc, char *argv[])
+{
+    int result = 0;
+
+    spatialite_init (0);
+
+    if (argc == 1)
+    {
+	result = run_all_testcases();
+    }
+    else
+    {
+	result = run_specified_testcases(argc, argv);
     }
 
     spatialite_cleanup();
