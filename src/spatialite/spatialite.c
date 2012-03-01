@@ -14793,24 +14793,24 @@ fnct_LinesCutAtNodes (sqlite3_context * context, int argc,
 	  if (geom1)
 	      gaiaFreeGeomColl (geom1);
 	  if (geom2)
-	      gaiaFreeGeomColl (geom1);
+	      gaiaFreeGeomColl (geom2);
 	  sqlite3_result_null (context);
+	  return;
+      }
+    result = gaiaLinesCutAtNodes (geom1, geom2);
+    if (result == NULL)
+      {
+	sqlite3_result_null (context);
       }
     else
       {
-	  result = gaiaLinesCutAtNodes (geom1, geom2);
-	  if (result == NULL)
-	      sqlite3_result_null (context);
-	  else
-	    {
-		/* builds the BLOB geometry to be returned */
-		int len;
-		unsigned char *p_result = NULL;
-		result->Srid = geom1->Srid;
-		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
-		sqlite3_result_blob (context, p_result, len, free);
-		gaiaFreeGeomColl (result);
-	    }
+	/* builds the BLOB geometry to be returned */
+	int len;
+	unsigned char *p_result = NULL;
+	result->Srid = geom1->Srid;
+	gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+	sqlite3_result_blob (context, p_result, len, free);
+	gaiaFreeGeomColl (result);
       }
     gaiaFreeGeomColl (geom1);
     gaiaFreeGeomColl (geom2);
