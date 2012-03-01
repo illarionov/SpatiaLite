@@ -987,12 +987,19 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/issimple3.testcase \
 	sql_stmt_tests/issimple4.testcase \
 	sql_stmt_tests/issimple5.testcase \
+	sql_stmt_tests/isvalid10.testcase \
+	sql_stmt_tests/isvalid11.testcase \
+	sql_stmt_tests/isvalid12.testcase \
+	sql_stmt_tests/isvalid13.testcase \
 	sql_stmt_tests/isvalid1.testcase \
 	sql_stmt_tests/isvalid2.testcase \
 	sql_stmt_tests/isvalid3.testcase \
 	sql_stmt_tests/isvalid4.testcase \
 	sql_stmt_tests/isvalid5.testcase \
 	sql_stmt_tests/isvalid6.testcase \
+	sql_stmt_tests/isvalid7.testcase \
+	sql_stmt_tests/isvalid8.testcase \
+	sql_stmt_tests/isvalid9.testcase \
 	sql_stmt_tests/isXblob1.testcase \
 	sql_stmt_tests/isXblob2.testcase \
 	sql_stmt_tests/isXblob3.testcase \
@@ -1707,7 +1714,17 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/union14.testcase \
 	sql_stmt_tests/union15.testcase \
 	sql_stmt_tests/union16.testcase \
+	sql_stmt_tests/union17.testcase \
+	sql_stmt_tests/union18.testcase \
+	sql_stmt_tests/union19.testcase \
 	sql_stmt_tests/union1.testcase \
+	sql_stmt_tests/union20.testcase \
+	sql_stmt_tests/union21.testcase \
+	sql_stmt_tests/union22.testcase \
+	sql_stmt_tests/union23.testcase \
+	sql_stmt_tests/union24.testcase \
+	sql_stmt_tests/union25.testcase \
+	sql_stmt_tests/union26.testcase \
 	sql_stmt_tests/union2.testcase \
 	sql_stmt_tests/union3.testcase \
 	sql_stmt_tests/union4.testcase \
