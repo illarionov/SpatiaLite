@@ -339,6 +339,8 @@ gaiaGeomCollRelate (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
     ret = GEOSRelatePattern (g1, g2, pattern);
     GEOSGeom_destroy (g1);
     GEOSGeom_destroy (g2);
+    if (ret == 2)
+	return -1;
     return ret;
 }
 
@@ -516,6 +518,8 @@ gaiaGeometrySymDifference (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g3;
     if (!geom1 || !geom2)
 	return NULL;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	return NULL;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     g3 = GEOSSymDifference (g1, g2);
@@ -546,6 +550,8 @@ gaiaBoundary (gaiaGeomCollPtr geom)
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom)
+	return NULL;
+    if (gaiaIsToxic (geom))
 	return NULL;
     g1 = gaiaToGeos (geom);
     g2 = GEOSBoundary (g1);
@@ -820,6 +826,8 @@ gaiaConvexHull (gaiaGeomCollPtr geom)
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom)
+	return NULL;
+    if (gaiaIsToxic (geom))
 	return NULL;
     g1 = gaiaToGeos (geom);
     g2 = GEOSConvexHull (g1);
