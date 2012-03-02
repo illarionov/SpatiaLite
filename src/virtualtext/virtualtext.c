@@ -338,8 +338,33 @@ static int
 vtxt_best_index (sqlite3_vtab * pVTab, sqlite3_index_info * pIndex)
 {
 /* best index selection */
-    if (pVTab || pIndex)
+    int i;
+    int iArg = 0;
+    char str[2048];
+    char buf[64];
+
+    if (pVTab)
 	pVTab = pVTab;		/* unused arg warning suppression */
+
+    *str = '\0';
+    for (i = 0; i < pIndex->nConstraint; i++)
+      {
+	  if (pIndex->aConstraint[i].usable)
+	    {
+		iArg++;
+		pIndex->aConstraintUsage[i].argvIndex = iArg;
+		pIndex->aConstraintUsage[i].omit = 1;
+		sprintf (buf, "%d:%d,", pIndex->aConstraint[i].iColumn,
+			 pIndex->aConstraint[i].op);
+		strcat (str, buf);
+	    }
+      }
+    if (*str != '\0')
+      {
+	  pIndex->idxStr = sqlite3_mprintf ("%s", str);
+	  pIndex->needToFreeIdxStr = 1;
+      }
+
     return SQLITE_OK;
 }
 

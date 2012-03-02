@@ -132,16 +132,195 @@ int main (int argc, char *argv[])
 	sqlite3_free (err_msg);
 	return -22;
     }
- 
-    ret = sqlite3_get_table (db_handle, "SELECT col003, col015 FROM places WHERE col015 > 100000", &results, &rows, &columns, &err_msg);
+    ret = sqlite3_get_table (db_handle, "SELECT ROWNO, col003, col015 FROM places WHERE col015 > 100000", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Error: %s\n", err_msg);
 	sqlite3_free (err_msg);
 	return -23;
     }
-    if ((rows != 1) || (columns != 2)) {
+    if ((rows != 1) || (columns != 3)) {
 	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
 	return  -24;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col002 FROM places WHERE col001 > 2172517 AND col001 <= 2172519", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -25;
+    }
+    if ((rows != 2) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -26;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col002 FROM places WHERE col001 >= 2172517 AND col001 < 2172519", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -27;
+    }
+    if ((rows != 2) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -28;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col002 FROM places WHERE col001 = 2172517", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -29;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -30;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col001 FROM places WHERE col002 > 'Canberra' AND col002 <= 'Canbrae'", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -31;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -32;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col001 FROM places WHERE col002 >= 'Canberra' AND col002 < 'Canbrae'", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -33;
+    }
+    if ((rows != 2) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -34;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col001 FROM places WHERE col002 = 'Canbrae'", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -29;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -30;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col001 FROM places WHERE ROWNO = 5", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -31;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -32;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col001 FROM places WHERE col006 > 149.0 AND col006 <= 149.1", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -33;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -34;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col001 FROM places WHERE col006 >= 149.1 AND col006 < 149.2", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -35;
+    }
+    if ((rows != 2) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -36;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col001 FROM places WHERE col006 = 149.1", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -37;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -38;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col001 FROM places WHERE col006 >= 149 AND col006 < 150", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -39;
+    }
+    if ((rows != 4) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -40;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col001 FROM places WHERE col006 > 149 AND col006 <= 150", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -41;
+    }
+    if ((rows != 4) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -42;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col001 FROM places WHERE col012  = 23940.0", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -43;
+    }
+    if ((rows != 2) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -44;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col001 FROM places WHERE col012  >= 20000.0 AND col012 < 24000.0", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -45;
+    }
+    if ((rows != 2) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -46;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_get_table (db_handle, "SELECT col001 FROM places WHERE col012  > 20000.0 AND col012 <= 24000.0", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -45;
+    }
+    if ((rows != 2) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result2: %i/%i.\n", rows, columns);
+	return  -46;
     }
     sqlite3_free_table (results);
 
@@ -149,7 +328,7 @@ int main (int argc, char *argv[])
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "DROP TABLE error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -25;
+	return -47;
     }
 
     sqlite3_close (db_handle);
