@@ -2941,10 +2941,12 @@ fnct_AddFDOGeometryColumn (sqlite3_context * context, int argc,
 	strcpy (xformat, "WKB");
     else if (strcasecmp (format, "FGF") == 0)
 	strcpy (xformat, "FGF");
+    else if (strcasecmp (format, "SPATIALITE") == 0)
+	strcpy (xformat, "SPATIALITE");
     else
       {
 	  spatialite_e
-	      ("AddFDOGeometryColumn() error: argument 6 [geometry_format] has to be one of: WKT,WKB,FGF\n");
+	      ("AddFDOGeometryColumn() error: argument 6 [geometry_format] has to be one of: WKT,WKB,FGF,SPATIALITE\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -3135,6 +3137,8 @@ fnct_RecoverFDOGeometryColumn (sqlite3_context * context, int argc,
 	strcpy (xformat, "WKB");
     else if (strcasecmp (format, "FGF") == 0)
 	strcpy (xformat, "FGF");
+    else if (strcasecmp (format, "SPATIALITE") == 0)
+	strcpy (xformat, "SPATIALITE");
     else
       {
 	  spatialite_e
@@ -14800,17 +14804,17 @@ fnct_LinesCutAtNodes (sqlite3_context * context, int argc,
     result = gaiaLinesCutAtNodes (geom1, geom2);
     if (result == NULL)
       {
-	sqlite3_result_null (context);
+	  sqlite3_result_null (context);
       }
     else
       {
-	/* builds the BLOB geometry to be returned */
-	int len;
-	unsigned char *p_result = NULL;
-	result->Srid = geom1->Srid;
-	gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
-	sqlite3_result_blob (context, p_result, len, free);
-	gaiaFreeGeomColl (result);
+	  /* builds the BLOB geometry to be returned */
+	  int len;
+	  unsigned char *p_result = NULL;
+	  result->Srid = geom1->Srid;
+	  gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+	  sqlite3_result_blob (context, p_result, len, free);
+	  gaiaFreeGeomColl (result);
       }
     gaiaFreeGeomColl (geom1);
     gaiaFreeGeomColl (geom2);
@@ -16302,8 +16306,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -16387,8 +16390,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -16397,8 +16399,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }

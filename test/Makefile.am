@@ -4,6 +4,8 @@ check_PROGRAMS = check_endian \
 		check_init2 \
 		check_geometry_cols \
 		check_create \
+		check_fdo1 \
+		check_fdo2 \
 		check_dbf_load \
 		check_shp_load \
 		check_shp_load_3d \
@@ -1674,6 +1676,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/tanpi.testcase \
 	sql_stmt_tests/tan-text.testcase \
 	sql_stmt_tests/testdb1.sqlite \
+	sql_stmt_tests/testFDO.sqlite \
 	sql_stmt_tests/transform10.testcase \
 	sql_stmt_tests/transform11.testcase \
 	sql_stmt_tests/transform12.testcase \

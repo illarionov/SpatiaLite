@@ -36,6 +36,7 @@ host_triplet = @host@
 check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_init$(EXEEXT) check_init2$(EXEEXT) \
 	check_geometry_cols$(EXEEXT) check_create$(EXEEXT) \
+	check_fdo1$(EXEEXT) check_fdo2$(EXEEXT) \
 	check_dbf_load$(EXEEXT) check_shp_load$(EXEEXT) \
 	check_shp_load_3d$(EXEEXT) shape_cp1252$(EXEEXT) \
 	shape_primitives$(EXEEXT) shape_utf8_1$(EXEEXT) \
@@ -71,6 +72,12 @@ check_endian_LDADD = $(LDADD)
 check_extension_SOURCES = check_extension.c
 check_extension_OBJECTS = check_extension.$(OBJEXT)
 check_extension_LDADD = $(LDADD)
+check_fdo1_SOURCES = check_fdo1.c
+check_fdo1_OBJECTS = check_fdo1.$(OBJEXT)
+check_fdo1_LDADD = $(LDADD)
+check_fdo2_SOURCES = check_fdo2.c
+check_fdo2_OBJECTS = check_fdo2.$(OBJEXT)
+check_fdo2_LDADD = $(LDADD)
 check_gaia_utf8_SOURCES = check_gaia_utf8.c
 check_gaia_utf8_OBJECTS = check_gaia_utf8.$(OBJEXT)
 check_gaia_utf8_LDADD = $(LDADD)
@@ -157,24 +164,26 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = check_create.c check_dbf_load.c check_endian.c \
-	check_extension.c check_gaia_utf8.c check_gaia_util.c \
-	check_geometry_cols.c check_init.c check_init2.c \
-	check_math_funcs.c check_mbrcache.c check_shp_load.c \
-	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
-	check_version.c check_virtualtable1.c check_virtualtable2.c \
-	check_virtualtable3.c check_virtualtable4.c \
-	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
-	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	check_extension.c check_fdo1.c check_fdo2.c check_gaia_utf8.c \
+	check_gaia_util.c check_geometry_cols.c check_init.c \
+	check_init2.c check_math_funcs.c check_mbrcache.c \
+	check_shp_load.c check_shp_load_3d.c check_spatialindex.c \
+	check_sql_stmt.c check_version.c check_virtualtable1.c \
+	check_virtualtable2.c check_virtualtable3.c \
+	check_virtualtable4.c check_virtualtable5.c \
+	check_virtualtable6.c check_xls_load.c shape_3d.c \
+	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
 	shape_utf8_2.c
 DIST_SOURCES = check_create.c check_dbf_load.c check_endian.c \
-	check_extension.c check_gaia_utf8.c check_gaia_util.c \
-	check_geometry_cols.c check_init.c check_init2.c \
-	check_math_funcs.c check_mbrcache.c check_shp_load.c \
-	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
-	check_version.c check_virtualtable1.c check_virtualtable2.c \
-	check_virtualtable3.c check_virtualtable4.c \
-	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
-	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	check_extension.c check_fdo1.c check_fdo2.c check_gaia_utf8.c \
+	check_gaia_util.c check_geometry_cols.c check_init.c \
+	check_init2.c check_math_funcs.c check_mbrcache.c \
+	check_shp_load.c check_shp_load_3d.c check_spatialindex.c \
+	check_sql_stmt.c check_version.c check_virtualtable1.c \
+	check_virtualtable2.c check_virtualtable3.c \
+	check_virtualtable4.c check_virtualtable5.c \
+	check_virtualtable6.c check_xls_load.c shape_3d.c \
+	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
 	shape_utf8_2.c
 ETAGS = etags
 CTAGS = ctags
@@ -1953,6 +1962,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/tanpi.testcase \
 	sql_stmt_tests/tan-text.testcase \
 	sql_stmt_tests/testdb1.sqlite \
+	sql_stmt_tests/testFDO.sqlite \
 	sql_stmt_tests/transform10.testcase \
 	sql_stmt_tests/transform11.testcase \
 	sql_stmt_tests/transform12.testcase \
@@ -2111,6 +2121,12 @@ check_endian$(EXEEXT): $(check_endian_OBJECTS) $(check_endian_DEPENDENCIES)
 check_extension$(EXEEXT): $(check_extension_OBJECTS) $(check_extension_DEPENDENCIES) 
 	@rm -f check_extension$(EXEEXT)
 	$(LINK) $(check_extension_OBJECTS) $(check_extension_LDADD) $(LIBS)
+check_fdo1$(EXEEXT): $(check_fdo1_OBJECTS) $(check_fdo1_DEPENDENCIES) 
+	@rm -f check_fdo1$(EXEEXT)
+	$(LINK) $(check_fdo1_OBJECTS) $(check_fdo1_LDADD) $(LIBS)
+check_fdo2$(EXEEXT): $(check_fdo2_OBJECTS) $(check_fdo2_DEPENDENCIES) 
+	@rm -f check_fdo2$(EXEEXT)
+	$(LINK) $(check_fdo2_OBJECTS) $(check_fdo2_LDADD) $(LIBS)
 check_gaia_utf8$(EXEEXT): $(check_gaia_utf8_OBJECTS) $(check_gaia_utf8_DEPENDENCIES) 
 	@rm -f check_gaia_utf8$(EXEEXT)
 	$(LINK) $(check_gaia_utf8_OBJECTS) $(check_gaia_utf8_LDADD) $(LIBS)
@@ -2194,6 +2210,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_dbf_load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_endian.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_extension.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_fdo1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_fdo2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gaia_utf8.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gaia_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_geometry_cols.Po@am__quote@
