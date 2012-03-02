@@ -399,9 +399,11 @@ gml_attribute (void *key, void *value)
 /* we need to de-quote the string, removing first and last ".." */
     if (*(v_tok->value + 0) == '"' && *(v_tok->value + len - 1) == '"')
       {
-	  a->Value = malloc (len - 1);
-	  memcpy (a->Value, v_tok->value + 1, len - 1);
-	  *(a->Value + len - 1) = '\0';
+	  int bytesToCopy = len - 2;
+	  int startingPointForCopy = v_tok->value + 1;
+	  a->Value = malloc (bytesToCopy + 1);
+	  memcpy (a->Value, startingPointForCopy, bytesToCopy);
+	  *(a->Value + bytesToCopy) = '\0';
       }
     else
       {
