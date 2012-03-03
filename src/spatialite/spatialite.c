@@ -13534,8 +13534,8 @@ fnct_PtDistWithin (sqlite3_context * context, int argc, sqlite3_value ** argv)
 			    else
 				sqlite3_result_int (context, 0);
 			}
+		      goto stop;
 		  }
-		goto stop;
 	    }
 /* defaulting to flat distance */
 	  ret = gaiaGeomCollDistance (geo1, geo2, &dist);
