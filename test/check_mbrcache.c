@@ -57,6 +57,7 @@ int main (int argc, char *argv[])
     char **results;
     int rows;
     int columns;
+    int pt;
 
     spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
@@ -345,10 +346,139 @@ int main (int argc, char *argv[])
 	return -44;
     }
 
+/* creating and feeding a Point table */
+    ret = sqlite3_exec (handle, "CREATE TABLE pt (id INTEGER);", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "CREATE TABLE pt error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -45;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('pt', 'g', 4326, 1, 'XY');", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "AddGeometryColumn pt error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -46;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('pt', 'g', 4326, 'POINT', 2.5);", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "AddGeometryColumn pt error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -47;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('pt', 'g', 4326, 'POINT', 'XY', 0.5);", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "AddGeometryColumn pt error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -48;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('pt', 'g', 4326, 'DUMMY', 'XY');", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "AddGeometryColumn pt error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -49;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('pt', 'g', 4326, 'POINT', 'DUMMY');", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "AddGeometryColumn pt error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -50;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('pt', 'g', 4326, 'POINT', 2);", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "AddGeometryColumn pt error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -51;
+    }
+    ret = sqlite3_exec (handle, "SELECT CreateMbrCache('pt', 'g');", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "CreateMbrCache pt.g error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -52;
+    }
+    for (pt = 0; pt < 10000; pt++)
+    {
+    /* inserting Points */
+        char sql[1024];
+        sprintf(sql, "INSERT INTO pt (id, g) VALUES (%d, GeomFromText('POINT(%1.2f %1.2f)', 4326));", pt, 11.0 + (pt / 10000.0), 43.0 + (pt / 10000.0));
+        ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);             
+        if (ret != SQLITE_OK) {
+            fprintf (stderr, "INSERT INTO pt error: %s\n", err_msg);
+            sqlite3_free (err_msg);
+            return -53;
+        }
+    }
+    for (pt = 5000; pt < 6000; pt++)
+    {
+    /* updating Points */
+        char sql[1024];
+        sprintf(sql, "UPDATE pt SET g  = GeomFromText('POINT(%1.2f %1.2f)', 4326) WHERE id = %d;", 12.0 + (pt / 10000.0), 42.0 + (pt / 10000.0), pt);
+        ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);             
+        if (ret != SQLITE_OK) {
+            fprintf (stderr, "UPDATE pt error: %s\n", err_msg);
+            sqlite3_free (err_msg);
+            return -54;
+        }
+    }
+    for (pt = 7000; pt < 8000; pt++)
+    {
+    /* deleting Points */
+        char sql[1024];
+        sprintf(sql, "DELETE FROM pt WHERE id = %d;", pt);
+        ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);             
+        if (ret != SQLITE_OK) {
+            fprintf (stderr, "UPDATE pt error: %s\n", err_msg);
+            sqlite3_free (err_msg);
+            return -55;
+        }
+    }
+
+    ret = sqlite3_exec (handle, "SELECT CreateMbrCache(1, 'geom');",
+                        NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "invalid CreateMbrCache error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -56;
+    }
+    ret = sqlite3_exec (handle, "SELECT CreateMbrCache('Councils', 2);",
+                        NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "invalid CreateMbrCache error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -57;
+    }
+    ret = sqlite3_exec (handle, "SELECT FilterMbrWithin('a', 2, 3, 4);",
+                        NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "invalid FilterMbrWithin error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -58;
+    }
+    ret = sqlite3_exec (handle, "SELECT FilterMbrWithin(1, 'a', 3, 4);",
+                        NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "invalid FilterMbrWithin error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -59;
+    }
+    ret = sqlite3_exec (handle, "SELECT FilterMbrWithin(1, 2, 'a', 4);",
+                        NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "invalid FilterMbrWithin error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -60;
+    }
+    ret = sqlite3_exec (handle, "SELECT FilterMbrWithin(1, 2, 3, 'a');",
+                        NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "invalid FilterMbrWithin error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -61;
+    }
+
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -45;
+	return -62;
     }
     
     spatialite_cleanup();

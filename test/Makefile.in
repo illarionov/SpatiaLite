@@ -36,7 +36,7 @@ host_triplet = @host@
 check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_init$(EXEEXT) check_init2$(EXEEXT) \
 	check_geometry_cols$(EXEEXT) check_create$(EXEEXT) \
-	check_fdo1$(EXEEXT) check_fdo2$(EXEEXT) \
+	check_fdo1$(EXEEXT) check_fdo2$(EXEEXT) check_fdo3$(EXEEXT) \
 	check_dbf_load$(EXEEXT) check_shp_load$(EXEEXT) \
 	check_shp_load_3d$(EXEEXT) shape_cp1252$(EXEEXT) \
 	shape_primitives$(EXEEXT) shape_utf8_1$(EXEEXT) \
@@ -78,6 +78,9 @@ check_fdo1_LDADD = $(LDADD)
 check_fdo2_SOURCES = check_fdo2.c
 check_fdo2_OBJECTS = check_fdo2.$(OBJEXT)
 check_fdo2_LDADD = $(LDADD)
+check_fdo3_SOURCES = check_fdo3.c
+check_fdo3_OBJECTS = check_fdo3.$(OBJEXT)
+check_fdo3_LDADD = $(LDADD)
 check_gaia_utf8_SOURCES = check_gaia_utf8.c
 check_gaia_utf8_OBJECTS = check_gaia_utf8.$(OBJEXT)
 check_gaia_utf8_LDADD = $(LDADD)
@@ -164,9 +167,9 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = check_create.c check_dbf_load.c check_endian.c \
-	check_extension.c check_fdo1.c check_fdo2.c check_gaia_utf8.c \
-	check_gaia_util.c check_geometry_cols.c check_init.c \
-	check_init2.c check_math_funcs.c check_mbrcache.c \
+	check_extension.c check_fdo1.c check_fdo2.c check_fdo3.c \
+	check_gaia_utf8.c check_gaia_util.c check_geometry_cols.c \
+	check_init.c check_init2.c check_math_funcs.c check_mbrcache.c \
 	check_shp_load.c check_shp_load_3d.c check_spatialindex.c \
 	check_sql_stmt.c check_version.c check_virtualtable1.c \
 	check_virtualtable2.c check_virtualtable3.c \
@@ -175,9 +178,9 @@ SOURCES = check_create.c check_dbf_load.c check_endian.c \
 	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
 	shape_utf8_2.c
 DIST_SOURCES = check_create.c check_dbf_load.c check_endian.c \
-	check_extension.c check_fdo1.c check_fdo2.c check_gaia_utf8.c \
-	check_gaia_util.c check_geometry_cols.c check_init.c \
-	check_init2.c check_math_funcs.c check_mbrcache.c \
+	check_extension.c check_fdo1.c check_fdo2.c check_fdo3.c \
+	check_gaia_utf8.c check_gaia_util.c check_geometry_cols.c \
+	check_init.c check_init2.c check_math_funcs.c check_mbrcache.c \
 	check_shp_load.c check_shp_load_3d.c check_spatialindex.c \
 	check_sql_stmt.c check_version.c check_virtualtable1.c \
 	check_virtualtable2.c check_virtualtable3.c \
@@ -553,6 +556,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/buildmbr7.testcase \
 	sql_stmt_tests/buildmbr8.testcase \
 	sql_stmt_tests/buildmbr9.testcase \
+	sql_stmt_tests/buildmbr10.testcase \
 	sql_stmt_tests/casttogeometrycollection2.testcase \
 	sql_stmt_tests/casttogeometrycollection3.testcase \
 	sql_stmt_tests/casttogeometrycollection4.testcase \
@@ -1048,6 +1052,9 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/geodesic-len3.testcase \
 	sql_stmt_tests/geodesic-len4.testcase \
 	sql_stmt_tests/geodesic-len5.testcase \
+	sql_stmt_tests/geodesic-len6.testcase \
+	sql_stmt_tests/geodesic-len7.testcase \
+	sql_stmt_tests/geodesic-len8.testcase \
 	sql_stmt_tests/geojson1.testcase \
 	sql_stmt_tests/geojson2.testcase \
 	sql_stmt_tests/geojson3.testcase \
@@ -1372,6 +1379,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/locatepoint6.testcase \
 	sql_stmt_tests/locatepoint7.testcase \
 	sql_stmt_tests/locatepoint8.testcase \
+	sql_stmt_tests/locatepoint9.testcase \
 	sql_stmt_tests/log10-0.0.testcase \
 	sql_stmt_tests/log10-100.0.testcase \
 	sql_stmt_tests/log10-100.testcase \
@@ -1635,6 +1643,22 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/pow-badarg2.testcase \
 	sql_stmt_tests/pow-edom.testcase \
 	sql_stmt_tests/pow-fp.testcase \
+	sql_stmt_tests/ptditwithin1.testcase \
+	sql_stmt_tests/ptditwithin10.testcase \
+	sql_stmt_tests/ptditwithin11.testcase \
+	sql_stmt_tests/ptditwithin12.testcase \
+	sql_stmt_tests/ptditwithin13.testcase \
+	sql_stmt_tests/ptditwithin14.testcase \
+	sql_stmt_tests/ptditwithin15.testcase \
+	sql_stmt_tests/ptditwithin16.testcase \
+	sql_stmt_tests/ptditwithin2.testcase \
+	sql_stmt_tests/ptditwithin3.testcase \
+	sql_stmt_tests/ptditwithin4.testcase \
+	sql_stmt_tests/ptditwithin5.testcase \
+	sql_stmt_tests/ptditwithin6.testcase \
+	sql_stmt_tests/ptditwithin7.testcase \
+	sql_stmt_tests/ptditwithin8.testcase \
+	sql_stmt_tests/ptditwithin9.testcase \
 	sql_stmt_tests/rad0.testcase \
 	sql_stmt_tests/radpi.testcase \
 	sql_stmt_tests/rad-text.testcase \
@@ -1726,6 +1750,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/routing3.testcase \
 	sql_stmt_tests/routing4.testcase \
 	sql_stmt_tests/routing5.testcase \
+	sql_stmt_tests/routing6.testcase \
 	sql_stmt_tests/sandro.jpg \
 	sql_stmt_tests/sanitizeGeometry10.testcase \
 	sql_stmt_tests/sanitizeGeometry11.testcase \
@@ -1933,6 +1958,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/st_z6.testcase \
 	sql_stmt_tests/st_z7.testcase \
 	sql_stmt_tests/st_z8.testcase \
+	sql_stmt_tests/st_z9.testcase \
 	sql_stmt_tests/swapcoords10.testcase \
 	sql_stmt_tests/swapcoords11.testcase \
 	sql_stmt_tests/swapcoords1.testcase \
@@ -1963,6 +1989,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/tan-text.testcase \
 	sql_stmt_tests/testdb1.sqlite \
 	sql_stmt_tests/testFDO.sqlite \
+	sql_stmt_tests/testFGF.sqlite \
 	sql_stmt_tests/transform10.testcase \
 	sql_stmt_tests/transform11.testcase \
 	sql_stmt_tests/transform12.testcase \
@@ -2127,6 +2154,9 @@ check_fdo1$(EXEEXT): $(check_fdo1_OBJECTS) $(check_fdo1_DEPENDENCIES)
 check_fdo2$(EXEEXT): $(check_fdo2_OBJECTS) $(check_fdo2_DEPENDENCIES) 
 	@rm -f check_fdo2$(EXEEXT)
 	$(LINK) $(check_fdo2_OBJECTS) $(check_fdo2_LDADD) $(LIBS)
+check_fdo3$(EXEEXT): $(check_fdo3_OBJECTS) $(check_fdo3_DEPENDENCIES) 
+	@rm -f check_fdo3$(EXEEXT)
+	$(LINK) $(check_fdo3_OBJECTS) $(check_fdo3_LDADD) $(LIBS)
 check_gaia_utf8$(EXEEXT): $(check_gaia_utf8_OBJECTS) $(check_gaia_utf8_DEPENDENCIES) 
 	@rm -f check_gaia_utf8$(EXEEXT)
 	$(LINK) $(check_gaia_utf8_OBJECTS) $(check_gaia_utf8_LDADD) $(LIBS)
@@ -2212,6 +2242,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_extension.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_fdo1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_fdo2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_fdo3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gaia_utf8.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gaia_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_geometry_cols.Po@am__quote@
