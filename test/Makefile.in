@@ -43,11 +43,12 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	shape_utf8_2$(EXEEXT) shape_3d$(EXEEXT) \
 	check_xls_load$(EXEEXT) check_math_funcs$(EXEEXT) \
 	check_gaia_util$(EXEEXT) check_gaia_utf8$(EXEEXT) \
-	check_extension$(EXEEXT) check_sql_stmt$(EXEEXT) \
-	check_virtualtable1$(EXEEXT) check_virtualtable2$(EXEEXT) \
-	check_virtualtable3$(EXEEXT) check_virtualtable4$(EXEEXT) \
-	check_virtualtable5$(EXEEXT) check_virtualtable6$(EXEEXT) \
-	check_mbrcache$(EXEEXT) check_spatialindex$(EXEEXT)
+	check_extension$(EXEEXT) check_recover_geom$(EXEEXT) \
+	check_sql_stmt$(EXEEXT) check_virtualtable1$(EXEEXT) \
+	check_virtualtable2$(EXEEXT) check_virtualtable3$(EXEEXT) \
+	check_virtualtable4$(EXEEXT) check_virtualtable5$(EXEEXT) \
+	check_virtualtable6$(EXEEXT) check_mbrcache$(EXEEXT) \
+	check_spatialindex$(EXEEXT)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -102,6 +103,9 @@ check_math_funcs_LDADD = $(LDADD)
 check_mbrcache_SOURCES = check_mbrcache.c
 check_mbrcache_OBJECTS = check_mbrcache.$(OBJEXT)
 check_mbrcache_LDADD = $(LDADD)
+check_recover_geom_SOURCES = check_recover_geom.c
+check_recover_geom_OBJECTS = check_recover_geom.$(OBJEXT)
+check_recover_geom_LDADD = $(LDADD)
 check_shp_load_SOURCES = check_shp_load.c
 check_shp_load_OBJECTS = check_shp_load.$(OBJEXT)
 check_shp_load_LDADD = $(LDADD)
@@ -170,23 +174,23 @@ SOURCES = check_create.c check_dbf_load.c check_endian.c \
 	check_extension.c check_fdo1.c check_fdo2.c check_fdo3.c \
 	check_gaia_utf8.c check_gaia_util.c check_geometry_cols.c \
 	check_init.c check_init2.c check_math_funcs.c check_mbrcache.c \
-	check_shp_load.c check_shp_load_3d.c check_spatialindex.c \
-	check_sql_stmt.c check_version.c check_virtualtable1.c \
-	check_virtualtable2.c check_virtualtable3.c \
-	check_virtualtable4.c check_virtualtable5.c \
-	check_virtualtable6.c check_xls_load.c shape_3d.c \
-	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	check_recover_geom.c check_shp_load.c check_shp_load_3d.c \
+	check_spatialindex.c check_sql_stmt.c check_version.c \
+	check_virtualtable1.c check_virtualtable2.c \
+	check_virtualtable3.c check_virtualtable4.c \
+	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
+	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
 	shape_utf8_2.c
 DIST_SOURCES = check_create.c check_dbf_load.c check_endian.c \
 	check_extension.c check_fdo1.c check_fdo2.c check_fdo3.c \
 	check_gaia_utf8.c check_gaia_util.c check_geometry_cols.c \
 	check_init.c check_init2.c check_math_funcs.c check_mbrcache.c \
-	check_shp_load.c check_shp_load_3d.c check_spatialindex.c \
-	check_sql_stmt.c check_version.c check_virtualtable1.c \
-	check_virtualtable2.c check_virtualtable3.c \
-	check_virtualtable4.c check_virtualtable5.c \
-	check_virtualtable6.c check_xls_load.c shape_3d.c \
-	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	check_recover_geom.c check_shp_load.c check_shp_load_3d.c \
+	check_spatialindex.c check_sql_stmt.c check_version.c \
+	check_virtualtable1.c check_virtualtable2.c \
+	check_virtualtable3.c check_virtualtable4.c \
+	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
+	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
 	shape_utf8_2.c
 ETAGS = etags
 CTAGS = ctags
@@ -490,6 +494,19 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/bdmpolyfromtext3.testcase \
 	sql_stmt_tests/bdmpolyfromtext4.testcase \
 	sql_stmt_tests/bdmpolyfromtext9.testcase \
+	sql_stmt_tests/bdmpolyfromwkb10.testcase \
+	sql_stmt_tests/bdmpolyfromwkb13.testcase \
+	sql_stmt_tests/bdmpolyfromwkb14.testcase \
+	sql_stmt_tests/bdmpolyfromwkb15.testcase \
+	sql_stmt_tests/bdmpolyfromwkb16.testcase \
+	sql_stmt_tests/bdmpolyfromwkb17.testcase \
+	sql_stmt_tests/bdmpolyfromwkb18.testcase \
+	sql_stmt_tests/bdmpolyfromwkb19.testcase \
+	sql_stmt_tests/bdmpolyfromwkb1.testcase \
+	sql_stmt_tests/bdmpolyfromwkb2.testcase \
+	sql_stmt_tests/bdmpolyfromwkb3.testcase \
+	sql_stmt_tests/bdmpolyfromwkb4.testcase \
+	sql_stmt_tests/bdmpolyfromwkb9.testcase \
 	sql_stmt_tests/bdpolyfromtext10.testcase \
 	sql_stmt_tests/bdpolyfromtext11.testcase \
 	sql_stmt_tests/bdpolyfromtext12.testcase \
@@ -506,6 +523,25 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/bdpolyfromtext7.testcase \
 	sql_stmt_tests/bdpolyfromtext8.testcase \
 	sql_stmt_tests/bdpolyfromtext9.testcase \
+	sql_stmt_tests/bdpolyfromwkb10.testcase \
+	sql_stmt_tests/bdpolyfromwkb11.testcase \
+	sql_stmt_tests/bdpolyfromwkb12.testcase \
+	sql_stmt_tests/bdpolyfromwkb13.testcase \
+	sql_stmt_tests/bdpolyfromwkb14.testcase \
+	sql_stmt_tests/bdpolyfromwkb15.testcase \
+	sql_stmt_tests/bdpolyfromwkb16.testcase \
+	sql_stmt_tests/bdpolyfromwkb17.testcase \
+	sql_stmt_tests/bdpolyfromwkb18.testcase \
+	sql_stmt_tests/bdpolyfromwkb19.testcase \
+	sql_stmt_tests/bdpolyfromwkb1.testcase \
+	sql_stmt_tests/bdpolyfromwkb2.testcase \
+	sql_stmt_tests/bdpolyfromwkb3.testcase \
+	sql_stmt_tests/bdpolyfromwkb4.testcase \
+	sql_stmt_tests/bdpolyfromwkb5.testcase \
+	sql_stmt_tests/bdpolyfromwkb6.testcase \
+	sql_stmt_tests/bdpolyfromwkb7.testcase \
+	sql_stmt_tests/bdpolyfromwkb8.testcase \
+	sql_stmt_tests/bdpolyfromwkb9.testcase \
 	sql_stmt_tests/blobfromfile1.testcase \
 	sql_stmt_tests/blobfromfile2.testcase \
 	sql_stmt_tests/blobfromfile3.testcase \
@@ -1643,22 +1679,22 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/pow-badarg2.testcase \
 	sql_stmt_tests/pow-edom.testcase \
 	sql_stmt_tests/pow-fp.testcase \
-	sql_stmt_tests/ptditwithin1.testcase \
-	sql_stmt_tests/ptditwithin10.testcase \
-	sql_stmt_tests/ptditwithin11.testcase \
-	sql_stmt_tests/ptditwithin12.testcase \
-	sql_stmt_tests/ptditwithin13.testcase \
-	sql_stmt_tests/ptditwithin14.testcase \
-	sql_stmt_tests/ptditwithin15.testcase \
-	sql_stmt_tests/ptditwithin16.testcase \
-	sql_stmt_tests/ptditwithin2.testcase \
-	sql_stmt_tests/ptditwithin3.testcase \
-	sql_stmt_tests/ptditwithin4.testcase \
-	sql_stmt_tests/ptditwithin5.testcase \
-	sql_stmt_tests/ptditwithin6.testcase \
-	sql_stmt_tests/ptditwithin7.testcase \
-	sql_stmt_tests/ptditwithin8.testcase \
-	sql_stmt_tests/ptditwithin9.testcase \
+	sql_stmt_tests/ptdistwithin1.testcase \
+	sql_stmt_tests/ptdistwithin10.testcase \
+	sql_stmt_tests/ptdistwithin11.testcase \
+	sql_stmt_tests/ptdistwithin12.testcase \
+	sql_stmt_tests/ptdistwithin13.testcase \
+	sql_stmt_tests/ptdistwithin14.testcase \
+	sql_stmt_tests/ptdistwithin15.testcase \
+	sql_stmt_tests/ptdistwithin16.testcase \
+	sql_stmt_tests/ptdistwithin2.testcase \
+	sql_stmt_tests/ptdistwithin3.testcase \
+	sql_stmt_tests/ptdistwithin4.testcase \
+	sql_stmt_tests/ptdistwithin5.testcase \
+	sql_stmt_tests/ptdistwithin6.testcase \
+	sql_stmt_tests/ptdistwithin7.testcase \
+	sql_stmt_tests/ptdistwithin8.testcase \
+	sql_stmt_tests/ptdistwithin9.testcase \
 	sql_stmt_tests/rad0.testcase \
 	sql_stmt_tests/radpi.testcase \
 	sql_stmt_tests/rad-text.testcase \
@@ -2178,6 +2214,9 @@ check_math_funcs$(EXEEXT): $(check_math_funcs_OBJECTS) $(check_math_funcs_DEPEND
 check_mbrcache$(EXEEXT): $(check_mbrcache_OBJECTS) $(check_mbrcache_DEPENDENCIES) 
 	@rm -f check_mbrcache$(EXEEXT)
 	$(LINK) $(check_mbrcache_OBJECTS) $(check_mbrcache_LDADD) $(LIBS)
+check_recover_geom$(EXEEXT): $(check_recover_geom_OBJECTS) $(check_recover_geom_DEPENDENCIES) 
+	@rm -f check_recover_geom$(EXEEXT)
+	$(LINK) $(check_recover_geom_OBJECTS) $(check_recover_geom_LDADD) $(LIBS)
 check_shp_load$(EXEEXT): $(check_shp_load_OBJECTS) $(check_shp_load_DEPENDENCIES) 
 	@rm -f check_shp_load$(EXEEXT)
 	$(LINK) $(check_shp_load_OBJECTS) $(check_shp_load_LDADD) $(LIBS)
@@ -2250,6 +2289,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_init2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_math_funcs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_mbrcache.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_recover_geom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_shp_load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_shp_load_3d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_spatialindex.Po@am__quote@

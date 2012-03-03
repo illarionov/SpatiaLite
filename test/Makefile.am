@@ -20,6 +20,7 @@ check_PROGRAMS = check_endian \
 		check_gaia_util \
 		check_gaia_utf8 \
 		check_extension \
+		check_recover_geom \
 		check_sql_stmt \
 		check_virtualtable1 \
 		check_virtualtable2 \
@@ -202,6 +203,19 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/bdmpolyfromtext3.testcase \
 	sql_stmt_tests/bdmpolyfromtext4.testcase \
 	sql_stmt_tests/bdmpolyfromtext9.testcase \
+	sql_stmt_tests/bdmpolyfromwkb10.testcase \
+	sql_stmt_tests/bdmpolyfromwkb13.testcase \
+	sql_stmt_tests/bdmpolyfromwkb14.testcase \
+	sql_stmt_tests/bdmpolyfromwkb15.testcase \
+	sql_stmt_tests/bdmpolyfromwkb16.testcase \
+	sql_stmt_tests/bdmpolyfromwkb17.testcase \
+	sql_stmt_tests/bdmpolyfromwkb18.testcase \
+	sql_stmt_tests/bdmpolyfromwkb19.testcase \
+	sql_stmt_tests/bdmpolyfromwkb1.testcase \
+	sql_stmt_tests/bdmpolyfromwkb2.testcase \
+	sql_stmt_tests/bdmpolyfromwkb3.testcase \
+	sql_stmt_tests/bdmpolyfromwkb4.testcase \
+	sql_stmt_tests/bdmpolyfromwkb9.testcase \
 	sql_stmt_tests/bdpolyfromtext10.testcase \
 	sql_stmt_tests/bdpolyfromtext11.testcase \
 	sql_stmt_tests/bdpolyfromtext12.testcase \
@@ -218,6 +232,25 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/bdpolyfromtext7.testcase \
 	sql_stmt_tests/bdpolyfromtext8.testcase \
 	sql_stmt_tests/bdpolyfromtext9.testcase \
+	sql_stmt_tests/bdpolyfromwkb10.testcase \
+	sql_stmt_tests/bdpolyfromwkb11.testcase \
+	sql_stmt_tests/bdpolyfromwkb12.testcase \
+	sql_stmt_tests/bdpolyfromwkb13.testcase \
+	sql_stmt_tests/bdpolyfromwkb14.testcase \
+	sql_stmt_tests/bdpolyfromwkb15.testcase \
+	sql_stmt_tests/bdpolyfromwkb16.testcase \
+	sql_stmt_tests/bdpolyfromwkb17.testcase \
+	sql_stmt_tests/bdpolyfromwkb18.testcase \
+	sql_stmt_tests/bdpolyfromwkb19.testcase \
+	sql_stmt_tests/bdpolyfromwkb1.testcase \
+	sql_stmt_tests/bdpolyfromwkb2.testcase \
+	sql_stmt_tests/bdpolyfromwkb3.testcase \
+	sql_stmt_tests/bdpolyfromwkb4.testcase \
+	sql_stmt_tests/bdpolyfromwkb5.testcase \
+	sql_stmt_tests/bdpolyfromwkb6.testcase \
+	sql_stmt_tests/bdpolyfromwkb7.testcase \
+	sql_stmt_tests/bdpolyfromwkb8.testcase \
+	sql_stmt_tests/bdpolyfromwkb9.testcase \
 	sql_stmt_tests/blobfromfile1.testcase \
 	sql_stmt_tests/blobfromfile2.testcase \
 	sql_stmt_tests/blobfromfile3.testcase \
@@ -1355,22 +1388,22 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/pow-badarg2.testcase \
 	sql_stmt_tests/pow-edom.testcase \
 	sql_stmt_tests/pow-fp.testcase \
-	sql_stmt_tests/ptditwithin1.testcase \
-	sql_stmt_tests/ptditwithin10.testcase \
-	sql_stmt_tests/ptditwithin11.testcase \
-	sql_stmt_tests/ptditwithin12.testcase \
-	sql_stmt_tests/ptditwithin13.testcase \
-	sql_stmt_tests/ptditwithin14.testcase \
-	sql_stmt_tests/ptditwithin15.testcase \
-	sql_stmt_tests/ptditwithin16.testcase \
-	sql_stmt_tests/ptditwithin2.testcase \
-	sql_stmt_tests/ptditwithin3.testcase \
-	sql_stmt_tests/ptditwithin4.testcase \
-	sql_stmt_tests/ptditwithin5.testcase \
-	sql_stmt_tests/ptditwithin6.testcase \
-	sql_stmt_tests/ptditwithin7.testcase \
-	sql_stmt_tests/ptditwithin8.testcase \
-	sql_stmt_tests/ptditwithin9.testcase \
+	sql_stmt_tests/ptdistwithin1.testcase \
+	sql_stmt_tests/ptdistwithin10.testcase \
+	sql_stmt_tests/ptdistwithin11.testcase \
+	sql_stmt_tests/ptdistwithin12.testcase \
+	sql_stmt_tests/ptdistwithin13.testcase \
+	sql_stmt_tests/ptdistwithin14.testcase \
+	sql_stmt_tests/ptdistwithin15.testcase \
+	sql_stmt_tests/ptdistwithin16.testcase \
+	sql_stmt_tests/ptdistwithin2.testcase \
+	sql_stmt_tests/ptdistwithin3.testcase \
+	sql_stmt_tests/ptdistwithin4.testcase \
+	sql_stmt_tests/ptdistwithin5.testcase \
+	sql_stmt_tests/ptdistwithin6.testcase \
+	sql_stmt_tests/ptdistwithin7.testcase \
+	sql_stmt_tests/ptdistwithin8.testcase \
+	sql_stmt_tests/ptdistwithin9.testcase \
 	sql_stmt_tests/rad0.testcase \
 	sql_stmt_tests/radpi.testcase \
 	sql_stmt_tests/rad-text.testcase \

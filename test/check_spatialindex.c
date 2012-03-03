@@ -546,59 +546,83 @@ int main (int argc, char *argv[])
         sqlite3_free (err_msg);
         return -81;
     }
+    ret = sqlite3_exec (handle, "SELECT RecoverSpatialIndex('a');", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "invalid RecoverSpatialIndex error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -82;
+    }
+    ret = sqlite3_exec (handle, "SELECT RecoverSpatialIndex(1);", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "invalid RecoverSpatialIndex error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -83;
+    }
+    ret = sqlite3_exec (handle, "SELECT RecoverSpatialIndex('a', 'b', 'c');", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "invalid RecoverSpatialIndex error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -84;
+    }
+    ret = sqlite3_exec (handle, "SELECT RecoverSpatialIndex('a', 'b', 1);", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "invalid RecoverSpatialIndex error: %s\n", err_msg);
+        sqlite3_free (err_msg);
+        return -85;
+    }
     ret = sqlite3_exec (handle, "SELECT CreateSpatialIndex(1, 'a');", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "invalid CreateSpatialIndex error: %s\n", err_msg);
         sqlite3_free (err_msg);
-        return -82;
+        return -86;
     }
     ret = sqlite3_exec (handle, "SELECT CreateSpatialIndex('a', 2);", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "invalid CreateSpatialIndex error: %s\n", err_msg);
         sqlite3_free (err_msg);
-        return -83;
+        return -87;
     }
     ret = sqlite3_exec (handle, "SELECT DisableSpatialIndex(1, 'a');", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "invalid DisableSpatialIndex error: %s\n", err_msg);
         sqlite3_free (err_msg);
-        return -84;
+        return -88;
     }
     ret = sqlite3_exec (handle, "SELECT DisableSpatialIndex('a', 2);", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "invalid DisableSpatialIndex error: %s\n", err_msg);
         sqlite3_free (err_msg);
-        return -85;
+        return -89;
     }
     ret = sqlite3_exec (handle, "SELECT RebuildGeometryTriggers(1, 'a');", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "invalid RebuildGeometryTriggers error: %s\n", err_msg);
         sqlite3_free (err_msg);
-        return -86;
+        return -90;
     }
     ret = sqlite3_exec (handle, "SELECT RebuildGeometryTriggers('a', 2);", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "invalid RebuildGeometryTriggers error: %s\n", err_msg);
         sqlite3_free (err_msg);
-        return -87;
+        return -91;
     }
     ret = sqlite3_exec (handle, "SELECT UpdateLayerStatistics('a', 2);", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "invalid UpdateLayerStatistics error: %s\n", err_msg);
         sqlite3_free (err_msg);
-        return -88;
+        return -92;
     }
     ret = sqlite3_exec (handle, "SELECT UpdateLayerStatistics(2, 'a');", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "invalid UpdateLayerStatistics error: %s\n", err_msg);
         sqlite3_free (err_msg);
-        return -89;
+        return -93;
     }
 
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -90;
+	return -94;
     }
     
     spatialite_cleanup();
