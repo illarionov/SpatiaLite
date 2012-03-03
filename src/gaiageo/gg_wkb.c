@@ -4665,7 +4665,10 @@ gaiaFromEWKB (const unsigned char *in_buffer)
     if (!blob)
 	return NULL;
     if (blob_size < 9)
+      {
+	free (blob);
 	return NULL;
+      }
     if (*(blob + 0) == 0x01)
 	endian = 1;
     else
@@ -4733,6 +4736,7 @@ gaiaFromEWKB (const unsigned char *in_buffer)
 				    endian_arch, dims);
 	  break;
       };
+    free (blob);
     if (ret < 0)
       {
 	  /* invalid EWKB !!! */

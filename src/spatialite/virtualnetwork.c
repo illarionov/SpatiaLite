@@ -1255,6 +1255,8 @@ network_free (NetworkPtr p)
 	  if (pN->Arcs)
 	      free (pN->Arcs);
       }
+    if (p->Nodes)
+        free(p->Nodes);
     if (p->TableName)
 	free (p->TableName);
     if (p->FromColumn)
