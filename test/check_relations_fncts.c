@@ -61,8 +61,7 @@ int main (int argc, char *argv[])
     int returnValue = 0;
     
     /* Common setup */
-    gaiaPointPtr validPoint = gaiaAllocPoint (1, 2);
-    gaiaGeomCollPtr validGeometry = (gaiaGeomCollPtr)validPoint;
+    gaiaGeomCollPtr validGeometry = gaiaAllocGeomColl();
     double dummyResultArg = 0.0;
     double dummyResultArg2 = 0.0;
     
@@ -496,7 +495,7 @@ int main (int argc, char *argv[])
 	goto exit;
     }
     
-    geom = gaiaLineSubstring(validGeometry, 0, 1);
+    geom = gaiaLineSubstring(0, 0, 1);
     if (geom != NULL) {
 	gaiaFree(geom);
 	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
@@ -698,6 +697,6 @@ int main (int argc, char *argv[])
  
     /* Cleanup and exit */
 exit:
-    gaiaFree (validPoint);
+    gaiaFreeGeomColl (validGeometry);
     return returnValue;
 }
