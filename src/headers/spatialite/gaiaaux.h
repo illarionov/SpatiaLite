@@ -71,7 +71,7 @@ extern "C"
 /** SQL double quoted string (SQL name) */
 #define GAIA_SQL_DOUBLE_QUOTE	1002
 
-/* function prototipes */
+/* function prototypes */
 
 /**
  Retrieves the Locale Charset

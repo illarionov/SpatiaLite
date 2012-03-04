@@ -65,7 +65,7 @@ extern "C"
 /**
  Safely frees any dynamic memory block allocated by the library itself
 
- \param ptr pointer to dynamicly allocated memory
+ \param ptr pointer to dynamically allocated memory
 
  \note on some platforms (most notably, Microsoft Windows) many different
  runtime libraries may actually support the same process.
@@ -156,7 +156,7 @@ extern "C"
 
  \sa gaiaAllocPoint, gaiaAllocPointXYZ, gaiaAllocPointXYM, gaiaAllocPointXYZM
 
- \note attempting to destroy any POINT object whose ownnership has already
+ \note attempting to destroy any POINT object whose ownership has already
  been transferred to some other (higher order) object is a serious
  error, and will easily cause severe memory corruption.
  */
@@ -333,14 +333,14 @@ extern "C"
  \sa gaiaAllocRing, gaiaAllocRingXYZ, gaiaAllocRingXYM,
   gaiaAllocRingXYZM
 
- \note attempting to destroy any RING object whose ownnership has already
+ \note attempting to destroy any RING object whose ownership has already
  been transferred to some other (higher order) object is a serious
  error, and will easily cause severe memory corruption.
  */
     GAIAGEO_DECLARE void gaiaFreeRing (gaiaRingPtr ptr);
 
 /**
- Copies coordinates betwee two RING objects
+ Copies coordinates between two RING objects
 
  \param dst destination RING [output]
  \param src origin RING [input]
@@ -447,10 +447,10 @@ extern "C"
  \sa gaiaAllocPolygon, gaiaAllocPolygonXYZ, gaiaAllocPolygonXYM,
   gaiaAllocPolygonXYZM, gaiaCreatePolygon
 
- \note attempting to destroy any POLYGON object whose ownnership has already
+ \note attempting to destroy any POLYGON object whose ownership has already
  been transferred to some other (higher order) object is a serious
  error, and will easily cause severe memory corruption.
- \n Ownerhip of each RING object referenced by a POLYGON object alway belongs
+ \n Ownership of each RING object referenced by a POLYGON object always belongs
  to the POLYGON itself, so destroying the POLYGON will surely destroy
  any related RING as well.
  */
@@ -520,11 +520,11 @@ extern "C"
  \sa gaiaAllocGeomColl, gaiaAllocGeomCollXYZ, gaiaAllocGeomCollXYM,
   gaiaAllocGeomCollXYZM
 
- \note attempting to destroy any Geometry object whose ownnership has already
+ \note attempting to destroy any Geometry object whose ownership has already
  been transferred to some other (higher order) object is a serious
  error, and will easily cause severe memory corruption.
- \n Ownerhip of each POINT, LINESTRING or POLYGON object referenced by a
- Geometry object alway belongs to the Geometry itself, so destroying the 
+ \n Ownership of each POINT, LINESTRING or POLYGON object referenced by a
+ Geometry object always belongs to the Geometry itself, so destroying the 
  Geometry will surely destroy any related elementary geometry item as well.
  */
     GAIAGEO_DECLARE void gaiaFreeGeomColl (gaiaGeomCollPtr geom);
@@ -690,7 +690,7 @@ extern "C"
 
  \sa gaiaInsertInteriorRing
 
- \note ownership of the Ring object will be tranferred to the Polygon object.
+ \note ownership of the Ring object will be transferred to the Polygon object.
  \n the newly created Polygon will have the same dimensions as the Ring has.
  \n if required the Polygon's Interior Rings count could be increased.
  */
@@ -839,7 +839,7 @@ extern "C"
  gaiaCastGeomCollToXYM, gaiaCastGeomCollToXYZM
 
  \note the newly created object is an exact copy of the original one; except
- in that any elementary item  will be casted to 3D [XYZ] dimensions.
+ in that any elementary item  will be cast to 3D [XYZ] dimensions.
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaCastGeomCollToXYZ (gaiaGeomCollPtr
 							   geom);
@@ -855,7 +855,7 @@ extern "C"
  gaiaCastGeomCollToXYZM
 
  \note the newly created object is an exact copy of the original one; except
- in that any elementary item  will be casted to 2D [XYM] dimensions.
+ in that any elementary item  will be cast to 2D [XYM] dimensions.
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaCastGeomCollToXYM (gaiaGeomCollPtr
 							   geom);
@@ -871,7 +871,7 @@ extern "C"
  gaiaCastGeomCollToXYM
 
  \note the newly created object is an exact copy of the original one; except
- in that any elementary item  will be casted to 3D [XYZM] dimensions.
+ in that any elementary item  will be cast to 3D [XYZM] dimensions.
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaCastGeomCollToXYZM (gaiaGeomCollPtr
 							    geom);
@@ -905,7 +905,7 @@ extern "C"
 					  double *m);
 
 /**
- Sets coodinates for a Linestring's Point
+ Sets coordinates for a Linestring's Point
 
  \param ln pointer to Linestring object.
  \param v relative position of Point: first Point has index 0
@@ -932,7 +932,7 @@ extern "C"
 					  double y, double z, double m);
 
 /**
- Gets coodinates from a Ring's Point
+ Gets coordinates from a Ring's Point
 
  \param rng pointer to Ring object.
  \param v relative position of Point: first Point has index 0
@@ -1299,7 +1299,7 @@ extern "C"
 						     double x, double y);
 
 /**
- Computes the minimum distance intercurring from a Point and a Linestring or Ring
+ Computes the minimum distance between a Point and a Linestring or Ring
 
  \param x0 Point X coordinate
  \param y0 Point Y coordinate
@@ -1455,7 +1455,7 @@ extern "C"
 					   double *b, double *rf);
 
 /**
- Calculates the Great Circle Distance intercurring between two Points
+ Calculates the Great Circle Distance between between two Points
 
  \param a first geodesic parameter.
  \param b second geodesic parameter.
@@ -1477,7 +1477,7 @@ extern "C"
 						    double lat2, double lon2);
 
 /**
- Calculates the Geodesic Distance intercurring between two Points
+ Calculates the Geodesic Distance between between two Points
 
  \param a first geodesic parameter.
  \param b second geodesic parameter.
