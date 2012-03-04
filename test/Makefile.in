@@ -492,6 +492,23 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/atan00.testcase \
 	sql_stmt_tests/atan0.testcase \
 	sql_stmt_tests/atan-text.testcase \
+	sql_stmt_tests/badEWKT1.testcase \
+	sql_stmt_tests/badEWKT2.testcase \
+	sql_stmt_tests/badEWKT3.testcase \
+	sql_stmt_tests/badEWKT4.testcase \
+	sql_stmt_tests/badEWKT5.testcase \
+	sql_stmt_tests/badEWKT6.testcase \
+	sql_stmt_tests/badEWKT7.testcase \
+	sql_stmt_tests/badEWKT8.testcase \
+	sql_stmt_tests/badwkt1.testcase \
+	sql_stmt_tests/badwkt2.testcase \
+	sql_stmt_tests/badwkt3.testcase \
+	sql_stmt_tests/badwkt4.testcase \
+	sql_stmt_tests/badwkt5.testcase \
+	sql_stmt_tests/badwkt6.testcase \
+	sql_stmt_tests/badwkt7.testcase \
+	sql_stmt_tests/badwkt8.testcase \
+	sql_stmt_tests/badwkt9.testcase \
 	sql_stmt_tests/bdmpolyfromtext10.testcase \
 	sql_stmt_tests/bdmpolyfromtext13.testcase \
 	sql_stmt_tests/bdmpolyfromtext14.testcase \
@@ -1066,6 +1083,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/fromgeojson2.testcase \
 	sql_stmt_tests/fromgeojson30.testcase \
 	sql_stmt_tests/fromgeojson31.testcase \
+	sql_stmt_tests/fromgeojson32.testcase \
 	sql_stmt_tests/fromgeojson3.testcase \
 	sql_stmt_tests/fromgeojson4.testcase \
 	sql_stmt_tests/fromgeojson5.testcase \
