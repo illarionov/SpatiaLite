@@ -29,7 +29,8 @@ check_PROGRAMS = check_endian \
 		check_virtualtable5 \
 		check_virtualtable6 \
 		check_mbrcache \
-		check_spatialindex
+		check_spatialindex \
+		check_relations_fncts
 
 AM_CFLAGS = -I@srcdir@/../src/headers
 AM_LDFLAGS = -L../src -lspatialite -lm $(GCOV_FLAGS)
