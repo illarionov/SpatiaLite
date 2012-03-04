@@ -2086,6 +2086,8 @@ gaiaGeomCollCovers (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     ret = GEOSCovers (g1, g2);
     GEOSGeom_destroy (g1);
     GEOSGeom_destroy (g2);
+    if (ret == 2)
+	return -1;
     return ret;
 }
 
@@ -2103,6 +2105,8 @@ gaiaGeomCollCoveredBy (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     ret = GEOSCoveredBy (g1, g2);
     GEOSGeom_destroy (g1);
     GEOSGeom_destroy (g2);
+    if (ret == 2)
+	return -1;
     return ret;
 }
 
