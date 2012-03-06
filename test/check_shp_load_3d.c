@@ -108,9 +108,308 @@ int main (int argc, char *argv[])
 	return -5;
     }
     
+    ret = sqlite3_exec (handle, "INSERT INTO polygons (COL_0, DATUM, HAUSNR) VALUES (1250000, 0.1, 'alpha')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "INSERT polygons (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -14;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO polygons (COL_0, DATUM, HAUSNR) VALUES (1250000, 0.1, 'alpha')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "INSERT polygons (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -15;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO polygons (COL_0, DATUM, TEXT_I) VALUES (1250000, 0.1, 'alpha')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "INSERT polygons (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -16;
+    }
+
+    ret = sqlite3_exec (handle, "CREATE TABLE polyg_xy (pk_elem INTEGER PRIMARY KEY AUTOINCREMENT, COL_0 INTEGER, DATUM DOUBLE, TEXT_I TEXT, BLOB_I BLOB)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CREATE polyg_xy error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -17;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('polyg_xy', 'geom', 25832, 'POLYGON', 'XY')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "AddGeomety polyg_xy error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -17;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO polyg_xy (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXY(geom) FROM polygons WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding polyg_xy (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -18;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO polyg_xy (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXY(geom) FROM polygons WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding polyg_xy (2) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -19;
+    }
+    ret = sqlite3_exec (handle, "CREATE TABLE polyg_xym (pk_elem INTEGER PRIMARY KEY AUTOINCREMENT, COL_0 INTEGER, DATUM DOUBLE, TEXT_I TEXT, BLOB_I BLOB)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CREATE polyg_xym error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -20;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('polyg_xym', 'geom', 25832, 'POLYGON', 'XYM')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "AddGeometry polyg_xym error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -21;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO polyg_xym (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYM(geom) FROM polygons WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding polyg_xym (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -22;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO polyg_xym (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYM(geom) FROM polygons WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding polyg_xym (2) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -23;
+    }
+    ret = sqlite3_exec (handle, "CREATE TABLE polyg_xyz (pk_elem INTEGER PRIMARY KEY AUTOINCREMENT, COL_0 INTEGER, DATUM DOUBLE, TEXT_I TEXT, BLOB_I BLOB)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CREATE polyg_xyz error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -24;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('polyg_xyz', 'geom', 25832, 'POLYGON', 'XYZ')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "AddGeometry polyg_xyz error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -25;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO polyg_xyz (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYZ(geom) FROM polygons WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding polyg_xyz (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -26;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO polyg_xyz (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYZ(geom) FROM polygons WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding polyg_xyz (2) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -27;
+    }
+
+    ret = sqlite3_exec (handle, "CREATE TABLE roads_xyz (pk_elem INTEGER PRIMARY KEY AUTOINCREMENT, COL_0 INTEGER, DATUM DOUBLE, TEXT_I TEXT, BLOB_I BLOB)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CREATE roads_xyz error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -28;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('roads_xyz', 'geom', 25832, 'LINESTRING', 'XYZ')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "AddGeomety roads_xyz error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -29;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO roads_xyz (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYZ(geom) FROM roads WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding roads_xyz (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -30;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO roads_xyz (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYZ(geom) FROM roads WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding roads_xyz (2) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -31;
+    }
+    ret = sqlite3_exec (handle, "CREATE TABLE roads_xym (pk_elem INTEGER PRIMARY KEY AUTOINCREMENT, COL_0 INTEGER, DATUM DOUBLE, TEXT_I TEXT, BLOB_I BLOB)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CREATE roads_xym error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -32;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('roads_xym', 'geom', 25832, 'LINESTRING', 'XYM')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "AddGeometry roads_xym error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -33;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO roads_xym (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYM(geom) FROM roads WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding roads_xym (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -34;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO roads_xym (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYM(geom) FROM roads WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding roads_xym (2) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -35;
+    }
+    ret = sqlite3_exec (handle, "CREATE TABLE roads_xyzm (pk_elem INTEGER PRIMARY KEY AUTOINCREMENT, COL_0 INTEGER, DATUM DOUBLE, TEXT_I TEXT, BLOB_I BLOB)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CREATE roads_xyzm error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -36;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('roads_xyzm', 'geom', 25832, 'LINESTRING', 'XYZM')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "AddGeometry roads_xyzm error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -37;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO roads_xyzm (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYZM(geom) FROM roads WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding roads_xyzm (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -38;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO roads_xyzm (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYZM(geom) FROM roads WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding roads_xyzm (2) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -39;
+    }
+
+    ret = sqlite3_exec (handle, "CREATE TABLE points_xyz (pk_elem INTEGER PRIMARY KEY AUTOINCREMENT, COL_0 INTEGER, DATUM DOUBLE, TEXT_I TEXT, BLOB_I BLOB)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CREATE points_xyz error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -40;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('points_xyz', 'geom', 25832, 'POINT', 'XYZ')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "AddGeomety points_xyz error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -41;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO points_xyz (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYZ(geom) FROM points WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding points_xyz (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -42;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO points_xyz (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYZ(geom) FROM points WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding points_xyz (2) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -43;
+    }
+    ret = sqlite3_exec (handle, "CREATE TABLE points_xym (pk_elem INTEGER PRIMARY KEY AUTOINCREMENT, COL_0 INTEGER, DATUM DOUBLE, TEXT_I TEXT, BLOB_I BLOB)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CREATE points_xym error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -44;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('points_xym', 'geom', 25832, 'POINT', 'XYM')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "AddGeometry points_xym error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -45;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO points_xym (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYM(geom) FROM points WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding points_xym (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -46;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO points_xym (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYM(geom) FROM points WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding points_xym (2) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -47;
+    }
+    ret = sqlite3_exec (handle, "CREATE TABLE points_xyzm (pk_elem INTEGER PRIMARY KEY AUTOINCREMENT, COL_0 INTEGER, DATUM DOUBLE, TEXT_I TEXT, BLOB_I BLOB)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CREATE points_xyzm error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -48;
+    }
+    ret = sqlite3_exec (handle, "SELECT AddGeometryColumn('points_xyzm', 'geom', 25832, 'POINT', 'XYZM')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "AddGeometry points_xyzm error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -49;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO points_xyzm (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYZM(geom) FROM points WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding points_xyzm (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -50;
+    }
+    ret = sqlite3_exec (handle, "INSERT INTO points_xyzm (pk_elem, COL_0, DATUM, TEXT_I, BLOB_I, geom) SELECT NULL, COL_0, DATUM, 'alpha', zeroblob(20), CastToXYZM(geom) FROM points WHERE geom IS NOT NULL", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "feeding points_xyzm (2) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -51;
+    }
+
     elementary_geometries (handle, "points", "geom", "elem_point", "pk_elem", "mul_id");
     elementary_geometries (handle, "roads", "geom", "elem_linestring", "pk_elem", "mul_id");
     elementary_geometries (handle, "polygons", "geom", "elem_poly", "pk_elem", "mul_id");
+
+    elementary_geometries (handle, "polyg_xy", "geom", "elem_poly_xy", "pk_elem1", "mul_id");
+    elementary_geometries (handle, "polyg_xym", "geom", "elem_poly_xym", "pk_elem1", "mul_id");
+    elementary_geometries (handle, "polyg_xyz", "geom", "elem_poly_xyz", "pk_elem1", "mul_id");
+
+    elementary_geometries (handle, "roads_xyz", "geom", "elem_roads_xy", "pk_elem1", "mul_id");
+    elementary_geometries (handle, "roads_xym", "geom", "elem_roads_xym", "pk_elem1", "mul_id");
+    elementary_geometries (handle, "roads_xyzm", "geom", "elem_roads_xyz", "pk_elem1", "mul_id");
+
+    elementary_geometries (handle, "points_xyz", "geom", "elem_points_xy", "pk_elem1", "mul_id");
+    elementary_geometries (handle, "points_xym", "geom", "elem_points_xym", "pk_elem1", "mul_id");
+    elementary_geometries (handle, "points_xyzm", "geom", "elem_points_xyz", "pk_elem1", "mul_id");
+
+    remove_duplicated_rows(handle, "polyg_xy");
+    remove_duplicated_rows(handle, "polyg_xyz");
+    remove_duplicated_rows(handle, "polyg_xym");
+    remove_duplicated_rows(handle, "roads_xyz");
+    remove_duplicated_rows(handle, "roads_xym");
+    remove_duplicated_rows(handle, "roads_xyzm");
+    remove_duplicated_rows(handle, "points_xyz");
+    remove_duplicated_rows(handle, "points_xym");
+    remove_duplicated_rows(handle, "points_xyzm");
 
     ret = update_layer_statistics (handle, NULL, NULL);
     if (!ret) {

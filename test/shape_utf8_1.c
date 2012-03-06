@@ -156,12 +156,49 @@ int main (int argc, char *argv[])
 	return -14;
     }
 
+    ret = sqlite3_exec (handle, "SELECT DiscardGeometryColumn('route', 'Geometry')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "DiscardGeometry route error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -15;
+    }
+
+    ret = sqlite3_exec (handle, "INSERT INTO geometry_columns (f_table_name, f_geometry_column, type, coord_dimension, srid, spatial_index_enabled) VALUES ('beta',  'gamma', 'LINESTRING', 'XY', 4326, 0)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "GeometryColumns route error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -16;
+    }
+
+    ret = sqlite3_exec (handle, "INSERT INTO views_geometry_columns (view_name, view_geometry, view_rowid, f_table_name, f_geometry_column) VALUES ('route',  'Geometry', 'ROWID', 'beta', 'gamma')", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "ViewsGeometryColumns route error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -17;
+    }
+
+    ret = dump_shapefile (handle, "route", "Geometry", dumpname, "UTF-8", NULL, 1, &row_count, err_msg);
+    if (!ret) {
+        fprintf (stderr, "dump_shapefile() error for UTF-8_1 route (2): %s\n", err_msg);
+	sqlite3_close(handle);
+	return -17;
+    }
+    cleanup_shapefile(dumpname);
+    if (row_count != 2) {
+	fprintf (stderr, "unexpected dump row count for UTF-8_1 route LINESTRING (2): %i\n", row_count);
+	sqlite3_close(handle);
+	return -18;
+    }
+    
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -15;
+	return -19;
     }
-    
+
     spatialite_cleanup();
     sqlite3_reset_auto_extension();
     return 0;

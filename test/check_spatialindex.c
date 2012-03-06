@@ -622,7 +622,7 @@ int main (int argc, char *argv[])
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -94;
+	return -97;
     }
     
     spatialite_cleanup();

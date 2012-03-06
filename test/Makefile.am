@@ -31,6 +31,7 @@ check_PROGRAMS = check_endian \
 		check_virtualtable6 \
 		check_mbrcache \
 		check_spatialindex \
+		check_exif \
 		check_relations_fncts
 
 AM_CFLAGS = -I@srcdir@/../src/headers
@@ -98,6 +99,7 @@ EXTRA_DIST = shapetest1.dbf \
 	shp/foggia/local_councils.shx \
 	testcase1.xls \
 	testcase1.csv \
+	sql_stmt_tests/DSC_1467.JPG \
 	sql_stmt_tests/k3b-icon.png \
 	sql_stmt_tests/ktorrent_grad1.jpg \
 	sql_stmt_tests/ktorrent_sidebar.gif \
@@ -211,6 +213,27 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/badEWKT6.testcase \
 	sql_stmt_tests/badEWKT7.testcase \
 	sql_stmt_tests/badEWKT8.testcase \
+	sql_stmt_tests/badGeoJSON1.testcase \
+	sql_stmt_tests/badGeoJSON2.testcase \
+	sql_stmt_tests/badGeoJSON3.testcase \
+	sql_stmt_tests/badGeoJSON4.testcase \
+	sql_stmt_tests/badGeoJSON5.testcase \
+	sql_stmt_tests/badGeoJSON6.testcase \
+	sql_stmt_tests/badGeoJSON7.testcase \
+	sql_stmt_tests/badGML1.testcase \
+	sql_stmt_tests/badGML2.testcase \
+	sql_stmt_tests/badGML3.testcase \
+	sql_stmt_tests/badGML4.testcase \
+	sql_stmt_tests/badGML5.testcase \
+	sql_stmt_tests/badGML6.testcase \
+	sql_stmt_tests/badGML7.testcase \
+	sql_stmt_tests/badKML1.testcase \
+	sql_stmt_tests/badKML2.testcase \
+	sql_stmt_tests/badKML3.testcase \
+	sql_stmt_tests/badKML4.testcase \
+	sql_stmt_tests/badKML5.testcase \
+	sql_stmt_tests/badKML6.testcase \
+	sql_stmt_tests/badKML7.testcase \
 	sql_stmt_tests/badwkt1.testcase \
 	sql_stmt_tests/badwkt2.testcase \
 	sql_stmt_tests/badwkt3.testcase \
@@ -670,6 +693,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/degreestext.testcase \
 	sql_stmt_tests/difference10.testcase \
 	sql_stmt_tests/difference11.testcase \
+	sql_stmt_tests/difference12.testcase \
 	sql_stmt_tests/difference1.testcase \
 	sql_stmt_tests/difference2.testcase \
 	sql_stmt_tests/difference3.testcase \
@@ -725,6 +749,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/distance7.testcase \
 	sql_stmt_tests/distance8.testcase \
 	sql_stmt_tests/dm_m.testcase \
+	sql_stmt_tests/emptyfile.txt \
 	sql_stmt_tests/endpoint1.testcase \
 	sql_stmt_tests/envelope1.testcase \
 	sql_stmt_tests/envelope2.testcase \
@@ -764,6 +789,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/fath_m.testcase \
 	sql_stmt_tests/fdo_ogr1.testcase \
 	sql_stmt_tests/fdo_ogr2.testcase \
+	sql_stmt_tests/fdo-wkb.sqlite_RO \
 	sql_stmt_tests/floor32.testcase \
 	sql_stmt_tests/floorint.testcase \
 	sql_stmt_tests/floornull.testcase \
@@ -1111,7 +1137,10 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/isXblob5.testcase \
 	sql_stmt_tests/isXblob6.testcase \
 	sql_stmt_tests/isXblob7.testcase \
+	sql_stmt_tests/k3b-icon.png \
 	sql_stmt_tests/km_m.testcase \
+	sql_stmt_tests/ktorrent_grad1.jpg \
+	sql_stmt_tests/ktorrent_sidebar.gif \
 	sql_stmt_tests/linefromtext1.testcase \
 	sql_stmt_tests/linefromtext2.testcase \
 	sql_stmt_tests/linemerge10.testcase \
@@ -1592,6 +1621,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/routing4.testcase \
 	sql_stmt_tests/routing5.testcase \
 	sql_stmt_tests/routing6.testcase \
+	sql_stmt_tests/sandro.jpg \
 	sql_stmt_tests/sanitizeGeometry10.testcase \
 	sql_stmt_tests/sanitizeGeometry11.testcase \
 	sql_stmt_tests/sanitizeGeometry12.testcase \
@@ -1730,6 +1760,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/snap7.testcase \
 	sql_stmt_tests/snap8.testcase \
 	sql_stmt_tests/snap9.testcase \
+	sql_stmt_tests/spatialindex.testcase \
 	sql_stmt_tests/sqrt00.testcase \
 	sql_stmt_tests/sqrt0.testcase \
 	sql_stmt_tests/sqrt-10.testcase \
@@ -1834,6 +1865,9 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/tan-pi.testcase \
 	sql_stmt_tests/tanpi.testcase \
 	sql_stmt_tests/tan-text.testcase \
+	sql_stmt_tests/testdb1.sqlite \
+	sql_stmt_tests/testFDO.sqlite \
+	sql_stmt_tests/testFGF.sqlite \
 	sql_stmt_tests/transform10.testcase \
 	sql_stmt_tests/transform11.testcase \
 	sql_stmt_tests/transform12.testcase \
@@ -1855,6 +1889,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/transform7.testcase \
 	sql_stmt_tests/transform8.testcase \
 	sql_stmt_tests/transform9.testcase \
+	sql_stmt_tests/trivial.sqlite_RO \
 	sql_stmt_tests/unaryunion1.testcase \
 	sql_stmt_tests/unaryunion2.testcase \
 	sql_stmt_tests/unaryunion3.testcase \
@@ -1937,6 +1972,5 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/wkb7.testcase \
 	sql_stmt_tests/wkb8.testcase \
 	sql_stmt_tests/wkb9.testcase \
-	sql_stmt_tests/yd_m.testcase \
 	sql_stmt_tests/yd_m.testcase
 

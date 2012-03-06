@@ -124,24 +124,55 @@ int main (int argc, char *argv[])
     
     ret = dump_kml (handle, "route", "col1", kmlname, NULL, NULL, 10);
     if (!ret) {
-        fprintf (stderr, "dump_kml() error for shp/taiwan/route: %s\n", err_msg);
+        fprintf (stderr, "dump_kml (1) error for shp/taiwan/route: %s\n", err_msg);
 	sqlite3_close(handle);
 	return -11;
     }
     unlink(kmlname);
 
+    ret = dump_kml (handle, "route", "col1", kmlname, "name", NULL, 10);
+    if (!ret) {
+        fprintf (stderr, "dump_kml (2) error for shp/taiwan/route: %s\n", err_msg);
+	sqlite3_close(handle);
+	return -12;
+    }
+    unlink(kmlname);
+
+    ret = dump_kml (handle, "route", "col1", kmlname, "theta", NULL, 10);
+    if (!ret) {
+        fprintf (stderr, "dump_kml (3) error for shp/taiwan/route: %s\n", err_msg);
+	sqlite3_close(handle);
+	return -13;
+    }
+    unlink(kmlname);
+
+    ret = dump_kml (handle, "route", "col1", kmlname, "name", "sub_type", 10);
+    if (!ret) {
+        fprintf (stderr, "dump_kml (4) error for shp/taiwan/route: %s\n", err_msg);
+	sqlite3_close(handle);
+	return -14;
+    }
+    unlink(kmlname);
+
+    ret = dump_kml (handle, "route", "col1", kmlname, "theta", "beta", 10);
+    if (!ret) {
+        fprintf (stderr, "dump_kml (5) error for shp/taiwan/route: %s\n", err_msg);
+	sqlite3_close(handle);
+	return -15;
+    }
+    unlink(kmlname);
     ret = dump_geojson(handle, "route", "col1", geojsonname, 10, 5);
     if (!ret) {
         fprintf (stderr, "dump_geojson() error for shp/taiwan/route: %s\n", err_msg);
        sqlite3_close(handle);
-       return -12;
+       return -16;
     }
     unlink(geojsonname);
 
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -13;
+	return -17;
     }
     
     spatialite_cleanup();

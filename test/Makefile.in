@@ -48,7 +48,8 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_virtualtable2$(EXEEXT) check_virtualtable3$(EXEEXT) \
 	check_virtualtable4$(EXEEXT) check_virtualtable5$(EXEEXT) \
 	check_virtualtable6$(EXEEXT) check_mbrcache$(EXEEXT) \
-	check_spatialindex$(EXEEXT) check_relations_fncts$(EXEEXT)
+	check_spatialindex$(EXEEXT) check_exif$(EXEEXT) \
+	check_relations_fncts$(EXEEXT)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -70,6 +71,9 @@ check_dbf_load_LDADD = $(LDADD)
 check_endian_SOURCES = check_endian.c
 check_endian_OBJECTS = check_endian.$(OBJEXT)
 check_endian_LDADD = $(LDADD)
+check_exif_SOURCES = check_exif.c
+check_exif_OBJECTS = check_exif.$(OBJEXT)
+check_exif_LDADD = $(LDADD)
 check_extension_SOURCES = check_extension.c
 check_extension_OBJECTS = check_extension.$(OBJEXT)
 check_extension_LDADD = $(LDADD)
@@ -176,7 +180,7 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = check_create.c check_dbf_load.c check_endian.c \
+SOURCES = check_create.c check_dbf_load.c check_endian.c check_exif.c \
 	check_extension.c check_fdo1.c check_fdo2.c check_fdo3.c \
 	check_gaia_utf8.c check_gaia_util.c check_geom_aux.c \
 	check_geometry_cols.c check_init.c check_init2.c \
@@ -189,13 +193,13 @@ SOURCES = check_create.c check_dbf_load.c check_endian.c \
 	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
 	shape_utf8_2.c
 DIST_SOURCES = check_create.c check_dbf_load.c check_endian.c \
-	check_extension.c check_fdo1.c check_fdo2.c check_fdo3.c \
-	check_gaia_utf8.c check_gaia_util.c check_geom_aux.c \
-	check_geometry_cols.c check_init.c check_init2.c \
-	check_math_funcs.c check_mbrcache.c check_recover_geom.c \
-	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
-	check_spatialindex.c check_sql_stmt.c check_version.c \
-	check_virtualtable1.c check_virtualtable2.c \
+	check_exif.c check_extension.c check_fdo1.c check_fdo2.c \
+	check_fdo3.c check_gaia_utf8.c check_gaia_util.c \
+	check_geom_aux.c check_geometry_cols.c check_init.c \
+	check_init2.c check_math_funcs.c check_mbrcache.c \
+	check_recover_geom.c check_relations_fncts.c check_shp_load.c \
+	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
+	check_version.c check_virtualtable1.c check_virtualtable2.c \
 	check_virtualtable3.c check_virtualtable4.c \
 	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
 	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
@@ -395,6 +399,7 @@ EXTRA_DIST = shapetest1.dbf \
 	shp/foggia/local_councils.shx \
 	testcase1.xls \
 	testcase1.csv \
+	sql_stmt_tests/DSC_1467.JPG \
 	sql_stmt_tests/k3b-icon.png \
 	sql_stmt_tests/ktorrent_grad1.jpg \
 	sql_stmt_tests/ktorrent_sidebar.gif \
@@ -508,6 +513,27 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/badEWKT6.testcase \
 	sql_stmt_tests/badEWKT7.testcase \
 	sql_stmt_tests/badEWKT8.testcase \
+	sql_stmt_tests/badGeoJSON1.testcase \
+	sql_stmt_tests/badGeoJSON2.testcase \
+	sql_stmt_tests/badGeoJSON3.testcase \
+	sql_stmt_tests/badGeoJSON4.testcase \
+	sql_stmt_tests/badGeoJSON5.testcase \
+	sql_stmt_tests/badGeoJSON6.testcase \
+	sql_stmt_tests/badGeoJSON7.testcase \
+	sql_stmt_tests/badGML1.testcase \
+	sql_stmt_tests/badGML2.testcase \
+	sql_stmt_tests/badGML3.testcase \
+	sql_stmt_tests/badGML4.testcase \
+	sql_stmt_tests/badGML5.testcase \
+	sql_stmt_tests/badGML6.testcase \
+	sql_stmt_tests/badGML7.testcase \
+	sql_stmt_tests/badKML1.testcase \
+	sql_stmt_tests/badKML2.testcase \
+	sql_stmt_tests/badKML3.testcase \
+	sql_stmt_tests/badKML4.testcase \
+	sql_stmt_tests/badKML5.testcase \
+	sql_stmt_tests/badKML6.testcase \
+	sql_stmt_tests/badKML7.testcase \
 	sql_stmt_tests/badwkt1.testcase \
 	sql_stmt_tests/badwkt2.testcase \
 	sql_stmt_tests/badwkt3.testcase \
@@ -967,6 +993,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/degreestext.testcase \
 	sql_stmt_tests/difference10.testcase \
 	sql_stmt_tests/difference11.testcase \
+	sql_stmt_tests/difference12.testcase \
 	sql_stmt_tests/difference1.testcase \
 	sql_stmt_tests/difference2.testcase \
 	sql_stmt_tests/difference3.testcase \
@@ -1022,6 +1049,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/distance7.testcase \
 	sql_stmt_tests/distance8.testcase \
 	sql_stmt_tests/dm_m.testcase \
+	sql_stmt_tests/emptyfile.txt \
 	sql_stmt_tests/endpoint1.testcase \
 	sql_stmt_tests/envelope1.testcase \
 	sql_stmt_tests/envelope2.testcase \
@@ -1061,6 +1089,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/fath_m.testcase \
 	sql_stmt_tests/fdo_ogr1.testcase \
 	sql_stmt_tests/fdo_ogr2.testcase \
+	sql_stmt_tests/fdo-wkb.sqlite_RO \
 	sql_stmt_tests/floor32.testcase \
 	sql_stmt_tests/floorint.testcase \
 	sql_stmt_tests/floornull.testcase \
@@ -1408,7 +1437,10 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/isXblob5.testcase \
 	sql_stmt_tests/isXblob6.testcase \
 	sql_stmt_tests/isXblob7.testcase \
+	sql_stmt_tests/k3b-icon.png \
 	sql_stmt_tests/km_m.testcase \
+	sql_stmt_tests/ktorrent_grad1.jpg \
+	sql_stmt_tests/ktorrent_sidebar.gif \
 	sql_stmt_tests/linefromtext1.testcase \
 	sql_stmt_tests/linefromtext2.testcase \
 	sql_stmt_tests/linemerge10.testcase \
@@ -1889,6 +1921,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/routing4.testcase \
 	sql_stmt_tests/routing5.testcase \
 	sql_stmt_tests/routing6.testcase \
+	sql_stmt_tests/sandro.jpg \
 	sql_stmt_tests/sanitizeGeometry10.testcase \
 	sql_stmt_tests/sanitizeGeometry11.testcase \
 	sql_stmt_tests/sanitizeGeometry12.testcase \
@@ -2027,6 +2060,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/snap7.testcase \
 	sql_stmt_tests/snap8.testcase \
 	sql_stmt_tests/snap9.testcase \
+	sql_stmt_tests/spatialindex.testcase \
 	sql_stmt_tests/sqrt00.testcase \
 	sql_stmt_tests/sqrt0.testcase \
 	sql_stmt_tests/sqrt-10.testcase \
@@ -2131,6 +2165,9 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/tan-pi.testcase \
 	sql_stmt_tests/tanpi.testcase \
 	sql_stmt_tests/tan-text.testcase \
+	sql_stmt_tests/testdb1.sqlite \
+	sql_stmt_tests/testFDO.sqlite \
+	sql_stmt_tests/testFGF.sqlite \
 	sql_stmt_tests/transform10.testcase \
 	sql_stmt_tests/transform11.testcase \
 	sql_stmt_tests/transform12.testcase \
@@ -2152,6 +2189,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/transform7.testcase \
 	sql_stmt_tests/transform8.testcase \
 	sql_stmt_tests/transform9.testcase \
+	sql_stmt_tests/trivial.sqlite_RO \
 	sql_stmt_tests/unaryunion1.testcase \
 	sql_stmt_tests/unaryunion2.testcase \
 	sql_stmt_tests/unaryunion3.testcase \
@@ -2234,7 +2272,6 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/wkb7.testcase \
 	sql_stmt_tests/wkb8.testcase \
 	sql_stmt_tests/wkb9.testcase \
-	sql_stmt_tests/yd_m.testcase \
 	sql_stmt_tests/yd_m.testcase
 
 all: all-am
@@ -2289,6 +2326,9 @@ check_dbf_load$(EXEEXT): $(check_dbf_load_OBJECTS) $(check_dbf_load_DEPENDENCIES
 check_endian$(EXEEXT): $(check_endian_OBJECTS) $(check_endian_DEPENDENCIES) 
 	@rm -f check_endian$(EXEEXT)
 	$(LINK) $(check_endian_OBJECTS) $(check_endian_LDADD) $(LIBS)
+check_exif$(EXEEXT): $(check_exif_OBJECTS) $(check_exif_DEPENDENCIES) 
+	@rm -f check_exif$(EXEEXT)
+	$(LINK) $(check_exif_OBJECTS) $(check_exif_LDADD) $(LIBS)
 check_extension$(EXEEXT): $(check_extension_OBJECTS) $(check_extension_DEPENDENCIES) 
 	@rm -f check_extension$(EXEEXT)
 	$(LINK) $(check_extension_OBJECTS) $(check_extension_LDADD) $(LIBS)
@@ -2392,6 +2432,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_create.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_dbf_load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_endian.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_exif.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_extension.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_fdo1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_fdo2.Po@am__quote@
