@@ -786,7 +786,7 @@ fnct_AutoFDOStart (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		sprintf (xname, "fdo_%s", p->table);
 		double_quoted_sql (xname);
 		sprintf (sql, "DROP TABLE IF EXISTS %s", xname);
-		ret = sqlite3_exec (sqlite, sql, NULL, 0, NULL);
+		ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
 		if (ret != SQLITE_OK)
 		    goto error;
 		/* creating the VirtualFDO table */
@@ -794,7 +794,7 @@ fnct_AutoFDOStart (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		double_quoted_sql (xtable);
 		sprintf (sql, "CREATE VIRTUAL TABLE %s USING VirtualFDO(%s)",
 			 xname, xtable);
-		ret = sqlite3_exec (sqlite, sql, NULL, 0, NULL);
+		ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
 		if (ret != SQLITE_OK)
 		    goto error;
 		count++;
@@ -865,7 +865,7 @@ fnct_AutoFDOStop (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		sprintf (xname, "fdo_%s", p->table);
 		double_quoted_sql (xname);
 		sprintf (sql, "DROP TABLE IF EXISTS %s", xname);
-		ret = sqlite3_exec (sqlite, sql, NULL, 0, NULL);
+		ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
 		if (ret != SQLITE_OK)
 		    goto error;
 		count++;
@@ -17893,7 +17893,7 @@ check_layer_statistics (sqlite3 * sqlite)
     strcat (sql, "(table_name, geometry_column) REFERENCES ");
     strcat (sql, "geometry_columns (f_table_name, f_geometry_column) ");
     strcat (sql, "ON DELETE CASCADE)");
-    ret = sqlite3_exec (sqlite, sql, NULL, 0, NULL);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
     if (ret != SQLITE_OK)
 	return 0;
     return 1;
@@ -18033,7 +18033,7 @@ check_views_layer_statistics (sqlite3 * sqlite)
     strcat (sql, "(view_name, view_geometry) REFERENCES ");
     strcat (sql, "views_geometry_columns (view_name, view_geometry) ");
     strcat (sql, "ON DELETE CASCADE)");
-    ret = sqlite3_exec (sqlite, sql, NULL, 0, NULL);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
     if (ret != SQLITE_OK)
 	return 0;
     return 1;
@@ -18173,7 +18173,7 @@ check_virts_layer_statistics (sqlite3 * sqlite)
     strcat (sql, "(virt_name, virt_geometry) REFERENCES ");
     strcat (sql, "virts_geometry_columns (virt_name, virt_geometry) ");
     strcat (sql, "ON DELETE CASCADE)");
-    ret = sqlite3_exec (sqlite, sql, NULL, 0, NULL);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
     if (ret != SQLITE_OK)
 	return 0;
     return 1;

@@ -497,13 +497,13 @@ vtxt_eval_constraints (VirtualTextCursorPtr cursor)
     int i;
     char buf[4096];
     int type;
-    const char *value;
+    const char *value = NULL;
     sqlite3_int64 int_value;
     double dbl_value;
-    const char *txt_value;
-    int is_int;
-    int is_dbl;
-    int is_txt;
+    char *txt_value = NULL;
+    int is_int = 0;
+    int is_dbl = 0;
+    int is_txt = 0;
     gaiaTextReaderPtr text = cursor->pVtab->reader;
     VirtualTextConstraintPtr pC;
     if (text->current_line_ready == 0)
@@ -516,6 +516,7 @@ vtxt_eval_constraints (VirtualTextCursorPtr cursor)
 	    {
 		/* the ROWNO column */
 		int_value = cursor->current_row;
+		is_int = 1;
 		goto eval;
 	    }
 	  nCol = 1;
@@ -526,6 +527,7 @@ vtxt_eval_constraints (VirtualTextCursorPtr cursor)
 		is_txt = 0;
 		if (nCol == pC->iColumn)
 		  {
+
 		      if (!gaiaTextReaderFetchField (text, i, &type, &value))
 			  ;
 		      else
@@ -551,7 +553,7 @@ vtxt_eval_constraints (VirtualTextCursorPtr cursor)
 			      }
 			    else if (type == VRTTXT_TEXT)
 			      {
-				  txt_value = value;
+				  txt_value = (char *) value;
 				  is_txt = 1;
 			      }
 			}
@@ -702,10 +704,17 @@ vtxt_eval_constraints (VirtualTextCursorPtr cursor)
 			};
 		  }
 	    }
+	  if (txt_value)
+	    {
+		free (txt_value);
+		txt_value = NULL;
+	    }
 	  if (!ok)
 	      return 0;
 	  pC = pC->next;
       }
+    if (txt_value)
+	free (txt_value);
     return 1;
 }
 

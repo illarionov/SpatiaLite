@@ -2,6 +2,7 @@ check_PROGRAMS = check_endian \
 		check_version \
 		check_init \
 		check_init2 \
+		check_geom_aux \
 		check_geometry_cols \
 		check_create \
 		check_fdo1 \

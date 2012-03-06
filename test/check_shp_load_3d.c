@@ -44,6 +44,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "sqlite3.h"
 #include "spatialite.h"
@@ -58,6 +59,7 @@ int main (int argc, char *argv[])
     char **results;
     int rows;
     int columns;
+    double tic;
 
     spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
@@ -135,11 +137,13 @@ int main (int argc, char *argv[])
         fprintf (stderr, "Unexpected error: LAYER_STATISTICS bad result row_count: %s\n", results[columns+0]);
         return -11;
     }
-    if (atof(results[columns+1]) != 666057.648017325) {
+    tic = fabs(atof(results[columns+1]) - 666057.648017325);
+    if (tic >= 0.00000002) {
         fprintf (stderr, "Unexpected error: LAYER_STATISTICS bad result extent_min_x: %s\n", results[columns+1]);
         return -12;
     }
-    if (atof(results[columns+2]) != 5170671.31627796) {
+    tic = fabs(atof(results[columns+2]) - 5170671.31627796);
+    if (tic >= 0.0000002) {
         fprintf (stderr, "Unexpected error: LAYER_STATISTICS bad result extent_max_y: %s\n", results[columns+2]);
         return -13;
     }

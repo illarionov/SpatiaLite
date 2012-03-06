@@ -529,6 +529,8 @@ vspidx_filter (sqlite3_vtab_cursor * pCursor, int idxNum, const char *idxStr,
     else
 	cursor->eof = 1;
   stop:
+    if (geom)
+	gaiaFreeGeomColl (geom);
     return SQLITE_OK;
 }
 
