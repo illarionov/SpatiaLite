@@ -99,16 +99,6 @@ EXTRA_DIST = shapetest1.dbf \
 	shp/foggia/local_councils.shx \
 	testcase1.xls \
 	testcase1.csv \
-	sql_stmt_tests/DSC_1467.JPG \
-	sql_stmt_tests/k3b-icon.png \
-	sql_stmt_tests/ktorrent_grad1.jpg \
-	sql_stmt_tests/ktorrent_sidebar.gif \
-	sql_stmt_tests/sandro.jpg \
-	sql_stmt_tests/fdo-wkb.sqlite_RO \
-	sql_stmt_tests/trivial.sqlite_RO \
-	sql_stmt_tests/testdb1.sqlite \
-	sql_stmt_tests/testFDO.sqlite \
-	sql_stmt_tests/testFGF.sqlite \
 	sql_stmt_tests/acos10.testcase \
 	sql_stmt_tests/acos20.testcase \
 	sql_stmt_tests/acos2.testcase \
@@ -749,6 +739,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/distance7.testcase \
 	sql_stmt_tests/distance8.testcase \
 	sql_stmt_tests/dm_m.testcase \
+	sql_stmt_tests/DSC_1467.JPG \
 	sql_stmt_tests/emptyfile.txt \
 	sql_stmt_tests/endpoint1.testcase \
 	sql_stmt_tests/envelope1.testcase \
@@ -1972,5 +1963,5 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/wkb7.testcase \
 	sql_stmt_tests/wkb8.testcase \
 	sql_stmt_tests/wkb9.testcase \
-	sql_stmt_tests/yd_m.testcase
+	sql_stmt_tests/yd_m.testcase 
 
