@@ -82,11 +82,12 @@ int gml_parse_error;
 #define GAIA_GML_MULTIGEOMETRY		10
 
 #define GML_DYN_NONE	0
-#define GML_DYN_POINT	1
-#define GML_DYN_LINESTRING	2
-#define GML_DYN_POLYGON	3
-#define GML_DYN_RING	4
-#define GML_DYN_GEOMETRY	5
+#define GML_DYN_DYNLINE	1
+#define GML_DYN_GEOM	2
+#define GML_DYN_DYNPG	3
+#define GML_DYN_NODE	4
+#define GML_DYN_COORD	5
+#define GML_DYN_ATTRIB	6
 
 #define GML_DYN_BLOCK 1024
 
@@ -206,11 +207,12 @@ gmlMapDynClean (void *ptr)
 	    {
 		switch (p->type[i])
 		  {
-		  case GML_DYN_POINT:
-		  case GML_DYN_LINESTRING:
-		  case GML_DYN_POLYGON:
-		  case GML_DYN_RING:
-		  case GML_DYN_GEOMETRY:
+		  case GML_DYN_DYNLINE:
+		  case GML_DYN_GEOM:
+		  case GML_DYN_DYNPG:
+		  case GML_DYN_NODE:
+		  case GML_DYN_COORD:
+		  case GML_DYN_ATTRIB:
 		      if (p->ptr[i] == ptr)
 			{
 			    p->type[i] = GML_DYN_NONE;
@@ -221,6 +223,79 @@ gmlMapDynClean (void *ptr)
 	    }
 	  p = p->next;
       }
+}
+
+static void
+gml_free_dyn_polygon (gmlDynamicPolygonPtr dyn)
+{
+/* deleting a dynamic polygon (ring collection) */
+    gmlDynamicRingPtr r;
+    gmlDynamicRingPtr rn;
+    if (!dyn)
+	return;
+    r = dyn->first;
+    while (r)
+      {
+	  rn = r->next;
+	  if (r->ring)
+	      gaiaFreeDynamicLine (r->ring);
+	  free (r);
+	  r = rn;
+      }
+    free (dyn);
+}
+
+static void
+gml_free_coord (gmlCoordPtr c)
+{
+/* deleting a GML coordinate */
+    if (c == NULL)
+	return;
+    if (c->Value)
+	free (c->Value);
+    free (c);
+}
+
+static void
+gml_free_attrib (gmlAttrPtr a)
+{
+/* deleting a GML attribute */
+    if (a == NULL)
+	return;
+    if (a->Key)
+	free (a->Key);
+    if (a->Value)
+	free (a->Value);
+    free (a);
+}
+
+static void
+gml_free_node (gmlNodePtr n)
+{
+/* deleting a GML node */
+    gmlAttrPtr a;
+    gmlAttrPtr an;
+    gmlCoordPtr c;
+    gmlCoordPtr cn;
+    if (n == NULL)
+	return;
+    a = n->Attributes;
+    while (a)
+      {
+	  an = a->Next;
+	  gml_free_attrib (a);
+	  a = an;
+      }
+    c = n->Coordinates;
+    while (c)
+      {
+	  cn = c->Next;
+	  gml_free_coord (c);
+	  c = cn;
+      }
+    if (n->Tag)
+	free (n->Tag);
+    free (n);
 }
 
 static void
@@ -239,21 +314,25 @@ gmlCleanMapDynAlloc (int clean_all)
 		      /* deleting Geometry objects */
 		      switch (p->type[i])
 			{
-			case GML_DYN_POINT:
-			    gaiaFreePoint ((gaiaPointPtr) (p->ptr[i]));
+			case GML_DYN_DYNLINE:
+			    gaiaFreeDynamicLine ((gaiaDynamicLinePtr)
+						 (p->ptr[i]));
 			    break;
-			case GML_DYN_LINESTRING:
-			    gaiaFreeLinestring ((gaiaLinestringPtr)
-						(p->ptr[i]));
-			    break;
-			case GML_DYN_POLYGON:
-			    gaiaFreePolygon ((gaiaPolygonPtr) (p->ptr[i]));
-			    break;
-			case GML_DYN_RING:
-			    gaiaFreeRing ((gaiaRingPtr) (p->ptr[i]));
-			    break;
-			case GML_DYN_GEOMETRY:
+			case GML_DYN_GEOM:
 			    gaiaFreeGeomColl ((gaiaGeomCollPtr) (p->ptr[i]));
+			    break;
+			case GML_DYN_DYNPG:
+			    gml_free_dyn_polygon ((gmlDynamicPolygonPtr)
+						  (p->ptr[i]));
+			    break;
+			case GML_DYN_NODE:
+			    gml_free_node ((gmlNodePtr) (p->ptr[i]));
+			    break;
+			case GML_DYN_COORD:
+			    gml_free_coord ((gmlCoordPtr) (p->ptr[i]));
+			    break;
+			case GML_DYN_ATTRIB:
+			    gml_free_attrib ((gmlAttrPtr) (p->ptr[i]));
 			    break;
 			};
 		  }
@@ -298,29 +377,10 @@ gml_alloc_dyn_polygon (void)
 {
 /* creating a dynamic polygon (ring collection) */
     gmlDynamicPolygonPtr p = malloc (sizeof (gmlDynamicPolygon));
+    gmlMapDynAlloc (GML_DYN_DYNPG, p);
     p->first = NULL;
     p->last = NULL;
     return p;
-}
-
-static void
-gml_free_dyn_polygon (gmlDynamicPolygonPtr dyn)
-{
-/* deleting a dynamic polygon (ring collection) */
-    gmlDynamicRingPtr r;
-    gmlDynamicRingPtr rn;
-    if (!dyn)
-	return;
-    r = dyn->first;
-    while (r)
-      {
-	  rn = r->next;
-	  if (r->ring)
-	      gaiaFreeDynamicLine (r->ring);
-	  free (r);
-	  r = rn;
-      }
-    free (dyn);
 }
 
 static void
@@ -338,6 +398,7 @@ gml_add_polygon_ring (gmlDynamicPolygonPtr dyn_pg, gaiaDynamicLinePtr dyn,
     if (dyn_pg->last != NULL)
 	dyn_pg->last->next = p;
     dyn_pg->last = p;
+    gmlMapDynClean (p);
 }
 
 static void
@@ -366,22 +427,12 @@ gml_coord (void *value)
     int len;
     gmlFlexToken *tok = (gmlFlexToken *) value;
     gmlCoordPtr c = malloc (sizeof (gmlCoord));
+    gmlMapDynAlloc (GML_DYN_COORD, c);
     len = strlen (tok->value);
     c->Value = malloc (len + 1);
     strcpy (c->Value, tok->value);
     c->Next = NULL;
     return c;
-}
-
-static void
-gml_freeCoordinate (gmlCoordPtr c)
-{
-/* deleting a GML coordinate */
-    if (c == NULL)
-	return;
-    if (c->Value)
-	free (c->Value);
-    free (c);
 }
 
 static gmlAttrPtr
@@ -392,6 +443,7 @@ gml_attribute (void *key, void *value)
     gmlFlexToken *k_tok = (gmlFlexToken *) key;
     gmlFlexToken *v_tok = (gmlFlexToken *) value;
     gmlAttrPtr a = malloc (sizeof (gmlAttr));
+    gmlMapDynAlloc (GML_DYN_ATTRIB, a);
     len = strlen (k_tok->value);
     a->Key = malloc (len + 1);
     strcpy (a->Key, k_tok->value);
@@ -400,7 +452,7 @@ gml_attribute (void *key, void *value)
     if (*(v_tok->value + 0) == '"' && *(v_tok->value + len - 1) == '"')
       {
 	  int bytesToCopy = len - 2;
-	  char * startingPointForCopy = v_tok->value + 1;
+	  char *startingPointForCopy = v_tok->value + 1;
 	  a->Value = malloc (bytesToCopy + 1);
 	  memcpy (a->Value, startingPointForCopy, bytesToCopy);
 	  *(a->Value + bytesToCopy) = '\0';
@@ -415,48 +467,6 @@ gml_attribute (void *key, void *value)
 }
 
 static void
-gml_freeAttribute (gmlAttrPtr a)
-{
-/* deleting a GML attribute */
-    if (a == NULL)
-	return;
-    if (a->Key)
-	free (a->Key);
-    if (a->Value)
-	free (a->Value);
-    free (a);
-}
-
-static void
-gml_freeNode (gmlNodePtr n)
-{
-/* deleting a GML node */
-    gmlAttrPtr a;
-    gmlAttrPtr an;
-    gmlCoordPtr c;
-    gmlCoordPtr cn;
-    if (n == NULL)
-	return;
-    a = n->Attributes;
-    while (a)
-      {
-	  an = a->Next;
-	  gml_freeAttribute (a);
-	  a = an;
-      }
-    c = n->Coordinates;
-    while (c)
-      {
-	  cn = c->Next;
-	  gml_freeCoordinate (c);
-	  c = cn;
-      }
-    if (n->Tag)
-	free (n->Tag);
-    free (n);
-}
-
-static void
 gml_freeTree (gmlNodePtr t)
 {
 /* deleting a GML tree */
@@ -466,7 +476,8 @@ gml_freeTree (gmlNodePtr t)
     while (n)
       {
 	  nn = n->Next;
-	  gml_freeNode (n);
+	  gmlMapDynClean (n);
+	  gml_free_node (n);
 	  n = nn;
       }
 }
@@ -475,15 +486,32 @@ static gmlNodePtr
 gml_createNode (void *tag, void *attributes, void *coords)
 {
 /* creating a node */
+    gmlAttrPtr a;
+    gmlCoordPtr c;
     int len;
     gmlFlexToken *tok = (gmlFlexToken *) tag;
     gmlNodePtr n = malloc (sizeof (gmlNode));
+    gmlMapDynAlloc (GML_DYN_NODE, n);
     len = strlen (tok->value);
     n->Tag = malloc (len + 1);
     strcpy (n->Tag, tok->value);
     n->Type = GML_PARSER_OPEN_NODE;
     n->Error = 0;
+    a = (gmlAttrPtr) attributes;
+    while (a)
+      {
+	  /* transferring ownership of attributes */
+	  gmlMapDynClean (a);
+	  a = a->Next;
+      }
     n->Attributes = attributes;
+    c = (gmlCoordPtr) coords;
+    while (c)
+      {
+	  /* transferring ownership of attributes */
+	  gmlMapDynClean (c);
+	  c = c->Next;
+      }
     n->Coordinates = coords;
     n->Next = NULL;
     return n;
@@ -493,14 +521,23 @@ static gmlNodePtr
 gml_createSelfClosedNode (void *tag, void *attributes)
 {
 /* creating a self-closed node */
+    gmlAttrPtr a;
     int len;
     gmlFlexToken *tok = (gmlFlexToken *) tag;
     gmlNodePtr n = malloc (sizeof (gmlNode));
+    gmlMapDynAlloc (GML_DYN_NODE, n);
     len = strlen (tok->value);
     n->Tag = malloc (len + 1);
     strcpy (n->Tag, tok->value);
     n->Type = GML_PARSER_SELF_CLOSED_NODE;
     n->Error = 0;
+    a = (gmlAttrPtr) attributes;
+    while (a)
+      {
+	  /* transferring ownership of attributes */
+	  gmlMapDynClean (a);
+	  a = a->Next;
+      }
     n->Attributes = attributes;
     n->Coordinates = NULL;
     n->Next = NULL;
@@ -514,6 +551,7 @@ gml_closingNode (void *tag)
     int len;
     gmlFlexToken *tok = (gmlFlexToken *) tag;
     gmlNodePtr n = malloc (sizeof (gmlNode));
+    gmlMapDynAlloc (GML_DYN_NODE, n);
     len = strlen (tok->value);
     n->Tag = malloc (len + 1);
     strcpy (n->Tag, tok->value);
@@ -888,12 +926,14 @@ gml_parse_point (gaiaGeomCollPtr geom, gmlNodePtr node, int srid,
     if (has_z)
       {
 	  pt = gaiaAllocGeomCollXYZ ();
+	  gmlMapDynAlloc (GML_DYN_GEOM, pt);
 	  pt->Srid = srid;
 	  gaiaAddPointToGeomCollXYZ (pt, x, y, z);
       }
     else
       {
 	  pt = gaiaAllocGeomColl ();
+	  gmlMapDynAlloc (GML_DYN_GEOM, pt);
 	  pt->Srid = srid;
 	  gaiaAddPointToGeomColl (pt, x, y);
       }
@@ -1138,6 +1178,7 @@ gml_parse_linestring (gaiaGeomCollPtr geom, gmlNodePtr node, int srid,
     gaiaLinestringPtr new_ln;
     gaiaPointPtr pt;
     gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
+    gmlMapDynAlloc (GML_DYN_DYNLINE, dyn);
     int iv;
     int has_z = 1;
     int points = 0;
@@ -1203,6 +1244,7 @@ gml_parse_linestring (gaiaGeomCollPtr geom, gmlNodePtr node, int srid,
     if (has_z)
       {
 	  ln = gaiaAllocGeomCollXYZ ();
+	  gmlMapDynAlloc (GML_DYN_GEOM, ln);
 	  ln->Srid = srid;
 	  new_ln = gaiaAddLinestringToGeomColl (ln, points);
 	  pt = dyn->First;
@@ -1217,6 +1259,7 @@ gml_parse_linestring (gaiaGeomCollPtr geom, gmlNodePtr node, int srid,
     else
       {
 	  ln = gaiaAllocGeomColl ();
+	  gmlMapDynAlloc (GML_DYN_GEOM, ln);
 	  ln->Srid = srid;
 	  new_ln = gaiaAddLinestringToGeomColl (ln, points);
 	  pt = dyn->First;
@@ -1237,10 +1280,12 @@ gml_parse_linestring (gaiaGeomCollPtr geom, gmlNodePtr node, int srid,
 	  last = last->Next;
       }
     last->Next = ln;
+    gmlMapDynClean (dyn);
     gaiaFreeDynamicLine (dyn);
     return 1;
 
   error:
+    gmlMapDynClean (dyn);
     gaiaFreeDynamicLine (dyn);
     return 0;
 }
@@ -1255,6 +1300,7 @@ gml_parse_curve (gaiaGeomCollPtr geom, gmlNodePtr node, int srid,
     gaiaLinestringPtr new_ln;
     gaiaPointPtr pt;
     gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
+    gmlMapDynAlloc (GML_DYN_DYNLINE, dyn);
     int iv;
     int has_z = 1;
     int points = 0;
@@ -1327,6 +1373,7 @@ gml_parse_curve (gaiaGeomCollPtr geom, gmlNodePtr node, int srid,
     if (has_z)
       {
 	  ln = gaiaAllocGeomCollXYZ ();
+	  gmlMapDynAlloc (GML_DYN_GEOM, ln);
 	  ln->Srid = srid;
 	  new_ln = gaiaAddLinestringToGeomColl (ln, points);
 	  pt = dyn->First;
@@ -1341,6 +1388,7 @@ gml_parse_curve (gaiaGeomCollPtr geom, gmlNodePtr node, int srid,
     else
       {
 	  ln = gaiaAllocGeomColl ();
+	  gmlMapDynAlloc (GML_DYN_GEOM, ln);
 	  ln->Srid = srid;
 	  new_ln = gaiaAddLinestringToGeomColl (ln, points);
 	  pt = dyn->First;
@@ -1361,10 +1409,12 @@ gml_parse_curve (gaiaGeomCollPtr geom, gmlNodePtr node, int srid,
 	  last = last->Next;
       }
     last->Next = ln;
+    gmlMapDynClean (dyn);
     gaiaFreeDynamicLine (dyn);
     return 1;
 
   error:
+    gmlMapDynClean (dyn);
     gaiaFreeDynamicLine (dyn);
     return 0;
 }
@@ -1374,6 +1424,7 @@ gml_parse_ring (gmlNodePtr node, int *interior, int *has_z, gmlNodePtr * next)
 {
 /* parsing a generic GML ring */
     gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
+    gmlMapDynAlloc (GML_DYN_DYNLINE, dyn);
     *has_z = 1;
 
     if (strcmp (node->Tag, "gml:outerBoundaryIs") == 0
@@ -1616,6 +1667,7 @@ gml_parse_ring (gmlNodePtr node, int *interior, int *has_z, gmlNodePtr * next)
       }
 
   error:
+    gmlMapDynClean (dyn);
     gaiaFreeDynamicLine (dyn);
     return 0;
 }
@@ -1707,6 +1759,7 @@ gml_parse_polygon (gaiaGeomCollPtr geom, gmlNodePtr node, int srid,
     if (has_z)
       {
 	  pg = gaiaAllocGeomCollXYZ ();
+	  gmlMapDynAlloc (GML_DYN_GEOM, pg);
 	  pg->Srid = srid;
 	  new_pg = gaiaAddPolygonToGeomColl (pg, points, inners);
 	  /* initializing the EXTERIOR RING */
@@ -1745,6 +1798,7 @@ gml_parse_polygon (gaiaGeomCollPtr geom, gmlNodePtr node, int srid,
     else
       {
 	  pg = gaiaAllocGeomColl ();
+	  gmlMapDynAlloc (GML_DYN_GEOM, pg);
 	  pg->Srid = srid;
 	  new_pg = gaiaAddPolygonToGeomColl (pg, points, inners);
 	  /* initializing the EXTERIOR RING */
@@ -2202,6 +2256,7 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 	    {
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
+		gmlMapDynAlloc (GML_DYN_GEOM, geom);
 		geom->Srid = chain->Srid;
 		if (chain->DeclaredType == GAIA_MULTIPOINT)
 		    geom->DeclaredType = GAIA_MULTIPOINT;
@@ -2216,6 +2271,7 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 	    {
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
+		gmlMapDynAlloc (GML_DYN_GEOM, geom);
 		geom->Srid = chain->Srid;
 		if (chain->DeclaredType == GAIA_MULTIPOINT)
 		    geom->DeclaredType = GAIA_MULTIPOINT;
@@ -2235,11 +2291,13 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 	    {
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
+		gmlMapDynAlloc (GML_DYN_GEOM, geom);
 	    }
 	  else
 	    {
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
+		gmlMapDynAlloc (GML_DYN_GEOM, geom);
 	    }
 	  geom->Srid = chain->Srid;
 	  if (chain->DeclaredType == GAIA_MULTILINESTRING)
@@ -2259,11 +2317,13 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 	    {
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
+		gmlMapDynAlloc (GML_DYN_GEOM, geom);
 	    }
 	  else
 	    {
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
+		gmlMapDynAlloc (GML_DYN_GEOM, geom);
 	    }
 	  geom->Srid = chain->Srid;
 	  if (chain->DeclaredType == GAIA_MULTIPOLYGON)
@@ -2292,6 +2352,7 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 	    {
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
+		gmlMapDynAlloc (GML_DYN_GEOM, geom);
 		geom->Srid = chain->Srid;
 		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
 		    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
@@ -2334,7 +2395,10 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 			    pt = pt->Next;
 			}
 		      if (delete_g2)
-			  gaiaFreeGeomColl (g2);
+			{
+			    gmlMapDynClean (g2);
+			    gaiaFreeGeomColl (g2);
+			}
 		      g = g->Next;
 		  }
 		return geom;
@@ -2343,6 +2407,7 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 	    {
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
+		gmlMapDynAlloc (GML_DYN_GEOM, geom);
 		geom->Srid = chain->Srid;
 		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
 		    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
@@ -2386,7 +2451,10 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 			    pt = pt->Next;
 			}
 		      if (delete_g2)
-			  gaiaFreeGeomColl (g2);
+			{
+			    gmlMapDynClean (g2);
+			    gaiaFreeGeomColl (g2);
+			}
 		      g = g->Next;
 		  }
 		return geom;
@@ -2399,6 +2467,7 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 	    {
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
+		gmlMapDynAlloc (GML_DYN_GEOM, geom);
 		geom->Srid = chain->Srid;
 		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
 		    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
@@ -2443,7 +2512,10 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 			    ln = ln->Next;
 			}
 		      if (delete_g2)
-			  gaiaFreeGeomColl (g2);
+			{
+			    gmlMapDynClean (g2);
+			    gaiaFreeGeomColl (g2);
+			}
 		      g = g->Next;
 		  }
 		return geom;
@@ -2452,6 +2524,7 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 	    {
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
+		gmlMapDynAlloc (GML_DYN_GEOM, geom);
 		geom->Srid = chain->Srid;
 		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
 		    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
@@ -2496,7 +2569,10 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 			    ln = ln->Next;
 			}
 		      if (delete_g2)
-			  gaiaFreeGeomColl (g2);
+			{
+			    gmlMapDynClean (g2);
+			    gaiaFreeGeomColl (g2);
+			}
 		      g = g->Next;
 		  }
 		return geom;
@@ -2509,6 +2585,7 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 	    {
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
+		gmlMapDynAlloc (GML_DYN_GEOM, geom);
 		geom->Srid = chain->Srid;
 		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
 		    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
@@ -2564,7 +2641,10 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 			    pg = pg->Next;
 			}
 		      if (delete_g2)
-			  gaiaFreeGeomColl (g2);
+			{
+			    gmlMapDynClean (g2);
+			    gaiaFreeGeomColl (g2);
+			}
 		      g = g->Next;
 		  }
 		return geom;
@@ -2573,6 +2653,7 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 	    {
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
+		gmlMapDynAlloc (GML_DYN_GEOM, geom);
 		geom->Srid = chain->Srid;
 		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
 		    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
@@ -2628,7 +2709,10 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 			    pg = pg->Next;
 			}
 		      if (delete_g2)
-			  gaiaFreeGeomColl (g2);
+			{
+			    gmlMapDynClean (g2);
+			    gaiaFreeGeomColl (g2);
+			}
 		      g = g->Next;
 		  }
 		return geom;
@@ -2641,6 +2725,7 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 	    {
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
+		gmlMapDynAlloc (GML_DYN_GEOM, geom);
 		geom->Srid = chain->Srid;
 		geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
 		g = chain;
@@ -2707,7 +2792,10 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 			    pg = pg->Next;
 			}
 		      if (delete_g2)
-			  gaiaFreeGeomColl (g2);
+			{
+			    gmlMapDynClean (g2);
+			    gaiaFreeGeomColl (g2);
+			}
 		      g = g->Next;
 		  }
 		return geom;
@@ -2716,6 +2804,7 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 	    {
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
+		gmlMapDynAlloc (GML_DYN_GEOM, geom);
 		geom->Srid = chain->Srid;
 		geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
 		g = chain;
@@ -2783,7 +2872,10 @@ gml_validate_geometry (gaiaGeomCollPtr chain, sqlite3 * sqlite_handle)
 			    pg = pg->Next;
 			}
 		      if (delete_g2)
-			  gaiaFreeGeomColl (g2);
+			{
+			    gmlMapDynClean (g2);
+			    gaiaFreeGeomColl (g2);
+			}
 		      g = g->Next;
 		  }
 		return geom;
@@ -2800,6 +2892,7 @@ gml_free_geom_chain (gaiaGeomCollPtr geom)
     while (geom)
       {
 	  gn = geom->Next;
+	  gmlMapDynClean (geom);
 	  gaiaFreeGeomColl (geom);
 	  geom = gn;
       }
@@ -3061,13 +3154,16 @@ gaiaParseGml (const unsigned char *dirty_buffer, sqlite3 * sqlite_handle)
 	  return NULL;
       }
 
-    gmlCleanMapDynAlloc (0);
     if (!result)
-	return NULL;
+      {
+	  gmlCleanMapDynAlloc (0);
+	  return NULL;
+      }
 
     /* attempting to build a geometry from GML */
     geom = gml_build_geometry (result, sqlite_handle);
     gml_freeTree (result);
+    gmlCleanMapDynAlloc (0);
     return geom;
 }
 

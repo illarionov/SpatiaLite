@@ -333,7 +333,6 @@ int main (int argc, char *argv[])
 
     sqlite3_close (db_handle);
     spatialite_cleanup();
-    sqlite3_reset_auto_extension();
     
     return 0;
 }

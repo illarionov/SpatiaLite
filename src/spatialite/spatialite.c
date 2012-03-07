@@ -17782,6 +17782,7 @@ spatialite_cleanup ()
 #ifndef OMIT_GEOS
     finishGEOS ();
 #endif
+    sqlite3_reset_auto_extension();
 }
 
 #if !(defined _WIN32) || defined(__MINGW__)

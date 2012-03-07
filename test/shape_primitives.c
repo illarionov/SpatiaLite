@@ -90,7 +90,7 @@ int main (int argc, char *argv[])
 	sqlite3_close(handle);
 	return -2;
     }
-    
+
     ret = sqlite3_exec (handle, "CREATE TABLE Point_Test (Name TEXT, Description TEXT)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "CREATE TABLE error: %s\n", err_msg);
@@ -572,6 +572,6 @@ int main (int argc, char *argv[])
     }
 
     spatialite_cleanup();
-    sqlite3_reset_auto_extension();
+    sqlite3_close(handle);
     return 0;
 }

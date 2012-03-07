@@ -76,11 +76,12 @@ int kml_parse_error;
 #define GAIA_KML_MULTIGEOMETRY		4
 
 #define KML_DYN_NONE	0
-#define KML_DYN_POINT	1
-#define KML_DYN_LINESTRING	2
-#define KML_DYN_POLYGON	3
-#define KML_DYN_RING	4
-#define KML_DYN_GEOMETRY	5
+#define KML_DYN_DYNLINE	1
+#define KML_DYN_GEOM	2
+#define KML_DYN_DYNPG	3
+#define KML_DYN_NODE	4
+#define KML_DYN_COORD	5
+#define KML_DYN_ATTRIB	6
 
 #define KML_DYN_BLOCK 1024
 
@@ -200,11 +201,12 @@ kmlMapDynClean (void *ptr)
 	    {
 		switch (p->type[i])
 		  {
-		  case KML_DYN_POINT:
-		  case KML_DYN_LINESTRING:
-		  case KML_DYN_POLYGON:
-		  case KML_DYN_RING:
-		  case KML_DYN_GEOMETRY:
+		  case KML_DYN_DYNLINE:
+		  case KML_DYN_GEOM:
+		  case KML_DYN_DYNPG:
+		  case KML_DYN_NODE:
+		  case KML_DYN_COORD:
+		  case KML_DYN_ATTRIB:
 		      if (p->ptr[i] == ptr)
 			{
 			    p->type[i] = KML_DYN_NONE;
@@ -215,58 +217,6 @@ kmlMapDynClean (void *ptr)
 	    }
 	  p = p->next;
       }
-}
-
-static void
-kmlCleanMapDynAlloc (int clean_all)
-{
-/* cleaning the dynamic allocations map */
-    int i;
-    struct kml_dyn_block *pn;
-    struct kml_dyn_block *p = kml_first_dyn_block;
-    while (p)
-      {
-	  if (clean_all)
-	    {
-		for (i = 0; i < KML_DYN_BLOCK; i++)
-		  {
-		      /* deleting Geometry objects */
-		      switch (p->type[i])
-			{
-			case KML_DYN_POINT:
-			    gaiaFreePoint ((gaiaPointPtr) (p->ptr[i]));
-			    break;
-			case KML_DYN_LINESTRING:
-			    gaiaFreeLinestring ((gaiaLinestringPtr)
-						(p->ptr[i]));
-			    break;
-			case KML_DYN_POLYGON:
-			    gaiaFreePolygon ((gaiaPolygonPtr) (p->ptr[i]));
-			    break;
-			case KML_DYN_RING:
-			    gaiaFreeRing ((gaiaRingPtr) (p->ptr[i]));
-			    break;
-			case KML_DYN_GEOMETRY:
-			    gaiaFreeGeomColl ((gaiaGeomCollPtr) (p->ptr[i]));
-			    break;
-			};
-		  }
-	    }
-	  /* deleting the map block */
-	  pn = p->next;
-	  free (p);
-	  p = pn;
-      }
-}
-
-static kmlDynamicPolygonPtr
-kml_alloc_dyn_polygon (void)
-{
-/* creating a dynamic polygon (ring collection) */
-    kmlDynamicPolygonPtr p = malloc (sizeof (kmlDynamicPolygon));
-    p->first = NULL;
-    p->last = NULL;
-    return p;
 }
 
 static void
@@ -287,6 +237,116 @@ kml_free_dyn_polygon (kmlDynamicPolygonPtr dyn)
 	  r = rn;
       }
     free (dyn);
+}
+
+static void
+kml_free_coord (kmlCoordPtr c)
+{
+/* deleting a KML coordinate */
+    if (c == NULL)
+	return;
+    if (c->Value)
+	free (c->Value);
+    free (c);
+}
+
+static void
+kml_free_attrib (kmlAttrPtr a)
+{
+/* deleting a KML attribute */
+    if (a == NULL)
+	return;
+    if (a->Key)
+	free (a->Key);
+    if (a->Value)
+	free (a->Value);
+    free (a);
+}
+
+static void
+kml_free_node (kmlNodePtr n)
+{
+/* deleting a KML node */
+    kmlAttrPtr a;
+    kmlAttrPtr an;
+    kmlCoordPtr c;
+    kmlCoordPtr cn;
+    if (n == NULL)
+	return;
+    a = n->Attributes;
+    while (a)
+      {
+	  an = a->Next;
+	  kml_free_attrib (a);
+	  a = an;
+      }
+    c = n->Coordinates;
+    while (c)
+      {
+	  cn = c->Next;
+	  kml_free_coord (c);
+	  c = cn;
+      }
+    if (n->Tag)
+	free (n->Tag);
+    free (n);
+}
+
+static void
+kmlCleanMapDynAlloc (int clean_all)
+{
+/* cleaning the dynamic allocations map */
+    int i;
+    struct kml_dyn_block *pn;
+    struct kml_dyn_block *p = kml_first_dyn_block;
+    while (p)
+      {
+	  if (clean_all)
+	    {
+		for (i = 0; i < KML_DYN_BLOCK; i++)
+		  {
+		      /* deleting Geometry objects */
+		      switch (p->type[i])
+			{
+			case KML_DYN_DYNLINE:
+			    gaiaFreeDynamicLine ((gaiaDynamicLinePtr)
+						 (p->ptr[i]));
+			    break;
+			case KML_DYN_GEOM:
+			    gaiaFreeGeomColl ((gaiaGeomCollPtr) (p->ptr[i]));
+			    break;
+			case KML_DYN_DYNPG:
+			    kml_free_dyn_polygon ((kmlDynamicPolygonPtr)
+						  (p->ptr[i]));
+			    break;
+			case KML_DYN_NODE:
+			    kml_free_node ((kmlNodePtr) (p->ptr[i]));
+			    break;
+			case KML_DYN_COORD:
+			    kml_free_coord ((kmlCoordPtr) (p->ptr[i]));
+			    break;
+			case KML_DYN_ATTRIB:
+			    kml_free_attrib ((kmlAttrPtr) (p->ptr[i]));
+			    break;
+			};
+		  }
+	    }
+	  /* deleting the map block */
+	  pn = p->next;
+	  free (p);
+	  p = pn;
+      }
+}
+
+static kmlDynamicPolygonPtr
+kml_alloc_dyn_polygon (void)
+{
+/* creating a dynamic polygon (ring collection) */
+    kmlDynamicPolygonPtr p = malloc (sizeof (kmlDynamicPolygon));
+    kmlMapDynAlloc (KML_DYN_DYNPG, p);
+    p->first = NULL;
+    p->last = NULL;
+    return p;
 }
 
 static void
@@ -332,22 +392,12 @@ kml_coord (void *value)
     int len;
     kmlFlexToken *tok = (kmlFlexToken *) value;
     kmlCoordPtr c = malloc (sizeof (kmlCoord));
+    kmlMapDynAlloc (KML_DYN_COORD, c);
     len = strlen (tok->value);
     c->Value = malloc (len + 1);
     strcpy (c->Value, tok->value);
     c->Next = NULL;
     return c;
-}
-
-static void
-kml_freeCoordinate (kmlCoordPtr c)
-{
-/* deleting a KML coordinate */
-    if (c == NULL)
-	return;
-    if (c->Value)
-	free (c->Value);
-    free (c);
 }
 
 static kmlAttrPtr
@@ -358,6 +408,7 @@ kml_attribute (void *key, void *value)
     kmlFlexToken *k_tok = (kmlFlexToken *) key;
     kmlFlexToken *v_tok = (kmlFlexToken *) value;
     kmlAttrPtr a = malloc (sizeof (kmlAttr));
+    kmlMapDynAlloc (KML_DYN_ATTRIB, a);
     len = strlen (k_tok->value);
     a->Key = malloc (len + 1);
     strcpy (a->Key, k_tok->value);
@@ -379,48 +430,6 @@ kml_attribute (void *key, void *value)
 }
 
 static void
-kml_freeAttribute (kmlAttrPtr a)
-{
-/* deleting a KML attribute */
-    if (a == NULL)
-	return;
-    if (a->Key)
-	free (a->Key);
-    if (a->Value)
-	free (a->Value);
-    free (a);
-}
-
-static void
-kml_freeNode (kmlNodePtr n)
-{
-/* deleting a KML node */
-    kmlAttrPtr a;
-    kmlAttrPtr an;
-    kmlCoordPtr c;
-    kmlCoordPtr cn;
-    if (n == NULL)
-	return;
-    a = n->Attributes;
-    while (a)
-      {
-	  an = a->Next;
-	  kml_freeAttribute (a);
-	  a = an;
-      }
-    c = n->Coordinates;
-    while (c)
-      {
-	  cn = c->Next;
-	  kml_freeCoordinate (c);
-	  c = cn;
-      }
-    if (n->Tag)
-	free (n->Tag);
-    free (n);
-}
-
-static void
 kml_freeTree (kmlNodePtr t)
 {
 /* deleting a KML tree */
@@ -430,7 +439,7 @@ kml_freeTree (kmlNodePtr t)
     while (n)
       {
 	  nn = n->Next;
-	  kml_freeNode (n);
+	  kml_free_node (n);
 	  n = nn;
       }
 }
@@ -439,15 +448,32 @@ static kmlNodePtr
 kml_createNode (void *tag, void *attributes, void *coords)
 {
 /* creating a node */
+    kmlAttrPtr a;
+    kmlCoordPtr c;
     int len;
     kmlFlexToken *tok = (kmlFlexToken *) tag;
     kmlNodePtr n = malloc (sizeof (kmlNode));
+    kmlMapDynAlloc (KML_DYN_NODE, n);
     len = strlen (tok->value);
     n->Tag = malloc (len + 1);
     strcpy (n->Tag, tok->value);
     n->Type = KML_PARSER_OPEN_NODE;
     n->Error = 0;
+    a = (kmlAttrPtr) attributes;
+    while (a)
+      {
+	  /* transferring ownership of attributes */
+	  kmlMapDynClean (a);
+	  a = a->Next;
+      }
     n->Attributes = attributes;
+    c = (kmlCoordPtr) coords;
+    while (c)
+      {
+	  /* transferring ownership of attributes */
+	  kmlMapDynClean (c);
+	  c = c->Next;
+      }
     n->Coordinates = coords;
     n->Next = NULL;
     return n;
@@ -457,14 +483,23 @@ static kmlNodePtr
 kml_createSelfClosedNode (void *tag, void *attributes)
 {
 /* creating a self-closed node */
+    kmlAttrPtr a;
     int len;
     kmlFlexToken *tok = (kmlFlexToken *) tag;
     kmlNodePtr n = malloc (sizeof (kmlNode));
+    kmlMapDynAlloc (KML_DYN_NODE, n);
     len = strlen (tok->value);
     n->Tag = malloc (len + 1);
     strcpy (n->Tag, tok->value);
     n->Type = KML_PARSER_SELF_CLOSED_NODE;
     n->Error = 0;
+    a = (kmlAttrPtr) attributes;
+    while (a)
+      {
+	  /* transferring ownership of attributes */
+	  kmlMapDynClean (a);
+	  a = a->Next;
+      }
     n->Attributes = attributes;
     n->Coordinates = NULL;
     n->Next = NULL;
@@ -478,6 +513,7 @@ kml_closingNode (void *tag)
     int len;
     kmlFlexToken *tok = (kmlFlexToken *) tag;
     kmlNodePtr n = malloc (sizeof (kmlNode));
+    kmlMapDynAlloc (KML_DYN_NODE, n);
     len = strlen (tok->value);
     n->Tag = malloc (len + 1);
     strcpy (n->Tag, tok->value);
@@ -704,11 +740,13 @@ kml_parse_point (gaiaGeomCollPtr geom, kmlNodePtr node, kmlNodePtr * next)
     if (has_z)
       {
 	  pt = gaiaAllocGeomCollXYZ ();
+	  kmlMapDynAlloc (KML_DYN_GEOM, pt);
 	  gaiaAddPointToGeomCollXYZ (pt, x, y, z);
       }
     else
       {
 	  pt = gaiaAllocGeomColl ();
+	  kmlMapDynAlloc (KML_DYN_GEOM, pt);
 	  gaiaAddPointToGeomColl (pt, x, y);
       }
     last = geom;
@@ -897,6 +935,7 @@ kml_parse_linestring (gaiaGeomCollPtr geom, kmlNodePtr node, kmlNodePtr * next)
     gaiaLinestringPtr new_ln;
     gaiaPointPtr pt;
     gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
+    kmlMapDynAlloc (KML_DYN_DYNLINE, dyn);
     int iv;
     int has_z = 1;
     int points = 0;
@@ -930,6 +969,7 @@ kml_parse_linestring (gaiaGeomCollPtr geom, kmlNodePtr node, kmlNodePtr * next)
     if (has_z)
       {
 	  ln = gaiaAllocGeomCollXYZ ();
+	  kmlMapDynAlloc (KML_DYN_GEOM, ln);
 	  new_ln = gaiaAddLinestringToGeomColl (ln, points);
 	  pt = dyn->First;
 	  iv = 0;
@@ -943,6 +983,7 @@ kml_parse_linestring (gaiaGeomCollPtr geom, kmlNodePtr node, kmlNodePtr * next)
     else
       {
 	  ln = gaiaAllocGeomColl ();
+	  kmlMapDynAlloc (KML_DYN_GEOM, ln);
 	  new_ln = gaiaAddLinestringToGeomColl (ln, points);
 	  pt = dyn->First;
 	  iv = 0;
@@ -1160,6 +1201,7 @@ kml_parse_polygon (gaiaGeomCollPtr geom, kmlNodePtr node, kmlNodePtr * next_n)
     if (has_z)
       {
 	  pg = gaiaAllocGeomCollXYZ ();
+	  kmlMapDynAlloc (KML_DYN_GEOM, pg);
 	  new_pg = gaiaAddPolygonToGeomColl (pg, points, inners);
 	  /* initializing the EXTERIOR RING */
 	  ring = new_pg->Exterior;
@@ -1197,6 +1239,7 @@ kml_parse_polygon (gaiaGeomCollPtr geom, kmlNodePtr node, kmlNodePtr * next_n)
     else
       {
 	  pg = gaiaAllocGeomColl ();
+	  kmlMapDynAlloc (KML_DYN_GEOM, pg);
 	  new_pg = gaiaAddPolygonToGeomColl (pg, points, inners);
 	  /* initializing the EXTERIOR RING */
 	  ring = new_pg->Exterior;
@@ -1362,6 +1405,7 @@ kml_validate_geometry (gaiaGeomCollPtr chain)
 	    {
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
+		kmlMapDynAlloc (KML_DYN_GEOM, pg);
 		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
 		    geom->DeclaredType = GAIA_MULTIPOINT;
 		else
@@ -1373,6 +1417,7 @@ kml_validate_geometry (gaiaGeomCollPtr chain)
 	    {
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
+		kmlMapDynAlloc (KML_DYN_GEOM, pg);
 		if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
 		    geom->DeclaredType = GAIA_MULTIPOINT;
 		else
@@ -1389,11 +1434,13 @@ kml_validate_geometry (gaiaGeomCollPtr chain)
 	    {
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
+		kmlMapDynAlloc (KML_DYN_GEOM, pg);
 	    }
 	  else
 	    {
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
+		kmlMapDynAlloc (KML_DYN_GEOM, pg);
 	    }
 	  if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
 	      geom->DeclaredType = GAIA_MULTILINESTRING;
@@ -1410,11 +1457,13 @@ kml_validate_geometry (gaiaGeomCollPtr chain)
 	    {
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
+		kmlMapDynAlloc (KML_DYN_GEOM, pg);
 	    }
 	  else
 	    {
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
+		kmlMapDynAlloc (KML_DYN_GEOM, pg);
 	    }
 	  if (chain->DeclaredType == GAIA_GEOMETRYCOLLECTION)
 	      geom->DeclaredType = GAIA_MULTIPOLYGON;
@@ -1440,6 +1489,7 @@ kml_validate_geometry (gaiaGeomCollPtr chain)
 	    {
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
+		kmlMapDynAlloc (KML_DYN_GEOM, pg);
 		geom->DeclaredType = GAIA_MULTIPOINT;
 		g = chain;
 		while (g)
@@ -1458,6 +1508,7 @@ kml_validate_geometry (gaiaGeomCollPtr chain)
 	    {
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
+		kmlMapDynAlloc (KML_DYN_GEOM, pg);
 		geom->DeclaredType = GAIA_MULTIPOINT;
 		g = chain;
 		while (g)
@@ -1481,6 +1532,7 @@ kml_validate_geometry (gaiaGeomCollPtr chain)
 	    {
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
+		kmlMapDynAlloc (KML_DYN_GEOM, pg);
 		geom->DeclaredType = GAIA_MULTILINESTRING;
 		g = chain;
 		while (g)
@@ -1501,6 +1553,7 @@ kml_validate_geometry (gaiaGeomCollPtr chain)
 	    {
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
+		kmlMapDynAlloc (KML_DYN_GEOM, pg);
 		geom->DeclaredType = GAIA_MULTILINESTRING;
 		g = chain;
 		while (g)
@@ -1525,6 +1578,7 @@ kml_validate_geometry (gaiaGeomCollPtr chain)
 	    {
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
+		kmlMapDynAlloc (KML_DYN_GEOM, pg);
 		geom->DeclaredType = GAIA_MULTIPOLYGON;
 		g = chain;
 		while (g)
@@ -1556,6 +1610,7 @@ kml_validate_geometry (gaiaGeomCollPtr chain)
 	    {
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
+		kmlMapDynAlloc (KML_DYN_GEOM, pg);
 		geom->DeclaredType = GAIA_MULTIPOLYGON;
 		g = chain;
 		while (g)
@@ -1591,6 +1646,7 @@ kml_validate_geometry (gaiaGeomCollPtr chain)
 	    {
 		/* 2D [XY] */
 		geom = gaiaAllocGeomColl ();
+		kmlMapDynAlloc (KML_DYN_GEOM, pg);
 		geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
 		g = chain;
 		while (g)
@@ -1636,6 +1692,7 @@ kml_validate_geometry (gaiaGeomCollPtr chain)
 	    {
 		/* 3D [XYZ] */
 		geom = gaiaAllocGeomCollXYZ ();
+		kmlMapDynAlloc (KML_DYN_GEOM, pg);
 		geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
 		g = chain;
 		while (g)
@@ -1920,14 +1977,17 @@ gaiaParseKml (const unsigned char *dirty_buffer)
 	  return NULL;
       }
 
-    kmlCleanMapDynAlloc (0);
     if (!result)
-	return NULL;
+      {
+	  kmlCleanMapDynAlloc (0);
+	  return NULL;
+      }
 
     /* attempting to build a geometry from KML */
     geom = kml_build_geometry (result);
     geom->Srid = 4326;
     kml_freeTree (result);
+    kmlCleanMapDynAlloc (0);
     return geom;
 }
 

@@ -136,9 +136,7 @@ int main (int argc, char *argv[])
     sqlite3_free_table (results);
  
     sqlite3_close (db_handle);
-    
     spatialite_cleanup();
-    sqlite3_reset_auto_extension();
     
     return 0;
 }

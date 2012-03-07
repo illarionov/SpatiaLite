@@ -325,7 +325,6 @@ int main (int argc, char *argv[])
     fclose(fl);
     
     spatialite_cleanup();
-    sqlite3_reset_auto_extension();
     
     return 0;
 }
