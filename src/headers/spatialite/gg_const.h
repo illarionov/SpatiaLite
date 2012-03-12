@@ -354,6 +354,14 @@ extern "C"
 /** SHP shape: MULTIPOINT M */
 #define GAIA_SHP_MULTIPOINTM	28
 
+/* constants used for Clone Special modes */
+/** Clone Special Mode: Same Order as input */
+#define GAIA_SAME_ORDER		0
+/** Clone Special Mode: Reversed Order */
+#define GAIA_REVERSE_ORDER	-1
+/** Clone Special Mode: apply Left Handle Rule to Polygon Rings */
+#define GAIA_LHR_ORDER		-2
+
 /* macros */
 /**
  macro extracting XY coordinates

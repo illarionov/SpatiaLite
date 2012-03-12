@@ -250,11 +250,28 @@ extern "C"
  \param dst destination LINESTRING [output]
  \param src origin LINESTRING [input]
 
+ \sa gaiaCopyLinestringCoordsReverse
+
  \note both LINESTRING objects must have exactly the same number of points:
  if dimensions aren't the same for both objects, then the appropriate 
  conversion will be silently applied.
  */
     GAIAGEO_DECLARE void gaiaCopyLinestringCoords (gaiaLinestringPtr dst,
+						   gaiaLinestringPtr src);
+
+/**
+ Copies coordinates between two LINESTRING objects in reverse order
+
+ \param dst destination LINESTRING [output]
+ \param src origin LINESTRING [input]
+
+ \sa gaiaCopyLinestringCoords
+
+ \note both LINESTRING objects must have exactly the same number of points:
+ if dimensions aren't the same for both objects, then the appropriate 
+ conversion will be silently applied.
+ */
+    GAIAGEO_DECLARE void gaiaCopyLinestringCoordsReverse (gaiaLinestringPtr dst,
 						   gaiaLinestringPtr src);
 
 /**
@@ -345,11 +362,27 @@ extern "C"
  \param dst destination RING [output]
  \param src origin RING [input]
 
+ \sa gaiaCopyRingCoordsReverse
+
  \note both RING objects must have exactly the same number of points:
  if dimensions aren't the same for both objects, then the appropriate
  conversion will be silently applied.
  */
     GAIAGEO_DECLARE void gaiaCopyRingCoords (gaiaRingPtr dst, gaiaRingPtr src);
+
+/**
+ Copies coordinates between two RING objects in reverse order
+
+ \param dst destination RING [output]
+ \param src origin RING [input]
+
+ \sa gaiaCopyRingCoords
+
+ \note both RING objects must have exactly the same number of points:
+ if dimensions aren't the same for both objects, then the appropriate
+ conversion will be silently applied.
+ */
+    GAIAGEO_DECLARE void gaiaCopyRingCoordsReverse (gaiaRingPtr dst, gaiaRingPtr src);
 
 /**
  Allocates a 2D POLYGON [XY]
@@ -706,12 +739,29 @@ extern "C"
 
  \sa gaiaCloneRing, gaiaClonePolygon, gaiaCloneGeomColl,
  gaiaCloneGeomCollPoints, gaiaCloneGeomCollLinestrings, 
- gaiaCloneGeomCollPolygons
+ gaiaCloneGeomCollPolygons, gaiaCloneLinestringSpecial
 
  \note the newly created object is an exact copy of the original one. 
  */
     GAIAGEO_DECLARE gaiaLinestringPtr gaiaCloneLinestring (gaiaLinestringPtr
 							   line);
+/**
+ Duplicates a Linestring object (special)
+
+ \param line pointer to Linestring object [origin].
+ \param mode one of GAIA_SAME_ORDER or GAIA_REVERSE_ORDER.
+
+ \return the pointer to newly created Linestring object: NULL on failure.
+
+ \sa gaiaCloneLinestring, gaiaCloneGeomCollSpecial
+
+ \note if GAIA_REVERSE_ORDER is specified, then any vertex into the newly created
+  object will be in reverse order [first vertex will be last one, and last vertex
+  will be the first one]. In any other case this function will simply default to 
+  gaiaCloneLinestring. 
+ */
+    GAIAGEO_DECLARE gaiaLinestringPtr
+	gaiaCloneLinestringSpecial (gaiaLinestringPtr line, int mode);
 
 /**
  Duplicates a Ring object
@@ -722,11 +772,29 @@ extern "C"
 
  \sa gaiaCloneLinestring, gaiaClonePolygon, gaiaCloneGeomColl,
  gaiaCloneGeomCollPoints, gaiaCloneGeomCollLinestrings, 
- gaiaCloneGeomCollPolygons
+ gaiaCloneGeomCollPolygons, gaiaCloneRingSpecial
 
  \note the newly created object is an exact copy of the original one. 
  */
     GAIAGEO_DECLARE gaiaRingPtr gaiaCloneRing (gaiaRingPtr ring);
+
+/**
+ Duplicates a Ring object (special)
+
+ \param ring pointer to Ring object [origin].
+ \param mode one of GAIA_SAME_ORDER or GAIA_REVERSE_ORDER.
+
+ \return the pointer to newly created Ring object: NULL on failure.
+
+ \sa gaiaCloneRing, gaiaClonePolygonSpecial
+
+ \note if GAIA_REVERSE_ORDER is specified, then any vertex into the newly created
+  object will be in reverse order [first vertex will be last one, and last vertex
+  will be the first one]. In any other case this function will simply default to 
+  gaiaCloneRing. 
+ */
+    GAIAGEO_DECLARE gaiaRingPtr gaiaCloneRingSpecial (gaiaRingPtr ring,
+						      int mode);
 
 /**
  Duplicates a Polygon object
@@ -737,11 +805,30 @@ extern "C"
 
  \sa gaiaCloneLinestring, gaiaCloneRing, gaiaCloneGeomColl,
  gaiaCloneGeomCollPoints, gaiaCloneGeomCollLinestrings, 
- gaiaCloneGeomCollPolygons
+ gaiaCloneGeomCollPolygons, gaiaClonePolygonSpecial
 
  \note the newly created object is an exact copy of the original one. 
  */
     GAIAGEO_DECLARE gaiaPolygonPtr gaiaClonePolygon (gaiaPolygonPtr polyg);
+
+/**
+ Duplicates a Polygon object (special)
+
+ \param polyg pointer to Polygon object [origin].
+ \param mode one of GAIA_SAME_ORDER, GAIA_REVERSE_ORDER or GAIA_LHR_ORDER.
+
+ \return the pointer to newly created Polygon object: NULL on failure.
+
+ \sa gaiaClonePolygon, gaiaCloneGeomCollSpecial
+
+ \note if GAIA_REVERSE_ORDER is specified, then any Ring into the newly created
+  object will be in reverse order. If GAIA_LHR_ORDER is specified instead, any
+  Exterior Ring will have clockwise orientation, and any Interior Ring will have
+  counter-clockwise orientation. In any other case this function will simply 
+  default to gaiaClonePolygon. 
+ */
+    GAIAGEO_DECLARE gaiaPolygonPtr gaiaClonePolygonSpecial (gaiaPolygonPtr
+							    polyg, int mode);
 
 /**
  Duplicates a Geometry object
@@ -755,11 +842,31 @@ extern "C"
  gaiaCloneGeomCollPolygons, gaiaCastGeomCollToXY, gaiaCastGeomCollToXYZ,
  gaiaCastGeomCollToXYM, gaiaCastGeomCollToXYZM, gaiaExtractPointsFromGeomColl,
  gaiaExtractLinestringsFromGeomColl, gaiaExtractPolygonsFromGeomColl,
- gaiaMergeGeometries
+ gaiaMergeGeometries, gaiaCloneGeomCollSpecial
 
  \note the newly created object is an exact copy of the original one. 
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaCloneGeomColl (gaiaGeomCollPtr geom);
+
+/**
+ Duplicates a Geometry object (special)
+
+ \param geom pointer to Geometry object [origin].
+ \param mode one of GAIA_SAME_ORDER, GAIA_REVERSE_ORDER or GAIA_LHR_ORDER.
+
+ \return the pointer to newly created Geometry object: NULL on failure.
+
+ \sa gaiaCloneLinestringSpecial, gaiaCloneRingSpecial, gaiaClonePolygonSpecial, 
+ gaiaCloneGeomColl
+
+ \note if GAIA_REVERSE_ORDER is specified, then any Linestring and/or Ring into
+ the newly created object will be in reverse order. If GAIA_LHR_ORDER is specified 
+  instead, any Polygong will have the Exterior Ring in clockwise orientation, and any 
+  Interior Ring int counter-clockwise orientation. In any other case this function will 
+  simply default to gaiaCloneGeomColl. 
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaCloneGeomCollSpecial (gaiaGeomCollPtr
+							      geom, int mode);
 
 /**
  Duplicates a Geometry object [Points only]

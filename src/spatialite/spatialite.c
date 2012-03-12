@@ -8833,6 +8833,81 @@ fnct_ExtractMultiPolygon (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_Reverse (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_Reverse(BLOB encoded geometry)
+/
+/ returns a new Geometry: any Linestring or Ring will be in reverse order
+/ or NULL in any other case
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    unsigned char *p_result = NULL;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr geom2 = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  geom2 = gaiaCloneGeomCollSpecial (geo, GAIA_REVERSE_ORDER);
+	  geom2->Srid = geo->Srid;
+	  gaiaToSpatiaLiteBlobWkb (geom2, &p_result, &len);
+	  gaiaFreeGeomColl (geom2);
+	  sqlite3_result_blob (context, p_result, len, free);
+	  gaiaFreeGeomColl (geo);
+      }
+}
+
+static void
+fnct_ForceLHR (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_ForceLHR(BLOB encoded geometry)
+/
+/ returns a new Geometry: any Exterior Ring will be in clockwise orientation
+/         and any Interior Ring will be in counter-clockwise orientation
+/ or NULL in any other case
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    unsigned char *p_result = NULL;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr geom2 = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  geom2 = gaiaCloneGeomCollSpecial (geo, GAIA_LHR_ORDER);
+	  geom2->Srid = geo->Srid;
+	  gaiaToSpatiaLiteBlobWkb (geom2, &p_result, &len);
+	  gaiaFreeGeomColl (geom2);
+	  sqlite3_result_blob (context, p_result, len, free);
+	  gaiaFreeGeomColl (geo);
+      }
+}
+
+static void
 fnct_Dimension (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -16506,8 +16581,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -16591,8 +16665,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -16601,8 +16674,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -17296,6 +17368,10 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_ExtractMultiLinestring, 0, 0);
     sqlite3_create_function (db, "ExtractMultiPolygon", 1, SQLITE_ANY, 0,
 			     fnct_ExtractMultiPolygon, 0, 0);
+    sqlite3_create_function (db, "ST_Reverse", 1, SQLITE_ANY, 0,
+			     fnct_Reverse, 0, 0);
+    sqlite3_create_function (db, "ST_ForceLHR", 1, SQLITE_ANY, 0,
+			     fnct_ForceLHR, 0, 0);
     sqlite3_create_function (db, "Dimension", 1, SQLITE_ANY, 0, fnct_Dimension,
 			     0, 0);
     sqlite3_create_function (db, "ST_Dimension", 1, SQLITE_ANY, 0,

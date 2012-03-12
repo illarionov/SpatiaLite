@@ -904,6 +904,24 @@ then a Geometry will be returned representing the MBR for this circle</td></tr>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td>return the total number of Rings (this including both Exterior and Interior Rings).</td></tr>
+			<tr><td><b>Reverse</b></td>
+				<td>ST_Reverse( geom <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td>returns a new Geometry [if a valid Geometry was supplied], or NULL in any other case.<hr>
+                                    Any Linestring or Ring will be in reverse order (first vertex will be the last one,
+                                    and last vertex will be the first one).</td></tr>
+			<tr><td><b>ForceLHR</b></td>
+				<td>ST_ForceLHR( geom <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td>returns a new Geometry [if a valid Geometry was supplied], or NULL in any other case.<hr>
+                                    Any Polygon Ring will be oriented accordingly to Left Hand Rule (Exterior
+                                    Ring will be clockwise oriented, and Interior Rings will be counter-clockwise oriented).</td></tr>
 			<tr><td colspan="7" align="center" bgcolor="#f0f0c0">
 				<h3><a name="repair">SQL functions attempting to repair malformed Geometries</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
