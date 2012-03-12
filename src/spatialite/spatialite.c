@@ -16516,8 +16516,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -16601,8 +16600,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -16611,8 +16609,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -17699,7 +17696,6 @@ register_spatialite_sql_functions (sqlite3 * db)
 
 #ifndef OMIT_GEOS		/* including GEOS */
 
-    initGEOS (geos_warning, geos_error);
     sqlite3_create_function (db, "Boundary", 1, SQLITE_ANY, 0, fnct_Boundary,
 			     0, 0);
     sqlite3_create_function (db, "ST_Boundary", 1, SQLITE_ANY, 0,
@@ -17957,6 +17953,11 @@ SPATIALITE_DECLARE void
 spatialite_init (int verbose)
 {
 /* used when SQLite initializes SpatiaLite via statically linked lib */
+
+#ifndef OMIT_GEOS		/* initializing GEOS */
+    initGEOS (geos_warning, geos_error);
+#endif /* end GEOS  */
+
     sqlite3_auto_extension ((void (*)(void)) init_spatialite_extension);
     if (isatty (1))
       {
@@ -18015,6 +18016,11 @@ __attribute__ ((visibility ("default")))
 				 const sqlite3_api_routines * pApi)
 {
 /* SQLite invokes this routine once when it dynamically loads the extension. */
+
+#ifndef OMIT_GEOS		/* initializing GEOS */
+    initGEOS (geos_warning, geos_error);
+#endif /* end GEOS  */
+
     return init_spatialite_extension (db, pzErrMsg, pApi);
 }
 
