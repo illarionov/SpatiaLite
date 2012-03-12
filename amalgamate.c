@@ -1123,6 +1123,14 @@ main ()
       }
     do_auto_sh (out);
     fclose (out);
+    out = fopen ("amalgamation/spatialite-sql-latest.html", "wb");
+    if (!out)
+      {
+	  fprintf (stderr, "Error opening amalgamation/spatialite-sql-latest.html\n");
+	  return 1;
+      }
+    do_copy_plain (out, "/../spatialite-sql-latest.html");
+    fclose (out);
     free_masked_keywords (first, first_def);
     return 0;
 }

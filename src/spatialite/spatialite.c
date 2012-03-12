@@ -9371,24 +9371,19 @@ fnct_Envelope (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
-	  if (!gaiaIsValid (geo))
-	      sqlite3_result_null (context);
-	  else
-	    {
-		gaiaMbrGeometry (geo);
-		bbox = gaiaAllocGeomColl ();
-		bbox->Srid = geo->Srid;
-		polyg = gaiaAddPolygonToGeomColl (bbox, 5, 0);
-		rect = polyg->Exterior;
-		gaiaSetPoint (rect->Coords, 0, geo->MinX, geo->MinY);	/* vertex # 1 */
-		gaiaSetPoint (rect->Coords, 1, geo->MaxX, geo->MinY);	/* vertex # 2 */
-		gaiaSetPoint (rect->Coords, 2, geo->MaxX, geo->MaxY);	/* vertex # 3 */
-		gaiaSetPoint (rect->Coords, 3, geo->MinX, geo->MaxY);	/* vertex # 4 */
-		gaiaSetPoint (rect->Coords, 4, geo->MinX, geo->MinY);	/* vertex # 5 [same as vertex # 1 to close the polygon] */
-		gaiaToSpatiaLiteBlobWkb (bbox, &p_result, &len);
-		gaiaFreeGeomColl (bbox);
-		sqlite3_result_blob (context, p_result, len, free);
-	    }
+	  gaiaMbrGeometry (geo);
+	  bbox = gaiaAllocGeomColl ();
+	  bbox->Srid = geo->Srid;
+	  polyg = gaiaAddPolygonToGeomColl (bbox, 5, 0);
+	  rect = polyg->Exterior;
+	  gaiaSetPoint (rect->Coords, 0, geo->MinX, geo->MinY);	/* vertex # 1 */
+	  gaiaSetPoint (rect->Coords, 1, geo->MaxX, geo->MinY);	/* vertex # 2 */
+	  gaiaSetPoint (rect->Coords, 2, geo->MaxX, geo->MaxY);	/* vertex # 3 */
+	  gaiaSetPoint (rect->Coords, 3, geo->MinX, geo->MaxY);	/* vertex # 4 */
+	  gaiaSetPoint (rect->Coords, 4, geo->MinX, geo->MinY);	/* vertex # 5 [same as vertex # 1 to close the polygon] */
+	  gaiaToSpatiaLiteBlobWkb (bbox, &p_result, &len);
+	  gaiaFreeGeomColl (bbox);
+	  sqlite3_result_blob (context, p_result, len, free);
       }
     gaiaFreeGeomColl (geo);
 }
@@ -9437,24 +9432,19 @@ fnct_Expand (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
-	  if (!gaiaIsValid (geo))
-	      sqlite3_result_null (context);
-	  else
-	    {
-		gaiaMbrGeometry (geo);
-		bbox = gaiaAllocGeomColl ();
-		bbox->Srid = geo->Srid;
-		polyg = gaiaAddPolygonToGeomColl (bbox, 5, 0);
-		rect = polyg->Exterior;
-		gaiaSetPoint (rect->Coords, 0, geo->MinX - tic, geo->MinY - tic);	/* vertex # 1 */
-		gaiaSetPoint (rect->Coords, 1, geo->MaxX + tic, geo->MinY - tic);	/* vertex # 2 */
-		gaiaSetPoint (rect->Coords, 2, geo->MaxX + tic, geo->MaxY + tic);	/* vertex # 3 */
-		gaiaSetPoint (rect->Coords, 3, geo->MinX - tic, geo->MaxY + tic);	/* vertex # 4 */
-		gaiaSetPoint (rect->Coords, 4, geo->MinX - tic, geo->MinY - tic);	/* vertex # 5 [same as vertex # 1 to close the polygon] */
-		gaiaToSpatiaLiteBlobWkb (bbox, &p_result, &len);
-		gaiaFreeGeomColl (bbox);
-		sqlite3_result_blob (context, p_result, len, free);
-	    }
+	  gaiaMbrGeometry (geo);
+	  bbox = gaiaAllocGeomColl ();
+	  bbox->Srid = geo->Srid;
+	  polyg = gaiaAddPolygonToGeomColl (bbox, 5, 0);
+	  rect = polyg->Exterior;
+	  gaiaSetPoint (rect->Coords, 0, geo->MinX - tic, geo->MinY - tic);	/* vertex # 1 */
+	  gaiaSetPoint (rect->Coords, 1, geo->MaxX + tic, geo->MinY - tic);	/* vertex # 2 */
+	  gaiaSetPoint (rect->Coords, 2, geo->MaxX + tic, geo->MaxY + tic);	/* vertex # 3 */
+	  gaiaSetPoint (rect->Coords, 3, geo->MinX - tic, geo->MaxY + tic);	/* vertex # 4 */
+	  gaiaSetPoint (rect->Coords, 4, geo->MinX - tic, geo->MinY - tic);	/* vertex # 5 [same as vertex # 1 to close the polygon] */
+	  gaiaToSpatiaLiteBlobWkb (bbox, &p_result, &len);
+	  gaiaFreeGeomColl (bbox);
+	  sqlite3_result_blob (context, p_result, len, free);
       }
     gaiaFreeGeomColl (geo);
 }
@@ -16516,7 +16506,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -16600,7 +16591,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -16609,7 +16601,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }

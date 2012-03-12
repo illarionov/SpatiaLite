@@ -492,9 +492,7 @@ insert_epsg_srid (sqlite3 * handle, int srid)
 /* inserting a single EPSG definition into the SPATIAL_REF_SYS table */
     struct epsg_defs *first = NULL;
     struct epsg_defs *last = NULL;
-    struct epsg_defs *p;
     char sql[1024];
-    char *errMsg = NULL;
     int ret;
     int error = 0;
     sqlite3_stmt *stmt;
