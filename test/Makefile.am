@@ -33,7 +33,8 @@ check_PROGRAMS = check_endian \
 		check_spatialindex \
 		check_exif \
 		check_relations_fncts \
-		check_extra_relations_fncts
+		check_extra_relations_fncts \
+		check_geoscvt_fncts
 
 AM_CFLAGS = -I@srcdir@/../src/headers
 AM_LDFLAGS = -L../src -lspatialite -lm $(GCOV_FLAGS)
