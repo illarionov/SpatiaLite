@@ -8923,6 +8923,46 @@ fnct_CoordDimension (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_NDims (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_NDims(BLOB encoded geometry)
+/
+/ returns:
+/ 2, 3 or 4
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int result = 0;
+    gaiaGeomCollPtr geo = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  if (geo->DimensionModel == GAIA_XY)
+	      result = 2;
+	  else if (geo->DimensionModel == GAIA_XY_Z)
+	      result = 3;
+	  else if (geo->DimensionModel == GAIA_XY_M)
+	      result = 3;
+	  else if (geo->DimensionModel == GAIA_XY_Z_M)
+	      result = 4;
+	  sqlite3_result_int (context, result);
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
 fnct_GeometryType (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -9345,6 +9385,72 @@ fnct_Envelope (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		gaiaSetPoint (rect->Coords, 2, geo->MaxX, geo->MaxY);	/* vertex # 3 */
 		gaiaSetPoint (rect->Coords, 3, geo->MinX, geo->MaxY);	/* vertex # 4 */
 		gaiaSetPoint (rect->Coords, 4, geo->MinX, geo->MinY);	/* vertex # 5 [same as vertex # 1 to close the polygon] */
+		gaiaToSpatiaLiteBlobWkb (bbox, &p_result, &len);
+		gaiaFreeGeomColl (bbox);
+		sqlite3_result_blob (context, p_result, len, free);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
+fnct_Expand (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_Expand(BLOB encoded geometry, double amount)
+/
+/ returns the MBR for current geometry expanded by "amount" in each direction
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    unsigned char *p_result = NULL;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr bbox;
+    gaiaPolygonPtr polyg;
+    gaiaRingPtr rect;
+    double tic;
+    int int_value;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	tic = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  tic = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  if (!gaiaIsValid (geo))
+	      sqlite3_result_null (context);
+	  else
+	    {
+		gaiaMbrGeometry (geo);
+		bbox = gaiaAllocGeomColl ();
+		bbox->Srid = geo->Srid;
+		polyg = gaiaAddPolygonToGeomColl (bbox, 5, 0);
+		rect = polyg->Exterior;
+		gaiaSetPoint (rect->Coords, 0, geo->MinX - tic, geo->MinY - tic);	/* vertex # 1 */
+		gaiaSetPoint (rect->Coords, 1, geo->MaxX + tic, geo->MinY - tic);	/* vertex # 2 */
+		gaiaSetPoint (rect->Coords, 2, geo->MaxX + tic, geo->MaxY + tic);	/* vertex # 3 */
+		gaiaSetPoint (rect->Coords, 3, geo->MinX - tic, geo->MaxY + tic);	/* vertex # 4 */
+		gaiaSetPoint (rect->Coords, 4, geo->MinX - tic, geo->MinY - tic);	/* vertex # 5 [same as vertex # 1 to close the polygon] */
 		gaiaToSpatiaLiteBlobWkb (bbox, &p_result, &len);
 		gaiaFreeGeomColl (bbox);
 		sqlite3_result_blob (context, p_result, len, free);
@@ -10685,6 +10791,110 @@ fnct_NumGeometries (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	    {
 		/* counts how many polygons are there */
 		cnt++;
+		polyg = polyg->Next;
+	    }
+	  sqlite3_result_int (context, cnt);
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
+fnct_NPoints (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_NPoints(BLOB encoded GEOMETRYCOLLECTION)
+/
+/ returns the total number of points/vertices for current geometry 
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int cnt = 0;
+    int ib;
+    gaiaPointPtr point;
+    gaiaLinestringPtr line;
+    gaiaPolygonPtr polyg;
+    gaiaRingPtr rng;
+    gaiaGeomCollPtr geo = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  point = geo->FirstPoint;
+	  while (point)
+	    {
+		/* counts how many points are there */
+		cnt++;
+		point = point->Next;
+	    }
+	  line = geo->FirstLinestring;
+	  while (line)
+	    {
+		/* counts how many points are there */
+		cnt += line->Points;
+		line = line->Next;
+	    }
+	  polyg = geo->FirstPolygon;
+	  while (polyg)
+	    {
+		/* counts how many points are in the exterior ring */
+		rng = polyg->Exterior;
+		cnt += rng->Points;
+		for (ib = 0; ib < polyg->NumInteriors; ib++)
+		  {
+		      /* processing any interior ring */
+		      rng = polyg->Interiors + ib;
+		      cnt += rng->Points;
+		  }
+		polyg = polyg->Next;
+	    }
+	  sqlite3_result_int (context, cnt);
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
+fnct_NRings (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_NRings(BLOB encoded GEOMETRYCOLLECTION)
+/
+/ returns the total number of rings for current geometry 
+/ (this including both interior and exterior rings)
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int cnt = 0;
+    gaiaPolygonPtr polyg;
+    gaiaGeomCollPtr geo = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  polyg = geo->FirstPolygon;
+	  while (polyg)
+	    {
+		/* counts how many rings are there */
+		cnt += polyg->NumInteriors + 1;
 		polyg = polyg->Next;
 	    }
 	  sqlite3_result_int (context, cnt);
@@ -16306,7 +16516,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -16390,7 +16601,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -16399,7 +16611,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -17099,6 +17312,8 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_Dimension, 0, 0);
     sqlite3_create_function (db, "CoordDimension", 1, SQLITE_ANY, 0,
 			     fnct_CoordDimension, 0, 0);
+    sqlite3_create_function (db, "ST_NDims", 1, SQLITE_ANY, 0,
+			     fnct_NDims, 0, 0);
     sqlite3_create_function (db, "GeometryType", 1, SQLITE_ANY, 0,
 			     fnct_GeometryType, 0, 0);
     sqlite3_create_function (db, "ST_GeometryType", 1, SQLITE_ANY, 0,
@@ -17119,6 +17334,8 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     0, 0);
     sqlite3_create_function (db, "ST_Envelope", 1, SQLITE_ANY, 0,
 			     fnct_Envelope, 0, 0);
+    sqlite3_create_function (db, "ST_Expand", 2, SQLITE_ANY, 0,
+			     fnct_Expand, 0, 0);
     sqlite3_create_function (db, "X", 1, SQLITE_ANY, 0, fnct_X, 0, 0);
     sqlite3_create_function (db, "Y", 1, SQLITE_ANY, 0, fnct_Y, 0, 0);
     sqlite3_create_function (db, "Z", 1, SQLITE_ANY, 0, fnct_Z, 0, 0);
@@ -17264,6 +17481,10 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_LinesFromRings, 0, 0);
     sqlite3_create_function (db, "ST_LinesFromRings", 2, SQLITE_ANY, 0,
 			     fnct_LinesFromRings, 0, 0);
+    sqlite3_create_function (db, "ST_NPoints", 1, SQLITE_ANY, 0,
+			     fnct_NPoints, 0, 0);
+    sqlite3_create_function (db, "ST_nrings", 1, SQLITE_ANY, 0,
+			     fnct_NRings, 0, 0);
 
 #ifndef OMIT_GEOS		/* including GEOS */
     sqlite3_create_function (db, "BuildArea", 1, SQLITE_ANY, 0, fnct_BuildArea,
@@ -17782,7 +18003,7 @@ spatialite_cleanup ()
 #ifndef OMIT_GEOS
     finishGEOS ();
 #endif
-    sqlite3_reset_auto_extension();
+    sqlite3_reset_auto_extension ();
 }
 
 #if !(defined _WIN32) || defined(__MINGW__)
