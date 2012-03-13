@@ -11389,6 +11389,83 @@ fnct_ShiftCoords (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_Translate (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ Translate(BLOBencoded geometry, shiftX, shiftY, shiftZ)
+/
+/ returns a new geometry that is the original one received, but with shifted coordinates
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int len;
+    unsigned char *p_result = NULL;
+    gaiaGeomCollPtr geo = NULL;
+    double shift_x;
+    double shift_y;
+    double shift_z;
+    int int_value;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	shift_x = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  shift_x = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	shift_y = sqlite3_value_double (argv[2]);
+    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[2]);
+	  shift_y = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
+	shift_z = sqlite3_value_double (argv[3]);
+    else if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[3]);
+	  shift_z = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  gaiaShiftCoords3D (geo, shift_x, shift_y, shift_z);
+	  gaiaToSpatiaLiteBlobWkb (geo, &p_result, &len);
+	  if (!p_result)
+	      sqlite3_result_null (context);
+	  else
+	      sqlite3_result_blob (context, p_result, len, free);
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
 fnct_ScaleCoords (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -16581,7 +16658,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -16665,7 +16743,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -16674,7 +16753,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -17465,6 +17545,8 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_ShiftCoords, 0, 0);
     sqlite3_create_function (db, "ShiftCoordinates", 3, SQLITE_ANY, 0,
 			     fnct_ShiftCoords, 0, 0);
+    sqlite3_create_function (db, "ST_Translate", 4, SQLITE_ANY, 0,
+			     fnct_Translate, 0, 0);
     sqlite3_create_function (db, "ScaleCoords", 2, SQLITE_ANY, 0,
 			     fnct_ScaleCoords, 0, 0);
     sqlite3_create_function (db, "ScaleCoordinates", 2, SQLITE_ANY, 0,

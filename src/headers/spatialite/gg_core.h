@@ -272,7 +272,8 @@ extern "C"
  conversion will be silently applied.
  */
     GAIAGEO_DECLARE void gaiaCopyLinestringCoordsReverse (gaiaLinestringPtr dst,
-						   gaiaLinestringPtr src);
+							  gaiaLinestringPtr
+							  src);
 
 /**
  Allocates a 2D RING [XY]
@@ -382,7 +383,8 @@ extern "C"
  if dimensions aren't the same for both objects, then the appropriate
  conversion will be silently applied.
  */
-    GAIAGEO_DECLARE void gaiaCopyRingCoordsReverse (gaiaRingPtr dst, gaiaRingPtr src);
+    GAIAGEO_DECLARE void gaiaCopyRingCoordsReverse (gaiaRingPtr dst,
+						    gaiaRingPtr src);
 
 /**
  Allocates a 2D POLYGON [XY]
@@ -1452,10 +1454,26 @@ extern "C"
  \param shift_x X axis shift factor.
  \param shift_y Y axis shift factor.
 
- \sa gaiaScaleCoords, gaiaRotateCoords, gaiaReflectCoords, gaiaSwapCoords
+ \sa gaiaScaleCoords, gaiaRotateCoords, gaiaReflectCoords, gaiaSwapCoords,
+     gaiaShiftCoords3D
  */
     GAIAGEO_DECLARE void gaiaShiftCoords (gaiaGeomCollPtr geom, double shift_x,
 					  double shift_y);
+
+/**
+ Shifts any coordinate within a 3D Geometry object
+
+ \param geom pointer to Geometry object.
+ \param shift_x X axis shift factor.
+ \param shift_y Y axis shift factor.
+ \param shift_z Z axis shift factor.
+
+ \sa gaiaScaleCoords, gaiaRotateCoords, gaiaReflectCoords, gaiaSwapCoords,
+     gaiaShiftCoords
+ */
+    GAIAGEO_DECLARE void gaiaShiftCoords3D (gaiaGeomCollPtr geom,
+					    double shift_x, double shift_y,
+					    double shift_z);
 
 /**
  Scales any coordinate within a Geometry object
