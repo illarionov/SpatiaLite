@@ -1483,6 +1483,12 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/km_m.testcase \
 	sql_stmt_tests/ktorrent_grad1.jpg \
 	sql_stmt_tests/ktorrent_sidebar.gif \
+	sql_stmt_tests/lhr1.testcase \
+	sql_stmt_tests/lhr2.testcase \
+	sql_stmt_tests/lhr3.testcase \
+	sql_stmt_tests/lhr4.testcase \
+	sql_stmt_tests/lhr5.testcase \
+	sql_stmt_tests/lhr6.testcase \
 	sql_stmt_tests/linefromtext1.testcase \
 	sql_stmt_tests/linefromtext2.testcase \
 	sql_stmt_tests/linemerge10.testcase \
@@ -1806,6 +1812,7 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/output7.testcase \
 	sql_stmt_tests/output8.testcase \
 	sql_stmt_tests/output9.testcase \
+	sql_stmt_tests/pippo \
 	sql_stmt_tests/pi.testcase \
 	sql_stmt_tests/pointfromtext1.testcase \
 	sql_stmt_tests/pointfromtext2.testcase \
@@ -1919,6 +1926,12 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/relations4.testcase \
 	sql_stmt_tests/relations5.testcase \
 	sql_stmt_tests/relations6.testcase \
+	sql_stmt_tests/reverse1.testcase \
+	sql_stmt_tests/reverse2.testcase \
+	sql_stmt_tests/reverse3.testcase \
+	sql_stmt_tests/reverse4.testcase \
+	sql_stmt_tests/reverse5.testcase \
+	sql_stmt_tests/reverse6.testcase \
 	sql_stmt_tests/ring10.testcase \
 	sql_stmt_tests/ring11.testcase \
 	sql_stmt_tests/ring12.testcase \
@@ -2249,6 +2262,25 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/transform7.testcase \
 	sql_stmt_tests/transform8.testcase \
 	sql_stmt_tests/transform9.testcase \
+	sql_stmt_tests/translate10.testcase \
+	sql_stmt_tests/translate11.testcase \
+	sql_stmt_tests/translate12.testcase \
+	sql_stmt_tests/translate13.testcase \
+	sql_stmt_tests/translate14.testcase \
+	sql_stmt_tests/translate15.testcase \
+	sql_stmt_tests/translate16.testcase \
+	sql_stmt_tests/translate17.testcase \
+	sql_stmt_tests/translate18.testcase \
+	sql_stmt_tests/translate19.testcase \
+	sql_stmt_tests/translate1.testcase \
+	sql_stmt_tests/translate2.testcase \
+	sql_stmt_tests/translate3.testcase \
+	sql_stmt_tests/translate4.testcase \
+	sql_stmt_tests/translate5.testcase \
+	sql_stmt_tests/translate6.testcase \
+	sql_stmt_tests/translate7.testcase \
+	sql_stmt_tests/translate8.testcase \
+	sql_stmt_tests/translate9.testcase \
 	sql_stmt_tests/trivial.sqlite_RO \
 	sql_stmt_tests/unaryunion1.testcase \
 	sql_stmt_tests/unaryunion2.testcase \

@@ -63,8 +63,14 @@ int main (int argc, char *argv[])
     gaiaGeomCollPtr geom2;
     gaiaGeomCollPtr geom3;
     gaiaLinestringPtr ln;
+    gaiaLinestringPtr line1;
+    gaiaLinestringPtr line2;
     gaiaPolygonPtr pg;
     gaiaRingPtr rng;
+    gaiaRingPtr ring1;
+    gaiaRingPtr ring2;
+    gaiaPolygonPtr polyg1;
+    gaiaPolygonPtr polyg2;
     double xy[6];
     unsigned char *blob;
     int size;
@@ -662,6 +668,282 @@ int main (int argc, char *argv[])
         fprintf(stderr, "gaiaIntersect: unexpected result %1.6f %1.6f|\n", min, max);
         return -51;
     }
+
+/* cloning a Linestring XY */
+    line1 = gaiaAllocLinestring(4);
+    gaiaLineSetPoint(line1, 0, 1.1, 1.2, 100.1, 10.1);
+    gaiaLineSetPoint(line1, 1, 1.3, 1.4, 100.2, 10.2);
+    gaiaLineSetPoint(line1, 2, 1.5, 1.6, 100.3, 10.3);
+    gaiaLineSetPoint(line1, 3, 1.7, 1.8, 100.4, 10.4);
+    line2 = gaiaCloneLinestringSpecial(line1, GAIA_SAME_ORDER);
+    gaiaFreeLinestring(line2);
+    line2 = gaiaCloneLinestringSpecial(line1, GAIA_REVERSE_ORDER);
+    gaiaFreeLinestring(line2);
+    gaiaFreeLinestring(line1);
+
+/* cloning a Linestring XYZ */
+    line1 = gaiaAllocLinestringXYZ(4);
+    gaiaLineSetPoint(line1, 0, 1.1, 1.2, 100.1, 10.1);
+    gaiaLineSetPoint(line1, 1, 1.3, 1.4, 100.2, 10.2);
+    gaiaLineSetPoint(line1, 2, 1.5, 1.6, 100.3, 10.3);
+    gaiaLineSetPoint(line1, 3, 1.7, 1.8, 100.4, 10.4);
+    line2 = gaiaCloneLinestringSpecial(line1, GAIA_SAME_ORDER);
+    gaiaFreeLinestring(line2);
+    line2 = gaiaCloneLinestringSpecial(line1, GAIA_REVERSE_ORDER);
+    gaiaFreeLinestring(line2);
+    gaiaFreeLinestring(line1);
+
+/* cloning a Linestring XYM */
+    line1 = gaiaAllocLinestringXYM(4);
+    gaiaLineSetPoint(line1, 0, 1.1, 1.2, 100.1, 10.1);
+    gaiaLineSetPoint(line1, 1, 1.3, 1.4, 100.2, 10.2);
+    gaiaLineSetPoint(line1, 2, 1.5, 1.6, 100.3, 10.3);
+    gaiaLineSetPoint(line1, 3, 1.7, 1.8, 100.4, 10.4);
+    line2 = gaiaCloneLinestringSpecial(line1, GAIA_SAME_ORDER);
+    gaiaFreeLinestring(line2);
+    line2 = gaiaCloneLinestringSpecial(line1, GAIA_REVERSE_ORDER);
+    gaiaFreeLinestring(line2);
+    gaiaFreeLinestring(line1);
+
+/* cloning a Linestring XYZM */
+    line1 = gaiaAllocLinestringXYZM(4);
+    gaiaLineSetPoint(line1, 0, 1.1, 1.2, 100.1, 10.1);
+    gaiaLineSetPoint(line1, 1, 1.3, 1.4, 100.2, 10.2);
+    gaiaLineSetPoint(line1, 2, 1.5, 1.6, 100.3, 10.3);
+    gaiaLineSetPoint(line1, 3, 1.7, 1.8, 100.4, 10.4);
+    line2 = gaiaCloneLinestringSpecial(line1, GAIA_SAME_ORDER);
+    gaiaFreeLinestring(line2);
+    line2 = gaiaCloneLinestringSpecial(line1, GAIA_REVERSE_ORDER);
+    gaiaFreeLinestring(line2);
+    gaiaFreeLinestring(line1);
+
+/* cloning a Ring XY */
+    ring1 = gaiaAllocRing(5);
+    gaiaRingSetPoint(ring1, 0, 1.1, 1.1, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.2, 1.1, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 1.2, 1.2, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.1, 1.2, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.1, 1.1, 100.1, 10.1);
+    ring2 = gaiaCloneRingSpecial(ring1, GAIA_SAME_ORDER);
+    gaiaFreeRing(ring2);
+    ring2 = gaiaCloneRingSpecial(ring1, GAIA_REVERSE_ORDER);
+    gaiaFreeRing(ring2);
+    gaiaFreeRing(ring1);
+
+/* cloning a Ring XYZ */
+    ring1 = gaiaAllocRingXYZ(5);
+    gaiaRingSetPoint(ring1, 0, 1.1, 1.1, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.2, 1.1, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 1.2, 1.2, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.1, 1.2, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.1, 1.1, 100.1, 10.1);
+    ring2 = gaiaCloneRingSpecial(ring1, GAIA_SAME_ORDER);
+    gaiaFreeRing(ring2);
+    ring2 = gaiaCloneRingSpecial(ring1, GAIA_REVERSE_ORDER);
+    gaiaFreeRing(ring2);
+    gaiaFreeRing(ring1);
+
+/* cloning a Ring XYM */
+    ring1 = gaiaAllocRingXYM(5);
+    gaiaRingSetPoint(ring1, 0, 1.1, 1.1, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.2, 1.1, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 1.2, 1.2, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.1, 1.2, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.1, 1.1, 100.1, 10.1);
+    ring2 = gaiaCloneRingSpecial(ring1, GAIA_SAME_ORDER);
+    gaiaFreeRing(ring2);
+    ring2 = gaiaCloneRingSpecial(ring1, GAIA_REVERSE_ORDER);
+    gaiaFreeRing(ring2);
+    gaiaFreeRing(ring1);
+
+/* cloning a Ring XYZM */
+    ring1 = gaiaAllocRingXYZM(4);
+    gaiaRingSetPoint(ring1, 0, 1.1, 1.1, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.2, 1.1, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 1.2, 1.2, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.1, 1.2, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.1, 1.1, 100.1, 10.1);
+    ring2 = gaiaCloneRingSpecial(ring1, GAIA_SAME_ORDER);
+    gaiaFreeRing(ring2);
+    ring2 = gaiaCloneRingSpecial(ring1, GAIA_REVERSE_ORDER);
+    gaiaFreeRing(ring2);
+    gaiaFreeRing(ring1);
+
+/* cloning a Polygon XY (1) */
+    polyg1 = gaiaAllocPolygon(5, 1);
+    ring1 = polyg1->Exterior;
+    gaiaRingSetPoint(ring1, 0, 1.0, 1.0, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 2.0, 1.0, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 2.0, 2.0, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.0, 2.0, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.0, 1.0, 100.1, 10.1);
+    ring1 = gaiaAddInteriorRing (polyg1, 0, 5);
+    gaiaRingSetPoint(ring1, 0, 1.1, 1.1, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.2, 1.1, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 1.2, 1.2, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.1, 1.2, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.1, 1.1, 100.1, 10.1);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_SAME_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_REVERSE_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_LHR_ORDER);
+    gaiaFreePolygon(polyg2);
+    gaiaFreePolygon(polyg1);
+
+/* cloning a Polygon XY (2) */
+    polyg1 = gaiaAllocPolygon(5, 1);
+    ring1 = polyg1->Exterior;
+    gaiaRingSetPoint(ring1, 0, 1.0, 1.0, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.0, 2.0, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 2.0, 2.0, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 2.0, 1.0, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.0, 1.0, 100.1, 10.1);
+    ring1 = gaiaAddInteriorRing (polyg1, 0, 5);
+    gaiaRingSetPoint(ring1, 0, 1.1, 1.1, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.1, 1.2, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 1.2, 1.2, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.2, 1.1, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.1, 1.1, 100.1, 10.1);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_SAME_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_REVERSE_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_LHR_ORDER);
+    gaiaFreePolygon(polyg2);
+    gaiaFreePolygon(polyg1);
+
+/* cloning a Polygon XYZ (1) */
+    polyg1 = gaiaAllocPolygonXYZ(5, 1);
+    ring1 = polyg1->Exterior;
+    gaiaRingSetPoint(ring1, 0, 1.0, 1.0, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 2.0, 1.0, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 2.0, 2.0, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.0, 2.0, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.0, 1.0, 100.1, 10.1);
+    ring1 = gaiaAddInteriorRing (polyg1, 0, 5);
+    gaiaRingSetPoint(ring1, 0, 1.1, 1.1, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.2, 1.1, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 1.2, 1.2, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.1, 1.2, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.1, 1.1, 100.1, 10.1);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_SAME_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_REVERSE_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_LHR_ORDER);
+    gaiaFreePolygon(polyg2);
+    gaiaFreePolygon(polyg1);
+
+/* cloning a Polygon XYZ (2) */
+    polyg1 = gaiaAllocPolygonXYZ(5, 1);
+    ring1 = polyg1->Exterior;
+    gaiaRingSetPoint(ring1, 0, 1.0, 1.0, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.0, 2.0, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 2.0, 2.0, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 2.0, 1.0, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.0, 1.0, 100.1, 10.1);
+    ring1 = gaiaAddInteriorRing (polyg1, 0, 5);
+    gaiaRingSetPoint(ring1, 0, 1.1, 1.1, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.1, 1.2, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 1.2, 1.2, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.2, 1.1, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.1, 1.1, 100.1, 10.1);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_SAME_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_REVERSE_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_LHR_ORDER);
+    gaiaFreePolygon(polyg2);
+    gaiaFreePolygon(polyg1);
+
+/* cloning a Polygon XYM (1) */
+    polyg1 = gaiaAllocPolygonXYM(5, 1);
+    ring1 = polyg1->Exterior;
+    gaiaRingSetPoint(ring1, 0, 1.0, 1.0, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 2.0, 1.0, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 2.0, 2.0, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.0, 2.0, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.0, 1.0, 100.1, 10.1);
+    ring1 = gaiaAddInteriorRing (polyg1, 0, 5);
+    gaiaRingSetPoint(ring1, 0, 1.1, 1.1, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.2, 1.1, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 1.2, 1.2, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.1, 1.2, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.1, 1.1, 100.1, 10.1);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_SAME_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_REVERSE_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_LHR_ORDER);
+    gaiaFreePolygon(polyg2);
+    gaiaFreePolygon(polyg1);
+
+/* cloning a Polygon XYM (2) */
+    polyg1 = gaiaAllocPolygonXYM(5, 1);
+    ring1 = polyg1->Exterior;
+    gaiaRingSetPoint(ring1, 0, 1.0, 1.0, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.0, 2.0, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 2.0, 2.0, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 2.0, 1.0, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.0, 1.0, 100.1, 10.1);
+    ring1 = gaiaAddInteriorRing (polyg1, 0, 5);
+    gaiaRingSetPoint(ring1, 0, 1.1, 1.1, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.1, 1.2, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 1.2, 1.2, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.2, 1.1, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.1, 1.1, 100.1, 10.1);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_SAME_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_REVERSE_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_LHR_ORDER);
+    gaiaFreePolygon(polyg2);
+    gaiaFreePolygon(polyg1);
+
+/* cloning a Polygon XYZM (1) */
+    polyg1 = gaiaAllocPolygonXYZM(5, 1);
+    ring1 = polyg1->Exterior;
+    gaiaRingSetPoint(ring1, 0, 1.0, 1.0, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 2.0, 1.0, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 2.0, 2.0, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.0, 2.0, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.0, 1.0, 100.1, 10.1);
+    ring1 = gaiaAddInteriorRing (polyg1, 0, 5);
+    gaiaRingSetPoint(ring1, 0, 1.1, 1.1, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.2, 1.1, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 1.2, 1.2, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.1, 1.2, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.1, 1.1, 100.1, 10.1);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_SAME_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_REVERSE_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_LHR_ORDER);
+    gaiaFreePolygon(polyg2);
+    gaiaFreePolygon(polyg1);
+
+/* cloning a Polygon XYZM (2) */
+    polyg1 = gaiaAllocPolygonXYZM(5, 1);
+    ring1 = polyg1->Exterior;
+    gaiaRingSetPoint(ring1, 0, 1.0, 1.0, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.0, 2.0, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 2.0, 2.0, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 2.0, 1.0, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.0, 1.0, 100.1, 10.1);
+    ring1 = gaiaAddInteriorRing (polyg1, 0, 5);
+    gaiaRingSetPoint(ring1, 0, 1.1, 1.1, 100.1, 10.1);
+    gaiaRingSetPoint(ring1, 1, 1.1, 1.2, 100.2, 10.2);
+    gaiaRingSetPoint(ring1, 2, 1.2, 1.2, 100.3, 10.3);
+    gaiaRingSetPoint(ring1, 3, 1.2, 1.1, 100.4, 10.4);
+    gaiaRingSetPoint(ring1, 4, 1.1, 1.1, 100.1, 10.1);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_SAME_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_REVERSE_ORDER);
+    gaiaFreePolygon(polyg2);
+    polyg2 = gaiaClonePolygonSpecial(polyg1, GAIA_LHR_ORDER);
+    gaiaFreePolygon(polyg2);
+    gaiaFreePolygon(polyg1);
 
     spatialite_cleanup();
 
