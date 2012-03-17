@@ -1923,6 +1923,15 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 				<td></td>
 				<td></td>
 				<td>return a geometric object obtained by translating coordinates according to shiftX, shiftY and shiftZ values</td></tr>
+			<tr><td><b>ST_Shift_Longitude</b></td>
+				<td>ST_Shift_Longitude( geom <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td>return a geometric object obtained by translating any negative longitude by 360.<hr>
+				Only meaningful for geographic (longitude/latitude) coordinates.<br>
+                                Negative longitudes (-180/0) will be shifted by 360, thus allowing to represent longitudes in the 0/360 range and effectively crossing the International Date Line. </td></tr>
 			<tr><td><b>ScaleCoords</b><br><b>ScaleCoordinates</b></td>
 				<td>ScaleCoords( geom <i>Geometry</i> , scaleX <i>Double precision</i> [ , scaleY <i>Double precision</i> ] ) : <i>Geometry</i><hr>
 					ScaleCoordinates( geom <i>Geometry</i> , scaleX <i>Double precision</i> [ , scaleY <i>Double precision</i> ] ) : <i>Geometry</i></td>

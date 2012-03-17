@@ -1455,7 +1455,7 @@ extern "C"
  \param shift_y Y axis shift factor.
 
  \sa gaiaScaleCoords, gaiaRotateCoords, gaiaReflectCoords, gaiaSwapCoords,
-     gaiaShiftCoords3D
+     gaiaShiftCoords3D, gaiaShiftLongitude
  */
     GAIAGEO_DECLARE void gaiaShiftCoords (gaiaGeomCollPtr geom, double shift_x,
 					  double shift_y);
@@ -1469,11 +1469,26 @@ extern "C"
  \param shift_z Z axis shift factor.
 
  \sa gaiaScaleCoords, gaiaRotateCoords, gaiaReflectCoords, gaiaSwapCoords,
-     gaiaShiftCoords
+     gaiaShiftCoords, gaiaShiftLongitude
  */
     GAIAGEO_DECLARE void gaiaShiftCoords3D (gaiaGeomCollPtr geom,
 					    double shift_x, double shift_y,
 					    double shift_z);
+
+/**
+ Shifts negative longitudes
+
+ \param geom pointer to Geometry object.
+
+ \sa gaiaShiftCoords, gaiaShiftCoords3D
+
+ \note only intended for geographic (longitude/latitude) coordinates.
+ Negative longitudes (-180/0) will be shifted by 360, thus allowing
+ to represent longitudes in the 0/360 range and effectively crossing 
+ the International Date Line.
+ 
+ */
+    GAIAGEO_DECLARE void gaiaShiftLongitude (gaiaGeomCollPtr geom);
 
 /**
  Scales any coordinate within a Geometry object

@@ -1812,7 +1812,6 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/output7.testcase \
 	sql_stmt_tests/output8.testcase \
 	sql_stmt_tests/output9.testcase \
-	sql_stmt_tests/pippo \
 	sql_stmt_tests/pi.testcase \
 	sql_stmt_tests/pointfromtext1.testcase \
 	sql_stmt_tests/pointfromtext2.testcase \
