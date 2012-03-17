@@ -43,7 +43,11 @@ TESTS = $(check_PROGRAMS)
 
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 
-EXTRA_DIST = shapetest1.dbf \
+EXTRA_DIST = asprintf4win.h \
+	fnmatch_impl4win.h \
+	fnmatch4win.h \
+	scandir4win.h \
+	shapetest1.dbf \
 	shapetest1.prj \
 	shapetest1.qpj \
 	shapetest1.shp \
@@ -2056,3 +2060,4 @@ EXTRA_DIST = shapetest1.dbf \
 	sql_stmt_tests/wkb8.testcase \
 	sql_stmt_tests/wkb9.testcase \
 	sql_stmt_tests/yd_m.testcase
+

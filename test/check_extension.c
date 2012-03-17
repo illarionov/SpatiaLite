@@ -48,6 +48,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 
+#ifdef _WIN32
+#include "asprintf4win.h"
+#endif
+
 int main (int argc, char *argv[])
 {
     sqlite3 *db_handle = NULL;

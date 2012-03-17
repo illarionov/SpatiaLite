@@ -351,7 +351,11 @@ AM_CFLAGS = -I@srcdir@/../src/headers
 AM_LDFLAGS = -L../src -lspatialite -lm $(GCOV_FLAGS)
 TESTS = $(check_PROGRAMS)
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
-EXTRA_DIST = shapetest1.dbf \
+EXTRA_DIST = asprintf4win.h \
+	fnmatch_impl4win.h \
+	fnmatch4win.h \
+	scandir4win.h \
+	shapetest1.dbf \
 	shapetest1.prj \
 	shapetest1.qpj \
 	shapetest1.shp \
