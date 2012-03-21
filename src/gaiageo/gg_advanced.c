@@ -1300,7 +1300,10 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
       {
 	  /* checking LINESTRINGs */
 	  if (gaiaIsToxicLinestring (line))
-	      return 1;
+	    {
+		gaiaSetGeosErrorMsg ("gaiaIsToxic detected a toxic Linestring");
+		return 1;
+	    }
 	  line = line->Next;
       }
     polyg = geom->FirstPolygon;
@@ -1309,7 +1312,10 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
 	  /* checking POLYGONs */
 	  ring = polyg->Exterior;
 	  if (gaiaIsToxicRing (ring))
-	      return 1;
+	    {
+		gaiaSetGeosErrorMsg ("gaiaIsToxic detected a toxic Ring");
+		return 1;
+	    }
 	  gaiaMbrRing (ring);
 	  minx = ring->MinX;
 	  miny = ring->MinY;
@@ -1317,19 +1323,36 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
 	  maxy = ring->MaxY;
 	  for (ib = 0; ib < polyg->NumInteriors; ib++)
 	    {
+		const char *mismatch =
+		    "gaiaIsToxic detected a mismatchin Interior Ring";
 		ring = polyg->Interiors + ib;
 		if (gaiaIsToxicRing (ring))
-		    return 1;
+		  {
+		      gaiaSetGeosErrorMsg ("gaiaIsToxic detected a toxic Ring");
+		      return 1;
+		  }
 		/* checking if the Interior Ring MBR falls outside the Exterior Ring */
 		gaiaMbrRing (ring);
 		if (ring->MinX < minx)
-		    return 1;
+		  {
+		      gaiaSetGeosErrorMsg (mismatch);
+		      return 1;
+		  }
 		if (ring->MinY < miny)
-		    return 1;
+		  {
+		      gaiaSetGeosErrorMsg (mismatch);
+		      return 1;
+		  }
 		if (ring->MaxX > maxx)
-		    return 1;
+		  {
+		      gaiaSetGeosErrorMsg (mismatch);
+		      return 1;
+		  }
 		if (ring->MaxY > maxy)
-		    return 1;
+		  {
+		      gaiaSetGeosErrorMsg (mismatch);
+		      return 1;
+		  }
 	    }
 	  polyg = polyg->Next;
       }

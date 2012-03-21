@@ -493,7 +493,7 @@ int main (int argc, char *argv[])
     }
     sqlite3_free_table (results);
 
-    asprintf(&sql_statement, "select PKUID, testcase1, testcase2 from dbftest where testcase1 LIKE \"wind\%\";");
+    asprintf(&sql_statement, "select PKUID, testcase1, testcase2 from dbftest where testcase1 LIKE \"wind%%\";");
     ret = sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns, &err_msg);
     free(sql_statement);
     if (ret != SQLITE_OK) {

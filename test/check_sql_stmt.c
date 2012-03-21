@@ -152,9 +152,11 @@ int get_clean_line(FILE *f, char ** line)
     size_t end = 0;
     char *tmp_line = NULL;
 
-#ifndef _WIN32
+#if !defined(_WIN32) &&!defined(__APPLE__)
+/* expecpting to be on a sane minded platform [linux-like] */
     num_read = getline(&(tmp_line), &len, f);
 #else
+/* neither Windows nor MacOsX support getline() */
 	len = 1024 * 1024;
 	tmp_line = malloc(len);
 	if (fgets(tmp_line, len, f) == NULL)

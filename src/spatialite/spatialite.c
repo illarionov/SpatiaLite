@@ -4863,8 +4863,8 @@ create_faces_resolved (sqlite3 * sqlite, const char *view, const char *faces,
 }
 
 static int
-create_curves_resolved (sqlite3 * sqlite, const char *view, const char *curves,
-			char *edges)
+create_curves_resolved (sqlite3 * sqlite, const char *view,
+			const char *curves, char *edges)
 {
 /* creating the Curves Resolved VIEW */
     char sql[2048];
@@ -11086,8 +11086,8 @@ fnct_GeometryN (sqlite3_context * context, int argc, sqlite3_value ** argv)
 			      {
 				  gaiaGetPointXYZM (line->Coords, iv, &x, &y,
 						    &z, &m);
-				  gaiaSetPointXYZM (line2->Coords, iv, x, y,
-						    z, m);
+				  gaiaSetPointXYZM (line2->Coords, iv, x, y, z,
+						    m);
 			      }
 			    else
 			      {
@@ -11126,24 +11126,24 @@ fnct_GeometryN (sqlite3_context * context, int argc, sqlite3_value ** argv)
 			    /* copying the exterior ring POINTs */
 			    if (ring_in->DimensionModel == GAIA_XY_Z)
 			      {
-				  gaiaGetPointXYZ (ring_in->Coords, iv,
-						   &x, &y, &z);
-				  gaiaSetPointXYZ (ring_out->Coords, iv,
-						   x, y, z);
+				  gaiaGetPointXYZ (ring_in->Coords, iv, &x, &y,
+						   &z);
+				  gaiaSetPointXYZ (ring_out->Coords, iv, x, y,
+						   z);
 			      }
 			    else if (ring_in->DimensionModel == GAIA_XY_M)
 			      {
-				  gaiaGetPointXYM (ring_in->Coords, iv,
-						   &x, &y, &m);
-				  gaiaSetPointXYM (ring_out->Coords, iv,
-						   x, y, m);
+				  gaiaGetPointXYM (ring_in->Coords, iv, &x, &y,
+						   &m);
+				  gaiaSetPointXYM (ring_out->Coords, iv, x, y,
+						   m);
 			      }
 			    else if (ring_in->DimensionModel == GAIA_XY_Z_M)
 			      {
-				  gaiaGetPointXYZM (ring_in->Coords, iv,
-						    &x, &y, &z, &m);
-				  gaiaSetPointXYZM (ring_out->Coords,
-						    iv, x, y, z, m);
+				  gaiaGetPointXYZM (ring_in->Coords, iv, &x, &y,
+						    &z, &m);
+				  gaiaSetPointXYZM (ring_out->Coords, iv, x, y,
+						    z, m);
 			      }
 			    else
 			      {
@@ -11179,8 +11179,8 @@ fnct_GeometryN (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				    {
 					gaiaGetPointXYZM (ring_in->Coords, iv,
 							  &x, &y, &z, &m);
-					gaiaSetPointXYZM (ring_out->Coords,
-							  iv, x, y, z, m);
+					gaiaSetPointXYZM (ring_out->Coords, iv,
+							  x, y, z, m);
 				    }
 				  else
 				    {
@@ -15365,11 +15365,11 @@ auxPolygNodes (gaiaGeomCollPtr geom)
 			}
 		      /* Node found */
 		      if (result->DimensionModel == GAIA_XY_Z)
-			  gaiaAddPointToGeomCollXYZ (result, pt->X,
-						     pt->Y, pt->Z);
+			  gaiaAddPointToGeomCollXYZ (result, pt->X, pt->Y,
+						     pt->Z);
 		      else if (result->DimensionModel == GAIA_XY_M)
-			  gaiaAddPointToGeomCollXYM (result, pt->X,
-						     pt->Y, pt->M);
+			  gaiaAddPointToGeomCollXYM (result, pt->X, pt->Y,
+						     pt->M);
 		      else if (result->DimensionModel == GAIA_XY_Z_M)
 			  gaiaAddPointToGeomCollXYZM (result, pt->X,
 						      pt->Y, pt->Z, pt->M);
@@ -15518,13 +15518,23 @@ fnct_math_acos (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / or NULL if any error is encountered
 */
     int int_value;
+    int err = 0;
     double x;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     errno = 0;
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
       {
 	  x = acos (sqlite3_value_double (argv[0]));
+#ifdef __APPLE__
+	  if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
+	      ;
+	  else
+	      err = 1;
+#else
 	  if (errno == EDOM)
+	      err = 1;
+#endif
+	  if (err)
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -15534,7 +15544,16 @@ fnct_math_acos (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  int_value = sqlite3_value_int (argv[0]);
 	  x = int_value;
 	  x = acos (x);
+#ifdef __APPLE__
+	  if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
+	      ;
+	  else
+	      err = 1;
+#else
 	  if (errno == EDOM)
+	      err = 1;
+#endif
+	  if (err)
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -15554,12 +15573,22 @@ fnct_math_asin (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     int int_value;
     double x;
+    int err = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     errno = 0;
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
       {
 	  x = asin (sqlite3_value_double (argv[0]));
+#ifdef __APPLE__
+	  if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
+	      ;
+	  else
+	      err = 1;
+#else
 	  if (errno == EDOM)
+	      err = 1;
+#endif
+	  if (err)
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -15569,7 +15598,16 @@ fnct_math_asin (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  int_value = sqlite3_value_int (argv[0]);
 	  x = int_value;
 	  x = asin (x);
+#ifdef __APPLE__
+	  if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
+	      ;
+	  else
+	      err = 1;
+#else
 	  if (errno == EDOM)
+	      err = 1;
+#endif
+	  if (err)
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -15792,12 +15830,22 @@ fnct_math_logn (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     int int_value;
     double x;
+    int err = 0;
     errno = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
       {
 	  x = log (sqlite3_value_double (argv[0]));
+#ifdef __APPLE__
+	  if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
+	      ;
+	  else
+	      err = 1;
+#else
 	  if (errno == EDOM || errno == ERANGE)
+	      err = 1;
+#endif
+	  if (err)
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -15807,7 +15855,16 @@ fnct_math_logn (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  int_value = sqlite3_value_int (argv[0]);
 	  x = int_value;
 	  x = log (x);
+#ifdef __APPLE__
+	  if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
+	      ;
+	  else
+	      err = 1;
+#else
 	  if (errno == EDOM || errno == ERANGE)
+	      err = 1;
+#endif
+	  if (err)
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -15830,6 +15887,7 @@ fnct_math_logn2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double b = 1.0;
     double log1;
     double log2;
+    int err = 0;
     errno = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
@@ -15862,13 +15920,31 @@ fnct_math_logn2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     log1 = log (x);
+#ifdef __APPLE__
+    if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
+	;
+    else
+	err = 1;
+#else
     if (errno == EDOM || errno == ERANGE)
+	err = 1;
+#endif
+    if (err)
       {
 	  sqlite3_result_null (context);
 	  return;
       }
     log2 = log (b);
+#ifdef __APPLE__
+    if (fpclassify (log2) == FP_NORMAL || fpclassify (log2) == FP_ZERO)
+	;
+    else
+	err = 1;
+#else
     if (errno == EDOM || errno == ERANGE)
+	err = 1;
+#endif
+    if (err)
       {
 	  sqlite3_result_null (context);
 	  return;
@@ -15889,6 +15965,7 @@ fnct_math_log_2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double x;
     double log1;
     double log2;
+    int err = 0;
     errno = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
@@ -15904,7 +15981,16 @@ fnct_math_log_2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     log1 = log (x);
+#ifdef __APPLE__
+    if (fpclassify (log1) == FP_NORMAL || fpclassify (log1) == FP_ZERO)
+	;
+    else
+	err = 1;
+#else
     if (errno == EDOM || errno == ERANGE)
+	err = 1;
+#endif
+    if (err)
       {
 	  sqlite3_result_null (context);
 	  return;
@@ -15926,6 +16012,7 @@ fnct_math_log_10 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double x;
     double log1;
     double log2;
+    int err = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     errno = 0;
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
@@ -15941,7 +16028,16 @@ fnct_math_log_10 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     log1 = log (x);
+#ifdef __APPLE__
+    if (fpclassify (log1) == FP_NORMAL || fpclassify (log1) == FP_ZERO)
+	;
+    else
+	err = 1;
+#else
     if (errno == EDOM || errno == ERANGE)
+	err = 1;
+#endif
+    if (err)
       {
 	  sqlite3_result_null (context);
 	  return;
@@ -15975,6 +16071,7 @@ fnct_math_pow (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double x;
     double y;
     double p;
+    int err = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     errno = 0;
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
@@ -16002,7 +16099,16 @@ fnct_math_pow (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     p = pow (x, y);
-    if (errno == EDOM)
+#ifdef __APPLE__
+    if (fpclassify (p) == FP_NORMAL || fpclassify (p) == FP_ZERO)
+	;
+    else
+	err = 1;
+#else
+    if (errno == EDOM || errno == ERANGE)
+	err = 1;
+#endif
+    if (err)
 	sqlite3_result_null (context);
     else
 	sqlite3_result_double (context, p);
@@ -16253,6 +16359,7 @@ fnct_math_sqrt (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     int int_value;
     double x;
+    int err = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     errno = 0;
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
@@ -16268,7 +16375,16 @@ fnct_math_sqrt (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  int_value = sqlite3_value_int (argv[0]);
 	  x = int_value;
 	  x = sqrt (x);
+#ifdef __APPLE__
+	  if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
+	      ;
+	  else
+	      err = 1;
+#else
 	  if (errno == EDOM)
+	      err = 1;
+#endif
+	  if (err)
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -16697,7 +16813,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -16781,7 +16898,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -16790,7 +16908,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -18458,9 +18577,9 @@ check_views_layer_statistics (sqlite3 * sqlite)
 
 static int
 do_update_views_layer_statistics (sqlite3 * sqlite, const char *table,
-				  const char *column, int count, int has_coords,
-				  double min_x, double min_y, double max_x,
-				  double max_y)
+				  const char *column, int count,
+				  int has_coords, double min_x, double min_y,
+				  double max_x, double max_y)
 {
 /* update VIEWS_LAYER_STATISTICS [single table/geometry] */
     char sql[8192];
@@ -18598,9 +18717,9 @@ check_virts_layer_statistics (sqlite3 * sqlite)
 
 static int
 do_update_virts_layer_statistics (sqlite3 * sqlite, const char *table,
-				  const char *column, int count, int has_coords,
-				  double min_x, double min_y, double max_x,
-				  double max_y)
+				  const char *column, int count,
+				  int has_coords, double min_x, double min_y,
+				  double max_x, double max_y)
 {
 /* update VIRTS_LAYER_STATISTICS [single table/geometry] */
     char sql[8192];
