@@ -1271,6 +1271,54 @@ gaiaIsToxicRing (gaiaRingPtr ring)
     return 1;
 }
 
+static int
+gaiaIsSelfIntersectedRing (gaiaRingPtr ring, double *x, double *y)
+{
+/* checking a Ring for self-intersected points */
+    double x0;
+    double y0;
+    double z0;
+    double m0;
+    double x1;
+    double y1;
+    double z1;
+    double m1;
+    int iv;
+    int iv1;
+
+    for (iv = 1; iv < ring->Points; iv++)
+      {
+	  /* checking for self-intersections */
+	  gaiaRingGetPoint (ring, iv, &x0, &y0, &z0, &m0);
+	  for (iv1 = iv + 1; iv1 < ring->Points; iv1++)
+	    {
+		gaiaRingGetPoint (ring, iv1, &x1, &y1, &z1, &m1);
+		if (ring->DimensionModel == GAIA_XY
+		    || ring->DimensionModel == GAIA_XY_M)
+		  {
+		      if (x0 == x1 && y0 == y1)
+			{
+			    *x = x0;
+			    *y = y0;
+			    return 1;
+			}
+		  }
+		else if (ring->DimensionModel == GAIA_XY_Z
+			 || ring->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      if (x0 == x1 && y0 == y1 && z0 == z1)
+			{
+			    *x = x0;
+			    *y = y0;
+			    return 1;
+			}
+		  }
+	    }
+      }
+
+    return 0;
+}
+
 GAIAGEO_DECLARE int
 gaiaIsToxic (gaiaGeomCollPtr geom)
 {
@@ -1316,6 +1364,14 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
 		gaiaSetGeosErrorMsg ("gaiaIsToxic detected a toxic Ring");
 		return 1;
 	    }
+	  if (gaiaIsSelfIntersectedRing (ring, &minx, &miny))
+	    {
+		char buf[1024];
+		sprintf (buf, "gaiaIsToxic: self-intersection near %1.8f %1.8f",
+			 minx, miny);
+		gaiaSetGeosErrorMsg (buf);
+		return 1;
+	    }
 	  gaiaMbrRing (ring);
 	  minx = ring->MinX;
 	  miny = ring->MinY;
@@ -1329,6 +1385,15 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
 		if (gaiaIsToxicRing (ring))
 		  {
 		      gaiaSetGeosErrorMsg ("gaiaIsToxic detected a toxic Ring");
+		      return 1;
+		  }
+		if (gaiaIsSelfIntersectedRing (ring, &minx, &miny))
+		  {
+		      char buf[1024];
+		      sprintf (buf,
+			       "gaiaIsToxic: self-intersection near %1.8f %1.8f",
+			       minx, miny);
+		      gaiaSetGeosErrorMsg (buf);
 		      return 1;
 		  }
 		/* checking if the Interior Ring MBR falls outside the Exterior Ring */
