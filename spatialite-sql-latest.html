@@ -442,6 +442,14 @@ then a Geometry will be returned representing the MBR for this circle</td></tr>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td>construct a geometric object given its Well-known text Representation</td></tr>
+			<tr><td><b>ST_WKTToSQL</b></td>
+				<td>ST_WKTToSQL( wkt <i>String</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td><b>SQL/MM</b> compliant: simply an <i>alias name</i> for <b>ST_GeomFromText</b><hr>
+                                        <u>Please note</u>: <b>SRID=0</b> is always assumed.</td></tr>
 			<tr><td><b>PointFromText</b></td>
 				<td>PointFromText( wktPoint <i>String</i> [ , SRID <i>Integer</i>] ) : <i>Point</i><hr>
 					ST_PointFromText( wktPoint <i>String</i> [ , SRID <i>Integer</i>] ) : <i>Point</i></td>
@@ -545,6 +553,14 @@ then a Geometry will be returned representing the MBR for this circle</td></tr>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td>construct a geometric object given its Well-known binary Representation</td></tr>
+			<tr><td><b>ST_WKBToSQL</b></td>
+				<td>ST_WKBToSQL( wkbGeometry <i>Binary</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td><b>SQL/MM</b> compliant: simply an <i>alias name</i> for <b>ST_GeomFromWKB</b><hr>
+                                        <u>Please note</u>: <b>SRID=0</b> is always assumed.</td></tr>
 			<tr><td><b>PointFromWKB</b></td>
 				<td>PointFromWKB( wkbPoint <i>Binary</i> [ , SRID <i>Integer</i>] ) : <i>Point</i><hr>
 					ST_PointFromWKB( wkbPoint <i>Binary</i> [ , SRID <i>Integer</i>] ) : <i>Point</i></td>

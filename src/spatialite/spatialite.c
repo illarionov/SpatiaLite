@@ -7822,6 +7822,40 @@ fnct_MPolyFromText2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     geom_from_text2 (context, argc, argv, (short) GAIA_MULTIPOLYGON);
 }
 
+static void
+fnct_WktToSql (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_WKTToSQL(WKT encoded geometry)
+/
+/ returns the current geometry by parsing WKT encoded string 
+/ or NULL if any error is encountered
+/
+/ the SRID is always 0 [SQL/MM function]
+*/
+    int len;
+    unsigned char *p_result = NULL;
+    const unsigned char *text;
+    gaiaGeomCollPtr geo = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    text = sqlite3_value_text (argv[0]);
+    geo = gaiaParseWkt (text, -1);
+    if (geo == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    geo->Srid = 0;
+    gaiaToSpatiaLiteBlobWkb (geo, &p_result, &len);
+    gaiaFreeGeomColl (geo);
+    sqlite3_result_blob (context, p_result, len, free);
+}
+
 /*
 / the following functions simply readdress the request to geom_from_wkb?()
 / setting the appropriate GEOMETRY CLASS TYPE
@@ -7923,6 +7957,44 @@ static void
 fnct_MPolyFromWkb2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     geom_from_wkb2 (context, argc, argv, (short) GAIA_MULTIPOLYGON);
+}
+
+static void
+fnct_WkbToSql (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_WKBToSQL(WKB encoded geometry)
+/
+/ returns the current geometry by parsing a WKB encoded blob 
+/ or NULL if any error is encountered
+/
+/ the SRID is always 0 [SQL/MM function]
+*/
+    int len;
+    int n_bytes;
+    unsigned char *p_result = NULL;
+    const unsigned char *wkb;
+    gaiaGeomCollPtr geo = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    wkb = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    if (!check_wkb (wkb, n_bytes, -1))
+	return;
+    geo = gaiaFromWkb (wkb, n_bytes);
+    if (geo == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    geo->Srid = 0;
+    gaiaToSpatiaLiteBlobWkb (geo, &p_result, &len);
+    gaiaFreeGeomColl (geo);
+    sqlite3_result_blob (context, p_result, len, free);
 }
 
 static void
@@ -16813,8 +16885,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -16898,8 +16969,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -16908,8 +16978,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -17439,6 +17508,8 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_MPolyFromWkb1, 0, 0);
     sqlite3_create_function (db, "MultiPolygonFromWKB", 2, SQLITE_ANY, 0,
 			     fnct_MPolyFromWkb2, 0, 0);
+    sqlite3_create_function (db, "ST_WKTToSQL", 1, SQLITE_ANY, 0,
+			     fnct_WktToSql, 0, 0);
     sqlite3_create_function (db, "ST_GeomFromText", 1, SQLITE_ANY, 0,
 			     fnct_GeomFromText1, 0, 0);
     sqlite3_create_function (db, "ST_GeomFromText", 2, SQLITE_ANY, 0,
@@ -17499,6 +17570,8 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_MPolyFromText1, 0, 0);
     sqlite3_create_function (db, "ST_MultiPolygonFromText", 2, SQLITE_ANY, 0,
 			     fnct_MPolyFromText2, 0, 0);
+    sqlite3_create_function (db, "ST_WKBToSQL", 1, SQLITE_ANY, 0,
+			     fnct_WkbToSql, 0, 0);
     sqlite3_create_function (db, "ST_GeomFromWKB", 1, SQLITE_ANY, 0,
 			     fnct_GeomFromWkb1, 0, 0);
     sqlite3_create_function (db, "ST_GeomFromWKB", 2, SQLITE_ANY, 0,
