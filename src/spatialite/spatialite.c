@@ -11545,7 +11545,7 @@ fnct_ShiftLongitude (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / ShiftLongitude(BLOBencoded geometry)
 /
 / returns a new geometry that is the original one received, but with negative
-/ longitueds shifted by 360
+/ longitudes shifted by 360
 / or NULL if any error is encountered
 */
     unsigned char *p_blob;
