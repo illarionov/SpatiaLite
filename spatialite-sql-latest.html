@@ -398,33 +398,77 @@ then a Geometry will be returned representing the MBR for this circle</td></tr>
 				<td>return a geometric object representing the bounding box that encloses a set of input values<br>
 				<b><u>aggregate function</u></b></td></tr>
 			<tr><td><b>MbrMinX</b></td>
-				<td>MbrMinX( geom <i>Geometry</i>) : <i>Double precision</i></td>
+				<td>MbrMinX( geom <i>Geometry</i>) : <i>Double precision</i><hr>
+				    ST_MbrMinX( geom <i>Geometry</i>) : <i>Double precision</i><hr>
+				    ST_MinX( geom <i>Geometry</i>) : <i>Double precision</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
-				<td>return the x-coordinate for <i>geom</i> MBR's <u>leftmost side</u> as a double precision number</td></tr>
+				<td>return the x-coordinate for <i>geom</i> MBR's <u>leftmost side</u> as a double precision number.<hr>
+                                NULL will be returned if <i>geom</i> isn't a valid Geometry.</td></tr>
 			<tr><td><b>MbrMinY</b></td>
-				<td>MbrMinY( geom <i>Geometry</i>) : <i>Double precision</i></td>
+				<td>MbrMinY( geom <i>Geometry</i>) : <i>Double precision</i><hr>
+				    ST_MbrMinY( geom <i>Geometry</i>) : <i>Double precision</i><hr>
+				    ST_MinY( geom <i>Geometry</i>) : <i>Double precision</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
-				<td>return the y-coordinate for <i>geom</i> MBR's <u>lowermost side</u> as a double precision number</td></tr>
+				<td>return the y-coordinate for <i>geom</i> MBR's <u>lowermost side</u> as a double precision number.<hr>
+                                NULL will be returned if <i>geom</i> isn't a valid Geometry.</td></tr>
 			<tr><td><b>MbrMaxX</b></td>
-				<td>MbrMaxX( geom <i>Geometry</i>) : <i>Double precision</i></td>
+				<td>MbrMaxX( geom <i>Geometry</i>) : <i>Double precision</i><hr>
+				    ST_MbrMaxX( geom <i>Geometry</i>) : <i>Double precision</i><hr>
+				    ST_MaxX( geom <i>Geometry</i>) : <i>Double precision</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
-				<td>return the x-coordinate for <i>geom</i> MBR's <u>rightmost side</u> as a double precision number</td></tr>
+				<td>return the x-coordinate for <i>geom</i> MBR's <u>rightmost side</u> as a double precision number.<hr>
+                                NULL will be returned if <i>geom</i> isn't a valid Geometry.</td></tr>
 			<tr><td><b>MbrMaxY</b></td>
-				<td>MbrMaxY( geom <i>Geometry</i>) : <i>Double precision</i></td>
+				<td>MbrMaxY( geom <i>Geometry</i>) : <i>Double precision</i><hr>
+				    ST_MbrMaxY( geom <i>Geometry</i>) : <i>Double precision</i><hr>
+				    ST_MaxY( geom <i>Geometry</i>) : <i>Double precision</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
-				<td>return the y-coordinate for <i>geom</i> MBR's <u>uppermost side</u> as a double precision number</td></tr>
+				<td>return the y-coordinate for <i>geom</i> MBR's <u>uppermost side</u> as a double precision number.<hr>
+                                NULL will be returned if <i>geom</i> isn't a valid Geometry.</td></tr>
+			<tr><td><b>ST_MinZ</b></td>
+				<td>MinZ( geom <i>Geometry</i>) : <i>Double precision</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td>return the minimum Z-coordinate value for <i>geom</i> as a double precision number.<hr>
+                                NULL will be returned if <i>geom</i> isn't a valid Geometry or if <i>geom</i> has no Z dimension.</td></tr>
+			<tr><td><b>MaxZ</b></td>
+				<td>ST_MaxZ( geom <i>Geometry</i>) : <i>Double precision</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td>return the maximum Z-coordinate value for <i>geom</i> as a double precision number.<hr>
+                                NULL will be returned if <i>geom</i> isn't a valid Geometry or if <i>geom</i> has no Z dimension.</td></tr>
+			<tr><td><b>MinM</b></td>
+				<td>ST_MinM( geom <i>Geometry</i>) : <i>Double precision</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td>return the minimum M-coordinate value for <i>geom</i> as a double precision number.<hr>
+                                NULL will be returned if <i>geom</i> isn't a valid Geometry or if <i>geom</i> has no M dimension.</td></tr>
+			<tr><td><b>MaxM</b></td>
+				<td>ST_MaxM( geom <i>Geometry</i>) : <i>Double precision</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td>return the maximum M-coordinate value for <i>geom</i> as a double precision number.<hr>
+                                NULL will be returned if <i>geom</i> isn't a valid Geometry or if <i>geom</i> has no M dimension.</td></tr>
 			<tr><td colspan="7" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p1">SQL functions for constructing a geometric object given its Well-known Text Representation</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
@@ -826,6 +870,24 @@ then a Geometry will be returned representing the MBR for this circle</td></tr>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td>returns the numer of dimensions used by the geometric object as:<br>
 					<b>2</b>, <b>3</b> or <b>4</b></td></tr>
+			<tr><td><b>Is3D</b></td>
+				<td>ST_Is3D( geom <i>Geometry</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td>Checks if <i>geom</i> has the Z dimension.<br>
+                                    The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, 
+                                    and -1 for UNKNOWN corresponding to a function invocation on invalid arguments.</td></tr>
+			<tr><td><b>IsMeasured</b></td>
+				<td>ST_IsMeasured( geom <i>Geometry</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td>Check if <i>geom</i> has the M dimension.<br>
+                                    The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, 
+                                    and -1 for UNKNOWN corresponding to a function invocation on invalid arguments.</td></tr>
 			<tr><td><b>GeometryType</b></td>
 				<td>GeometryType( geom <i>Geometry</i> ) : <i>String</i><hr>
 					ST_GeometryType( geom <i>Geometry</i> ) : <i>String</i></td>
@@ -1434,6 +1496,19 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 				<td>The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, 
 					and &#8211;1 for UNKNOWN corresponding to a function invocation on NULL arguments;<br>
 					convenience predicate: TRUE if the intersection of g1 and g2 MBRs is not empty</td></tr>
+			<tr><td><b>EnvelopesIntersects</b></td>
+				<td>ST_EnvIntersects( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Integer</i><hr>
+				    ST_EnvelopesIntersects( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Integer</i><hr>
+				    ST_EnvIntersects( geom1 <i>Geometry</i> , x1 <i>Double precision</i> , y1 <i>Double precision</i> , x2 <i>Double precision</i> , y2 <i>Double precision</i> ) : <i>Integer</i><hr>
+				    ST_EnvelopesIntersects( geom1 <i>Geometry</i> , x1 <i>Double precision</i> , y1 <i>Double precision</i> , x2 <i>Double precision</i> , y2 <i>Double precision</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td>The first form simply is an <u>alias name</u> for <b>MbrIntersects</b>; the other form allows to define the second MBR by two extreme points [<b>x1, y1</b>] and [<b>x2, y2</b>].<br>
+                                        The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, 
+					and &#8211;1 for UNKNOWN corresponding to a function invocation on invalid arguments;<br>
+					convenience predicate: TRUE if the intersection of both MBRs is not empty</td></tr>
 			<tr><td><b>MbrContains</b></td>
 				<td>MbrContains( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Integer</i></td>
 				<td></td>
