@@ -535,7 +535,10 @@ gaiaShiftLongitude (gaiaGeomCollPtr geom)
 		  {
 		      gaiaGetPoint (line->Coords, iv, &x, &y);
 		  }
-		x += 360.0;
+		if (x < 0)
+		  {
+		    x += 360.0;
+		  }
 		if (line->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaSetPointXYZ (line->Coords, iv, x, y, z);
@@ -579,7 +582,10 @@ gaiaShiftLongitude (gaiaGeomCollPtr geom)
 		  {
 		      gaiaGetPoint (ring->Coords, iv, &x, &y);
 		  }
-		x += 360.0;
+		if (x < 0)
+		  {
+		    x += 360.0;
+		  }
 		if (ring->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
@@ -619,7 +625,10 @@ gaiaShiftLongitude (gaiaGeomCollPtr geom)
 			{
 			    gaiaGetPoint (ring->Coords, iv, &x, &y);
 			}
-		      x += 360.0;
+		      if (x < 0)
+		        {
+			  x += 360.0;
+			}
 		      if (ring->DimensionModel == GAIA_XY_Z)
 			{
 			    gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
