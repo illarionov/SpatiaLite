@@ -376,115 +376,6 @@ gaiaShiftCoords3D (gaiaGeomCollPtr geom, double shift_x, double shift_y,
     gaiaMbrGeometry (geom);
 }
 
-static int
-testNegativeLongitudes (gaiaGeomCollPtr geom)
-{
-/* test is this geometry actually contains any negative longitude */
-    int ib;
-    int iv;
-    double x;
-    double y;
-    double z;
-    double m;
-    gaiaPointPtr point;
-    gaiaPolygonPtr polyg;
-    gaiaLinestringPtr line;
-    gaiaRingPtr ring;
-    if (!geom)
-	return 0;
-    point = geom->FirstPoint;
-    while (point)
-      {
-	  if (point->X < 0.0)
-	      return 1;
-	  point = point->Next;
-      }
-    line = geom->FirstLinestring;
-    while (line)
-      {
-	  /* shifting LINESTRINGs */
-	  for (iv = 0; iv < line->Points; iv++)
-	    {
-		if (line->DimensionModel == GAIA_XY_Z)
-		  {
-		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
-		  }
-		else if (line->DimensionModel == GAIA_XY_M)
-		  {
-		      gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
-		  }
-		else if (line->DimensionModel == GAIA_XY_Z_M)
-		  {
-		      gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
-		  }
-		else
-		  {
-		      gaiaGetPoint (line->Coords, iv, &x, &y);
-		  }
-		if (x < 0.0)
-		    return 1;
-	    }
-	  line = line->Next;
-      }
-    polyg = geom->FirstPolygon;
-    while (polyg)
-      {
-	  /* shifting POLYGONs */
-	  ring = polyg->Exterior;
-	  for (iv = 0; iv < ring->Points; iv++)
-	    {
-		/* shifting the EXTERIOR RING */
-		if (ring->DimensionModel == GAIA_XY_Z)
-		  {
-		      gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);
-		  }
-		else if (ring->DimensionModel == GAIA_XY_M)
-		  {
-		      gaiaGetPointXYM (ring->Coords, iv, &x, &y, &m);
-		  }
-		else if (ring->DimensionModel == GAIA_XY_Z_M)
-		  {
-		      gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
-		  }
-		else
-		  {
-		      gaiaGetPoint (ring->Coords, iv, &x, &y);
-		  }
-		if (x < 0.0)
-		    return 1;
-	    }
-	  for (ib = 0; ib < polyg->NumInteriors; ib++)
-	    {
-		/* shifting the INTERIOR RINGs */
-		ring = polyg->Interiors + ib;
-		for (iv = 0; iv < ring->Points; iv++)
-		  {
-		      if (ring->DimensionModel == GAIA_XY_Z)
-			{
-			    gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);
-			}
-		      else if (ring->DimensionModel == GAIA_XY_M)
-			{
-			    gaiaGetPointXYM (ring->Coords, iv, &x, &y, &m);
-			}
-		      else if (ring->DimensionModel == GAIA_XY_Z_M)
-			{
-			    gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
-			}
-		      else
-			{
-			    gaiaGetPoint (ring->Coords, iv, &x, &y);
-			}
-		      if (x < 0.0)
-			  return 1;
-		  }
-	    }
-	  polyg = polyg->Next;
-      }
-    return 0;
-}
-
-
 GAIAGEO_DECLARE void
 gaiaShiftLongitude (gaiaGeomCollPtr geom)
 {
@@ -501,11 +392,6 @@ gaiaShiftLongitude (gaiaGeomCollPtr geom)
     gaiaRingPtr ring;
     if (!geom)
 	return;
-    if (testNegativeLongitudes (geom) == 0)
-      {
-	  gaiaMbrGeometry (geom);
-	  return;
-      }
     point = geom->FirstPoint;
     while (point)
       {
