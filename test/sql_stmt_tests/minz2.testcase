@@ -1,7 +1,8 @@
-isempty - zeroblob
+MinZ - bad blob
 :memory: #use in-memory database
-SELECT IsEmpty(zeroblob(200))
+SELECT ST_MinZ(zeroblob(48))
 1 # rows (not including the header row)
 1 # columns
-IsEmpty(zeroblob(200))
--1
+ST_MinZ(zeroblob(48))
+(NULL)
+

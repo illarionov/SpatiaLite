@@ -1,7 +1,8 @@
-isempty - zeroblob
+IsMeasured- bad blob
 :memory: #use in-memory database
-SELECT IsEmpty(zeroblob(200))
+SELECT ST_IsMeasured(zeroblob(48))
 1 # rows (not including the header row)
 1 # columns
-IsEmpty(zeroblob(200))
+ST_IsMeasured(zeroblob(48))
 -1
+

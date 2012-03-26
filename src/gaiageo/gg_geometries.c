@@ -2600,10 +2600,10 @@ gaiaZRangeRing (gaiaRingPtr rng, double *min, double *max)
 	    {
 		gaiaGetPoint (rng->Coords, iv, &x, &y);
 	    }
-	  if (m < *min)
-	      *min = m;
-	  if (m > *max)
-	      *max = m;
+	  if (z < *min)
+	      *min = z;
+	  if (z > *max)
+	      *max = z;
       }
 }
 

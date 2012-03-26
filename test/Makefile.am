@@ -764,6 +764,16 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/envelope5.testcase \
 	sql_stmt_tests/envelope6.testcase \
 	sql_stmt_tests/envelope7.testcase \
+	sql_stmt_tests/envintersects10.testcase \
+	sql_stmt_tests/envintersects1.testcase \
+	sql_stmt_tests/envintersects2.testcase \
+	sql_stmt_tests/envintersects3.testcase \
+	sql_stmt_tests/envintersects4.testcase \
+	sql_stmt_tests/envintersects5.testcase \
+	sql_stmt_tests/envintersects6.testcase \
+	sql_stmt_tests/envintersects7.testcase \
+	sql_stmt_tests/envintersects8.testcase \
+	sql_stmt_tests/envintersects9.testcase \
 	sql_stmt_tests/ewkb10.testcase \
 	sql_stmt_tests/ewkb11.testcase \
 	sql_stmt_tests/ewkb12.testcase \
@@ -929,7 +939,21 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/geomconstraints12.testcase \
 	sql_stmt_tests/geomconstraints13.testcase \
 	sql_stmt_tests/geomconstraints14.testcase \
+	sql_stmt_tests/geomconstraints15.testcase \
+	sql_stmt_tests/geomconstraints16.testcase \
+	sql_stmt_tests/geomconstraints17.testcase \
+	sql_stmt_tests/geomconstraints18.testcase \
+	sql_stmt_tests/geomconstraints19.testcase \
 	sql_stmt_tests/geomconstraints1.testcase \
+	sql_stmt_tests/geomconstraints20.testcase \
+	sql_stmt_tests/geomconstraints21.testcase \
+	sql_stmt_tests/geomconstraints22.testcase \
+	sql_stmt_tests/geomconstraints23.testcase \
+	sql_stmt_tests/geomconstraints24.testcase \
+	sql_stmt_tests/geomconstraints25.testcase \
+	sql_stmt_tests/geomconstraints26.testcase \
+	sql_stmt_tests/geomconstraints27.testcase \
+	sql_stmt_tests/geomconstraints28.testcase \
 	sql_stmt_tests/geomconstraints2.testcase \
 	sql_stmt_tests/geomconstraints3.testcase \
 	sql_stmt_tests/geomconstraints4.testcase \
@@ -1125,6 +1149,12 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/intersection7.testcase \
 	sql_stmt_tests/intersection8.testcase \
 	sql_stmt_tests/intersection9.testcase \
+	sql_stmt_tests/is3d1.testcase \
+	sql_stmt_tests/is3d2.testcase \
+	sql_stmt_tests/is3d3.testcase \
+	sql_stmt_tests/is3d4.testcase \
+	sql_stmt_tests/is3d5.testcase \
+	sql_stmt_tests/is3d6.testcase \
 	sql_stmt_tests/isclosed1.testcase \
 	sql_stmt_tests/isclosed2.testcase \
 	sql_stmt_tests/isclosed3.testcase \
@@ -1134,6 +1164,12 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/isempty3.testcase \
 	sql_stmt_tests/isempty4.testcase \
 	sql_stmt_tests/isempty.testcase \
+	sql_stmt_tests/ismeasured1.testcase \
+	sql_stmt_tests/ismeasured2.testcase \
+	sql_stmt_tests/ismeasured3.testcase \
+	sql_stmt_tests/ismeasured4.testcase \
+	sql_stmt_tests/ismeasured5.testcase \
+	sql_stmt_tests/ismeasured6.testcase \
 	sql_stmt_tests/isring1.testcase \
 	sql_stmt_tests/isring2.testcase \
 	sql_stmt_tests/isring3.testcase \
@@ -1250,6 +1286,23 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/linesubstring8.testcase \
 	sql_stmt_tests/linesubstring9.testcase \
 	sql_stmt_tests/link_m.testcase \
+	sql_stmt_tests/locatemeasure10.testcase \
+	sql_stmt_tests/locatemeasure11.testcase \
+	sql_stmt_tests/locatemeasure12.testcase \
+	sql_stmt_tests/locatemeasure13.testcase \
+	sql_stmt_tests/locatemeasure14.testcase \
+	sql_stmt_tests/locatemeasure15.testcase \
+	sql_stmt_tests/locatemeasure16.testcase \
+	sql_stmt_tests/locatemeasure17.testcase \
+	sql_stmt_tests/locatemeasure1.testcase \
+	sql_stmt_tests/locatemeasure2.testcase \
+	sql_stmt_tests/locatemeasure3.testcase \
+	sql_stmt_tests/locatemeasure4.testcase \
+	sql_stmt_tests/locatemeasure5.testcase \
+	sql_stmt_tests/locatemeasure6.testcase \
+	sql_stmt_tests/locatemeasure7.testcase \
+	sql_stmt_tests/locatemeasure8.testcase \
+	sql_stmt_tests/locatemeasure9.testcase \
 	sql_stmt_tests/locatepoint10.testcase \
 	sql_stmt_tests/locatepoint1.testcase \
 	sql_stmt_tests/locatepoint2.testcase \
@@ -1355,6 +1408,20 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/makepointz-null6.testcase \
 	sql_stmt_tests/makepointz-null7.testcase \
 	sql_stmt_tests/makepointz-null8.testcase \
+	sql_stmt_tests/maxm1.testcase \
+	sql_stmt_tests/maxm2.testcase \
+	sql_stmt_tests/maxm3.testcase \
+	sql_stmt_tests/maxm4.testcase \
+	sql_stmt_tests/maxm5.testcase \
+	sql_stmt_tests/maxm6.testcase \
+	sql_stmt_tests/maxm7.testcase \
+	sql_stmt_tests/maxz1.testcase \
+	sql_stmt_tests/maxz2.testcase \
+	sql_stmt_tests/maxz3.testcase \
+	sql_stmt_tests/maxz4.testcase \
+	sql_stmt_tests/maxz5.testcase \
+	sql_stmt_tests/maxz6.testcase \
+	sql_stmt_tests/maxz7.testcase \
 	sql_stmt_tests/mbr10.testcase \
 	sql_stmt_tests/mbr11.testcase \
 	sql_stmt_tests/mbr12.testcase \
@@ -1405,8 +1472,20 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/m_ind_ch.testcase \
 	sql_stmt_tests/m_ind_ft.testcase \
 	sql_stmt_tests/m_ind_yd.testcase \
+	sql_stmt_tests/minm1.testcase \
+	sql_stmt_tests/minm2.testcase \
+	sql_stmt_tests/minm3.testcase \
+	sql_stmt_tests/minm4.testcase \
+	sql_stmt_tests/minm5.testcase \
+	sql_stmt_tests/minm6.testcase \
 	sql_stmt_tests/m_in.testcase \
 	sql_stmt_tests/m_in_us.testcase \
+	sql_stmt_tests/minz1.testcase \
+	sql_stmt_tests/minz2.testcase \
+	sql_stmt_tests/minz3.testcase \
+	sql_stmt_tests/minz4.testcase \
+	sql_stmt_tests/minz5.testcase \
+	sql_stmt_tests/minz6.testcase \
 	sql_stmt_tests/m_km.testcase \
 	sql_stmt_tests/mlinefromtext1.testcase \
 	sql_stmt_tests/mlinefromtext2.testcase \
@@ -1599,6 +1678,8 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/reflectcoords13.testcase \
 	sql_stmt_tests/reflectcoords14.testcase \
 	sql_stmt_tests/reflectcoords15.testcase \
+	sql_stmt_tests/reflectcoords16.testcase \
+	sql_stmt_tests/reflectcoords17.testcase \
 	sql_stmt_tests/reflectcoords1.testcase \
 	sql_stmt_tests/reflectcoords2.testcase \
 	sql_stmt_tests/reflectcoords3.testcase \
@@ -1766,6 +1847,32 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/shiftcoords7.testcase \
 	sql_stmt_tests/shiftcoords8.testcase \
 	sql_stmt_tests/shiftcoords9.testcase \
+	sql_stmt_tests/shiftlongitude10.testcase \
+	sql_stmt_tests/shiftlongitude11.testcase \
+	sql_stmt_tests/shiftlongitude12.testcase \
+	sql_stmt_tests/shiftlongitude13.testcase \
+	sql_stmt_tests/shiftlongitude14.testcase \
+	sql_stmt_tests/shiftlongitude15.testcase \
+	sql_stmt_tests/shiftlongitude16.testcase \
+	sql_stmt_tests/shiftlongitude17.testcase \
+	sql_stmt_tests/shiftlongitude18.testcase \
+	sql_stmt_tests/shiftlongitude19.testcase \
+	sql_stmt_tests/shiftlongitude1.testcase \
+	sql_stmt_tests/shiftlongitude20.testcase \
+	sql_stmt_tests/shiftlongitude21.testcase \
+	sql_stmt_tests/shiftlongitude22.testcase \
+	sql_stmt_tests/shiftlongitude23.testcase \
+	sql_stmt_tests/shiftlongitude24.testcase \
+	sql_stmt_tests/shiftlongitude25.testcase \
+	sql_stmt_tests/shiftlongitude26.testcase \
+	sql_stmt_tests/shiftlongitude2.testcase \
+	sql_stmt_tests/shiftlongitude3.testcase \
+	sql_stmt_tests/shiftlongitude4.testcase \
+	sql_stmt_tests/shiftlongitude5.testcase \
+	sql_stmt_tests/shiftlongitude6.testcase \
+	sql_stmt_tests/shiftlongitude7.testcase \
+	sql_stmt_tests/shiftlongitude8.testcase \
+	sql_stmt_tests/shiftlongitude9.testcase \
 	sql_stmt_tests/shortestline1.testcase \
 	sql_stmt_tests/shortestline2.testcase \
 	sql_stmt_tests/shortestline3.testcase \
@@ -2059,5 +2166,11 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/wkb7.testcase \
 	sql_stmt_tests/wkb8.testcase \
 	sql_stmt_tests/wkb9.testcase \
+	sql_stmt_tests/wkbtosql1.testcase \
+	sql_stmt_tests/wkbtosql2.testcase \
+	sql_stmt_tests/wkbtosql3.testcase \
+	sql_stmt_tests/wkttosql1.testcase \
+	sql_stmt_tests/wkttosql2.testcase \
+	sql_stmt_tests/wkttosql3.testcase \
 	sql_stmt_tests/yd_m.testcase
 

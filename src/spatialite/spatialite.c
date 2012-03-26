@@ -11690,20 +11690,20 @@ fnct_EnvIntersects (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
-    geo1 = gaiaFromSpatiaLiteBlobMbr (p_blob, n_bytes);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo1)
 	sqlite3_result_null (context);
-    gaiaMbrGeometry (geo1);
-    geo2 = gaiaAllocGeomColl ();
-    ln = gaiaAddLinestringToGeomColl (geo2, 2);
-    gaiaSetPoint (ln->Coords, 0, x1, y1);
-    gaiaSetPoint (ln->Coords, 1, x2, y2);
-    gaiaMbrGeometry (geo2);
-    ret = gaiaMbrsIntersects (geo1, geo2);
-    if (ret < 0)
-	sqlite3_result_null (context);
     else
-	sqlite3_result_int (context, ret);
+      {
+	  gaiaMbrGeometry (geo1);
+	  geo2 = gaiaAllocGeomColl ();
+	  ln = gaiaAddLinestringToGeomColl (geo2, 2);
+	  gaiaSetPoint (ln->Coords, 0, x1, y1);
+	  gaiaSetPoint (ln->Coords, 1, x2, y2);
+	  gaiaMbrGeometry (geo2);
+	  ret = gaiaMbrsIntersects (geo1, geo2);
+	  sqlite3_result_int (context, ret);
+      }
     gaiaFreeGeomColl (geo1);
     gaiaFreeGeomColl (geo2);
 }
@@ -17294,7 +17294,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -17378,7 +17379,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -17387,7 +17389,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
