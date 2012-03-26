@@ -396,7 +396,10 @@ gaiaShiftLongitude (gaiaGeomCollPtr geom)
     while (point)
       {
 	  /* shifting POINTs */
-	  point->X += 360.0;
+	  if (point->X < 0)
+	    {
+		point->X += 360.0;
+	    }
 	  point = point->Next;
       }
     line = geom->FirstLinestring;
