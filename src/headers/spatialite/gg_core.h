@@ -1327,6 +1327,27 @@ extern "C"
 							 gaiaGeomCollPtr geom2);
 
 /**
+ Return a GeometryCollection containing elements matching the specified range of measures
+
+ \param geom pointer to Geometry object
+ \param m_start range of measures: start value
+ \param m_end range of measures: end value
+
+ \return the pointer to newly created Geometry: NULL on failure.
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry created by gaiaLocateBetweenMeasures()
+ \n the newly created Geometry will contain Points and/or Linestrings.
+ \n if the input Geometry has no M dimension then NULL will be returned.
+ \n if the input Geometry doesn't contains any point/vertex corresponding to the
+ required range of measures then NULL will be returned.
+ \n if the input Geometry contains any Polygon (or is a GeometryCollection) then
+ NULL will be returned.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr
+	gaiaLocateBetweenMeasures (gaiaGeomCollPtr geom, double m_start, double m_end);
+
+/**
  Measures the geometric length for a Linestring or Ring
 
  \param dims dimensions: one of GAIA_XY, GAIA_XY_Z, GAIA_XY_M or GAIA_XY_ZM

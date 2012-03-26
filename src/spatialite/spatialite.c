@@ -12770,6 +12770,84 @@ fnct_CollectionExtract (sqlite3_context * context, int argc,
     gaiaFreeGeomColl (geo);
 }
 
+static void
+fnct_LocateBetweenMeasures (sqlite3_context * context, int argc,
+			    sqlite3_value ** argv)
+{
+/* SQL functions:
+/ ST_Locate_Along_Measure(BLOBencoded geometry, Double m_value)
+/ ST_Locate_Between_Measures(BLOBencoded geometry, Double m_start, Double m_end)
+/
+/ Extracts from a GEOMETRY (supporting M) any Point/Linestring
+/ matching the range of measures
+/ NULL is returned for invalid arguments
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    double m_start;
+    double m_end;
+    int intval;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr result;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	m_start = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  intval = sqlite3_value_int (argv[1]);
+	  m_start = intval;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc > 2)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	      m_end = sqlite3_value_double (argv[2]);
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		intval = sqlite3_value_int (argv[2]);
+		m_end = intval;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    else
+	m_end = m_start;
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geo == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  result = gaiaLocateBetweenMeasures (geo, m_start, m_end);
+	  if (result == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+}
+
 #ifndef OMIT_PROJ		/* including PROJ.4 */
 
 static void
@@ -17216,8 +17294,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -17301,8 +17378,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -17311,8 +17387,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -18244,6 +18319,10 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_CollectionExtract, 0, 0);
     sqlite3_create_function (db, "ST_CollectionExtract", 2, SQLITE_ANY, 0,
 			     fnct_CollectionExtract, 0, 0);
+    sqlite3_create_function (db, "ST_Locate_Along_Measure", 2, SQLITE_ANY, 0,
+			     fnct_LocateBetweenMeasures, 0, 0);
+    sqlite3_create_function (db, "ST_Locate_Between_Measures", 3, SQLITE_ANY, 0,
+			     fnct_LocateBetweenMeasures, 0, 0);
 #ifndef OMIT_GEOCALLBACKS	/* supporting RTree geometry callbacks */
     sqlite3_rtree_geometry_callback (db, "RTreeWithin", fnct_RTreeIntersects,
 				     0);

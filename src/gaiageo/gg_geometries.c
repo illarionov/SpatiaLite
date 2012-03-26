@@ -4344,3 +4344,189 @@ gaiaGetMbrMaxY (const unsigned char *blob, unsigned int size, double *maxy)
     *maxy = gaiaImport64 (blob + 30, little_endian, endian_arch);
     return 1;
 }
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaLocateBetweenMeasures (gaiaGeomCollPtr geom, double m_start, double m_end)
+{
+/* extracts points/linestrings accordingly to a range of measures */
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaLinestringPtr new_line;
+    gaiaGeomCollPtr new_geom = NULL;
+    gaiaDynamicLinePtr dyn = NULL;
+    int iv;
+    double x;
+    double y;
+    double z;
+    double m;
+    if (!geom)
+	return NULL;
+    if (geom->DeclaredType == GAIA_GEOMETRYCOLLECTION)
+	return NULL;
+    if (geom->FirstPolygon != NULL)
+	return NULL;
+    if (geom->DimensionModel == GAIA_XY_M)
+	new_geom = gaiaAllocGeomCollXYM ();
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	new_geom = gaiaAllocGeomCollXYZM ();
+    else
+	return NULL;
+    new_geom->Srid = geom->Srid;
+    new_geom->DeclaredType = geom->DeclaredType;
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  /* extracting POINTs */
+	  if (pt->M >= m_start && pt->M <= m_end)
+	    {
+		if (geom->DimensionModel == GAIA_XY_M)
+		    gaiaAddPointToGeomCollXYM (new_geom, pt->X, pt->Y, pt->M);
+		else if (geom->DimensionModel == GAIA_XY_Z_M)
+		    gaiaAddPointToGeomCollXYZM (new_geom, pt->X, pt->Y,
+						pt->Z, pt->M);
+	    }
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  /* extracting LINESTRINGs */
+	  for (iv = 0; iv < ln->Points; iv++)
+	    {
+		z = 0.0;
+		if (ln->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+		  }
+		else
+		  {
+		      gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+		  }
+		if (m >= m_start && m <= m_end)
+		  {
+		      /* found a valid vertex */
+		      if (dyn == NULL)
+			  dyn = gaiaAllocDynamicLine ();
+		      if (ln->DimensionModel == GAIA_XY_Z_M)
+			  gaiaAppendPointZMToDynamicLine (dyn, x, y, z, m);
+		      else
+			  gaiaAppendPointMToDynamicLine (dyn, x, y, m);
+		  }
+		else
+		  {
+		      if (dyn != NULL)
+			{
+			    /* evaluting the latest sequence found */
+			    int cnt = 0;
+			    pt = dyn->First;
+			    while (pt)
+			      {
+				  /* counting how many points are there */
+				  cnt++;
+				  pt = pt->Next;
+			      }
+			    if (cnt > 1)
+			      {
+				  /* creating a Linestring */
+				  new_line =
+				      gaiaAddLinestringToGeomColl (new_geom,
+								   cnt);
+				  cnt = 0;
+				  pt = dyn->First;
+				  while (pt)
+				    {
+
+					if (new_line->DimensionModel ==
+					    GAIA_XY_Z_M)
+					  {
+					      gaiaSetPointXYZM
+						  (new_line->Coords, cnt, pt->X,
+						   pt->Y, pt->Z, pt->M);
+					  }
+					else
+					  {
+					      gaiaSetPointXYM (new_line->Coords,
+							       cnt, pt->X, pt->Y,
+							       pt->M);
+					  }
+					cnt++;
+					pt = pt->Next;
+				    }
+			      }
+			    else if (cnt == 1)
+			      {
+				  /* creating a Point */
+				  pt = dyn->First;
+				  if (geom->DimensionModel == GAIA_XY_M)
+				      gaiaAddPointToGeomCollXYM (new_geom,
+								 pt->X, pt->Y,
+								 pt->M);
+				  else if (geom->DimensionModel == GAIA_XY_Z_M)
+				      gaiaAddPointToGeomCollXYZM (new_geom,
+								  pt->X, pt->Y,
+								  pt->Z, pt->M);
+			      }
+			    gaiaFreeDynamicLine (dyn);
+			    dyn = NULL;
+			}
+		  }
+	    }
+	  if (dyn != NULL)
+	    {
+		/* evaluting the latest sequence found */
+		int cnt = 0;
+		pt = dyn->First;
+		while (pt)
+		  {
+		      /* counting how many points are there */
+		      cnt++;
+		      pt = pt->Next;
+		  }
+		if (cnt > 1)
+		  {
+		      /* creating a Linestring */
+		      new_line = gaiaAddLinestringToGeomColl (new_geom, cnt);
+		      cnt = 0;
+		      pt = dyn->First;
+		      while (pt)
+			{
+
+			    if (new_line->DimensionModel == GAIA_XY_Z_M)
+			      {
+				  gaiaSetPointXYZM (new_line->Coords, cnt,
+						    pt->X, pt->Y, pt->Z, pt->M);
+			      }
+			    else
+			      {
+				  gaiaSetPointXYM (new_line->Coords,
+						   cnt, pt->X, pt->Y, pt->M);
+			      }
+			    cnt++;
+			    pt = pt->Next;
+			}
+		  }
+		else if (cnt == 1)
+		  {
+		      /* creating a Point */
+		      pt = dyn->First;
+		      if (geom->DimensionModel == GAIA_XY_M)
+			  gaiaAddPointToGeomCollXYM (new_geom,
+						     pt->X, pt->Y, pt->M);
+		      else if (geom->DimensionModel == GAIA_XY_Z_M)
+			  gaiaAddPointToGeomCollXYZM (new_geom,
+						      pt->X, pt->Y,
+						      pt->Z, pt->M);
+		  }
+		gaiaFreeDynamicLine (dyn);
+		dyn = NULL;
+	    }
+	  ln = ln->Next;
+      }
+    if (new_geom->FirstPoint == NULL && new_geom->FirstLinestring == NULL)
+      {
+	  /* empty result: returning NULL */
+	  gaiaFreeGeomColl (new_geom);
+	  return NULL;
+      }
+    return new_geom;
+}

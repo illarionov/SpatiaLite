@@ -1974,6 +1974,24 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 					<li><b>3</b> = POLYGON-type</li>
 				</ul>
 				NULL will be returned if any error is encountered (or when no item of required type is found)</td></tr>
+			<tr><td><b>LocateAlongMeasure</b></td>
+				<td>ST_Locate_Along_Measure( geom <i>Geometry</i> , m_value <i>Double precision</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td>Return a derived geometry collection value with elements that match the specified measure.<br>
+				NULL will be returned if any error is encountered (or when no element corresponding to the given measure is found).<br>
+                                <u>Please note</u>: NULL will be returned anyway if Geometry doesn't support M-dimension, or if it contains any Polygon, or if it's of the GeometryCollection type.</td></tr>
+			<tr><td><b>LocateBetweenMeasures</b></td>
+				<td>ST_Locate_Between_Measures( geom <i>Geometry</i> , m_start <i>Double precision</i> , m_end <i>Double precision</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td>Return a derived geometry collection value with elements that match the specified range of measures.<br>
+				NULL will be returned if any error is encountered (or when no element corresponding to the given range of measures is found).<br>
+                                <u>Please note</u>: NULL will be returned anyway if Geometry doesn't support M-dimension, or if it contains any Polygon, or if it's of the GeometryCollection type.</td></tr>
 			<tr><td colspan="7" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p15">SQL functions for coordinate transformations</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
