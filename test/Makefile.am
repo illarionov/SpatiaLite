@@ -755,6 +755,7 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/distance8.testcase \
 	sql_stmt_tests/dm_m.testcase \
 	sql_stmt_tests/DSC_1467.JPG \
+	sql_stmt_tests/DSCN0042.JPG \
 	sql_stmt_tests/emptyfile.txt \
 	sql_stmt_tests/endpoint1.testcase \
 	sql_stmt_tests/envelope1.testcase \

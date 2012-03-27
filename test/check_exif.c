@@ -197,6 +197,8 @@ int main (int argc, char *argv[])
     const char *result;
     unsigned char *blob = NULL;
     gaiaExifTagListPtr tag_list = NULL;
+    double longitude;
+    double latitude;
 
     spatialite_init (0);
     
@@ -314,6 +316,250 @@ int main (int argc, char *argv[])
     {
         gaiaExifTag tag;
         tag.Gps = 1;
+        tag.TagId = i;
+        gaiaExifTagGetName(&tag, tag_name, 128);
+    }
+
+    if (blob)
+        free(blob);
+    if (tag_list)
+        gaiaExifTagsFree(tag_list);
+    fclose(fl);
+       
+    fl = fopen("sql_stmt_tests/DSCN0042.JPG", "rb");
+    if (!fl)
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "cannot open EXIF-JPEG image: DSCN0042.JPG\n");
+	return -100;
+    }
+    if (fseek(fl, 0, SEEK_END) == 0)
+        sz = ftell(fl);
+    if (sz <= 14) {
+	fprintf(stderr, "invalid size EXIF-JPEG image: DSCN0042.JPG\n");
+	return -17;
+    }
+    
+    blob = (unsigned char *) malloc(sz);
+    rewind(fl);
+    rd = fread(blob, 1, sz, fl);
+    if (rd != sz) {
+	fprintf(stderr, "read error EXIF-JPEG image: DSCN0042.JPG\n");
+	return -18;
+    }
+    
+    tag_list = gaiaGetExifTags(blob, sz);
+    if (tag_list == NULL) {
+	fprintf(stderr, "cannot extract EXIF tags from JPEG image: DSCN0042.JPG\n");
+	return -19;
+    }
+
+    val64 = get_pixel_x(tag_list, &ok);
+    if (!ok) {
+	fprintf(stderr, "DSCN0042.JPG: PixelX tag not found\n");
+	return -20;
+    }
+    if (val64 != 640) {
+	fprintf(stderr, "DSCN0042.JPG: PixelX unexpected value: %d\n", (int)val64);
+	return -21;
+    }
+
+    val64 = get_pixel_y(tag_list, &ok); 
+    if (!ok) {
+	fprintf(stderr, "DSCN0042.JPG: PixelY tag not found\n");
+	return -22;
+    }
+    if (val64 != 480) {
+	fprintf(stderr, "DSCN0042.JPG: PixelY unexpected value: %d\n", (int)val64);
+	return -23;
+    }
+  
+    get_make(tag_list, &result, &ok);
+    if (!ok) {
+	fprintf(stderr, "DSCN0042.JPG: Make tag not found\n");
+	return -24;
+    }
+    if (strcmp(result, "NIKON") != 0) {
+	fprintf(stderr, "DSCN0042.JPG: Make unexpected value: %s|\n", result);
+	return -25;
+    };
+
+    get_model(tag_list, &result, &ok);
+    if (!ok) {
+	fprintf(stderr, "DSCN0042.JPG: Model tag not found\n");
+	return -26;
+    }
+    if (strcmp(result, "COOLPIX P6000") != 0) {
+	fprintf(stderr, "DSCN0042.JPG: Model unexpected value: %s|\n", result);
+	return -27;
+    };
+
+    get_date(tag_list, &result, &ok);
+    if (!ok) {
+	fprintf(stderr, "DSCN0042.JPG: Date tag not found\n");
+	return -28;
+    }
+    if (strcmp(result, "2008:10:22 17:00:07") != 0) {
+	fprintf(stderr, "DSCN0042.JPG: Date unexpected value: %s|\n", result);
+	return -29;
+    };
+            
+    for (i = 0; i < gaiaGetExifTagsCount(tag_list); i++)
+    {
+        pT = gaiaGetExifTagByPos(tag_list, i);
+        if (pT)
+        {
+            gaiaExifTagGetName(pT, tag_name, 128);
+            gaiaExifTagGetValueType(pT);
+            gaiaIsExifGpsTag(pT);
+            gaiaExifTagGetValueType(pT);
+            gaiaExifTagGetNumValues(pT);
+            gaiaExifTagGetHumanReadable (pT, human, 8190, &ok);
+        }
+    }
+
+    pT = gaiaGetExifTagById (tag_list, 0x0112);
+    if (pT == NULL) {
+	fprintf(stderr, "DSCN0042.JPG: tag Orientation not found: %s|\n", result);
+	return -30;
+    };
+
+    pT = gaiaGetExifTagByName (tag_list, "YCbCrPositioning");
+    if (pT == NULL) {
+	fprintf(stderr, "DSCN0042.JPG: tag YCbCrPositioning not found: %s|\n", result);
+	return -31;
+    };
+
+    for (i = 0x0000; i < 0xffff; i++)
+    {
+        gaiaExifTag tag;
+        tag.Gps = 0;
+        tag.TagId = i;
+        gaiaExifTagGetName(&tag, tag_name, 128);
+    }
+    for (i = 0x0000; i < 0xffff; i++)
+    {
+        gaiaExifTag tag;
+        tag.Gps = 1;
+        tag.TagId = i;
+        gaiaExifTagGetName(&tag, tag_name, 128);
+    }
+
+    if (!gaiaGetGpsLatLong(blob, sz, human, 8192)) {
+	fprintf(stderr, "cannot extract GPS coords from JPEG image: DSCN0042.JPG\n");
+	return -32;
+    }
+    if (strcmp(human, "N 43.00 27.00 52.04 / E 11.00 52.00 53.32") != 0) {
+	fprintf(stderr, "DSCN0042.JPG: GPS coords unexpected value: %s|\n", human);
+	return -33;
+    };
+    if (!gaiaGetGpsLatLong(blob, sz, human, 20)) {
+	fprintf(stderr, "cannot extract GPS coords(20) from JPEG image: DSCN0042.JPG\n");
+	return -34;
+    }
+    if (strcmp(human, "N 43.00 27.00 52.04 ") != 0) {
+	fprintf(stderr, "DSCN0042.JPG: GPS coords(20) unexpected value: %s|\n", human);
+	return -35;
+    };
+    if (!gaiaGetGpsCoords(blob, sz, &longitude, &latitude)) {
+	fprintf(stderr, "cannot extract GPS long/lat from JPEG image: DSCN0042.JPG\n");
+	return -36;
+    }
+    if (longitude != 11.881478 || latitude != 43.464455) {
+	fprintf(stderr, "DSCN0042.JPG: GPS long/lat unexpected values: %1.9f %1.9f|\n", longitude, latitude);
+	return -37;
+    };
+
+    if (blob)
+        free(blob);
+    if (tag_list)
+        gaiaExifTagsFree(tag_list);
+    fclose(fl);
+       
+    fl = fopen("sql_stmt_tests/La_folla_durante_il_Palio.jpg", "rb");
+    if (!fl)
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "cannot open EXIF-JPEG image: La_folla_durante_il_Palio.jpg\n");
+	return -50;
+    }
+    if (fseek(fl, 0, SEEK_END) == 0)
+        sz = ftell(fl);
+    if (sz <= 14) {
+	fprintf(stderr, "invalid size EXIF-JPEG image: La_folla_durante_il_Palio.jpg\n");
+	return -51;
+    }
+    
+    blob = (unsigned char *) malloc(sz);
+    rewind(fl);
+    rd = fread(blob, 1, sz, fl);
+    if (rd != sz) {
+	fprintf(stderr, "read error EXIF-JPEG image: La_folla_durante_il_Palio.jpg\n");
+	return -52;
+    }
+    
+    tag_list = gaiaGetExifTags(blob, sz);
+    if (tag_list == NULL) {
+	fprintf(stderr, "cannot extract EXIF tags from JPEG image: La_folla_durante_il_Palio.jpg\n");
+	return -53;
+    }
+
+    val64 = get_pixel_x(tag_list, &ok);
+    if (!ok) {
+	fprintf(stderr, "La_folla_durante_il_Palio.jpg: PixelX tag not found\n");
+	return -54;
+    }
+    if (val64 != 1280) {
+	fprintf(stderr, "La_folla_durante_il_Palio.jpg: PixelX unexpected value: %d\n", (int)val64);
+	return -55;
+    }
+
+    val64 = get_pixel_y(tag_list, &ok); 
+    if (!ok) {
+	fprintf(stderr, "La_folla_durante_il_Palio.jpg: PixelY tag not found\n");
+	return -56;
+    }
+    if (val64 != 960) {
+	fprintf(stderr, "La_folla_durante_il_Palio.jpg: PixelY unexpected value: %d\n", (int)val64);
+	return -57;
+    }
+  
+    get_make(tag_list, &result, &ok);
+    if (!ok) {
+	fprintf(stderr, "La_folla_durante_il_Palio.jpg: Make tag not found\n");
+	return -58;
+    }
+    if (strcmp(result, "Nokia") != 0) {
+	fprintf(stderr, "La_folla_durante_il_Palio.jpg: Make unexpected value: %s|\n", result);
+	return -59;
+    };
+
+    get_model(tag_list, &result, &ok);
+    if (!ok) {
+	fprintf(stderr, "La_folla_durante_il_Palio.jpg: Model tag not found\n");
+	return -60;
+    }
+    if (strcmp(result, "6630") != 0) {
+	fprintf(stderr, "La_folla_durante_il_Palio.jpg: Model unexpected value: %s|\n", result);
+	return -61;
+    };
+    
+    for (i = 0; i < gaiaGetExifTagsCount(tag_list); i++)
+    {
+        pT = gaiaGetExifTagByPos(tag_list, i);
+        if (pT)
+        {
+            gaiaExifTagGetName(pT, tag_name, 128);
+            gaiaExifTagGetValueType(pT);
+            gaiaIsExifGpsTag(pT);
+            gaiaExifTagGetValueType(pT);
+            gaiaExifTagGetNumValues(pT);
+            gaiaExifTagGetHumanReadable (pT, human, 8190, &ok);
+        }
+    }
+
+    for (i = 0x0000; i < 0xffff; i++)
+    {
+        gaiaExifTag tag;
+        tag.Gps = 0;
         tag.TagId = i;
         gaiaExifTagGetName(&tag, tag_name, 128);
     }
