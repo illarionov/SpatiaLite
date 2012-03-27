@@ -67,6 +67,15 @@ gaiaOutClean (char *buffer)
       }
     if (buffer[i] == '.')
 	buffer[i] = '\0';
+
+    if (strcmp (buffer, "-1.#QNAN") == 0
+	|| strcmp (buffer, "1.#QNAN") == 0
+	|| strcmp (buffer, "-1.#IND") == 0 || strcmp (buffer, "1.#IND") == 0)
+      {
+	  /* on Windows a NaN could be represented in "odd" ways */
+	  /* this is intended to restore a consistent behaviour  */
+	  strcpy (buffer, "nan");
+      }
 }
 
 GAIAGEO_DECLARE void

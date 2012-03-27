@@ -329,6 +329,13 @@ int main (int argc, char *argv[])
     {
 	result = run_specified_testcases(argc, argv);
     }
+    if (result != 0)
+    {
+    /* it looks like if MinGW applies some wrong assumption   */ 
+    /* some negative values are incorrectly reported to be OK */
+    /* forcing -1 seems to resolve this issue                 */
+        result = -1;
+    }
 
     spatialite_cleanup();
 
