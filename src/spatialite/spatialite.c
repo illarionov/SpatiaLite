@@ -52,7 +52,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <math.h>
 #include <float.h>
 #include <locale.h>
-#include <errno.h>
 
 #if defined(_WIN32) || defined(WIN32)
 #include <io.h>
@@ -15989,6 +15988,25 @@ fnct_RingsCutAtNodes (sqlite3_context * context, int argc,
 
 #ifndef OMIT_MATHSQL		/* supporting SQL math functions */
 
+static int
+testInvalidFP (double x)
+{
+/* testing if this one is an invalid Floating Point */
+#ifdef _WIN32
+    if (_fpclass (x) == _FPCLASS_NN || _fpclass (x) == _FPCLASS_PN ||
+	_fpclass (x) == _FPCLASS_NZ || _fpclass (x) == _FPCLASS_PZ)
+	;
+    else
+	return 1;
+#else
+    if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
+	;
+    else
+	return 1;
+#endif
+    return 0;
+}
+
 static void
 fnct_math_acos (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
@@ -15999,23 +16017,12 @@ fnct_math_acos (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / or NULL if any error is encountered
 */
     int int_value;
-    int err = 0;
     double x;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    errno = 0;
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
       {
 	  x = acos (sqlite3_value_double (argv[0]));
-#ifdef __APPLE__
-	  if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
-	      ;
-	  else
-	      err = 1;
-#else
-	  if (errno == EDOM)
-	      err = 1;
-#endif
-	  if (err)
+	  if (testInvalidFP (x))
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -16025,16 +16032,7 @@ fnct_math_acos (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  int_value = sqlite3_value_int (argv[0]);
 	  x = int_value;
 	  x = acos (x);
-#ifdef __APPLE__
-	  if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
-	      ;
-	  else
-	      err = 1;
-#else
-	  if (errno == EDOM)
-	      err = 1;
-#endif
-	  if (err)
+	  if (testInvalidFP (x))
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -16054,22 +16052,11 @@ fnct_math_asin (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     int int_value;
     double x;
-    int err = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    errno = 0;
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
       {
 	  x = asin (sqlite3_value_double (argv[0]));
-#ifdef __APPLE__
-	  if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
-	      ;
-	  else
-	      err = 1;
-#else
-	  if (errno == EDOM)
-	      err = 1;
-#endif
-	  if (err)
+	  if (testInvalidFP (x))
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -16079,16 +16066,7 @@ fnct_math_asin (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  int_value = sqlite3_value_int (argv[0]);
 	  x = int_value;
 	  x = asin (x);
-#ifdef __APPLE__
-	  if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
-	      ;
-	  else
-	      err = 1;
-#else
-	  if (errno == EDOM)
-	      err = 1;
-#endif
-	  if (err)
+	  if (testInvalidFP (x))
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -16311,22 +16289,11 @@ fnct_math_logn (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     int int_value;
     double x;
-    int err = 0;
-    errno = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
       {
 	  x = log (sqlite3_value_double (argv[0]));
-#ifdef __APPLE__
-	  if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
-	      ;
-	  else
-	      err = 1;
-#else
-	  if (errno == EDOM || errno == ERANGE)
-	      err = 1;
-#endif
-	  if (err)
+	  if (testInvalidFP(x))
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -16336,16 +16303,7 @@ fnct_math_logn (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  int_value = sqlite3_value_int (argv[0]);
 	  x = int_value;
 	  x = log (x);
-#ifdef __APPLE__
-	  if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
-	      ;
-	  else
-	      err = 1;
-#else
-	  if (errno == EDOM || errno == ERANGE)
-	      err = 1;
-#endif
-	  if (err)
+	  if (testInvalidFP (x))
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -16368,8 +16326,6 @@ fnct_math_logn2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double b = 1.0;
     double log1;
     double log2;
-    int err = 0;
-    errno = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
 	x = sqlite3_value_double (argv[0]);
@@ -16401,31 +16357,13 @@ fnct_math_logn2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     log1 = log (x);
-#ifdef __APPLE__
-    if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
-	;
-    else
-	err = 1;
-#else
-    if (errno == EDOM || errno == ERANGE)
-	err = 1;
-#endif
-    if (err)
+    if (testInvalidFP (log1))
       {
 	  sqlite3_result_null (context);
 	  return;
       }
     log2 = log (b);
-#ifdef __APPLE__
-    if (fpclassify (log2) == FP_NORMAL || fpclassify (log2) == FP_ZERO)
-	;
-    else
-	err = 1;
-#else
-    if (errno == EDOM || errno == ERANGE)
-	err = 1;
-#endif
-    if (err)
+    if (testInvalidFP (log2))
       {
 	  sqlite3_result_null (context);
 	  return;
@@ -16446,8 +16384,6 @@ fnct_math_log_2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double x;
     double log1;
     double log2;
-    int err = 0;
-    errno = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
 	x = sqlite3_value_double (argv[0]);
@@ -16462,16 +16398,7 @@ fnct_math_log_2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     log1 = log (x);
-#ifdef __APPLE__
-    if (fpclassify (log1) == FP_NORMAL || fpclassify (log1) == FP_ZERO)
-	;
-    else
-	err = 1;
-#else
-    if (errno == EDOM || errno == ERANGE)
-	err = 1;
-#endif
-    if (err)
+    if (testInvalidFP (log1))
       {
 	  sqlite3_result_null (context);
 	  return;
@@ -16493,9 +16420,7 @@ fnct_math_log_10 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double x;
     double log1;
     double log2;
-    int err = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    errno = 0;
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
 	x = sqlite3_value_double (argv[0]);
     else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
@@ -16509,16 +16434,7 @@ fnct_math_log_10 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     log1 = log (x);
-#ifdef __APPLE__
-    if (fpclassify (log1) == FP_NORMAL || fpclassify (log1) == FP_ZERO)
-	;
-    else
-	err = 1;
-#else
-    if (errno == EDOM || errno == ERANGE)
-	err = 1;
-#endif
-    if (err)
+    if (testInvalidFP (log1))
       {
 	  sqlite3_result_null (context);
 	  return;
@@ -16552,9 +16468,7 @@ fnct_math_pow (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double x;
     double y;
     double p;
-    int err = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    errno = 0;
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
 	x = sqlite3_value_double (argv[0]);
     else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
@@ -16580,16 +16494,7 @@ fnct_math_pow (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     p = pow (x, y);
-#ifdef __APPLE__
-    if (fpclassify (p) == FP_NORMAL || fpclassify (p) == FP_ZERO)
-	;
-    else
-	err = 1;
-#else
-    if (errno == EDOM || errno == ERANGE)
-	err = 1;
-#endif
-    if (err)
+    if (testInvalidFP (p))
 	sqlite3_result_null (context);
     else
 	sqlite3_result_double (context, p);
@@ -16840,13 +16745,11 @@ fnct_math_sqrt (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     int int_value;
     double x;
-    int err = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    errno = 0;
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
       {
 	  x = sqrt (sqlite3_value_double (argv[0]));
-	  if (errno)
+	  if (testInvalidFP (x))
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -16856,16 +16759,7 @@ fnct_math_sqrt (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  int_value = sqlite3_value_int (argv[0]);
 	  x = int_value;
 	  x = sqrt (x);
-#ifdef __APPLE__
-	  if (fpclassify (x) == FP_NORMAL || fpclassify (x) == FP_ZERO)
-	      ;
-	  else
-	      err = 1;
-#else
-	  if (errno == EDOM)
-	      err = 1;
-#endif
-	  if (err)
+	  if (testInvalidFP (x))
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
