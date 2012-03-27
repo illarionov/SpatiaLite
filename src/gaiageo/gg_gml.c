@@ -1177,11 +1177,11 @@ gml_parse_linestring (gaiaGeomCollPtr geom, gmlNodePtr node, int srid,
     gaiaGeomCollPtr last;
     gaiaLinestringPtr new_ln;
     gaiaPointPtr pt;
-    gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
-    gmlMapDynAlloc (GML_DYN_DYNLINE, dyn);
     int iv;
     int has_z = 1;
     int points = 0;
+    gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
+    gmlMapDynAlloc (GML_DYN_DYNLINE, dyn);
 
     if (strcmp (node->Tag, "gml:coordinates") == 0
 	|| strcmp (node->Tag, "coordinates") == 0)
@@ -1299,11 +1299,11 @@ gml_parse_curve (gaiaGeomCollPtr geom, gmlNodePtr node, int srid,
     gaiaGeomCollPtr last;
     gaiaLinestringPtr new_ln;
     gaiaPointPtr pt;
-    gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
-    gmlMapDynAlloc (GML_DYN_DYNLINE, dyn);
     int iv;
     int has_z = 1;
     int points = 0;
+    gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
+    gmlMapDynAlloc (GML_DYN_DYNLINE, dyn);
 
     if (strcmp (node->Tag, "gml:segments") == 0
 	|| strcmp (node->Tag, "segments") == 0)

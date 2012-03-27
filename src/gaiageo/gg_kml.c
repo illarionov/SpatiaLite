@@ -934,11 +934,11 @@ kml_parse_linestring (gaiaGeomCollPtr geom, kmlNodePtr node, kmlNodePtr * next)
     gaiaGeomCollPtr last;
     gaiaLinestringPtr new_ln;
     gaiaPointPtr pt;
-    gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
-    kmlMapDynAlloc (KML_DYN_DYNLINE, dyn);
     int iv;
     int has_z = 1;
     int points = 0;
+    gaiaDynamicLinePtr dyn = gaiaAllocDynamicLine ();
+    kmlMapDynAlloc (KML_DYN_DYNLINE, dyn);
 
     if (strcmp (node->Tag, "coordinates") == 0)
       {

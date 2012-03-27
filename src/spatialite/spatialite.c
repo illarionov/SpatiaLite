@@ -11620,8 +11620,6 @@ fnct_EnvIntersects (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / the second MBR is defined by two points (identifying a rectangle's diagonal) 
 / or NULL if any error is encountered
 */
-    int len;
-    unsigned char *p_result = NULL;
     double x1;
     double y1;
     double x2;

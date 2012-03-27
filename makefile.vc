@@ -1,4 +1,4 @@
-# $Id: makefile.vc 2010/11/09 Sandro Furieri $
+# $Id: $
 #
 # NMAKE Makefile to build libspatialite on Windows
 #
@@ -6,19 +6,22 @@
 
 LIBOBJ = src\gaiaaux\gg_sqlaux.obj src\gaiaaux\gg_utf8.obj \
 	src\gaiaexif\gaia_exif.obj src\gaiageo\gg_advanced.obj \
-	src\gaiageo\gg_endian.obj src\gaiageo\gg_geodesic.obj \
+	src\gaiageo\gg_endian.obj src\gaiageo\gg_ewkt.obj \
+	src\gaiageo\gg_geodesic.obj src\gaiageo\gg_geoJSON.obj \
 	src\gaiageo\gg_geometries.obj src\gaiageo\gg_geoscvt.obj \
+	src\gaiageo\gg_gml.obj src\gaiageo\gg_kml.obj \
 	src\gaiageo\gg_relations.obj src\gaiageo\gg_shape.obj \
-	src\gaiageo\gg_transform.obj src\gaiageo\gg_wkb.obj \
-	src\gaiageo\gg_wkt.obj src\spatialite\mbrcache.obj \
-	src\shapefiles\shapefiles.obj \
+	src\gaiageo\gg_transform.obj src\gaiageo\gg_vanuatu.obj \
+	src\gaiageo\gg_wkb.obj src\gaiageo\gg_wkt.obj \
+	src\spatialite\mbrcache.obj src\shapefiles\shapefiles.obj \
 	src\spatialite\spatialite.obj src\spatialite\virtualdbf.obj \
 	src\spatialite\virtualfdo.obj src\spatialite\virtualnetwork.obj \
-	src\spatialite\virtualshape.obj src\srsinit\srs_init.obj \
+	src\spatialite\virtualshape.obj src\spatialite\virtualspatialindex.obj \
+	src\spatialite\virtualXL.obj src\srsinit\srs_init.obj \
 	src\versioninfo\version.obj src\virtualtext\virtualtext.obj
 SPATIALITE_DLL = spatialite$(VERSION).dll
 
-CFLAGS = /nologo -IC:\OSGeo4W\include -I.\src\headers $(OPTFLAGS)
+CFLAGS = /nologo -I.\src\headers -IC:\OSGeo4W\include $(OPTFLAGS)
 
 default:	all
 
@@ -35,8 +38,8 @@ spatialite_i.lib:     $(LIBOBJ)
 	link /debug /dll /out:$(SPATIALITE_DLL) \
 		/implib:spatialite_i.lib $(LIBOBJ) \
 		C:\OSGeo4W\lib\proj_i.lib C:\OSGeo4W\lib\geos_c_i.lib \
-		C:\OSGeo4w\lib\freexl.lib C:\OSGeo4w\lib\iconv.lib \
-		C:\OSGeo4W\lib\sqlite_i.lib
+		C:\OSGeo4w\lib\freexl_i.lib C:\OSGeo4w\lib\iconv.lib \
+		C:\OSGeo4W\lib\sqlite3_i.lib
 	if exist $(SPATIALITE_DLL).manifest mt -manifest \
 		$(SPATIALITE_DLL).manifest -outputresource:$(SPATIALITE_DLL);2
 		
