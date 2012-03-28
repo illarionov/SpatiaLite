@@ -5,5 +5,5 @@ SELECT assvg(geom, 1) AS rel, assvg(geom, 0) AS abs FROM (SELECT GeomFromText("P
 2 # columns
 rel
 abs
-M 10 -10 l 5 -0 0 -5 -5 -0 z M 11 -11 l 1 -0 0 -1 -1 -0 z
+M 10 -10 l 5 0 0 -5 -5 0 z M 11 -11 l 1 0 0 -1 -1 0 z
 M 10 -10 L 15 -10 15 -15 10 -15 z M 11 -11 L 12 -11 12 -12 11 -12 z
