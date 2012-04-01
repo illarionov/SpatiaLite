@@ -11267,40 +11267,42 @@ fnct_NRings (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static char garsMapping[24] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J',
-'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z' };
-    
+    'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+};
+
 static char
-garsLetterCode(int value)
+garsLetterCode (int value)
 {
     return garsMapping[value];
 }
 
-static int garsMappingIndex (const char letter)
+static int
+garsMappingIndex (const char letter)
 {
     int i = 0;
     for (i = 0; i < 24; ++i)
       {
-	 if (letter == garsMapping[i])
-	   return i;
+	  if (letter == garsMapping[i])
+	      return i;
       }
     return -1;
 }
 
 static double
-garsLetterToDegreesLat(char msd, char lsd)
+garsLetterToDegreesLat (char msd, char lsd)
 {
-    double high = garsMappingIndex(msd) * 24.0;
-    double low = garsMappingIndex(lsd);
+    double high = garsMappingIndex (msd) * 24.0;
+    double low = garsMappingIndex (lsd);
     if ((high < 0) || (low < 0))
       {
-	return -100.0;
+	  return -100.0;
       }
     return (((high + low) * 0.5) - 90.0);
 }
-    
-    
+
+
 static void
-fnct_GARSMbr (sqlite3_context * context, int argc, sqlite3_value **argv)
+fnct_GARSMbr (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / GARSMbr(Text)
@@ -11309,14 +11311,14 @@ fnct_GARSMbr (sqlite3_context * context, int argc, sqlite3_value **argv)
 / MBR geometry.
 / This function will return NULL if an error occurs
 */
-    const char* text = NULL;
+    const char *text = NULL;
     int len = 0;
     unsigned char *p_result = NULL;
     double x1 = 0.0;
     double y1 = 0.0;
     double x2 = 0.0;
     double y2 = 0.0;
-    
+
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
@@ -11324,110 +11326,112 @@ fnct_GARSMbr (sqlite3_context * context, int argc, sqlite3_value **argv)
 	  return;
       }
     text = sqlite3_value_text (argv[0]);
-    if ((strlen(text) < 5) || (strlen(text) > 7))
+    if ((strlen (text) < 5) || (strlen (text) > 7))
       {
 	  sqlite3_result_null (context);
 	  return;
       }
-    if (strlen(text) == 5)
+    if (strlen (text) == 5)
       {
-	int numMatch = 0;
-	int digit100 = 0;
-	char letterMSD = '\0';
-	char letterLSD = '\0';
-	numMatch = sscanf(text, "%u%c%c", &digit100, &letterMSD, &letterLSD);
-	if (numMatch != 3)
-	  {
-	      sqlite3_result_null (context);
-	      return;
-	  }
-	x1 = ((digit100 - 1) * 0.5) - 180.0;
-	y1 = garsLetterToDegreesLat(letterMSD, letterLSD);
-	if ((x1 < -180.0) || (x1 > 179.5) || (y1 < -90.0) || (y1 > 89.5))
-	  {
-	    sqlite3_result_null (context);
-	    return;
-	  }
-	x2 = x1 + 0.5;
-	y2 = y1 + 0.5;
+	  int numMatch = 0;
+	  int digit100 = 0;
+	  char letterMSD = '\0';
+	  char letterLSD = '\0';
+	  numMatch = sscanf (text, "%u%c%c", &digit100, &letterMSD, &letterLSD);
+	  if (numMatch != 3)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  x1 = ((digit100 - 1) * 0.5) - 180.0;
+	  y1 = garsLetterToDegreesLat (letterMSD, letterLSD);
+	  if ((x1 < -180.0) || (x1 > 179.5) || (y1 < -90.0) || (y1 > 89.5))
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  x2 = x1 + 0.5;
+	  y2 = y1 + 0.5;
       }
-    if (strlen(text) == 6)
+    if (strlen (text) == 6)
       {
-	int numMatch = 0;
-	int digit100 = 0;
-	char letterMSD = '\0';
-	char letterLSD = '\0';
-	int digitSegment = 0;
-	numMatch = sscanf(text, "%u%c%c%u", &digit100, &letterMSD, &letterLSD,
-			  &digitSegment);
-	if (numMatch != 4)
-	  {
-	      sqlite3_result_null (context);
-	      return;
-	  }
-	if ((digitSegment < 1) || (digitSegment > 4))
-	  {
-	      sqlite3_result_null (context);
-	      return;
-	  }
-	x1 = ((digit100 - 1) * 0.5) - 180.0;
-	if ((digitSegment == 2) || (digitSegment == 4))
-	  {
-	    x1 += 0.25;
-	  }
-	y1 = garsLetterToDegreesLat(letterMSD, letterLSD);
-	if ((digitSegment == 1) || (digitSegment == 2))
-	  {
-	    y1 += 0.25;
-	  }
-	if ((x1 < -180.0) || (x1 > 179.75) || (y1 < -90.0) || (y1 > 89.75))
-	  {
-	    sqlite3_result_null (context);
-	    return;
-	  }
-	x2 = x1 + 0.25;
-	y2 = y1 + 0.25;
+	  int numMatch = 0;
+	  int digit100 = 0;
+	  char letterMSD = '\0';
+	  char letterLSD = '\0';
+	  int digitSegment = 0;
+	  numMatch =
+	      sscanf (text, "%u%c%c%u", &digit100, &letterMSD, &letterLSD,
+		      &digitSegment);
+	  if (numMatch != 4)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if ((digitSegment < 1) || (digitSegment > 4))
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  x1 = ((digit100 - 1) * 0.5) - 180.0;
+	  if ((digitSegment == 2) || (digitSegment == 4))
+	    {
+		x1 += 0.25;
+	    }
+	  y1 = garsLetterToDegreesLat (letterMSD, letterLSD);
+	  if ((digitSegment == 1) || (digitSegment == 2))
+	    {
+		y1 += 0.25;
+	    }
+	  if ((x1 < -180.0) || (x1 > 179.75) || (y1 < -90.0) || (y1 > 89.75))
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  x2 = x1 + 0.25;
+	  y2 = y1 + 0.25;
       }
-    if (strlen(text) == 7)
+    if (strlen (text) == 7)
       {
-	int numMatch = 0;
-	int digit100 = 0;
-	char letterMSD = '\0';
-	char letterLSD = '\0';
-	int digitAndKeypad = 0;
-	int digitSegment = 0;
-	int keypadNumber = 0;
-	numMatch = sscanf(text, "%u%c%c%u", &digit100, &letterMSD, &letterLSD,
-			  &digitAndKeypad);
-	if (numMatch != 4)
-	  {
-	      sqlite3_result_null (context);
-	      return;
-	  }
-	digitSegment = digitAndKeypad / 10;
-	keypadNumber = digitAndKeypad % 10;
-	if ((digitSegment < 1) || (digitSegment > 4))
-	  {
-	      sqlite3_result_null (context);
-	      return;
-	  }
-	if (keypadNumber < 1)
-	  {
-	      sqlite3_result_null (context);
-	      return;
-	  }
-	x1 = ((digit100 - 1) * 0.5) - 180.0;
-	if ((digitSegment == 2) || (digitSegment == 4))
-	  {
-	    x1 += 0.25;
-	  }
-	y1 = garsLetterToDegreesLat(letterMSD, letterLSD);
-	if ((digitSegment == 1) || (digitSegment == 2))
-	  {
-	    y1 += 0.25;
-	  }
-	switch (keypadNumber)
-	{
+	  int numMatch = 0;
+	  int digit100 = 0;
+	  char letterMSD = '\0';
+	  char letterLSD = '\0';
+	  int digitAndKeypad = 0;
+	  int digitSegment = 0;
+	  int keypadNumber = 0;
+	  numMatch =
+	      sscanf (text, "%u%c%c%u", &digit100, &letterMSD, &letterLSD,
+		      &digitAndKeypad);
+	  if (numMatch != 4)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  digitSegment = digitAndKeypad / 10;
+	  keypadNumber = digitAndKeypad % 10;
+	  if ((digitSegment < 1) || (digitSegment > 4))
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (keypadNumber < 1)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  x1 = ((digit100 - 1) * 0.5) - 180.0;
+	  if ((digitSegment == 2) || (digitSegment == 4))
+	    {
+		x1 += 0.25;
+	    }
+	  y1 = garsLetterToDegreesLat (letterMSD, letterLSD);
+	  if ((digitSegment == 1) || (digitSegment == 2))
+	    {
+		y1 += 0.25;
+	    }
+	  switch (keypadNumber)
+	    {
 	    case 1:
 		x1 += 0 * 0.25 / 3;
 		y1 += 2 * 0.25 / 3;
@@ -11464,20 +11468,20 @@ fnct_GARSMbr (sqlite3_context * context, int argc, sqlite3_value **argv)
 		x1 += 2 * 0.25 / 3;
 		y1 += 0 * 0.25 / 3;
 		break;
-	}
-	if ((x1 < -180.0) || (x1 >= 180.0) || (y1 < -90.0) || (y1 >= 90.0))
-	  {
-	    sqlite3_result_null (context);
-	    return;
-	  }
-	x2 = x1 + (0.25 / 3);
-	y2 = y1 + (0.25 / 3);
+	    }
+	  if ((x1 < -180.0) || (x1 >= 180.0) || (y1 < -90.0) || (y1 >= 90.0))
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  x2 = x1 + (0.25 / 3);
+	  y2 = y1 + (0.25 / 3);
       }
     gaiaBuildMbr (x1, y1, x2, y2, 4326, &p_result, &len);
     if (!p_result)
       {
-	sqlite3_result_null (context);
-	printf("bad p_result\n");
+	  sqlite3_result_null (context);
+	  printf ("bad p_result\n");
       }
     else
 	sqlite3_result_blob (context, p_result, len, free);
@@ -11494,8 +11498,12 @@ fnct_ToGARS (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     unsigned char *p_blob;
     int n_bytes;
-    int cnt = 0;
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
     gaiaPointPtr point;
+    gaiaLinestringPtr line;
+    gaiaPolygonPtr polyg;
     gaiaGeomCollPtr geo = NULL;
     char p_result[8];
     int lon_band = 0;
@@ -11506,80 +11514,100 @@ fnct_ToGARS (sqlite3_context * context, int argc, sqlite3_value ** argv)
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
-	sqlite3_result_null (context);
-	return;
+	  sqlite3_result_null (context);
+	  return;
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geo)
       {
-	sqlite3_result_null (context);
-	return;
+	  sqlite3_result_null (context);
+	  return;
       }
-    gaiaNormalizeLonLat(geo);
+    gaiaNormalizeLonLat (geo);
     point = geo->FirstPoint;
-    if (!point)
+    while (point != NULL)
       {
-	sqlite3_result_null (context);
-	return;
+	  pts++;
+	  point = point->Next;
+      }
+    line = geo->FirstLinestring;
+    while (line != NULL)
+      {
+	  lns++;
+	  line = line->Next;
+      }
+    polyg = geo->FirstPolygon;
+    while (polyg != NULL)
+      {
+	  pgs++;
+	  polyg = polyg->Next;
+      }
+    if (pts == 1 && lns == 0 && pgs == 0)
+	point = geo->FirstPoint;
+    else
+      {
+	  /* not a single Point */
+	  sqlite3_result_null (context);
+	  return;
       }
     /* longitude band */
-    lon_band = 1 + (int)((point->X + 180.0)*2);
-    sprintf(p_result, "%03i", lon_band);
+    lon_band = 1 + (int) ((point->X + 180.0) * 2);
+    sprintf (p_result, "%03i", lon_band);
     /* latitude band */
-    lat_band = (int)((point->Y + 90.0)*2);
-    p_result[3] = garsLetterCode(lat_band / 24);
-    p_result[4] = garsLetterCode(lat_band % 24);
+    lat_band = (int) ((point->Y + 90.0) * 2);
+    p_result[3] = garsLetterCode (lat_band / 24);
+    p_result[4] = garsLetterCode (lat_band % 24);
     /* quadrant */
-    lon_minutes = fmod((point->X + 180.0), 0.5) * 60.0;
+    lon_minutes = fmod ((point->X + 180.0), 0.5) * 60.0;
     if (lon_minutes < 15.0)
       {
-	segmentNumber = 1;
+	  segmentNumber = 1;
       }
     else
       {
-	segmentNumber = 2;
-	lon_minutes -= 15.0;
+	  segmentNumber = 2;
+	  lon_minutes -= 15.0;
       }
-    lat_minutes = fmod((point->Y + 90.0), 0.5) * 60.0;
+    lat_minutes = fmod ((point->Y + 90.0), 0.5) * 60.0;
     if (lat_minutes < 15.0)
-    {
-	segmentNumber += 2;
-    }
+      {
+	  segmentNumber += 2;
+      }
     else
-    {
-	/* we already have the right segment */
-	lat_minutes -= 15.0;
-    }
-    sprintf(&(p_result[5]), "%i", segmentNumber);
+      {
+	  /* we already have the right segment */
+	  lat_minutes -= 15.0;
+      }
+    sprintf (&(p_result[5]), "%i", segmentNumber);
     /* area */
     segmentNumber = 0;
     if (lon_minutes >= 10.0)
-    {
-	segmentNumber = 3;
-    }
+      {
+	  segmentNumber = 3;
+      }
     else if (lon_minutes >= 5.0)
-    {
-	segmentNumber = 2;
-    }
-    else 
-    {
-	segmentNumber = 1;
-    }
-    if (lat_minutes >= 10.0)
-    {
-	/* nothing to add */
-    }
-    else if (lat_minutes >= 5.0)
-    {
-	segmentNumber += 3;
-    }
+      {
+	  segmentNumber = 2;
+      }
     else
-    {
-	segmentNumber += 6;
-    }
-    sprintf(&(p_result[6]), "%i", segmentNumber);
+      {
+	  segmentNumber = 1;
+      }
+    if (lat_minutes >= 10.0)
+      {
+	  /* nothing to add */
+      }
+    else if (lat_minutes >= 5.0)
+      {
+	  segmentNumber += 3;
+      }
+    else
+      {
+	  segmentNumber += 6;
+      }
+    sprintf (&(p_result[6]), "%i", segmentNumber);
     sqlite3_result_text (context, p_result, 7, SQLITE_TRANSIENT);
     gaiaFreeGeomColl (geo);
 }
@@ -16648,7 +16676,7 @@ fnct_math_logn (sqlite3_context * context, int argc, sqlite3_value ** argv)
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
       {
 	  x = log (sqlite3_value_double (argv[0]));
-	  if (testInvalidFP(x))
+	  if (testInvalidFP (x))
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, x);
@@ -17543,8 +17571,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -17628,8 +17655,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -17638,8 +17664,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
