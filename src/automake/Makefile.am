@@ -18,7 +18,7 @@ if MINGW
 libspatialite_la_LDFLAGS = -version-info 3:0:0 -no-undefined
 libspatialite_la_LIBADD = 
 else
-libspatialite_la_LDFLAGS = -version-info 4:3:0
+libspatialite_la_LDFLAGS = -version-info 5:0:2
 libspatialite_la_LIBADD = -lpthread -ldl
 endif
 

@@ -167,6 +167,9 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 GEOSADVANCED_FLAGS = @GEOSADVANCED_FLAGS@
+GEOSCONFIG = @GEOSCONFIG@
+GEOS_CPPFLAGS = @GEOS_CPPFLAGS@
+GEOS_LDFLAGS = @GEOS_LDFLAGS@
 GREP = @GREP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -282,7 +285,7 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./spatialite/libsplite.la ./shapefiles/libshapefiles.la \
 	./srsinit/libsrsinit.la ./virtualtext/libvirtualtext.la \
 	$(am__append_1)
-@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 4:3:0
+@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 5:0:2
 @MINGW_TRUE@libspatialite_la_LDFLAGS = -version-info 3:0:0 -no-undefined
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-recursive

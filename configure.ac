@@ -127,8 +127,48 @@ AC_ARG_ENABLE(geos, [AS_HELP_STRING(
   [], [enable_geos=yes])
 if test x"$enable_geos" != "xno"; then
   OMIT_GEOS_FLAGS=
-  AC_CHECK_HEADERS(geos_c.h,, [AC_MSG_ERROR([cannot find geos_c.h, bailing out])])
-  AC_SEARCH_LIBS(GEOSTopologyPreserveSimplify,geos_c,,AC_MSG_ERROR(['libgeos_c' is required but it doesn't seem to be installed on this system.]),-lm -lgeos)
+
+  #-----------------------------------------------------------------------
+  #   --with-geosconfig
+  #
+  AC_ARG_WITH([geosconfig],
+        [AS_HELP_STRING([--with-geosconfig=FILE], [specify an alternative geos-config file])],
+	[GEOSCONFIG="$withval"], [GEOSCONFIG=""])
+  if test "x$GEOSCONFIG" = "x"; then
+        # GEOSCONFIG was not specified, so search within the current path
+        AC_PATH_PROG([GEOSCONFIG], [geos-config])	
+        # If we couldn't find geos-config, display an error
+        if test "x$GEOSCONFIG" = "x"; then
+                AC_MSG_ERROR([could not find geos-config within the current path. You may need to try re-running configure with a --with-geosconfig parameter.])
+        fi
+  else
+        # GEOSCONFIG was specified; display a message to the user
+        if test "x$GEOSCONFIG" = "xyes"; then
+                AC_MSG_ERROR([you must specify a parameter to --with-geosconfig, e.g. --with-geosconfig=/path/to/geos-config])
+        else
+                if test -f $GEOSCONFIG; then
+                        AC_MSG_RESULT([Using user-specified geos-config file: $GEOSCONFIG])
+                else
+                        AC_MSG_ERROR([the user-specified geos-config file $GEOSCONFIG does not exist])
+                fi     
+        fi
+  fi
+  # Extract the linker and include flags
+  GEOS_LDFLAGS=`$GEOSCONFIG --ldflags`
+  GEOS_CPPFLAGS=-I`$GEOSCONFIG --includes`
+  AC_SUBST([GEOS_LDFLAGS])
+  AC_SUBST([GEOS_CPPFLAGS])	
+  # Ensure that we can parse geos_c.h
+  CPPFLAGS_SAVE="$CPPFLAGS"
+  CPPFLAGS="$GEOS_CPPFLAGS"
+  AC_CHECK_HEADERS([geos_c.h],, [AC_MSG_ERROR([could not find geos_c.h - you may need to specify the directory of a geos-config file using --with-geosconfig])])
+  CPPFLAGS="$CPPFLAGS_SAVE"	
+  # Ensure we can link against libgeos_c
+  LIBS_SAVE="$LIBS"
+  LIBS="$GEOS_LDFLAGS"
+  AC_SEARCH_LIBS(GEOSTopologyPreserveSimplify,geos_c,,AC_MSG_ERROR([could not find libgeos_c - you may need to specify the directory of a geos-config file using --with-geosconfig]))
+  LIBS="$LIBS_SAVE"
+
   #-----------------------------------------------------------------------
   #   --enable-geosadvanced
   #
@@ -137,7 +177,7 @@ if test x"$enable_geos" != "xno"; then
 	  [], [enable_geosadvanced=yes])
   if test x"$enable_geosadvanced" != "xno"; then
 	  GEOSADVANCED_FLAGS=-DGEOS_ADVANCED
-	  AC_SEARCH_LIBS(GEOSCoveredBy,geos_c,,AC_MSG_ERROR([obsolete 'libgeos_c' (< v.3.3.0). please retry specifying: --disable-geosadvanced.]),-lm -lgeos)
+	  AC_SEARCH_LIBS(GEOSCoveredBy,geos_c,,AC_MSG_ERROR([obsolete 'libgeos_c' (< v.3.3.0). please retry specifying: --disable-geosadvanced.]))
   else
 	  GEOSADVANCED_FLAGS=
   fi
