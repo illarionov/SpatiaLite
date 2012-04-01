@@ -1490,7 +1490,7 @@ extern "C"
  \param shift_z Z axis shift factor.
 
  \sa gaiaScaleCoords, gaiaRotateCoords, gaiaReflectCoords, gaiaSwapCoords,
-     gaiaShiftCoords, gaiaShiftLongitude
+     gaiaShiftCoords, gaiaShiftLongitude, gaiaNormalizeLongLat
  */
     GAIAGEO_DECLARE void gaiaShiftCoords3D (gaiaGeomCollPtr geom,
 					    double shift_x, double shift_y,
@@ -1501,7 +1501,7 @@ extern "C"
 
  \param geom pointer to Geometry object.
 
- \sa gaiaShiftCoords, gaiaShiftCoords3D
+ \sa gaiaShiftCoords, gaiaShiftCoords3D, gaiaNormalizeLongLat
 
  \note only intended for geographic (longitude/latitude) coordinates.
  Negative longitudes (-180/0) will be shifted by 360, thus allowing
@@ -1511,6 +1511,20 @@ extern "C"
  */
     GAIAGEO_DECLARE void gaiaShiftLongitude (gaiaGeomCollPtr geom);
 
+/**
+ Shifts any coordinate to within the "normal range" of longitude and
+ latitude values (-180.0 to 180.0 longitude and -90.0 to 90.0 latitude).
+
+ \param geom pointer to Geometry object.
+ \param shift_x X axis shift factor.
+ \param shift_y Y axis shift factor.
+
+ \sa gaiaScaleCoords, gaiaRotateCoords, gaiaReflectCoords, gaiaSwapCoords,
+     gaiaShiftCoords3D, gaiaShiftLongitude
+ */
+    GAIAGEO_DECLARE void gaiaNormalizeLongLat (gaiaGeomCollPtr geom);
+
+    
 /**
  Scales any coordinate within a Geometry object
 

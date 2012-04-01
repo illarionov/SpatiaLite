@@ -541,6 +541,205 @@ gaiaShiftLongitude (gaiaGeomCollPtr geom)
     gaiaMbrGeometry (geom);
 }
 
+static void
+normalizePoint(double *x, double *y)
+{
+    if ((-180.0 <= *x) && (*x <= 180.0) && (-90.0 <= *y) && (*y <= 90.0))
+      {
+	/* then this point is already OK */
+	return;
+      }
+    if ((*x > 180.0) || (*x < -180.0))
+      {
+	int numCycles = (int)(*x / 360.0);
+	*x -= numCycles * 360.0;
+      }
+    if (*x > 180.0)
+      {
+	*x -= 360.0;
+      }
+    if (*x < -180.0)
+      {
+	*x += 360.0;
+      }
+    if ((*y > 90.0) || (*y < -90.0))
+      {
+	int numCycles = (int)(*y / 360.0);
+	*y -= numCycles * 360.0;
+      }
+    if (*y > 180.0)
+      {
+	*y = -1.0 * (*y - 180.0);
+      }
+    if (*y < -180.0)
+      {
+	*y = -1.0 * (*y + 180.0);
+      }
+    if (*y > 90.0)
+      {
+	*y = 180 - *y;
+      }
+    if (*y < -90.0)
+      {
+	*y = -180.0 - *y;
+      }
+}
+
+GAIAGEO_DECLARE void
+gaiaNormalizeLonLat (gaiaGeomCollPtr geom)
+{
+/* returns a geometry that is the old geometry with all latitudes shifted
+ into the range -90 to 90, and all longitudes shifted into the range -180 to
+ 180.
+*/
+    int ib;
+    int iv;
+    double x;
+    double y;
+    double z;
+    double m;
+    gaiaPointPtr point;
+    gaiaPolygonPtr polyg;
+    gaiaLinestringPtr line;
+    gaiaRingPtr ring;
+    if (!geom)
+	return;
+    point = geom->FirstPoint;
+    while (point)
+      {
+	normalizePoint(&(point->X), &(point->Y));
+	point = point->Next;
+      }
+    line = geom->FirstLinestring;
+    while (line)
+      {
+	  /* shifting LINESTRINGs */
+	  for (iv = 0; iv < line->Points; iv++)
+	    {
+		if (line->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
+		  }
+		else if (line->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (line->Coords, iv, &x, &y, &m);
+		  }
+		else if (line->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (line->Coords, iv, &x, &y, &z, &m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (line->Coords, iv, &x, &y);
+		  }
+		normalizePoint(&x, &y);
+		if (line->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaSetPointXYZ (line->Coords, iv, x, y, z);
+		  }
+		else if (line->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaSetPointXYM (line->Coords, iv, x, y, m);
+		  }
+		else if (line->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaSetPointXYZM (line->Coords, iv, x, y, z, m);
+		  }
+		else
+		  {
+		      gaiaSetPoint (line->Coords, iv, x, y);
+		  }
+	    }
+	  line = line->Next;
+      }
+    polyg = geom->FirstPolygon;
+    while (polyg)
+      {
+	  /* shifting POLYGONs */
+	  ring = polyg->Exterior;
+	  for (iv = 0; iv < ring->Points; iv++)
+	    {
+		/* shifting the EXTERIOR RING */
+		if (ring->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);
+		  }
+		else if (ring->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (ring->Coords, iv, &x, &y, &m);
+		  }
+		else if (ring->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (ring->Coords, iv, &x, &y);
+		  }
+		normalizePoint(&x, &y);
+		if (ring->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
+		  }
+		else if (ring->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaSetPointXYM (ring->Coords, iv, x, y, m);
+		  }
+		else if (ring->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
+		  }
+		else
+		  {
+		      gaiaSetPoint (ring->Coords, iv, x, y);
+		  }
+	    }
+	  for (ib = 0; ib < polyg->NumInteriors; ib++)
+	    {
+		/* shifting the INTERIOR RINGs */
+		ring = polyg->Interiors + ib;
+		for (iv = 0; iv < ring->Points; iv++)
+		  {
+		      if (ring->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaGetPointXYZ (ring->Coords, iv, &x, &y, &z);
+			}
+		      else if (ring->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaGetPointXYM (ring->Coords, iv, &x, &y, &m);
+			}
+		      else if (ring->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaGetPointXYZM (ring->Coords, iv, &x, &y, &z, &m);
+			}
+		      else
+			{
+			    gaiaGetPoint (ring->Coords, iv, &x, &y);
+			}
+		      normalizePoint(&x, &y);
+		      if (ring->DimensionModel == GAIA_XY_Z)
+			{
+			    gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
+			}
+		      else if (ring->DimensionModel == GAIA_XY_M)
+			{
+			    gaiaSetPointXYM (ring->Coords, iv, x, y, m);
+			}
+		      else if (ring->DimensionModel == GAIA_XY_Z_M)
+			{
+			    gaiaSetPointXYZM (ring->Coords, iv, x, y, z, m);
+			}
+		      else
+			{
+			    gaiaSetPoint (ring->Coords, iv, x, y);
+			}
+		  }
+	    }
+	  polyg = polyg->Next;
+      }
+    gaiaMbrGeometry (geom);
+}
+
 GAIAGEO_DECLARE void
 gaiaScaleCoords (gaiaGeomCollPtr geom, double scale_x, double scale_y)
 {
