@@ -36,7 +36,7 @@ check_PROGRAMS = check_endian \
 		check_extra_relations_fncts \
 		check_geoscvt_fncts
 
-AM_CFLAGS = -I@srcdir@/../src/headers
+AM_CFLAGS = -I@srcdir@/../src/headers -I@srcdir@
 AM_LDFLAGS = -L../src -lspatialite -lm $(GCOV_FLAGS)
 
 TESTS = $(check_PROGRAMS)

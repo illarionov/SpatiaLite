@@ -17407,7 +17407,7 @@ else
   as_fn_error $? "obsolete 'libgeos_c' (< v.3.3.0). please retry specifying: --disable-geosadvanced." "$LINENO" 5
 fi
 
-	  $as_echo "#define GEOSADVANCED 1" >>confdefs.h
+	  $as_echo "#define GEOS_ADVANCED 1" >>confdefs.h
 
   fi
 else

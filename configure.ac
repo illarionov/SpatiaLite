@@ -29,8 +29,8 @@ AC_DEFINE(NDEBUG)
 # config depending options
 AH_TEMPLATE([OMIT_GEOS],
             [Should be defined in order to disable GEOS support.])
-AH_TEMPLATE([GEOSADVANCED],
-            [Should be defined in order to enable GEOSADVANCED support.])
+AH_TEMPLATE([GEOS_ADVANCED],
+            [Should be defined in order to enable GEOS_ADVANCED support.])
 AH_TEMPLATE([OMIT_PROJ],
             [Should be defined in order to disable PROJ.4 support.])
 AH_TEMPLATE([OMIT_ICONV],
@@ -203,7 +203,7 @@ if test x"$enable_geos" != "xno"; then
 	  [], [enable_geosadvanced=yes])
   if test x"$enable_geosadvanced" != "xno"; then
 	  AC_SEARCH_LIBS(GEOSCoveredBy,geos_c,,AC_MSG_ERROR([obsolete 'libgeos_c' (< v.3.3.0). please retry specifying: --disable-geosadvanced.]))
-	  AC_DEFINE(GEOSADVANCED)
+	  AC_DEFINE(GEOS_ADVANCED)
   fi
 else
   AC_DEFINE(OMIT_GEOS)
