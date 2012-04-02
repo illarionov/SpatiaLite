@@ -51,6 +51,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <float.h>
 #include <errno.h>
 
+#include "config.h"
+
 #if OMIT_ICONV == 0		/* if ICONV is disabled no SHP support is available */
 
 #if defined(__MINGW32__) || defined(_WIN32)

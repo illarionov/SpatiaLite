@@ -44,13 +44,14 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
+CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libsrsinit_la_LIBADD =
 am_libsrsinit_la_OBJECTS = srs_init.lo
 libsrsinit_la_OBJECTS = $(am_libsrsinit_la_OBJECTS)
-DEFAULT_INCLUDES = -I.@am__isrc@
+DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
@@ -135,7 +136,6 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
-GEOSADVANCED_FLAGS = @GEOSADVANCED_FLAGS@
 GEOSCONFIG = @GEOSCONFIG@
 GEOS_CPPFLAGS = @GEOS_CPPFLAGS@
 GEOS_LDFLAGS = @GEOS_LDFLAGS@
@@ -161,13 +161,6 @@ NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
-OMIT_EPSG_FLAGS = @OMIT_EPSG_FLAGS@
-OMIT_FREEXL_FLAGS = @OMIT_FREEXL_FLAGS@
-OMIT_GEOCALLBACKS_FLAGS = @OMIT_GEOCALLBACKS_FLAGS@
-OMIT_GEOS_FLAGS = @OMIT_GEOS_FLAGS@
-OMIT_ICONV_FLAGS = @OMIT_ICONV_FLAGS@
-OMIT_MATHSQL_FLAGS = @OMIT_MATHSQL_FLAGS@
-OMIT_PROJ_FLAGS = @OMIT_PROJ_FLAGS@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -238,12 +231,6 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = epsg_update
-AM_CFLAGS = -D_LARGE_FILE=1 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE=1 \
-        -DNDEBUG=1 \
-	@OMIT_GEOS_FLAGS@ @GEOSADVANCED_FLAGS@ @OMIT_PROJ_FLAGS@ \
-	@OMIT_ICONV_FLAGS@ @OMIT_MATHSQL_FLAGS@ \
-	@OMIT_EPSG_FLAGS@ @OMIT_GEOCALLBACKS_FLAGS@ @OMIT_FREEXL_FLAGS@
-
 INCLUDES = @CFLAGS@ -I$(top_srcdir)/src/headers
 noinst_LTLIBRARIES = libsrsinit.la
 libsrsinit_la_SOURCES = srs_init.c

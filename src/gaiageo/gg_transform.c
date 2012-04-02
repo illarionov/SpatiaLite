@@ -47,6 +47,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+#include "config.h"
+
 #ifndef OMIT_PROJ		/* including PROJ.4 */
 #include <proj_api.h>
 #endif

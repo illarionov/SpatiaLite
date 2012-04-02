@@ -53,6 +53,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <float.h>
 #include <locale.h>
 
+#include "config.h"
+
 #if defined(_WIN32) || defined(WIN32)
 #include <io.h>
 #define isatty	_isatty

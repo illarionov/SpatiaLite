@@ -48,6 +48,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include <assert.h>
 
+#include "config.h"
+
 #include <spatialite/sqlite.h>
 #include <spatialite/debug.h>
 

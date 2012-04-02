@@ -46,6 +46,8 @@ do_auto_sh (FILE * out)
     fprintf (out, "cd ./amalgamation\n");
     fprintf (out, "echo aclocal\n");
     fprintf (out, "aclocal\n");
+    fprintf (out, "echo autoheader\n");
+    fprintf (out, "autoheader\n");
     fprintf (out, "echo autoconf\n");
     fprintf (out, "autoconf\n");
     fprintf (out, "echo libtoolize\n");
@@ -146,6 +148,7 @@ do_headers (FILE * out, struct masked_keyword *first)
     fprintf (out, "#include <locale.h>\n");
     fprintf (out, "#include <errno.h>\n\n");
     fprintf (out, "#include <assert.h>\n\n");
+    fprintf (out, "#include \"config.h\"\n\n");
     fprintf (out, "#if defined(__MINGW32__) || defined(_WIN32)\n");
     fprintf (out, "#define LIBICONV_STATIC\n");
     fprintf (out, "#include <iconv.h>\n");
@@ -1126,7 +1129,8 @@ main ()
     out = fopen ("amalgamation/spatialite-sql-latest.html", "wb");
     if (!out)
       {
-	  fprintf (stderr, "Error opening amalgamation/spatialite-sql-latest.html\n");
+	  fprintf (stderr,
+		   "Error opening amalgamation/spatialite-sql-latest.html\n");
 	  return 1;
       }
     do_copy_plain (out, "/../spatialite-sql-latest.html");

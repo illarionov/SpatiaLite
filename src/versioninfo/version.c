@@ -42,6 +42,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
+#include "config.h"
+
 #include <spatialite/sqlite.h>
 
 #include <spatialite.h>

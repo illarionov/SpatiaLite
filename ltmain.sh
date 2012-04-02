@@ -69,7 +69,7 @@
 #         compiler:		$LTCC
 #         compiler flags:		$LTCFLAGS
 #         linker:		$LD (gnu? $with_gnu_ld)
-#         $progname:	(GNU libtool) 2.4 Debian-2.4-2ubuntu1
+#         $progname:	(GNU libtool) 2.4
 #         automake:	$automake_version
 #         autoconf:	$autoconf_version
 #
@@ -79,7 +79,7 @@
 
 PROGRAM=libtool
 PACKAGE=libtool
-VERSION="2.4 Debian-2.4-2ubuntu1"
+VERSION=2.4
 TIMESTAMP=""
 package_revision=1.3293
 
@@ -6111,10 +6111,7 @@ func_mode_link ()
 	case $pass in
 	dlopen) libs="$dlfiles" ;;
 	dlpreopen) libs="$dlprefiles" ;;
-	link)
-	  libs="$deplibs %DEPLIBS%"
-	  test "X$link_all_deplibs" != Xno && libs="$libs $dependency_libs"
-	  ;;
+	link) libs="$deplibs %DEPLIBS% $dependency_libs" ;;
 	esac
       fi
       if test "$linkmode,$pass" = "lib,dlpreopen"; then
@@ -6433,19 +6430,19 @@ func_mode_link ()
 	    # It is a libtool convenience library, so add in its objects.
 	    func_append convenience " $ladir/$objdir/$old_library"
 	    func_append old_convenience " $ladir/$objdir/$old_library"
-	    tmp_libs=
-	    for deplib in $dependency_libs; do
-	      deplibs="$deplib $deplibs"
-	      if $opt_preserve_dup_deps ; then
-		case "$tmp_libs " in
-		*" $deplib "*) func_append specialdeplibs " $deplib" ;;
-		esac
-	      fi
-	      func_append tmp_libs " $deplib"
-	    done
 	  elif test "$linkmode" != prog && test "$linkmode" != lib; then
 	    func_fatal_error "\`$lib' is not a convenience library"
 	  fi
+	  tmp_libs=
+	  for deplib in $dependency_libs; do
+	    deplibs="$deplib $deplibs"
+	    if $opt_preserve_dup_deps ; then
+	      case "$tmp_libs " in
+	      *" $deplib "*) func_append specialdeplibs " $deplib" ;;
+	      esac
+	    fi
+	    func_append tmp_libs " $deplib"
+	  done
 	  continue
 	fi # $pass = conv
 
@@ -7337,9 +7334,6 @@ func_mode_link ()
 	    revision="$number_minor"
 	    lt_irix_increment=no
 	    ;;
-	  *)
-	    func_fatal_configuration "$modename: unknown library version type \`$version_type'"
-	    ;;
 	  esac
 	  ;;
 	no)
@@ -8056,7 +8050,7 @@ EOF
 	    elif test -n "$runpath_var"; then
 	      case "$perm_rpath " in
 	      *" $libdir "*) ;;
-	      *) func_apped perm_rpath " $libdir" ;;
+	      *) func_append perm_rpath " $libdir" ;;
 	      esac
 	    fi
 	  done

@@ -10,6 +10,7 @@ SUBDIRS = headers \
 
 INCLUDES = @CFLAGS@
 INCLUDES += -I$(top_srcdir)/src/headers
+INCLUDES += -I$(top_srcdir)
 
 lib_LTLIBRARIES = libspatialite.la
 

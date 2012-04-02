@@ -9,6 +9,42 @@ AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
+AM_CONFIG_HEADER(config.h)
+
+# enabling huge-file support (64 bit file pointers)
+AH_TEMPLATE([_LARGE_FILE],
+            [Must be defined in order to enable huge-file support.])
+AC_DEFINE(_LARGE_FILE)
+AH_TEMPLATE([_FILE_OFFSET_BITS],
+            [Must be =64 in order to enable huge-file support.])
+AC_DEFINE(_FILE_OFFSET_BITS, 64)
+AH_TEMPLATE([_LARGEFILE_SOURCE],
+            [Must be defined in order to enable huge-file support.])
+AC_DEFINE(_LARGEFILE_SOURCE)
+
+# disablibg debug support
+AH_TEMPLATE([NDEBUG],
+            [Must be defined in order to disable debug mode.])
+AC_DEFINE(NDEBUG)
+
+# config depending options
+AH_TEMPLATE([OMIT_GEOS],
+            [Should be defined in order to disable GEOS support.])
+AH_TEMPLATE([GEOSADVANCED],
+            [Should be defined in order to enable GEOSADVANCED support.])
+AH_TEMPLATE([OMIT_PROJ],
+            [Should be defined in order to disable PROJ.4 support.])
+AH_TEMPLATE([OMIT_ICONV],
+            [Should be defined in order to disable ICONV support.])
+AH_TEMPLATE([OMIT_MATHSQL],
+            [Should be defined in order to disable MATHSQL support.])
+AH_TEMPLATE([OMIT_EPSG],
+            [Should be defined in order to disable EPSG full support.])
+AH_TEMPLATE([OMIT_GEOCALLBACKS],
+            [Should be defined in order to disable GEOCALLBACKS support.])
+AH_TEMPLATE([OMIT_FREEXL],
+            [Should be defined in order to disable FREEXL support.])
+
 
 # Checks for header files.
 AC_CHECK_HEADERS(stdlib.h,, [AC_MSG_ERROR([cannot find stdlib.h, bailing out])])
@@ -61,12 +97,9 @@ AC_CONFIG_FILES([Makefile \
 AC_ARG_ENABLE(mathsql, [AS_HELP_STRING(
   [--enable-mathsql], [enables SQL math functions [default=yes]])],
   [], [enable_mathsql=yes])
-if test x"$enable_mathsql" != "xno"; then
-  OMIT_MATHSQL_FLAGS=
-else
-  OMIT_MATHSQL_FLAGS=-DOMIT_MATHSQL
+if test x"$enable_mathsql" != "xyes"; then
+  AC_DEFINE(OMIT_MATHSQL)
 fi
-AC_SUBST(OMIT_MATHSQL_FLAGS)
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
@@ -75,12 +108,9 @@ AC_SUBST(OMIT_MATHSQL_FLAGS)
 AC_ARG_ENABLE(geocallbacks, [AS_HELP_STRING(
   [--enable-geocallbacks], [enables geometry callbacks [default=no]])],
   [], [enable_geocallbacks=no])
-if test x"$enable_geocallbacks" == "xyes"; then
-  OMIT_GEOCALLBACKS_FLAGS=
-else
-  OMIT_GEOCALLBACKS_FLAGS=-DOMIT_GEOCALLBACKS
+if test x"$enable_geocallbacks" == "xno"; then
+  AC_DEFINE(OMIT_GEOCALLBACKS)
 fi
-AC_SUBST(OMIT_GEOCALLBACKS_FLAGS)
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
@@ -90,13 +120,11 @@ AC_ARG_ENABLE(proj, [AS_HELP_STRING(
   [--enable-proj], [enables PROJ.4 inclusion [default=yes]])],
   [], [enable_proj=yes])
 if test x"$enable_proj" != "xno"; then
-  OMIT_PROJ_FLAGS=
   AC_CHECK_HEADERS(proj_api.h,, [AC_MSG_ERROR([cannot find proj_api.h, bailing out])])
   AC_SEARCH_LIBS(pj_init_plus,proj,,AC_MSG_ERROR(['libproj' is required but it doesn't seem to be installed on this system.]),-lm)
 else
-  OMIT_PROJ_FLAGS=-DOMIT_PROJ
+  AC_DEFINE(OMIT_PROJ)
 fi
-AC_SUBST(OMIT_PROJ_FLAGS)
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
@@ -106,8 +134,6 @@ AC_ARG_ENABLE(geos, [AS_HELP_STRING(
   [--enable-geos], [enables GEOS inclusion [default=yes]])],
   [], [enable_geos=yes])
 if test x"$enable_geos" != "xno"; then
-  OMIT_GEOS_FLAGS=
-
   #-----------------------------------------------------------------------
   #   --with-geosconfig
   #
@@ -156,16 +182,12 @@ if test x"$enable_geos" != "xno"; then
 	  [--enable-geosadvanced], [enables GEOS advanced features [default=yes]])],
 	  [], [enable_geosadvanced=yes])
   if test x"$enable_geosadvanced" != "xno"; then
-	  GEOSADVANCED_FLAGS=-DGEOS_ADVANCED
 	  AC_SEARCH_LIBS(GEOSCoveredBy,geos_c,,AC_MSG_ERROR([obsolete 'libgeos_c' (< v.3.3.0). please retry specifying: --disable-geosadvanced.]))
-  else
-	  GEOSADVANCED_FLAGS=
+	  AC_DEFINE(GEOSADVANCED)
   fi
-	  AC_SUBST(GEOSADVANCED_FLAGS)
 else
-  OMIT_GEOS_FLAGS=-DOMIT_GEOS
+  AC_DEFINE(OMIT_GEOS)
 fi
-AC_SUBST(OMIT_GEOS_FLAGS)
 
 #-----------------------------------------------------------------------
 #   --enable-iconv
@@ -174,7 +196,6 @@ AC_ARG_ENABLE(iconv, [AS_HELP_STRING(
   [--enable-iconv], [enables ICONV inclusion [default=yes]])],
   [], [enable_iconv=yes])
 if test x"$enable_iconv" != "xno"; then
-  OMIT_ICONV_FLAGS=
   AC_CHECK_HEADERS(iconv.h,, [AC_MSG_ERROR([cannot find iconv.h, bailing out])])
 # on some systems "iconv()" lives in libc. On others it lives in libiconv
 #  on older systems "libiconv()" lives in libiconv
@@ -183,9 +204,8 @@ if test x"$enable_iconv" != "xno"; then
   AC_SEARCH_LIBS(locale_charset,charset,,
     AC_SEARCH_LIBS(nl_langinfo,c,,AC_MSG_ERROR(['libcharset' is required but it doesn't seem to be installed on this system.]),))
 else
-  OMIT_ICONV_FLAGS=-DOMIT_ICONV
+  AC_DEFINE(OMIT_ICONV)
 fi
-AC_SUBST(OMIT_ICONV_FLAGS)
 
 #-----------------------------------------------------------------------
 #   --enable-freexl
@@ -194,13 +214,11 @@ AC_ARG_ENABLE(freexl, [AS_HELP_STRING(
   [--enable-freexl], [enables FreeXL inclusion [default=yes]])],
   [], [enable_freexl=yes])
 if test x"$enable_freexl" != "xno"; then
-  OMIT_FREEXL_FLAGS=
   AC_CHECK_HEADERS(freexl.h,, [AC_MSG_ERROR([cannot find freexl.h, bailing out])])
   AC_SEARCH_LIBS(freexl_open,freexl,,AC_MSG_ERROR(['libfreexl' is required but it doesn't seem to be installed on this system.]),-lm)
 else
-  OMIT_FREEXL_FLAGS=-DOMIT_FREEXL
+  AC_DEFINE(OMIT_FREEXL)
 fi
-AC_SUBST(OMIT_FREEXL_FLAGS)
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
@@ -209,12 +227,9 @@ AC_SUBST(OMIT_FREEXL_FLAGS)
 AC_ARG_ENABLE(epsg, [AS_HELP_STRING(
   [--enable-epsg], [enables full EPSG dataset support [default=yes]])],
   [], [enable_epsg=yes])
-if test x"$enable_epsg" != "xno"; then
-  OMIT_EPSG_FLAGS=
-else
-  OMIT_EPSG_FLAGS=-DOMIT_EPSG
+if test x"$enable_epsg" != "xyes"; then
+  AC_DEFINE(OMIT_EPSG)
 fi
-AC_SUBST(OMIT_EPSG_FLAGS)
 #-----------------------------------------------------------------------
 
 # Checking for MinGW
