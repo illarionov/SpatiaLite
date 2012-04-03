@@ -42,6 +42,7 @@ the provisions above, a recipient may use your version of this file under
 the terms of any one of the MPL, the GPL or the LGPL.
  
 */
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -466,7 +467,7 @@ int main (int argc, char *argv[])
 	sqlite3_close(handle);
 	return -51;
     }
-    // TODO: try dumping an empty table    
+    /* TODO: try dumping an empty table */ 
     
     ret = sqlite3_exec (handle, "INSERT INTO Polygon_Test (Name, Description, thing1, thing2, thing3, thing4, geom) VALUES ('Polygon 1', 'Some polygon', 2, 4.25, 343.343, zeroblob(40), GeomFromText('POLYGON((136 -33, 47 2, -20 -1, 136 -33),(10 -2, -20 -0.4, 40 0.1, 10 -2))', 4326))", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {

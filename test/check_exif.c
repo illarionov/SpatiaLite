@@ -181,15 +181,11 @@ get_date(gaiaExifTagListPtr tag_list, const char **str, int *ok)
 
 int main (int argc, char *argv[])
 {
-    int ret;
-    sqlite3 *handle;
-    char *err_msg = NULL;
     FILE *fl;
     int sz = 0;
     int rd;
     int ok;
     int i;
-    int len;
     char tag_name[128];
     char human[8192];
     gaiaExifTagPtr pT;
@@ -203,8 +199,7 @@ int main (int argc, char *argv[])
     spatialite_init (0);
     
     fl = fopen("sql_stmt_tests/DSC_1467.JPG", "rb");
-    if (!fl)
-    if (ret != SQLITE_OK) {
+    if (!fl) {
 	fprintf(stderr, "cannot open EXIF-JPEG image: DSC_1467.JPG\n");
 	return -1;
     }
@@ -327,8 +322,7 @@ int main (int argc, char *argv[])
     fclose(fl);
        
     fl = fopen("sql_stmt_tests/DSCN0042.JPG", "rb");
-    if (!fl)
-    if (ret != SQLITE_OK) {
+    if (!fl) {
 	fprintf(stderr, "cannot open EXIF-JPEG image: DSCN0042.JPG\n");
 	return -100;
     }
@@ -476,8 +470,7 @@ int main (int argc, char *argv[])
     fclose(fl);
        
     fl = fopen("sql_stmt_tests/La_folla_durante_il_Palio.jpg", "rb");
-    if (!fl)
-    if (ret != SQLITE_OK) {
+    if (!fl) {
 	fprintf(stderr, "cannot open EXIF-JPEG image: La_folla_durante_il_Palio.jpg\n");
 	return -50;
     }

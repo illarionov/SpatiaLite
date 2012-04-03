@@ -58,6 +58,7 @@ int main (int argc, char *argv[])
 {
     int result;
     int returnValue = 0;
+    gaiaRingPtr interior;
     
     /* Common setup */
     gaiaLinestringPtr linestr1 = gaiaAllocLinestring(0);
@@ -153,7 +154,7 @@ int main (int argc, char *argv[])
     gaiaSetPoint(poly2->Exterior->Coords, 2, 10, 10);
     gaiaSetPoint(poly2->Exterior->Coords, 3, 0, 10);
     gaiaSetPoint(poly2->Exterior->Coords, 4, 0, 0);
-    gaiaRingPtr interior = gaiaAddInteriorRing(poly2, 0, 4);
+    interior = gaiaAddInteriorRing(poly2, 0, 4);
     gaiaSetPoint(interior->Coords, 0, 1, 1);
     gaiaSetPoint(interior->Coords, 1, 3, 2);
     gaiaSetPoint(interior->Coords, 2, 3, 1);

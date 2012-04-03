@@ -87,7 +87,7 @@ int main (int argc, char *argv[])
 
     ret = update_layer_statistics (handle, "polygons", "geom");
     if (!ret) {
-        fprintf (stderr, "update_layer_statistics() error\n", err_msg);
+        fprintf (stderr, "update_layer_statistics() error %s\n", err_msg);
 	sqlite3_close(handle);
 	return -8;
     }
@@ -413,7 +413,7 @@ int main (int argc, char *argv[])
 
     ret = update_layer_statistics (handle, NULL, NULL);
     if (!ret) {
-        fprintf (stderr, "update_layer_statistics() error\n", err_msg);
+        fprintf (stderr, "update_layer_statistics() error %s\n", err_msg);
 	sqlite3_close(handle);
 	return -8;
     }

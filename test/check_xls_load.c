@@ -53,7 +53,8 @@ int main (int argc, char *argv[])
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
-    int row_count;
+    unsigned int row_count;
+    int rcnt;
 
     spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
@@ -95,16 +96,16 @@ int main (int argc, char *argv[])
 	return -6;
     }
 
-    check_duplicated_rows (handle, "test1", &row_count);
-    if (row_count != 0) {
-	fprintf (stderr, "check_duplicated_rows() unexpected duplicate count: %d\n", row_count);
+    check_duplicated_rows (handle, "test1", &rcnt);
+    if (rcnt != 0) {
+	fprintf (stderr, "check_duplicated_rows() unexpected duplicate count: %d\n", rcnt);
 	sqlite3_close(handle);
 	return -8;
     }
 
-    check_duplicated_rows (handle, "test2", &row_count);
-    if (row_count != 2) {
-	fprintf (stderr, "check_duplicated_rows() unexpected duplicate count sheet 2: %d\n", row_count);
+    check_duplicated_rows (handle, "test2", &rcnt);
+    if (rcnt != 2) {
+	fprintf (stderr, "check_duplicated_rows() unexpected duplicate count sheet 2: %d\n", rcnt);
 	sqlite3_close(handle);
 	return -10;
     }

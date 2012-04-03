@@ -52,22 +52,15 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "spatialite.h"
 #include "spatialite/gaiageo.h"
 
-// static const double double_eps = 0.00000001;
-
 int main (int argc, char *argv[])
 {
     gaiaGeomCollPtr result;
     void *resultVoid;
-    // double resultDouble;
     int returnValue = 0;
     
     /* Common setup */
-    // spatialite_init(0);
     
     gaiaGeomCollPtr emptyGeometry = gaiaAllocGeomColl();
-    // gaiaAddPointToGeomColl(validGeometry, 1.0, 2.0);
-    // double dummyResultArg = 0.0;
-    // double dummyResultArg2 = 0.0;
     
     /* Tests start here */
     
@@ -80,15 +73,15 @@ int main (int argc, char *argv[])
     }
     
     resultVoid = gaiaToGeos ((gaiaGeomCollPtr)NULL);
-    if (result != NULL) {
+    if (resultVoid != NULL) {
 	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
 	returnValue = -2;
 	goto exit;
     }
     
     /* unknown type geometry collection */
-    result = gaiaToGeos ( emptyGeometry );
-    if (result != NULL) {
+    resultVoid = gaiaToGeos ( emptyGeometry );
+    if (resultVoid != NULL) {
 	fprintf(stderr, "bad result at %s:%i\n", __FILE__, __LINE__);
 	returnValue = -3;
 	goto exit;
@@ -97,6 +90,5 @@ int main (int argc, char *argv[])
     /* Cleanup and exit */
 exit:
     gaiaFreeGeomColl (emptyGeometry);
- //   spatialite_cleanup();
     return returnValue;
 }

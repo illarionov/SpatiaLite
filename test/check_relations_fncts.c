@@ -59,6 +59,7 @@ int main (int argc, char *argv[])
     int result;
     double resultDouble;
     int returnValue = 0;
+    gaiaGeomCollPtr geom;
     
     /* Common setup */
     gaiaGeomCollPtr validGeometry = gaiaAllocGeomColl();
@@ -406,7 +407,7 @@ int main (int argc, char *argv[])
     }
 
     /* geometry generating functionality */
-    gaiaGeomCollPtr geom = NULL;
+    geom = NULL;
     geom = gaiaLinesCutAtNodes(0, validGeometry);
     if (geom != NULL) {
 	gaiaFree(geom);

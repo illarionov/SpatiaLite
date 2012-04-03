@@ -83,7 +83,7 @@ int do_one_case (const struct test_data *data)
     int columns;
 
     fprintf(stderr, "Test case: %s\n", data->test_case_name);
-    // This hack checks if the name ends with _RO
+    /* This hack checks if the name ends with _RO */
     if (strncmp("_RO", data->database_name + strlen(data->database_name) - 3, strlen("_RO")) == 0) {
 	fprintf(stderr, "opening read_only\n");
 	ret = sqlite3_open_v2 (data->database_name, &db_handle, SQLITE_OPEN_READONLY, NULL);
@@ -212,14 +212,12 @@ struct test_data *read_one_case(const char *filepath)
 {
     int num_results;
     int i;
-    size_t len;
-    ssize_t num_read;
     char *tmp;
     FILE *f;
+    struct test_data* data;
 
     f = fopen(filepath, "r");
     
-    struct test_data* data;
     data = malloc(sizeof(struct test_data));
     get_clean_line(f, &(data->test_case_name));
     get_clean_line(f, &(data->database_name));
@@ -259,7 +257,6 @@ void cleanup_test_data(struct test_data *data)
 
 int test_case_filter(const struct dirent *entry)
 {
-    int ret = 0;
     return (fnmatch("*.testcase", entry->d_name, FNM_PERIOD) == 0);
 }
 

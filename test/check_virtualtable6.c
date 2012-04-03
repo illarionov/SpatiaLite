@@ -41,6 +41,7 @@ the provisions above, a recipient may use your version of this file under
 the terms of any one of the MPL, the GPL or the LGPL.
  
 */
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -89,14 +90,12 @@ struct test_step steps[] = {
 int main (int argc, char *argv[])
 {
     sqlite3 *db_handle = NULL;
-    char *sql_statement;
     int ret;
     char *err_msg = NULL;
     int i;
     char **results;
     int rows;
     int columns;
-    const char *sql;
 
     spatialite_init (0);
 
