@@ -11327,7 +11327,7 @@ fnct_GARSMbr (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_null (context);
 	  return;
       }
-    text = sqlite3_value_text (argv[0]);
+    text = (const char *)sqlite3_value_text (argv[0]);
     if ((strlen (text) < 5) || (strlen (text) > 7))
       {
 	  sqlite3_result_null (context);
@@ -11336,7 +11336,7 @@ fnct_GARSMbr (sqlite3_context * context, int argc, sqlite3_value ** argv)
     if (strlen (text) == 5)
       {
 	  int numMatch = 0;
-	  int digit100 = 0;
+	  unsigned int digit100 = 0;
 	  char letterMSD = '\0';
 	  char letterLSD = '\0';
 	  numMatch = sscanf (text, "%u%c%c", &digit100, &letterMSD, &letterLSD);
@@ -11357,11 +11357,11 @@ fnct_GARSMbr (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     if (strlen (text) == 6)
       {
-	  int numMatch = 0;
-	  int digit100 = 0;
+	  unsigned int numMatch = 0;
+	  unsigned int digit100 = 0;
 	  char letterMSD = '\0';
 	  char letterLSD = '\0';
-	  int digitSegment = 0;
+	  unsigned int digitSegment = 0;
 	  numMatch =
 	      sscanf (text, "%u%c%c%u", &digit100, &letterMSD, &letterLSD,
 		      &digitSegment);
@@ -11395,13 +11395,13 @@ fnct_GARSMbr (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     if (strlen (text) == 7)
       {
-	  int numMatch = 0;
-	  int digit100 = 0;
+	  unsigned int numMatch = 0;
+	  unsigned int digit100 = 0;
 	  char letterMSD = '\0';
 	  char letterLSD = '\0';
-	  int digitAndKeypad = 0;
-	  int digitSegment = 0;
-	  int keypadNumber = 0;
+	  unsigned int digitAndKeypad = 0;
+	  unsigned int digitSegment = 0;
+	  unsigned int keypadNumber = 0;
 	  numMatch =
 	      sscanf (text, "%u%c%c%u", &digit100, &letterMSD, &letterLSD,
 		      &digitAndKeypad);
