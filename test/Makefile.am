@@ -52,6 +52,8 @@ EXTRA_DIST = asprintf4win.h \
 	shapetest1.qpj \
 	shapetest1.shp \
 	shapetest1.shx \
+	test_under_valgrind.sh \
+	WritingSQLTestCase.txt \
 	shp/new-caledonia/buildings.dbf \
 	shp/new-caledonia/buildings.prj \
 	shp/new-caledonia/buildings.shp \
