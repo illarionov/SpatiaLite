@@ -263,17 +263,34 @@ extern "C"
 
 /**
  Checks if a Linestring object represents an OGC Closed Geometry
+ 
+ This function only works on a single linestring - if you pass in a multi-line
+ linestring geometry, it will return 0 (false). See gaiaIsClosedGeom for an
+ alternative.
 
- \param line pointer to Geometry object.
+ \param line pointer to Linestring object.
 
  \return 0 if false; any other value if true
 
- \sa gaiaIsSimple, gaiaIsRing, gaiaIsValid
+ \sa gaiaIsSimple, gaiaIsRing, gaiaIsValid, gaiaIsClosedGeom
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE int gaiaIsClosed (gaiaLinestringPtr line);
 
+/**
+ Checks if a Geometry object represents an OGC Closed Linestring
+
+ \param line pointer to Geometry object.
+
+ \return 0 if false; any other value if true
+
+ \sa gaiaIsSimple, gaiaIsRing, gaiaIsValid, gaiaIsClosed
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE int gaiaIsClosedGeom (gaiaGeomCollPtr geom);
+    
 /**
  Checks if a Linestring object represents an OGC Ring Geometry
 

@@ -762,6 +762,38 @@ gaiaIsValid (gaiaGeomCollPtr geom)
     return ret;
 }
 
+GAIAGEO_DECLARE int
+gaiaIsClosedGeom (gaiaGeomCollPtr geom)
+{
+/* checks if this geometry is a closed linestring (or multilinestring) */
+    int ret = 0;
+    gaiaLinestringPtr ln;
+    if (!geom)
+	return -1;
+    if (gaiaIsToxic (geom))
+	return 0;
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	GEOSGeometry *g;
+	gaiaGeomCollPtr geoColl = gaiaAllocGeomColl();
+	gaiaInsertLinestringInGeomColl(geoColl, gaiaCloneLinestring(ln));
+	g = gaiaToGeos (geoColl);
+	ret = GEOSisClosed (g);
+	GEOSGeom_destroy (g);
+	gaiaFreeGeomColl(geoColl);
+	if (ret == 0)
+	{
+	    /* this line isn't closed, so we don't need to continue */
+	    break;
+	}
+	ln =  ln->Next;
+      }
+    if (ret == 2)
+	return -1;
+    return ret;
+}  
+
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaGeomCollSimplify (gaiaGeomCollPtr geom, double tolerance)
 {

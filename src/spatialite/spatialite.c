@@ -13364,7 +13364,6 @@ fnct_IsClosed (sqlite3_context * context, int argc, sqlite3_value ** argv)
     unsigned char *p_blob;
     int n_bytes;
     gaiaGeomCollPtr geo = NULL;
-    gaiaLinestringPtr line;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
@@ -13378,11 +13377,7 @@ fnct_IsClosed (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_int (context, -1);
     else
       {
-	  line = simpleLinestring (geo);
-	  if (!line < 0)
-	      sqlite3_result_int (context, -1);
-	  else
-	      sqlite3_result_int (context, gaiaIsClosed (line));
+	sqlite3_result_int (context, gaiaIsClosedGeom (geo));
       }
     gaiaFreeGeomColl (geo);
 }
