@@ -1264,8 +1264,7 @@ shp_check_rings (gaiaRingPtr exterior, gaiaRingPtr candidate)
     ret0 = gaiaIsPointOnRingSurface (exterior, x0, y0);
 /* testing if the second point falls on the exterior ring surface */
     ret1 = gaiaIsPointOnRingSurface (exterior, x1, y1);
-
-    if (ret0 && ret1)
+    if (ret0 || ret1)
 	return 1;
     return 0;
 }
