@@ -775,24 +775,44 @@ gaiaIsClosedGeom (gaiaGeomCollPtr geom)
     ln = geom->FirstLinestring;
     while (ln)
       {
-	GEOSGeometry *g;
-	gaiaGeomCollPtr geoColl = gaiaAllocGeomColl();
-	gaiaInsertLinestringInGeomColl(geoColl, gaiaCloneLinestring(ln));
-	g = gaiaToGeos (geoColl);
-	ret = GEOSisClosed (g);
-	GEOSGeom_destroy (g);
-	gaiaFreeGeomColl(geoColl);
-	if (ret == 0)
-	{
-	    /* this line isn't closed, so we don't need to continue */
-	    break;
-	}
-	ln =  ln->Next;
+	  /* unhappily GEOS v3.2.2 [system package on Debian Lenny and Ubuntu 12.04]
+	   * doesn't exposes the GEOSisClosed() API at all !!!!
+	   *
+	   GEOSGeometry *g;
+	   gaiaGeomCollPtr geoColl = gaiaAllocGeomColl();
+	   gaiaInsertLinestringInGeomColl(geoColl, gaiaCloneLinestring(ln));
+	   g = gaiaToGeos (geoColl);
+	   ret = GEOSisClosed (g);
+	   GEOSGeom_destroy (g);
+	   gaiaFreeGeomColl(geoColl);
+	   */
+
+	  /* so we'll use this internal default in order to circumvent the above issue */
+	  double x1;
+	  double y1;
+	  double z1;
+	  double m1;
+	  double x2;
+	  double y2;
+	  double z2;
+	  double m2;
+	  gaiaLineGetPoint (ln, 0, &x1, &y1, &z1, &m1);
+	  gaiaLineGetPoint (ln, ln->Points - 1, &x2, &y2, &z2, &m2);
+	  if (x1 == x2 && y1 == y2 && z1 == z2)
+	      ret = 1;
+	  else
+	      ret = 0;
+	  if (ret == 0)
+	    {
+		/* this line isn't closed, so we don't need to continue */
+		break;
+	    }
+	  ln = ln->Next;
       }
     if (ret == 2)
 	return -1;
     return ret;
-}  
+}
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaGeomCollSimplify (gaiaGeomCollPtr geom, double tolerance)

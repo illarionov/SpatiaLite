@@ -152,7 +152,7 @@ fi
 #
 AC_ARG_ENABLE(geos, [AS_HELP_STRING(
   [--enable-geos], [enables GEOS inclusion [default=yes]])],
-  [], [enable_geos=yes])
+  [], [enable_geos=yes])geos
 if test x"$enable_geos" != "xno"; then
   #-----------------------------------------------------------------------
   #   --with-geosconfig
@@ -194,6 +194,7 @@ if test x"$enable_geos" != "xno"; then
   LIBS="$GEOS_LDFLAGS"
   AC_SEARCH_LIBS(GEOSTopologyPreserveSimplify,geos_c,,AC_MSG_ERROR([could not find libgeos_c - you may need to specify the directory of a geos-config file using --with-geosconfig]))
   LIBS="$LIBS_SAVE"
+  LIBS=$LIBS$GEOS_LDFALGS' -lgeos_c'
 
   #-----------------------------------------------------------------------
   #   --enable-geosadvanced
