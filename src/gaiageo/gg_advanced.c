@@ -538,22 +538,22 @@ gaiaIntersect (double *x0, double *y0, double x1, double y1, double x2,
 	  miny2 = y3;
 	  maxy2 = y4;
       }
-/* checkinkg MBRs first */
-    if (minx1 >= maxx2)
+/* checking MBRs first */
+    if (minx1 > maxx2)
 	return 0;
-    if (miny1 >= maxy2)
+    if (miny1 > maxy2)
 	return 0;
-    if (maxx1 <= minx2)
+    if (maxx1 < minx2)
 	return 0;
-    if (maxy1 <= miny2)
+    if (maxy1 < miny2)
 	return 0;
-    if (minx2 >= maxx1)
+    if (minx2 > maxx1)
 	return 0;
-    if (miny2 >= maxy1)
+    if (miny2 > maxy1)
 	return 0;
-    if (maxx2 <= minx1)
+    if (maxx2 < minx1)
 	return 0;
-    if (maxy2 <= miny1)
+    if (maxy2 < miny1)
 	return 0;
 /* there is an MBRs intersection - proceeding */
     if ((x2 - x1) != 0.0)
