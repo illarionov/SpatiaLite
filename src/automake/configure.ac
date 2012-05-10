@@ -174,6 +174,7 @@ if test x"$enable_geos" != "xno"; then
   LIBS="$GEOS_LDFLAGS"
   AC_SEARCH_LIBS(GEOSTopologyPreserveSimplify,geos_c,,AC_MSG_ERROR([could not find libgeos_c - you may need to specify the directory of a geos-config file using --with-geosconfig]))
   LIBS="$LIBS_SAVE"
+  LIBS=$LIBS$GEOS_LDFALGS' -lgeos_c'
   
   #-----------------------------------------------------------------------
   #   --enable-geosadvanced
@@ -236,5 +237,7 @@ fi
 AM_CONDITIONAL([MINGW], [test "$target_alias" = "mingw32"])
 # Checking for Mac OsX
 AM_CONDITIONAL([MACOSX], [test "$target_alias" = "macosx"])
+# Checking for Android
+AM_CONDITIONAL([ANDROID], [test "$target_alias" = "android"])
 
 AC_OUTPUT

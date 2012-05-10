@@ -10,10 +10,14 @@ libspatialite_la_SOURCES = spatialite.c \
 
 if MINGW
 libspatialite_la_LDFLAGS = -version-info 3:0:0 -no-undefined
-libspatialite_la_LIBADD = 
+else 
+if ANDROID
+libspatialite_la_LDFLAGS = -version-info 5:0:2
+libspatialite_la_LIBADD = -ldl
 else
 libspatialite_la_LDFLAGS = -version-info 5:0:2
 libspatialite_la_LIBADD = -lpthread -ldl
+endif
 endif
 
 AUTOMAKE_OPTIONS = dist-zip

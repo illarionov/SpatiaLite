@@ -34,14 +34,12 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@MINGW_FALSE@am__append_1 = -lpthread -ldl
+@ANDROID_TRUE@@MINGW_FALSE@am__append_1 = -ldl
+@ANDROID_FALSE@@MINGW_FALSE@am__append_2 = -lpthread -ldl
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -76,7 +74,7 @@ libspatialite_la_DEPENDENCIES = ./gaiaaux/libgaiaaux.la \
 	./gaiaexif/libgaiaexif.la ./gaiageo/libgaiageo.la \
 	./spatialite/libsplite.la ./shapefiles/libshapefiles.la \
 	./srsinit/libsrsinit.la ./virtualtext/libvirtualtext.la \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_libspatialite_la_OBJECTS = version.lo
 libspatialite_la_OBJECTS = $(am_libspatialite_la_OBJECTS)
 libspatialite_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
@@ -277,8 +275,9 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./gaiaexif/libgaiaexif.la ./gaiageo/libgaiageo.la \
 	./spatialite/libsplite.la ./shapefiles/libshapefiles.la \
 	./srsinit/libsrsinit.la ./virtualtext/libvirtualtext.la \
-	$(am__append_1)
-@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 5:0:2
+	$(am__append_1) $(am__append_2)
+@ANDROID_FALSE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 5:0:2
+@ANDROID_TRUE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 5:0:2
 @MINGW_TRUE@libspatialite_la_LDFLAGS = -version-info 3:0:0 -no-undefined
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-recursive

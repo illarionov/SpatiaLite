@@ -67,10 +67,10 @@ extern const char *locale_charset (void);
 #include <localcharset.h>
 #endif /* end localcharset */
 #else /* not MINGW32 */
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__ANDROID__)
 #include <iconv.h>
 #include <localcharset.h>
-#else /* not Mac OsX */
+#else /* neither Mac OsX nor Android */
 #include <iconv.h>
 #include <langinfo.h>
 #endif

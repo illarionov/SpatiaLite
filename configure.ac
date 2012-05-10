@@ -269,5 +269,7 @@ fi
 AM_CONDITIONAL([MINGW], [test "$target_alias" = "mingw32"])
 # Checking for Mac OsX
 AM_CONDITIONAL([MACOSX], [test "$target_alias" = "macosx"])
+# Checking for Android
+AM_CONDITIONAL([ANDROID], [test "$target_alias" = "android"])
 
 AC_OUTPUT

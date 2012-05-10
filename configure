@@ -614,6 +614,8 @@ ac_includes_default="\
 ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
+ANDROID_FALSE
+ANDROID_TRUE
 MACOSX_FALSE
 MACOSX_TRUE
 MINGW_FALSE
@@ -9659,10 +9661,6 @@ _lt_linker_boilerplate=`cat conftest.err`
 $RM -r conftest*
 
 
-## CAVEAT EMPTOR:
-## There is no encapsulation within the following macros, do not change
-## the running order or otherwise move them around unless you know exactly
-## what you are doing...
 if test -n "$compiler"; then
 
 lt_prog_compiler_no_builtin_flag=
@@ -17816,6 +17814,15 @@ else
   MACOSX_FALSE=
 fi
 
+# Checking for Android
+ if test "$target_alias" = "android"; then
+  ANDROID_TRUE=
+  ANDROID_FALSE='#'
+else
+  ANDROID_TRUE='#'
+  ANDROID_FALSE=
+fi
+
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -17960,6 +17967,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MACOSX_TRUE}" && test -z "${MACOSX_FALSE}"; then
   as_fn_error $? "conditional \"MACOSX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${ANDROID_TRUE}" && test -z "${ANDROID_FALSE}"; then
+  as_fn_error $? "conditional \"ANDROID\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

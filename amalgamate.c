@@ -161,7 +161,7 @@ do_headers (FILE * out, struct masked_keyword *first)
     fprintf (out, "#include <localcharset.h>\n");
     fprintf (out, "#endif /* end localcharset */\n");
     fprintf (out, "#else /* not WINDOWS */\n");
-    fprintf (out, "#ifdef __APPLE__\n");
+    fprintf (out, "#if defined(__APPLE__) || defined(__ANDROID__)\n");
     fprintf (out, "#include <iconv.h>\n");
     fprintf (out, "#include <localcharset.h>\n");
     fprintf (out, "#else /* not Mac OsX */\n");
