@@ -9661,6 +9661,10 @@ _lt_linker_boilerplate=`cat conftest.err`
 $RM -r conftest*
 
 
+## CAVEAT EMPTOR:
+## There is no encapsulation within the following macros, do not change
+## the running order or otherwise move them around unless you know exactly
+## what you are doing...
 if test -n "$compiler"; then
 
 lt_prog_compiler_no_builtin_flag=
@@ -17178,7 +17182,7 @@ if test "${enable_geos+set}" = set; then :
 else
   enable_geos=yes
 fi
-geos
+
 if test x"$enable_geos" != "xno"; then
   #-----------------------------------------------------------------------
   #   --with-geosconfig
@@ -17335,7 +17339,7 @@ else
 fi
 
   LIBS="$LIBS_SAVE"
-  LIBS=$LIBS$GEOS_LDFALGS' -lgeos_c'
+  LIBS=$LIBS$GEOS_LDFLAGS' -lgeos_c'
 
   #-----------------------------------------------------------------------
   #   --enable-geosadvanced
