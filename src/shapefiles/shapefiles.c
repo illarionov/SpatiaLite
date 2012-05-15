@@ -299,8 +299,16 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
     char *geom_type;
     char *txt_dims;
     char *geo_column = column;
+    char qtable[1024];
+    char *xtable = NULL;
     if (!geo_column)
 	geo_column = "Geometry";
+    xtable = gaiaDoubleQuotedSql (table);
+    if (xtable)
+      {
+	  strcpy (qtable, xtable);
+	  free (xtable);
+      }
 /* checking if TABLE already exists */
     sprintf (sql,
 	     "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE '%s'",
@@ -452,7 +460,7 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 	  goto clean_up;
       }
 /* creating the Table */
-    sprintf (sql, "CREATE TABLE %s", table);
+    sprintf (sql, "CREATE TABLE \"%s\"", qtable);
     strcat (sql, " (\nPK_UID INTEGER PRIMARY KEY AUTOINCREMENT");
     cnt = 0;
     dbf_field = shp->Dbf->First;
@@ -614,7 +622,7 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 	    }
       }
     /* preparing the INSERT INTO parametrerized statement */
-    sprintf (sql, "INSERT INTO %s (PK_UID,", table);
+    sprintf (sql, "INSERT INTO \"%s\" (PK_UID,", qtable);
     cnt = 0;
     dbf_field = shp->Dbf->First;
     while (dbf_field)
@@ -691,8 +699,8 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->Value->
-						       TxtValue),
+					       strlen (dbf_field->
+						       Value->TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -1486,6 +1494,14 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
     int current_row;
     char **col_name = NULL;
     int deleted;
+    char qtable[1024];
+    char *xtable = NULL;
+    xtable = gaiaDoubleQuotedSql (table);
+    if (xtable)
+      {
+	  strcpy (qtable, xtable);
+	  free (xtable);
+      }
 /* checking if TABLE already exists */
     sprintf (sql,
 	     "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE '%s'",
@@ -1599,7 +1615,7 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 	  goto clean_up;
       }
 /* creating the Table */
-    sprintf (sql, "CREATE TABLE %s", table);
+    sprintf (sql, "CREATE TABLE \"%s\"", qtable);
     strcat (sql, " (\nPK_UID INTEGER PRIMARY KEY AUTOINCREMENT");
     cnt = 0;
     dbf_field = dbf->Dbf->First;
@@ -1651,7 +1667,7 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 	  goto clean_up;
       }
     /* preparing the INSERT INTO parametrerized statement */
-    sprintf (sql, "INSERT INTO %s (PK_UID", table);
+    sprintf (sql, "INSERT INTO \"%s\" (PK_UID", qtable);
     cnt = 0;
     dbf_field = dbf->Dbf->First;
     while (dbf_field)
@@ -1730,8 +1746,8 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->Value->
-						       TxtValue),
+					       strlen (dbf_field->
+						       Value->TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
