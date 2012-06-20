@@ -7151,7 +7151,7 @@ geomFromDynamicLine (gaiaDynamicLinePtr dyn)
 	      dims = GAIA_XY_Z_M;
 	  pt = pt->Next;
       }
-    if (count == 0)
+    if (count < 2)
 	return NULL;
 
     switch (dims)
@@ -11327,7 +11327,7 @@ fnct_GARSMbr (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_null (context);
 	  return;
       }
-    text = (const char *)sqlite3_value_text (argv[0]);
+    text = (const char *) sqlite3_value_text (argv[0]);
     if ((strlen (text) < 5) || (strlen (text) > 7))
       {
 	  sqlite3_result_null (context);
@@ -13377,7 +13377,7 @@ fnct_IsClosed (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_int (context, -1);
     else
       {
-	sqlite3_result_int (context, gaiaIsClosedGeom (geo));
+	  sqlite3_result_int (context, gaiaIsClosedGeom (geo));
       }
     gaiaFreeGeomColl (geo);
 }
@@ -13527,7 +13527,8 @@ fnct_Length (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  ret = gaiaGeomCollLength (geo, &length);
 	  if (!ret)
 	      sqlite3_result_null (context);
-	  sqlite3_result_double (context, length);
+	  else
+	      sqlite3_result_double (context, length);
       }
     gaiaFreeGeomColl (geo);
 }
@@ -13562,7 +13563,8 @@ fnct_Area (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  ret = gaiaGeomCollArea (geo, &area);
 	  if (!ret)
 	      sqlite3_result_null (context);
-	  sqlite3_result_double (context, area);
+	  else
+	      sqlite3_result_double (context, area);
       }
     gaiaFreeGeomColl (geo);
 }
@@ -14620,7 +14622,8 @@ fnct_Distance (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  ret = gaiaGeomCollDistance (geo1, geo2, &dist);
 	  if (!ret)
 	      sqlite3_result_null (context);
-	  sqlite3_result_double (context, dist);
+	  else
+	      sqlite3_result_double (context, dist);
       }
     gaiaFreeGeomColl (geo1);
     gaiaFreeGeomColl (geo2);
@@ -17568,7 +17571,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -17652,7 +17656,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -17661,7 +17666,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }

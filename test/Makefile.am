@@ -755,6 +755,8 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/distance6.testcase \
 	sql_stmt_tests/distance7.testcase \
 	sql_stmt_tests/distance8.testcase \
+	sql_stmt_tests/distance9.testcase \
+	sql_stmt_tests/distance10.testcase \
 	sql_stmt_tests/dm_m.testcase \
 	sql_stmt_tests/DSC_1467.JPG \
 	sql_stmt_tests/DSCN0042.JPG \
@@ -1216,6 +1218,7 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/isring6.testcase \
 	sql_stmt_tests/isring7.testcase \
 	sql_stmt_tests/isring8.testcase \
+	sql_stmt_tests/isring9.testcase \
 	sql_stmt_tests/issimple1.testcase \
 	sql_stmt_tests/issimple2.testcase \
 	sql_stmt_tests/issimple3.testcase \
@@ -1684,6 +1687,7 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/polygonize11.testcase \
 	sql_stmt_tests/polygonize12.testcase \
 	sql_stmt_tests/polygonize13.testcase \
+	sql_stmt_tests/polygonize14.testcase \
 	sql_stmt_tests/polygonize1.testcase \
 	sql_stmt_tests/polygonize2.testcase \
 	sql_stmt_tests/polygonize3.testcase \
@@ -1762,12 +1766,16 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/relate5.testcase \
 	sql_stmt_tests/relate6.testcase \
 	sql_stmt_tests/relate7.testcase \
+	sql_stmt_tests/relate8.testcase \
+	sql_stmt_tests/relate9.testcase \
 	sql_stmt_tests/relations1.testcase \
 	sql_stmt_tests/relations2.testcase \
 	sql_stmt_tests/relations3.testcase \
 	sql_stmt_tests/relations4.testcase \
 	sql_stmt_tests/relations5.testcase \
 	sql_stmt_tests/relations6.testcase \
+	sql_stmt_tests/relations7.testcase \
+	sql_stmt_tests/relations8.testcase \
 	sql_stmt_tests/reverse1.testcase \
 	sql_stmt_tests/reverse2.testcase \
 	sql_stmt_tests/reverse3.testcase \
@@ -1959,6 +1967,8 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/simplify12.testcase \
 	sql_stmt_tests/simplify13.testcase \
 	sql_stmt_tests/simplify14.testcase \
+	sql_stmt_tests/simplify15.testcase \
+	sql_stmt_tests/simplify16.testcase \
 	sql_stmt_tests/simplify1.testcase \
 	sql_stmt_tests/simplify2.testcase \
 	sql_stmt_tests/simplify3.testcase \
@@ -2034,6 +2044,7 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/st_area6.testcase \
 	sql_stmt_tests/st_area7.testcase \
 	sql_stmt_tests/st_area8.testcase \
+	sql_stmt_tests/st_area9.testcase \
 	sql_stmt_tests/startpoint1.testcase \
 	sql_stmt_tests/startpoint2.testcase \
 	sql_stmt_tests/startpoint3.testcase \
@@ -2045,6 +2056,7 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/st_length5.testcase \
 	sql_stmt_tests/st_length6.testcase \
 	sql_stmt_tests/st_length7.testcase \
+	sql_stmt_tests/st_length8.testcase \
 	sql_stmt_tests/st_m1.testcase \
 	sql_stmt_tests/st_m2.testcase \
 	sql_stmt_tests/st_m3.testcase \

@@ -4,5 +4,5 @@ SELECT AsText(MakeLine(GeomFromText("POINTZM(1 2 3 4)")))
 1 # rows (not including the header row)
 1 # columns
 AsText(MakeLine(GeomFromText("POINTZM(1 2 3 4)")))
-LINESTRING ZM(1 2 3 4)
+(NULL)
 

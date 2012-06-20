@@ -199,6 +199,8 @@ gaiaGeomCollEquals (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
 	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	return -1;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     ret = GEOSEquals (g1, g2);
@@ -215,6 +217,8 @@ gaiaGeomCollIntersects (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
+	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return -1;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
@@ -233,6 +237,8 @@ gaiaGeomCollDisjoint (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
 	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	return -1;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     ret = GEOSDisjoint (g1, g2);
@@ -249,6 +255,8 @@ gaiaGeomCollOverlaps (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
+	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return -1;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
@@ -267,6 +275,8 @@ gaiaGeomCollCrosses (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
 	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	return -1;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     ret = GEOSCrosses (g1, g2);
@@ -283,6 +293,8 @@ gaiaGeomCollTouches (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
+	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return -1;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
@@ -301,6 +313,8 @@ gaiaGeomCollWithin (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
 	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	return -1;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     ret = GEOSWithin (g1, g2);
@@ -317,6 +331,8 @@ gaiaGeomCollContains (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
+	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return -1;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
@@ -335,6 +351,8 @@ gaiaGeomCollRelate (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
+	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return -1;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
@@ -355,6 +373,8 @@ gaiaGeomCollLength (gaiaGeomCollPtr geom, double *xlength)
     GEOSGeometry *g;
     if (!geom)
 	return 0;
+    if (gaiaIsToxic (geom))
+	return 0;
     g = gaiaToGeos (geom);
     ret = GEOSLength (g, &length);
     GEOSGeom_destroy (g);
@@ -371,6 +391,8 @@ gaiaGeomCollArea (gaiaGeomCollPtr geom, double *xarea)
     int ret;
     GEOSGeometry *g;
     if (!geom)
+	return 0;
+    if (gaiaIsToxic (geom))
 	return 0;
     g = gaiaToGeos (geom);
     ret = GEOSArea (g, &area);
@@ -390,6 +412,8 @@ gaiaGeomCollDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2,
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
+	return 0;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return 0;
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
@@ -734,6 +758,11 @@ gaiaIsRing (gaiaLinestringPtr line)
 		gaiaSetPoint (line2->Coords, iv, x, y);
 	    }
       }
+    if (gaiaIsToxic (geo))
+      {
+	  gaiaFreeGeomColl (geo);
+	  return -1;
+      }
     g = gaiaToGeos (geo);
     gaiaFreeGeomColl (geo);
     ret = GEOSisRing (g);
@@ -823,8 +852,8 @@ gaiaGeomCollSimplify (gaiaGeomCollPtr geom, double tolerance)
     GEOSGeometry *g2;
     if (!geom)
 	return NULL;
-    if (gaiaIsToxic (geom)) 
-        return NULL; 
+    if (gaiaIsToxic (geom))
+	return NULL;
     g1 = gaiaToGeos (geom);
     g2 = GEOSSimplify (g1, tolerance);
     GEOSGeom_destroy (g1);
@@ -853,6 +882,8 @@ gaiaGeomCollSimplifyPreserveTopology (gaiaGeomCollPtr geom, double tolerance)
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom)
+	return NULL;
+    if (gaiaIsToxic (geom))
 	return NULL;
     g1 = gaiaToGeos (geom);
     g2 = GEOSTopologyPreserveSimplify (g1, tolerance);
@@ -1106,6 +1137,8 @@ gaiaPolygonize (gaiaGeomCollPtr geom, int force_multi)
     double max_y2;
 
     if (!geom)
+	return NULL;
+    if (gaiaIsToxic (geom))
 	return NULL;
     pt = geom->FirstPoint;
     while (pt)
