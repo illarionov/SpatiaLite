@@ -4152,6 +4152,7 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
     int multi = 0;
     int hasM = 0;
     int current_row = 0;
+
     gaiaRingPtr ring = NULL;
     while (1)
       {
@@ -4210,7 +4211,12 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 	      || shape == GAIA_SHP_POLYGONM)
 	    {
 		/* shape polygon */
-		polygons = 0;
+		struct shp_ring_item *pExt;
+		struct shp_ring_collection ringsColl;
+		/* initializing the RING collection */
+		ringsColl.First = NULL;
+		ringsColl.Last = NULL;
+
 		rd = fread (shp->BufShp, sizeof (unsigned char), 32,
 			    shp->flShp);
 		if (rd != 32)
@@ -4251,23 +4257,19 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 			    start++;
 			    points++;
 			}
-		      if (!polygons)
-			{
-			    /* this one is the first POLYGON */
-			    polygons = 1;
-			}
-		      else
-			{
-			    gaiaClockwise (ring);
-			    if (ring->Clockwise)
-			      {
-				  /* this one is a different POLYGON exterior ring - we need to allocate e new POLYGON */
-				  polygons++;
-			      }
-			}
-		      gaiaFreeRing (ring);
-		      ring = NULL;
+		      shp_add_ring (&ringsColl, ring);
 		  }
+		shp_arrange_rings (&ringsColl);
+		pExt = ringsColl.First;
+		polygons = 0;
+		while (pExt != NULL)
+		  {
+		      if (pExt->IsExterior)
+			  polygons++;
+		      pExt = pExt->Next;
+		  }
+		shp_free_rings (&ringsColl);
+
 		if (polygons > 1)
 		    multi++;
 		if (shape == GAIA_SHP_POLYGONZ)
