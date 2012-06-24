@@ -4258,6 +4258,7 @@ gaiaShpAnalyze (gaiaShapefilePtr shp)
 			    points++;
 			}
 		      shp_add_ring (&ringsColl, ring);
+		      ring = NULL;
 		  }
 		shp_arrange_rings (&ringsColl);
 		pExt = ringsColl.First;
