@@ -1993,23 +1993,25 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 				</ul>
 				NULL will be returned if any error is encountered (or when no item of required type is found)</td></tr>
 			<tr><td><b>LocateAlongMeasure</b></td>
-				<td>ST_Locate_Along_Measure( geom <i>Geometry</i> , m_value <i>Double precision</i> ) : <i>Geometry</i></td>
+				<td>ST_Locate_Along_Measure( geom <i>Geometry</i> , m_value <i>Double precision</i> ) : <i>Geometry</i><hr>
+				    ST_LocateAlong( geom <i>Geometry</i> , m_value <i>Double precision</i> ) : <i>Geometry</i></hr></td>
 				<td></td>
 				<td></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td>Return a derived geometry collection value with elements that match the specified measure.<br>
 				NULL will be returned if any error is encountered (or when no element corresponding to the given measure is found).<br>
-                                <u>Please note</u>: NULL will be returned anyway if Geometry doesn't support M-dimension, or if it contains any Polygon, or if it's of the GeometryCollection type.</td></tr>
+                                <u>Please note</u>: NULL will be returned if geom doesn't contain M-dimension, or if geom contains a Polygon, or if geom is a GeometryCollection.</td></tr>
 			<tr><td><b>LocateBetweenMeasures</b></td>
-				<td>ST_Locate_Between_Measures( geom <i>Geometry</i> , m_start <i>Double precision</i> , m_end <i>Double precision</i> ) : <i>Geometry</i></td>
+				<td>ST_Locate_Between_Measures( geom <i>Geometry</i> , m_start <i>Double precision</i> , m_end <i>Double precision</i> ) : <i>Geometry</i><hr>
+				    ST_LocateBetween( geom <i>Geometry</i> , m_start <i>Double precision</i> , m_end <i>Double precision</i> ) : <i>Geometry</i></td>
 				<td></td>
 				<td></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td>Return a derived geometry collection value with elements that match the specified range of measures.<br>
 				NULL will be returned if any error is encountered (or when no element corresponding to the given range of measures is found).<br>
-                                <u>Please note</u>: NULL will be returned anyway if Geometry doesn't support M-dimension, or if it contains any Polygon, or if it's of the GeometryCollection type.</td></tr>
+                                <u>Please note</u>: NULL will be returned if geom doesn't contain M-dimension, or if geom contains a Polygon, or if geom is a GeometryCollection.</td></tr>
 			<tr><td colspan="7" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p15">SQL functions for coordinate transformations</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
@@ -2242,7 +2244,7 @@ NULL will be returned if the requested RTree doesn't exists</td></tr>
 						<ul>
 							<li>if <b>no_check = FALSE</b> (<i>default</i>) the RTree will be checked first:
 								and only an invalid RTree will be then actually rebuilt</li>
-							<li>if <b>no_check = TRUE</b> the RTree will be unconditionally rebuilt from scratch anyway</li>
+							<li>if <b>no_check = TRUE</b> the RTree will be unconditionally rebuilt from scratch</li>
 						</ul></li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE<br>

@@ -18606,7 +18606,11 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_CollectionExtract, 0, 0);
     sqlite3_create_function (db, "ST_Locate_Along_Measure", 2, SQLITE_ANY, 0,
 			     fnct_LocateBetweenMeasures, 0, 0);
+    sqlite3_create_function (db, "ST_LocateAlong", 2, SQLITE_ANY, 0,
+			     fnct_LocateBetweenMeasures, 0, 0);
     sqlite3_create_function (db, "ST_Locate_Between_Measures", 3, SQLITE_ANY, 0,
+			     fnct_LocateBetweenMeasures, 0, 0);
+    sqlite3_create_function (db, "ST_LocateBetween", 3, SQLITE_ANY, 0,
 			     fnct_LocateBetweenMeasures, 0, 0);
 #ifndef OMIT_GEOCALLBACKS	/* supporting RTree geometry callbacks */
     sqlite3_rtree_geometry_callback (db, "RTreeWithin", fnct_RTreeIntersects,
