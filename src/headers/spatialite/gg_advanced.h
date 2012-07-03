@@ -290,7 +290,7 @@ extern "C"
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE int gaiaIsClosedGeom (gaiaGeomCollPtr geom);
-    
+
 /**
  Checks if a Linestring object represents an OGC Ring Geometry
 
@@ -841,6 +841,7 @@ extern "C"
  laying on the input Geometry and positioned at the given length fraction:
  NULL on failure.
 
+ \sa gaiaLineInterpolateEquidistantPoints
  \sa gaiaFreeGeomColl
 
  \note you are responsible to destroy (before or after) any allocated Geometry,
@@ -851,6 +852,30 @@ extern "C"
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaLineInterpolatePoint (gaiaGeomCollPtr
 							      ln_geom,
 							      double fraction);
+
+/**
+ Spatial operator: Line Interpolate Equidistant Points
+
+ \param ln_geom the input Geometry object [expected to be of lineal type]
+ \param distance regular distance between interpolated points
+
+ \return the pointer to newly created Geometry object representing a MultiPoint;
+ such MultiPoint always supports the M coordinate (the corresponding value
+ representing the progressive distance for each interpolated Point).
+ individual Points will be regularly spaced by the given distance:
+ NULL on failure.
+
+ \sa gaiaLineInterpolatePoint
+ \sa gaiaFreeGeomColl
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaLineInterpolateEquidistantPoints()
+
+ \remark \b GEOS-ADVANCED support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr
+	gaiaLineInterpolateEquidistantPoints (gaiaGeomCollPtr ln_geom,
+					      double distance);
 
 /**
  Spatial operator: Line Substring

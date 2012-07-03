@@ -1177,6 +1177,20 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/interpolatepoint7.testcase \
 	sql_stmt_tests/interpolatepoint8.testcase \
 	sql_stmt_tests/interpolatepoint9.testcase \
+	sql_stmt_tests/interpolateequidistantpoint10.testcase \
+	sql_stmt_tests/interpolateequidistantpoint11.testcase \
+	sql_stmt_tests/interpolateequidistantpoint12.testcase \
+	sql_stmt_tests/interpolateequidistantpoint13.testcase \
+	sql_stmt_tests/interpolateequidistantpoint14.testcase \
+	sql_stmt_tests/interpolateequidistantpoint1.testcase \
+	sql_stmt_tests/interpolateequidistantpoint2.testcase \
+	sql_stmt_tests/interpolateequidistantpoint3.testcase \
+	sql_stmt_tests/interpolateequidistantpoint4.testcase \
+	sql_stmt_tests/interpolateequidistantpoint5.testcase \
+	sql_stmt_tests/interpolateequidistantpoint6.testcase \
+	sql_stmt_tests/interpolateequidistantpoint7.testcase \
+	sql_stmt_tests/interpolateequidistantpoint8.testcase \
+	sql_stmt_tests/interpolateequidistantpoint9.testcase \
 	sql_stmt_tests/intersection10.testcase \
 	sql_stmt_tests/intersection11.testcase \
 	sql_stmt_tests/intersection12.testcase \

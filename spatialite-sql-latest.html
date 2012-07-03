@@ -1803,6 +1803,18 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 					Second argument (between <b>0.0</b> and <b>1.0</b>) representing fraction of total length of linestring 
 					the point has to be located.<br>
 					NULL is returned for invalid arguments</td></tr>
+			<tr><td><b>Line_Interpolate_Equidistant_Points</b></td>
+				<td>Line_Interpolate_Equidistant_Points( line <i>Curve</i> , distance <i>Double precision</i>) : <i>Point</i><hr>
+					ST_Line_Interpolate_Equidistant_Points( line <i>Curve</i> , distance <i>Double precision</i> ) : <i>Point</i></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td>return a set of equidistant points interpolated along a line; the returned geometry
+					always corresponds to a MULTIPOINT supporting the M coordinate (representing the
+                                        progressive distance for each interpolated Point).<br>
+					Second argument represents the regular distance between interpolated points.<br>
+					NULL is returned for invalid arguments</td></tr>
 			<tr><td><b>Line_Locate_Point</b></td>
 				<td>Line_Locate_Point( line <i>Curve</i> , point <i>Point</i> ) : <i>Double precision</i><hr>
 					ST_Line_Locate_Point( line <i>Curve</i> , point <i>Point</i> ) : <i>Double precision</i></td>

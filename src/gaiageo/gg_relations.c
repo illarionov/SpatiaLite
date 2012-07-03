@@ -2279,6 +2279,151 @@ gaiaLineInterpolatePoint (gaiaGeomCollPtr geom, double fraction)
     return result;
 }
 
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaLineInterpolateEquidistantPoints (gaiaGeomCollPtr geom, double distance)
+{
+/*
+ * attempts to intepolate a set of points on line at regular distances 
+ */
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    gaiaGeomCollPtr result;
+    gaiaGeomCollPtr xpt;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    GEOSGeometry *g;
+    GEOSGeometry *g_pt;
+    double length;
+    double current_length = 0.0;
+    if (!geom)
+	return NULL;
+    if (distance <= 0.0)
+	return NULL;
+
+/* checking if a single Linestring has been passed */
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  lns++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts == 0 && lns == 1 && pgs == 0)
+	;
+    else
+	return NULL;
+
+    g = gaiaToGeos (geom);
+    if (GEOSLength (g, &length))
+      {
+	  if (length <= distance)
+	    {
+		/* the line is too short to apply interpolation */
+		GEOSGeom_destroy (g);
+		return NULL;
+	    }
+      }
+    else
+      {
+	  GEOSGeom_destroy (g);
+	  return NULL;
+      }
+
+/* creating the MultiPoint [always supporting M] */
+    if (geom->DimensionModel == GAIA_XY_Z
+	|| geom->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaAllocGeomCollXYZM ();
+    else
+	result = gaiaAllocGeomCollXYM ();
+    if (result == NULL)
+      {
+	  GEOSGeom_destroy (g);
+	  return NULL;
+      }
+
+    while (1)
+      {
+	  /* increasing the current distance */
+	  current_length += distance;
+	  if (current_length >= length)
+	      break;
+	  /* interpolating a point */
+	  g_pt = GEOSInterpolate (g, current_length);
+	  if (!g_pt)
+	      goto error;
+	  if (geom->DimensionModel == GAIA_XY_Z)
+	    {
+		xpt = gaiaFromGeos_XYZ (g_pt);
+		if (!xpt)
+		    goto error;
+		pt = xpt->FirstPoint;
+		if (!pt)
+		    goto error;
+		gaiaAddPointToGeomCollXYZM (result, pt->X, pt->Y, pt->Z,
+					    current_length);
+	    }
+	  else if (geom->DimensionModel == GAIA_XY_M)
+	    {
+		xpt = gaiaFromGeos_XYM (g_pt);
+		if (!xpt)
+		    goto error;
+		pt = xpt->FirstPoint;
+		if (!pt)
+		    goto error;
+		gaiaAddPointToGeomCollXYM (result, pt->X, pt->Y,
+					   current_length);
+	    }
+	  else if (geom->DimensionModel == GAIA_XY_Z_M)
+	    {
+		xpt = gaiaFromGeos_XYZM (g_pt);
+		if (!xpt)
+		    goto error;
+		pt = xpt->FirstPoint;
+		if (!pt)
+		    goto error;
+		gaiaAddPointToGeomCollXYZM (result, pt->X, pt->Y, pt->Z,
+					    current_length);
+	    }
+	  else
+	    {
+		xpt = gaiaFromGeos_XY (g_pt);
+		if (!xpt)
+		    goto error;
+		pt = xpt->FirstPoint;
+		if (!pt)
+		    goto error;
+		gaiaAddPointToGeomCollXYM (result, pt->X, pt->Y,
+					   current_length);
+	    }
+	  GEOSGeom_destroy (g_pt);
+	  gaiaFreeGeomColl (xpt);
+      }
+    GEOSGeom_destroy (g);
+    result->Srid = geom->Srid;
+    result->DeclaredType = GAIA_MULTIPOINT;
+    return result;
+
+  error:
+    if (g_pt)
+	GEOSGeom_destroy (g_pt);
+    GEOSGeom_destroy (g);
+    gaiaFreeGeomColl (result);
+    return NULL;
+}
+
 GAIAGEO_DECLARE double
 gaiaLineLocatePoint (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {

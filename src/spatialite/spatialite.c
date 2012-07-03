@@ -15589,6 +15589,65 @@ fnct_LineInterpolatePoint (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_LineInterpolateEquidistantPoints (sqlite3_context * context, int argc,
+				       sqlite3_value ** argv)
+{
+/* SQL function:
+/ LineInterpolateEquidistantPointS(BLOBencoded geometry1, double distance)
+/
+/ returns a new geometry representing a point interpolated along a line
+/ [a LINESTRING is expected / fraction ranging from 0.0 to 1.0]
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int int_value;
+    double distance;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr result;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	distance = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  distance = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geo == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  result = gaiaLineInterpolateEquidistantPoints (geo, distance);
+	  if (!result)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
 fnct_LineLocatePoint (sqlite3_context * context, int argc,
 		      sqlite3_value ** argv)
 {
@@ -17571,8 +17630,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -17656,8 +17714,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -17666,8 +17723,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -18970,6 +19026,12 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_LineInterpolatePoint, 0, 0);
     sqlite3_create_function (db, "ST_Line_Interpolate_Point", 2, SQLITE_ANY, 0,
 			     fnct_LineInterpolatePoint, 0, 0);
+    sqlite3_create_function (db, "Line_Interpolate_Equidistant_Points", 2,
+			     SQLITE_ANY, 0,
+			     fnct_LineInterpolateEquidistantPoints, 0, 0);
+    sqlite3_create_function (db, "ST_Line_Interpolate_Equidistant_Points", 2,
+			     SQLITE_ANY, 0,
+			     fnct_LineInterpolateEquidistantPoints, 0, 0);
     sqlite3_create_function (db, "Line_Locate_Point", 2, SQLITE_ANY, 0,
 			     fnct_LineLocatePoint, 0, 0);
     sqlite3_create_function (db, "ST_Line_Locate_Point", 2, SQLITE_ANY, 0,
