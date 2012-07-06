@@ -87,6 +87,8 @@ extern "C"
 #define GAIA_GEOMETRY_BLOB	8
 /** this BLOB does actually contain a TIFF image */
 #define GAIA_TIFF_BLOB		9
+/** this BLOB does actually contain a WebP image */
+#define GAIA_WEBP_BLOB		10
 
 /* constants used for EXIF value types */
 /** unrecognized EXIF value */

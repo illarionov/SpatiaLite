@@ -17382,6 +17382,14 @@ blob_guess (sqlite3_context * context, int argc, sqlite3_value ** argv,
 	      sqlite3_result_int (context, 0);
 	  return;
       }
+    if (request == GAIA_WEBP_BLOB)
+      {
+	  if (blob_type == GAIA_WEBP_BLOB)
+	      sqlite3_result_int (context, 1);
+	  else
+	      sqlite3_result_int (context, 0);
+	  return;
+      }
     sqlite3_result_int (context, -1);
 }
 
@@ -17442,6 +17450,12 @@ static void
 fnct_IsExifGpsBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
     blob_guess (context, argc, argv, GAIA_EXIF_GPS_BLOB);
+}
+
+static void
+fnct_IsWebPBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+    blob_guess (context, argc, argv, GAIA_WEBP_BLOB);
 }
 
 static void
@@ -18698,6 +18712,8 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_IsExifBlob, 0, 0);
     sqlite3_create_function (db, "IsExifGpsBlob", 1, SQLITE_ANY, 0,
 			     fnct_IsExifGpsBlob, 0, 0);
+    sqlite3_create_function (db, "IsWebpBlob", 1, SQLITE_ANY, 0,
+			     fnct_IsWebPBlob, 0, 0);
     sqlite3_create_function (db, "GeomFromExifGpsBlob", 1, SQLITE_ANY, 0,
 			     fnct_GeomFromExifGpsBlob, 0, 0);
     sqlite3_create_function (db, "BlobFromFile", 1, SQLITE_ANY, 0,

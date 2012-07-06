@@ -2378,6 +2378,8 @@ gaiaGuessBlobType (const unsigned char *blob, int size)
     unsigned char zip_signature[4];
     unsigned char tiff_signature_little[4];
     unsigned char tiff_signature_big[4];
+    unsigned char riff_signature[4];
+    unsigned char webp_signature[8];
     jpeg1_signature[0] = 0xff;
     jpeg1_signature[1] = 0xd8;
     jpeg2_signature[0] = 0xff;
@@ -2414,6 +2416,18 @@ gaiaGuessBlobType (const unsigned char *blob, int size)
     tiff_signature_big[1] = 'M';
     tiff_signature_big[2] = 0x00;
     tiff_signature_big[3] = 0x2a;
+    riff_signature[0] = 'R';
+    riff_signature[1] = 'I';
+    riff_signature[2] = 'F';
+    riff_signature[3] = 'F';
+    webp_signature[0] = 'W';
+    webp_signature[1] = 'E';
+    webp_signature[2] = 'B';
+    webp_signature[3] = 'P';
+    webp_signature[4] = 'V';
+    webp_signature[5] = 'P';
+    webp_signature[6] = '8';
+    webp_signature[7] = ' ';
     if (size < 1 || !blob)
 	return GAIA_HEX_BLOB;
     if (size > 4)
@@ -2484,6 +2498,12 @@ gaiaGuessBlobType (const unsigned char *blob, int size)
 	return GAIA_EXIF_BLOB;
     if (jpeg)
 	return GAIA_JPEG_BLOB;
+    if (size > 16)
+      {
+	if ((memcmp(blob, riff_signature, 4) == 0) &&
+	    (memcmp(blob+8, webp_signature, 8) == 0))
+	      return GAIA_WEBP_BLOB;
+      }
 /* testing for GEOMETRY */
     if (size < 45)
 	geom = 0;
