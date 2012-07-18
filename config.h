@@ -17,7 +17,7 @@
 #define HAVE_FLOAT_H 1
 
 /* Define to 1 if you have the <freexl.h> header file. */
-#define HAVE_FREEXL_H 1
+/* #undef HAVE_FREEXL_H */
 
 /* Define to 1 if you have the `ftruncate' function. */
 #define HAVE_FTRUNCATE 1
@@ -135,7 +135,7 @@
 /* #undef OMIT_EPSG */
 
 /* Should be defined in order to disable FREEXL support. */
-/* #undef OMIT_FREEXL */
+#define OMIT_FREEXL 1
 
 /* Should be defined in order to disable GEOCALLBACKS support. */
 #define OMIT_GEOCALLBACKS 1

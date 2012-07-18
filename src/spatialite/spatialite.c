@@ -159,7 +159,6 @@ fnct_geos_version (sqlite3_context * context, int argc, sqlite3_value ** argv)
 #endif
 }
 
-
 static void
 fnct_proj4_version (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
@@ -178,6 +177,134 @@ fnct_proj4_version (sqlite3_context * context, int argc, sqlite3_value ** argv)
     sqlite3_result_text (context, p_result, len, SQLITE_TRANSIENT);
 #else
     sqlite3_result_null (context);
+#endif
+}
+
+static void
+fnct_has_proj (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ HasProj()
+/
+/ return 1 if built including Proj.4; otherwise 0
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+#ifndef OMIT_PROJ		/* PROJ.4 is supported */
+   sqlite3_result_int (context, 1);
+#else
+   sqlite3_result_int (context, 0);
+#endif
+}
+
+static void
+fnct_has_geos (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ HasGeos()
+/
+/ return 1 if built including GEOS; otherwise 0
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+#ifndef OMIT_GEOS		/* GEOS is supported */
+   sqlite3_result_int (context, 1);
+#else
+   sqlite3_result_int (context, 0);
+#endif
+}
+
+static void
+fnct_has_geos_advanced (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ HasGeosAdvanced()
+/
+/ return 1 if built including GEOS; otherwise 0
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+#ifdef GEOS_ADVANCED		/* GEOS-ADVANCED is supported */
+   sqlite3_result_int (context, 1);
+#else
+   sqlite3_result_int (context, 0);
+#endif
+}
+
+static void
+fnct_has_iconv (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ HasIconv()
+/
+/ return 1 if built including ICONV; otherwise 0
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+#ifndef OMIT_ICONV		/* ICONV is supported */
+   sqlite3_result_int (context, 1);
+#else
+   sqlite3_result_int (context, 0);
+#endif
+}
+
+static void
+fnct_has_math_sql (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ HasMathSql()
+/
+/ return 1 if built including MATHSQL; otherwise 0
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+#ifndef OMIT_MATHSQL		/* MATHSQL is supported */
+   sqlite3_result_int (context, 1);
+#else
+   sqlite3_result_int (context, 0);
+#endif
+}
+
+static void
+fnct_has_geo_callbacks (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ HasGeoCallbacks()
+/
+/ return 1 if built enabling GEOCALLBACKS; otherwise 0
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+#ifndef OMIT_GEOCALLBACKS	/* GEO-CALLBACKS are supported */
+   sqlite3_result_int (context, 1);
+#else
+   sqlite3_result_int (context, 0);
+#endif
+}
+
+static void
+fnct_has_freeXL (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ HasFreeXL()
+/
+/ return 1 if built including FreeXL; otherwise 0
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+#ifndef OMIT_FREEXL		/* FreeXL is supported */
+   sqlite3_result_int (context, 1);
+#else
+   sqlite3_result_int (context, 0);
+#endif
+}
+
+static void
+fnct_has_epsg (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ HasEpsg()
+/
+/ return 1 if built including EPSG; otherwise 0
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+#ifndef OMIT_EPSG		/* EPSG is supported */
+   sqlite3_result_int (context, 1);
+#else
+   sqlite3_result_int (context, 0);
 #endif
 }
 
@@ -18042,6 +18169,22 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_proj4_version, 0, 0);
     sqlite3_create_function (db, "geos_version", 0, SQLITE_ANY, 0,
 			     fnct_geos_version, 0, 0);
+    sqlite3_create_function (db, "HasProj", 0, SQLITE_ANY, 0,
+			     fnct_has_proj, 0, 0);
+    sqlite3_create_function (db, "HasGeos", 0, SQLITE_ANY, 0,
+			     fnct_has_geos, 0, 0);
+    sqlite3_create_function (db, "HasGeosAdvanced", 0, SQLITE_ANY, 0,
+			     fnct_has_geos_advanced, 0, 0);
+    sqlite3_create_function (db, "HasMathSql", 0, SQLITE_ANY, 0,
+			     fnct_has_math_sql, 0, 0);
+    sqlite3_create_function (db, "HasGeoCallbacks", 0, SQLITE_ANY, 0,
+			     fnct_has_geo_callbacks, 0, 0);
+    sqlite3_create_function (db, "HasIconv", 0, SQLITE_ANY, 0,
+			     fnct_has_iconv, 0, 0);
+    sqlite3_create_function (db, "HasFreeXL", 0, SQLITE_ANY, 0,
+			     fnct_has_freeXL, 0, 0);
+    sqlite3_create_function (db, "HasEpsg", 0, SQLITE_ANY, 0,
+			     fnct_has_epsg, 0, 0);
     sqlite3_create_function (db, "GeometryConstraints", 3, SQLITE_ANY, 0,
 			     fnct_GeometryConstraints, 0, 0);
     sqlite3_create_function (db, "GeometryConstraints", 4, SQLITE_ANY, 0,
