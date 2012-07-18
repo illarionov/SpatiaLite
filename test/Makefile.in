@@ -782,28 +782,28 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/checkspatialmetadata2.testcase \
 	sql_stmt_tests/checkspatialmetadata3.testcase \
 	sql_stmt_tests/ch_m.testcase \
-	sql_stmt_tests/closestpoint10.testcase \
-	sql_stmt_tests/closestpoint11.testcase \
-	sql_stmt_tests/closestpoint12.testcase \
-	sql_stmt_tests/closestpoint13.testcase \
-	sql_stmt_tests/closestpoint14.testcase \
-	sql_stmt_tests/closestpoint15.testcase \
-	sql_stmt_tests/closestpoint16.testcase \
-	sql_stmt_tests/closestpoint17.testcase \
-	sql_stmt_tests/closestpoint18.testcase \
-	sql_stmt_tests/closestpoint19.testcase \
-	sql_stmt_tests/closestpoint1.testcase \
-	sql_stmt_tests/closestpoint20.testcase \
-	sql_stmt_tests/closestpoint21.testcase \
-	sql_stmt_tests/closestpoint22.testcase \
-	sql_stmt_tests/closestpoint2.testcase \
-	sql_stmt_tests/closestpoint3.testcase \
-	sql_stmt_tests/closestpoint4.testcase \
-	sql_stmt_tests/closestpoint5.testcase \
-	sql_stmt_tests/closestpoint6.testcase \
-	sql_stmt_tests/closestpoint7.testcase \
-	sql_stmt_tests/closestpoint8.testcase \
-	sql_stmt_tests/closestpoint9.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint10.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint11.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint12.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint13.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint14.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint15.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint16.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint17.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint18.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint19.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint1.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint20.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint21.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint22.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint2.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint3.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint4.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint5.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint6.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint7.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint8.testcase \
+	sql_stmt_geosadvanced_tests/closestpoint9.testcase \
 	sql_stmt_tests/cm_m.testcase \
 	sql_stmt_tests/collect10.testcase \
 	sql_stmt_tests/collect11.testcase \
@@ -970,35 +970,35 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/cot0.testcase \
 	sql_stmt_tests/cotpi2.testcase \
 	sql_stmt_tests/cot-text.testcase \
-	sql_stmt_tests/coveredby1.testcase \
-	sql_stmt_tests/coveredby2.testcase \
-	sql_stmt_tests/covers1.testcase \
-	sql_stmt_tests/covers2.testcase \
-	sql_stmt_tests/covers_covered1.testcase \
-	sql_stmt_tests/covers_covered2.testcase \
-	sql_stmt_tests/covers_covered3.testcase \
-	sql_stmt_tests/covers_covered4.testcase \
-	sql_stmt_tests/covers_covered5.testcase \
-	sql_stmt_tests/covers_covered6.testcase \
-	sql_stmt_tests/covers_covered7.testcase \
-	sql_stmt_tests/createtopo10.testcase \
-	sql_stmt_tests/createtopo11.testcase \
-	sql_stmt_tests/createtopo12.testcase \
-	sql_stmt_tests/createtopo13.testcase \
-	sql_stmt_tests/createtopo14.testcase \
-	sql_stmt_tests/createtopo15.testcase \
-	sql_stmt_tests/createtopo16.testcase \
-	sql_stmt_tests/createtopo17.testcase \
-	sql_stmt_tests/createtopo18.testcase \
-	sql_stmt_tests/createtopo1.testcase \
-	sql_stmt_tests/createtopo2.testcase \
-	sql_stmt_tests/createtopo3.testcase \
-	sql_stmt_tests/createtopo4.testcase \
-	sql_stmt_tests/createtopo5.testcase \
-	sql_stmt_tests/createtopo6.testcase \
-	sql_stmt_tests/createtopo7.testcase \
-	sql_stmt_tests/createtopo8.testcase \
-	sql_stmt_tests/createtopo9.testcase \
+	sql_stmt_geosadvanced_tests/coveredby1.testcase \
+	sql_stmt_geosadvanced_tests/coveredby2.testcase \
+	sql_stmt_geosadvanced_tests/covers1.testcase \
+	sql_stmt_geosadvanced_tests/covers2.testcase \
+	sql_stmt_geosadvanced_tests/covers_covered1.testcase \
+	sql_stmt_geosadvanced_tests/covers_covered2.testcase \
+	sql_stmt_geosadvanced_tests/covers_covered3.testcase \
+	sql_stmt_geosadvanced_tests/covers_covered4.testcase \
+	sql_stmt_geosadvanced_tests/covers_covered5.testcase \
+	sql_stmt_geosadvanced_tests/covers_covered6.testcase \
+	sql_stmt_geosadvanced_tests/covers_covered7.testcase \
+	sql_stmt_geosadvanced_tests/createtopo10.testcase \
+	sql_stmt_geosadvanced_tests/createtopo11.testcase \
+	sql_stmt_geosadvanced_tests/createtopo12.testcase \
+	sql_stmt_geosadvanced_tests/createtopo13.testcase \
+	sql_stmt_geosadvanced_tests/createtopo14.testcase \
+	sql_stmt_geosadvanced_tests/createtopo15.testcase \
+	sql_stmt_geosadvanced_tests/createtopo16.testcase \
+	sql_stmt_geosadvanced_tests/createtopo17.testcase \
+	sql_stmt_geosadvanced_tests/createtopo18.testcase \
+	sql_stmt_geosadvanced_tests/createtopo1.testcase \
+	sql_stmt_geosadvanced_tests/createtopo2.testcase \
+	sql_stmt_geosadvanced_tests/createtopo3.testcase \
+	sql_stmt_geosadvanced_tests/createtopo4.testcase \
+	sql_stmt_geosadvanced_tests/createtopo5.testcase \
+	sql_stmt_geosadvanced_tests/createtopo6.testcase \
+	sql_stmt_geosadvanced_tests/createtopo7.testcase \
+	sql_stmt_geosadvanced_tests/createtopo8.testcase \
+	sql_stmt_geosadvanced_tests/createtopo9.testcase \
 	sql_stmt_tests/degrees45.testcase \
 	sql_stmt_tests/degrees.testcase \
 	sql_stmt_tests/degreestext.testcase \
@@ -1456,45 +1456,45 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/greatcircle-poly.testcase \
 	sql_stmt_tests/greatcircle.testcase \
 	sql_stmt_tests/greatcircle-text.testcase \
-	sql_stmt_tests/hausdorffdistance1.testcase \
-	sql_stmt_tests/hausdorffdistance2.testcase \
-	sql_stmt_tests/hausdorffdistance3.testcase \
-	sql_stmt_tests/hausdorffdistance4.testcase \
-	sql_stmt_tests/hausdorffdistance5.testcase \
-	sql_stmt_tests/hausdorffdistance6.testcase \
-	sql_stmt_tests/hausdorffdistance7.testcase \
+	sql_stmt_geosadvanced_tests/hausdorffdistance1.testcase \
+	sql_stmt_geosadvanced_tests/hausdorffdistance2.testcase \
+	sql_stmt_geosadvanced_tests/hausdorffdistance3.testcase \
+	sql_stmt_geosadvanced_tests/hausdorffdistance4.testcase \
+	sql_stmt_geosadvanced_tests/hausdorffdistance5.testcase \
+	sql_stmt_geosadvanced_tests/hausdorffdistance6.testcase \
+	sql_stmt_geosadvanced_tests/hausdorffdistance7.testcase \
 	sql_stmt_tests/ind_ch_m.testcase \
 	sql_stmt_tests/ind_ft_m.testcase \
 	sql_stmt_tests/ind_yd_m.testcase \
 	sql_stmt_tests/in_m.testcase \
-	sql_stmt_tests/interpolatepoint10.testcase \
-	sql_stmt_tests/interpolatepoint11.testcase \
-	sql_stmt_tests/interpolatepoint12.testcase \
-	sql_stmt_tests/interpolatepoint13.testcase \
-	sql_stmt_tests/interpolatepoint14.testcase \
-	sql_stmt_tests/interpolatepoint1.testcase \
-	sql_stmt_tests/interpolatepoint2.testcase \
-	sql_stmt_tests/interpolatepoint3.testcase \
-	sql_stmt_tests/interpolatepoint4.testcase \
-	sql_stmt_tests/interpolatepoint5.testcase \
-	sql_stmt_tests/interpolatepoint6.testcase \
-	sql_stmt_tests/interpolatepoint7.testcase \
-	sql_stmt_tests/interpolatepoint8.testcase \
-	sql_stmt_tests/interpolatepoint9.testcase \
-	sql_stmt_tests/interpolateequidistantpoint10.testcase \
-	sql_stmt_tests/interpolateequidistantpoint11.testcase \
-	sql_stmt_tests/interpolateequidistantpoint12.testcase \
-	sql_stmt_tests/interpolateequidistantpoint13.testcase \
-	sql_stmt_tests/interpolateequidistantpoint14.testcase \
-	sql_stmt_tests/interpolateequidistantpoint1.testcase \
-	sql_stmt_tests/interpolateequidistantpoint2.testcase \
-	sql_stmt_tests/interpolateequidistantpoint3.testcase \
-	sql_stmt_tests/interpolateequidistantpoint4.testcase \
-	sql_stmt_tests/interpolateequidistantpoint5.testcase \
-	sql_stmt_tests/interpolateequidistantpoint6.testcase \
-	sql_stmt_tests/interpolateequidistantpoint7.testcase \
-	sql_stmt_tests/interpolateequidistantpoint8.testcase \
-	sql_stmt_tests/interpolateequidistantpoint9.testcase \
+	sql_stmt_geosadvanced_tests/interpolatepoint10.testcase \
+	sql_stmt_geosadvanced_tests/interpolatepoint11.testcase \
+	sql_stmt_geosadvanced_tests/interpolatepoint12.testcase \
+	sql_stmt_geosadvanced_tests/interpolatepoint13.testcase \
+	sql_stmt_geosadvanced_tests/interpolatepoint14.testcase \
+	sql_stmt_geosadvanced_tests/interpolatepoint1.testcase \
+	sql_stmt_geosadvanced_tests/interpolatepoint2.testcase \
+	sql_stmt_geosadvanced_tests/interpolatepoint3.testcase \
+	sql_stmt_geosadvanced_tests/interpolatepoint4.testcase \
+	sql_stmt_geosadvanced_tests/interpolatepoint5.testcase \
+	sql_stmt_geosadvanced_tests/interpolatepoint6.testcase \
+	sql_stmt_geosadvanced_tests/interpolatepoint7.testcase \
+	sql_stmt_geosadvanced_tests/interpolatepoint8.testcase \
+	sql_stmt_geosadvanced_tests/interpolatepoint9.testcase \
+	sql_stmt_geosadvanced_tests/interpolateequidistantpoint10.testcase \
+	sql_stmt_geosadvanced_tests/interpolateequidistantpoint11.testcase \
+	sql_stmt_geosadvanced_tests/interpolateequidistantpoint12.testcase \
+	sql_stmt_geosadvanced_tests/interpolateequidistantpoint13.testcase \
+	sql_stmt_geosadvanced_tests/interpolateequidistantpoint14.testcase \
+	sql_stmt_geosadvanced_tests/interpolateequidistantpoint1.testcase \
+	sql_stmt_geosadvanced_tests/interpolateequidistantpoint2.testcase \
+	sql_stmt_geosadvanced_tests/interpolateequidistantpoint3.testcase \
+	sql_stmt_geosadvanced_tests/interpolateequidistantpoint4.testcase \
+	sql_stmt_geosadvanced_tests/interpolateequidistantpoint5.testcase \
+	sql_stmt_geosadvanced_tests/interpolateequidistantpoint6.testcase \
+	sql_stmt_geosadvanced_tests/interpolateequidistantpoint7.testcase \
+	sql_stmt_geosadvanced_tests/interpolateequidistantpoint8.testcase \
+	sql_stmt_geosadvanced_tests/interpolateequidistantpoint9.testcase \
 	sql_stmt_tests/intersection10.testcase \
 	sql_stmt_tests/intersection11.testcase \
 	sql_stmt_tests/intersection12.testcase \
@@ -1583,16 +1583,16 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/lhr6.testcase \
 	sql_stmt_tests/linefromtext1.testcase \
 	sql_stmt_tests/linefromtext2.testcase \
-	sql_stmt_tests/linemerge10.testcase \
-	sql_stmt_tests/linemerge1.testcase \
-	sql_stmt_tests/linemerge2.testcase \
-	sql_stmt_tests/linemerge3.testcase \
-	sql_stmt_tests/linemerge4.testcase \
-	sql_stmt_tests/linemerge5.testcase \
-	sql_stmt_tests/linemerge6.testcase \
-	sql_stmt_tests/linemerge7.testcase \
-	sql_stmt_tests/linemerge8.testcase \
-	sql_stmt_tests/linemerge9.testcase \
+	sql_stmt_geosadvanced_tests/linemerge10.testcase \
+	sql_stmt_geosadvanced_tests/linemerge1.testcase \
+	sql_stmt_geosadvanced_tests/linemerge2.testcase \
+	sql_stmt_geosadvanced_tests/linemerge3.testcase \
+	sql_stmt_geosadvanced_tests/linemerge4.testcase \
+	sql_stmt_geosadvanced_tests/linemerge5.testcase \
+	sql_stmt_geosadvanced_tests/linemerge6.testcase \
+	sql_stmt_geosadvanced_tests/linemerge7.testcase \
+	sql_stmt_geosadvanced_tests/linemerge8.testcase \
+	sql_stmt_geosadvanced_tests/linemerge9.testcase \
 	sql_stmt_tests/linesfromrings1.testcase \
 	sql_stmt_tests/linesfromrings2.testcase \
 	sql_stmt_tests/linesfromrings3.testcase \
@@ -1600,51 +1600,51 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/linesfromrings5.testcase \
 	sql_stmt_tests/linesfromrings6.testcase \
 	sql_stmt_tests/linesfromrings7.testcase \
-	sql_stmt_tests/linesnodes10.testcase \
-	sql_stmt_tests/linesnodes11.testcase \
-	sql_stmt_tests/linesnodes12.testcase \
-	sql_stmt_tests/linesnodes13.testcase \
-	sql_stmt_tests/linesnodes14.testcase \
-	sql_stmt_tests/linesnodes15.testcase \
-	sql_stmt_tests/linesnodes16.testcase \
-	sql_stmt_tests/linesnodes17.testcase \
-	sql_stmt_tests/linesnodes18.testcase \
-	sql_stmt_tests/linesnodes19.testcase \
-	sql_stmt_tests/linesnodes1.testcase \
-	sql_stmt_tests/linesnodes2.testcase \
-	sql_stmt_tests/linesnodes3.testcase \
-	sql_stmt_tests/linesnodes4.testcase \
-	sql_stmt_tests/linesnodes5.testcase \
-	sql_stmt_tests/linesnodes6.testcase \
-	sql_stmt_tests/linesnodes7.testcase \
-	sql_stmt_tests/linesnodes8.testcase \
-	sql_stmt_tests/linesnodes9.testcase \
-	sql_stmt_tests/linesubstring10.testcase \
-	sql_stmt_tests/linesubstring11.testcase \
-	sql_stmt_tests/linesubstring12.testcase \
-	sql_stmt_tests/linesubstring13.testcase \
-	sql_stmt_tests/linesubstring14.testcase \
-	sql_stmt_tests/linesubstring15.testcase \
-	sql_stmt_tests/linesubstring16.testcase \
-	sql_stmt_tests/linesubstring17.testcase \
-	sql_stmt_tests/linesubstring18.testcase \
-	sql_stmt_tests/linesubstring19.testcase \
-	sql_stmt_tests/linesubstring1.testcase \
-	sql_stmt_tests/linesubstring20.testcase \
-	sql_stmt_tests/linesubstring21.testcase \
-	sql_stmt_tests/linesubstring22.testcase \
-	sql_stmt_tests/linesubstring23.testcase \
-	sql_stmt_tests/linesubstring24.testcase \
-	sql_stmt_tests/linesubstring25.testcase \
-	sql_stmt_tests/linesubstring26.testcase \
-	sql_stmt_tests/linesubstring2.testcase \
-	sql_stmt_tests/linesubstring3.testcase \
-	sql_stmt_tests/linesubstring4.testcase \
-	sql_stmt_tests/linesubstring5.testcase \
-	sql_stmt_tests/linesubstring6.testcase \
-	sql_stmt_tests/linesubstring7.testcase \
-	sql_stmt_tests/linesubstring8.testcase \
-	sql_stmt_tests/linesubstring9.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes10.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes11.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes12.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes13.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes14.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes15.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes16.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes17.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes18.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes19.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes1.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes2.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes3.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes4.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes5.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes6.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes7.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes8.testcase \
+	sql_stmt_geosadvanced_tests/linesnodes9.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring10.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring11.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring12.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring13.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring14.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring15.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring16.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring17.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring18.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring19.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring1.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring20.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring21.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring22.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring23.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring24.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring25.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring26.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring2.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring3.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring4.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring5.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring6.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring7.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring8.testcase \
+	sql_stmt_geosadvanced_tests/linesubstring9.testcase \
 	sql_stmt_tests/link_m.testcase \
 	sql_stmt_tests/locatemeasure10.testcase \
 	sql_stmt_tests/locatemeasure11.testcase \
@@ -1663,16 +1663,18 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/locatemeasure7.testcase \
 	sql_stmt_tests/locatemeasure8.testcase \
 	sql_stmt_tests/locatemeasure9.testcase \
-	sql_stmt_tests/locatepoint10.testcase \
-	sql_stmt_tests/locatepoint1.testcase \
-	sql_stmt_tests/locatepoint2.testcase \
-	sql_stmt_tests/locatepoint3.testcase \
-	sql_stmt_tests/locatepoint4.testcase \
-	sql_stmt_tests/locatepoint5.testcase \
-	sql_stmt_tests/locatepoint6.testcase \
-	sql_stmt_tests/locatepoint7.testcase \
-	sql_stmt_tests/locatepoint8.testcase \
-	sql_stmt_tests/locatepoint9.testcase \
+	sql_stmt_geosadvanced_tests/locatepoint10.testcase \
+	sql_stmt_geosadvanced_tests/locatepoint11.testcase \
+	sql_stmt_geosadvanced_tests/locatepoint12.testcase \
+	sql_stmt_geosadvanced_tests/locatepoint1.testcase \
+	sql_stmt_geosadvanced_tests/locatepoint2.testcase \
+	sql_stmt_geosadvanced_tests/locatepoint3.testcase \
+	sql_stmt_geosadvanced_tests/locatepoint4.testcase \
+	sql_stmt_geosadvanced_tests/locatepoint5.testcase \
+	sql_stmt_geosadvanced_tests/locatepoint6.testcase \
+	sql_stmt_geosadvanced_tests/locatepoint7.testcase \
+	sql_stmt_geosadvanced_tests/locatepoint8.testcase \
+	sql_stmt_geosadvanced_tests/locatepoint9.testcase \
 	sql_stmt_tests/log10-0.0.testcase \
 	sql_stmt_tests/log10-100.0.testcase \
 	sql_stmt_tests/log10-100.testcase \
@@ -1922,20 +1924,20 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/NumPoints6.testcase \
 	sql_stmt_tests/NumPoints7.testcase \
 	sql_stmt_tests/NumPoints.testcase \
-	sql_stmt_tests/offsetcurve10.testcase \
-	sql_stmt_tests/offsetcurve11.testcase \
-	sql_stmt_tests/offsetcurve12.testcase \
-	sql_stmt_tests/offsetcurve13.testcase \
-	sql_stmt_tests/offsetcurve14.testcase \
-	sql_stmt_tests/offsetcurve1.testcase \
-	sql_stmt_tests/offsetcurve2.testcase \
-	sql_stmt_tests/offsetcurve3.testcase \
-	sql_stmt_tests/offsetcurve4.testcase \
-	sql_stmt_tests/offsetcurve5.testcase \
-	sql_stmt_tests/offsetcurve6.testcase \
-	sql_stmt_tests/offsetcurve7.testcase \
-	sql_stmt_tests/offsetcurve8.testcase \
-	sql_stmt_tests/offsetcurve9.testcase \
+	sql_stmt_geosadvanced_tests/offsetcurve10.testcase \
+	sql_stmt_geosadvanced_tests/offsetcurve11.testcase \
+	sql_stmt_geosadvanced_tests/offsetcurve12.testcase \
+	sql_stmt_geosadvanced_tests/offsetcurve13.testcase \
+	sql_stmt_geosadvanced_tests/offsetcurve14.testcase \
+	sql_stmt_geosadvanced_tests/offsetcurve1.testcase \
+	sql_stmt_geosadvanced_tests/offsetcurve2.testcase \
+	sql_stmt_geosadvanced_tests/offsetcurve3.testcase \
+	sql_stmt_geosadvanced_tests/offsetcurve4.testcase \
+	sql_stmt_geosadvanced_tests/offsetcurve5.testcase \
+	sql_stmt_geosadvanced_tests/offsetcurve6.testcase \
+	sql_stmt_geosadvanced_tests/offsetcurve7.testcase \
+	sql_stmt_geosadvanced_tests/offsetcurve8.testcase \
+	sql_stmt_geosadvanced_tests/offsetcurve9.testcase \
 	sql_stmt_tests/output10.testcase \
 	sql_stmt_tests/output11.testcase \
 	sql_stmt_tests/output12.testcase \
@@ -2128,12 +2130,12 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/ring7.testcase \
 	sql_stmt_tests/ring8.testcase \
 	sql_stmt_tests/ring9.testcase \
-	sql_stmt_tests/ringsnodes1.testcase \
-	sql_stmt_tests/ringsnodes2.testcase \
-	sql_stmt_tests/ringsnodes3.testcase \
-	sql_stmt_tests/ringsnodes4.testcase \
-	sql_stmt_tests/ringsnodes5.testcase \
-	sql_stmt_tests/ringsnodes6.testcase \
+	sql_stmt_geosadvanced_tests/ringsnodes1.testcase \
+	sql_stmt_geosadvanced_tests/ringsnodes2.testcase \
+	sql_stmt_geosadvanced_tests/ringsnodes3.testcase \
+	sql_stmt_geosadvanced_tests/ringsnodes4.testcase \
+	sql_stmt_geosadvanced_tests/ringsnodes5.testcase \
+	sql_stmt_geosadvanced_tests/ringsnodes6.testcase \
 	sql_stmt_tests/rotatecoords10.testcase \
 	sql_stmt_tests/rotatecoords11.testcase \
 	sql_stmt_tests/rotatecoords12.testcase \
@@ -2192,38 +2194,38 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/scalecoords7.testcase \
 	sql_stmt_tests/scalecoords8.testcase \
 	sql_stmt_tests/scalecoords9.testcase \
-	sql_stmt_tests/sharedpaths10.testcase \
-	sql_stmt_tests/sharedpaths11.testcase \
-	sql_stmt_tests/sharedpaths12.testcase \
-	sql_stmt_tests/sharedpaths13.testcase \
-	sql_stmt_tests/sharedpaths14.testcase \
-	sql_stmt_tests/sharedpaths15.testcase \
-	sql_stmt_tests/sharedpaths16.testcase \
-	sql_stmt_tests/sharedpaths17.testcase \
-	sql_stmt_tests/sharedpaths18.testcase \
-	sql_stmt_tests/sharedpaths19.testcase \
-	sql_stmt_tests/sharedpaths1.testcase \
-	sql_stmt_tests/sharedpaths20.testcase \
-	sql_stmt_tests/sharedpaths21.testcase \
-	sql_stmt_tests/sharedpaths22.testcase \
-	sql_stmt_tests/sharedpaths23.testcase \
-	sql_stmt_tests/sharedpaths24.testcase \
-	sql_stmt_tests/sharedpaths25.testcase \
-	sql_stmt_tests/sharedpaths26.testcase \
-	sql_stmt_tests/sharedpaths27.testcase \
-	sql_stmt_tests/sharedpaths28.testcase \
-	sql_stmt_tests/sharedpaths29.testcase \
-	sql_stmt_tests/sharedpaths2.testcase \
-	sql_stmt_tests/sharedpaths30.testcase \
-	sql_stmt_tests/sharedpaths31.testcase \
-	sql_stmt_tests/sharedpaths32.testcase \
-	sql_stmt_tests/sharedpaths3.testcase \
-	sql_stmt_tests/sharedpaths4.testcase \
-	sql_stmt_tests/sharedpaths5.testcase \
-	sql_stmt_tests/sharedpaths6.testcase \
-	sql_stmt_tests/sharedpaths7.testcase \
-	sql_stmt_tests/sharedpaths8.testcase \
-	sql_stmt_tests/sharedpaths9.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths10.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths11.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths12.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths13.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths14.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths15.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths16.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths17.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths18.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths19.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths1.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths20.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths21.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths22.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths23.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths24.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths25.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths26.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths27.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths28.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths29.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths2.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths30.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths31.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths32.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths3.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths4.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths5.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths6.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths7.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths8.testcase \
+	sql_stmt_geosadvanced_tests/sharedpaths9.testcase \
 	sql_stmt_tests/shiftcoords10.testcase \
 	sql_stmt_tests/shiftcoords11.testcase \
 	sql_stmt_tests/shiftcoords12.testcase \
@@ -2265,13 +2267,13 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/shiftlongitude7.testcase \
 	sql_stmt_tests/shiftlongitude8.testcase \
 	sql_stmt_tests/shiftlongitude9.testcase \
-	sql_stmt_tests/shortestline1.testcase \
-	sql_stmt_tests/shortestline2.testcase \
-	sql_stmt_tests/shortestline3.testcase \
-	sql_stmt_tests/shortestline4.testcase \
-	sql_stmt_tests/shortestline5.testcase \
-	sql_stmt_tests/shortestline6.testcase \
-	sql_stmt_tests/shortestline7.testcase \
+	sql_stmt_geosadvanced_tests/shortestline1.testcase \
+	sql_stmt_geosadvanced_tests/shortestline2.testcase \
+	sql_stmt_geosadvanced_tests/shortestline3.testcase \
+	sql_stmt_geosadvanced_tests/shortestline4.testcase \
+	sql_stmt_geosadvanced_tests/shortestline5.testcase \
+	sql_stmt_geosadvanced_tests/shortestline6.testcase \
+	sql_stmt_geosadvanced_tests/shortestline7.testcase \
 	sql_stmt_tests/sign00.testcase \
 	sql_stmt_tests/sign01.testcase \
 	sql_stmt_tests/sign0.testcase \
@@ -2298,37 +2300,37 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/simplify9.testcase \
 	sql_stmt_tests/sin00.testcase \
 	sql_stmt_tests/sin0.testcase \
-	sql_stmt_tests/singlesidedbuffer11.testcase \
-	sql_stmt_tests/singlesidedbuffer12.testcase \
-	sql_stmt_tests/singlesidedbuffer13.testcase \
-	sql_stmt_tests/singlesidedbuffer14.testcase \
-	sql_stmt_tests/singlesidedbuffer15.testcase \
-	sql_stmt_tests/singlesidedbuffer16.testcase \
-	sql_stmt_tests/singlesidedbuffer17.testcase \
-	sql_stmt_tests/singlesidedbuffer1.testcase \
-	sql_stmt_tests/singlesidedbuffer2.testcase \
-	sql_stmt_tests/singlesidedbuffer3.testcase \
-	sql_stmt_tests/singlesidedbuffer4.testcase \
-	sql_stmt_tests/singlesidedbuffer5.testcase \
-	sql_stmt_tests/singlesidedbuffer6.testcase \
-	sql_stmt_tests/singlesidedbuffer7.testcase \
-	sql_stmt_tests/singlesidedbuffer8.testcase \
-	sql_stmt_tests/singlesidedbuffer9.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer11.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer12.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer13.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer14.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer15.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer16.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer17.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer1.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer2.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer3.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer4.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer5.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer6.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer7.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer8.testcase \
+	sql_stmt_geosadvanced_tests/singlesidedbuffer9.testcase \
 	sql_stmt_tests/sin-pi2.testcase \
 	sql_stmt_tests/sinpi2.testcase \
 	sql_stmt_tests/sin-pi.testcase \
 	sql_stmt_tests/sinpi.testcase \
 	sql_stmt_tests/sin-text.testcase \
-	sql_stmt_tests/snap10.testcase \
-	sql_stmt_tests/snap1.testcase \
-	sql_stmt_tests/snap2.testcase \
-	sql_stmt_tests/snap3.testcase \
-	sql_stmt_tests/snap4.testcase \
-	sql_stmt_tests/snap5.testcase \
-	sql_stmt_tests/snap6.testcase \
-	sql_stmt_tests/snap7.testcase \
-	sql_stmt_tests/snap8.testcase \
-	sql_stmt_tests/snap9.testcase \
+	sql_stmt_geosadvanced_tests/snap10.testcase \
+	sql_stmt_geosadvanced_tests/snap1.testcase \
+	sql_stmt_geosadvanced_tests/snap2.testcase \
+	sql_stmt_geosadvanced_tests/snap3.testcase \
+	sql_stmt_geosadvanced_tests/snap4.testcase \
+	sql_stmt_geosadvanced_tests/snap5.testcase \
+	sql_stmt_geosadvanced_tests/snap6.testcase \
+	sql_stmt_geosadvanced_tests/snap7.testcase \
+	sql_stmt_geosadvanced_tests/snap8.testcase \
+	sql_stmt_geosadvanced_tests/snap9.testcase \
 	sql_stmt_tests/spatialindex.testcase \
 	sql_stmt_tests/sqrt00.testcase \
 	sql_stmt_tests/sqrt0.testcase \
@@ -2492,14 +2494,14 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/translate8.testcase \
 	sql_stmt_tests/translate9.testcase \
 	sql_stmt_tests/trivial.sqlite_RO \
-	sql_stmt_tests/unaryunion1.testcase \
-	sql_stmt_tests/unaryunion2.testcase \
-	sql_stmt_tests/unaryunion3.testcase \
-	sql_stmt_tests/unaryunion4.testcase \
-	sql_stmt_tests/unaryunion5.testcase \
-	sql_stmt_tests/unaryunion6.testcase \
-	sql_stmt_tests/unaryunion7.testcase \
-	sql_stmt_tests/unaryunion8.testcase \
+	sql_stmt_geosadvanced_tests/unaryunion1.testcase \
+	sql_stmt_geosadvanced_tests/unaryunion2.testcase \
+	sql_stmt_geosadvanced_tests/unaryunion3.testcase \
+	sql_stmt_geosadvanced_tests/unaryunion4.testcase \
+	sql_stmt_geosadvanced_tests/unaryunion5.testcase \
+	sql_stmt_geosadvanced_tests/unaryunion6.testcase \
+	sql_stmt_geosadvanced_tests/unaryunion7.testcase \
+	sql_stmt_geosadvanced_tests/unaryunion8.testcase \
 	sql_stmt_tests/uncompressgeom1.testcase \
 	sql_stmt_tests/uncompressgeom2.testcase \
 	sql_stmt_tests/uncompressgeom3.testcase \

@@ -291,6 +291,34 @@ int run_all_testcases()
 	free(namelist[i]);
     }
     free(namelist);
+
+#ifdef GEOS_ADVANCED	/* only if GEOS_ADVANCED is supported */
+    n = scandir("sql_stmt_geosadvanced_tests", &namelist, test_case_filter, alphasort);
+    if (n < 0) {
+	perror("scandir");
+	return -1;
+    }
+
+    for (i = 0; i < n; ++i) {
+	struct test_data *data;
+	char *path;
+	if (asprintf(&path, "sql_stmt_geosadvanced_tests/%s", namelist[i]->d_name) < 0) {
+	    return -1;
+	}
+	data = read_one_case(path);
+	free(path);
+	
+	result = do_one_case(data);
+	
+	cleanup_test_data(data);
+	if (result != 0) {
+	    break;
+	}
+	free(namelist[i]);
+    }
+    free(namelist);
+#endif	/* end GEOS_ADVANCED conditional */
+
     return result;
 }
 
