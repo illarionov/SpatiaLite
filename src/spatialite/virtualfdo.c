@@ -1881,11 +1881,11 @@ vfdo_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 /* retrieving the base table columns */
     strcpy (sql,
 	    "SELECT f_geometry_column, geometry_type, srid, geometry_format, coord_dimension\n");
-    strcat (sql, "FROM geometry_columns WHERE f_table_name LIKE '");
+    strcat (sql, "FROM geometry_columns WHERE Upper(f_table_name) = Upper('");
     strcpy (xname, table);
     vfdo_clean_sql_string (xname);
     strcat (sql, xname);
-    strcat (sql, "'");
+    strcat (sql, "')");
     ret = sqlite3_get_table (db, sql, &results, &n_rows, &n_columns, NULL);
     if (ret != SQLITE_OK)
 	goto illegal;

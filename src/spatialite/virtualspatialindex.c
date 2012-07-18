@@ -186,13 +186,13 @@ vspidx_check_rtree (sqlite3 * sqlite, const char *table_name,
     strcpy (xtable, table_name);
     strcpy (xcolumn, geom_column);
     strcpy (sql,
-	    "SELECT Count(*) FROM geometry_columns WHERE f_table_name LIKE '");
+	    "SELECT Count(*) FROM geometry_columns WHERE Upper(f_table_name) = Upper('");
     vspidx_clean_sql_string (xtable);
     strcat (sql, xtable);
-    strcat (sql, "' AND f_geometry_column LIKE '");
+    strcat (sql, "') AND Upper(f_geometry_column) = Upper('");
     vspidx_clean_sql_string (xcolumn);
     strcat (sql, xcolumn);
-    strcat (sql, "' AND spatial_index_enabled = 1");
+    strcat (sql, "') AND spatial_index_enabled = 1");
     ret = sqlite3_get_table (sqlite, sql, &results, &n_rows, &n_columns, NULL);
     if (ret != SQLITE_OK)
 	return 0;
@@ -223,10 +223,10 @@ vspidx_find_rtree (sqlite3 * sqlite, const char *table_name, char *geom_column)
 
     strcpy (xtable, table_name);
     strcpy (sql,
-	    "SELECT f_geometry_column FROM geometry_columns WHERE f_table_name LIKE '");
+	    "SELECT f_geometry_column FROM geometry_columns WHERE Upper(f_table_name) = Upper('");
     vspidx_clean_sql_string (xtable);
     strcat (sql, xtable);
-    strcat (sql, "' AND spatial_index_enabled = 1");
+    strcat (sql, "') AND spatial_index_enabled = 1");
     ret = sqlite3_get_table (sqlite, sql, &results, &n_rows, &n_columns, NULL);
     if (ret != SQLITE_OK)
 	return 0;

@@ -1411,7 +1411,8 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
     clean_sql_string (sqlcolumn);
     sprintf (sql,
 	     "SELECT f_table_name, f_geometry_column, type, srid, spatial_index_enabled, coord_dimension "
-	     "FROM geometry_columns WHERE f_table_name LIKE '%s' AND f_geometry_column LIKE '%s'",
+	     "FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') "
+             "AND Upper(f_geometry_column) = Upper('%s')",
 	     sqltable, sqlcolumn);
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
@@ -1946,7 +1947,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
     strcpy (sqlcolumn, (char *) column);
     clean_sql_string (sqlcolumn);
     sprintf (sql,
-	     "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE '%s'",
+	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Upper(name) = Upper('%s')",
 	     sqltable);
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
@@ -2267,7 +2268,7 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     strcpy (sqlcolumn, (char *) column);
     clean_sql_string (sqlcolumn);
     sprintf (sql,
-	     "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE '%s'",
+	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Upper(name) = Upper('%s')",
 	     sqltable);
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
@@ -2613,7 +2614,7 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     strcpy (sqlcolumn, (char *) column);
     clean_sql_string (sqlcolumn);
     sprintf (sql,
-	     "DELETE FROM geometry_columns WHERE f_table_name LIKE '%s' AND f_geometry_column LIKE '%s'",
+	     "DELETE FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') AND Upper(f_geometry_column) = Upper('%s')",
 	     sqltable, sqlcolumn);
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
@@ -2961,7 +2962,7 @@ fnct_AddFDOGeometryColumn (sqlite3_context * context, int argc,
     strcpy (sqlcolumn, (char *) column);
     clean_sql_string (sqlcolumn);
     sprintf (sql,
-	     "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE '%s'",
+	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Upper(name) = Upper('%s')",
 	     sqltable);
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
@@ -3153,7 +3154,7 @@ fnct_RecoverFDOGeometryColumn (sqlite3_context * context, int argc,
     strcpy (sqlcolumn, (char *) column);
     clean_sql_string (sqlcolumn);
     sprintf (sql,
-	     "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE '%s'",
+	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Upper(name) = Upper('%s')",
 	     sqltable);
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
@@ -3259,7 +3260,7 @@ fnct_DiscardFDOGeometryColumn (sqlite3_context * context, int argc,
     strcpy (sqlcolumn, (char *) column);
     clean_sql_string (sqlcolumn);
     sprintf (sql,
-	     "DELETE FROM geometry_columns WHERE f_table_name LIKE '%s' AND f_geometry_column LIKE '%s'",
+	     "DELETE FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') AND Upper(f_geometry_column) = Upper('%s')",
 	     sqltable, sqlcolumn);
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
@@ -3329,9 +3330,9 @@ check_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     strcpy (xgeom, (const char *) geom);
     clean_sql_string (xgeom);
     strcpy (sql, "SELECT Count(*) FROM geometry_columns ");
-    sprintf (sql2, "WHERE f_table_name LIKE '%s' ", xtable);
+    sprintf (sql2, "WHERE Upper(f_table_name) = Upper('%s') ", xtable);
     strcat (sql, sql2);
-    sprintf (sql2, "AND f_geometry_column LIKE '%s' ", xgeom);
+    sprintf (sql2, "AND Upper(f_geometry_column) = Upper('%s') ", xgeom);
     strcat (sql, sql2);
     strcat (sql, "AND spatial_index_enabled = 1");
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
@@ -3754,9 +3755,9 @@ recover_spatial_index (sqlite3 * sqlite, const unsigned char *table,
     strcpy (xgeom, (const char *) geom);
     clean_sql_string (xgeom);
     strcpy (sql, "SELECT Count(*) FROM geometry_columns ");
-    sprintf (sql2, "WHERE f_table_name LIKE '%s' ", xtable);
+    sprintf (sql2, "WHERE Upper(f_table_name) = Upper('%s') ", xtable);
     strcat (sql, sql2);
-    sprintf (sql2, "AND f_geometry_column LIKE '%s' ", xgeom);
+    sprintf (sql2, "AND Upper(f_geometry_column) = Upper('%s') ", xgeom);
     strcat (sql, sql2);
     strcat (sql, "AND spatial_index_enabled = 1");
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
@@ -4023,11 +4024,11 @@ fnct_CreateSpatialIndex (sqlite3_context * context, int argc,
     strcpy (sqlcolumn, (char *) column);
     clean_sql_string (sqlcolumn);
     strcpy (sql,
-	    "UPDATE geometry_columns SET spatial_index_enabled = 1 WHERE f_table_name LIKE '");
+	    "UPDATE geometry_columns SET spatial_index_enabled = 1 WHERE Upper(f_table_name) = Upper('");
     strcat (sql, sqltable);
-    strcat (sql, "' AND f_geometry_column LIKE '");
+    strcat (sql, "') AND Upper(f_geometry_column) = Upper('");
     strcat (sql, sqlcolumn);
-    strcat (sql, "' AND spatial_index_enabled = 0");
+    strcat (sql, "') AND spatial_index_enabled = 0");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
@@ -4092,11 +4093,11 @@ fnct_CreateMbrCache (sqlite3_context * context, int argc, sqlite3_value ** argv)
     strcpy (sqlcolumn, (char *) column);
     clean_sql_string (sqlcolumn);
     strcpy (sql,
-	    "UPDATE geometry_columns SET spatial_index_enabled = 2 WHERE f_table_name LIKE '");
+	    "UPDATE geometry_columns SET spatial_index_enabled = 2 WHERE Upper(f_table_name) = Upper('");
     strcat (sql, sqltable);
-    strcat (sql, "' AND f_geometry_column LIKE '");
+    strcat (sql, "') AND Upper(f_geometry_column) = Upper('");
     strcat (sql, sqlcolumn);
-    strcat (sql, "' AND spatial_index_enabled = 0");
+    strcat (sql, "') AND spatial_index_enabled = 0");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
@@ -4162,11 +4163,11 @@ fnct_DisableSpatialIndex (sqlite3_context * context, int argc,
     strcpy (sqlcolumn, (char *) column);
     clean_sql_string (sqlcolumn);
     strcpy (sql,
-	    "UPDATE geometry_columns SET spatial_index_enabled = 0 WHERE f_table_name LIKE '");
+	    "UPDATE geometry_columns SET spatial_index_enabled = 0 WHERE Upper(f_table_name) = Upper('");
     strcat (sql, sqltable);
-    strcat (sql, "' AND f_geometry_column LIKE '");
+    strcat (sql, "') AND Upper(f_geometry_column) = Upper('");
     strcat (sql, sqlcolumn);
-    strcat (sql, "' AND spatial_index_enabled <> 0");
+    strcat (sql, "') AND spatial_index_enabled <> 0");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
@@ -4235,11 +4236,11 @@ fnct_RebuildGeometryTriggers (sqlite3_context * context, int argc,
     strcpy (sqlcolumn, (char *) column);
     clean_sql_string (sqlcolumn);
     strcpy (sql,
-	    "SELECT f_table_name FROM geometry_columns WHERE f_table_name LIKE '");
+	    "SELECT f_table_name FROM geometry_columns WHERE Upper(f_table_name) = Upper('");
     strcat (sql, sqltable);
-    strcat (sql, "' AND f_geometry_column LIKE '");
+    strcat (sql, "') AND Upper(f_geometry_column) = Upper ('");
     strcat (sql, sqlcolumn);
-    strcat (sql, "'");
+    strcat (sql, "')");
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
     if (ret != SQLITE_OK)
 	goto error;
@@ -4282,7 +4283,7 @@ check_topo_table (sqlite3 * sqlite, const char *table, int is_view)
     strcpy (sqltable, table);
     clean_sql_string (sqltable);
     sprintf (sql,
-	     "SELECT name FROM sqlite_master WHERE type = '%s' AND name LIKE '%s'",
+	     "SELECT name FROM sqlite_master WHERE type = '%s' AND Upper(name) = Upper('%s')",
 	     (!is_view) ? "table" : "view", table);
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
@@ -9372,7 +9373,7 @@ fnct_SridFromAuthCRS (sqlite3_context * context, int argc,
     auth_srid = sqlite3_value_int (argv[1]);
 
     sprintf (sql, "SELECT srid FROM spatial_ref_sys ");
-    sprintf (sql2, "WHERE auth_name LIKE '%s' AND auth_srid = %d", auth_name,
+    sprintf (sql2, "WHERE Upper(auth_name) = Upper('%s') AND auth_srid = %d", auth_name,
 	     auth_srid);
     strcat (sql, sql2);
     ret =
@@ -19782,7 +19783,7 @@ genuine_layer_statistics (sqlite3 * sqlite, const char *table,
 	  clean_sql_string (xtable);
 	  strcpy (sql, "SELECT f_table_name, f_geometry_column ");
 	  strcat (sql, "FROM geometry_columns ");
-	  sprintf (sql2, "WHERE f_table_name LIKE '%s'", xtable);
+	  sprintf (sql2, "WHERE Upper(f_table_name) = Upper('%s')", xtable);
 	  strcat (sql, sql2);
       }
     else
@@ -19794,9 +19795,9 @@ genuine_layer_statistics (sqlite3 * sqlite, const char *table,
 	  clean_sql_string (xgeom);
 	  strcpy (sql, "SELECT f_table_name, f_geometry_column ");
 	  strcat (sql, "FROM geometry_columns ");
-	  sprintf (sql2, "WHERE f_table_name LIKE '%s' ", xtable);
+	  sprintf (sql2, "WHERE Upper(f_table_name) = Upper('%s') ", xtable);
 	  strcat (sql, sql2);
-	  sprintf (sql2, "AND f_geometry_column LIKE '%s'", xgeom);
+	  sprintf (sql2, "AND Upper(f_geometry_column) = Upper('%s')", xgeom);
 	  strcat (sql2, sql);
       }
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
@@ -19858,7 +19859,7 @@ views_layer_statistics (sqlite3 * sqlite, const char *table, const char *column)
 	  clean_sql_string (xtable);
 	  strcpy (sql, "SELECT view_name, view_geometry ");
 	  strcat (sql, "FROM views_geometry_columns ");
-	  sprintf (sql2, "WHERE view_name LIKE '%s'", xtable);
+	  sprintf (sql2, "WHERE Upper(view_name) = Upper('%s')", xtable);
 	  strcat (sql, sql2);
       }
     else
@@ -19870,9 +19871,9 @@ views_layer_statistics (sqlite3 * sqlite, const char *table, const char *column)
 	  clean_sql_string (xgeom);
 	  strcpy (sql, "SELECT view_name, view_geometry ");
 	  strcat (sql, "FROM views_geometry_columns ");
-	  sprintf (sql2, "WHERE view_name LIKE '%s' ", xtable);
+	  sprintf (sql2, "WHERE Upper(view_name) = Upper('%s') ", xtable);
 	  strcat (sql, sql2);
-	  sprintf (sql2, "AND view_geometry LIKE '%s'", xgeom);
+	  sprintf (sql2, "AND Upper(view_geometry) = Upper('%s')", xgeom);
 	  strcat (sql2, sql);
       }
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
@@ -19934,7 +19935,7 @@ virts_layer_statistics (sqlite3 * sqlite, const char *table, const char *column)
 	  clean_sql_string (xtable);
 	  strcpy (sql, "SELECT virt_name, virt_geometry ");
 	  strcat (sql, "FROM virts_geometry_columns ");
-	  sprintf (sql2, "WHERE virt_name LIKE '%s'", xtable);
+	  sprintf (sql2, "WHERE Upper(virt_name) = Upper('%s')", xtable);
 	  strcat (sql, sql2);
       }
     else
@@ -19946,9 +19947,9 @@ virts_layer_statistics (sqlite3 * sqlite, const char *table, const char *column)
 	  clean_sql_string (xgeom);
 	  strcpy (sql, "SELECT virt_name, virt_geometry ");
 	  strcat (sql, "FROM virts_geometry_columns ");
-	  sprintf (sql2, "WHERE virt_name LIKE '%s' ", xtable);
+	  sprintf (sql2, "WHERE Upper(virt_name) = Upper('%s') ", xtable);
 	  strcat (sql, sql2);
-	  sprintf (sql2, "AND virt_geometry LIKE '%s'", xgeom);
+	  sprintf (sql2, "AND Upper(virt_geometry) = Upper('%s')", xgeom);
 	  strcat (sql2, sql);
       }
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
