@@ -142,13 +142,22 @@ int main (int argc, char *argv[])
 	fprintf (stderr, "Unexpected error: proj4_version() bad result: %i/%i.\n", rows, columns);
 	return  -14;
     }
+
+#ifndef OMIT_PROJ	/* only if PROJ is supported */
     /* we tolerate any string here, because versions always change */
     if (strlen(results[1]) == 0) {
 	fprintf (stderr, "Unexpected error: proj4_version() bad result.\n");
 	return  -15;
     }
-    sqlite3_free_table (results);
- 
+#else	/* PROJ is not supported */
+    /* in this case we expect a NULL */
+    if (results[1] != NULL) {
+	fprintf (stderr, "Unexpected error: proj4_version() bad result.\n");
+	return  -15;
+    }
+#endif	/* end PROJ conditional */
+
+    sqlite3_free_table (results); 
     sqlite3_close (db_handle);
     spatialite_cleanup();
     

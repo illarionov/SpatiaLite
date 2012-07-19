@@ -46,11 +46,14 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+#include "config.h"
+
 #include "sqlite3.h"
 #include "spatialite.h"
 
 int main (int argc, char *argv[])
 {
+#ifndef OMIT_ICONV	/* only if ICONV is supported */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
@@ -87,5 +90,7 @@ int main (int argc, char *argv[])
     }
     
     spatialite_cleanup();
+#endif	/* end ICONV conditional */
+
     return 0;
 }

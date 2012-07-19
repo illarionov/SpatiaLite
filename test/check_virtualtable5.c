@@ -46,6 +46,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+#include "config.h"
+
 #include "sqlite3.h"
 #include "spatialite.h"
 
@@ -86,8 +88,10 @@ struct test_step steps[] = {
     { "select Length, HOEHE from dbftest WHERE HOEHE <= -1;", 0 },
     { NULL, 0 }
 };
+
 int main (int argc, char *argv[])
 {
+#ifndef OMIT_ICONV	/* only if ICONV is supported */
     sqlite3 *db_handle = NULL;
     int ret;
     char *err_msg = NULL;
@@ -164,6 +168,7 @@ int main (int argc, char *argv[])
 
     sqlite3_close (db_handle);
     spatialite_cleanup();
+#endif	/* end ICONV conditional */
     
     return 0;
 }
