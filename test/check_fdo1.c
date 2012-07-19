@@ -45,6 +45,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+#include "config.h"
+
 #include "sqlite3.h"
 #include "spatialite.h"
 
@@ -52,6 +54,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 int main (int argc, char *argv[])
 {
+#ifndef OMIT_GEOS	/* only if GEOS is supported */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
@@ -412,6 +415,7 @@ int main (int argc, char *argv[])
     }
     
     spatialite_cleanup();
+#endif	/* end GEOS conditional */
     
     return 0;
 }

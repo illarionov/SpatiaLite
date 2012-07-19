@@ -118,6 +118,8 @@ int main (int argc, char *argv[])
       sqlite3_free (err_msg);
       return -13;
     }
+
+#ifndef OMIT_GEOS	/* only if GEOS is supported */
     if ((rows != 1) || (columns != 1)) {
 	fprintf (stderr, "Unexpected error: geos_version() bad result: %i/%i.\n", rows, columns);
 	return  -14;
@@ -128,6 +130,13 @@ int main (int argc, char *argv[])
 	return  -15;
     }
     sqlite3_free_table (results);
+#else	/* GEOS is not supported */
+    /* in this case we expect a NULL */
+    if (results[1] != NULL) {
+	fprintf (stderr, "Unexpected error: geos_version() bad result.\n");
+	return  -15;
+    }
+#endif	/* end GEOS conditional */
 
     
     asprintf(&sql_statement, "SELECT proj4_version()");

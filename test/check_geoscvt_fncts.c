@@ -48,12 +48,15 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+#include "config.h"
+
 #include "sqlite3.h"
 #include "spatialite.h"
 #include "spatialite/gaiageo.h"
 
 int main (int argc, char *argv[])
 {
+#ifndef OMIT_GEOS	/* only if GEOS is supported */
     gaiaGeomCollPtr result;
     void *resultVoid;
     int returnValue = 0;
@@ -91,4 +94,8 @@ int main (int argc, char *argv[])
 exit:
     gaiaFreeGeomColl (emptyGeometry);
     return returnValue;
+
+#endif	/* end GEOS conditional */
+
+    return 0;
 }

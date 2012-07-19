@@ -58,6 +58,7 @@ static const double double_eps = 0.00000001;
 
 int main (int argc, char *argv[])
 {
+#ifndef OMIT_GEOS	/* only if GEOS is supported */
     int result;
     double resultDouble;
     int returnValue = 0;
@@ -708,4 +709,7 @@ int main (int argc, char *argv[])
 exit:
     gaiaFreeGeomColl (validGeometry);
     return returnValue;
+
+#endif	/* end GEOS conditional */
+    return 0;
 }

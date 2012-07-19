@@ -281,7 +281,6 @@ int run_all_testcases()
 	if (asprintf(&path, "sql_stmt_tests/%s", namelist[i]->d_name) < 0) {
 	    return -1;
 	}
-fprintf(stderr, "PATH=%s\n", path);
 	data = read_one_case(path);
 	free(path);
 	
@@ -323,7 +322,7 @@ fprintf(stderr, "PATH=%s\n", path);
 #endif	/* end MATHSQL conditional */
 
 #ifndef OMIT_PROJ	/* only if PROJ is supported */
-    n = scandir("sql_stmt_geosadvanced_tests", &namelist, test_case_filter, alphasort);
+    n = scandir("sql_stmt_proj_tests", &namelist, test_case_filter, alphasort);
     if (n < 0) {
 	perror("scandir");
 	return -1;
@@ -332,7 +331,7 @@ fprintf(stderr, "PATH=%s\n", path);
     for (i = 0; i < n; ++i) {
 	struct test_data *data;
 	char *path;
-	if (asprintf(&path, "sql_stmt_geosadvanced_tests/%s", namelist[i]->d_name) < 0) {
+	if (asprintf(&path, "sql_stmt_proj_tests/%s", namelist[i]->d_name) < 0) {
 	    return -1;
 	}
 	data = read_one_case(path);
@@ -348,6 +347,33 @@ fprintf(stderr, "PATH=%s\n", path);
     }
     free(namelist);
 #endif	/* end PROJ conditional */
+
+#ifndef OMIT_GEOS	/* only if GEOS is supported */
+    n = scandir("sql_stmt_geos_tests", &namelist, test_case_filter, alphasort);
+    if (n < 0) {
+	perror("scandir");
+	return -1;
+    }
+
+    for (i = 0; i < n; ++i) {
+	struct test_data *data;
+	char *path;
+	if (asprintf(&path, "sql_stmt_geos_tests/%s", namelist[i]->d_name) < 0) {
+	    return -1;
+	}
+	data = read_one_case(path);
+	free(path);
+	
+	result = do_one_case(data);
+	
+	cleanup_test_data(data);
+	if (result != 0) {
+	    break;
+	}
+	free(namelist[i]);
+    }
+    free(namelist);
+#endif	/* end GEOS conditional */
 
 #ifdef GEOS_ADVANCED	/* only if GEOS_ADVANCED is supported */
     n = scandir("sql_stmt_geosadvanced_tests", &namelist, test_case_filter, alphasort);
