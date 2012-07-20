@@ -63,13 +63,8 @@ Greg Wilson			gvwilson@cs.toronto.ca
 */
 
 %option prefix="VanuatuWkt"
-
-%{
-
-/* For debugging purposes */
-int vanuatu_line = 1, vanuatu_col = 1;
-
-%}
+%option reentrant
+%option extra-type="struct vanuatu_data *"
 
 /**
 *  The main string-token matcher.
@@ -82,7 +77,7 @@ int vanuatu_line = 1, vanuatu_col = 1;
 *  of the two tokens, FLEX will match POINT ZM.
 */
 %%
--?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*       	{ vanuatu_col += (int) strlen(yytext);  VanuatuWktlval.dval = atof(yytext); return VANUATU_NUM; }
+-?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*       	{ VanuatuWktget_extra(yyscanner)->vanuatu_col += (int) strlen(yytext);  VanuatuWktlval.dval = atof(yytext); return VANUATU_NUM; }
 ","										{ VanuatuWktlval.dval = 0; return VANUATU_COMMA; }
 "("										{ VanuatuWktlval.dval = 0; return VANUATU_OPEN_BRACKET; }
 ")"										{ VanuatuWktlval.dval = 0; return VANUATU_CLOSE_BRACKET; }
@@ -115,38 +110,14 @@ int vanuatu_line = 1, vanuatu_col = 1;
 (?i:"geometrycollection"[ \t\n]*"m")	{ VanuatuWktlval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_M; }
 (?i:"geometrycollection"[ \t\n]*"zm")	{ VanuatuWktlval.dval = 0; return VANUATU_GEOMETRYCOLLECTION_ZM; }
 
-[ \t]   { vanuatu_col += (int) strlen(yytext); }               /* ignore but count white space */
+[ \t]   { VanuatuWktget_extra(yyscanner)->vanuatu_col += (int) strlen(yytext); }               /* ignore but count white space */
 
-\n      { vanuatu_col = 0; ++vanuatu_line; }
+\n      { VanuatuWktget_extra(yyscanner)->vanuatu_col = 0; VanuatuWktget_extra(yyscanner)->vanuatu_line++; }
 
-.       { vanuatu_col += (int) strlen(yytext); return -1; }
+.       { VanuatuWktget_extra(yyscanner)->vanuatu_col += (int) strlen(yytext); return -1; }
 %%
-/**
- * reset the line and column count
- *
- *
- */
-void vanuatu_reset_lexer(void)
-{
 
-  vanuatu_line = 1;
-  vanuatu_col  = 1;
-
-}
-
-/**
- * VanuatuWkterror() is invoked when the lexer or the parser encounter
- * an error. The error message is passed via *s
- *
- *
- */
-void VanuatuWkterror(char *s)
-{
-  spatialite_e("error: %s at line: %d col: %d\n",s,vanuatu_line,vanuatu_col);
-
-}
-
-int yywrap(void)
+int yywrap(yyscan_t yyscanner )
 {
   return 1;
 }

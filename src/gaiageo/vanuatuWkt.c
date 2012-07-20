@@ -65,10 +65,10 @@ typedef union {
 #ifndef YYSTACKDEPTH
 #define YYSTACKDEPTH 1000000
 #endif
-#define ParseARG_SDECL  gaiaGeomCollPtr *result ;
-#define ParseARG_PDECL , gaiaGeomCollPtr *result 
-#define ParseARG_FETCH  gaiaGeomCollPtr *result  = yypParser->result 
-#define ParseARG_STORE yypParser->result  = result 
+#define ParseARG_SDECL  struct vanuatu_data *p_data ;
+#define ParseARG_PDECL , struct vanuatu_data *p_data 
+#define ParseARG_FETCH  struct vanuatu_data *p_data  = yypParser->p_data 
+#define ParseARG_STORE yypParser->p_data  = p_data 
 #define YYNSTATE 358
 #define YYNRULE 153
 #define YY_NO_ACTION      (YYNSTATE+YYNRULE+2)
@@ -843,7 +843,7 @@ static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
    /* Here code is inserted which will execute if the parser
    ** stack every overflows */
 
-     spatialite_e("Giving up.  Parser stack overflow\n");
+     fprintf(stderr, "Giving up.  Parser stack overflow\n");
    ParseARG_STORE; /* Suppress warning about unused %extra_argument var */
 }
 
@@ -1135,27 +1135,27 @@ static void yy_reduce(
       case 33: /* geo_textzm ::= multilinestringzm */ yytestcase(yyruleno==33);
       case 34: /* geo_textzm ::= multipolygonzm */ yytestcase(yyruleno==34);
       case 35: /* geo_textzm ::= geocollzm */ yytestcase(yyruleno==35);
-{ *result = yymsp[0].minor.yy0; }
+{ p_data->result = yymsp[0].minor.yy0; }
         break;
       case 36: /* point ::= VANUATU_POINT VANUATU_OPEN_BRACKET point_coordxy VANUATU_CLOSE_BRACKET */
-{ yygotominor.yy0 = vanuatu_buildGeomFromPoint((gaiaPointPtr)yymsp[-1].minor.yy0); }
+{ yygotominor.yy0 = vanuatu_buildGeomFromPoint( p_data, (gaiaPointPtr)yymsp[-1].minor.yy0); }
         break;
       case 37: /* pointm ::= VANUATU_POINT_M VANUATU_OPEN_BRACKET point_coordxym VANUATU_CLOSE_BRACKET */
       case 38: /* pointz ::= VANUATU_POINT_Z VANUATU_OPEN_BRACKET point_coordxyz VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==38);
       case 39: /* pointzm ::= VANUATU_POINT_ZM VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==39);
-{ yygotominor.yy0 = vanuatu_buildGeomFromPoint((gaiaPointPtr)yymsp[-1].minor.yy0);  }
+{ yygotominor.yy0 = vanuatu_buildGeomFromPoint( p_data, (gaiaPointPtr)yymsp[-1].minor.yy0);  }
         break;
       case 40: /* point_coordxy ::= coord coord */
-{ yygotominor.yy0 = (void *) vanuatu_point_xy((double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = (void *) vanuatu_point_xy( p_data, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
         break;
       case 41: /* point_coordxym ::= coord coord coord */
-{ yygotominor.yy0 = (void *) vanuatu_point_xym((double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = (void *) vanuatu_point_xym( p_data, (double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
         break;
       case 42: /* point_coordxyz ::= coord coord coord */
-{ yygotominor.yy0 = (void *) vanuatu_point_xyz((double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = (void *) vanuatu_point_xyz( p_data, (double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
         break;
       case 43: /* point_coordxyzm ::= coord coord coord coord */
-{ yygotominor.yy0 = (void *) vanuatu_point_xyzm((double *)yymsp[-3].minor.yy0, (double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = (void *) vanuatu_point_xyzm( p_data, (double *)yymsp[-3].minor.yy0, (double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
         break;
       case 44: /* coord ::= VANUATU_NUM */
       case 81: /* multipoint ::= VANUATU_MULTIPOINT multipoint_text */ yytestcase(yyruleno==81);
@@ -1208,64 +1208,64 @@ static void yy_reduce(
       case 54: /* linestringm ::= VANUATU_LINESTRING_M linestring_textm */ yytestcase(yyruleno==54);
       case 55: /* linestringz ::= VANUATU_LINESTRING_Z linestring_textz */ yytestcase(yyruleno==55);
       case 56: /* linestringzm ::= VANUATU_LINESTRING_ZM linestring_textzm */ yytestcase(yyruleno==56);
-{ yygotominor.yy0 = vanuatu_buildGeomFromLinestring((gaiaLinestringPtr)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = vanuatu_buildGeomFromLinestring( p_data, (gaiaLinestringPtr)yymsp[0].minor.yy0); }
         break;
       case 57: /* linestring_text ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
-	   yygotominor.yy0 = (void *) vanuatu_linestring_xy((gaiaPointPtr)yymsp[-4].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_linestring_xy( p_data, (gaiaPointPtr)yymsp[-4].minor.yy0);
 	}
         break;
       case 58: /* linestring_textm ::= VANUATU_OPEN_BRACKET point_coordxym VANUATU_COMMA point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
-	   yygotominor.yy0 = (void *) vanuatu_linestring_xym((gaiaPointPtr)yymsp[-4].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_linestring_xym( p_data, (gaiaPointPtr)yymsp[-4].minor.yy0);
 	}
         break;
       case 59: /* linestring_textz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
-	   yygotominor.yy0 = (void *) vanuatu_linestring_xyz((gaiaPointPtr)yymsp[-4].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_linestring_xyz( p_data, (gaiaPointPtr)yymsp[-4].minor.yy0);
 	}
         break;
       case 60: /* linestring_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
-	   yygotominor.yy0 = (void *) vanuatu_linestring_xyzm((gaiaPointPtr)yymsp[-4].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_linestring_xyzm( p_data, (gaiaPointPtr)yymsp[-4].minor.yy0);
 	}
         break;
       case 61: /* polygon ::= VANUATU_POLYGON polygon_text */
       case 62: /* polygonm ::= VANUATU_POLYGON_M polygon_textm */ yytestcase(yyruleno==62);
       case 63: /* polygonz ::= VANUATU_POLYGON_Z polygon_textz */ yytestcase(yyruleno==63);
       case 64: /* polygonzm ::= VANUATU_POLYGON_ZM polygon_textzm */ yytestcase(yyruleno==64);
-{ yygotominor.yy0 = vanuatu_buildGeomFromPolygon((gaiaPolygonPtr)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = vanuatu_buildGeomFromPolygon( p_data, (gaiaPolygonPtr)yymsp[0].minor.yy0); }
         break;
       case 65: /* polygon_text ::= VANUATU_OPEN_BRACKET ring extra_rings VANUATU_CLOSE_BRACKET */
 { 
 		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) vanuatu_polygon_xy((gaiaRingPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) vanuatu_polygon_xy( p_data, (gaiaRingPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 66: /* polygon_textm ::= VANUATU_OPEN_BRACKET ringm extra_ringsm VANUATU_CLOSE_BRACKET */
 { 
 		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) vanuatu_polygon_xym((gaiaRingPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) vanuatu_polygon_xym( p_data, (gaiaRingPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 67: /* polygon_textz ::= VANUATU_OPEN_BRACKET ringz extra_ringsz VANUATU_CLOSE_BRACKET */
 {  
 		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) vanuatu_polygon_xyz((gaiaRingPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) vanuatu_polygon_xyz( p_data, (gaiaRingPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 68: /* polygon_textzm ::= VANUATU_OPEN_BRACKET ringzm extra_ringszm VANUATU_CLOSE_BRACKET */
 { 
 		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) vanuatu_polygon_xyzm((gaiaRingPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) vanuatu_polygon_xyzm( p_data, (gaiaRingPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 69: /* ring ::= VANUATU_OPEN_BRACKET point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy VANUATU_COMMA point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
@@ -1274,7 +1274,7 @@ static void yy_reduce(
 		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
 		((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0; 
 		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) vanuatu_ring_xy((gaiaPointPtr)yymsp[-8].minor.yy0);
+		yygotominor.yy0 = (void *) vanuatu_ring_xy( p_data, (gaiaPointPtr)yymsp[-8].minor.yy0);
 	}
         break;
       case 71: /* extra_rings ::= VANUATU_COMMA ring extra_rings */
@@ -1292,7 +1292,7 @@ static void yy_reduce(
 		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
 		((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0; 
 		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) vanuatu_ring_xym((gaiaPointPtr)yymsp[-8].minor.yy0);
+		yygotominor.yy0 = (void *) vanuatu_ring_xym( p_data, (gaiaPointPtr)yymsp[-8].minor.yy0);
 	}
         break;
       case 75: /* ringz ::= VANUATU_OPEN_BRACKET point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz VANUATU_COMMA point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
@@ -1301,7 +1301,7 @@ static void yy_reduce(
 		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
 		((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0; 
 		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) vanuatu_ring_xyz((gaiaPointPtr)yymsp[-8].minor.yy0);
+		yygotominor.yy0 = (void *) vanuatu_ring_xyz( p_data, (gaiaPointPtr)yymsp[-8].minor.yy0);
 	}
         break;
       case 78: /* ringzm ::= VANUATU_OPEN_BRACKET point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm VANUATU_COMMA point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
@@ -1310,37 +1310,37 @@ static void yy_reduce(
 		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
 		((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0; 
 		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) vanuatu_ring_xyzm((gaiaPointPtr)yymsp[-8].minor.yy0);
+		yygotominor.yy0 = (void *) vanuatu_ring_xyzm( p_data, (gaiaPointPtr)yymsp[-8].minor.yy0);
 	}
         break;
       case 85: /* multipoint_text ::= VANUATU_OPEN_BRACKET point_coordxy extra_pointsxy VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) vanuatu_multipoint_xy((gaiaPointPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_multipoint_xy( p_data, (gaiaPointPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 86: /* multipoint_textm ::= VANUATU_OPEN_BRACKET point_coordxym extra_pointsxym VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) vanuatu_multipoint_xym((gaiaPointPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_multipoint_xym( p_data, (gaiaPointPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 87: /* multipoint_textz ::= VANUATU_OPEN_BRACKET point_coordxyz extra_pointsxyz VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) vanuatu_multipoint_xyz((gaiaPointPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_multipoint_xyz( p_data, (gaiaPointPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 88: /* multipoint_textzm ::= VANUATU_OPEN_BRACKET point_coordxyzm extra_pointsxyzm VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) vanuatu_multipoint_xyzm((gaiaPointPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_multipoint_xyzm( p_data, (gaiaPointPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 93: /* multilinestring_text ::= VANUATU_OPEN_BRACKET linestring_text multilinestring_text2 VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) vanuatu_multilinestring_xy((gaiaLinestringPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_multilinestring_xy( p_data, (gaiaLinestringPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 95: /* multilinestring_text2 ::= VANUATU_COMMA linestring_text multilinestring_text2 */
@@ -1352,25 +1352,25 @@ static void yy_reduce(
       case 96: /* multilinestring_textm ::= VANUATU_OPEN_BRACKET linestring_textm multilinestring_textm2 VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) vanuatu_multilinestring_xym((gaiaLinestringPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_multilinestring_xym( p_data, (gaiaLinestringPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 99: /* multilinestring_textz ::= VANUATU_OPEN_BRACKET linestring_textz multilinestring_textz2 VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) vanuatu_multilinestring_xyz((gaiaLinestringPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_multilinestring_xyz( p_data, (gaiaLinestringPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 102: /* multilinestring_textzm ::= VANUATU_OPEN_BRACKET linestring_textzm multilinestring_textzm2 VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) vanuatu_multilinestring_xyzm((gaiaLinestringPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_multilinestring_xyzm( p_data, (gaiaLinestringPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 109: /* multipolygon_text ::= VANUATU_OPEN_BRACKET polygon_text multipolygon_text2 VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) vanuatu_multipolygon_xy((gaiaPolygonPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_multipolygon_xy( p_data, (gaiaPolygonPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 111: /* multipolygon_text2 ::= VANUATU_COMMA polygon_text multipolygon_text2 */
@@ -1382,19 +1382,19 @@ static void yy_reduce(
       case 112: /* multipolygon_textm ::= VANUATU_OPEN_BRACKET polygon_textm multipolygon_textm2 VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) vanuatu_multipolygon_xym((gaiaPolygonPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_multipolygon_xym( p_data, (gaiaPolygonPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 115: /* multipolygon_textz ::= VANUATU_OPEN_BRACKET polygon_textz multipolygon_textz2 VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) vanuatu_multipolygon_xyz((gaiaPolygonPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_multipolygon_xyz( p_data, (gaiaPolygonPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 118: /* multipolygon_textzm ::= VANUATU_OPEN_BRACKET polygon_textzm multipolygon_textzm2 VANUATU_CLOSE_BRACKET */
 { 
 	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) vanuatu_multipolygon_xyzm((gaiaPolygonPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) vanuatu_multipolygon_xyzm( p_data, (gaiaPolygonPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 125: /* geocoll_text ::= VANUATU_OPEN_BRACKET point geocoll_text2 VANUATU_CLOSE_BRACKET */
@@ -1402,7 +1402,7 @@ static void yy_reduce(
       case 127: /* geocoll_text ::= VANUATU_OPEN_BRACKET polygon geocoll_text2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==127);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) vanuatu_geomColl_xy((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) vanuatu_geomColl_xy( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 129: /* geocoll_text2 ::= VANUATU_COMMA point geocoll_text2 */
@@ -1427,7 +1427,7 @@ static void yy_reduce(
       case 134: /* geocoll_textm ::= VANUATU_OPEN_BRACKET polygonm geocoll_textm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==134);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) vanuatu_geomColl_xym((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) vanuatu_geomColl_xym( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 139: /* geocoll_textz ::= VANUATU_OPEN_BRACKET pointz geocoll_textz2 VANUATU_CLOSE_BRACKET */
@@ -1435,7 +1435,7 @@ static void yy_reduce(
       case 141: /* geocoll_textz ::= VANUATU_OPEN_BRACKET polygonz geocoll_textz2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==141);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) vanuatu_geomColl_xyz((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) vanuatu_geomColl_xyz( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 146: /* geocoll_textzm ::= VANUATU_OPEN_BRACKET pointzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */
@@ -1443,7 +1443,7 @@ static void yy_reduce(
       case 148: /* geocoll_textzm ::= VANUATU_OPEN_BRACKET polygonzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==148);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) vanuatu_geomColl_xyzm((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) vanuatu_geomColl_xyzm( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);
 	}
         break;
       default:
@@ -1520,8 +1520,8 @@ static void yy_syntax_error(
 ** when the LEMON parser encounters an error
 ** then this global variable is set 
 */
-	vanuatu_parse_error = 1;
-	*result = NULL;
+	p_data->vanuatu_parse_error = 1;
+	p_data->result = NULL;
   ParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
 
