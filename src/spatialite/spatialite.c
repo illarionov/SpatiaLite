@@ -190,9 +190,9 @@ fnct_has_proj (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 #ifndef OMIT_PROJ		/* PROJ.4 is supported */
-   sqlite3_result_int (context, 1);
+    sqlite3_result_int (context, 1);
 #else
-   sqlite3_result_int (context, 0);
+    sqlite3_result_int (context, 0);
 #endif
 }
 
@@ -206,14 +206,15 @@ fnct_has_geos (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 #ifndef OMIT_GEOS		/* GEOS is supported */
-   sqlite3_result_int (context, 1);
+    sqlite3_result_int (context, 1);
 #else
-   sqlite3_result_int (context, 0);
+    sqlite3_result_int (context, 0);
 #endif
 }
 
 static void
-fnct_has_geos_advanced (sqlite3_context * context, int argc, sqlite3_value ** argv)
+fnct_has_geos_advanced (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
 {
 /* SQL function:
 / HasGeosAdvanced()
@@ -222,9 +223,9 @@ fnct_has_geos_advanced (sqlite3_context * context, int argc, sqlite3_value ** ar
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 #ifdef GEOS_ADVANCED		/* GEOS-ADVANCED is supported */
-   sqlite3_result_int (context, 1);
+    sqlite3_result_int (context, 1);
 #else
-   sqlite3_result_int (context, 0);
+    sqlite3_result_int (context, 0);
 #endif
 }
 
@@ -238,9 +239,9 @@ fnct_has_iconv (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 #ifndef OMIT_ICONV		/* ICONV is supported */
-   sqlite3_result_int (context, 1);
+    sqlite3_result_int (context, 1);
 #else
-   sqlite3_result_int (context, 0);
+    sqlite3_result_int (context, 0);
 #endif
 }
 
@@ -254,14 +255,15 @@ fnct_has_math_sql (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 #ifndef OMIT_MATHSQL		/* MATHSQL is supported */
-   sqlite3_result_int (context, 1);
+    sqlite3_result_int (context, 1);
 #else
-   sqlite3_result_int (context, 0);
+    sqlite3_result_int (context, 0);
 #endif
 }
 
 static void
-fnct_has_geo_callbacks (sqlite3_context * context, int argc, sqlite3_value ** argv)
+fnct_has_geo_callbacks (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
 {
 /* SQL function:
 / HasGeoCallbacks()
@@ -270,9 +272,9 @@ fnct_has_geo_callbacks (sqlite3_context * context, int argc, sqlite3_value ** ar
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 #ifndef OMIT_GEOCALLBACKS	/* GEO-CALLBACKS are supported */
-   sqlite3_result_int (context, 1);
+    sqlite3_result_int (context, 1);
 #else
-   sqlite3_result_int (context, 0);
+    sqlite3_result_int (context, 0);
 #endif
 }
 
@@ -286,9 +288,9 @@ fnct_has_freeXL (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 #ifndef OMIT_FREEXL		/* FreeXL is supported */
-   sqlite3_result_int (context, 1);
+    sqlite3_result_int (context, 1);
 #else
-   sqlite3_result_int (context, 0);
+    sqlite3_result_int (context, 0);
 #endif
 }
 
@@ -302,9 +304,9 @@ fnct_has_epsg (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 #ifndef OMIT_EPSG		/* EPSG is supported */
-   sqlite3_result_int (context, 1);
+    sqlite3_result_int (context, 1);
 #else
-   sqlite3_result_int (context, 0);
+    sqlite3_result_int (context, 0);
 #endif
 }
 
@@ -1539,8 +1541,7 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
     sprintf (sql,
 	     "SELECT f_table_name, f_geometry_column, type, srid, spatial_index_enabled, coord_dimension "
 	     "FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') "
-             "AND Upper(f_geometry_column) = Upper('%s')",
-	     sqltable, sqlcolumn);
+	     "AND Upper(f_geometry_column) = Upper('%s')", sqltable, sqlcolumn);
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
@@ -9500,8 +9501,8 @@ fnct_SridFromAuthCRS (sqlite3_context * context, int argc,
     auth_srid = sqlite3_value_int (argv[1]);
 
     sprintf (sql, "SELECT srid FROM spatial_ref_sys ");
-    sprintf (sql2, "WHERE Upper(auth_name) = Upper('%s') AND auth_srid = %d", auth_name,
-	     auth_srid);
+    sprintf (sql2, "WHERE Upper(auth_name) = Upper('%s') AND auth_srid = %d",
+	     auth_name, auth_srid);
     strcat (sql, sql2);
     ret =
 	sqlite3_get_table (sqlite, sql, &results, &n_rows, &n_columns,
@@ -11679,6 +11680,7 @@ fnct_ToGARS (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  /* not a single Point */
+	  gaiaFreeGeomColl (geo);
 	  sqlite3_result_null (context);
 	  return;
       }
@@ -17772,7 +17774,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -17856,7 +17859,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -17865,7 +17869,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }

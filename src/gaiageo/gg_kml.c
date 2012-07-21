@@ -1996,7 +1996,7 @@ gaiaParseKml (const unsigned char *dirty_buffer)
 	  return NULL;
       }
 
-    if (str_data.result != NULL)
+    if (str_data.result == NULL)
       {
 	  kmlCleanMapDynAlloc (&str_data, 0);
 	  return NULL;
