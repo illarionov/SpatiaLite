@@ -88,6 +88,7 @@ struct vanuatu_dyn_block
 
 struct vanuatu_data
 {
+/* a struct used to make the lexer-parser reentrant and thread-safe */
     int vanuatu_parse_error;
     int vanuatu_line;
     int vanuatu_col;
@@ -132,8 +133,8 @@ vanuatuMapDynAlloc (struct vanuatu_data *p_data, int type, void *ptr)
 	  p_data->vanuatu_last_dyn_block->next = p;
 	  p_data->vanuatu_last_dyn_block = p;
       }
-    p_data->vanuatu_last_dyn_block->type[p_data->vanuatu_last_dyn_block->
-					 index] = type;
+    p_data->vanuatu_last_dyn_block->type[p_data->
+					 vanuatu_last_dyn_block->index] = type;
     p_data->vanuatu_last_dyn_block->ptr[p_data->vanuatu_last_dyn_block->index] =
 	ptr;
     p_data->vanuatu_last_dyn_block->index++;
@@ -1781,6 +1782,7 @@ vanuatu_geomColl_xyzm (struct vanuatu_data *p_data, gaiaGeomCollPtr first)
 #define yyRuleName		vanuatu_yyRuleName
 #define ParseTrace		vanuatu_ParseTrace
 
+#define yylex			vanuatu_yylex
 #define YY_DECL int yylex (yyscan_t yyscanner)
 
 
@@ -1867,6 +1869,7 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
 /* initializing the helper structs */
     str_data.vanuatu_line = 1;
     str_data.vanuatu_col = 1;
+    str_data.vanuatu_parse_error = 0;
     str_data.vanuatu_first_dyn_block = NULL;
     str_data.vanuatu_last_dyn_block = NULL;
     str_data.result = NULL;
@@ -1875,11 +1878,6 @@ gaiaParseWkt (const unsigned char *dirty_buffer, short type)
     VanuatuWktlex_init_extra (&str_data, &scanner);
 
     tokens->Next = NULL;
-    /*
-     ** Sandro Furieri 2010 Apr 4
-     ** unsetting the parser error flag
-     */
-    str_data.vanuatu_parse_error = 0;
 
     VanuatuWkt_scan_string ((char *) dirty_buffer, scanner);
 
@@ -2096,3 +2094,6 @@ Greg Wilson			gvwilson@cs.toronto.ca
 #undef yyTokenName
 #undef yyRuleName
 #undef ParseTrace
+
+#undef yylex
+#undef YY_DECL 

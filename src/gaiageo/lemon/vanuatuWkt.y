@@ -67,7 +67,7 @@ Greg Wilson			gvwilson@cs.toronto.ca
 
 // Output to stderr when stack overflows
 %stack_overflow {
-     fprintf(stderr, "Giving up.  Parser stack overflow\n");
+     spatialite_e( "Giving up.  Parser stack overflow\n");
 }
 
 // Increase this number if necessary
@@ -117,7 +117,7 @@ geo_text ::= linestring(L). { p_data->result = L; }		// L is a geometry collecti
 geo_text ::= polygon(P). { p_data->result = P; }		// P is a geometry collection containing a polygon
 geo_text ::= multipoint(M). { p_data->result = M; }		// M is a geometry collection containing a multipoint
 geo_text ::= multilinestring(M). { p_data->result = M; }	// M is a geometry collection containing a multilinestring
-geo_text ::= multipolygon(M). { p_data->result = M; }	// M is a geometry collection containing a multipolygon
+geo_text ::= multipolygon(M). { p_data->result = M; }		// M is a geometry collection containing a multipolygon
 geo_text ::= geocoll(H). { p_data->result = H; }		// H is a geometry collection created from user input
 
 // 3D geometries (no measure):

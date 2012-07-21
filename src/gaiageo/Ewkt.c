@@ -65,10 +65,10 @@ typedef union {
 #ifndef YYSTACKDEPTH
 #define YYSTACKDEPTH 1000000
 #endif
-#define ParseARG_SDECL  gaiaGeomCollPtr *result ;
-#define ParseARG_PDECL , gaiaGeomCollPtr *result 
-#define ParseARG_FETCH  gaiaGeomCollPtr *result  = yypParser->result 
-#define ParseARG_STORE yypParser->result  = result 
+#define ParseARG_SDECL  struct ewkt_data *p_data ;
+#define ParseARG_PDECL , struct ewkt_data *p_data 
+#define ParseARG_FETCH  struct ewkt_data *p_data  = yypParser->p_data 
+#define ParseARG_STORE yypParser->p_data  = p_data 
 #define YYNSTATE 350
 #define YYNRULE 151
 #define YY_NO_ACTION      (YYNSTATE+YYNRULE+2)
@@ -837,7 +837,7 @@ static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
    /* Here code is inserted which will execute if the parser
    ** stack every overflows */
 
-     spatialite_e("Giving up.  Parser stack overflow\n");
+     spatialite_e( "Giving up.  Parser stack overflow\n");
    ParseARG_STORE; /* Suppress warning about unused %extra_argument var */
 }
 
@@ -1127,27 +1127,27 @@ static void yy_reduce(
       case 31: /* geo_textm ::= multilinestringm */ yytestcase(yyruleno==31);
       case 32: /* geo_textm ::= multipolygonm */ yytestcase(yyruleno==32);
       case 33: /* geo_textm ::= geocollm */ yytestcase(yyruleno==33);
-{ *result = yymsp[0].minor.yy0; }
+{ p_data->result = yymsp[0].minor.yy0; }
         break;
       case 34: /* point ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxy EWKT_CLOSE_BRACKET */
       case 35: /* pointz ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyz EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==35);
       case 37: /* pointzm ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyzm EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==37);
-{ yygotominor.yy0 = ewkt_buildGeomFromPoint((gaiaPointPtr)yymsp[-1].minor.yy0); }
+{ yygotominor.yy0 = ewkt_buildGeomFromPoint( p_data, (gaiaPointPtr)yymsp[-1].minor.yy0); }
         break;
       case 36: /* pointm ::= EWKT_POINT_M EWKT_OPEN_BRACKET point_coordxym EWKT_CLOSE_BRACKET */
-{ yygotominor.yy0 = ewkt_buildGeomFromPoint((gaiaPointPtr)yymsp[-1].minor.yy0);  }
+{ yygotominor.yy0 = ewkt_buildGeomFromPoint( p_data, (gaiaPointPtr)yymsp[-1].minor.yy0);  }
         break;
       case 38: /* point_coordxy ::= coord coord */
-{ yygotominor.yy0 = (void *) ewkt_point_xy((double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = (void *) ewkt_point_xy( p_data, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
         break;
       case 39: /* point_coordxym ::= coord coord coord */
-{ yygotominor.yy0 = (void *) ewkt_point_xym((double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = (void *) ewkt_point_xym( p_data, (double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
         break;
       case 40: /* point_coordxyz ::= coord coord coord */
-{ yygotominor.yy0 = (void *) ewkt_point_xyz((double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = (void *) ewkt_point_xyz( p_data, (double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
         break;
       case 41: /* point_coordxyzm ::= coord coord coord coord */
-{ yygotominor.yy0 = (void *) ewkt_point_xyzm((double *)yymsp[-3].minor.yy0, (double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = (void *) ewkt_point_xyzm( p_data, (double *)yymsp[-3].minor.yy0, (double *)yymsp[-2].minor.yy0, (double *)yymsp[-1].minor.yy0, (double *)yymsp[0].minor.yy0); }
         break;
       case 42: /* coord ::= EWKT_NUM */
       case 79: /* multipoint ::= EWKT_MULTIPOINT multipoint_text */ yytestcase(yyruleno==79);
@@ -1200,64 +1200,64 @@ static void yy_reduce(
       case 52: /* linestringm ::= EWKT_LINESTRING_M linestring_textm */ yytestcase(yyruleno==52);
       case 53: /* linestringz ::= EWKT_LINESTRING linestring_textz */ yytestcase(yyruleno==53);
       case 54: /* linestringzm ::= EWKT_LINESTRING linestring_textzm */ yytestcase(yyruleno==54);
-{ yygotominor.yy0 = ewkt_buildGeomFromLinestring((gaiaLinestringPtr)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = ewkt_buildGeomFromLinestring( p_data, (gaiaLinestringPtr)yymsp[0].minor.yy0); }
         break;
       case 55: /* linestring_text ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
-	   yygotominor.yy0 = (void *) ewkt_linestring_xy((gaiaPointPtr)yymsp[-4].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_linestring_xy( p_data, (gaiaPointPtr)yymsp[-4].minor.yy0);
 	}
         break;
       case 56: /* linestring_textm ::= EWKT_OPEN_BRACKET point_coordxym EWKT_COMMA point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
-	   yygotominor.yy0 = (void *) ewkt_linestring_xym((gaiaPointPtr)yymsp[-4].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_linestring_xym( p_data, (gaiaPointPtr)yymsp[-4].minor.yy0);
 	}
         break;
       case 57: /* linestring_textz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
-	   yygotominor.yy0 = (void *) ewkt_linestring_xyz((gaiaPointPtr)yymsp[-4].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_linestring_xyz( p_data, (gaiaPointPtr)yymsp[-4].minor.yy0);
 	}
         break;
       case 58: /* linestring_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
 	   ((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0;
-	   yygotominor.yy0 = (void *) ewkt_linestring_xyzm((gaiaPointPtr)yymsp[-4].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_linestring_xyzm( p_data, (gaiaPointPtr)yymsp[-4].minor.yy0);
 	}
         break;
       case 59: /* polygon ::= EWKT_POLYGON polygon_text */
       case 60: /* polygonm ::= EWKT_POLYGON_M polygon_textm */ yytestcase(yyruleno==60);
       case 61: /* polygonz ::= EWKT_POLYGON polygon_textz */ yytestcase(yyruleno==61);
       case 62: /* polygonzm ::= EWKT_POLYGON polygon_textzm */ yytestcase(yyruleno==62);
-{ yygotominor.yy0 = ewkt_buildGeomFromPolygon((gaiaPolygonPtr)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = ewkt_buildGeomFromPolygon( p_data, (gaiaPolygonPtr)yymsp[0].minor.yy0); }
         break;
       case 63: /* polygon_text ::= EWKT_OPEN_BRACKET ring extra_rings EWKT_CLOSE_BRACKET */
 { 
 		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) ewkt_polygon_xy((gaiaRingPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) ewkt_polygon_xy( p_data, (gaiaRingPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 64: /* polygon_textm ::= EWKT_OPEN_BRACKET ringm extra_ringsm EWKT_CLOSE_BRACKET */
 { 
 		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) ewkt_polygon_xym((gaiaRingPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) ewkt_polygon_xym( p_data, (gaiaRingPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 65: /* polygon_textz ::= EWKT_OPEN_BRACKET ringz extra_ringsz EWKT_CLOSE_BRACKET */
 {  
 		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) ewkt_polygon_xyz((gaiaRingPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) ewkt_polygon_xyz( p_data, (gaiaRingPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 66: /* polygon_textzm ::= EWKT_OPEN_BRACKET ringzm extra_ringszm EWKT_CLOSE_BRACKET */
 { 
 		((gaiaRingPtr)yymsp[-2].minor.yy0)->Next = (gaiaRingPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) ewkt_polygon_xyzm((gaiaRingPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) ewkt_polygon_xyzm( p_data, (gaiaRingPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 67: /* ring ::= EWKT_OPEN_BRACKET point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy EWKT_COMMA point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET */
@@ -1266,7 +1266,7 @@ static void yy_reduce(
 		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
 		((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0; 
 		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) ewkt_ring_xy((gaiaPointPtr)yymsp[-8].minor.yy0);
+		yygotominor.yy0 = (void *) ewkt_ring_xy( p_data, (gaiaPointPtr)yymsp[-8].minor.yy0);
 	}
         break;
       case 69: /* extra_rings ::= EWKT_COMMA ring extra_rings */
@@ -1284,7 +1284,7 @@ static void yy_reduce(
 		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
 		((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0; 
 		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) ewkt_ring_xym((gaiaPointPtr)yymsp[-8].minor.yy0);
+		yygotominor.yy0 = (void *) ewkt_ring_xym( p_data, (gaiaPointPtr)yymsp[-8].minor.yy0);
 	}
         break;
       case 73: /* ringz ::= EWKT_OPEN_BRACKET point_coordxyz EWKT_COMMA point_coordxyz EWKT_COMMA point_coordxyz EWKT_COMMA point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET */
@@ -1293,7 +1293,7 @@ static void yy_reduce(
 		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
 		((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0; 
 		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) ewkt_ring_xyz((gaiaPointPtr)yymsp[-8].minor.yy0);
+		yygotominor.yy0 = (void *) ewkt_ring_xyz( p_data, (gaiaPointPtr)yymsp[-8].minor.yy0);
 	}
         break;
       case 76: /* ringzm ::= EWKT_OPEN_BRACKET point_coordxyzm EWKT_COMMA point_coordxyzm EWKT_COMMA point_coordxyzm EWKT_COMMA point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET */
@@ -1302,37 +1302,37 @@ static void yy_reduce(
 		((gaiaPointPtr)yymsp[-6].minor.yy0)->Next = (gaiaPointPtr)yymsp[-4].minor.yy0;
 		((gaiaPointPtr)yymsp[-4].minor.yy0)->Next = (gaiaPointPtr)yymsp[-2].minor.yy0; 
 		((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) ewkt_ring_xyzm((gaiaPointPtr)yymsp[-8].minor.yy0);
+		yygotominor.yy0 = (void *) ewkt_ring_xyzm( p_data, (gaiaPointPtr)yymsp[-8].minor.yy0);
 	}
         break;
       case 83: /* multipoint_text ::= EWKT_OPEN_BRACKET point_coordxy extra_pointsxy EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) ewkt_multipoint_xy((gaiaPointPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_multipoint_xy( p_data, (gaiaPointPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 84: /* multipoint_textm ::= EWKT_OPEN_BRACKET point_coordxym extra_pointsxym EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) ewkt_multipoint_xym((gaiaPointPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_multipoint_xym( p_data, (gaiaPointPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 85: /* multipoint_textz ::= EWKT_OPEN_BRACKET point_coordxyz extra_pointsxyz EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) ewkt_multipoint_xyz((gaiaPointPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_multipoint_xyz( p_data, (gaiaPointPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 86: /* multipoint_textzm ::= EWKT_OPEN_BRACKET point_coordxyzm extra_pointsxyzm EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaPointPtr)yymsp[-2].minor.yy0)->Next = (gaiaPointPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) ewkt_multipoint_xyzm((gaiaPointPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_multipoint_xyzm( p_data, (gaiaPointPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 91: /* multilinestring_text ::= EWKT_OPEN_BRACKET linestring_text multilinestring_text2 EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) ewkt_multilinestring_xy((gaiaLinestringPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_multilinestring_xy( p_data, (gaiaLinestringPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 93: /* multilinestring_text2 ::= EWKT_COMMA linestring_text multilinestring_text2 */
@@ -1344,25 +1344,25 @@ static void yy_reduce(
       case 94: /* multilinestring_textm ::= EWKT_OPEN_BRACKET linestring_textm multilinestring_textm2 EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) ewkt_multilinestring_xym((gaiaLinestringPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_multilinestring_xym( p_data, (gaiaLinestringPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 97: /* multilinestring_textz ::= EWKT_OPEN_BRACKET linestring_textz multilinestring_textz2 EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) ewkt_multilinestring_xyz((gaiaLinestringPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_multilinestring_xyz( p_data, (gaiaLinestringPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 100: /* multilinestring_textzm ::= EWKT_OPEN_BRACKET linestring_textzm multilinestring_textzm2 EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaLinestringPtr)yymsp[-2].minor.yy0)->Next = (gaiaLinestringPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) ewkt_multilinestring_xyzm((gaiaLinestringPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_multilinestring_xyzm( p_data, (gaiaLinestringPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 107: /* multipolygon_text ::= EWKT_OPEN_BRACKET polygon_text multipolygon_text2 EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) ewkt_multipolygon_xy((gaiaPolygonPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_multipolygon_xy( p_data, (gaiaPolygonPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 109: /* multipolygon_text2 ::= EWKT_COMMA polygon_text multipolygon_text2 */
@@ -1374,19 +1374,19 @@ static void yy_reduce(
       case 110: /* multipolygon_textm ::= EWKT_OPEN_BRACKET polygon_textm multipolygon_textm2 EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) ewkt_multipolygon_xym((gaiaPolygonPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_multipolygon_xym( p_data, (gaiaPolygonPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 113: /* multipolygon_textz ::= EWKT_OPEN_BRACKET polygon_textz multipolygon_textz2 EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) ewkt_multipolygon_xyz((gaiaPolygonPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_multipolygon_xyz( p_data, (gaiaPolygonPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 116: /* multipolygon_textzm ::= EWKT_OPEN_BRACKET polygon_textzm multipolygon_textzm2 EWKT_CLOSE_BRACKET */
 { 
 	   ((gaiaPolygonPtr)yymsp[-2].minor.yy0)->Next = (gaiaPolygonPtr)yymsp[-1].minor.yy0; 
-	   yygotominor.yy0 = (void *) ewkt_multipolygon_xyzm((gaiaPolygonPtr)yymsp[-2].minor.yy0);
+	   yygotominor.yy0 = (void *) ewkt_multipolygon_xyzm( p_data, (gaiaPolygonPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 123: /* geocoll_text ::= EWKT_OPEN_BRACKET point geocoll_text2 EWKT_CLOSE_BRACKET */
@@ -1394,7 +1394,7 @@ static void yy_reduce(
       case 125: /* geocoll_text ::= EWKT_OPEN_BRACKET polygon geocoll_text2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==125);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) ewkt_geomColl_xy((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) ewkt_geomColl_xy( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 127: /* geocoll_text2 ::= EWKT_COMMA point geocoll_text2 */
@@ -1419,7 +1419,7 @@ static void yy_reduce(
       case 132: /* geocoll_textm ::= EWKT_OPEN_BRACKET polygonm geocoll_textm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==132);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) ewkt_geomColl_xym((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) ewkt_geomColl_xym( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 137: /* geocoll_textz ::= EWKT_OPEN_BRACKET pointz geocoll_textz2 EWKT_CLOSE_BRACKET */
@@ -1427,7 +1427,7 @@ static void yy_reduce(
       case 139: /* geocoll_textz ::= EWKT_OPEN_BRACKET polygonz geocoll_textz2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==139);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) ewkt_geomColl_xyz((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) ewkt_geomColl_xyz( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);
 	}
         break;
       case 144: /* geocoll_textzm ::= EWKT_OPEN_BRACKET pointzm geocoll_textzm2 EWKT_CLOSE_BRACKET */
@@ -1435,7 +1435,7 @@ static void yy_reduce(
       case 146: /* geocoll_textzm ::= EWKT_OPEN_BRACKET polygonzm geocoll_textzm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==146);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
-		yygotominor.yy0 = (void *) ewkt_geomColl_xyzm((gaiaGeomCollPtr)yymsp[-2].minor.yy0);
+		yygotominor.yy0 = (void *) ewkt_geomColl_xyzm( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);
 	}
         break;
       default:
@@ -1509,8 +1509,8 @@ static void yy_syntax_error(
 ** when the LEMON parser encounters an error
 ** then this global variable is set 
 */
-	ewkt_parse_error = 1;
-	*result = NULL;
+	p_data->ewkt_parse_error = 1;
+	p_data->result = NULL;
   ParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
 

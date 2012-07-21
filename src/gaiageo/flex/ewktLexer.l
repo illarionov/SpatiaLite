@@ -41,13 +41,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 */
 
 %option prefix="Ewkt"
-
-%{
-
-/* For debugging purposes */
-int ewkt_line = 1, ewkt_col = 1;
-
-%}
+%option reentrant
+%option extra-type="struct ewkt_data *"
 
 /**
 *  The main string-token matcher.
@@ -60,7 +55,7 @@ int ewkt_line = 1, ewkt_col = 1;
 *  of the two tokens, FLEX will match POINTM.
 */
 %%
--?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*       	{ ewkt_col += (int) strlen(yytext);  EwktLval.dval = atof(yytext); return EWKT_NUM; }
+-?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*       	{ Ewktget_extra(yyscanner)->ewkt_col += (int) strlen(yytext);  EwktLval.dval = atof(yytext); return EWKT_NUM; }
 ","										{ EwktLval.dval = 0; return EWKT_COMMA; }
 "("										{ EwktLval.dval = 0; return EWKT_OPEN_BRACKET; }
 ")"										{ EwktLval.dval = 0; return EWKT_CLOSE_BRACKET; }
@@ -79,38 +74,14 @@ int ewkt_line = 1, ewkt_col = 1;
 (?i:"geometrycollection")				{ EwktLval.dval = 0; return EWKT_GEOMETRYCOLLECTION; }
 (?i:"geometrycollectionm")				{ EwktLval.dval = 0; return EWKT_GEOMETRYCOLLECTION_M; }
 
-[ \t]   { ewkt_col += (int) strlen(yytext); }               /* ignore but count white space */
+[ \t]   { Ewktget_extra(yyscanner)->ewkt_col += (int) strlen(yytext); }               /* ignore but count white space */
 
-\n      { ewkt_col = 0; ++ewkt_line; }
+\n      { Ewktget_extra(yyscanner)->ewkt_col = 0; Ewktget_extra(yyscanner)->ewkt_line++; }
 
-.       { ewkt_col += (int) strlen(yytext); return -1; }
+.       { Ewktget_extra(yyscanner)->ewkt_col += (int) strlen(yytext); return -1; }
 %%
-/**
- * reset the line and column count
- *
- *
- */
-void ewkt_reset_lexer(void)
-{
 
-  ewkt_line = 1;
-  ewkt_col  = 1;
-
-}
-
-/**
- * EwktError() is invoked when the lexer or the parser encounter
- * an error. The error message is passed via *s
- *
- *
- */
-void EwktError(char *s)
-{
-  spatialite_e("error: %s at line: %d col: %d\n",s,ewkt_line,ewkt_col);
-
-}
-
-int yywrap(void)
+int yywrap(yyscan_t yyscanner )
 {
   return 1;
 }
