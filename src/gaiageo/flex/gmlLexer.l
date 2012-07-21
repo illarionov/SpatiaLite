@@ -41,13 +41,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 */
 
 %option prefix="Gml"
-
-%{
-
-/* For debugging purposes */
-int gml_line = 1, gml_col = 1;
-
-%}
+%option reentrant
+%option extra-type="struct gml_data *"
 
 /**
 *  The main string-token matcher.
@@ -68,38 +63,14 @@ int gml_line = 1, gml_col = 1;
 \"[^<>\"]*\"								{ gml_saveString(&(GmlLval.pval), yytext); return GML_VALUE; }
 [a-zA-Z_][a-zA-Z_:0-9]*						{ gml_saveString(&(GmlLval.pval), yytext); return GML_KEYWORD; }
 
-[ \t]   { gml_freeString(&(GmlLval.pval)); gml_col += (int) strlen(yytext); }               /* ignore but count white space */
+[ \t]   { gml_freeString(&(GmlLval.pval)); Gmlget_extra(yyscanner)->gml_col += (int) strlen(yytext); }               /* ignore but count white space */
 
-\n      { gml_freeString(&(GmlLval.pval)); gml_col = 0; ++gml_line; }
+\n      { gml_freeString(&(GmlLval.pval)); Gmlget_extra(yyscanner)->gml_col = 0; Gmlget_extra(yyscanner)->gml_line++; }
 
-.       { gml_freeString(&(GmlLval.pval)); gml_col += (int) strlen(yytext); return -1; }
+.       { gml_freeString(&(GmlLval.pval)); Gmlget_extra(yyscanner)->gml_col += (int) strlen(yytext); return -1; }
 %%
-/**
- * reset the line and column count
- *
- *
- */
-void gml_reset_lexer(void)
-{
 
-  gml_line = 1;
-  gml_col  = 1;
-
-}
-
-/**
- * gmlError() is invoked when the lexer or the parser encounter
- * an error. The error message is passed via *s
- *
- *
- */
-void GmlError(char *s)
-{
-  spatialite_e("error: %s at line: %d col: %d\n",s,gml_line,gml_col);
-
-}
-
-int yywrap(void)
+int yywrap(yyscan_t yyscanner )
 {
   return 1;
 }

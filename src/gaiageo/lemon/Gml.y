@@ -45,7 +45,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 // Output to stderr when stack overflows
 %stack_overflow {
-     fprintf(stderr, "Giving up.  Parser stack overflow\n");
+     spatialite_e( "Giving up.  Parser stack overflow\n");
 }
 
 // Increase this number if necessary
@@ -56,7 +56,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 }
 
 // Set the return value of gaiaParseGML in the following pointer:
-%extra_argument { gmlNodePtr *result }
+%extra_argument { struct gml_data *p_data }
 
 // Invalid syntax (ie. no rules matched)
 %syntax_error {
@@ -64,8 +64,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 ** when the LEMON parser encounters an error
 ** then this global variable is set 
 */
-	gml_parse_error = 1;
-	*result = NULL;
+	p_data->gml_parse_error = 1;
+	p_data->result = NULL;
 }
  
  /* This is to terminate with a new line */
@@ -82,37 +82,37 @@ the terms of any one of the MPL, the GPL or the LGPL.
 program ::= gml_tree.
 
 // GML node:
-gml_tree ::= node(N). { *result = N; }				// N is a GML node
-gml_tree ::= node_chain(C). { *result = C; }		// C is a chain of GML nodes
+gml_tree ::= node(N). { p_data->result = N; }			// N is a GML node
+gml_tree ::= node_chain(C). { p_data->result = C; }		// C is a chain of GML nodes
 
 
 // syntax for a GML node object:
 node(N) ::= open_tag(K) GML_END GML_CLOSE.
-	{ N = gml_createSelfClosedNode((void *)K, NULL); }
+	{ N = gml_createSelfClosedNode( p_data, (void *)K, NULL); }
 node(N) ::= open_tag(K) attr(A) GML_END GML_CLOSE.
-	{ N = gml_createSelfClosedNode((void *)K, (void *)A); }
+	{ N = gml_createSelfClosedNode( p_data, (void *)K, (void *)A); }
 node(N) ::= open_tag(K) attributes(A) GML_END GML_CLOSE.
-	{ N = gml_createSelfClosedNode((void *)K, (void *)A); }
+	{ N = gml_createSelfClosedNode( p_data, (void *)K, (void *)A); }
 node(N) ::= open_tag(K) GML_CLOSE.
-	{ N = gml_createNode((void *)K, NULL, NULL); }
+	{ N = gml_createNode( p_data, (void *)K, NULL, NULL); }
 node(N) ::= open_tag(K) attr(A) GML_CLOSE.
-	{ N = gml_createNode((void *)K, (void *)A, NULL); }
+	{ N = gml_createNode( p_data, (void *)K, (void *)A, NULL); }
 node(N) ::= open_tag(K) attributes(A) GML_CLOSE.
-	{ N = gml_createNode((void *)K, (void *)A, NULL); }
+	{ N = gml_createNode( p_data, (void *)K, (void *)A, NULL); }
 node(N) ::= open_tag(K) GML_CLOSE coord(C).
-	{ N = gml_createNode((void *)K, NULL, (void *)C); }
+	{ N = gml_createNode( p_data, (void *)K, NULL, (void *)C); }
 node(N) ::= open_tag(K) GML_CLOSE coord_chain(C).
-	{ N = gml_createNode((void *)K, NULL, (void *)C); }
+	{ N = gml_createNode( p_data, (void *)K, NULL, (void *)C); }
 node(N) ::= open_tag(K) attr(A) GML_CLOSE coord(C).
-	{ N = gml_createNode((void *)K, (void *)A, (void *)C); }
+	{ N = gml_createNode( p_data, (void *)K, (void *)A, (void *)C); }
 node(N) ::= open_tag(K) attr(A) GML_CLOSE coord_chain(C).
-	{ N = gml_createNode((void *)K, (void *)A, (void *)C); }
+	{ N = gml_createNode( p_data, (void *)K, (void *)A, (void *)C); }
 node(N) ::= open_tag(K) attributes(A) GML_CLOSE coord(C).
-	{ N = gml_createNode((void *)K, (void *)A, (void *)C); }
+	{ N = gml_createNode( p_data, (void *)K, (void *)A, (void *)C); }
 node(N) ::= open_tag(K) attributes(A) GML_CLOSE coord_chain(C).
-	{ N = gml_createNode((void *)K, (void *)A, (void *)C); }
+	{ N = gml_createNode( p_data, (void *)K, (void *)A, (void *)C); }
 node(N) ::= close_tag(K).
-	{ N = gml_closingNode((void *)K); }
+	{ N = gml_closingNode( p_data, (void *)K); }
 	
 
 // syntax for a GML tag object:
@@ -142,7 +142,7 @@ node_chain(C) ::= node(A) node(B) extra_nodes(Q).
 	
 // syntax for a GML attribute:
 attr(A) ::= GML_KEYWORD(K) GML_EQ GML_VALUE(V).
-	{ A = gml_attribute((void *)K, (void *)V); }
+	{ A = gml_attribute( p_data, (void *)K, (void *)V); }
 
 
 // Rules to match an infinite number of GML attributes:
@@ -163,7 +163,7 @@ attributes(C) ::= attr(A) attr(B) extra_attr(Q).
 	
 // syntax for a GML coordinate:
 coord(C) ::= GML_COORD(V).
-	{ C = gml_coord((void *)V); }
+	{ C = gml_coord( p_data, (void *)V); }
 
 
 // Rules to match an infinite number of GML coords:
