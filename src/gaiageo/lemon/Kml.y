@@ -45,7 +45,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 // Output to stderr when stack overflows
 %stack_overflow {
-     fprintf(stderr, "Giving up.  Parser stack overflow\n");
+     spatialite_e( "Giving up.  Parser stack overflow\n");
 }
 
 // Increase this number if necessary
@@ -56,7 +56,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 }
 
 // Set the return value of gaiaParseKML in the following pointer:
-%extra_argument { kmlNodePtr *result }
+%extra_argument { struct kml_data *p_data }
 
 // Invalid syntax (ie. no rules matched)
 %syntax_error {
@@ -64,8 +64,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 ** when the LEMON parser encounters an error
 ** then this global variable is set 
 */
-	kml_parse_error = 1;
-	*result = NULL;
+	p_data->kml_parse_error = 1;
+	p_data->result = NULL;
 }
  
  /* This is to terminate with a new line */
@@ -82,37 +82,37 @@ the terms of any one of the MPL, the GPL or the LGPL.
 program ::= kml_tree.
 
 // KML node:
-kml_tree ::= node(N). { *result = N; }				// N is a KML node
-kml_tree ::= node_chain(C). { *result = C; }		// C is a chain of KML nodes
+kml_tree ::= node(N). { p_data->result = N; }			// N is a KML node
+kml_tree ::= node_chain(C). { p_data->result = C; }		// C is a chain of KML nodes
 
 
 // syntax for a KML node object:
 node(N) ::= open_tag(K) KML_END KML_CLOSE.
-	{ N = kml_createSelfClosedNode((void *)K, NULL); }
+	{ N = kml_createSelfClosedNode( p_data, (void *)K, NULL); }
 node(N) ::= open_tag(K) attr(A) KML_END KML_CLOSE.
-	{ N = kml_createSelfClosedNode((void *)K, (void *)A); }
+	{ N = kml_createSelfClosedNode( p_data, (void *)K, (void *)A); }
 node(N) ::= open_tag(K) attributes(A) KML_END KML_CLOSE.
-	{ N = kml_createSelfClosedNode((void *)K, (void *)A); }
+	{ N = kml_createSelfClosedNode( p_data, (void *)K, (void *)A); }
 node(N) ::= open_tag(K) KML_CLOSE.
-	{ N = kml_createNode((void *)K, NULL, NULL); }
+	{ N = kml_createNode( p_data, (void *)K, NULL, NULL); }
 node(N) ::= open_tag(K) attr(A) KML_CLOSE.
-	{ N = kml_createNode((void *)K, (void *)A, NULL); }
+	{ N = kml_createNode( p_data, (void *)K, (void *)A, NULL); }
 node(N) ::= open_tag(K) attributes(A) KML_CLOSE.
-	{ N = kml_createNode((void *)K, (void *)A, NULL); }
+	{ N = kml_createNode( p_data, (void *)K, (void *)A, NULL); }
 node(N) ::= open_tag(K) KML_CLOSE coord(C).
-	{ N = kml_createNode((void *)K, NULL, (void *)C); }
+	{ N = kml_createNode( p_data, (void *)K, NULL, (void *)C); }
 node(N) ::= open_tag(K) KML_CLOSE coord_chain(C).
-	{ N = kml_createNode((void *)K, NULL, (void *)C); }
+	{ N = kml_createNode( p_data, (void *)K, NULL, (void *)C); }
 node(N) ::= open_tag(K) attr(A) KML_CLOSE coord(C).
-	{ N = kml_createNode((void *)K, (void *)A, (void *)C); }
+	{ N = kml_createNode( p_data, (void *)K, (void *)A, (void *)C); }
 node(N) ::= open_tag(K) attr(A) KML_CLOSE coord_chain(C).
-	{ N = kml_createNode((void *)K, (void *)A, (void *)C); }
+	{ N = kml_createNode( p_data, (void *)K, (void *)A, (void *)C); }
 node(N) ::= open_tag(K) attributes(A) KML_CLOSE coord(C).
-	{ N = kml_createNode((void *)K, (void *)A, (void *)C); }
+	{ N = kml_createNode( p_data, (void *)K, (void *)A, (void *)C); }
 node(N) ::= open_tag(K) attributes(A) KML_CLOSE coord_chain(C).
-	{ N = kml_createNode((void *)K, (void *)A, (void *)C); }
+	{ N = kml_createNode( p_data, (void *)K, (void *)A, (void *)C); }
 node(N) ::= close_tag(K).
-	{ N = kml_closingNode((void *)K); }
+	{ N = kml_closingNode( p_data, (void *)K); }
 	
 
 // syntax for a KML tag object:
@@ -142,7 +142,7 @@ node_chain(C) ::= node(A) node(B) extra_nodes(Q).
 	
 // syntax for a KML attribute:
 attr(A) ::= KML_KEYWORD(K) KML_EQ KML_VALUE(V).
-	{ A = kml_attribute((void *)K, (void *)V); }
+	{ A = kml_attribute( p_data, (void *)K, (void *)V); }
 
 
 // Rules to match an infinite number of KML attributes:
@@ -163,7 +163,7 @@ attributes(C) ::= attr(A) attr(B) extra_attr(Q).
 	
 // syntax for a KML coordinate:
 coord(C) ::= KML_COORD(V).
-	{ C = kml_coord((void *)V); }
+	{ C = kml_coord( p_data, (void *)V); }
 
 
 // Rules to match an infinite number of KML coords:

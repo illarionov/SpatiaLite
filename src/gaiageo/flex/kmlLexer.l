@@ -41,13 +41,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 */
 
 %option prefix="Kml"
-
-%{
-
-/* For debugging purposes */
-int kml_line = 1, kml_col = 1;
-
-%}
+%option reentrant
+%option extra-type="struct kml_data *"
 
 /**
 *  The main string-token matcher.
@@ -68,38 +63,14 @@ int kml_line = 1, kml_col = 1;
 \"[^<>\"]*\"								{ kml_saveString(&(KmlLval.pval), yytext); return KML_VALUE; }
 [a-zA-Z_][a-zA-Z_:0-9]*						{ kml_saveString(&(KmlLval.pval), yytext); return KML_KEYWORD; }
 
-[ \t]   { kml_freeString(&(KmlLval.pval)); kml_col += (int) strlen(yytext); }               /* ignore but count white space */
+[ \t]   { kml_freeString(&(KmlLval.pval)); Kmlget_extra(yyscanner)->kml_col += (int) strlen(yytext); }               /* ignore but count white space */
 
-\n      { kml_freeString(&(KmlLval.pval)); kml_col = 0; ++kml_line; }
+\n      { kml_freeString(&(KmlLval.pval)); Kmlget_extra(yyscanner)->kml_col = 0; Kmlget_extra(yyscanner)->kml_line++; }
 
-.       { kml_freeString(&(KmlLval.pval)); kml_col += (int) strlen(yytext); return -1; }
+.       { kml_freeString(&(KmlLval.pval)); Kmlget_extra(yyscanner)->kml_col += (int) strlen(yytext); return -1; }
 %%
-/**
- * reset the line and column count
- *
- *
- */
-void kml_reset_lexer(void)
-{
 
-  kml_line = 1;
-  kml_col  = 1;
-
-}
-
-/**
- * kmlError() is invoked when the lexer or the parser encounter
- * an error. The error message is passed via *s
- *
- *
- */
-void KmlError(char *s)
-{
-  spatialite_e("error: %s at line: %d col: %d\n",s,kml_line,kml_col);
-
-}
-
-int yywrap(void)
+int yywrap(yyscan_t yyscanner )
 {
   return 1;
 }

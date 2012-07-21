@@ -65,10 +65,10 @@ typedef union {
 #ifndef YYSTACKDEPTH
 #define YYSTACKDEPTH 1000000
 #endif
-#define ParseARG_SDECL  kmlNodePtr *result ;
-#define ParseARG_PDECL , kmlNodePtr *result 
-#define ParseARG_FETCH  kmlNodePtr *result  = yypParser->result 
-#define ParseARG_STORE yypParser->result  = result 
+#define ParseARG_SDECL  struct kml_data *p_data ;
+#define ParseARG_PDECL , struct kml_data *p_data 
+#define ParseARG_FETCH  struct kml_data *p_data  = yypParser->p_data 
+#define ParseARG_STORE yypParser->p_data  = p_data 
 #define YYNSTATE 49
 #define YYNRULE 34
 #define YY_NO_ACTION      (YYNSTATE+YYNRULE+2)
@@ -566,7 +566,7 @@ static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
    /* Here code is inserted which will execute if the parser
    ** stack every overflows */
 
-     spatialite_e("Giving up.  Parser stack overflow\n");
+     spatialite_e( "Giving up.  Parser stack overflow\n");
    ParseARG_STORE; /* Suppress warning about unused %extra_argument var */
 }
 
@@ -713,34 +713,34 @@ static void yy_reduce(
   */
       case 5: /* kml_tree ::= node */
       case 6: /* kml_tree ::= node_chain */ yytestcase(yyruleno==6);
-{ *result = yymsp[0].minor.yy0; }
+{ p_data->result = yymsp[0].minor.yy0; }
         break;
       case 7: /* node ::= open_tag KML_END KML_CLOSE */
-{ yygotominor.yy0 = kml_createSelfClosedNode((void *)yymsp[-2].minor.yy0, NULL); }
+{ yygotominor.yy0 = kml_createSelfClosedNode( p_data, (void *)yymsp[-2].minor.yy0, NULL); }
         break;
       case 8: /* node ::= open_tag attr KML_END KML_CLOSE */
       case 9: /* node ::= open_tag attributes KML_END KML_CLOSE */ yytestcase(yyruleno==9);
-{ yygotominor.yy0 = kml_createSelfClosedNode((void *)yymsp[-3].minor.yy0, (void *)yymsp[-2].minor.yy0); }
+{ yygotominor.yy0 = kml_createSelfClosedNode( p_data, (void *)yymsp[-3].minor.yy0, (void *)yymsp[-2].minor.yy0); }
         break;
       case 10: /* node ::= open_tag KML_CLOSE */
-{ yygotominor.yy0 = kml_createNode((void *)yymsp[-1].minor.yy0, NULL, NULL); }
+{ yygotominor.yy0 = kml_createNode( p_data, (void *)yymsp[-1].minor.yy0, NULL, NULL); }
         break;
       case 11: /* node ::= open_tag attr KML_CLOSE */
       case 12: /* node ::= open_tag attributes KML_CLOSE */ yytestcase(yyruleno==12);
-{ yygotominor.yy0 = kml_createNode((void *)yymsp[-2].minor.yy0, (void *)yymsp[-1].minor.yy0, NULL); }
+{ yygotominor.yy0 = kml_createNode( p_data, (void *)yymsp[-2].minor.yy0, (void *)yymsp[-1].minor.yy0, NULL); }
         break;
       case 13: /* node ::= open_tag KML_CLOSE coord */
       case 14: /* node ::= open_tag KML_CLOSE coord_chain */ yytestcase(yyruleno==14);
-{ yygotominor.yy0 = kml_createNode((void *)yymsp[-2].minor.yy0, NULL, (void *)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = kml_createNode( p_data, (void *)yymsp[-2].minor.yy0, NULL, (void *)yymsp[0].minor.yy0); }
         break;
       case 15: /* node ::= open_tag attr KML_CLOSE coord */
       case 16: /* node ::= open_tag attr KML_CLOSE coord_chain */ yytestcase(yyruleno==16);
       case 17: /* node ::= open_tag attributes KML_CLOSE coord */ yytestcase(yyruleno==17);
       case 18: /* node ::= open_tag attributes KML_CLOSE coord_chain */ yytestcase(yyruleno==18);
-{ yygotominor.yy0 = kml_createNode((void *)yymsp[-3].minor.yy0, (void *)yymsp[-2].minor.yy0, (void *)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = kml_createNode( p_data, (void *)yymsp[-3].minor.yy0, (void *)yymsp[-2].minor.yy0, (void *)yymsp[0].minor.yy0); }
         break;
       case 19: /* node ::= close_tag */
-{ yygotominor.yy0 = kml_closingNode((void *)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = kml_closingNode( p_data, (void *)yymsp[0].minor.yy0); }
         break;
       case 20: /* open_tag ::= KML_OPEN keyword */
       case 22: /* keyword ::= KML_KEYWORD */ yytestcase(yyruleno==22);
@@ -765,7 +765,7 @@ static void yy_reduce(
 	}
         break;
       case 26: /* attr ::= KML_KEYWORD KML_EQ KML_VALUE */
-{ yygotominor.yy0 = kml_attribute((void *)yymsp[-2].minor.yy0, (void *)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = kml_attribute( p_data, (void *)yymsp[-2].minor.yy0, (void *)yymsp[0].minor.yy0); }
         break;
       case 28: /* extra_attr ::= attr extra_attr */
 { ((kmlAttrPtr)yymsp[-1].minor.yy0)->Next = (kmlAttrPtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
@@ -778,7 +778,7 @@ static void yy_reduce(
 	}
         break;
       case 30: /* coord ::= KML_COORD */
-{ yygotominor.yy0 = kml_coord((void *)yymsp[0].minor.yy0); }
+{ yygotominor.yy0 = kml_coord( p_data, (void *)yymsp[0].minor.yy0); }
         break;
       case 32: /* extra_coord ::= coord extra_coord */
 { ((kmlCoordPtr)yymsp[-1].minor.yy0)->Next = (kmlCoordPtr)yymsp[0].minor.yy0;  yygotominor.yy0 = yymsp[-1].minor.yy0; }
@@ -860,8 +860,8 @@ static void yy_syntax_error(
 ** when the LEMON parser encounters an error
 ** then this global variable is set 
 */
-	kml_parse_error = 1;
-	*result = NULL;
+	p_data->kml_parse_error = 1;
+	p_data->result = NULL;
   ParseARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
 

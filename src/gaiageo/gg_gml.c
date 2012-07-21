@@ -3183,7 +3183,7 @@ gaiaParseGml (const unsigned char *dirty_buffer, sqlite3 * sqlite_handle)
 	  return NULL;
       }
 
-    if (str_data.result == NULL)
+    if (str_data.result != NULL)
       {
 	  gmlCleanMapDynAlloc (&str_data, 0);
 	  return NULL;
