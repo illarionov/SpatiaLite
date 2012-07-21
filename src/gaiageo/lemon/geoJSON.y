@@ -45,7 +45,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 // Output to stderr when stack overflows
 %stack_overflow {
-     fprintf(stderr, "Giving up.  Parser stack overflow\n");
+     spatialite_e( "Giving up.  Parser stack overflow\n");
 }
 
 // Increase this number if necessary
@@ -56,7 +56,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 }
 
 // Set the return value of gaiaParseGeoJSON in the following pointer:
-%extra_argument { gaiaGeomCollPtr *result }
+%extra_argument { struct geoJson_data *p_data }
 
 // Invalid syntax (ie. no rules matched)
 %syntax_error {
@@ -64,8 +64,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 ** when the LEMON parser encounters an error
 ** then this global variable is set 
 */
-	geoJSON_parse_error = 1;
-	*result = NULL;
+	p_data->geoJson_parse_error = 1;
+	p_data->result = NULL;
 }
  
  /* This is to terminate with a new line */
@@ -83,74 +83,74 @@ the terms of any one of the MPL, the GPL or the LGPL.
 program ::= geo_text.
 
 // geometries (2D and 3D):
-geo_text ::= point(P). { *result = P; }				// P is a geometry collection containing a point
-geo_text ::= pointz(P). { *result = P; }			// P is a geometry collection containing a point
-geo_text ::= linestring(L). { *result = L; }		// L is a geometry collection containing a linestring
-geo_text ::= linestringz(L). { *result = L; }		// L is a geometry collection containing a linestring
-geo_text ::= polygon(P). { *result = P; }			// P is a geometry collection containing a polygon
-geo_text ::= polygonz(P). { *result = P; }			// P is a geometry collection containing a polygon
-geo_text ::= multipoint(M). { *result = M; }		// M is a geometry collection containing a multipoint
-geo_text ::= multipointz(M). { *result = M; }		// M is a geometry collection containing a multipoint
-geo_text ::= multilinestring(M). { *result = M; }	// M is a geometry collection containing a multilinestring
-geo_text ::= multilinestringz(M). { *result = M; }	// M is a geometry collection containing a multilinestring
-geo_text ::= multipolygon(M). { *result = M; }		// M is a geometry collection containing a multipolygon
-geo_text ::= multipolygonz(M). { *result = M; }		// M is a geometry collection containing a multipolygon
-geo_text ::= geocoll(H). { *result = H; }			// H is a geometry collection created from user input
-geo_text ::= geocollz(H). { *result = H; }			// H is a geometry collection created from user input
+geo_text ::= point(P). { p_data->result = P; }			// P is a geometry collection containing a point
+geo_text ::= pointz(P). { p_data->result = P; }			// P is a geometry collection containing a point
+geo_text ::= linestring(L). { p_data->result = L; }		// L is a geometry collection containing a linestring
+geo_text ::= linestringz(L). { p_data->result = L; }		// L is a geometry collection containing a linestring
+geo_text ::= polygon(P). { p_data->result = P; }		// P is a geometry collection containing a polygon
+geo_text ::= polygonz(P). { p_data->result = P; }		// P is a geometry collection containing a polygon
+geo_text ::= multipoint(M). { p_data->result = M; }		// M is a geometry collection containing a multipoint
+geo_text ::= multipointz(M). { p_data->result = M; }		// M is a geometry collection containing a multipoint
+geo_text ::= multilinestring(M). { p_data->result = M; }	// M is a geometry collection containing a multilinestring
+geo_text ::= multilinestringz(M). { p_data->result = M; }	// M is a geometry collection containing a multilinestring
+geo_text ::= multipolygon(M). { p_data->result = M; }		// M is a geometry collection containing a multipolygon
+geo_text ::= multipolygonz(M). { p_data->result = M; }		// M is a geometry collection containing a multipolygon
+geo_text ::= geocoll(H). { p_data->result = H; }		// H is a geometry collection created from user input
+geo_text ::= geocollz(H). { p_data->result = H; }		// H is a geometry collection created from user input
 
 
 // Syntax for a "point" object:
 // The functions called build a geometry collection from a gaiaPointPtr
 point(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA 
 	GEOJSON_COORDS GEOJSON_COLON point_coordxy(Q) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPoint((gaiaPointPtr)Q); } // Point (2D) [simple]
+	{ P = geoJSON_buildGeomFromPoint( p_data, (gaiaPointPtr)Q); } // Point (2D) [simple]
 point(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA 
 	GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON point_coordxy(Q) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPoint((gaiaPointPtr)Q); } // Point (2D) [with BBOX] 
+	{ P = geoJSON_buildGeomFromPoint( p_data, (gaiaPointPtr)Q); } // Point (2D) [with BBOX] 
 point(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON short_crs(S) GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON point_coordxy(Q) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPointSrid((gaiaPointPtr)Q, (int *)S); } // Point (2D) [with short SRS]
+	{ P = geoJSON_buildGeomFromPointSrid( p_data, (gaiaPointPtr)Q, (int *)S); } // Point (2D) [with short SRS]
 point(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON long_crs(S) GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON point_coordxy(Q) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPointSrid((gaiaPointPtr)Q, (int *)S); } // Point (2D) [with long SRS]
+	{ P = geoJSON_buildGeomFromPointSrid( p_data, (gaiaPointPtr)Q, (int *)S); } // Point (2D) [with long SRS]
 point(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON short_crs(S) GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON 
 	GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS 
 	GEOJSON_COLON point_coordxy(Q) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPointSrid((gaiaPointPtr)Q, (int *)S); } // Point (2D) [with BBOX & short SRS]
+	{ P = geoJSON_buildGeomFromPointSrid( p_data, (gaiaPointPtr)Q, (int *)S); } // Point (2D) [with BBOX & short SRS]
 point(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON long_crs(S) GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON 
 	GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS 
 	GEOJSON_COLON point_coordxy(Q) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPointSrid((gaiaPointPtr)Q, (int *)S); } // Point (2D) [with BBOX & long SRS]
+	{ P = geoJSON_buildGeomFromPointSrid( p_data, (gaiaPointPtr)Q, (int *)S); } // Point (2D) [with BBOX & long SRS]
 pointz(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA 
 	GEOJSON_COORDS GEOJSON_COLON point_coordxyz(Q) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPoint((gaiaPointPtr)Q); } // Point (3D) [simple]
+	{ P = geoJSON_buildGeomFromPoint( p_data, (gaiaPointPtr)Q); } // Point (3D) [simple]
 pointz(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA 
 	GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON point_coordxyz(Q) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPoint((gaiaPointPtr)Q); } // Point (3D) [with BBOX] 
+	{ P = geoJSON_buildGeomFromPoint( p_data, (gaiaPointPtr)Q); } // Point (3D) [with BBOX] 
 pointz(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON short_crs(S) GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON point_coordxyz(Q) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPointSrid((gaiaPointPtr)Q, (int *)S); } // Point (3D) [with short SRS] 
+	{ P = geoJSON_buildGeomFromPointSrid( p_data, (gaiaPointPtr)Q, (int *)S); } // Point (3D) [with short SRS] 
 pointz(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON long_crs(S) GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON point_coordxyz(Q) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPointSrid((gaiaPointPtr)Q, (int *)S); } // Point (3D) [with long SRS]
+	{ P = geoJSON_buildGeomFromPointSrid( p_data, (gaiaPointPtr)Q, (int *)S); } // Point (3D) [with long SRS]
 point(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON short_crs(S) GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON 
 	GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS 
 	GEOJSON_COLON point_coordxyz(Q) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPointSrid((gaiaPointPtr)Q, (int *)S); } // Point (3D) [with BBOX & short SRS]
+	{ P = geoJSON_buildGeomFromPointSrid( p_data, (gaiaPointPtr)Q, (int *)S); } // Point (3D) [with BBOX & short SRS]
 point(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON long_crs(S) GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON 
 	GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS 
 	GEOJSON_COLON point_coordxyz(Q) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPointSrid((gaiaPointPtr)Q, (int *)S); } // Point (3D) [with BBOX & long SRS] 
+	{ P = geoJSON_buildGeomFromPointSrid( p_data, (gaiaPointPtr)Q, (int *)S); } // Point (3D) [with BBOX & long SRS] 
 
 // GeoJSON Bounding Box
 bbox ::= coord GEOJSON_COMMA coord GEOJSON_COMMA coord GEOJSON_COMMA coord.
@@ -170,9 +170,9 @@ long_crs(A) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_NAME GEOJS
 // Point coordinates in different dimensions.
 // Create the point by calling the proper function in SpatiaLite :
 point_coordxy(P) ::= GEOJSON_OPEN_BRACKET coord(X) GEOJSON_COMMA coord(Y) GEOJSON_CLOSE_BRACKET. 
-	{ P = (void *) geoJSON_point_xy((double *)X, (double *)Y); }
+	{ P = (void *) geoJSON_point_xy( p_data, (double *)X, (double *)Y); }
 point_coordxyz(P) ::= GEOJSON_OPEN_BRACKET coord(X) GEOJSON_COMMA coord(Y) GEOJSON_COMMA coord(Z) GEOJSON_CLOSE_BRACKET. 
-	{ P = (void *) geoJSON_point_xyz((double *)X, (double *)Y, (double *)Z); }
+	{ P = (void *) geoJSON_point_xyz( p_data, (double *)X, (double *)Y, (double *)Z); }
 
 // All coordinates are assumed to be doubles (guaranteed by the flex tokenizer).
 coord(A) ::= GEOJSON_NUM(B). { A = B; }
@@ -199,54 +199,54 @@ extra_pointsxyz(A) ::= GEOJSON_COMMA point_coordxyz(P) extra_pointsxyz(B).
 // The functions called build a geometry collection from a gaiaLinestringPtr
 linestring(L) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA 
 	GEOJSON_COORDS GEOJSON_COLON linestring_text(X) GEOJSON_CLOSE_BRACE.
-	{ L = geoJSON_buildGeomFromLinestring((gaiaLinestringPtr)X); } // LineString (2D) [simple]
+	{ L = geoJSON_buildGeomFromLinestring( p_data, (gaiaLinestringPtr)X); } // LineString (2D) [simple]
 linestring(L) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA 
 	GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON linestring_text(X) GEOJSON_CLOSE_BRACE.
-	{ L = geoJSON_buildGeomFromLinestring((gaiaLinestringPtr)X); } // LineString (2D) [with BBOX] 
+	{ L = geoJSON_buildGeomFromLinestring( p_data, (gaiaLinestringPtr)X); } // LineString (2D) [with BBOX] 
 linestring(L) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON short_crs(S) GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON linestring_text(X) GEOJSON_CLOSE_BRACE.
-	{ L = geoJSON_buildGeomFromLinestringSrid((gaiaLinestringPtr)X, (int *)S); } // LineString (2D) [with short SRS]
+	{ L = geoJSON_buildGeomFromLinestringSrid( p_data, (gaiaLinestringPtr)X, (int *)S); } // LineString (2D) [with short SRS]
 linestring(L) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON long_crs(S) GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON linestring_text(X) GEOJSON_CLOSE_BRACE.
-	{ L = geoJSON_buildGeomFromLinestringSrid((gaiaLinestringPtr)X, (int *)S); } // LineString (2D) [with long SRS]
+	{ L = geoJSON_buildGeomFromLinestringSrid( p_data, (gaiaLinestringPtr)X, (int *)S); } // LineString (2D) [with long SRS]
 linestring(L) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON short_crs(S) GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON 
 	GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS 
 	GEOJSON_COLON linestring_text(X) GEOJSON_CLOSE_BRACE.
-	{ L = geoJSON_buildGeomFromLinestringSrid((gaiaLinestringPtr)X, (int *)S); } // LineString (2D) [with BBOX & short SRS]
+	{ L = geoJSON_buildGeomFromLinestringSrid( p_data, (gaiaLinestringPtr)X, (int *)S); } // LineString (2D) [with BBOX & short SRS]
 linestring(L) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON long_crs(S) GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON 
 	GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS 
 	GEOJSON_COLON linestring_text(X) GEOJSON_CLOSE_BRACE.
-	{ L = geoJSON_buildGeomFromLinestringSrid((gaiaLinestringPtr)X, (int *)S); } // LineString (2D) [with BBOX & long SRS]
+	{ L = geoJSON_buildGeomFromLinestringSrid( p_data, (gaiaLinestringPtr)X, (int *)S); } // LineString (2D) [with BBOX & long SRS]
 linestringz(L) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA 
 	GEOJSON_COORDS GEOJSON_COLON linestring_textz(X) GEOJSON_CLOSE_BRACE.
-	{ L = geoJSON_buildGeomFromLinestring((gaiaLinestringPtr)X); } // LineString (3D) [simple]
+	{ L = geoJSON_buildGeomFromLinestring( p_data, (gaiaLinestringPtr)X); } // LineString (3D) [simple]
 linestringz(L) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA 
 	GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON linestring_textz(X) GEOJSON_CLOSE_BRACE.
-	{ L = geoJSON_buildGeomFromLinestring((gaiaLinestringPtr)X); } // LineString (3D) [with BBOX] 
+	{ L = geoJSON_buildGeomFromLinestring( p_data, (gaiaLinestringPtr)X); } // LineString (3D) [with BBOX] 
 linestringz(L) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON short_crs(S) GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON linestring_textz(X) GEOJSON_CLOSE_BRACE.
-	{ L = geoJSON_buildGeomFromLinestringSrid((gaiaLinestringPtr)X, (int *)S); } // LineString (3D) [with short SRS] 
+	{ L = geoJSON_buildGeomFromLinestringSrid( p_data, (gaiaLinestringPtr)X, (int *)S); } // LineString (3D) [with short SRS] 
 linestringz(L) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON long_crs(S) GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON linestring_textz(X) GEOJSON_CLOSE_BRACE.
-	{ L = geoJSON_buildGeomFromLinestringSrid((gaiaLinestringPtr)X, (int *)S); } // LineString (3D) [with long SRS]
+	{ L = geoJSON_buildGeomFromLinestringSrid( p_data, (gaiaLinestringPtr)X, (int *)S); } // LineString (3D) [with long SRS]
 linestringz(L) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON short_crs(S) GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON 
 	GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS 
 	GEOJSON_COLON linestring_textz(X) GEOJSON_CLOSE_BRACE.
-	{ L = geoJSON_buildGeomFromLinestringSrid((gaiaLinestringPtr)X, (int *)S); } // LineString (3D) [with BBOX & short SRS]
+	{ L = geoJSON_buildGeomFromLinestringSrid( p_data, (gaiaLinestringPtr)X, (int *)S); } // LineString (3D) [with BBOX & short SRS]
 linestringz(L) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON long_crs(S) GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON 
 	GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS 
 	GEOJSON_COLON linestring_textz(X) GEOJSON_CLOSE_BRACE.
-	{ L = geoJSON_buildGeomFromLinestringSrid((gaiaLinestringPtr)X, (int *)S); } // LineString (3D) [with BBOX & long SRS] 
+	{ L = geoJSON_buildGeomFromLinestringSrid( p_data, (gaiaLinestringPtr)X, (int *)S); } // LineString (3D) [with BBOX & long SRS] 
 
 // A valid linestring must have at least two vertices:
 // The functions called build a gaiaLinestring from a linked list of points
@@ -254,14 +254,14 @@ linestring_text(L) ::= GEOJSON_OPEN_BRACKET point_coordxy(P) GEOJSON_COMMA point
 	{ 
 	   ((gaiaPointPtr)Q)->Next = (gaiaPointPtr)R; 
 	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q;
-	   L = (void *) geoJSON_linestring_xy((gaiaPointPtr)P);
+	   L = (void *) geoJSON_linestring_xy( p_data, (gaiaPointPtr)P);
 	}
 
 linestring_textz(L) ::= GEOJSON_OPEN_BRACKET point_coordxyz(P) GEOJSON_COMMA point_coordxyz(Q) extra_pointsxyz(R) GEOJSON_CLOSE_BRACKET.
 	{ 
 	   ((gaiaPointPtr)Q)->Next = (gaiaPointPtr)R; 
 	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q;
-	   L = (void *) geoJSON_linestring_xyz((gaiaPointPtr)P);
+	   L = (void *) geoJSON_linestring_xyz( p_data, (gaiaPointPtr)P);
 	}
 
 
@@ -269,67 +269,67 @@ linestring_textz(L) ::= GEOJSON_OPEN_BRACKET point_coordxyz(P) GEOJSON_COMMA poi
 // The functions called build a geometry collection from a gaiaPolygonPtr
 polygon(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA 
 	GEOJSON_COORDS GEOJSON_COLON polygon_text(X) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPolygon((gaiaPolygonPtr)X); } // Polygon (2D) [simple]
+	{ P = geoJSON_buildGeomFromPolygon( p_data, (gaiaPolygonPtr)X); } // Polygon (2D) [simple]
 polygon(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA 
 	GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON polygon_text(X) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPolygon((gaiaPolygonPtr)X); } // Polygon (2D) [with BBOX] 
+	{ P = geoJSON_buildGeomFromPolygon( p_data, (gaiaPolygonPtr)X); } // Polygon (2D) [with BBOX] 
 polygon(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON short_crs(S) GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON polygon_text(X) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPolygonSrid((gaiaPolygonPtr)X, (int *)S); } // Polygon (2D) [with short SRS]
+	{ P = geoJSON_buildGeomFromPolygonSrid( p_data, (gaiaPolygonPtr)X, (int *)S); } // Polygon (2D) [with short SRS]
 polygon(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON long_crs(S) GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON polygon_text(X) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPolygonSrid((gaiaPolygonPtr)X, (int *)S); } // Polygon (2D) [with long SRS]
+	{ P = geoJSON_buildGeomFromPolygonSrid( p_data, (gaiaPolygonPtr)X, (int *)S); } // Polygon (2D) [with long SRS]
 polygon(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON short_crs(S) GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON 
 	GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS 
 	GEOJSON_COLON polygon_text(X) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPolygonSrid((gaiaPolygonPtr)X, (int *)S); } // Polygon (2D) [with BBOX & short SRS]
+	{ P = geoJSON_buildGeomFromPolygonSrid( p_data, (gaiaPolygonPtr)X, (int *)S); } // Polygon (2D) [with BBOX & short SRS]
 polygon(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON long_crs(S) GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON 
 	GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS 
 	GEOJSON_COLON polygon_text(X) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPolygonSrid((gaiaPolygonPtr)X, (int *)S); } // Polygon (2D) [with BBOX & long SRS]
+	{ P = geoJSON_buildGeomFromPolygonSrid( p_data, (gaiaPolygonPtr)X, (int *)S); } // Polygon (2D) [with BBOX & long SRS]
 polygonz(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA 
 	GEOJSON_COORDS GEOJSON_COLON polygon_textz(X) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPolygon((gaiaPolygonPtr)X); } // Polygon (3D) [simple]
+	{ P = geoJSON_buildGeomFromPolygon( p_data, (gaiaPolygonPtr)X); } // Polygon (3D) [simple]
 polygonz(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA 
 	GEOJSON_BBOX GEOJSON_COLON GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON polygon_textz(X) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPolygon((gaiaPolygonPtr)X); } // Polygon (3D) [with BBOX] 
+	{ P = geoJSON_buildGeomFromPolygon( p_data, (gaiaPolygonPtr)X); } // Polygon (3D) [with BBOX] 
 polygonz(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON short_crs(S) GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON polygon_textz(X) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPolygonSrid((gaiaPolygonPtr)X, (int *)S); } // Polygon (3D) [with short SRS] 
+	{ P = geoJSON_buildGeomFromPolygonSrid( p_data, (gaiaPolygonPtr)X, (int *)S); } // Polygon (3D) [with short SRS] 
 polygonz(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON long_crs(S) GEOJSON_COMMA
 	GEOJSON_COORDS GEOJSON_COLON polygon_textz(X) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPolygonSrid((gaiaPolygonPtr)X, (int *)S); } // Polygon (3D) [with long SRS]
+	{ P = geoJSON_buildGeomFromPolygonSrid( p_data, (gaiaPolygonPtr)X, (int *)S); } // Polygon (3D) [with long SRS]
 polygonz(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON short_crs(S) GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON 
 	GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS 
 	GEOJSON_COLON polygon_textz(X) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPolygonSrid((gaiaPolygonPtr)X, (int *)S); } // Polygon (3D) [with BBOX & short SRS]
+	{ P = geoJSON_buildGeomFromPolygonSrid( p_data, (gaiaPolygonPtr)X, (int *)S); } // Polygon (3D) [with BBOX & short SRS]
 polygonz(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA 
 	GEOJSON_CRS GEOJSON_COLON long_crs(S) GEOJSON_COMMA GEOJSON_BBOX GEOJSON_COLON 
 	GEOJSON_OPEN_BRACKET bbox GEOJSON_CLOSE_BRACKET GEOJSON_COMMA GEOJSON_COORDS 
 	GEOJSON_COLON polygon_textz(X) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPolygonSrid((gaiaPolygonPtr)X, (int *)S); } // Polygon (3D) [with BBOX & long SRS] 
+	{ P = geoJSON_buildGeomFromPolygonSrid( p_data, (gaiaPolygonPtr)X, (int *)S); } // Polygon (3D) [with BBOX & long SRS] 
 
 // A valid polygon must have at least one ring:
 // The functions called build a gaiaPolygonPtr from a linked list of gaiaRingPtrs
 polygon_text(P) ::= GEOJSON_OPEN_BRACKET ring(R) extra_rings(E) GEOJSON_CLOSE_BRACKET.
 	{ 
 		((gaiaRingPtr)R)->Next = (gaiaRingPtr)E;
-		P = (void *) geoJSON_polygon_xy((gaiaRingPtr)R);
+		P = (void *) geoJSON_polygon_xy(p_data, (gaiaRingPtr)R);
 	}
 
 polygon_textz(P) ::= GEOJSON_OPEN_BRACKET ringz(R) extra_ringsz(E) GEOJSON_CLOSE_BRACKET.
 	{  
 		((gaiaRingPtr)R)->Next = (gaiaRingPtr)E;
-		P = (void *) geoJSON_polygon_xyz((gaiaRingPtr)R);
+		P = (void *) geoJSON_polygon_xyz(p_data, (gaiaRingPtr)R);
 	}
 
 // A valid ring must have at least 4 points
@@ -341,7 +341,7 @@ ring(R) ::= GEOJSON_OPEN_BRACKET point_coordxy(A) GEOJSON_COMMA point_coordxy(B)
 		((gaiaPointPtr)B)->Next = (gaiaPointPtr)C;
 		((gaiaPointPtr)C)->Next = (gaiaPointPtr)D; 
 		((gaiaPointPtr)D)->Next = (gaiaPointPtr)E;
-		R = (void *) geoJSON_ring_xy((gaiaPointPtr)A);
+		R = (void *) geoJSON_ring_xy(p_data, (gaiaPointPtr)A);
 	}
 
 // To match more than one 2D ring:
@@ -359,7 +359,7 @@ ringz(R) ::= GEOJSON_OPEN_BRACKET point_coordxyz(A) GEOJSON_COMMA point_coordxyz
 		((gaiaPointPtr)B)->Next = (gaiaPointPtr)C;
 		((gaiaPointPtr)C)->Next = (gaiaPointPtr)D; 
 		((gaiaPointPtr)D)->Next = (gaiaPointPtr)E;
-		R = (void *) geoJSON_ring_xyz((gaiaPointPtr)A);
+		R = (void *) geoJSON_ring_xyz(p_data, (gaiaPointPtr)A);
 	}
 
 // To match more than one 3D ring:
@@ -428,12 +428,12 @@ multipointz(M) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_MULTIPO
 multipoint_text(M) ::= GEOJSON_OPEN_BRACKET point_coordxy(P) extra_pointsxy(Q) GEOJSON_CLOSE_BRACKET.
 	{ 
 	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q; 
-	   M = (void *) geoJSON_multipoint_xy((gaiaPointPtr)P);
+	   M = (void *) geoJSON_multipoint_xy(p_data, (gaiaPointPtr)P);
 	}
 multipoint_textz(M) ::= GEOJSON_OPEN_BRACKET point_coordxyz(P) extra_pointsxyz(Q) GEOJSON_CLOSE_BRACKET.
 	{ 
 	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q; 
-	   M = (void *) geoJSON_multipoint_xyz((gaiaPointPtr)P);
+	   M = (void *) geoJSON_multipoint_xyz(p_data, (gaiaPointPtr)P);
 	}
 
 
@@ -495,7 +495,7 @@ multilinestringz(M) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_MU
 multilinestring_text(M) ::= GEOJSON_OPEN_BRACKET linestring_text(L) multilinestring_text2(X) GEOJSON_CLOSE_BRACKET.
 	{ 
 	   ((gaiaLinestringPtr)L)->Next = (gaiaLinestringPtr)X; 
-	   M = (void *) geoJSON_multilinestring_xy((gaiaLinestringPtr)L);
+	   M = (void *) geoJSON_multilinestring_xy( p_data, (gaiaLinestringPtr)L);
 	}
 
 // Extra linestrings
@@ -506,7 +506,7 @@ multilinestring_text2(X) ::= GEOJSON_COMMA linestring_text(L) multilinestring_te
 multilinestring_textz(M) ::= GEOJSON_OPEN_BRACKET linestring_textz(L) multilinestring_textz2(X) GEOJSON_CLOSE_BRACKET.
 	{ 
 	   ((gaiaLinestringPtr)L)->Next = (gaiaLinestringPtr)X; 
-	   M = (void *) geoJSON_multilinestring_xyz((gaiaLinestringPtr)L);
+	   M = (void *) geoJSON_multilinestring_xyz(p_data, (gaiaLinestringPtr)L);
 	}
 
 multilinestring_textz2(X) ::=  . { X = NULL; }
@@ -572,7 +572,7 @@ multipolygonz(M) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_MULTI
 multipolygon_text(M) ::= GEOJSON_OPEN_BRACKET polygon_text(P) multipolygon_text2(Q) GEOJSON_CLOSE_BRACKET.
 	{ 
 	   ((gaiaPolygonPtr)P)->Next = (gaiaPolygonPtr)Q; 
-	   M = (void *) geoJSON_multipolygon_xy((gaiaPolygonPtr)P);
+	   M = (void *) geoJSON_multipolygon_xy(p_data, (gaiaPolygonPtr)P);
 	}
 
 // Extra polygons
@@ -583,7 +583,7 @@ multipolygon_text2(A) ::= GEOJSON_COMMA polygon_text(P) multipolygon_text2(B).
 multipolygon_textz(M) ::= GEOJSON_OPEN_BRACKET polygon_textz(P) multipolygon_textz2(Q) GEOJSON_CLOSE_BRACKET.
 	{ 
 	   ((gaiaPolygonPtr)P)->Next = (gaiaPolygonPtr)Q; 
-	   M = (void *) geoJSON_multipolygon_xyz((gaiaPolygonPtr)P);
+	   M = (void *) geoJSON_multipolygon_xyz(p_data, (gaiaPolygonPtr)P);
 	}
 
 multipolygon_textz2(Q) ::=  . { Q = NULL; }
@@ -647,19 +647,19 @@ geocollz(G) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_GEOMETRYCO
 geocoll_text(G) ::= GEOJSON_OPEN_BRACKET coll_point(P) geocoll_text2(X) GEOJSON_CLOSE_BRACKET.
 	{ 
 		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) geoJSON_geomColl_xy((gaiaGeomCollPtr)P);
+		G = (void *) geoJSON_geomColl_xy(p_data, (gaiaGeomCollPtr)P);
 	}
 	
 geocoll_text(G) ::= GEOJSON_OPEN_BRACKET coll_linestring(L) geocoll_text2(X) GEOJSON_CLOSE_BRACKET.
 	{ 
 		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) geoJSON_geomColl_xy((gaiaGeomCollPtr)L);
+		G = (void *) geoJSON_geomColl_xy(p_data, (gaiaGeomCollPtr)L);
 	}
 	
 geocoll_text(G) ::= GEOJSON_OPEN_BRACKET coll_polygon(P) geocoll_text2(X) GEOJSON_CLOSE_BRACKET.
 	{ 
 		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) geoJSON_geomColl_xy((gaiaGeomCollPtr)P);
+		G = (void *) geoJSON_geomColl_xy(p_data, (gaiaGeomCollPtr)P);
 	}
 
 // Extra points, linestrings, or polygons
@@ -686,19 +686,19 @@ geocoll_text2(X) ::= GEOJSON_COMMA coll_polygon(P) geocoll_text2(Y).
 geocoll_textz(G) ::= GEOJSON_OPEN_BRACKET coll_pointz(P) geocoll_textz2(X) GEOJSON_CLOSE_BRACKET.
 	{ 
 		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) geoJSON_geomColl_xyz((gaiaGeomCollPtr)P);
+		G = (void *) geoJSON_geomColl_xyz(p_data, (gaiaGeomCollPtr)P);
 	}
 	
 geocoll_textz(G) ::= GEOJSON_OPEN_BRACKET coll_linestringz(L) geocoll_textz2(X) GEOJSON_CLOSE_BRACKET.
 	{ 
 		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) geoJSON_geomColl_xyz((gaiaGeomCollPtr)L);
+		G = (void *) geoJSON_geomColl_xyz(p_data, (gaiaGeomCollPtr)L);
 	}
 	
 geocoll_textz(G) ::= GEOJSON_OPEN_BRACKET coll_polygonz(P) geocoll_textz2(X) GEOJSON_CLOSE_BRACKET.
 	{ 
 		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) geoJSON_geomColl_xyz((gaiaGeomCollPtr)P);
+		G = (void *) geoJSON_geomColl_xyz(p_data, (gaiaGeomCollPtr)P);
 	}
 
 geocoll_textz2(X) ::=  . { X = NULL; }
@@ -722,24 +722,24 @@ geocoll_textz2(X) ::= GEOJSON_COMMA coll_polygonz(P) geocoll_textz2(Y).
 
 coll_point(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA 
 	GEOJSON_COORDS GEOJSON_COLON point_coordxy(Q) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPoint((gaiaPointPtr)Q); } 
+	{ P = geoJSON_buildGeomFromPoint(p_data, (gaiaPointPtr)Q); } 
 	
 coll_pointz(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POINT GEOJSON_COMMA 
 	GEOJSON_COORDS GEOJSON_COLON point_coordxyz(Q) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPoint((gaiaPointPtr)Q); }
+	{ P = geoJSON_buildGeomFromPoint(p_data, (gaiaPointPtr)Q); }
 	
 coll_linestring(L) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA 
 	GEOJSON_COORDS GEOJSON_COLON linestring_text(X) GEOJSON_CLOSE_BRACE.
-	{ L = geoJSON_buildGeomFromLinestring((gaiaLinestringPtr)X); }
+	{ L = geoJSON_buildGeomFromLinestring(p_data, (gaiaLinestringPtr)X); }
 	
 coll_linestringz(L) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_LINESTRING GEOJSON_COMMA 
 	GEOJSON_COORDS GEOJSON_COLON linestring_textz(X) GEOJSON_CLOSE_BRACE.
-	{ L = geoJSON_buildGeomFromLinestring((gaiaLinestringPtr)X); } 
+	{ L = geoJSON_buildGeomFromLinestring(p_data, (gaiaLinestringPtr)X); } 
 	
 coll_polygon(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA 
 	GEOJSON_COORDS GEOJSON_COLON polygon_text(X) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPolygon((gaiaPolygonPtr)X); }
+	{ P = geoJSON_buildGeomFromPolygon(p_data, (gaiaPolygonPtr)X); }
 	
 coll_polygonz(P) ::= GEOJSON_OPEN_BRACE GEOJSON_TYPE GEOJSON_COLON GEOJSON_POLYGON GEOJSON_COMMA 
 	GEOJSON_COORDS GEOJSON_COLON polygon_textz(X) GEOJSON_CLOSE_BRACE.
-	{ P = geoJSON_buildGeomFromPolygon((gaiaPolygonPtr)X); }
+	{ P = geoJSON_buildGeomFromPolygon(p_data, (gaiaPolygonPtr)X); }

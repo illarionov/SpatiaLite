@@ -71,8 +71,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #endif
 #endif
 
-int ewkt_parse_error;
-
 #define EWKT_DYN_NONE	0
 #define EWKT_DYN_POINT	1
 #define EWKT_DYN_LINESTRING	2

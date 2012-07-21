@@ -41,13 +41,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 */
 
 %option prefix="GeoJson"
-
-%{
-
-/* For debugging purposes */
-int geoJSON_line = 1, geoJSON_col = 1;
-
-%}
+%option reentrant
+%option extra-type="struct geoJson_data *"
 
 /**
 *  The main string-token matcher.
@@ -60,9 +55,9 @@ int geoJSON_line = 1, geoJSON_col = 1;
 *  of the two tokens, FLEX will match POINTM.
 */
 %%
--?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*      { geoJSON_col += (int) strlen(yytext);  GeoJsonLval.dval = atof(yytext); return GEOJSON_NUM; }
--?"\""EPSG:-?[0-9]+"\""					{ geoJSON_col += (int) strlen(yytext);  GeoJsonLval.ival = atoi(yytext+6); return GEOJSON_SHORT_SRID; }
--?"\""urn:ogc:def:crs:EPSG:-?[0-9]+"\""	{ geoJSON_col += (int) strlen(yytext);  GeoJsonLval.ival = atoi(yytext+22); return GEOJSON_LONG_SRID; }
+-?[0-9]+|-?[0-9]+"."[0-9]*|"+"?[0-9]+|"+"?[0-9]+"."[0-9]*      { GeoJsonget_extra(yyscanner)->geoJson_col += (int) strlen(yytext);  GeoJsonLval.dval = atof(yytext); return GEOJSON_NUM; }
+-?"\""EPSG:-?[0-9]+"\""					{ GeoJsonget_extra(yyscanner)->geoJson_col += (int) strlen(yytext);  GeoJsonLval.ival = atoi(yytext+6); return GEOJSON_SHORT_SRID; }
+-?"\""urn:ogc:def:crs:EPSG:-?[0-9]+"\""	{ GeoJsonget_extra(yyscanner)->geoJson_col += (int) strlen(yytext);  GeoJsonLval.ival = atoi(yytext+22); return GEOJSON_LONG_SRID; }
 ","										{ GeoJsonLval.dval = 0; return GEOJSON_COMMA; }
 ":"										{ GeoJsonLval.dval = 0; return GEOJSON_COLON; }
 "{"										{ GeoJsonLval.dval = 0; return GEOJSON_OPEN_BRACE; }
@@ -84,38 +79,14 @@ int geoJSON_line = 1, geoJSON_col = 1;
 (?-i:"\"MultiPolygon\"")				{ GeoJsonLval.dval = 0; return GEOJSON_MULTIPOLYGON; }
 (?-i:"\"GeometryCollection\"")			{ GeoJsonLval.dval = 0; return GEOJSON_GEOMETRYCOLLECTION; }
 
-[ \t]   { geoJSON_col += (int) strlen(yytext); }               /* ignore but count white space */
+[ \t]   { GeoJsonget_extra(yyscanner)->geoJson_col += (int) strlen(yytext); }               /* ignore but count white space */
 
-\n      { geoJSON_col = 0; ++geoJSON_line; }
+\n      { GeoJsonget_extra(yyscanner)->geoJson_col = 0; GeoJsonget_extra(yyscanner)->geoJson_line++; }
 
-.       { geoJSON_col += (int) strlen(yytext); return -1; }
+.       { GeoJsonget_extra(yyscanner)->geoJson_col += (int) strlen(yytext); return -1; }
 %%
-/**
- * reset the line and column count
- *
- *
- */
-void geoJSON_reset_lexer(void)
-{
 
-  geoJSON_line = 1;
-  geoJSON_col  = 1;
-
-}
-
-/**
- * GeoJsonError() is invoked when the lexer or the parser encounter
- * an error. The error message is passed via *s
- *
- *
- */
-void GeoJsonError(char *s)
-{
-  spatialite_e("error: %s at line: %d col: %d\n",s,geoJSON_line,geoJSON_col);
-
-}
-
-int yywrap(void)
+int yywrap(yyscan_t yyscanner )
 {
   return 1;
 }

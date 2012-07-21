@@ -55,8 +55,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include <spatialite/gaiageo.h>
 
-int geoJSON_parse_error;
-
 #define GEOJSON_DYN_NONE	0
 #define GEOJSON_DYN_POINT	1
 #define GEOJSON_DYN_LINESTRING	2
@@ -75,8 +73,16 @@ struct geoJson_dyn_block
     struct geoJson_dyn_block *next;
 };
 
-struct geoJson_dyn_block *geoJson_first_dyn_block;
-struct geoJson_dyn_block *geoJson_last_dyn_block;
+struct geoJson_data
+{
+/* a struct used to make the lexer-parser reentrant and thread-safe */
+    int geoJson_parse_error;
+    int geoJson_line;
+    int geoJson_col;
+    struct geoJson_dyn_block *geoJson_first_dyn_block;
+    struct geoJson_dyn_block *geoJson_last_dyn_block;
+    gaiaGeomCollPtr result;
+};
 
 static struct geoJson_dyn_block *
 geoJsonCreateDynBlock (void)
@@ -96,35 +102,37 @@ geoJsonCreateDynBlock (void)
 }
 
 static void
-geoJsonMapDynAlloc (int type, void *ptr)
+geoJsonMapDynAlloc (struct geoJson_data *p_data, int type, void *ptr)
 {
 /* appending a dynamic allocation into the map */
     struct geoJson_dyn_block *p;
-    if (geoJson_first_dyn_block == NULL)
+    if (p_data->geoJson_first_dyn_block == NULL)
       {
 	  /* inserting the first block of the map */
 	  p = geoJsonCreateDynBlock ();
-	  geoJson_first_dyn_block = p;
-	  geoJson_last_dyn_block = p;
+	  p_data->geoJson_first_dyn_block = p;
+	  p_data->geoJson_last_dyn_block = p;
       }
-    if (geoJson_last_dyn_block->index >= GEOJSON_DYN_BLOCK)
+    if (p_data->geoJson_last_dyn_block->index >= GEOJSON_DYN_BLOCK)
       {
 	  /* adding a further block to the map */
 	  p = geoJsonCreateDynBlock ();
-	  geoJson_last_dyn_block->next = p;
-	  geoJson_last_dyn_block = p;
+	  p_data->geoJson_last_dyn_block->next = p;
+	  p_data->geoJson_last_dyn_block = p;
       }
-    geoJson_last_dyn_block->type[geoJson_last_dyn_block->index] = type;
-    geoJson_last_dyn_block->ptr[geoJson_last_dyn_block->index] = ptr;
-    geoJson_last_dyn_block->index++;
+    p_data->geoJson_last_dyn_block->type[p_data->geoJson_last_dyn_block->
+					 index] = type;
+    p_data->geoJson_last_dyn_block->ptr[p_data->geoJson_last_dyn_block->index] =
+	ptr;
+    p_data->geoJson_last_dyn_block->index++;
 }
 
 static void
-geoJsonMapDynClean (void *ptr)
+geoJsonMapDynClean (struct geoJson_data *p_data, void *ptr)
 {
 /* deleting a dynamic allocation from the map */
     int i;
-    struct geoJson_dyn_block *p = geoJson_first_dyn_block;
+    struct geoJson_dyn_block *p = p_data->geoJson_first_dyn_block;
     while (p)
       {
 	  for (i = 0; i < GEOJSON_DYN_BLOCK; i++)
@@ -149,12 +157,12 @@ geoJsonMapDynClean (void *ptr)
 }
 
 static void
-geoJsonCleanMapDynAlloc (int clean_all)
+geoJsonCleanMapDynAlloc (struct geoJson_data *p_data, int clean_all)
 {
 /* cleaning the dynamic allocations map */
     int i;
     struct geoJson_dyn_block *pn;
-    struct geoJson_dyn_block *p = geoJson_first_dyn_block;
+    struct geoJson_dyn_block *p = p_data->geoJson_first_dyn_block;
     while (p)
       {
 	  if (clean_all)
@@ -248,37 +256,40 @@ geoJSON_setSrid (gaiaGeomCollPtr geom, int *srid)
 }
 
 static gaiaGeomCollPtr
-gaiaGeoJsonGeometryFromPoint (gaiaPointPtr point, int srid)
+gaiaGeoJsonGeometryFromPoint (struct geoJson_data *p_data, gaiaPointPtr point,
+			      int srid)
 {
 /* builds a GEOMETRY containing a POINT */
     gaiaGeomCollPtr geom = NULL;
     geom = gaiaAllocGeomColl ();
-    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_POINT;
     geom->Srid = srid;
     gaiaAddPointToGeomColl (geom, point->X, point->Y);
-    geoJsonMapDynClean (point);
+    geoJsonMapDynClean (p_data, point);
     gaiaFreePoint (point);
     return geom;
 }
 
 static gaiaGeomCollPtr
-gaiaGeoJsonGeometryFromPointZ (gaiaPointPtr point, int srid)
+gaiaGeoJsonGeometryFromPointZ (struct geoJson_data *p_data, gaiaPointPtr point,
+			       int srid)
 {
 /* builds a GEOMETRY containing a POINTZ */
     gaiaGeomCollPtr geom = NULL;
     geom = gaiaAllocGeomCollXYZ ();
-    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_POINTZ;
     geom->Srid = srid;
     gaiaAddPointToGeomCollXYZ (geom, point->X, point->Y, point->Z);
-    geoJsonMapDynClean (point);
+    geoJsonMapDynClean (p_data, point);
     gaiaFreePoint (point);
     return geom;
 }
 
 static gaiaGeomCollPtr
-gaiaGeoJsonGeometryFromLinestring (gaiaLinestringPtr line, int srid)
+gaiaGeoJsonGeometryFromLinestring (struct geoJson_data *p_data,
+				   gaiaLinestringPtr line, int srid)
 {
 /* builds a GEOMETRY containing a LINESTRING */
     gaiaGeomCollPtr geom = NULL;
@@ -287,7 +298,7 @@ gaiaGeoJsonGeometryFromLinestring (gaiaLinestringPtr line, int srid)
     double x;
     double y;
     geom = gaiaAllocGeomColl ();
-    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_LINESTRING;
     geom->Srid = srid;
     line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
@@ -297,13 +308,14 @@ gaiaGeoJsonGeometryFromLinestring (gaiaLinestringPtr line, int srid)
 	  gaiaGetPoint (line->Coords, iv, &x, &y);
 	  gaiaSetPoint (line2->Coords, iv, x, y);
       }
-    geoJsonMapDynClean (line);
+    geoJsonMapDynClean (p_data, line);
     gaiaFreeLinestring (line);
     return geom;
 }
 
 static gaiaGeomCollPtr
-gaiaGeoJsonGeometryFromLinestringZ (gaiaLinestringPtr line, int srid)
+gaiaGeoJsonGeometryFromLinestringZ (struct geoJson_data *p_data,
+				    gaiaLinestringPtr line, int srid)
 {
 /* builds a GEOMETRY containing a LINESTRINGZ */
     gaiaGeomCollPtr geom = NULL;
@@ -313,7 +325,7 @@ gaiaGeoJsonGeometryFromLinestringZ (gaiaLinestringPtr line, int srid)
     double y;
     double z;
     geom = gaiaAllocGeomCollXYZ ();
-    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_LINESTRING;
     geom->Srid = srid;
     line2 = gaiaAddLinestringToGeomColl (geom, line->Points);
@@ -323,16 +335,16 @@ gaiaGeoJsonGeometryFromLinestringZ (gaiaLinestringPtr line, int srid)
 	  gaiaGetPointXYZ (line->Coords, iv, &x, &y, &z);
 	  gaiaSetPointXYZ (line2->Coords, iv, x, y, z);
       }
-    geoJsonMapDynClean (line);
+    geoJsonMapDynClean (p_data, line);
     gaiaFreeLinestring (line);
     return geom;
 }
 
 static gaiaPointPtr
-geoJSON_point_xy (double *x, double *y)
+geoJSON_point_xy (struct geoJson_data *p_data, double *x, double *y)
 {
     gaiaPointPtr pt = gaiaAllocPoint (*x, *y);
-    geoJsonMapDynAlloc (GEOJSON_DYN_POINT, pt);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_POINT, pt);
     return pt;
 }
 
@@ -346,10 +358,10 @@ geoJSON_point_xy (double *x, double *y)
  * Returns a gaiaPointPtr pointing to the 3D created point.
  */
 static gaiaPointPtr
-geoJSON_point_xyz (double *x, double *y, double *z)
+geoJSON_point_xyz (struct geoJson_data *p_data, double *x, double *y, double *z)
 {
     gaiaPointPtr pt = gaiaAllocPointXYZ (*x, *y, *z);
-    geoJsonMapDynAlloc (GEOJSON_DYN_POINT, pt);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_POINT, pt);
     return pt;
 }
 
@@ -362,27 +374,28 @@ geoJSON_point_xyz (double *x, double *y, double *z)
  * same place as point.  *DimensionModel must be the same as the model of the point and DimensionType must be GAIA_TYPE_POINT.
  */
 static gaiaGeomCollPtr
-geoJSON_buildGeomFromPoint (gaiaPointPtr point)
+geoJSON_buildGeomFromPoint (struct geoJson_data *p_data, gaiaPointPtr point)
 {
     switch (point->DimensionModel)
       {
       case GAIA_XY:
-	  return gaiaGeoJsonGeometryFromPoint (point, -1);
+	  return gaiaGeoJsonGeometryFromPoint (p_data, point, -1);
       case GAIA_XY_Z:
-	  return gaiaGeoJsonGeometryFromPointZ (point, -1);
+	  return gaiaGeoJsonGeometryFromPointZ (p_data, point, -1);
       }
     return NULL;
 }
 
 static gaiaGeomCollPtr
-geoJSON_buildGeomFromPointSrid (gaiaPointPtr point, int *srid)
+geoJSON_buildGeomFromPointSrid (struct geoJson_data *p_data, gaiaPointPtr point,
+				int *srid)
 {
     switch (point->DimensionModel)
       {
       case GAIA_XY:
-	  return gaiaGeoJsonGeometryFromPoint (point, *srid);
+	  return gaiaGeoJsonGeometryFromPoint (p_data, point, *srid);
       case GAIA_XY_Z:
-	  return gaiaGeoJsonGeometryFromPointZ (point, *srid);
+	  return gaiaGeoJsonGeometryFromPointZ (p_data, point, *srid);
       }
     return NULL;
 }
@@ -397,7 +410,7 @@ geoJSON_buildGeomFromPointSrid (gaiaPointPtr point, int *srid)
  * Returns a pointer to linestring containing all of the points in the list.
  */
 static gaiaLinestringPtr
-geoJSON_linestring_xy (gaiaPointPtr first)
+geoJSON_linestring_xy (struct geoJson_data *p_data, gaiaPointPtr first)
 {
     gaiaPointPtr p = first;
     gaiaPointPtr p_n;
@@ -412,14 +425,14 @@ geoJSON_linestring_xy (gaiaPointPtr first)
       }
 
     linestring = gaiaAllocLinestring (points);
-    geoJsonMapDynAlloc (GEOJSON_DYN_LINESTRING, linestring);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_LINESTRING, linestring);
 
     p = first;
     while (p != NULL)
       {
 	  gaiaSetPoint (linestring->Coords, i, p->X, p->Y);
 	  p_n = p->Next;
-	  geoJsonMapDynClean (p);
+	  geoJsonMapDynClean (p_data, p);
 	  gaiaFreePoint (p);
 	  p = p_n;
 	  i++;
@@ -437,7 +450,7 @@ geoJSON_linestring_xy (gaiaPointPtr first)
  * Returns a pointer to linestring containing all of the points in the list.
  */
 static gaiaLinestringPtr
-geoJSON_linestring_xyz (gaiaPointPtr first)
+geoJSON_linestring_xyz (struct geoJson_data *p_data, gaiaPointPtr first)
 {
     gaiaPointPtr p = first;
     gaiaPointPtr p_n;
@@ -452,14 +465,14 @@ geoJSON_linestring_xyz (gaiaPointPtr first)
       }
 
     linestring = gaiaAllocLinestringXYZ (points);
-    geoJsonMapDynAlloc (GEOJSON_DYN_LINESTRING, linestring);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_LINESTRING, linestring);
 
     p = first;
     while (p != NULL)
       {
 	  gaiaSetPointXYZ (linestring->Coords, i, p->X, p->Y, p->Z);
 	  p_n = p->Next;
-	  geoJsonMapDynClean (p);
+	  geoJsonMapDynClean (p_data, p);
 	  gaiaFreePoint (p);
 	  p = p_n;
 	  i++;
@@ -472,27 +485,29 @@ geoJSON_linestring_xyz (gaiaPointPtr first)
  * Builds a geometry collection from a linestring.
  */
 static gaiaGeomCollPtr
-geoJSON_buildGeomFromLinestring (gaiaLinestringPtr line)
+geoJSON_buildGeomFromLinestring (struct geoJson_data *p_data,
+				 gaiaLinestringPtr line)
 {
     switch (line->DimensionModel)
       {
       case GAIA_XY:
-	  return gaiaGeoJsonGeometryFromLinestring (line, -1);
+	  return gaiaGeoJsonGeometryFromLinestring (p_data, line, -1);
       case GAIA_XY_Z:
-	  return gaiaGeoJsonGeometryFromLinestringZ (line, -1);
+	  return gaiaGeoJsonGeometryFromLinestringZ (p_data, line, -1);
       }
     return NULL;
 }
 
 static gaiaGeomCollPtr
-geoJSON_buildGeomFromLinestringSrid (gaiaLinestringPtr line, int *srid)
+geoJSON_buildGeomFromLinestringSrid (struct geoJson_data *p_data,
+				     gaiaLinestringPtr line, int *srid)
 {
     switch (line->DimensionModel)
       {
       case GAIA_XY:
-	  return gaiaGeoJsonGeometryFromLinestring (line, *srid);
+	  return gaiaGeoJsonGeometryFromLinestring (p_data, line, *srid);
       case GAIA_XY_Z:
-	  return gaiaGeoJsonGeometryFromLinestringZ (line, *srid);
+	  return gaiaGeoJsonGeometryFromLinestringZ (p_data, line, *srid);
       }
     return NULL;
 }
@@ -523,7 +538,7 @@ geoJSON_count_points (gaiaPointPtr first)
  * Returns the ring defined by the points given to the function.
  */
 static gaiaRingPtr
-geoJSON_ring_xy (gaiaPointPtr first)
+geoJSON_ring_xy (struct geoJson_data *p_data, gaiaPointPtr first)
 {
     gaiaPointPtr p = first;
     gaiaPointPtr p_n;
@@ -544,7 +559,7 @@ geoJSON_ring_xy (gaiaPointPtr first)
     ring = gaiaAllocRing (numpoints);
     if (ring == NULL)
 	return NULL;
-    geoJsonMapDynAlloc (GEOJSON_DYN_RING, ring);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_RING, ring);
 
     /* Adds every point into the ring structure. */
     p = first;
@@ -552,7 +567,7 @@ geoJSON_ring_xy (gaiaPointPtr first)
       {
 	  gaiaSetPoint (ring->Coords, index, p->X, p->Y);
 	  p_n = p->Next;
-	  geoJsonMapDynClean (p);
+	  geoJsonMapDynClean (p_data, p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -569,7 +584,7 @@ geoJSON_ring_xy (gaiaPointPtr first)
  * Returns the ring defined by the points given to the function.
  */
 static gaiaRingPtr
-geoJSON_ring_xyz (gaiaPointPtr first)
+geoJSON_ring_xyz (struct geoJson_data *p_data, gaiaPointPtr first)
 {
     gaiaPointPtr p = first;
     gaiaPointPtr p_n;
@@ -590,7 +605,7 @@ geoJSON_ring_xyz (gaiaPointPtr first)
     ring = gaiaAllocRingXYZ (numpoints);
     if (ring == NULL)
 	return NULL;
-    geoJsonMapDynAlloc (GEOJSON_DYN_RING, ring);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_RING, ring);
 
     /* Adds every point into the ring structure. */
     p = first;
@@ -598,7 +613,7 @@ geoJSON_ring_xyz (gaiaPointPtr first)
       {
 	  gaiaSetPointXYZ (ring->Coords, index, p->X, p->Y, p->Z);
 	  p_n = p->Next;
-	  geoJsonMapDynClean (p);
+	  geoJsonMapDynClean (p_data, p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -616,7 +631,7 @@ geoJSON_ring_xyz (gaiaPointPtr first)
  * Returns the polygon defined by the rings given to the function.
  */
 static gaiaPolygonPtr
-geoJSON_polygon_any_type (gaiaRingPtr first)
+geoJSON_polygon_any_type (struct geoJson_data *p_data, gaiaRingPtr first)
 {
     gaiaRingPtr p;
     gaiaRingPtr p_n;
@@ -629,14 +644,14 @@ geoJSON_polygon_any_type (gaiaRingPtr first)
     polygon = gaiaCreatePolygon (first);
     if (polygon == NULL)
 	return NULL;
-    geoJsonMapDynAlloc (GEOJSON_DYN_POLYGON, polygon);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_POLYGON, polygon);
 
     /* Adds all interior rings into the polygon structure. */
     p = first;
     while (p != NULL)
       {
 	  p_n = p->Next;
-	  geoJsonMapDynClean (p);
+	  geoJsonMapDynClean (p_data, p);
 	  if (p == first)
 	      gaiaFreeRing (p);
 	  else
@@ -657,9 +672,9 @@ geoJSON_polygon_any_type (gaiaRingPtr first)
  * Returns the polygon defined by the rings given to the function.
  */
 static gaiaPolygonPtr
-geoJSON_polygon_xy (gaiaRingPtr first)
+geoJSON_polygon_xy (struct geoJson_data *p_data, gaiaRingPtr first)
 {
-    return geoJSON_polygon_any_type (first);
+    return geoJSON_polygon_any_type (p_data, first);
 }
 
 /* 
@@ -672,9 +687,9 @@ geoJSON_polygon_xy (gaiaRingPtr first)
  * Returns the polygon defined by the rings given to the function.
  */
 static gaiaPolygonPtr
-geoJSON_polygon_xyz (gaiaRingPtr first)
+geoJSON_polygon_xyz (struct geoJson_data *p_data, gaiaRingPtr first)
 {
-    return geoJSON_polygon_any_type (first);
+    return geoJSON_polygon_any_type (p_data, first);
 }
 
 /*
@@ -684,7 +699,8 @@ geoJSON_polygon_xyz (gaiaRingPtr first)
  *              that we can use an existing function then ignore this one.
  */
 static gaiaGeomCollPtr
-geoJSON_buildGeomFromPolygon (gaiaPolygonPtr polygon)
+geoJSON_buildGeomFromPolygon (struct geoJson_data *p_data,
+			      gaiaPolygonPtr polygon)
 {
     gaiaGeomCollPtr geom = NULL;
 
@@ -708,14 +724,14 @@ geoJSON_buildGeomFromPolygon (gaiaPolygonPtr polygon)
       {
 	  return NULL;
       }
-    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_POLYGON;
 
     /* Stores the location of the first and last polygons in the linked list. */
     geom->FirstPolygon = polygon;
     while (polygon != NULL)
       {
-	  geoJsonMapDynClean (polygon);
+	  geoJsonMapDynClean (p_data, polygon);
 	  geom->LastPolygon = polygon;
 	  polygon = polygon->Next;
       }
@@ -723,7 +739,8 @@ geoJSON_buildGeomFromPolygon (gaiaPolygonPtr polygon)
 }
 
 static gaiaGeomCollPtr
-geoJSON_buildGeomFromPolygonSrid (gaiaPolygonPtr polygon, int *srid)
+geoJSON_buildGeomFromPolygonSrid (struct geoJson_data *p_data,
+				  gaiaPolygonPtr polygon, int *srid)
 {
     gaiaGeomCollPtr geom = NULL;
 
@@ -747,7 +764,7 @@ geoJSON_buildGeomFromPolygonSrid (gaiaPolygonPtr polygon, int *srid)
       {
 	  return NULL;
       }
-    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_POLYGON;
     geom->Srid = *srid;
 
@@ -755,7 +772,7 @@ geoJSON_buildGeomFromPolygonSrid (gaiaPolygonPtr polygon, int *srid)
     geom->FirstPolygon = polygon;
     while (polygon != NULL)
       {
-	  geoJsonMapDynClean (polygon);
+	  geoJsonMapDynClean (p_data, polygon);
 	  geom->LastPolygon = polygon;
 	  polygon = polygon->Next;
       }
@@ -771,7 +788,7 @@ geoJSON_buildGeomFromPolygonSrid (gaiaPolygonPtr polygon, int *srid)
  * Returns a geometry collection containing the created multipoint object.
  */
 static gaiaGeomCollPtr
-geoJSON_multipoint_xy (gaiaPointPtr first)
+geoJSON_multipoint_xy (struct geoJson_data *p_data, gaiaPointPtr first)
 {
     gaiaPointPtr p = first;
     gaiaPointPtr p_n;
@@ -785,7 +802,7 @@ geoJSON_multipoint_xy (gaiaPointPtr first)
     geom = gaiaAllocGeomColl ();
     if (geom == NULL)
 	return NULL;
-    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_MULTIPOINT;
 
     /* For every 2D (xy) point, add it to the geometry collection. */
@@ -793,7 +810,7 @@ geoJSON_multipoint_xy (gaiaPointPtr first)
       {
 	  gaiaAddPointToGeomColl (geom, p->X, p->Y);
 	  p_n = p->Next;
-	  geoJsonMapDynClean (p);
+	  geoJsonMapDynClean (p_data, p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -809,7 +826,7 @@ geoJSON_multipoint_xy (gaiaPointPtr first)
  * Returns a geometry collection containing the created multipoint object.
  */
 static gaiaGeomCollPtr
-geoJSON_multipoint_xyz (gaiaPointPtr first)
+geoJSON_multipoint_xyz (struct geoJson_data *p_data, gaiaPointPtr first)
 {
     gaiaPointPtr p = first;
     gaiaPointPtr p_n;
@@ -823,7 +840,7 @@ geoJSON_multipoint_xyz (gaiaPointPtr first)
     geom = gaiaAllocGeomCollXYZ ();
     if (geom == NULL)
 	return NULL;
-    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_MULTIPOINT;
 
     /* For every 3D (xyz) point, add it to the geometry collection. */
@@ -831,7 +848,7 @@ geoJSON_multipoint_xyz (gaiaPointPtr first)
       {
 	  gaiaAddPointToGeomCollXYZ (geom, p->X, p->Y, p->Z);
 	  p_n = p->Next;
-	  geoJsonMapDynClean (p);
+	  geoJsonMapDynClean (p_data, p);
 	  gaiaFreePoint (p);
 	  p = p_n;
       }
@@ -848,13 +865,14 @@ geoJSON_multipoint_xyz (gaiaPointPtr first)
  */
 
 static gaiaGeomCollPtr
-geoJSON_multilinestring_xy (gaiaLinestringPtr first)
+geoJSON_multilinestring_xy (struct geoJson_data *p_data,
+			    gaiaLinestringPtr first)
 {
     gaiaLinestringPtr p = first;
     gaiaLinestringPtr p_n;
     gaiaLinestringPtr new_line;
     gaiaGeomCollPtr a = gaiaAllocGeomColl ();
-    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, a);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_GEOMETRY, a);
     a->DeclaredType = GAIA_MULTILINESTRING;
     a->DimensionModel = GAIA_XY;
 
@@ -863,7 +881,7 @@ geoJSON_multilinestring_xy (gaiaLinestringPtr first)
 	  new_line = gaiaAddLinestringToGeomColl (a, p->Points);
 	  gaiaCopyLinestringCoords (new_line, p);
 	  p_n = p->Next;
-	  geoJsonMapDynClean (p);
+	  geoJsonMapDynClean (p_data, p);
 	  gaiaFreeLinestring (p);
 	  p = p_n;
       }
@@ -881,13 +899,14 @@ geoJSON_multilinestring_xy (gaiaLinestringPtr first)
  * must be GAIA_XYZ and DimensionType must be *GAIA_TYPE_LINESTRING.
  */
 static gaiaGeomCollPtr
-geoJSON_multilinestring_xyz (gaiaLinestringPtr first)
+geoJSON_multilinestring_xyz (struct geoJson_data *p_data,
+			     gaiaLinestringPtr first)
 {
     gaiaLinestringPtr p = first;
     gaiaLinestringPtr p_n;
     gaiaLinestringPtr new_line;
     gaiaGeomCollPtr a = gaiaAllocGeomCollXYZ ();
-    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, a);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_GEOMETRY, a);
     a->DeclaredType = GAIA_MULTILINESTRING;
     a->DimensionModel = GAIA_XY_Z;
 
@@ -896,7 +915,7 @@ geoJSON_multilinestring_xyz (gaiaLinestringPtr first)
 	  new_line = gaiaAddLinestringToGeomColl (a, p->Points);
 	  gaiaCopyLinestringCoords (new_line, p);
 	  p_n = p->Next;
-	  geoJsonMapDynClean (p);
+	  geoJsonMapDynClean (p_data, p);
 	  gaiaFreeLinestring (p);
 	  p = p_n;
       }
@@ -917,7 +936,7 @@ geoJSON_multilinestring_xyz (gaiaLinestringPtr first)
  *
  */
 static gaiaGeomCollPtr
-geoJSON_multipolygon_xy (gaiaPolygonPtr first)
+geoJSON_multipolygon_xy (struct geoJson_data *p_data, gaiaPolygonPtr first)
 {
     gaiaPolygonPtr p = first;
     gaiaPolygonPtr p_n;
@@ -926,7 +945,7 @@ geoJSON_multipolygon_xy (gaiaPolygonPtr first)
     gaiaRingPtr i_ring;
     gaiaRingPtr o_ring;
     gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
-    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_GEOMETRY, geom);
 
     geom->DeclaredType = GAIA_MULTIPOLYGON;
 
@@ -946,7 +965,7 @@ geoJSON_multipolygon_xy (gaiaPolygonPtr first)
 	    }
 
 	  p_n = p->Next;
-	  geoJsonMapDynClean (p);
+	  geoJsonMapDynClean (p_data, p);
 	  gaiaFreePolygon (p);
 	  p = p_n;
       }
@@ -968,7 +987,7 @@ geoJSON_multipolygon_xy (gaiaPolygonPtr first)
  *
  */
 static gaiaGeomCollPtr
-geoJSON_multipolygon_xyz (gaiaPolygonPtr first)
+geoJSON_multipolygon_xyz (struct geoJson_data *p_data, gaiaPolygonPtr first)
 {
     gaiaPolygonPtr p = first;
     gaiaPolygonPtr p_n;
@@ -977,7 +996,7 @@ geoJSON_multipolygon_xyz (gaiaPolygonPtr first)
     gaiaRingPtr i_ring;
     gaiaRingPtr o_ring;
     gaiaGeomCollPtr geom = gaiaAllocGeomCollXYZ ();
-    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_GEOMETRY, geom);
 
     geom->DeclaredType = GAIA_MULTIPOLYGON;
 
@@ -997,7 +1016,7 @@ geoJSON_multipolygon_xyz (gaiaPolygonPtr first)
 	    }
 
 	  p_n = p->Next;
-	  geoJsonMapDynClean (p);
+	  geoJsonMapDynClean (p_data, p);
 	  gaiaFreePolygon (p);
 	  p = p_n;
       }
@@ -1006,7 +1025,8 @@ geoJSON_multipolygon_xyz (gaiaPolygonPtr first)
 }
 
 static void
-geoJSON_geomColl_common (gaiaGeomCollPtr org, gaiaGeomCollPtr dst)
+geoJSON_geomColl_common (struct geoJson_data *p_data, gaiaGeomCollPtr org,
+			 gaiaGeomCollPtr dst)
 {
 /* 
 / helper function: xfers entities between the Origin and Destination 
@@ -1065,7 +1085,7 @@ geoJSON_geomColl_common (gaiaGeomCollPtr org, gaiaGeomCollPtr dst)
 	  p->LastLinestring = NULL;
 	  p->FirstPolygon = NULL;
 	  p->LastPolygon = NULL;
-	  geoJsonMapDynClean (p);
+	  geoJsonMapDynClean (p_data, p);
 	  gaiaFreeGeomColl (p);
 	  p = p_n;
       }
@@ -1094,15 +1114,15 @@ geoJSON_geomColl_common (gaiaGeomCollPtr org, gaiaGeomCollPtr dst)
  *	GAIA_MULTIPOINT, GAIA_MULTILINESTRING, GAIA_MULTIPOLYGON
  */
 static gaiaGeomCollPtr
-geoJSON_geomColl_xy (gaiaGeomCollPtr first)
+geoJSON_geomColl_xy (struct geoJson_data *p_data, gaiaGeomCollPtr first)
 {
     gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
     if (geom == NULL)
 	return NULL;
-    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     geom->DimensionModel = GAIA_XY;
-    geoJSON_geomColl_common (first, geom);
+    geoJSON_geomColl_common (p_data, first, geom);
     return geom;
 }
 
@@ -1116,15 +1136,15 @@ geoJSON_geomColl_xy (gaiaGeomCollPtr first)
  * 	GAIA_MULTIPOINTZ, GAIA_MULTILINESTRINGZ, GAIA_MULTIPOLYGONZ
  */
 static gaiaGeomCollPtr
-geoJSON_geomColl_xyz (gaiaGeomCollPtr first)
+geoJSON_geomColl_xyz (struct geoJson_data *p_data, gaiaGeomCollPtr first)
 {
     gaiaGeomCollPtr geom = gaiaAllocGeomColl ();
     if (geom == NULL)
 	return NULL;
-    geoJsonMapDynAlloc (GEOJSON_DYN_GEOMETRY, geom);
+    geoJsonMapDynAlloc (p_data, GEOJSON_DYN_GEOMETRY, geom);
     geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     geom->DimensionModel = GAIA_XY_Z;
-    geoJSON_geomColl_common (first, geom);
+    geoJSON_geomColl_common (p_data, first, geom);
     return geom;
 }
 
@@ -1186,6 +1206,9 @@ geoJSON_geomColl_xyz (gaiaGeomCollPtr first)
 #define yyTokenName		geoJSON_yyTokenName
 #define yyRuleName		geoJSON_yyRuleName
 #define ParseTrace		geoJSON_ParseTrace
+
+#define yylex			geoJSON_yylex
+#define YY_DECL int yylex (yyscan_t yyscanner)
 
 
 /* including LEMON generated header */
@@ -1266,26 +1289,33 @@ gaiaParseGeoJSON (const unsigned char *dirty_buffer)
     /* Pointer to the head of the list */
     geoJsonFlexToken *head = tokens;
     int yv;
-    gaiaGeomCollPtr result = NULL;
+    yyscan_t scanner;
+    struct geoJson_data str_data;
 
-/* initializing the allocation map */
-    geoJson_first_dyn_block = NULL;
-    geoJson_last_dyn_block = NULL;
+/* initializing the helper structs */
+    str_data.geoJson_line = 1;
+    str_data.geoJson_col = 1;
+    str_data.geoJson_parse_error = 0;
+    str_data.geoJson_first_dyn_block = NULL;
+    str_data.geoJson_last_dyn_block = NULL;
+    str_data.result = NULL;
+
+/* initializing the scanner state */
+    GeoJsonlex_init_extra (&str_data, &scanner);
 
     tokens->Next = NULL;
-    geoJSON_parse_error = 0;
 
-    GeoJson_scan_string ((char *) dirty_buffer);
+    GeoJson_scan_string ((char *) dirty_buffer, scanner);
 
     /*
        / Keep tokenizing until we reach the end
        / yylex() will return the next matching Token for us.
      */
-    while ((yv = yylex ()) != 0)
+    while ((yv = yylex (scanner)) != 0)
       {
 	  if (yv == -1)
 	    {
-		geoJSON_parse_error = 1;
+		str_data.geoJson_parse_error = 1;
 		break;
 	    }
 	  tokens->Next = malloc (sizeof (geoJsonFlexToken));
@@ -1296,47 +1326,47 @@ gaiaParseGeoJSON (const unsigned char *dirty_buffer)
 	   */
 	  tokens->Next->value = GeoJsonLval.dval;
 	  /* Pass the token to the wkt parser created from lemon */
-	  Parse (pParser, yv, &(tokens->Next->value), &result);
+	  Parse (pParser, yv, &(tokens->Next->value), &str_data);
 	  tokens = tokens->Next;
       }
     /* This denotes the end of a line as well as the end of the parser */
-    Parse (pParser, GEOJSON_NEWLINE, 0, &result);
+    Parse (pParser, GEOJSON_NEWLINE, 0, &str_data);
     ParseFree (pParser, free);
-    GeoJsonlex_destroy ();
+    GeoJsonlex_destroy (scanner);
 
     /* Assigning the token as the end to avoid seg faults while cleaning */
     tokens->Next = NULL;
     geoJSON_cleanup (head);
 
-    if (geoJSON_parse_error)
+    if (str_data.geoJson_parse_error)
       {
-	  if (result)
+	  if (str_data.result)
 	    {
 		/* if a Geometry-result has been produced, the stack is already cleaned */
-		gaiaFreeGeomColl (result);
-		geoJsonCleanMapDynAlloc (0);
+		gaiaFreeGeomColl (str_data.result);
+		geoJsonCleanMapDynAlloc (&str_data, 0);
 	    }
 	  else
 	    {
 		/* otherwise we are required to clean the stack */
-		geoJsonCleanMapDynAlloc (1);
+		geoJsonCleanMapDynAlloc (&str_data, 1);
 	    }
 	  return NULL;
       }
 
-    geoJsonCleanMapDynAlloc (0);
+    geoJsonCleanMapDynAlloc (&str_data, 0);
 
-    if (!result)
+    if (str_data.result == NULL)
 	return NULL;
-    if (!geoJsonCheckValidity (result))
+    if (!geoJsonCheckValidity (str_data.result))
       {
-	  gaiaFreeGeomColl (result);
+	  gaiaFreeGeomColl (str_data.result);
 	  return NULL;
       }
 
-    gaiaMbrGeometry (result);
+    gaiaMbrGeometry (str_data.result);
 
-    return result;
+    return str_data.result;
 }
 
 
@@ -1452,3 +1482,6 @@ gaiaParseGeoJSON (const unsigned char *dirty_buffer)
 #undef yyTokenName
 #undef yyRuleName
 #undef ParseTrace
+
+#undef yylex
+#undef YY_DECL
