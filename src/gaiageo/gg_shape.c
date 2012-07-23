@@ -1197,6 +1197,7 @@ shp_add_ring (struct shp_ring_collection *ringsColl, gaiaRingPtr ring)
 /* inserting a ring into the rings collection */
     struct shp_ring_item *p = malloc (sizeof (struct shp_ring_item));
     p->Ring = ring;
+    gaiaMbrRing (ring);
     gaiaClockwise (ring);
 /* accordingly to SHP rules interior/exterior depends on direction */
     p->IsExterior = ring->Clockwise;
@@ -1269,6 +1270,27 @@ shp_check_rings (gaiaRingPtr exterior, gaiaRingPtr candidate)
     return 0;
 }
 
+static int
+shp_mbr_contains (gaiaRingPtr r1, gaiaRingPtr r2)
+{
+/* checks if the first Ring contains the second one - MBR based */
+    int ok_1 = 0;
+    int ok_2 = 0;
+    int ok_3 = 0;
+    int ok_4 = 0;
+    if (r2->MinX >= r1->MinX && r2->MinX <= r1->MaxX)
+	ok_1 = 1;
+    if (r2->MaxX >= r1->MinX && r2->MaxX <= r1->MaxX)
+	ok_2 = 1;
+    if (r2->MinY >= r1->MinY && r2->MinY <= r1->MaxY)
+	ok_3 = 1;
+    if (r2->MaxY >= r1->MinY && r2->MaxY <= r1->MaxY)
+	ok_4 = 1;
+    if (ok_1 && ok_2 && ok_3 && ok_4)
+	return 1;
+    return 0;
+}
+
 static void
 shp_arrange_rings (struct shp_ring_collection *ringsColl)
 {
@@ -1288,7 +1310,8 @@ shp_arrange_rings (struct shp_ring_collection *ringsColl)
 		while (pInt != NULL)
 		  {
 		      /* looping on Interior Rings */
-		      if (pInt->IsExterior == 0 && pInt->Mother == NULL)
+		      if (pInt->IsExterior == 0 && pInt->Mother == NULL
+			  && shp_mbr_contains (pExt->Ring, pInt->Ring))
 			{
 			    /* ok, matches */
 			    if (shp_check_rings (pExt->Ring, pInt->Ring))

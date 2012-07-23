@@ -276,6 +276,17 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 		int srid, char *column, int coerce2d, int compressed,
 		int verbose, int spatial_index, int *rows, char *err_msg)
 {
+    return load_shapefile_ex (sqlite, shp_path, table, charset, srid, column,
+			      NULL, coerce2d, compressed, verbose,
+			      spatial_index, rows, err_msg);
+}
+
+SPATIALITE_DECLARE int
+load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
+		   int srid, char *column, char *gtype, int coerce2d,
+		   int compressed, int verbose, int spatial_index, int *rows,
+		   char *err_msg)
+{
     sqlite3_stmt *stmt = NULL;
     int ret;
     char *errMsg = NULL;
@@ -299,10 +310,50 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
     char *geom_type;
     char *txt_dims;
     char *geo_column = column;
+    char *xgtype = gtype;
     char qtable[1024];
     char *xtable = NULL;
     if (!geo_column)
 	geo_column = "Geometry";
+    if (!xgtype)
+	;
+    else
+      {
+	  if (strcasecmp (xgtype, "LINESTRING") == 0)
+	      xgtype = "LINESTRING";
+	  else if (strcasecmp (xgtype, "LINESTRINGZ") == 0)
+	      xgtype = "LINESTRINGZ";
+	  else if (strcasecmp (xgtype, "LINESTRINGM") == 0)
+	      xgtype = "LINESTRINGM";
+	  else if (strcasecmp (xgtype, "LINESTRINGZM") == 0)
+	      xgtype = "LINESTRINGZM";
+	  else if (strcasecmp (xgtype, "MULTILINESTRING") == 0)
+	      xgtype = "MULTILINESTRING";
+	  else if (strcasecmp (xgtype, "MULTILINESTRINGZ") == 0)
+	      xgtype = "MULTILINESTRINGZ";
+	  else if (strcasecmp (xgtype, "MULTILINESTRINGM") == 0)
+	      xgtype = "MULTILINESTRINGM";
+	  else if (strcasecmp (xgtype, "MULTILINESTRINGZM") == 0)
+	      xgtype = "MULTILINESTRINGZM";
+	  else if (strcasecmp (xgtype, "POLYGON") == 0)
+	      xgtype = "POLYGON";
+	  else if (strcasecmp (xgtype, "POLYGONZ") == 0)
+	      xgtype = "POLYGONZ";
+	  else if (strcasecmp (xgtype, "POLYGONM") == 0)
+	      xgtype = "POLYGONM";
+	  else if (strcasecmp (xgtype, "POLYGONZM") == 0)
+	      xgtype = "POLYGONZM";
+	  else if (strcasecmp (xgtype, "MULTIPOLYGON") == 0)
+	      xgtype = "MULTIPOLYGON";
+	  else if (strcasecmp (xgtype, "MULTIPOLYGONZ") == 0)
+	      xgtype = "MULTIPOLYGONZ";
+	  else if (strcasecmp (xgtype, "MULTIPOLYGONM") == 0)
+	      xgtype = "MULTIPOLYGONM";
+	  else if (strcasecmp (xgtype, "MULTIPOLYGONZM") == 0)
+	      xgtype = "MULTIPOLYGONZM";
+	  else
+	      xgtype = NULL;
+      }
     xtable = gaiaDoubleQuotedSql (table);
     if (xtable)
       {
@@ -536,20 +587,132 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 	    case GAIA_SHP_POLYLINE:
 	    case GAIA_SHP_POLYLINEM:
 	    case GAIA_SHP_POLYLINEZ:
-		gaiaShpAnalyze (shp);
-		if (shp->EffectiveType == GAIA_LINESTRING)
-		    geom_type = "LINESTRING";
+		if (xgtype == NULL)
+		  {
+		      /* auto-decting if MULTILINESTRING is required */
+		      gaiaShpAnalyze (shp);
+		      if (shp->EffectiveType == GAIA_LINESTRING)
+			  geom_type = "LINESTRING";
+		      else
+			  geom_type = "MULTILINESTRING";
+		  }
 		else
-		    geom_type = "MULTILINESTRING";
+		  {
+		      /* user-defined geometry type */
+		      if (strcmp (xgtype, "LINESTRING") == 0)
+			{
+			    geom_type = "LINESTRING";
+			    shp->EffectiveType = GAIA_LINESTRING;
+			    shp->EffectiveDims = GAIA_XY;
+			}
+		      if (strcmp (xgtype, "LINESTRINGZ") == 0)
+			{
+			    geom_type = "LINESTRING";
+			    shp->EffectiveType = GAIA_LINESTRING;
+			    shp->EffectiveDims = GAIA_XY_Z;
+			}
+		      if (strcmp (xgtype, "LINESTRINGM") == 0)
+			{
+			    geom_type = "LINESTRING";
+			    shp->EffectiveType = GAIA_LINESTRING;
+			    shp->EffectiveDims = GAIA_XY_M;
+			}
+		      if (strcmp (xgtype, "LINESTRINGZM") == 0)
+			{
+			    geom_type = "LINESTRING";
+			    shp->EffectiveType = GAIA_LINESTRING;
+			    shp->EffectiveDims = GAIA_XY_Z_M;
+			}
+		      if (strcmp (xgtype, "MULTILINESTRING") == 0)
+			{
+			    geom_type = "MULTILINESTRING";
+			    shp->EffectiveType = GAIA_MULTILINESTRING;
+			    shp->EffectiveDims = GAIA_XY;
+			}
+		      if (strcmp (xgtype, "MULTILINESTRINGZ") == 0)
+			{
+			    geom_type = "MULTILINESTRING";
+			    shp->EffectiveType = GAIA_MULTILINESTRING;
+			    shp->EffectiveDims = GAIA_XY_Z;
+			}
+		      if (strcmp (xgtype, "MULTILINESTRINGM") == 0)
+			{
+			    geom_type = "MULTILINESTRING";
+			    shp->EffectiveType = GAIA_MULTILINESTRING;
+			    shp->EffectiveDims = GAIA_XY_M;
+			}
+		      if (strcmp (xgtype, "MULTILINESTRINGZM") == 0)
+			{
+			    geom_type = "MULTILINESTRING";
+			    shp->EffectiveType = GAIA_MULTILINESTRING;
+			    shp->EffectiveDims = GAIA_XY_Z_M;
+			}
+		  }
 		break;
 	    case GAIA_SHP_POLYGON:
 	    case GAIA_SHP_POLYGONM:
 	    case GAIA_SHP_POLYGONZ:
-		gaiaShpAnalyze (shp);
-		if (shp->EffectiveType == GAIA_POLYGON)
-		    geom_type = "POLYGON";
+		if (xgtype == NULL)
+		  {
+		      /* auto-decting if MULTIPOLYGON is required */
+		      gaiaShpAnalyze (shp);
+		      if (shp->EffectiveType == GAIA_POLYGON)
+			  geom_type = "POLYGON";
+		      else
+			  geom_type = "MULTIPOLYGON";
+		  }
 		else
-		    geom_type = "MULTIPOLYGON";
+		  {
+		      /* user-defined geometry type */
+		      if (strcmp (xgtype, "POLYGON") == 0)
+			{
+			    geom_type = "POLYGON";
+			    shp->EffectiveType = GAIA_POLYGON;
+			    shp->EffectiveDims = GAIA_XY;
+			}
+		      if (strcmp (xgtype, "POLYGONZ") == 0)
+			{
+			    geom_type = "POLYGON";
+			    shp->EffectiveType = GAIA_POLYGON;
+			    shp->EffectiveDims = GAIA_XY_Z;
+			}
+		      if (strcmp (xgtype, "POLYGONM") == 0)
+			{
+			    geom_type = "POLYGON";
+			    shp->EffectiveType = GAIA_POLYGON;
+			    shp->EffectiveDims = GAIA_XY_M;
+			}
+		      if (strcmp (xgtype, "POLYGONZM") == 0)
+			{
+			    geom_type = "POLYGON";
+			    shp->EffectiveType = GAIA_POLYGON;
+			    shp->EffectiveDims = GAIA_XY_Z_M;
+			}
+		      if (strcmp (xgtype, "MULTIPOLYGON") == 0)
+			{
+			    geom_type = "MULTIPOLYGON";
+			    shp->EffectiveType = GAIA_MULTIPOLYGON;
+			    shp->EffectiveDims = GAIA_XY;
+			}
+		      if (strcmp (xgtype, "MULTIPOLYGONZ") == 0)
+			{
+			    geom_type = "MULTIPOLYGON";
+			    shp->EffectiveType = GAIA_MULTIPOLYGON;
+			    shp->EffectiveDims = GAIA_XY_Z;
+			}
+		      if (strcmp (xgtype, "MULTIPOLYGONM") == 0)
+			{
+			    geom_type = "MULTIPOLYGON";
+			    shp->EffectiveType = GAIA_MULTIPOLYGON;
+			    shp->EffectiveDims = GAIA_XY_M;
+			}
+		      if (strcmp (xgtype, "MULTIPOLYGONZM") == 0)
+			{
+			    geom_type = "MULTIPOLYGON";
+			    shp->EffectiveType = GAIA_MULTIPOLYGON;
+			    shp->EffectiveDims = GAIA_XY_Z_M;
+			}
+		  }
 		break;
 	    };
 	  if (coerce2d)
@@ -699,8 +862,8 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->
-						       Value->TxtValue),
+					       strlen (dbf_field->Value->
+						       TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -1746,8 +1909,8 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->
-						       Value->TxtValue),
+					       strlen (dbf_field->Value->
+						       TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
