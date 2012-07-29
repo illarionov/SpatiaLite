@@ -48,10 +48,14 @@ the terms of any one of the MPL, the GPL or the LGPL.
  Main SpatiaLite header file
  */
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
+#ifdef _WIN32
 #ifdef DLL_EXPORT
 #define SPATIALITE_DECLARE __declspec(dllexport)
 #else
 #define SPATIALITE_DECLARE extern
+#endif
+#else
+#define SPATIALITE_DECLARE __attribute__ ((visibility("default")))
 #endif
 #endif
 
@@ -64,16 +68,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 extern "C"
 {
 #endif
-
-/** spatial_ref_sys_init2: will create the "spatial_ref_sys" table
- and will populate this table with any supported EPSG SRID definition */
-#define GAIA_EPSG_ANY -9999
-/** spatial_ref_sys_init2: will create the "spatial_ref_sys" table
- and will populate this table only inserting WGS84-related definitions */
-#define GAIA_EPSG_WGS84_ONLY -9998
-/** spatial_ref_sys_init2: will create the "spatial_ref_sys" table
- but will avoid to insert any row at all */
-#define GAIA_EPSG_NONE -9997
 
 /**
  Return the current library version.

@@ -40,15 +40,18 @@ Windows [MinGW]:
 
 STEP #3: generating the C code [inlined EPSG dataset]
 --------
-# rm epsg_inlined.h
+# rm epsg_inlined_*.c
 # ./auto_epsg
 
-at the end of this step the "epsg_inlined.c" file will be generated
+at the end of this step several "epsg_inlined_*.c" files will be generated
 
 
 
 STEP #4: final setup
 --------
 - copy the generated file into the parent dir:
+  rm ../epsg_inlined_*.c
   cp epsg_inlined.c ..
+- be sure to update as required the repository (ADD/DEL)
+- be sure to update as required Makefile.am
 - and finally commit into the repository

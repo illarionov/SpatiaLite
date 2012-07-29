@@ -70,6 +70,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/gaiaexif.h>
 #include <spatialite/spatialite.h>
 #include <spatialite.h>
+#include <spatialite_private.h>
 
 #ifndef OMIT_GEOS		/* including GEOS */
 #include <geos_c.h>
