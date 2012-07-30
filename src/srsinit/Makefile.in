@@ -93,6 +93,7 @@ am_libsrsinit_la_OBJECTS = libsrsinit_la-srs_init.lo \
 	libsrsinit_la-epsg_inlined_40.lo \
 	libsrsinit_la-epsg_inlined_wgs84_00.lo \
 	libsrsinit_la-epsg_inlined_wgs84_01.lo \
+	libsrsinit_la-epsg_inlined_prussian.lo \
 	libsrsinit_la-epsg_inlined_extra.lo
 libsrsinit_la_OBJECTS = $(am_libsrsinit_la_OBJECTS)
 libsrsinit_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
@@ -324,6 +325,7 @@ libsrsinit_la_SOURCES = srs_init.c \
 	epsg_inlined_40.c \
 	epsg_inlined_wgs84_00.c \
 	epsg_inlined_wgs84_01.c \
+	epsg_inlined_prussian.c \
 	epsg_inlined_extra.c
 
 libsrsinit_la_CFLAGS = -fvisibility=hidden
@@ -422,6 +424,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsrsinit_la-epsg_inlined_39.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsrsinit_la-epsg_inlined_40.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsrsinit_la-epsg_inlined_extra.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsrsinit_la-epsg_inlined_prussian.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsrsinit_la-epsg_inlined_wgs84_00.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsrsinit_la-epsg_inlined_wgs84_01.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsrsinit_la-srs_init.Plo@am__quote@
@@ -754,6 +757,13 @@ libsrsinit_la-epsg_inlined_wgs84_01.lo: epsg_inlined_wgs84_01.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='epsg_inlined_wgs84_01.c' object='libsrsinit_la-epsg_inlined_wgs84_01.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsrsinit_la_CFLAGS) $(CFLAGS) -c -o libsrsinit_la-epsg_inlined_wgs84_01.lo `test -f 'epsg_inlined_wgs84_01.c' || echo '$(srcdir)/'`epsg_inlined_wgs84_01.c
+
+libsrsinit_la-epsg_inlined_prussian.lo: epsg_inlined_prussian.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsrsinit_la_CFLAGS) $(CFLAGS) -MT libsrsinit_la-epsg_inlined_prussian.lo -MD -MP -MF $(DEPDIR)/libsrsinit_la-epsg_inlined_prussian.Tpo -c -o libsrsinit_la-epsg_inlined_prussian.lo `test -f 'epsg_inlined_prussian.c' || echo '$(srcdir)/'`epsg_inlined_prussian.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libsrsinit_la-epsg_inlined_prussian.Tpo $(DEPDIR)/libsrsinit_la-epsg_inlined_prussian.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='epsg_inlined_prussian.c' object='libsrsinit_la-epsg_inlined_prussian.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsrsinit_la_CFLAGS) $(CFLAGS) -c -o libsrsinit_la-epsg_inlined_prussian.lo `test -f 'epsg_inlined_prussian.c' || echo '$(srcdir)/'`epsg_inlined_prussian.c
 
 libsrsinit_la-epsg_inlined_extra.lo: epsg_inlined_extra.c
 @am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsrsinit_la_CFLAGS) $(CFLAGS) -MT libsrsinit_la-epsg_inlined_extra.lo -MD -MP -MF $(DEPDIR)/libsrsinit_la-epsg_inlined_extra.Tpo -c -o libsrsinit_la-epsg_inlined_extra.lo `test -f 'epsg_inlined_extra.c' || echo '$(srcdir)/'`epsg_inlined_extra.c

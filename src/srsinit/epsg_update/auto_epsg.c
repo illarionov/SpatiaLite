@@ -342,6 +342,22 @@ open_file2 ()
 }
 
 static FILE *
+open_file3 ()
+{
+/* opening the "prussian" output file */
+    FILE *out = NULL;
+
+    out = fopen ("epsg_inlined_prussian.c", "wb");
+    if (out == NULL)
+      {
+	  fprintf (stderr,
+		   "ERROR: unable to open the \"epsg_inlined_prussian.c\" output file\n");
+	  return NULL;
+      }
+    return out;
+}
+
+static FILE *
 open_file_wgs84 (int file_no)
 {
 /* opening an output file "wgs84" */
@@ -357,6 +373,1399 @@ open_file_wgs84 (int file_no)
 	  return NULL;
       }
     return out;
+}
+
+static void
+do_prussian (FILE * out)
+{
+/* writing the "prussian" body */
+    fprintf (out,
+	     "SPATIALITE_PRIVATE void\ninitialize_epsg_prussian(int filter,struct epsg_defs **first, struct epsg_defs **last)\n");
+    fprintf (out,
+	     "{\n/* old Prussian based on Cassini-Soldner - kindly contributed by Mark Johnson */\n");
+    fprintf (out, "    struct epsg_defs *p;\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187900,\"mj10777.de\",187900,\"DHDN / Soldner Rathausnetz 660\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=52.41864827777778 +lon_0=13.62720366666667 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=14741.77 +y_0=-11288.28 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner Rathausnetz 660\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",52.41864827777778],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",13.62720366666667],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",14741.77],PARAMETER[\\\"false_northing\\\",-11288.28],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187900\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187901,\"mj10777.de\",187901,\"DHDN / Soldner 1 Kucklinsberg\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=54.46022375 +lon_0=21.95509736 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 1 Kucklinsberg\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",54.46022375],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",21.95509736],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187901\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187902,\"mj10777.de\",187902,\"DHDN / Soldner 2 Paulinen\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=54.28921067 +lon_0=20.73315431 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 2 Paulinen\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",54.28921067],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",20.73315431],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187902\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187903,\"mj10777.de\",187903,\"DHDN / Soldner 3 Markushof I\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=54.05881333 +lon_0=19.37343583 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 3 Markushof I\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",54.05881333],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",19.37343583],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187903\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187904,\"mj10777.de\",187904,\"DHDN / Soldner 4 Thurmberg\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=54.22552092 +lon_0=18.12569375 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 4 Thurmberg\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",54.22552092],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",18.12569375],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187904\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187905,\"mj10777.de\",187905,\"DHDN / Soldner 5 Kauernick I\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=53.38933197 +lon_0=19.59810438 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 5 Kauernick I\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",53.38933197],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",19.59810438],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187905\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187906,\"mj10777.de\",187906,\"DHDN / Soldner 6 Thorn, Rathausturm\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=53.01181586 +lon_0=18.60725428 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 6 Thorn, Rathausturm\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",53.01181586],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",18.60725428],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187906\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187907,\"mj10777.de\",187907,\"DHDN / Soldner 7 Heinrichsthal\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=53.71289217 +lon_0=17.49676781 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 7 Heinrichsthal\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",53.71289217],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",17.49676781],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187907\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187908,\"mj10777.de\",187908,\"DHDN / Soldner 8 Gollenberg, Denkmal\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=54.20857178 +lon_0=16.22956781 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 8 Gollenberg, Denkmal\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",54.20857178],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",16.22956781],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187908\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187909,\"mj10777.de\",187909,\"DHDN / Soldner 9 Gnesen\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=52.53820406 +lon_0=17.59450500 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 9 Gnesen\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",52.53820406],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",17.59450500],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187909\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187910,\"mj10777.de\",187910,\"DHDN / Soldner 10 Josefsberg\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=51.98768806 +lon_0=16.20044389 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 10 Josefsberg\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",51.98768806],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",16.20044389],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187910\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187911,\"mj10777.de\",187911,\"DHDN / Soldner 11 Schroda\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=52.23137372 +lon_0=17.27795372 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 11 Schroda\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",52.23137372],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",17.27795372],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187911\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187912,\"mj10777.de\",187912,\"DHDN / Soldner 12 Pschow\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=50.04206544 +lon_0=18.39610692 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 12 Pschow\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",50.04206544],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",18.39610692],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187912\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187913,\"mj10777.de\",187913,\"DHDN / Soldner 13 Rummelsberg\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=50.70352314 +lon_0=17.11233917 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 13 Rummelsberg\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",50.70352314],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",17.11233917],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187913\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187914,\"mj10777.de\",187914,\"DHDN / Soldner 14 Gröditzberg I\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=51.17819342 +lon_0=15.76127086 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 14 Gröditzberg I\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",51.17819342],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",15.76127086],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187914\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187915,\"mj10777.de\",187915,\"DHDN / Soldner 15 Kaltenborn\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=51.92903708 +lon_0=14.66212942 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 15 Kaltenborn\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",51.92903708],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",14.66212942],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187915\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187917,\"mj10777.de\",187917,\"DHDN / Soldner 17 Greifswald, Nikolaikirche\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=54.09698872 +lon_0=13.37880703 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 17 Greifswald, Nikolaikirche\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",54.09698872],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",13.37880703],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187917\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187916,\"mj10777.de\",187916,\"DHDN / Soldner 16 Bahn I\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=53.10184583 +lon_0=14.70144539 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 16 Bahn I\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",53.10184583],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",14.70144539],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187916\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187918,\"mj10777.de\",187918,\"DHDN / Soldner 18 Müggelberg 600\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=52.41864827777778 +lon_0=13.62720366666667 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 18 Müggelberg 600\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",52.41864827777778],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",13.62720366666667],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187918\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187919,\"mj10777.de\",187919,\"DHDN / Soldner 19 Götzer Berg 650\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=52.43725961111112 +lon_0=12.72882972222223 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 19 Götzer Berg 650\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",52.43725961111112],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",12.72882972222223],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187919\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187920,\"mj10777.de\",187920,\"DHDN / Soldner 20 Torgau, Stadtkirche\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=51.56136217 +lon_0=13.00760264 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 20 Torgau, Stadtkirche\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",51.56136217],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",13.00760264],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187920\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187921,\"mj10777.de\",187921,\"DHDN / Soldner 21 Burkersroda, Kirchturm\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=51.17656322 +lon_0=11.64139367 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 21 Burkersroda, Kirchturm\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",51.17656322],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",11.64139367],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187921\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187922,\"mj10777.de\",187922,\"DHDN / Soldner 22 Inselsberg\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=50.85237983 +lon_0=10.46776506 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 22 Inselsberg\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",50.85237983],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",10.46776506],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187922\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187923,\"mj10777.de\",187923,\"DHDN / Soldner 23 Magdeburg\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=52.12625311 +lon_0=11.63550325 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 23 Magdeburg\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",52.12625311],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",11.63550325],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187923\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187924,\"mj10777.de\",187924,\"DHDN / Soldner 24 Ostenfeld I\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=54.47018733 +lon_0=9.23411097 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 24 Ostenfeld I\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",54.47018733],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",9.23411097],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187924\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187925,\"mj10777.de\",187925,\"DHDN / Soldner 25 Rathkrügen\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=53.81839364 +lon_0=10.04220189 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 25 Rathkrügen\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",53.81839364],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",10.04220189],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187925\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187926,\"mj10777.de\",187926,\"DHDN / Soldner 26 Bungsberg, Aussichtsturm\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=54.21110653 +lon_0=10.72636431 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 26 Bungsberg, Aussichtsturm\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",54.21110653],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",10.72636431],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187926\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187927,\"mj10777.de\",187927,\"DHDN / Soldner 27 Celle, Stadtkirche\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=52.62574192 +lon_0=10.08190214 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 27 Celle, Stadtkirche\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",52.62574192],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",10.08190214],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187927\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187928,\"mj10777.de\",187928,\"DHDN / Soldner 28 Kaltenborn\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=51.79646722 +lon_0=10.27322494 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 28 Kaltenborn\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",51.79646722],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",10.27322494],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187928\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187929,\"mj10777.de\",187929,\"DHDN / Soldner 29 Silberberg\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=53.73123461 +lon_0=9.05774925 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 29 Silberberg\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",53.73123461],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",9.05774925],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187929\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187930,\"mj10777.de\",187930,\"DHDN / Soldner 30 Windberg\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=52.88088372 +lon_0=7.53062114 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 30 Windberg\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",52.88088372],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",7.53062114],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187930\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187931,\"mj10777.de\",187931,\"DHDN / Soldner 31 Hermannsdenkmal\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=51.91301647 +lon_0=8.84051853 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 31 Hermannsdenkmal\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",51.91301647],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",8.84051853],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187931\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187932,\"mj10777.de\",187932,\"DHDN / Soldner 32 Münster\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=51.96547642 +lon_0=7.62334994 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 32 Münster\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",51.96547642],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",7.62334994],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187932\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187933,\"mj10777.de\",187933,\"DHDN / Soldner 33 Bochum, Peter-Paul-Kirche\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=51.48373533 +lon_0=7.22115822 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 33 Bochum, Peter-Paul-Kirche\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",51.48373533],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",7.22115822],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187933\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187934,\"mj10777.de\",187934,\"DHDN / Soldner 34 Homert\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=51.26480147 +lon_0=8.10687050 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 34 Homert\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",51.26480147],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",8.10687050],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187934\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187935,\"mj10777.de\",187935,\"DHDN / Soldner 35 Kassel, Martinskirche\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=51.31846489 +lon_0=9.50203072 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 35 Kassel, Martinskirche\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",51.31846489],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",9.50203072],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187935\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187936,\"mj10777.de\",187936,\"DHDN / Soldner 36 Schaumburg, Schloßturm\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=50.34048964 +lon_0=7.97808156 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 36 Schaumburg, Schloßturm\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",50.34048964],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",7.97808156],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187936\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187937,\"mj10777.de\",187937,\"DHDN / Soldner 37 Fleckert\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=50.18762544 +lon_0=7.60594289 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 37 Fleckert\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",50.18762544],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",7.60594289],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187937\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187938,\"mj10777.de\",187938,\"DHDN / Soldner 38 Cöln, Dom\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=50.94257242 +lon_0=6.95897600 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 38 Cöln, Dom\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",50.94257242],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",6.95897600],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187938\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187939,\"mj10777.de\",187939,\"DHDN / Soldner 39 Langschoß\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=50.66738711 +lon_0=6.28935703 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 39 Langschoß\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",50.66738711],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",6.28935703],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187939\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187940,\"mj10777.de\",187940,\"DHDN / Soldner 40 Rissenthal\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=49.47801819 +lon_0=6.75864339 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner 40 Rissenthal\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",49.47801819],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",6.75864339],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187940\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187941,\"mj10777.de\",187941,\"DHDN / Soldner Bayern\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=48.13959111 +lon_0=11.57437083 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=0 +y_0=0 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner Bayern\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",48.13959111],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",11.57437083],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",0],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187941\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def (filter,first, last, 187998, \"mj10777.de\", 187998,\"DHDN / Ferro / Deutsches_Hauptdreiecksnetz\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=longlat +ellps=bessel +datum=potsdam +pm=ferro +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Ferro / Deutsches_Hauptdreiecksnetz\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"SPHEROID[\\\"Bessel 1841\\\",6377397.155,299.1528128,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]], AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"PRIMEM[\\\"ferro\\\",-17.66666666666667],UNIT[\\\"Degree\\\",0.017453292519943295,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187998\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]]\");\n");
+    fprintf (out,
+	     "/* mj10777: Not exsiting System, used for testing purposes. */\n");
+    fprintf (out,
+	     "    p = add_epsg_def(filter,first,last,187999,\"mj10777.de\",187999,\"DHDN / Brandenburger Tor\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=cass +lat_0=52.41864827777778 +lon_0=13.62720366666667 \");\n");
+    fprintf (out,
+	     "    add_proj4text(p,1,\"+x_0=16819.76033675660074 +y_0=-11046.08218553455117 +ellps=bessel +datum=potsdam +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"DHDN / Soldner Brandenburger Tor\\\",\");\n");
+    fprintf (out, "    add_srs_wkt(p,1,\"GEOGCS[\\\"DHDN\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"DATUM[\\\"Deutsches_Hauptdreiecksnetz\\\",SPHEROID[\\\"Bessel 1841\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"6377397.155,299.1528128,AUTHORITY[\\\"EPSG\\\",\\\"7004\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"AUTHORITY[\\\"EPSG\\\",\\\"6314\\\"]],PRIMEM[\\\"Greenwich\\\",0,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],UNIT[\\\"degree\\\",0.01745329251994328,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"4314\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"UNIT[\\\"metre\\\",1,AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PROJECTION[\\\"Cassini_Soldner\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"latitude_of_origin\\\",52.41864827777778],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"central_meridian\\\",13.62720366666667],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"PARAMETER[\\\"false_easting\\\",16819.76033675660074],PARAMETER[\\\"false_northing\\\",-11046.08218553455117],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AUTHORITY[\\\"mj10777.de\\\",\\\"187999\\\"],AXIS[\\\"x\\\",NORTH],AXIS[\\\"y\\\",EAST]]\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def (filter,first, last, 325833, \"mj10777.de\", 325833,\"ETRS89 / UTM zone 33N (Brandenburg)\");\n");
+    fprintf (out,
+	     "    add_proj4text(p,0,\"+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,0,\"PROJCS[\\\"ETRS89 / UTM zone 33N (Brandenburg)\\\",GEOGCS[\\\"ETRS89\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,1,\"DATUM[\\\"European_Terrestrial_Reference_System_1989\\\",\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,2,\"SPHEROID[\\\"GRS 1980\\\",6378137,298.257222101,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,3,\"AUTHORITY[\\\"EPSG\\\",\\\"7019\\\"]],AUTHORITY[\\\"EPSG\\\",\\\"6258\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,4,\"PRIMEM[\\\"Greenwich\\\",0,AUTHORITY[\\\"EPSG\\\",\\\"8901\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,5,\"UNIT[\\\"degree\\\",0.01745329251994328,AUTHORITY[\\\"EPSG\\\",\\\"9122\\\"]],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,6,\"AUTHORITY[\\\"EPSG\\\",\\\"4258\\\"]],UNIT[\\\"metre\\\",1,\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,7,\"AUTHORITY[\\\"EPSG\\\",\\\"9001\\\"]],PROJECTION[\\\"Transverse_Mercator\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,8,\"PARAMETER[\\\"latitude_of_origin\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,9,\"PARAMETER[\\\"central_meridian\\\",15],PARAMETER[\\\"scale_factor\\\",0.9996],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,10,\"PARAMETER[\\\"false_easting\\\",3500000],PARAMETER[\\\"false_northing\\\",0],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,11,\"AUTHORITY[\\\"EPSG\\\",\\\"325833\\\"],\");\n");
+    fprintf (out,
+	     "    add_srs_wkt(p,12,\"AXIS[\\\"Easting\\\",EAST],AXIS[\\\"Northing\\\",NORTH]]\");\n");
 }
 
 static void
@@ -691,6 +2100,22 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 	  out = NULL;
       }
 
+/* opening the "prussian" output file */
+    out = open_file3 ();
+    if (out == NULL)
+	return;
+
+/* function header */
+    do_header (out, 1);
+    do_prussian (out);
+
+/* function footer */
+    do_footer (out, 1);
+
+/* closing the "prussian" output file */
+    fclose (out);
+    out = NULL;
+
 /* opening the "extra" output file */
     out = open_file2 ();
     if (out == NULL)
@@ -707,6 +2132,8 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
 	fprintf (out,
 		 "SPATIALITE_PRIVATE void initialize_epsg_wgs84_%02d (\n\tint filter, struct epsg_defs **first, struct epsg_defs **last);\n",
 		 i);
+    fprintf (out,
+	     "SPATIALITE_PRIVATE void initialize_epsg_prussian (\n\tint filter, struct epsg_defs **first, struct epsg_defs **last);\n");
     fprintf (out,
 	     "SPATIALITE_PRIVATE void initialize_epsg_extra (\n\tint filter, struct epsg_defs **first, struct epsg_defs **last);\n\n");
 
@@ -785,6 +2212,7 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
     for (i = 0; i < sect; i++)
 	fprintf (out,
 		 "        initialize_epsg_%02d (filter, first, last);\n", i);
+    fprintf (out, "        initialize_epsg_prussian (filter, first, last);\n");
     fprintf (out, "        initialize_epsg_extra (filter, first, last);\n");
     fprintf (out, "#endif /* full EPSG initialization enabled/disabled */\n");
 

@@ -50,6 +50,7 @@ libsrsinit_la_SOURCES = srs_init.c \
 	epsg_inlined_40.c \
 	epsg_inlined_wgs84_00.c \
 	epsg_inlined_wgs84_01.c \
+	epsg_inlined_prussian.c \
 	epsg_inlined_extra.c
 
 libsrsinit_la_CFLAGS = -fvisibility=hidden
