@@ -2203,7 +2203,11 @@ output_c_code (FILE * out, struct epsg_dict *epsg)
     fprintf (out, "    struct epsg_defs *p;\n ");
     fprintf (out, "/* initializing the EPSG UNKNOWN def [-1] */\n");
     fprintf (out,
-	     "    p = add_epsg_def (filter, first, last, -1, \"NONE\", -1, \"UNKNOWN SRS\");\n");
+	     "    p = add_epsg_def (filter, first, last, -1, \"NONE\", -1, \"Undefined - Cartesian\");\n");
+    fprintf (out, "    add_proj4text (p, 0, \"\");\n");
+    fprintf (out, "    add_srs_wkt (p, 0, \"\");\n");
+    fprintf (out,
+	     "    p = add_epsg_def (filter, first, last, 0, \"NONE\", 0, \"Undefined - Geographic Long/Lat\");\n");
     fprintf (out, "    add_proj4text (p, 0, \"\");\n");
     fprintf (out, "    add_srs_wkt (p, 0, \"\");\n\n");
     fprintf (out, "    if (filter != GAIA_EPSG_WGS84_ONLY)\n    {\n");

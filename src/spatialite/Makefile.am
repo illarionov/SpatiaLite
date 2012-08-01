@@ -13,4 +13,6 @@ libsplite_la_SOURCES = mbrcache.c \
 	virtualnetwork.c \
 	virtualshape.c
 
+libsplite_la_CFLAGS = -fvisibility=hidden
+
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda

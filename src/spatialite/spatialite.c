@@ -386,6 +386,142 @@ fnct_GeometryConstraints (sqlite3_context * context, int argc,
       }
     if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
 	type = sqlite3_value_text (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  /* current metadata format > v.3.1.0 */
+	  type = "UNKNOWN";
+	  switch (sqlite3_value_int (argv[1]))
+	    {
+	    case 0:
+		type = "GEOMETRY";
+		dims = GAIA_XY;
+		break;
+	    case 1:
+		type = "POINT";
+		dims = GAIA_XY;
+		break;
+	    case 2:
+		type = "LINESTRING";
+		dims = GAIA_XY;
+		break;
+	    case 3:
+		type = "POLYGON";
+		dims = GAIA_XY;
+		break;
+	    case 4:
+		type = "MULTIPOINT";
+		dims = GAIA_XY;
+		break;
+	    case 5:
+		type = "MULTILINESTRING";
+		dims = GAIA_XY;
+		break;
+	    case 6:
+		type = "MULTIPOLYGON";
+		dims = GAIA_XY;
+		break;
+	    case 7:
+		type = "GEOMETRYCOLLECTION";
+		dims = GAIA_XY;
+		break;
+	    case 1000:
+		type = "GEOMETRY";
+		dims = GAIA_XY_Z;
+		break;
+	    case 1001:
+		type = "POINT";
+		dims = GAIA_XY_Z;
+		break;
+	    case 1002:
+		type = "LINESTRING";
+		dims = GAIA_XY_Z;
+		break;
+	    case 1003:
+		type = "POLYGON";
+		dims = GAIA_XY_Z;
+		break;
+	    case 1004:
+		type = "MULTIPOINT";
+		dims = GAIA_XY_Z;
+		break;
+	    case 1005:
+		type = "MULTILINESTRING";
+		dims = GAIA_XY_Z;
+		break;
+	    case 1006:
+		type = "MULTIPOLYGON";
+		dims = GAIA_XY_Z;
+		break;
+	    case 1007:
+		type = "GEOMETRYCOLLECTION";
+		dims = GAIA_XY_Z;
+		break;
+	    case 2000:
+		type = "GEOMETRY";
+		dims = GAIA_XY_M;
+		break;
+	    case 2001:
+		type = "POINT";
+		dims = GAIA_XY_M;
+		break;
+	    case 2002:
+		type = "LINESTRING";
+		dims = GAIA_XY_M;
+		break;
+	    case 2003:
+		type = "POLYGON";
+		dims = GAIA_XY_M;
+		break;
+	    case 2004:
+		type = "MULTIPOINT";
+		dims = GAIA_XY_M;
+		break;
+	    case 2005:
+		type = "MULTILINESTRING";
+		dims = GAIA_XY_M;
+		break;
+	    case 2006:
+		type = "MULTIPOLYGON";
+		dims = GAIA_XY_M;
+		break;
+	    case 2007:
+		type = "GEOMETRYCOLLECTION";
+		dims = GAIA_XY_M;
+		break;
+	    case 3000:
+		type = "GEOMETRY";
+		dims = GAIA_XY_Z_M;
+		break;
+	    case 3001:
+		type = "POINT";
+		dims = GAIA_XY_Z_M;
+		break;
+	    case 3002:
+		type = "LINESTRING";
+		dims = GAIA_XY_Z_M;
+		break;
+	    case 3003:
+		type = "POLYGON";
+		dims = GAIA_XY_Z_M;
+		break;
+	    case 3004:
+		type = "MULTIPOINT";
+		dims = GAIA_XY_Z_M;
+		break;
+	    case 3005:
+		type = "MULTILINESTRING";
+		dims = GAIA_XY_Z_M;
+		break;
+	    case 3006:
+		type = "MULTIPOLYGON";
+		dims = GAIA_XY_Z_M;
+		break;
+	    case 3007:
+		type = "GEOMETRYCOLLECTION";
+		dims = GAIA_XY_Z_M;
+		break;
+	    };
+      }
     else
       {
 	  sqlite3_result_int (context, -1);
@@ -707,21 +843,24 @@ fnct_RTreeAlign (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
 }
 
-static int
+SPATIALITE_PRIVATE int
 checkSpatialMetaData (sqlite3 * sqlite)
 {
 /* internal utility function:
 /
-/ for FDO-OGR interoperability:
+/ for FDO-OGR interoperability and cross-version seamless compatibility:
 / tests the SpatialMetadata type, returning:
 /
 / 0 - if no valid SpatialMetaData where found
-/ 1 - if SpatiaLite-like SpatialMetadata where found
-/ 2- if FDO-OGR-like SpatialMetadata where found
+/ 1 - if SpatiaLite-like (legacy) SpatialMetadata where found
+/ 2 - if FDO-OGR-like SpatialMetadata where found
+/ 3 - if SpatiaLite-like (current) SpatialMetadata where found
 /
 */
+    int spatialite_legacy_rs = 0;
     int spatialite_rs = 0;
     int fdo_rs = 0;
+    int spatialite_legacy_gc = 0;
     int spatialite_gc = 0;
     int fdo_gc = 0;
     int rs_srid = 0;
@@ -776,15 +915,14 @@ checkSpatialMetaData (sqlite3 * sqlite)
 	    }
       }
     sqlite3_free_table (results);
-    if (f_table_name
-	&&
-	f_geometry_column
-	&& type && coord_dimension && gc_srid && spatial_index_enabled)
+    if (f_table_name && f_geometry_column && type && coord_dimension && gc_srid
+	&& spatial_index_enabled)
+	spatialite_legacy_gc = 1;
+    if (f_table_name && f_geometry_column && geometry_type && coord_dimension
+	&& gc_srid && spatial_index_enabled)
 	spatialite_gc = 1;
-    if (f_table_name
-	&&
-	f_geometry_column
-	&& geometry_type && coord_dimension && gc_srid && geometry_format)
+    if (f_table_name && f_geometry_column && geometry_type && coord_dimension
+	&& gc_srid && geometry_format)
 	fdo_gc = 1;
 /* checking the SPATIAL_REF_SYS table */
     strcpy (sql, "PRAGMA table_info(spatial_ref_sys)");
@@ -810,18 +948,25 @@ checkSpatialMetaData (sqlite3 * sqlite)
 		    ref_sys_name = 1;
 		if (strcasecmp (name, "proj4text") == 0)
 		    proj4text = 1;
+		if (strcasecmp (name, "srtext") == 0)
+		    srtext = 1;
 	    }
       }
     sqlite3_free_table (results);
-    if (rs_srid && auth_name && auth_srid && ref_sys_name && proj4text)
+    if (rs_srid && auth_name && auth_srid && ref_sys_name && proj4text
+	&& srtext)
 	spatialite_rs = 1;
+    if (rs_srid && auth_name && auth_srid && ref_sys_name && proj4text)
+	spatialite_legacy_rs = 1;
     if (rs_srid && auth_name && auth_srid && srtext)
 	fdo_rs = 1;
 /* verifying the MetaData format */
-    if (spatialite_gc && spatialite_rs)
+    if (spatialite_legacy_gc && spatialite_legacy_rs)
 	return 1;
     if (fdo_gc && fdo_rs)
 	return 2;
+    if (spatialite_gc && spatialite_rs)
+	return 3;
   unknown:
     return 0;
 }
@@ -1257,7 +1402,7 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 / returns 1 on success
 / 0 on failure
 */
-    char sql[1024];
+    char sql[8192];
     char *errMsg = NULL;
     int ret;
     const char *xmode;
@@ -1286,9 +1431,9 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     strcat (sql, "srid INTEGER NOT NULL PRIMARY KEY,\n");
     strcat (sql, "auth_name TEXT NOT NULL,\n");
     strcat (sql, "auth_srid INTEGER NOT NULL,\n");
-    strcat (sql, "ref_sys_name TEXT,\n");
+    strcat (sql, "ref_sys_name TEXT NOT NULL DEFAULT 'Unknown',\n");
     strcat (sql, "proj4text TEXT NOT NULL,\n");
-    strcat (sql, "srs_wkt TEXT) ");
+    strcat (sql, "srtext TEXT NOT NULL DEFAULT 'Undefined')");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
@@ -1303,14 +1448,22 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     strcpy (sql, "CREATE TABLE geometry_columns (\n");
     strcat (sql, "f_table_name TEXT NOT NULL,\n");
     strcat (sql, "f_geometry_column TEXT NOT NULL,\n");
-    strcat (sql, "type TEXT NOT NULL,\n");
-    strcat (sql, "coord_dimension TEXT NOT NULL,\n");
+    strcat (sql, "geometry_type INTEGER NOT NULL,\n");
+    strcat (sql, "coord_dimension INTEGER NOT NULL,\n");
     strcat (sql, "srid INTEGER NOT NULL,\n");
     strcat (sql, "spatial_index_enabled INTEGER NOT NULL,\n");
     strcat (sql, "CONSTRAINT pk_geom_cols PRIMARY KEY ");
     strcat (sql, "(f_table_name, f_geometry_column),\n");
     strcat (sql, "CONSTRAINT fk_gc_srs FOREIGN KEY ");
-    strcat (sql, "(srid) REFERENCES spatial_ref_sys (srid))");
+    strcat (sql, "(srid) REFERENCES spatial_ref_sys (srid),\n");
+    strcat (sql, "CONSTRAINT ck_gc_type CHECK (geometry_type IN ");
+    strcat (sql, "(0,1,2,3,4,5,6,7,1000,1001,1002,1003,1004,1005,1006,");
+    strcat (sql, "1007,2000,2001,2002,2003,2004,2005,2006,2007,3000,3001,");
+    strcat (sql, "3002,3003,3004,3005,3006,3007)),\n");
+    strcat (sql, "CONSTRAINT ck_gc_dims CHECK (coord_dimension IN ");
+    strcat (sql, "(2,3,4)),\n");
+    strcat (sql, "CONSTRAINT ck_gc_rtree CHECK ");
+    strcat (sql, "(spatial_index_enabled IN (0,1,2)))");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
@@ -1324,9 +1477,9 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 	goto error;
 /* creating the GEOM_COLS_REF_SYS view */
     strcpy (sql, "CREATE VIEW geom_cols_ref_sys AS\n");
-    strcat (sql, "SELECT f_table_name, f_geometry_column, type,\n");
+    strcat (sql, "SELECT f_table_name, f_geometry_column, geometry_type,\n");
     strcat (sql, "coord_dimension, spatial_ref_sys.srid AS srid,\n");
-    strcat (sql, "auth_name, auth_srid, ref_sys_name, proj4text\n");
+    strcat (sql, "auth_name, auth_srid, ref_sys_name, proj4text, srtext\n");
     strcat (sql, "FROM geometry_columns, spatial_ref_sys\n");
     strcat (sql, "WHERE geometry_columns.srid = spatial_ref_sys.srid");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
@@ -1352,7 +1505,7 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     sqlite3_result_int (context, 1);
     return;
   error:
-    spatialite_e (" InitSpatiaMetaData ()error:\"%s\"\n", errMsg);
+    spatialite_e (" InitSpatiaMetaData() error:\"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -1514,8 +1667,6 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
     int i;
     char tblname[256];
     char colname[256];
-    char col_type[32];
-    char col_srid[32];
     char col_index[32];
     char col_dims[64];
     int index;
@@ -1535,14 +1686,29 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
     struct spatial_index_str *last_idx = NULL;
     struct spatial_index_str *curr_idx;
     struct spatial_index_str *next_idx;
+    int metadata_version = checkSpatialMetaData (sqlite);
     strcpy (sqltable, (char *) table);
     clean_sql_string (sqltable);
     strcpy (sqlcolumn, (char *) column);
     clean_sql_string (sqlcolumn);
-    sprintf (sql,
-	     "SELECT f_table_name, f_geometry_column, type, srid, spatial_index_enabled, coord_dimension "
-	     "FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') "
-	     "AND Upper(f_geometry_column) = Upper('%s')", sqltable, sqlcolumn);
+    if (metadata_version == 3)
+      {
+	  /* current metadata style >= v.3.1.0 */
+	  sprintf (sql,
+		   "SELECT f_table_name, f_geometry_column, spatial_index_enabled "
+		   "FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') "
+		   "AND Upper(f_geometry_column) = Upper('%s')", sqltable,
+		   sqlcolumn);
+      }
+    else
+      {
+	  /* legacy metadata style < v.3.1.0 */
+	  sprintf (sql,
+		   "SELECT f_table_name, f_geometry_column, spatial_index_enabled, coord_dimension "
+		   "FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') "
+		   "AND Upper(f_geometry_column) = Upper('%s')", sqltable,
+		   sqlcolumn);
+      }
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
@@ -1555,19 +1721,34 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
 	  /* preparing the triggers */
 	  strcpy (tblname, results[(i * columns)]);
 	  strcpy (colname, results[(i * columns) + 1]);
-	  strcpy (col_type, results[(i * columns) + 2]);
-	  /* 
-	     / Even Rouault - 3 Mar 2010 
-	     / the OGR driver wrongly inserts a NULL SRID
-	     / into GEOMETRY_COLUMNS, so we must check such
-	     / an odd condition to avoid a crash
-	   */
-	  if (results[(i * columns) + 3] == NULL)
-	      strcpy (col_srid, "-1");
-	  else
-	      strcpy (col_srid, results[(i * columns) + 3]);
-	  strcpy (col_index, results[(i * columns) + 4]);
-	  strcpy (col_dims, results[(i * columns) + 5]);
+	  strcpy (col_index, results[(i * columns) + 2]);
+	  if (metadata_version == 1)
+	    {
+		/* legacy metadata style < v.3.1.0 */
+		strcpy (col_dims, results[(i * columns) + 3]);
+		dims = GAIA_XY;
+		if (strcasecmp (col_dims, "XYZ") == 0)
+		    dims = GAIA_XY_Z;
+		if (strcasecmp (col_dims, "XYM") == 0)
+		    dims = GAIA_XY_M;
+		if (strcasecmp (col_dims, "XYZM") == 0)
+		    dims = GAIA_XY_Z_M;
+		switch (dims)
+		  {
+		  case GAIA_XY_Z:
+		      txt_dims = "XYZ";
+		      break;
+		  case GAIA_XY_M:
+		      txt_dims = "XYM";
+		      break;
+		  case GAIA_XY_Z_M:
+		      txt_dims = "XYZM";
+		      break;
+		  default:
+		      txt_dims = "XY";
+		      break;
+		  };
+	    }
 	  if (atoi (col_index) == 1)
 	      index = 1;
 	  else
@@ -1576,28 +1757,6 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
 	      cached = 1;
 	  else
 	      cached = 0;
-	  dims = GAIA_XY;
-	  if (strcasecmp (col_dims, "XYZ") == 0)
-	      dims = GAIA_XY_Z;
-	  if (strcasecmp (col_dims, "XYM") == 0)
-	      dims = GAIA_XY_M;
-	  if (strcasecmp (col_dims, "XYZM") == 0)
-	      dims = GAIA_XY_Z_M;
-	  switch (dims)
-	    {
-	    case GAIA_XY_Z:
-		txt_dims = "XYZ";
-		break;
-	    case GAIA_XY_M:
-		txt_dims = "XYM";
-		break;
-	    case GAIA_XY_Z_M:
-		txt_dims = "XYZM";
-		break;
-	    default:
-		txt_dims = "XY";
-		break;
-	    };
 
 	  /* trying to delete old versions [v2.0, v2.2] triggers[if any] */
 	  strcpy (sqltable, (char *) tblname);
@@ -1649,14 +1808,35 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
 		   "SELECT RAISE(ROLLBACK, '%s.%s violates Geometry constraint [geom-type or SRID not allowed]')\n",
 		   sqltable, sqlcolumn);
 	  strcat (trigger, dummy);
-	  strcat (trigger, "WHERE (SELECT type FROM geometry_columns\n");
+	  if (metadata_version == 3)
+	    {
+		/* current metadata style >= v.3.1.0 */
+		strcat (trigger,
+			"WHERE (SELECT geometry_type FROM geometry_columns\n");
+	    }
+	  else
+	    {
+		/* legacy metadata style < v.3.1.0 */
+		strcat (trigger, "WHERE (SELECT type FROM geometry_columns\n");
+	    }
 	  sprintf (dummy,
 		   "WHERE f_table_name = '%s' AND f_geometry_column = '%s'\n",
 		   sqltable, sqlcolumn);
 	  strcat (trigger, dummy);
-	  sprintf (dummy,
-		   "AND GeometryConstraints(NEW.%s, type, srid, '%s') = 1) IS NULL;\n",
-		   xcolname, txt_dims);
+	  if (metadata_version == 3)
+	    {
+		/* current metadata style >= v.3.1.0 */
+		sprintf (dummy,
+			 "AND GeometryConstraints(NEW.%s, geometry_type, srid) = 1) IS NULL;\n",
+			 xcolname);
+	    }
+	  else
+	    {
+		/* legacy metadata style < v.3.1.0 */
+		sprintf (dummy,
+			 "AND GeometryConstraints(NEW.%s, type, srid, '%s') = 1) IS NULL;\n",
+			 xcolname, txt_dims);
+	    }
 	  strcat (trigger, dummy);
 	  strcat (trigger, "END;");
 	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
@@ -1677,14 +1857,35 @@ updateGeometryTriggers (sqlite3 * sqlite, const unsigned char *table,
 		   "SELECT RAISE(ROLLBACK, '%s.%s violates Geometry constraint [geom-type or SRID not allowed]')\n",
 		   sqltable, sqlcolumn);
 	  strcat (trigger, dummy);
-	  strcat (trigger, "WHERE (SELECT type FROM geometry_columns\n");
+	  if (metadata_version == 3)
+	    {
+		/* current metadata style >= v.3.1.0 */
+		strcat (trigger,
+			"WHERE (SELECT geometry_type FROM geometry_columns\n");
+	    }
+	  else
+	    {
+		/* legacy metadata style < v.3.1.0 */
+		strcat (trigger, "WHERE (SELECT type FROM geometry_columns\n");
+	    }
 	  sprintf (dummy,
 		   "WHERE f_table_name = '%s' AND f_geometry_column = '%s'\n",
 		   sqltable, sqlcolumn);
 	  strcat (trigger, dummy);
-	  sprintf (dummy,
-		   "AND GeometryConstraints(NEW.%s, type, srid, '%s') = 1) IS NULL;\n",
-		   xcolname, txt_dims);
+	  if (metadata_version == 3)
+	    {
+		/* current metadata style >= v.3.1.0 */
+		sprintf (dummy,
+			 "AND GeometryConstraints(NEW.%s, geometry_type, srid) = 1) IS NULL;\n",
+			 xcolname);
+	    }
+	  else
+	    {
+		/* legacy metadata style < v.3.1.0 */
+		sprintf (dummy,
+			 "AND GeometryConstraints(NEW.%s, type, srid, '%s') = 1) IS NULL;\n",
+			 xcolname, txt_dims);
+	    }
 	  strcat (trigger, dummy);
 	  strcat (trigger, "END;");
 	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
@@ -1964,6 +2165,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
     char sqltable[1024];
     char sqlcolumn[1024];
     int notNull = 0;
+    int metadata_version;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
@@ -2096,6 +2298,17 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 	  sqlite3_result_int (context, 0);
 	  return;
       }
+    metadata_version = checkSpatialMetaData (sqlite);
+    if (metadata_version == 1 || metadata_version == 3)
+	;
+    else
+      {
+	  spatialite_e
+	      ("AddGeometryColumn() error: unexpected metadata layout\n",
+	       table);
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
 /* trying to add the column */
     strcpy (xtable, (char *) table);
     double_quoted_sql (xtable);
@@ -2142,66 +2355,184 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
     if (ret != SQLITE_OK)
 	goto error;
 /*ok, inserting into geometry_columns [Spatial Metadata] */
-    strcpy (sql,
-	    "INSERT INTO geometry_columns (f_table_name, f_geometry_column, type, ");
-    strcat (sql, "coord_dimension, srid, spatial_index_enabled) VALUES (");
-    strcat (sql, "'");
-    strcat (sql, sqltable);
-    strcat (sql, "', '");
-    strcat (sql, sqlcolumn);
-    strcat (sql, "', '");
-    switch (xtype)
+    if (metadata_version == 1)
       {
-      case GAIA_POINT:
-	  strcat (sql, "POINT");
-	  break;
-      case GAIA_LINESTRING:
-	  strcat (sql, "LINESTRING");
-	  break;
-      case GAIA_POLYGON:
-	  strcat (sql, "POLYGON");
-	  break;
-      case GAIA_MULTIPOINT:
-	  strcat (sql, "MULTIPOINT");
-	  break;
-      case GAIA_MULTILINESTRING:
-	  strcat (sql, "MULTILINESTRING");
-	  break;
-      case GAIA_MULTIPOLYGON:
-	  strcat (sql, "MULTIPOLYGON");
-	  break;
-      case GAIA_GEOMETRYCOLLECTION:
-	  strcat (sql, "GEOMETRYCOLLECTION");
-	  break;
-      case -1:
-	  strcat (sql, "GEOMETRY");
-	  break;
-      };
-    strcat (sql, "', '");
-    switch (dims)
-      {
-      case GAIA_XY:
-	  strcat (sql, "XY");
-	  break;
-      case GAIA_XY_Z:
-	  strcat (sql, "XYZ");
-	  break;
-      case GAIA_XY_M:
-	  strcat (sql, "XYM");
-	  break;
-      case GAIA_XY_Z_M:
-	  strcat (sql, "XYZM");
-	  break;
-      };
-    strcat (sql, "', ");
-    if (srid <= 0)
-	strcat (sql, "-1");
+	  /* legacy metadata style < v.3.1.0 */
+	  strcpy (sql,
+		  "INSERT INTO geometry_columns (f_table_name, f_geometry_column, type, ");
+	  strcat (sql,
+		  "coord_dimension, srid, spatial_index_enabled) VALUES (");
+	  strcat (sql, "'");
+	  strcat (sql, sqltable);
+	  strcat (sql, "', '");
+	  strcat (sql, sqlcolumn);
+	  strcat (sql, "', '");
+	  switch (xtype)
+	    {
+	    case GAIA_POINT:
+		strcat (sql, "POINT");
+		break;
+	    case GAIA_LINESTRING:
+		strcat (sql, "LINESTRING");
+		break;
+	    case GAIA_POLYGON:
+		strcat (sql, "POLYGON");
+		break;
+	    case GAIA_MULTIPOINT:
+		strcat (sql, "MULTIPOINT");
+		break;
+	    case GAIA_MULTILINESTRING:
+		strcat (sql, "MULTILINESTRING");
+		break;
+	    case GAIA_MULTIPOLYGON:
+		strcat (sql, "MULTIPOLYGON");
+		break;
+	    case GAIA_GEOMETRYCOLLECTION:
+		strcat (sql, "GEOMETRYCOLLECTION");
+		break;
+	    case -1:
+		strcat (sql, "GEOMETRY");
+		break;
+	    };
+	  strcat (sql, "', '");
+	  switch (dims)
+	    {
+	    case GAIA_XY:
+		strcat (sql, "XY");
+		break;
+	    case GAIA_XY_Z:
+		strcat (sql, "XYZ");
+		break;
+	    case GAIA_XY_M:
+		strcat (sql, "XYM");
+		break;
+	    case GAIA_XY_Z_M:
+		strcat (sql, "XYZM");
+		break;
+	    };
+	  strcat (sql, "', ");
+	  if (srid <= 0)
+	      strcat (sql, "-1");
+	  else
+	    {
+		sprintf (dummy, "%d", srid);
+		strcat (sql, dummy);
+	    }
+	  strcat (sql, ", 0)");
+      }
     else
       {
+	  /* current metadata style >= v.3.1.0 */
+	  strcpy (sql,
+		  "INSERT INTO geometry_columns (f_table_name, f_geometry_column, geometry_type, ");
+	  strcat (sql,
+		  "coord_dimension, srid, spatial_index_enabled) VALUES (");
+	  strcat (sql, "'");
+	  strcat (sql, sqltable);
+	  strcat (sql, "', '");
+	  strcat (sql, sqlcolumn);
+	  strcat (sql, "', ");
+	  switch (xtype)
+	    {
+	    case GAIA_POINT:
+		if (dims == GAIA_XY_Z)
+		    strcat (sql, "1001, ");
+		else if (dims == GAIA_XY_M)
+		    strcat (sql, "2001, ");
+		else if (dims == GAIA_XY_Z_M)
+		    strcat (sql, "3001, ");
+		else
+		    strcat (sql, "1, ");
+		break;
+	    case GAIA_LINESTRING:
+		if (dims == GAIA_XY_Z)
+		    strcat (sql, "1002, ");
+		else if (dims == GAIA_XY_M)
+		    strcat (sql, "2002, ");
+		else if (dims == GAIA_XY_Z_M)
+		    strcat (sql, "3002, ");
+		else
+		    strcat (sql, "2, ");
+		break;
+	    case GAIA_POLYGON:
+		if (dims == GAIA_XY_Z)
+		    strcat (sql, "1003, ");
+		else if (dims == GAIA_XY_M)
+		    strcat (sql, "2003, ");
+		else if (dims == GAIA_XY_Z_M)
+		    strcat (sql, "3003, ");
+		else
+		    strcat (sql, "3, ");
+		break;
+	    case GAIA_MULTIPOINT:
+		if (dims == GAIA_XY_Z)
+		    strcat (sql, "1004, ");
+		else if (dims == GAIA_XY_M)
+		    strcat (sql, "2004, ");
+		else if (dims == GAIA_XY_Z_M)
+		    strcat (sql, "3004, ");
+		else
+		    strcat (sql, "4, ");
+		break;
+	    case GAIA_MULTILINESTRING:
+		if (dims == GAIA_XY_Z)
+		    strcat (sql, "1005, ");
+		else if (dims == GAIA_XY_M)
+		    strcat (sql, "2005, ");
+		else if (dims == GAIA_XY_Z_M)
+		    strcat (sql, "3005, ");
+		else
+		    strcat (sql, "5, ");
+		break;
+	    case GAIA_MULTIPOLYGON:
+		if (dims == GAIA_XY_Z)
+		    strcat (sql, "1006, ");
+		else if (dims == GAIA_XY_M)
+		    strcat (sql, "2006, ");
+		else if (dims == GAIA_XY_Z_M)
+		    strcat (sql, "3006, ");
+		else
+		    strcat (sql, "6, ");
+		break;
+	    case GAIA_GEOMETRYCOLLECTION:
+		if (dims == GAIA_XY_Z)
+		    strcat (sql, "1007, ");
+		else if (dims == GAIA_XY_M)
+		    strcat (sql, "2007, ");
+		else if (dims == GAIA_XY_Z_M)
+		    strcat (sql, "3007, ");
+		else
+		    strcat (sql, "7, ");
+		break;
+	    case -1:
+		if (dims == GAIA_XY_Z)
+		    strcat (sql, "1000, ");
+		else if (dims == GAIA_XY_M)
+		    strcat (sql, "2000, ");
+		else if (dims == GAIA_XY_Z_M)
+		    strcat (sql, "3000, ");
+		else
+		    strcat (sql, "0, ");
+		break;
+	    };
+	  switch (dims)
+	    {
+	    case GAIA_XY:
+		strcat (sql, "2");
+		break;
+	    case GAIA_XY_Z:
+	    case GAIA_XY_M:
+		strcat (sql, "3");
+		break;
+	    case GAIA_XY_Z_M:
+		strcat (sql, "4");
+		break;
+	    };
+	  strcat (sql, ", ");
 	  sprintf (dummy, "%d", srid);
 	  strcat (sql, dummy);
+	  strcat (sql, ", 0)");
       }
-    strcat (sql, ", 0)");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
@@ -2296,6 +2627,7 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     char tblname[256];
     char sqltable[1024];
     char sqlcolumn[1024];
+    int metadata_version;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
@@ -2388,6 +2720,17 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
       {
 	  spatialite_e
 	      ("RecoverGeometryColumn() error: argument 5 [dimension] ILLEGAL VALUE\n");
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    metadata_version = checkSpatialMetaData (sqlite);
+    if (metadata_version == 1 || metadata_version == 3)
+	;
+    else
+      {
+	  spatialite_e
+	      ("RecoverGeometryColumn() error: unexpected metadata layout\n",
+	       table);
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -2558,79 +2901,201 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 	  sqlite3_result_int (context, 0);
 	  return;
       }
-    strcpy (sql,
-	    "INSERT INTO geometry_columns (f_table_name, f_geometry_column, type, ");
-    strcat (sql, "coord_dimension, srid, spatial_index_enabled) VALUES (");
-    strcat (sql, "'");
-    strcat (sql, sqltable);
-    strcat (sql, "', '");
-    strcat (sql, sqlcolumn);
-    strcat (sql, "', '");
-    switch (xtype)
+    if (metadata_version == 1)
       {
-      case GAIA_POINT:
-      case GAIA_POINTZ:
-      case GAIA_POINTM:
-      case GAIA_POINTZM:
-	  strcat (sql, "POINT");
-	  break;
-      case GAIA_LINESTRING:
-      case GAIA_LINESTRINGZ:
-      case GAIA_LINESTRINGM:
-      case GAIA_LINESTRINGZM:
-	  strcat (sql, "LINESTRING");
-	  break;
-      case GAIA_POLYGON:
-      case GAIA_POLYGONZ:
-      case GAIA_POLYGONM:
-      case GAIA_POLYGONZM:
-	  strcat (sql, "POLYGON");
-	  break;
-      case GAIA_MULTIPOINT:
-      case GAIA_MULTIPOINTZ:
-      case GAIA_MULTIPOINTM:
-      case GAIA_MULTIPOINTZM:
-	  strcat (sql, "MULTIPOINT");
-	  break;
-      case GAIA_MULTILINESTRING:
-      case GAIA_MULTILINESTRINGZ:
-      case GAIA_MULTILINESTRINGM:
-      case GAIA_MULTILINESTRINGZM:
-	  strcat (sql, "MULTILINESTRING");
-	  break;
-      case GAIA_MULTIPOLYGON:
-      case GAIA_MULTIPOLYGONZ:
-      case GAIA_MULTIPOLYGONM:
-      case GAIA_MULTIPOLYGONZM:
-	  strcat (sql, "MULTIPOLYGON");
-	  break;
-      case GAIA_GEOMETRYCOLLECTION:
-      case GAIA_GEOMETRYCOLLECTIONZ:
-      case GAIA_GEOMETRYCOLLECTIONM:
-      case GAIA_GEOMETRYCOLLECTIONZM:
-	  strcat (sql, "GEOMETRYCOLLECTION");
-	  break;
-      case -1:
-	  strcat (sql, "GEOMETRY");
-	  break;
-      };
-    strcat (sql, "', '");
-    switch (dims)
+	  /* legacy metadata style < v.3.1.0 */
+	  strcpy (sql,
+		  "INSERT INTO geometry_columns (f_table_name, f_geometry_column, type, ");
+	  strcat (sql,
+		  "coord_dimension, srid, spatial_index_enabled) VALUES (");
+	  strcat (sql, "'");
+	  strcat (sql, sqltable);
+	  strcat (sql, "', '");
+	  strcat (sql, sqlcolumn);
+	  strcat (sql, "', '");
+	  switch (xtype)
+	    {
+	    case GAIA_POINT:
+	    case GAIA_POINTZ:
+	    case GAIA_POINTM:
+	    case GAIA_POINTZM:
+		strcat (sql, "POINT");
+		break;
+	    case GAIA_LINESTRING:
+	    case GAIA_LINESTRINGZ:
+	    case GAIA_LINESTRINGM:
+	    case GAIA_LINESTRINGZM:
+		strcat (sql, "LINESTRING");
+		break;
+	    case GAIA_POLYGON:
+	    case GAIA_POLYGONZ:
+	    case GAIA_POLYGONM:
+	    case GAIA_POLYGONZM:
+		strcat (sql, "POLYGON");
+		break;
+	    case GAIA_MULTIPOINT:
+	    case GAIA_MULTIPOINTZ:
+	    case GAIA_MULTIPOINTM:
+	    case GAIA_MULTIPOINTZM:
+		strcat (sql, "MULTIPOINT");
+		break;
+	    case GAIA_MULTILINESTRING:
+	    case GAIA_MULTILINESTRINGZ:
+	    case GAIA_MULTILINESTRINGM:
+	    case GAIA_MULTILINESTRINGZM:
+		strcat (sql, "MULTILINESTRING");
+		break;
+	    case GAIA_MULTIPOLYGON:
+	    case GAIA_MULTIPOLYGONZ:
+	    case GAIA_MULTIPOLYGONM:
+	    case GAIA_MULTIPOLYGONZM:
+		strcat (sql, "MULTIPOLYGON");
+		break;
+	    case GAIA_GEOMETRYCOLLECTION:
+	    case GAIA_GEOMETRYCOLLECTIONZ:
+	    case GAIA_GEOMETRYCOLLECTIONM:
+	    case GAIA_GEOMETRYCOLLECTIONZM:
+		strcat (sql, "GEOMETRYCOLLECTION");
+		break;
+	    case -1:
+		strcat (sql, "GEOMETRY");
+		break;
+	    };
+	  strcat (sql, "', '");
+	  switch (dims)
+	    {
+	    case GAIA_XY:
+		strcat (sql, "XY");
+		break;
+	    case GAIA_XY_Z:
+		strcat (sql, "XYZ");
+		break;
+	    case GAIA_XY_M:
+		strcat (sql, "XYM");
+		break;
+	    case GAIA_XY_Z_M:
+		strcat (sql, "XYZM");
+		break;
+	    };
+	  strcat (sql, "', ");
+      }
+    else
       {
-      case GAIA_XY:
-	  strcat (sql, "XY");
-	  break;
-      case GAIA_XY_Z:
-	  strcat (sql, "XYZ");
-	  break;
-      case GAIA_XY_M:
-	  strcat (sql, "XYM");
-	  break;
-      case GAIA_XY_Z_M:
-	  strcat (sql, "XYZM");
-	  break;
-      };
-    strcat (sql, "', ");
+	  /* current metadata style v.3.1.0 */
+	  strcpy (sql,
+		  "INSERT INTO geometry_columns (f_table_name, f_geometry_column, geometry_type, ");
+	  strcat (sql,
+		  "coord_dimension, srid, spatial_index_enabled) VALUES (");
+	  strcat (sql, "'");
+	  strcat (sql, sqltable);
+	  strcat (sql, "', '");
+	  strcat (sql, sqlcolumn);
+	  strcat (sql, "', ");
+	  switch (xtype)
+	    {
+	    case GAIA_POINT:
+		strcat (sql, "1, 2, ");
+		break;
+	    case GAIA_POINTZ:
+		strcat (sql, "1001, 3, ");
+		break;
+	    case GAIA_POINTM:
+		strcat (sql, "2001, 3, ");
+		break;
+	    case GAIA_POINTZM:
+		strcat (sql, "3001, 4, ");
+		break;
+	    case GAIA_LINESTRING:
+		strcat (sql, "2, 2, ");
+		break;
+	    case GAIA_LINESTRINGZ:
+		strcat (sql, "2002, 3, ");
+		break;
+	    case GAIA_LINESTRINGM:
+		strcat (sql, "2002, 3, ");
+		break;
+	    case GAIA_LINESTRINGZM:
+		strcat (sql, "3002, 4, ");
+		break;
+	    case GAIA_POLYGON:
+		strcat (sql, "3, 2, ");
+		break;
+	    case GAIA_POLYGONZ:
+		strcat (sql, "1003, 3, ");
+		break;
+	    case GAIA_POLYGONM:
+		strcat (sql, "2003, 3, ");
+		break;
+	    case GAIA_POLYGONZM:
+		strcat (sql, "3003, 4, ");
+		break;
+	    case GAIA_MULTIPOINT:
+		strcat (sql, "4, 2, ");
+		break;
+	    case GAIA_MULTIPOINTZ:
+		strcat (sql, "1004, 3, ");
+		break;
+	    case GAIA_MULTIPOINTM:
+		strcat (sql, "2004, 3, ");
+		break;
+	    case GAIA_MULTIPOINTZM:
+		strcat (sql, "3004, 4, ");
+		break;
+	    case GAIA_MULTILINESTRING:
+		strcat (sql, "5, 2, ");
+		break;
+	    case GAIA_MULTILINESTRINGZ:
+		strcat (sql, "1005, 3, ");
+		break;
+	    case GAIA_MULTILINESTRINGM:
+		strcat (sql, "2005, 3, ");
+		break;
+	    case GAIA_MULTILINESTRINGZM:
+		strcat (sql, "3005, 4, ");
+		break;
+	    case GAIA_MULTIPOLYGON:
+		strcat (sql, "6, 2, ");
+		break;
+	    case GAIA_MULTIPOLYGONZ:
+		strcat (sql, "1006, 3, ");
+		break;
+	    case GAIA_MULTIPOLYGONM:
+		strcat (sql, "2006, 3, ");
+		break;
+	    case GAIA_MULTIPOLYGONZM:
+		strcat (sql, "3006, 4, ");
+		break;
+	    case GAIA_GEOMETRYCOLLECTION:
+		strcat (sql, "7, 2, ");
+		break;
+	    case GAIA_GEOMETRYCOLLECTIONZ:
+		strcat (sql, "1007, 3, ");
+		break;
+	    case GAIA_GEOMETRYCOLLECTIONM:
+		strcat (sql, "2007, 3, ");
+		break;
+	    case GAIA_GEOMETRYCOLLECTIONZM:
+		strcat (sql, "3007, 4, ");
+		break;
+	    case -1:
+		switch (dims)
+		  {
+		  case GAIA_XY:
+		      strcat (sql, "0, 2, ");
+		      break;
+		  case GAIA_XY_Z:
+		      strcat (sql, "1000, 2, ");
+		      break;
+		  case GAIA_XY_M:
+		      strcat (sql, "2000, 2, ");
+		      break;
+		  case GAIA_XY_Z_M:
+		      strcat (sql, "3000, 2, ");
+		      break;
+		  };
+		break;
+	    };
+      }
     if (srid <= 0)
 	strcat (sql, "-1");
     else
@@ -17775,8 +18240,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -17860,8 +18324,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -17870,8 +18333,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }

@@ -362,7 +362,7 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
       }
 /* checking if TABLE already exists */
     sprintf (sql,
-	     "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE '%s'",
+	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Upper(name) = Upper('%s')",
 	     table);
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
@@ -862,8 +862,8 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->Value->
-						       TxtValue),
+					       strlen (dbf_field->
+						       Value->TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -975,6 +975,7 @@ output_prj_file (sqlite3 * sqlite, char *path, char *table, char *column)
     int ret;
     int rs_srid = 0;
     int rs_srs_wkt = 0;
+    int rs_srtext = 0;
     const char *name;
     char srsWkt[8192];
     char dummy[8192];
@@ -1023,7 +1024,7 @@ output_prj_file (sqlite3 * sqlite, char *path, char *table, char *column)
     if (srid < 0)
 	return;
 
-/* step II: checking if the SRS_WKT column actually exists */
+/* step II: checking if the SRS_WKT or SRTEXT column actually exists */
     ret =
 	sqlite3_get_table (sqlite, "PRAGMA table_info(spatial_ref_sys)",
 			   &results, &rows, &columns, &errMsg);
@@ -1042,19 +1043,30 @@ output_prj_file (sqlite3 * sqlite, char *path, char *table, char *column)
 		name = results[(i * columns) + 1];
 		if (strcasecmp (name, "srid") == 0)
 		    rs_srid = 1;
-		if (strcasecmp (name, "auth_name") == 0)
+		if (strcasecmp (name, "srs_wkt") == 0)
 		    rs_srs_wkt = 1;
+		if (strcasecmp (name, "srtext") == 0)
+		    rs_srtext = 1;
 	    }
       }
     sqlite3_free_table (results);
-    if (rs_srid == 0 || rs_srs_wkt == 0)
+    if (rs_srid == 0 || (rs_srs_wkt == 0 && rs_srtext == 0) == 0)
 	return;
 
 /* step III: fetching WKT SRS */
     *srsWkt = '\0';
-    sprintf (sql,
-	     "SELECT srs_wkt FROM spatial_ref_sys WHERE srid = %d AND srs_wkt IS NOT NULL",
-	     srid);
+    if (rs_srtext)
+      {
+	  sprintf (sql,
+		   "SELECT srtext FROM spatial_ref_sys WHERE srid = %d AND srtext IS NOT NULL",
+		   srid);
+      }
+    else
+      {
+	  sprintf (sql,
+		   "SELECT srs_wkt FROM spatial_ref_sys WHERE srid = %d AND srs_wkt IS NOT NULL",
+		   srid);
+      }
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
@@ -1134,6 +1146,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
     gaiaDbfFieldPtr dbf_field;
     int *max_length = NULL;
     int *sql_type = NULL;
+    int metadata_version = checkSpatialMetaData (sqlite);
     if (geom_type)
       {
 	  /* normalizing required geometry type */
@@ -1155,9 +1168,21 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	  int i;
 	  char metatype[256];
 	  char metadims[256];
-	  sprintf (sql,
-		   "SELECT type, coord_dimension FROM geometry_columns WHERE f_table_name = '%s' AND f_geometry_column = '%s'",
-		   table, column);
+	  if (metadata_version == 3)
+	    {
+		/* current metadata style >= v.3.1.0 */
+		sprintf (sql,
+			 "SELECT geometry_type FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') AND Upper(f_geometry_column) = Upper('%s')",
+			 table, column);
+	    }
+	  else
+	    {
+		/* legacy metadata style < v.3.1.0 */
+		sprintf (sql,
+			 "SELECT type, coord_dimension FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') AND Upper(f_geometry_column) = Upper('%s')",
+			 table, column);
+	    }
+
 	  ret =
 	      sqlite3_get_table (sqlite, sql, &results, &rows, &columns,
 				 &errMsg);
@@ -1176,8 +1201,147 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	  *metadims = '\0';
 	  for (i = 1; i <= rows; i++)
 	    {
-		strcpy (metatype, results[(i * columns) + 0]);
-		strcpy (metadims, results[(i * columns) + 1]);
+		if (metadata_version == 3)
+		  {
+		      /* current metadata style >= v.3.1.0 */
+		      switch (atoi (results[(i * columns) + 0]))
+			{
+			case 0:
+			    strcpy (metatype, "GEOMETRY");
+			    strcpy (metadims, "XY");
+			    break;
+			case 1:
+			    strcpy (metatype, "POINT");
+			    strcpy (metadims, "XY");
+			    break;
+			case 2:
+			    strcpy (metatype, "LINESTRING");
+			    strcpy (metadims, "XY");
+			    break;
+			case 3:
+			    strcpy (metatype, "POLYGON");
+			    strcpy (metadims, "XY");
+			    break;
+			case 4:
+			    strcpy (metatype, "MULTIPOINT");
+			    strcpy (metadims, "XY");
+			    break;
+			case 5:
+			    strcpy (metatype, "MULTILINESTRING");
+			    strcpy (metadims, "XY");
+			    break;
+			case 6:
+			    strcpy (metatype, "MULTIPOLYGON");
+			    strcpy (metadims, "XY");
+			    break;
+			case 7:
+			    strcpy (metatype, "GEOMETRYCOLLECTION");
+			    strcpy (metadims, "XY");
+			    break;
+			case 1000:
+			    strcpy (metatype, "GEOMETRY");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 1001:
+			    strcpy (metatype, "POINT");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 1002:
+			    strcpy (metatype, "LINESTRING");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 1003:
+			    strcpy (metatype, "POLYGON");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 1004:
+			    strcpy (metatype, "MULTIPOINT");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 1005:
+			    strcpy (metatype, "MULTILINESTRING");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 1006:
+			    strcpy (metatype, "MULTIPOLYGON");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 1007:
+			    strcpy (metatype, "GEOMETRYCOLLECTION");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 2000:
+			    strcpy (metatype, "GEOMETRY");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 2001:
+			    strcpy (metatype, "POINT");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 2002:
+			    strcpy (metatype, "LINESTRING");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 2003:
+			    strcpy (metatype, "POLYGON");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 2004:
+			    strcpy (metatype, "MULTIPOINT");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 2005:
+			    strcpy (metatype, "MULTILINESTRING");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 2006:
+			    strcpy (metatype, "MULTIPOLYGON");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 2007:
+			    strcpy (metatype, "GEOMETRYCOLLECTION");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 3000:
+			    strcpy (metatype, "GEOMETRY");
+			    strcpy (metadims, "XYZM");
+			    break;
+			case 3001:
+			    strcpy (metatype, "POINT");
+			    strcpy (metadims, "XYZM");
+			    break;
+			case 3002:
+			    strcpy (metatype, "LINESTRING");
+			    strcpy (metadims, "XYZM");
+			    break;
+			case 3003:
+			    strcpy (metatype, "POLYGON");
+			    strcpy (metadims, "XYZM");
+			    break;
+			case 3004:
+			    strcpy (metatype, "MULTIPOINT");
+			    strcpy (metadims, "XYZM");
+			    break;
+			case 3005:
+			    strcpy (metatype, "MULTILINESTRING");
+			    strcpy (metadims, "XYZM");
+			    break;
+			case 3006:
+			    strcpy (metatype, "MULTIPOLYGON");
+			    strcpy (metadims, "XYZM");
+			    break;
+			case 3007:
+			    strcpy (metatype, "GEOMETRYCOLLECTION");
+			    strcpy (metadims, "XYZM");
+			    break;
+			};
+		  }
+		else
+		  {
+		      /* legacy metadata style < v.3.1.0 */
+		      strcpy (metatype, results[(i * columns) + 0]);
+		      strcpy (metadims, results[(i * columns) + 1]);
+		  }
 	    }
 	  sqlite3_free_table (results);
 	  if (strcasecmp (metatype, "POINT") == 0)
@@ -1241,8 +1405,18 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	  char metatype[256];
 	  char metadims[256];
 	  char sql2[1024];
-	  strcpy (sql,
-		  "SELECT type, coord_dimension FROM views_geometry_columns ");
+	  if (metadata_version == 3)
+	    {
+		/* current metadata style >= v.3.1.0 */
+		strcpy (sql,
+			"SELECT geometry_type FROM views_geometry_columns ");
+	    }
+	  else
+	    {
+		/* legacy metadata style < v.3.1.0 */
+		strcpy (sql,
+			"SELECT type, coord_dimension FROM views_geometry_columns ");
+	    }
 	  strcat (sql,
 		  "JOIN geometry_columns USING (f_table_name, f_geometry_column) ");
 	  sprintf (sql2, "WHERE view_name = '%s' AND view_geometry = '%s'",
@@ -1266,8 +1440,147 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	  *metadims = '\0';
 	  for (i = 1; i <= rows; i++)
 	    {
-		strcpy (metatype, results[(i * columns) + 0]);
-		strcpy (metadims, results[(i * columns) + 1]);
+		if (metadata_version == 3)
+		  {
+		      /* current metadata style >= v.3.1.0 */
+		      switch (atoi (results[(i * columns) + 0]))
+			{
+			case 0:
+			    strcpy (metatype, "GEOMETRY");
+			    strcpy (metadims, "XY");
+			    break;
+			case 1:
+			    strcpy (metatype, "POINT");
+			    strcpy (metadims, "XY");
+			    break;
+			case 2:
+			    strcpy (metatype, "LINESTRING");
+			    strcpy (metadims, "XY");
+			    break;
+			case 3:
+			    strcpy (metatype, "POLYGON");
+			    strcpy (metadims, "XY");
+			    break;
+			case 4:
+			    strcpy (metatype, "MULTIPOINT");
+			    strcpy (metadims, "XY");
+			    break;
+			case 5:
+			    strcpy (metatype, "MULTILINESTRING");
+			    strcpy (metadims, "XY");
+			    break;
+			case 6:
+			    strcpy (metatype, "MULTIPOLYGON");
+			    strcpy (metadims, "XY");
+			    break;
+			case 7:
+			    strcpy (metatype, "GEOMETRYCOLLECTION");
+			    strcpy (metadims, "XY");
+			    break;
+			case 1000:
+			    strcpy (metatype, "GEOMETRY");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 1001:
+			    strcpy (metatype, "POINT");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 1002:
+			    strcpy (metatype, "LINESTRING");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 1003:
+			    strcpy (metatype, "POLYGON");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 1004:
+			    strcpy (metatype, "MULTIPOINT");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 1005:
+			    strcpy (metatype, "MULTILINESTRING");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 1006:
+			    strcpy (metatype, "MULTIPOLYGON");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 1007:
+			    strcpy (metatype, "GEOMETRYCOLLECTION");
+			    strcpy (metadims, "XYZ");
+			    break;
+			case 2000:
+			    strcpy (metatype, "GEOMETRY");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 2001:
+			    strcpy (metatype, "POINT");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 2002:
+			    strcpy (metatype, "LINESTRING");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 2003:
+			    strcpy (metatype, "POLYGON");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 2004:
+			    strcpy (metatype, "MULTIPOINT");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 2005:
+			    strcpy (metatype, "MULTILINESTRING");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 2006:
+			    strcpy (metatype, "MULTIPOLYGON");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 2007:
+			    strcpy (metatype, "GEOMETRYCOLLECTION");
+			    strcpy (metadims, "XYM");
+			    break;
+			case 3000:
+			    strcpy (metatype, "GEOMETRY");
+			    strcpy (metadims, "XYZM");
+			    break;
+			case 3001:
+			    strcpy (metatype, "POINT");
+			    strcpy (metadims, "XYZM");
+			    break;
+			case 3002:
+			    strcpy (metatype, "LINESTRING");
+			    strcpy (metadims, "XYZM");
+			    break;
+			case 3003:
+			    strcpy (metatype, "POLYGON");
+			    strcpy (metadims, "XYZM");
+			    break;
+			case 3004:
+			    strcpy (metatype, "MULTIPOINT");
+			    strcpy (metadims, "XYZM");
+			    break;
+			case 3005:
+			    strcpy (metatype, "MULTILINESTRING");
+			    strcpy (metadims, "XYZM");
+			    break;
+			case 3006:
+			    strcpy (metatype, "MULTIPOLYGON");
+			    strcpy (metadims, "XYZM");
+			    break;
+			case 3007:
+			    strcpy (metatype, "GEOMETRYCOLLECTION");
+			    strcpy (metadims, "XYZM");
+			    break;
+			};
+		  }
+		else
+		  {
+		      /* legacy metadata style < v.3.1.0 */
+		      strcpy (metatype, results[(i * columns) + 0]);
+		      strcpy (metadims, results[(i * columns) + 1]);
+		  }
 	    }
 	  sqlite3_free_table (results);
 	  if (strcasecmp (metatype, "POINT") == 0)
@@ -1667,7 +1980,7 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
       }
 /* checking if TABLE already exists */
     sprintf (sql,
-	     "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE '%s'",
+	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Upper(name) = Upper('%s')",
 	     table);
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
@@ -1909,8 +2222,8 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->Value->
-						       TxtValue),
+					       strlen (dbf_field->
+						       Value->TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -2428,9 +2741,9 @@ is_table (sqlite3 * sqlite, const char *table)
     int ok = 0;
 
     strcpy (sql, "SELECT tbl_name FROM sqlite_master ");
-    strcat (sql, "WHERE type = 'table' AND tbl_name LIKE '");
+    strcat (sql, "WHERE type = 'table' AND Upper(tbl_name) = Upper('");
     strcat (sql, table);
-    strcat (sql, "'");
+    strcat (sql, "')");
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
@@ -2931,24 +3244,34 @@ check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
     char *gtp;
     char *dims;
     char *quoted;
+    int metadata_version = checkSpatialMetaData (sqlite);
 
 /* fetching metadata */
-    strcpy (sql, "SELECT type, coord_dimension, srid ");
-    strcat (sql, "FROM geometry_columns WHERE f_table_name LIKE '");
+    if (metadata_version == 3)
+      {
+	  /* current metadata style >= v.3.1.0 */
+	  strcpy (sql, "SELECT geometry_type, srid ");
+      }
+    else
+      {
+	  /* legacy metadata style < v.3.1.0 */
+	  strcpy (sql, "SELECT type, coord_dimension, srid ");
+      }
+    strcat (sql, "FROM geometry_columns WHERE Upper(f_table_name) = Upper('");
     quoted = gaiaSingleQuotedSql (inTable);
     if (quoted)
       {
 	  strcat (sql, quoted);
 	  free (quoted);
       }
-    strcat (sql, "' AND f_geometry_column LIKE '");
+    strcat (sql, "') AND Upper(f_geometry_column) = Upper('");
     quoted = gaiaSingleQuotedSql (geom);
     if (quoted)
       {
 	  strcat (sql, quoted);
 	  free (quoted);
       }
-    strcat (sql, "'");
+    strcat (sql, "')");
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
@@ -2962,9 +3285,150 @@ check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
       {
 	  for (i = 1; i <= rows; i++)
 	    {
-		gtp = results[(i * columns) + 0];
-		dims = results[(i * columns) + 1];
-		*srid = atoi (results[(i * columns) + 2]);
+		if (metadata_version == 3)
+		  {
+		      /* current metadata style >= v.3.1.0 */
+		      gtp = "UNKNOWN";
+		      dims = "UNKNOWN";
+		      switch (atoi (results[(i * columns) + 0]))
+			{
+			case 0:
+			    gtp = "GEOMETRY";
+			    dims = "XY";
+			    break;
+			case 1:
+			    gtp = "POINT";
+			    dims = "XY";
+			    break;
+			case 2:
+			    gtp = "LINESTRING";
+			    dims = "XY";
+			    break;
+			case 3:
+			    gtp = "POLYGON";
+			    dims = "XY";
+			    break;
+			case 4:
+			    gtp = "MULTIPOINT";
+			    dims = "XY";
+			    break;
+			case 5:
+			    gtp = "MULTILINESTRING";
+			    dims = "XY";
+			    break;
+			case 6:
+			    gtp = "MULTIPOLYGON";
+			    dims = "XY";
+			    break;
+			case 7:
+			    gtp = "GEOMETRYCOLLECTION";
+			    dims = "XY";
+			    break;
+			case 1000:
+			    gtp = "GEOMETRY";
+			    dims = "XYZ";
+			    break;
+			case 1001:
+			    gtp = "POINT";
+			    dims = "XYZ";
+			    break;
+			case 1002:
+			    gtp = "LINESTRING";
+			    dims = "XYZ";
+			    break;
+			case 1003:
+			    gtp = "POLYGON";
+			    dims = "XYZ";
+			    break;
+			case 1004:
+			    gtp = "MULTIPOINT";
+			    dims = "XYZ";
+			    break;
+			case 1005:
+			    gtp = "MULTILINESTRING";
+			    dims = "XYZ";
+			    break;
+			case 1006:
+			    gtp = "MULTIPOLYGON";
+			    dims = "XYZ";
+			    break;
+			case 1007:
+			    gtp = "GEOMETRYCOLLECTION";
+			    dims = "XYZ";
+			    break;
+			case 2000:
+			    gtp = "GEOMETRY";
+			    dims = "XYM";
+			    break;
+			case 2001:
+			    gtp = "POINT";
+			    dims = "XYM";
+			    break;
+			case 2002:
+			    gtp = "LINESTRING";
+			    dims = "XYM";
+			    break;
+			case 2003:
+			    gtp = "POLYGON";
+			    dims = "XYM";
+			    break;
+			case 2004:
+			    gtp = "MULTIPOINT";
+			    dims = "XYM";
+			    break;
+			case 2005:
+			    gtp = "MULTILINESTRING";
+			    dims = "XYM";
+			    break;
+			case 2006:
+			    gtp = "MULTIPOLYGON";
+			    dims = "XYM";
+			    break;
+			case 2007:
+			    gtp = "GEOMETRYCOLLECTION";
+			    dims = "XYM";
+			    break;
+			case 3000:
+			    gtp = "GEOMETRY";
+			    dims = "XYZM";
+			    break;
+			case 3001:
+			    gtp = "POINT";
+			    dims = "XYZM";
+			    break;
+			case 3002:
+			    gtp = "LINESTRING";
+			    dims = "XYZM";
+			    break;
+			case 3003:
+			    gtp = "POLYGON";
+			    dims = "XYZM";
+			    break;
+			case 3004:
+			    gtp = "MULTIPOINT";
+			    dims = "XYZM";
+			    break;
+			case 3005:
+			    gtp = "MULTILINESTRING";
+			    dims = "XYZM";
+			    break;
+			case 3006:
+			    gtp = "MULTIPOLYGON";
+			    dims = "XYZM";
+			    break;
+			case 3007:
+			    gtp = "GEOMETRYCOLLECTION";
+			    dims = "XYZM";
+			    break;
+			};
+		  }
+		else
+		  {
+		      /* legacy metadata style < v.3.1.0 */
+		      gtp = results[(i * columns) + 0];
+		      dims = results[(i * columns) + 1];
+		      *srid = atoi (results[(i * columns) + 2]);
+		  }
 		if (strcasecmp (gtp, "POINT") == 0
 		    || strcasecmp (gtp, "MULTIPOINT") == 0)
 		    strcpy (type, "POINT");
@@ -3046,14 +3510,14 @@ check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
 
 /* cheching if Output Table already exists */
     strcpy (sql, "SELECT Count(*) FROM sqlite_master WHERE type ");
-    strcat (sql, "LIKE 'table' AND tbl_name LIKE '");
+    strcat (sql, "= 'table' AND Upper(tbl_name) = Upper('");
     quoted = gaiaSingleQuotedSql (outTable);
     if (quoted)
       {
 	  strcat (sql, quoted);
 	  free (quoted);
       }
-    strcat (sql, "'");
+    strcat (sql, "')");
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
     if (ret != SQLITE_OK)
       {
@@ -3876,7 +4340,7 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
     int already_exists = 0;
 /* checking if TABLE already exists */
     sprintf (sql,
-	     "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE '%s'",
+	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Upper(name) = Upper('%s')",
 	     table);
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)

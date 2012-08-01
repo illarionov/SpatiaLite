@@ -230,7 +230,7 @@ populate_spatial_ref_sys (sqlite3 * handle, int mode)
 /* preparing the SQL parameterized statement */
     strcpy (sql, "INSERT INTO spatial_ref_sys ");
     strcat (sql,
-	    "(srid, auth_name, auth_srid, ref_sys_name, proj4text, srs_wkt) ");
+	    "(srid, auth_name, auth_srid, ref_sys_name, proj4text, srtext) ");
     strcat (sql, "VALUES (?, ?, ?, ?, ?, ?)");
     ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
@@ -254,7 +254,7 @@ populate_spatial_ref_sys (sqlite3 * handle, int mode)
 	  sqlite3_bind_text (stmt, 5, p->proj4text, strlen (p->proj4text),
 			     SQLITE_STATIC);
 	  if (strlen (p->srs_wkt) == 0)
-	      sqlite3_bind_null (stmt, 6);
+	      sqlite3_bind_text (stmt, 6, "Undefined", 9, SQLITE_STATIC);
 	  else
 	      sqlite3_bind_text (stmt, 6, p->srs_wkt, strlen (p->srs_wkt),
 				 SQLITE_STATIC);
@@ -346,7 +346,7 @@ check_spatial_ref_sys (sqlite3 * handle)
     int auth_srid = 0;
     int ref_sys_name = 0;
     int proj4text = 0;
-    int srs_wkt = 0;
+    int srtext = 0;
 
     strcpy (sql, "PRAGMA table_info(spatial_ref_sys)");
     ret =
@@ -374,13 +374,13 @@ check_spatial_ref_sys (sqlite3 * handle)
 		    ref_sys_name = 1;
 		if (strcasecmp (name, "proj4text") == 0)
 		    proj4text = 1;
-		if (strcasecmp (name, "srs_wkt") == 0)
-		    srs_wkt = 1;
+		if (strcasecmp (name, "srtext") == 0)
+		    srtext = 1;
 	    }
       }
     sqlite3_free_table (results);
     if (rs_srid && auth_name && auth_srid && ref_sys_name && proj4text
-	&& srs_wkt)
+	&& srtext)
 	ret = 1;
     else
 	ret = 0;
@@ -506,7 +506,7 @@ insert_epsg_srid (sqlite3 * handle, int srid)
 /* preparing the SQL parameterized statement */
     strcpy (sql, "INSERT INTO spatial_ref_sys ");
     strcat (sql,
-	    "(srid, auth_name, auth_srid, ref_sys_name, proj4text, srs_wkt) ");
+	    "(srid, auth_name, auth_srid, ref_sys_name, proj4text, srtext) ");
     strcat (sql, "VALUES (?, ?, ?, ?, ?, ?)");
     ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
@@ -526,7 +526,7 @@ insert_epsg_srid (sqlite3 * handle, int srid)
     sqlite3_bind_text (stmt, 5, first->proj4text, strlen (first->proj4text),
 		       SQLITE_STATIC);
     if (strlen (first->srs_wkt) == 0)
-	sqlite3_bind_null (stmt, 6);
+	sqlite3_bind_text (stmt, 6, "Undefined", 9, SQLITE_STATIC);
     else
 	sqlite3_bind_text (stmt, 6, first->srs_wkt, strlen (first->srs_wkt),
 			   SQLITE_STATIC);
