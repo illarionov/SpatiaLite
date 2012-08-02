@@ -56,7 +56,7 @@ EXTRA_DIST = asprintf4win.h \
 	test_under_valgrind.sh \
 	WritingSQLTestCase.txt \
 	test-legacy-2.3.1.sqlite \
-	test-legacy-3.1.0.sqlite \
+	test-legacy-3.0.1.sqlite \
 	shp/new-caledonia/buildings.dbf \
 	shp/new-caledonia/buildings.prj \
 	shp/new-caledonia/buildings.shp \

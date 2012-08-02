@@ -68,11 +68,67 @@ int main (int argc, char *argv[])
 	sqlite3_close(handle);
 	return -2;
     }
+    ret = sqlite3_exec (handle, "SELECT HasProj()", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "HasProj() error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -3;
+    }
+    ret = sqlite3_exec (handle, "SELECT HasGeos()", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "HasGeos() error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -4;
+    }
+    ret = sqlite3_exec (handle, "SELECT HasGeosAdvanced()", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "HasGeosAdvanced() error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -5;
+    }
+    ret = sqlite3_exec (handle, "SELECT HasIconv()", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "HasIconv() error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -6;
+    }
+    ret = sqlite3_exec (handle, "SELECT HasMathSql()", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "HasMathSql() error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -7;
+    }
+    ret = sqlite3_exec (handle, "SELECT HasGeoCallbacks()", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "HasGeoCallbacks() error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -8;
+    }
+    ret = sqlite3_exec (handle, "SELECT HasFreeXL()", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "HasFreeXL() error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -9;
+    }
+    ret = sqlite3_exec (handle, "SELECT HasEpsg()", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "HasEpsg() error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -10;
+    }
 
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -3;
+	return -11;
     }
     
     spatialite_cleanup();

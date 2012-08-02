@@ -2336,9 +2336,10 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td>Checks the Spatial Metadata type, then returning:<ul>
-				<li><b>0</b> - if <b>geometry_columns</b> and <b>spatial_ref_sys</b> tables does not exists</li>
-				<li><b>1</b> - if both tables exist, and their layout is the one used by <b>SpatiaLite</b></li>
+				<li><b>0</b> - if the <b>geometry_columns</b> or <b>spatial_ref_sys</b> table does not exists, or if their actual layout doesn't corresponds to any known implementation</li>
+				<li><b>1</b> - if both tables exist, and their layout is the one previously used by <b>SpatiaLite legacy</b> (<i>older versions including 3.0.1</i>)</li>
 				<li><b>2</b> - if both tables exist, and their layout is the one used by <b>FDO/OGR</b></li>
+				<li><b>3</b> - if both tables exist, and their layout is the one currently used by <b>SpatiaLite</b> (<i>3.1.0 or any subsequent version</i>)</li>
 				</ul></td></tr>
 			<tr><td><b>AutoFDOStart</b></td>
 				<td>AutoFDOStart( void ) : <i>Integer</i></td>
