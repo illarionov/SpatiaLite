@@ -288,7 +288,7 @@ int run_all_testcases()
 	
 	cleanup_test_data(data);
 	if (result != 0) {
-	    break;
+	    return result;
 	}
 	free(namelist[i]);
     }
@@ -314,7 +314,7 @@ int run_all_testcases()
 	
 	cleanup_test_data(data);
 	if (result != 0) {
-	    break;
+	    return result;
 	}
 	free(namelist[i]);
     }
@@ -341,7 +341,7 @@ int run_all_testcases()
 	
 	cleanup_test_data(data);
 	if (result != 0) {
-	    break;
+	    return result;
 	}
 	free(namelist[i]);
     }
@@ -368,7 +368,7 @@ int run_all_testcases()
 	
 	cleanup_test_data(data);
 	if (result != 0) {
-	    break;
+	    return result;
 	}
 	free(namelist[i]);
     }
@@ -395,7 +395,7 @@ int run_all_testcases()
 	
 	cleanup_test_data(data);
 	if (result != 0) {
-	    break;
+	    return result;
 	}
 	free(namelist[i]);
     }

@@ -14,6 +14,7 @@ check_PROGRAMS = check_endian \
 		shape_cp1252 \
 		shape_primitives \
 		shape_utf8_1 \
+		shape_utf8_1ex \
 		shape_utf8_2 \
 		shape_3d \
 		check_xls_load \
@@ -54,6 +55,8 @@ EXTRA_DIST = asprintf4win.h \
 	shapetest1.shx \
 	test_under_valgrind.sh \
 	WritingSQLTestCase.txt \
+	test-legacy-2.3.1.sqlite \
+	test-legacy-3.1.0.sqlite \
 	shp/new-caledonia/buildings.dbf \
 	shp/new-caledonia/buildings.prj \
 	shp/new-caledonia/buildings.shp \
@@ -477,6 +480,8 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/checkspatialmetadata1.testcase \
 	sql_stmt_tests/checkspatialmetadata2.testcase \
 	sql_stmt_tests/checkspatialmetadata3.testcase \
+	sql_stmt_tests/checkspatialmetadata4.testcase \
+	sql_stmt_tests/checkspatialmetadata5.testcase \
 	sql_stmt_tests/ch_m.testcase \
 	sql_stmt_geosadvanced_tests/closestpoint10.testcase \
 	sql_stmt_geosadvanced_tests/closestpoint11.testcase \

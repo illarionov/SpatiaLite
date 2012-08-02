@@ -40,7 +40,8 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_fdo3$(EXEEXT) check_dbf_load$(EXEEXT) \
 	check_shp_load$(EXEEXT) check_shp_load_3d$(EXEEXT) \
 	shape_cp1252$(EXEEXT) shape_primitives$(EXEEXT) \
-	shape_utf8_1$(EXEEXT) shape_utf8_2$(EXEEXT) shape_3d$(EXEEXT) \
+	shape_utf8_1$(EXEEXT) shape_utf8_1ex$(EXEEXT) \
+	shape_utf8_2$(EXEEXT) shape_3d$(EXEEXT) \
 	check_xls_load$(EXEEXT) check_math_funcs$(EXEEXT) \
 	check_gaia_util$(EXEEXT) check_gaia_utf8$(EXEEXT) \
 	check_extension$(EXEEXT) check_recover_geom$(EXEEXT) \
@@ -174,6 +175,9 @@ shape_primitives_LDADD = $(LDADD)
 shape_utf8_1_SOURCES = shape_utf8_1.c
 shape_utf8_1_OBJECTS = shape_utf8_1.$(OBJEXT)
 shape_utf8_1_LDADD = $(LDADD)
+shape_utf8_1ex_SOURCES = shape_utf8_1ex.c
+shape_utf8_1ex_OBJECTS = shape_utf8_1ex.$(OBJEXT)
+shape_utf8_1ex_LDADD = $(LDADD)
 shape_utf8_2_SOURCES = shape_utf8_2.c
 shape_utf8_2_OBJECTS = shape_utf8_2.$(OBJEXT)
 shape_utf8_2_LDADD = $(LDADD)
@@ -201,7 +205,7 @@ SOURCES = check_create.c check_dbf_load.c check_endian.c check_exif.c \
 	check_virtualtable3.c check_virtualtable4.c \
 	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
 	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
-	shape_utf8_2.c
+	shape_utf8_1ex.c shape_utf8_2.c
 DIST_SOURCES = check_create.c check_dbf_load.c check_endian.c \
 	check_exif.c check_extension.c check_extra_relations_fncts.c \
 	check_fdo1.c check_fdo2.c check_fdo3.c check_gaia_utf8.c \
@@ -214,7 +218,7 @@ DIST_SOURCES = check_create.c check_dbf_load.c check_endian.c \
 	check_virtualtable3.c check_virtualtable4.c \
 	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
 	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
-	shape_utf8_2.c
+	shape_utf8_1ex.c shape_utf8_2.c
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -358,6 +362,8 @@ EXTRA_DIST = asprintf4win.h \
 	shapetest1.shx \
 	test_under_valgrind.sh \
 	WritingSQLTestCase.txt \
+	test-legacy-2.3.1.sqlite \
+	test-legacy-3.1.0.sqlite \
 	shp/new-caledonia/buildings.dbf \
 	shp/new-caledonia/buildings.prj \
 	shp/new-caledonia/buildings.shp \
@@ -781,6 +787,8 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/checkspatialmetadata1.testcase \
 	sql_stmt_tests/checkspatialmetadata2.testcase \
 	sql_stmt_tests/checkspatialmetadata3.testcase \
+	sql_stmt_tests/checkspatialmetadata4.testcase \
+	sql_stmt_tests/checkspatialmetadata5.testcase \
 	sql_stmt_tests/ch_m.testcase \
 	sql_stmt_geosadvanced_tests/closestpoint10.testcase \
 	sql_stmt_geosadvanced_tests/closestpoint11.testcase \
@@ -2740,6 +2748,9 @@ shape_primitives$(EXEEXT): $(shape_primitives_OBJECTS) $(shape_primitives_DEPEND
 shape_utf8_1$(EXEEXT): $(shape_utf8_1_OBJECTS) $(shape_utf8_1_DEPENDENCIES) $(EXTRA_shape_utf8_1_DEPENDENCIES) 
 	@rm -f shape_utf8_1$(EXEEXT)
 	$(LINK) $(shape_utf8_1_OBJECTS) $(shape_utf8_1_LDADD) $(LIBS)
+shape_utf8_1ex$(EXEEXT): $(shape_utf8_1ex_OBJECTS) $(shape_utf8_1ex_DEPENDENCIES) $(EXTRA_shape_utf8_1ex_DEPENDENCIES) 
+	@rm -f shape_utf8_1ex$(EXEEXT)
+	$(LINK) $(shape_utf8_1ex_OBJECTS) $(shape_utf8_1ex_LDADD) $(LIBS)
 shape_utf8_2$(EXEEXT): $(shape_utf8_2_OBJECTS) $(shape_utf8_2_DEPENDENCIES) $(EXTRA_shape_utf8_2_DEPENDENCIES) 
 	@rm -f shape_utf8_2$(EXEEXT)
 	$(LINK) $(shape_utf8_2_OBJECTS) $(shape_utf8_2_LDADD) $(LIBS)
@@ -2786,6 +2797,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_cp1252.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_primitives.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_utf8_1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_utf8_1ex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_utf8_2.Po@am__quote@
 
 .c.o:

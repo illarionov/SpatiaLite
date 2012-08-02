@@ -862,8 +862,8 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->
-						       Value->TxtValue),
+					       strlen (dbf_field->Value->
+						       TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -976,6 +976,7 @@ output_prj_file (sqlite3 * sqlite, char *path, char *table, char *column)
     int rs_srid = 0;
     int rs_srs_wkt = 0;
     int rs_srtext = 0;
+    int has_srtext = 0;
     const char *name;
     char srsWkt[8192];
     char dummy[8192];
@@ -1050,7 +1051,9 @@ output_prj_file (sqlite3 * sqlite, char *path, char *table, char *column)
 	    }
       }
     sqlite3_free_table (results);
-    if (rs_srid == 0 || (rs_srs_wkt == 0 && rs_srtext == 0) == 0)
+    if (rs_srs_wkt == 1 || rs_srtext == 1)
+	has_srtext = 1;
+    if (rs_srid == 0 || has_srtext == 0)
 	return;
 
 /* step III: fetching WKT SRS */
@@ -2222,8 +2225,8 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->
-						       Value->TxtValue),
+					       strlen (dbf_field->Value->
+						       TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
