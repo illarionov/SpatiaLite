@@ -176,7 +176,7 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  else
 	      strcpy (encoding, pEncoding);
 	  srid = atoi (argv[5]);
-	  if (srid <= 0)
+	  if (srid < 0)
 	      srid = -1;
       }
     else

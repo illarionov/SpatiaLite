@@ -2230,6 +2230,22 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td
 				<td>Removes a <u>geometry column</u> from Spatial MetaData tables and drops any related <u>trigger</u><br>
 the column itself still continues to exist untouched as an ordinary, unconstrained column<hr>
 the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td></tr>
+			<tr><td><b>RegisterVirtualGeometry</b></td>
+				<td>RegisterVirtualGeometry( table <i>String</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td>Registers a <u>VirtualShape</u> table into Spatial MetaData tables; the VirtualShape table should be previously created by invoking <b>CREATE VIRTUAL TABLE ... USING VirtualShape(...)</b><hr>
+the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td></tr>
+			<tr><td><b>DropVirtualGeometry</b></td>
+				<td>DropVirtualGeometry( table <i>String</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td>Removes a <u>VirtualShape</u> table from Spatial MetaData tables, dropping the VirtualShape table as well.<hr>
+the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td></tr>
 			<tr><td><b>CreateSpatialIndex</b></td>
 				<td>CreateSpatialIndex( table <i>String</i> , column <i>String</i> ) : <i>Integer</i></td>
 				<td></td>

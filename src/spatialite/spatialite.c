@@ -1293,7 +1293,7 @@ static int
 createAdvancedMetaData (sqlite3 * sqlite)
 {
 /* creating the advanced MetaData tables */
-    char sql[1024];
+    char sql[4186];
     char *errMsg = NULL;
     int ret;
 /* creating the VIEWS_GEOMETRY_COLUMNS table */
@@ -1326,12 +1326,16 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "virts_geometry_columns (\n");
     strcat (sql, "virt_name TEXT NOT NULL,\n");
     strcat (sql, "virt_geometry TEXT NOT NULL,\n");
-    strcat (sql, "type VARCHAR(30) NOT NULL,\n");
+    strcat (sql, "geometry_type INTEGER NOT NULL,\n");
     strcat (sql, "srid INTEGER NOT NULL,\n");
     strcat (sql, "CONSTRAINT pk_geom_cols_virts PRIMARY KEY ");
     strcat (sql, "(virt_name, virt_geometry),\n");
     strcat (sql, "CONSTRAINT fk_vgc_srid FOREIGN KEY ");
-    strcat (sql, "(srid) REFERENCES spatial_ref_sys (srid))");
+    strcat (sql, "(srid) REFERENCES spatial_ref_sys (srid),\n");
+    strcat (sql, "CONSTRAINT ck_vgc_type CHECK (geometry_type IN ");
+    strcat (sql, "(1,2,3,4,5,6,1001,1002,1003,1004,1005,1006,");
+    strcat (sql, "2001,2002,2003,2004,2005,2006,3001,3002,");
+    strcat (sql, "3003,3004,3005,3006)))");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	return 0;
@@ -3297,6 +3301,289 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
     return;
   error:
     spatialite_e ("DiscardGeometryColumn() error: \"%s\"\n", errMsg);
+    sqlite3_free (errMsg);
+    sqlite3_result_int (context, 0);
+    return;
+}
+
+static int
+registerVirtual (sqlite3 * sqlite, const char *table)
+{
+/* attempting to register a VirtualGeometry */
+    char sql[8192];
+    char sql2[8192];
+    char xtable[4096];
+    char gtype[64];
+    int xtype = -1;
+    int srid;
+    char **results;
+    int ret;
+    int rows;
+    int columns;
+    int i;
+    char *errMsg = NULL;
+    int ok_virt_name = 0;
+    int ok_virt_geometry = 0;
+    int ok_srid = 0;
+    int ok_geometry_type = 0;
+    int ok_type = 0;
+
+/* testing the layout of virts_geometry_columns table */
+    sprintf (sql, "PRAGMA table_info(virts_geometry_columns)");
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("RegisterVirtualGeometry() error: \"%s\"\n", errMsg);
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+      {
+	  if (strcasecmp ("virt_name", results[(i * columns) + 1]) == 0)
+	      ok_virt_name = 1;
+	  if (strcasecmp ("virt_geometry", results[(i * columns) + 1]) == 0)
+	      ok_virt_geometry = 1;
+	  if (strcasecmp ("srid", results[(i * columns) + 1]) == 0)
+	      ok_srid = 1;
+	  if (strcasecmp ("geometry_type", results[(i * columns) + 1]) == 0)
+	      ok_geometry_type = 1;
+	  if (strcasecmp ("type", results[(i * columns) + 1]) == 0)
+	      ok_type = 1;
+      }
+    sqlite3_free_table (results);
+
+    if (ok_virt_name && ok_virt_geometry && ok_srid && ok_geometry_type)
+	;
+    else if (ok_virt_name && ok_virt_geometry && ok_srid && ok_type)
+	;
+    else
+	return 0;
+
+/* determining Geometry Type and dims */
+    strcpy (xtable, table);
+    double_quoted_sql (xtable);
+    sprintf (sql,
+	     "SELECT DISTINCT ST_GeometryType(Geometry), ST_Srid(Geometry) FROM %s",
+	     xtable);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("RegisterVirtualGeometry() error: \"%s\"\n", errMsg);
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+      {
+	  strcpy (gtype, results[(i * columns)]);
+	  srid = atoi (results[(i * columns) + 1]);
+      }
+    sqlite3_free_table (results);
+
+/* normalized Geometry type */
+    if (strcmp (gtype, "POINT") == 0)
+	      xtype = 1;
+    if (strcmp (gtype, "POINT Z") == 0)
+	      xtype = 1001;
+    if (strcmp (gtype, "POINT M") == 0)
+	      xtype = 2001;
+    if (strcmp (gtype, "POINT ZM") == 0)
+	      xtype = 3001;
+    if (strcmp (gtype, "LINESTRING") == 0)
+	      xtype = 2;
+    if (strcmp (gtype, "LINESTRING Z") == 0)
+	      xtype = 1002;
+    if (strcmp (gtype, "LINESTRING M") == 0)
+	      xtype = 2002;
+    if (strcmp (gtype, "LINESTRING ZM") == 0)
+	      xtype = 3002;
+    if (strcmp (gtype, "POLYGON") == 0)
+	      xtype = 3;
+    if (strcmp (gtype, "POLYGON Z") == 0)
+	      xtype = 1003;
+    if (strcmp (gtype, "POLYGON M") == 0)
+	      xtype = 2003;
+    if (strcmp (gtype, "POLYGON ZM") == 0)
+	      xtype = 3003;
+    if (strcmp (gtype, "MULTIPOINT") == 0)
+	      xtype = 4;
+    if (strcmp (gtype, "MULTIPOINT Z") == 0)
+	      xtype = 1004;
+    if (strcmp (gtype, "MULTIPOINT M") == 0)
+	      xtype = 2004;
+    if (strcmp (gtype, "MULTIPOINT ZM") == 0)
+	      xtype = 3004;
+    if (strcmp (gtype, "MULTILINESTRING") == 0)
+	      xtype = 5;
+    if (strcmp (gtype, "MULTILINESTRING Z") == 0)
+	      xtype = 1005;
+    if (strcmp (gtype, "MULTILINESTRING M") == 0)
+	      xtype = 2005;
+    if (strcmp (gtype, "MULTILINESTRING ZM") == 0)
+	      xtype = 3005;
+    if (strcmp (gtype, "MULTIPOLYGON") == 0)
+	      xtype = 6;
+    if (strcmp (gtype, "MULTIPOLYGON Z") == 0)
+	      xtype = 1006;
+    if (strcmp (gtype, "MULTIPOLYGON M") == 0)
+	      xtype = 2006;
+    if (strcmp (gtype, "MULTIPOLYGON ZM") == 0)
+	      xtype = 3006;
+
+/* updating metadata tables */
+    strcpy (xtable, table);
+    clean_sql_string (xtable);
+    if (ok_geometry_type)
+      {
+	  /* has the "geometry_type" column */
+	  strcpy (sql, "INSERT OR REPLACE INTO virts_geometry_columns ");
+	  strcat (sql, "(virt_name, virt_geometry, geometry_type, srid) ");
+	  sprintf (sql2, "VALUES ('%s', 'Geometry', %d, %d)", xtable, xtype,
+		   srid);
+	  strcat (sql, sql2);
+      }
+    else
+      {
+	  /* has the "type" column */
+	  const char *xgtype = "UNKNOWN";
+	  switch (xtype)
+	    {
+	    case 1:
+	    case 1001:
+	    case 2001:
+	    case 3001:
+		xgtype = "POINT";
+		break;
+	    case 2:
+	    case 1002:
+	    case 2002:
+	    case 3002:
+		xgtype = "LINESTRING";
+		break;
+	    case 3:
+	    case 1003:
+	    case 2003:
+	    case 3003:
+		xgtype = "POLYGON";
+		break;
+	    case 4:
+	    case 1004:
+	    case 2004:
+	    case 3004:
+		xgtype = "MULTIPOINT";
+		break;
+	    case 5:
+	    case 1005:
+	    case 2005:
+	    case 3005:
+		xgtype = "MULTILINESTRING";
+		break;
+	    case 6:
+	    case 1006:
+	    case 2006:
+	    case 3006:
+		xgtype = "MULTIPOLYGON";
+		break;
+	    };
+	  strcpy (sql, "INSERT OR REPLACE INTO virts_geometry_columns ");
+	  strcat (sql, "(virt_name, virt_geometry, type, srid) ");
+	  sprintf (sql2, "VALUES ('%s', 'Geometry', '%s', %d)", xtable, xgtype,
+		   srid);
+	  strcat (sql, sql2);
+      }
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("RegisterVirtualGeometry() error: \"%s\"\n", errMsg);
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    return 1;
+}
+
+static void
+fnct_RegisterVirtualGeometry (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterVirtualGeometry(table)
+/
+/ insert/updates TABLE.COLUMN into the Spatial MetaData [Virtual Table]
+/ returns 1 on success
+/ 0 on failure
+*/
+    const unsigned char *table;
+    char sql[1024];
+    char *errMsg = NULL;
+    int ret;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("RegisterVirtualGeometry() error: argument 1 [table_name] is not of the String type\n");
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    table = sqlite3_value_text (argv[0]);
+    if (!registerVirtual (sqlite, (char *) table))
+	goto error;
+    sqlite3_result_int (context, 1);
+    strcpy (sql, "Virtual Geometry successfully registered");
+    updateSpatiaLiteHistory (sqlite, (const char *) table, "Geometry", sql);
+    return;
+  error:
+    spatialite_e ("RegisterVirtualGeometry() error\n");
+    sqlite3_result_int (context, 0);
+    return;
+}
+
+
+static void
+fnct_DropVirtualGeometry (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ DropVirtualGeometry(table)
+/
+/ removes TABLE.COLUMN from the Spatial MetaData and DROPs the Virtual Table
+/ returns 1 on success
+/ 0 on failure
+*/
+    const unsigned char *table;
+    char sql[1024];
+    char *errMsg = NULL;
+    int ret;
+    char sqltable[1024];
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("DropVirtualGeometry() error: argument 1 [table_name] is not of the String type\n");
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    table = sqlite3_value_text (argv[0]);
+    strcpy (sqltable, (char *) table);
+    clean_sql_string (sqltable);
+    sprintf (sql,
+	     "DELETE FROM virts_geometry_columns WHERE Upper(virt_name) = Upper('%s')",
+	     sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
+    strcpy (sqltable, (char *) table);
+    double_quoted_sql (sqltable);
+    sprintf (sql, "DROP TABLE IF EXISTS %s", sqltable);
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
+    sqlite3_result_int (context, 1);
+    strcpy (sql, "Virtual Geometry successfully dropped");
+    updateSpatiaLiteHistory (sqlite, (const char *) table, "Geometry", sql);
+    return;
+  error:
+    spatialite_e ("DropVirtualGeometry() error: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
@@ -18240,7 +18527,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -18324,7 +18612,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -18333,7 +18622,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -18687,6 +18977,10 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_RecoverGeometryColumn, 0, 0);
     sqlite3_create_function (db, "DiscardGeometryColumn", 2, SQLITE_ANY, 0,
 			     fnct_DiscardGeometryColumn, 0, 0);
+    sqlite3_create_function (db, "RegisterVirtualGeometry", 1, SQLITE_ANY, 0,
+			     fnct_RegisterVirtualGeometry, 0, 0);
+    sqlite3_create_function (db, "DropVirtualGeometry", 1, SQLITE_ANY, 0,
+			     fnct_DropVirtualGeometry, 0, 0);
     sqlite3_create_function (db, "RecoverSpatialIndex", 0, SQLITE_ANY, 0,
 			     fnct_RecoverSpatialIndex, 0, 0);
     sqlite3_create_function (db, "RecoverSpatialIndex", 1, SQLITE_ANY, 0,
