@@ -1367,7 +1367,7 @@ createAdvancedMetaData (sqlite3 * sqlite)
     if (ret != SQLITE_OK)
 	return 0;
 /* creating the VECTOR LAYERS view */
-    strcpy (sql, "CREATE VIEW vectors_layers AS\n");
+    strcpy (sql, "CREATE VIEW vector_layers AS\n");
     strcat (sql, "SELECT 'SpatialTable' AS layer_type, ");
     strcat (sql, "f_table_name AS table_name, ");
     strcat (sql, "f_geometry_column AS geometry_column, ");
@@ -1580,7 +1580,8 @@ fnct_InsertEpsgSrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 
 static int
 recoverGeomColumn (sqlite3 * sqlite, const unsigned char *table,
-		   const unsigned char *column, int xtype, int dims, int srid)
+		   const unsigned char *column, int xtype, int dims, int srid,
+		   char *xxcolumn)
 {
 /* checks if TABLE.COLUMN exists and has the required features */
     int ok = 1;
@@ -1594,10 +1595,37 @@ recoverGeomColumn (sqlite3 * sqlite, const unsigned char *table,
     int i_col;
     char xcolumn[1024];
     char xtable[1024];
-    strcpy (xcolumn, (char *) column);
-    double_quoted_sql (xcolumn);
+    int is_nullable = 1;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    char *errMsg = NULL;
+
+/* testing if NOT NULL */
     strcpy (xtable, (char *) table);
     double_quoted_sql (xtable);
+    sprintf (sql, "PRAGMA table_info(%s)", xtable);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("recoverGeomColumn: error: \"%s\"\n", errMsg);
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+      {
+	  if (strcasecmp ((char *) column, results[(i * columns) + 1]) == 0)
+	    {
+		strcpy (xxcolumn, results[(i * columns) + 1]);
+		if (atoi (results[(i * columns) + 2]) != 0)
+		    is_nullable = 0;
+	    }
+      }
+    sqlite3_free_table (results);
+
+    strcpy (xcolumn, (char *) column);
+    double_quoted_sql (xcolumn);
     sprintf (sql, "SELECT %s FROM %s", xcolumn, xtable);
 /* compiling SQL prepared statement */
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
@@ -1619,7 +1647,13 @@ recoverGeomColumn (sqlite3 * sqlite, const unsigned char *table,
 		geom = NULL;
 		for (i_col = 0; i_col < sqlite3_column_count (stmt); i_col++)
 		  {
-		      if (sqlite3_column_type (stmt, i_col) != SQLITE_BLOB)
+		      if (sqlite3_column_type (stmt, i_col) == SQLITE_NULL)
+			{
+			    /* found a NULL geometry */
+			    if (!is_nullable)
+				ok = 0;
+			}
+		      else if (sqlite3_column_type (stmt, i_col) != SQLITE_BLOB)
 			  ok = 0;
 		      else
 			{
@@ -2665,9 +2699,10 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     int rows;
     int columns;
     int i;
-    char tblname[256];
     char sqltable[1024];
     char sqlcolumn[1024];
+    char xtable[1024];
+    char xcolumn[1024];
     int metadata_version;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
@@ -2778,8 +2813,6 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 /* checking if the table exists */
     strcpy (sqltable, (char *) table);
     clean_sql_string (sqltable);
-    strcpy (sqlcolumn, (char *) column);
-    clean_sql_string (sqlcolumn);
     sprintf (sql,
 	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Upper(name) = Upper('%s')",
 	     sqltable);
@@ -2790,14 +2823,14 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 	  sqlite3_free (errMsg);
 	  return;
       }
-    *tblname = '\0';
+    *xtable = '\0';
     for (i = 1; i <= rows; i++)
       {
-	  /* preparing the triggers */
-	  strcpy (tblname, results[(i * columns)]);
+	  /* retrieving the real table name */
+	  strcpy (xtable, results[(i * columns)]);
       }
     sqlite3_free_table (results);
-    if (*tblname == '\0')
+    if (*xtable == '\0')
       {
 	  spatialite_e
 	      ("RecoverGeometryColumn() error: table '%s' does not exist\n",
@@ -2936,19 +2969,33 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
       }
     if (xxtype == -1)
 	xtype = -1;		/* GEOMETRY */
-    if (!recoverGeomColumn (sqlite, table, column, xtype, dims, srid))
+    if (!recoverGeomColumn (sqlite, xtable, column, xtype, dims, srid, xcolumn))
       {
 	  spatialite_e ("RecoverGeometryColumn(): validation failed\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
+    strcpy (sqltable, xtable);
+    clean_sql_string (sqltable);
+    strcpy (sqlcolumn, xcolumn);
+    clean_sql_string (sqlcolumn);
+/* deleting anyway any previous definition */
+    strcpy (sql, "DELETE FROM geometry_columns ");
+    strcat (sql, "WHERE Upper(f_table_name) = Upper('");
+    strcat (sql, sqltable);
+    strcat (sql, "') AND Upper(f_geometry_column) = Upper('");
+    strcat (sql, sqlcolumn);
+    strcat (sql, "')");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
+
     if (metadata_version == 1)
       {
 	  /* legacy metadata style < v.3.1.0 */
-	  strcpy (sql,
-		  "INSERT INTO geometry_columns (f_table_name, f_geometry_column, type, ");
-	  strcat (sql,
-		  "coord_dimension, srid, spatial_index_enabled) VALUES (");
+	  strcpy (sql, "INSERT INTO geometry_columns (f_table_name, ");
+	  strcat (sql, "f_geometry_column, type, coord_dimension, srid, ");
+	  strcat (sql, "spatial_index_enabled) VALUES (");
 	  strcat (sql, "'");
 	  strcat (sql, sqltable);
 	  strcat (sql, "', '");
@@ -3023,10 +3070,9 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     else
       {
 	  /* current metadata style v.3.1.0 */
-	  strcpy (sql,
-		  "INSERT INTO geometry_columns (f_table_name, f_geometry_column, geometry_type, ");
-	  strcat (sql,
-		  "coord_dimension, srid, spatial_index_enabled) VALUES (");
+	  strcpy (sql, "INSERT INTO geometry_columns (f_table_name, ");
+	  strcat (sql, "f_geometry_column, geometry_type, coord_dimension, ");
+	  strcat (sql, "srid, spatial_index_enabled) VALUES (");
 	  strcat (sql, "'");
 	  strcat (sql, sqltable);
 	  strcat (sql, "', '");
@@ -3148,7 +3194,7 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
-    updateGeometryTriggers (sqlite, table, column);
+    updateGeometryTriggers (sqlite, xtable, xcolumn);
     sqlite3_result_int (context, 1);
     strcpy (sql, "Geometry [");
     switch (xtype)
@@ -3197,8 +3243,8 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     sprintf (sqlcolumn, ",SRID=%d", (srid <= 0) ? -1 : srid);
     strcat (sql, sqlcolumn);
     strcat (sql, "] successfully recovered");
-    updateSpatiaLiteHistory (sqlite, (const char *) table,
-			     (const char *) column, sql);
+    updateSpatiaLiteHistory (sqlite, (const char *) xtable,
+			     (const char *) xcolumn, sql);
     return;
   error:
     spatialite_e ("RecoverGeometryColumn() error: \"%s\"\n", errMsg);
