@@ -1327,6 +1327,7 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "virt_name TEXT NOT NULL,\n");
     strcat (sql, "virt_geometry TEXT NOT NULL,\n");
     strcat (sql, "geometry_type INTEGER NOT NULL,\n");
+    strcat (sql, "coord_dimension INTEGER NOT NULL,\n");
     strcat (sql, "srid INTEGER NOT NULL,\n");
     strcat (sql, "CONSTRAINT pk_geom_cols_virts PRIMARY KEY ");
     strcat (sql, "(virt_name, virt_geometry),\n");
@@ -1335,7 +1336,9 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "CONSTRAINT ck_vgc_type CHECK (geometry_type IN ");
     strcat (sql, "(1,2,3,4,5,6,1001,1002,1003,1004,1005,1006,");
     strcat (sql, "2001,2002,2003,2004,2005,2006,3001,3002,");
-    strcat (sql, "3003,3004,3005,3006)))");
+    strcat (sql, "3003,3004,3005,3006)),\n");
+    strcat (sql, "CONSTRAINT ck_vgc_dims CHECK (coord_dimension IN ");
+    strcat (sql, "(2,3,4)))");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	return 0;
@@ -1360,6 +1363,40 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "REFERENCES geometry_columns ");
     strcat (sql, "(f_table_name, f_geometry_column) ");
     strcat (sql, "ON DELETE CASCADE)");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	return 0;
+/* creating the VECTOR LAYERS view */
+    strcpy (sql, "CREATE VIEW vectors_layers AS\n");
+    strcat (sql, "SELECT 'SpatialTable' AS layer_type, ");
+    strcat (sql, "f_table_name AS table_name, ");
+    strcat (sql, "f_geometry_column AS geometry_column, ");
+    strcat (sql, "geometry_type AS geometry_type, ");
+    strcat (sql, "coord_dimension AS coord_dimension, ");
+    strcat (sql, "srid AS srid, ");
+    strcat (sql, "spatial_index_enabled AS spatial_index_enabled\n");
+    strcat (sql, "FROM geometry_columns\n");
+    strcat (sql, "UNION\n");
+    strcat (sql, "SELECT 'SpatialView' AS layer_type, ");
+    strcat (sql, "a.view_name AS table_name, ");
+    strcat (sql, "a.view_geometry AS geometry_column, ");
+    strcat (sql, "b.geometry_type AS geometry_type, ");
+    strcat (sql, "b.coord_dimension AS coord_dimension, ");
+    strcat (sql, "b.srid AS srid, ");
+    strcat (sql, "b.spatial_index_enabled AS spatial_index_enabled\n");
+    strcat (sql, "FROM views_geometry_columns AS a\n");
+    strcat (sql, "LEFT JOIN geometry_columns AS b ON (");
+    strcat (sql, "Upper(a.f_table_name) = Upper(b.f_table_name) AND ");
+    strcat (sql, "Upper(a.f_geometry_column) = Upper(b.f_geometry_column))\n");
+    strcat (sql, "UNION\n");
+    strcat (sql, "SELECT 'VirtualShape' AS layer_type, ");
+    strcat (sql, "virt_name AS table_name, ");
+    strcat (sql, "virt_geometry AS geometry_column, ");
+    strcat (sql, "geometry_type AS geometry_type, ");
+    strcat (sql, "coord_dimension AS coord_dimension, ");
+    strcat (sql, "srid AS srid, ");
+    strcat (sql, "0 AS spatial_index_enabled\n");
+    strcat (sql, "FROM virts_geometry_columns");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	return 0;
@@ -3327,6 +3364,7 @@ registerVirtual (sqlite3 * sqlite, const char *table)
     int ok_srid = 0;
     int ok_geometry_type = 0;
     int ok_type = 0;
+    int ok_coord_dimension = 0;
 
 /* testing the layout of virts_geometry_columns table */
     sprintf (sql, "PRAGMA table_info(virts_geometry_columns)");
@@ -3349,10 +3387,13 @@ registerVirtual (sqlite3 * sqlite, const char *table)
 	      ok_geometry_type = 1;
 	  if (strcasecmp ("type", results[(i * columns) + 1]) == 0)
 	      ok_type = 1;
+	  if (strcasecmp ("coord_dimension", results[(i * columns) + 1]) == 0)
+	      ok_coord_dimension = 1;
       }
     sqlite3_free_table (results);
 
-    if (ok_virt_name && ok_virt_geometry && ok_srid && ok_geometry_type)
+    if (ok_virt_name && ok_virt_geometry && ok_srid && ok_geometry_type
+	&& ok_coord_dimension)
 	;
     else if (ok_virt_name && ok_virt_geometry && ok_srid && ok_type)
 	;
@@ -3381,64 +3422,99 @@ registerVirtual (sqlite3 * sqlite, const char *table)
 
 /* normalized Geometry type */
     if (strcmp (gtype, "POINT") == 0)
-	      xtype = 1;
+	xtype = 1;
     if (strcmp (gtype, "POINT Z") == 0)
-	      xtype = 1001;
+	xtype = 1001;
     if (strcmp (gtype, "POINT M") == 0)
-	      xtype = 2001;
+	xtype = 2001;
     if (strcmp (gtype, "POINT ZM") == 0)
-	      xtype = 3001;
+	xtype = 3001;
     if (strcmp (gtype, "LINESTRING") == 0)
-	      xtype = 2;
+	xtype = 2;
     if (strcmp (gtype, "LINESTRING Z") == 0)
-	      xtype = 1002;
+	xtype = 1002;
     if (strcmp (gtype, "LINESTRING M") == 0)
-	      xtype = 2002;
+	xtype = 2002;
     if (strcmp (gtype, "LINESTRING ZM") == 0)
-	      xtype = 3002;
+	xtype = 3002;
     if (strcmp (gtype, "POLYGON") == 0)
-	      xtype = 3;
+	xtype = 3;
     if (strcmp (gtype, "POLYGON Z") == 0)
-	      xtype = 1003;
+	xtype = 1003;
     if (strcmp (gtype, "POLYGON M") == 0)
-	      xtype = 2003;
+	xtype = 2003;
     if (strcmp (gtype, "POLYGON ZM") == 0)
-	      xtype = 3003;
+	xtype = 3003;
     if (strcmp (gtype, "MULTIPOINT") == 0)
-	      xtype = 4;
+	xtype = 4;
     if (strcmp (gtype, "MULTIPOINT Z") == 0)
-	      xtype = 1004;
+	xtype = 1004;
     if (strcmp (gtype, "MULTIPOINT M") == 0)
-	      xtype = 2004;
+	xtype = 2004;
     if (strcmp (gtype, "MULTIPOINT ZM") == 0)
-	      xtype = 3004;
+	xtype = 3004;
     if (strcmp (gtype, "MULTILINESTRING") == 0)
-	      xtype = 5;
+	xtype = 5;
     if (strcmp (gtype, "MULTILINESTRING Z") == 0)
-	      xtype = 1005;
+	xtype = 1005;
     if (strcmp (gtype, "MULTILINESTRING M") == 0)
-	      xtype = 2005;
+	xtype = 2005;
     if (strcmp (gtype, "MULTILINESTRING ZM") == 0)
-	      xtype = 3005;
+	xtype = 3005;
     if (strcmp (gtype, "MULTIPOLYGON") == 0)
-	      xtype = 6;
+	xtype = 6;
     if (strcmp (gtype, "MULTIPOLYGON Z") == 0)
-	      xtype = 1006;
+	xtype = 1006;
     if (strcmp (gtype, "MULTIPOLYGON M") == 0)
-	      xtype = 2006;
+	xtype = 2006;
     if (strcmp (gtype, "MULTIPOLYGON ZM") == 0)
-	      xtype = 3006;
+	xtype = 3006;
 
 /* updating metadata tables */
+    int xdims = -1;
+    switch (xtype)
+      {
+      case 1:
+      case 2:
+      case 3:
+      case 4:
+      case 5:
+      case 6:
+	  xdims = 2;
+	  break;
+      case 1001:
+      case 1002:
+      case 1003:
+      case 1004:
+      case 1005:
+      case 1006:
+      case 2001:
+      case 2002:
+      case 2003:
+      case 2004:
+      case 2005:
+      case 2006:
+	  xdims = 3;
+	  break;
+      case 3001:
+      case 3002:
+      case 3003:
+      case 3004:
+      case 3005:
+      case 3006:
+	  xdims = 4;
+	  break;
+      };
     strcpy (xtable, table);
     clean_sql_string (xtable);
     if (ok_geometry_type)
       {
 	  /* has the "geometry_type" column */
 	  strcpy (sql, "INSERT OR REPLACE INTO virts_geometry_columns ");
-	  strcat (sql, "(virt_name, virt_geometry, geometry_type, srid) ");
-	  sprintf (sql2, "VALUES ('%s', 'Geometry', %d, %d)", xtable, xtype,
-		   srid);
+	  strcat (sql,
+		  "(virt_name, virt_geometry, geometry_type, coord_dimension, srid) ");
+	  sprintf (sql2, "VALUES ('%s', 'Geometry', %d, %d, %d)", xtable, xtype,
+		   xdims, srid);
 	  strcat (sql, sql2);
       }
     else
