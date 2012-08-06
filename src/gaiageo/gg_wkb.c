@@ -2,7 +2,7 @@
 
  gg_wkb.c -- Gaia common support for WKB encoded geometries
   
- version 3.0, 2011 July 20
+ version 4.0, 2012 August 6
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -24,7 +24,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2008
+Portions created by the Initial Developer are Copyright (C) 2008-2012
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -3461,7 +3461,7 @@ gaiaFromWkb (const unsigned char *blob, unsigned int size)
 	geo = gaiaAllocGeomCollXYZM ();
     else
 	geo = gaiaAllocGeomColl ();
-    geo->Srid = -1;
+    geo->Srid = 0;
     geo->endian_arch = (char) endian_arch;
     geo->endian = (char) little_endian;
     geo->blob = blob;
@@ -4668,8 +4668,8 @@ gaiaFromEWKB (const unsigned char *in_buffer)
 	return NULL;
     if (blob_size < 9)
       {
-	free (blob);
-	return NULL;
+	  free (blob);
+	  return NULL;
       }
     if (*(blob + 0) == 0x01)
 	endian = 1;
@@ -4714,7 +4714,7 @@ gaiaFromEWKB (const unsigned char *in_buffer)
     srid = gaiaImport32 (blob + 5, endian, endian_arch);
     geom->Srid = srid;
     if (geom->Srid <= 0)
-	geom->Srid = -1;
+	geom->Srid = 0;
     switch (type)
       {
       case GAIA_POINT:

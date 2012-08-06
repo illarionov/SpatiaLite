@@ -2,7 +2,7 @@
 
  gg_transform.c -- Gaia PROJ.4 wrapping
   
- version 3.0, 2011 July 20
+ version 4.0, 2012 August 6
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -24,7 +24,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2008
+Portions created by the Initial Developer are Copyright (C) 2008-2012
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -544,46 +544,46 @@ gaiaShiftLongitude (gaiaGeomCollPtr geom)
 }
 
 static void
-normalizePoint(double *x, double *y)
+normalizePoint (double *x, double *y)
 {
     if ((-180.0 <= *x) && (*x <= 180.0) && (-90.0 <= *y) && (*y <= 90.0))
       {
-	/* then this point is already OK */
-	return;
+	  /* then this point is already OK */
+	  return;
       }
     if ((*x > 180.0) || (*x < -180.0))
       {
-	int numCycles = (int)(*x / 360.0);
-	*x -= numCycles * 360.0;
+	  int numCycles = (int) (*x / 360.0);
+	  *x -= numCycles * 360.0;
       }
     if (*x > 180.0)
       {
-	*x -= 360.0;
+	  *x -= 360.0;
       }
     if (*x < -180.0)
       {
-	*x += 360.0;
+	  *x += 360.0;
       }
     if ((*y > 90.0) || (*y < -90.0))
       {
-	int numCycles = (int)(*y / 360.0);
-	*y -= numCycles * 360.0;
+	  int numCycles = (int) (*y / 360.0);
+	  *y -= numCycles * 360.0;
       }
     if (*y > 180.0)
       {
-	*y = -1.0 * (*y - 180.0);
+	  *y = -1.0 * (*y - 180.0);
       }
     if (*y < -180.0)
       {
-	*y = -1.0 * (*y + 180.0);
+	  *y = -1.0 * (*y + 180.0);
       }
     if (*y > 90.0)
       {
-	*y = 180 - *y;
+	  *y = 180 - *y;
       }
     if (*y < -90.0)
       {
-	*y = -180.0 - *y;
+	  *y = -180.0 - *y;
       }
 }
 
@@ -609,8 +609,8 @@ gaiaNormalizeLonLat (gaiaGeomCollPtr geom)
     point = geom->FirstPoint;
     while (point)
       {
-	normalizePoint(&(point->X), &(point->Y));
-	point = point->Next;
+	  normalizePoint (&(point->X), &(point->Y));
+	  point = point->Next;
       }
     line = geom->FirstLinestring;
     while (line)
@@ -634,7 +634,7 @@ gaiaNormalizeLonLat (gaiaGeomCollPtr geom)
 		  {
 		      gaiaGetPoint (line->Coords, iv, &x, &y);
 		  }
-		normalizePoint(&x, &y);
+		normalizePoint (&x, &y);
 		if (line->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaSetPointXYZ (line->Coords, iv, x, y, z);
@@ -678,7 +678,7 @@ gaiaNormalizeLonLat (gaiaGeomCollPtr geom)
 		  {
 		      gaiaGetPoint (ring->Coords, iv, &x, &y);
 		  }
-		normalizePoint(&x, &y);
+		normalizePoint (&x, &y);
 		if (ring->DimensionModel == GAIA_XY_Z)
 		  {
 		      gaiaSetPointXYZ (ring->Coords, iv, x, y, z);
@@ -718,7 +718,7 @@ gaiaNormalizeLonLat (gaiaGeomCollPtr geom)
 			{
 			    gaiaGetPoint (ring->Coords, iv, &x, &y);
 			}
-		      normalizePoint(&x, &y);
+		      normalizePoint (&x, &y);
 		      if (ring->DimensionModel == GAIA_XY_Z)
 			{
 			    gaiaSetPointXYZ (ring->Coords, iv, x, y, z);

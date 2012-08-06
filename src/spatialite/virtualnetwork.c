@@ -2,7 +2,7 @@
 
  virtualnetwork.c -- SQLite3 extension [VIRTUAL TABLE Routing - shortest path]
 
- version 3.0, 2011 July 20
+ version 4.0, 2012 August 6
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -24,7 +24,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2008
+Portions created by the Initial Developer are Copyright (C) 2008-2012
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -1064,8 +1064,9 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 					      double x;
 					      double y;
 					      gaiaGetPoint
-						  (geom->FirstLinestring->
-						   Coords, iv, &x, &y);
+						  (geom->
+						   FirstLinestring->Coords, iv,
+						   &x, &y);
 					      *(coords + ((iv * 2) + 0)) = x;
 					      *(coords + ((iv * 2) + 1)) = y;
 					  }
@@ -1077,8 +1078,7 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 								      to_id,
 								      points,
 								      coords,
-								      geom->
-								      Srid,
+								      geom->Srid,
 								      name);
 				    }
 				  else
@@ -1258,7 +1258,7 @@ network_free (NetworkPtr p)
 	      free (pN->Arcs);
       }
     if (p->Nodes)
-        free(p->Nodes);
+	free (p->Nodes);
     if (p->TableName)
 	free (p->TableName);
     if (p->FromColumn)

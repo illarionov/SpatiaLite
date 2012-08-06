@@ -2,7 +2,7 @@
 
  gg_gml.c -- GML parser/lexer 
   
- version 3.0, 2011 July 20
+ version 4.0, 2012 August 6
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -24,7 +24,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2011
+Portions created by the Initial Developer are Copyright (C) 2011-2012
 the Initial Developer. All Rights Reserved.
 
 Alternatively, the contents of this file may be used under the terms of
@@ -2378,14 +2378,14 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 		g = chain;
 		while (g)
 		  {
-		      if (geom->Srid == -1)
+		      if (geom->Srid <= 0)
 			{
 			    /* we haven't yet set any SRID */
 			    geom->Srid = g->Srid;
 			}
 		      g2 = g;
 		      delete_g2 = 0;
-		      if (g->Srid != geom->Srid && g->Srid != -1
+		      if (g->Srid != geom->Srid && g->Srid > 0
 			  && sqlite_handle != NULL)
 			{
 			    /* we'll try to apply a reprojection */
@@ -2433,14 +2433,14 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 		g = chain;
 		while (g)
 		  {
-		      if (geom->Srid == -1)
+		      if (geom->Srid <= 0)
 			{
 			    /* we haven't yet a SRID set */
 			    geom->Srid = g->Srid;
 			}
 		      g2 = g;
 		      delete_g2 = 0;
-		      if (g->Srid != geom->Srid && g->Srid != -1
+		      if (g->Srid != geom->Srid && g->Srid > 0
 			  && sqlite_handle != NULL)
 			{
 			    /* we'll try to apply a reprojection */
@@ -2493,14 +2493,14 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 		g = chain;
 		while (g)
 		  {
-		      if (geom->Srid == -1)
+		      if (geom->Srid <= 0)
 			{
 			    /* we haven't yet set any SRID */
 			    geom->Srid = g->Srid;
 			}
 		      g2 = g;
 		      delete_g2 = 0;
-		      if (g->Srid != geom->Srid && g->Srid != -1
+		      if (g->Srid != geom->Srid && g->Srid > 0
 			  && sqlite_handle != NULL)
 			{
 			    /* we'll try to apply a reprojection */
@@ -2550,14 +2550,14 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 		g = chain;
 		while (g)
 		  {
-		      if (geom->Srid == -1)
+		      if (geom->Srid <= 0)
 			{
 			    /* we haven't yet a SRID set */
 			    geom->Srid = g->Srid;
 			}
 		      g2 = g;
 		      delete_g2 = 0;
-		      if (g->Srid != geom->Srid && g->Srid != -1
+		      if (g->Srid != geom->Srid && g->Srid > 0
 			  && sqlite_handle != NULL)
 			{
 			    /* we'll try to apply a reprojection */
@@ -2611,14 +2611,14 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 		g = chain;
 		while (g)
 		  {
-		      if (geom->Srid == -1)
+		      if (geom->Srid <= 0)
 			{
 			    /* we haven't yet set any SRID */
 			    geom->Srid = g->Srid;
 			}
 		      g2 = g;
 		      delete_g2 = 0;
-		      if (g->Srid != geom->Srid && g->Srid != -1
+		      if (g->Srid != geom->Srid && g->Srid > 0
 			  && sqlite_handle != NULL)
 			{
 			    /* we'll try to apply a reprojection */
@@ -2679,14 +2679,14 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 		g = chain;
 		while (g)
 		  {
-		      if (geom->Srid == -1)
+		      if (geom->Srid <= 0)
 			{
 			    /* we haven't yet a SRID set */
 			    geom->Srid = g->Srid;
 			}
 		      g2 = g;
 		      delete_g2 = 0;
-		      if (g->Srid != geom->Srid && g->Srid != -1
+		      if (g->Srid != geom->Srid && g->Srid > 0
 			  && sqlite_handle != NULL)
 			{
 			    /* we'll try to apply a reprojection */
@@ -2748,14 +2748,14 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 		g = chain;
 		while (g)
 		  {
-		      if (geom->Srid == -1)
+		      if (geom->Srid <= 0)
 			{
 			    /* we haven't yet set any SRID */
 			    geom->Srid = g->Srid;
 			}
 		      g2 = g;
 		      delete_g2 = 0;
-		      if (g->Srid != geom->Srid && g->Srid != -1
+		      if (g->Srid != geom->Srid && g->Srid > 0
 			  && sqlite_handle != NULL)
 			{
 			    /* we'll try to apply a reprojection */
@@ -2827,14 +2827,14 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 		g = chain;
 		while (g)
 		  {
-		      if (geom->Srid == -1)
+		      if (geom->Srid <= 0)
 			{
 			    /* we haven't yet a SRID set */
 			    geom->Srid = g->Srid;
 			}
 		      g2 = g;
 		      delete_g2 = 0;
-		      if (g->Srid != geom->Srid && g->Srid != -1
+		      if (g->Srid != geom->Srid && g->Srid > 0
 			  && sqlite_handle != NULL)
 			{
 			    /* we'll try to apply a reprojection */

@@ -1,7 +1,7 @@
 /* 
  debug.h -- abstract defs for standard output functions
   
- version 3.0, 2012 January 25
+ version 4.0, 2012 August 6
 
  Author: Sandro Furieri a.furieri@lqt.it
 

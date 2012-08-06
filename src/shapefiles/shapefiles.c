@@ -2,7 +2,7 @@
 
  shapefiles.c -- implements shapefile support [import - export]
 
- version 2.3, 2008 October 13
+ version 4.0, 2012 August 6
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -24,7 +24,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2008
+Portions created by the Initial Developer are Copyright (C) 2008-2012
 the Initial Developer. All Rights Reserved.
 
 Contributor(s): Brad Hards <bradh@frogmouth.net>
@@ -60,6 +60,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/gaiaaux.h>
 #include <spatialite/gaiageo.h>
 #include <spatialite.h>
+#include <spatialite_private.h>
 
 #ifndef OMIT_FREEXL
 #include <freexl.h>
@@ -862,8 +863,8 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->Value->
-						       TxtValue),
+					       strlen (dbf_field->
+						       Value->TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -2225,8 +2226,8 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->Value->
-						       TxtValue),
+					       strlen (dbf_field->
+						       Value->TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:

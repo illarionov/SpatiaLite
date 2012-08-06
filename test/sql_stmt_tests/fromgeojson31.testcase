@@ -4,5 +4,5 @@ SELECT AsEWkt(GeomFromGeoJSON('{"type":"MultiPoint","bbox":[1,2,4,6],"coordinate
 1 # rows (not including the header row)
 1 # columns
 AsEWkt(GeomFromGeoJSON('{"type":"MultiPoint","bbox":[1,2,4,6],"coordinates":[[1,2],[4,6]]}')):0
-SRID=-1;MULTIPOINT(1 2,4 6)
+SRID=0;MULTIPOINT(1 2,4 6)
 

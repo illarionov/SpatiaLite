@@ -2,7 +2,7 @@
 
  gg_kml.c -- KML parser/lexer 
   
- version 3.0, 2011 July 20
+ version 4.0, 2012 August 6
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -24,7 +24,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2011
+Portions created by the Initial Developer are Copyright (C) 2011-2012
 the Initial Developer. All Rights Reserved.
 
 Alternatively, the contents of this file may be used under the terms of
@@ -348,7 +348,7 @@ kmlCleanMapDynAlloc (struct kml_data *p_data, int clean_all)
 }
 
 static kmlDynamicPolygonPtr
-kml_alloc_dyn_polygon (struct kml_data *p_data )
+kml_alloc_dyn_polygon (struct kml_data *p_data)
 {
 /* creating a dynamic polygon (ring collection) */
     kmlDynamicPolygonPtr p = malloc (sizeof (kmlDynamicPolygon));
@@ -454,7 +454,8 @@ kml_freeTree (kmlNodePtr t)
 }
 
 static kmlNodePtr
-kml_createNode (struct kml_data *p_data, void *tag, void *attributes, void *coords)
+kml_createNode (struct kml_data *p_data, void *tag, void *attributes,
+		void *coords)
 {
 /* creating a node */
     kmlAttrPtr a;
@@ -710,7 +711,8 @@ kml_parse_point_v2 (kmlCoordPtr coord, double *x, double *y, double *z,
 }
 
 static int
-kml_parse_point (struct kml_data *p_data, gaiaGeomCollPtr geom, kmlNodePtr node, kmlNodePtr * next)
+kml_parse_point (struct kml_data *p_data, gaiaGeomCollPtr geom, kmlNodePtr node,
+		 kmlNodePtr * next)
 {
 /* parsing a <Point> */
     double x;
@@ -936,7 +938,8 @@ kml_count_dyn_points (gaiaDynamicLinePtr dyn)
 }
 
 static int
-kml_parse_linestring (struct kml_data *p_data, gaiaGeomCollPtr geom, kmlNodePtr node, kmlNodePtr * next)
+kml_parse_linestring (struct kml_data *p_data, gaiaGeomCollPtr geom,
+		      kmlNodePtr node, kmlNodePtr * next)
 {
 /* parsing a <LineString> */
     gaiaGeomCollPtr ln;
@@ -1126,7 +1129,8 @@ kml_parse_ring (kmlNodePtr node, int *interior, int *has_z, kmlNodePtr * next)
 }
 
 static int
-kml_parse_polygon (struct kml_data *p_data, gaiaGeomCollPtr geom, kmlNodePtr node, kmlNodePtr * next_n)
+kml_parse_polygon (struct kml_data *p_data, gaiaGeomCollPtr geom,
+		   kmlNodePtr node, kmlNodePtr * next_n)
 {
 /* parsing a <Polygon> */
     int interior;
@@ -1302,7 +1306,8 @@ kml_parse_polygon (struct kml_data *p_data, gaiaGeomCollPtr geom, kmlNodePtr nod
 }
 
 static int
-kml_parse_multi_geometry (struct kml_data *p_data, gaiaGeomCollPtr geom, kmlNodePtr node)
+kml_parse_multi_geometry (struct kml_data *p_data, gaiaGeomCollPtr geom,
+			  kmlNodePtr node)
 {
 /* parsing a <MultiGeometry> */
     kmlNodePtr next;

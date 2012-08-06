@@ -1,7 +1,7 @@
 /* 
  spatialite.h -- Gaia spatial support for SQLite 
   
- version 3.0, 2011 July 20
+ version 4.0, 2012 August 6
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -23,7 +23,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2008
+Portions created by the Initial Developer are Copyright (C) 2008-2012
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -79,30 +79,37 @@ extern "C"
  but will avoid to insert any row at all */
 #define GAIA_EPSG_NONE -9997
 
-struct epsg_defs
-{
-    int srid;
-    char *auth_name;
-    int auth_srid;
-    char *ref_sys_name;
-    char *proj4text;
-    char *srs_wkt;
-    struct epsg_defs *next;
-};
+    struct epsg_defs
+    {
+	int srid;
+	char *auth_name;
+	int auth_srid;
+	char *ref_sys_name;
+	char *proj4text;
+	char *srs_wkt;
+	struct epsg_defs *next;
+    };
 
-SPATIALITE_PRIVATE struct epsg_defs *
-add_epsg_def (int filter_srid, struct epsg_defs **first,
-	      struct epsg_defs **last, int srid, const char *auth_name,
-	      int auth_srid, const char *ref_sys_name);
+    SPATIALITE_PRIVATE struct epsg_defs *add_epsg_def (int filter_srid,
+						       struct epsg_defs **first,
+						       struct epsg_defs **last,
+						       int srid,
+						       const char *auth_name,
+						       int auth_srid,
+						       const char
+						       *ref_sys_name);
 
-SPATIALITE_PRIVATE void
-add_proj4text (struct epsg_defs *p, int count, const char *text);
+    SPATIALITE_PRIVATE void
+	add_proj4text (struct epsg_defs *p, int count, const char *text);
 
-SPATIALITE_PRIVATE void
-add_srs_wkt (struct epsg_defs *p, int count, const char *text);
+    SPATIALITE_PRIVATE void
+	add_srs_wkt (struct epsg_defs *p, int count, const char *text);
 
-SPATIALITE_PRIVATE void
-initialize_epsg (int filter, struct epsg_defs **first, struct epsg_defs **last);
+    SPATIALITE_PRIVATE void
+	initialize_epsg (int filter, struct epsg_defs **first,
+			 struct epsg_defs **last);
+
+    SPATIALITE_PRIVATE int checkSpatialMetaData (const void *sqlite);
 
 #ifdef __cplusplus
 }

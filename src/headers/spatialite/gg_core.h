@@ -1,7 +1,7 @@
 /*
  gg_core.h -- Gaia common support for geometries: core functions
   
- version 3.0, 2011 July 20
+ version 4.0, 2012 August 6
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -23,7 +23,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2008
+Portions created by the Initial Developer are Copyright (C) 2008-2012
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -1345,7 +1345,8 @@ extern "C"
  NULL will be returned.
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr
-	gaiaLocateBetweenMeasures (gaiaGeomCollPtr geom, double m_start, double m_end);
+	gaiaLocateBetweenMeasures (gaiaGeomCollPtr geom, double m_start,
+				   double m_end);
 
 /**
  Measures the geometric length for a Linestring or Ring
@@ -1524,7 +1525,7 @@ extern "C"
  */
     GAIAGEO_DECLARE void gaiaNormalizeLonLat (gaiaGeomCollPtr geom);
 
-    
+
 /**
  Scales any coordinate within a Geometry object
 
