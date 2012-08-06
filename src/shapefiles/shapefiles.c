@@ -863,8 +863,8 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->
-						       Value->TxtValue),
+					       strlen (dbf_field->Value->
+						       TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -1174,14 +1174,14 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	  char metadims[256];
 	  if (metadata_version == 3)
 	    {
-		/* current metadata style >= v.3.1.0 */
+		/* current metadata style >= v.4.0.0 */
 		sprintf (sql,
 			 "SELECT geometry_type FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') AND Upper(f_geometry_column) = Upper('%s')",
 			 table, column);
 	    }
 	  else
 	    {
-		/* legacy metadata style < v.3.1.0 */
+		/* legacy metadata style <= v.3.1.0 */
 		sprintf (sql,
 			 "SELECT type, coord_dimension FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') AND Upper(f_geometry_column) = Upper('%s')",
 			 table, column);
@@ -1342,7 +1342,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 		  }
 		else
 		  {
-		      /* legacy metadata style < v.3.1.0 */
+		      /* legacy metadata style <= v.3.1.0 */
 		      strcpy (metatype, results[(i * columns) + 0]);
 		      strcpy (metadims, results[(i * columns) + 1]);
 		  }
@@ -1411,13 +1411,13 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	  char sql2[1024];
 	  if (metadata_version == 3)
 	    {
-		/* current metadata style >= v.3.1.0 */
+		/* current metadata style >= v.4.0.0 */
 		strcpy (sql,
 			"SELECT geometry_type FROM views_geometry_columns ");
 	    }
 	  else
 	    {
-		/* legacy metadata style < v.3.1.0 */
+		/* legacy metadata style <= v.3.1.0 */
 		strcpy (sql,
 			"SELECT type, coord_dimension FROM views_geometry_columns ");
 	    }
@@ -1446,7 +1446,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	    {
 		if (metadata_version == 3)
 		  {
-		      /* current metadata style >= v.3.1.0 */
+		      /* current metadata style >= v.4.0.0 */
 		      switch (atoi (results[(i * columns) + 0]))
 			{
 			case 0:
@@ -1581,7 +1581,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 		  }
 		else
 		  {
-		      /* legacy metadata style < v.3.1.0 */
+		      /* legacy metadata style <= v.3.1.0 */
 		      strcpy (metatype, results[(i * columns) + 0]);
 		      strcpy (metadims, results[(i * columns) + 1]);
 		  }
@@ -1761,6 +1761,8 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	    }
 	  if (sql_type[i] == SQLITE_TEXT)
 	    {
+		if (max_length[i] == 0)	/* avoiding ZERO-length fields */
+		    max_length[i] = 1;
 		gaiaAddDbfField (dbf_list, dbf_field->Name, 'C', offset,
 				 max_length[i], 0);
 		offset += max_length[i];
@@ -2226,8 +2228,8 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->
-						       Value->TxtValue),
+					       strlen (dbf_field->Value->
+						       TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -3253,12 +3255,12 @@ check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
 /* fetching metadata */
     if (metadata_version == 3)
       {
-	  /* current metadata style >= v.3.1.0 */
+	  /* current metadata style >= v.4.0.0 */
 	  strcpy (sql, "SELECT geometry_type, srid ");
       }
     else
       {
-	  /* legacy metadata style < v.3.1.0 */
+	  /* legacy metadata style <= v.3.1.0 */
 	  strcpy (sql, "SELECT type, coord_dimension, srid ");
       }
     strcat (sql, "FROM geometry_columns WHERE Upper(f_table_name) = Upper('");
@@ -3291,7 +3293,7 @@ check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
 	    {
 		if (metadata_version == 3)
 		  {
-		      /* current metadata style >= v.3.1.0 */
+		      /* current metadata style >= v.4.0.0 */
 		      gtp = "UNKNOWN";
 		      dims = "UNKNOWN";
 		      switch (atoi (results[(i * columns) + 0]))
@@ -3428,7 +3430,7 @@ check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
 		  }
 		else
 		  {
-		      /* legacy metadata style < v.3.1.0 */
+		      /* legacy metadata style <= v.3.1.0 */
 		      gtp = results[(i * columns) + 0];
 		      dims = results[(i * columns) + 1];
 		      *srid = atoi (results[(i * columns) + 2]);
