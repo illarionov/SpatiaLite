@@ -264,7 +264,7 @@ int main (int argc, char *argv[])
     sqlite3 *handle;
     char *err_msg = NULL;
 
-/* testing current style metadata layout >= v.3.1.0 */
+/* testing current style metadata layout >= v.4.0.0 */
     spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -293,7 +293,7 @@ int main (int argc, char *argv[])
 	return -19;
     }
 
-/* testing legacy style metadata layout < v.3.1.0 */
+/* testing legacy style metadata layout <= v.3.1.0 */
     spatialite_init (0);
     ret = sqlite3_open_v2 ("test-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
     if (ret != SQLITE_OK) {

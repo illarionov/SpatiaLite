@@ -629,20 +629,35 @@ int do_test(sqlite3 *db_handle)
 	return  -110;
     }
     sqlite3_free_table (results);
+    ret = sqlite3_get_table (db_handle, "SELECT UpdateLayerStatistics('shapetest2')", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "UpdateLayerStatistics error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -111;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "UpdateLayerStatistics Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
+	return  -112;
+    }
+    if (strcmp(results[1], "1") != 0) {
+	fprintf (stderr, "UpdateLayerStatistics Unexpected error: header() bad result: %s.\n", results[0]);
+	return  -113;
+    }
+    sqlite3_free_table (results);
 
     ret = sqlite3_get_table (db_handle, "SELECT DropVirtualGeometry('shapetest2')", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "DropVirtualGeometry error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -111;
+	return -114;
     }
     if ((rows != 1) || (columns != 1)) {
 	fprintf (stderr, "DropVirtualGeometry Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
-	return  -112;
+	return  -115;
     }
     if (strcmp(results[1], "1") != 0) {
 	fprintf (stderr, "DropVirtualGeometry Unexpected error: header() bad result: %s.\n", results[0]);
-	return  -113;
+	return  -116;
     }
     sqlite3_free_table (results);
 
@@ -650,21 +665,21 @@ int do_test(sqlite3 *db_handle)
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "VirtualShape error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -108;
+	return -117;
     }
     ret = sqlite3_get_table (db_handle, "SELECT RegisterVirtualGeometry('shapetest3')", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "RegisterVirtualGeometry error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -109;
+	return -118;
     }
     if ((rows != 1) || (columns != 1)) {
 	fprintf (stderr, "RegisterVirtualGeometry Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
-	return  -110;
+	return  -119;
     }
     if (strcmp(results[1], "1") != 0) {
 	fprintf (stderr, "RegisterVirtualGeometry Unexpected error: header() bad result: %s.\n", results[0]);
-	return  -111;
+	return  -120;
     }
     sqlite3_free_table (results);
 
@@ -672,15 +687,15 @@ int do_test(sqlite3 *db_handle)
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "DropVirtualGeometry error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -112;
+	return -121;
     }
     if ((rows != 1) || (columns != 1)) {
 	fprintf (stderr, "DropVirtualGeometry Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
-	return  -113;
+	return  -122;
     }
     if (strcmp(results[1], "1") != 0) {
 	fprintf (stderr, "DropVirtualGeometry Unexpected error: header() bad result: %s.\n", results[0]);
-	return  -114;
+	return  -123;
     }
     sqlite3_free_table (results);
 
@@ -688,21 +703,21 @@ int do_test(sqlite3 *db_handle)
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "VirtualShape error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -115;
+	return -124;
     }
     ret = sqlite3_get_table (db_handle, "SELECT RegisterVirtualGeometry('shapetest4')", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "RegisterVirtualGeometry error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -116;
+	return -125;
     }
     if ((rows != 1) || (columns != 1)) {
 	fprintf (stderr, "RegisterVirtualGeometry Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
-	return  -117;
+	return  -126;
     }
     if (strcmp(results[1], "1") != 0) {
 	fprintf (stderr, "RegisterVirtualGeometry Unexpected error: header() bad result: %s.\n", results[0]);
-	return  -118;
+	return  -127;
     }
     sqlite3_free_table (results);
 
@@ -710,15 +725,15 @@ int do_test(sqlite3 *db_handle)
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "DropVirtualGeometry error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -119;
+	return -128;
     }
     if ((rows != 1) || (columns != 1)) {
 	fprintf (stderr, "DropVirtualGeometry Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
-	return  -120;
+	return  -129;
     }
     if (strcmp(results[1], "1") != 0) {
 	fprintf (stderr, "DropVirtualGeometry Unexpected error: header() bad result: %s.\n", results[0]);
-	return  -121;
+	return  -130;
     }
     sqlite3_free_table (results);
 
@@ -728,14 +743,14 @@ int do_test(sqlite3 *db_handle)
 	fprintf (stderr, "DELETE FROM spatialite_history error: %s\n", err_msg);
 	sqlite3_free(err_msg);
 	sqlite3_close(db_handle);
-	return -122;
+	return -131;
     }
     ret = sqlite3_exec (db_handle, "VACUUM", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "VACUUM error: %s\n", err_msg);
 	sqlite3_free(err_msg);
 	sqlite3_close(db_handle);
-	return -123;
+	return -132;
     }
 #endif	/* end ICONV conditional */
 
@@ -749,7 +764,7 @@ int main (int argc, char *argv[])
     int ret;
     char *err_msg = NULL;
 
-/* testing current style metadata layout >= v.3.1.0 */
+/* testing current style metadata layout >= v.4.0.0 */
     spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -776,7 +791,7 @@ int main (int argc, char *argv[])
     sqlite3_close (db_handle);
     spatialite_cleanup();
 
-/* testing legacy style metadata layout < v.3.1.0 */
+/* testing legacy style metadata layout <= v.3.1.0 */
     spatialite_init (0);
     ret = sqlite3_open_v2 ("test-legacy-3.0.1.sqlite", &db_handle, SQLITE_OPEN_READWRITE, NULL);
     if (ret != SQLITE_OK) {

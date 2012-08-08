@@ -595,7 +595,7 @@ int main (int argc, char *argv[])
     char *err_msg = NULL;
 
     spatialite_init (0);
-/* testing current style metadata layout >= v.3.1.0 */
+/* testing current style metadata layout >= v.4.0.0 */
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open in-memory database: %s\n", sqlite3_errmsg (handle));
@@ -620,7 +620,7 @@ int main (int argc, char *argv[])
     spatialite_cleanup();
     sqlite3_close(handle);
 	
-/* testing legacy style metadata layout < v.3.1.0 */
+/* testing legacy style metadata layout <= v.3.1.0 */
     spatialite_init (0);
     ret = sqlite3_open_v2 ("test-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
     if (ret != SQLITE_OK) {

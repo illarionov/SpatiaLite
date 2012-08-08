@@ -50,7 +50,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 
-int do_test(sqlite3 *handle)
+int do_test(sqlite3 *handle, int legacy)
 {
 #ifndef OMIT_ICONV	/* only if ICONV is supported */
     int ret;
@@ -604,7 +604,7 @@ int do_test(sqlite3 *handle)
         sqlite3_free (err_msg);
         return -93;
     }
-	
+
 /* final DB cleanup */
     ret = sqlite3_exec (handle, "DROP TABLE bad_councils", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -634,12 +634,16 @@ int do_test(sqlite3 *handle)
 	sqlite3_close(handle);
 	return -97;
     }
-    ret = sqlite3_exec (handle, "DELETE FROM layer_statistics", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf (stderr, "DELETE FROM layer_statistics error: %s\n", err_msg);
-	sqlite3_free(err_msg);
-	sqlite3_close(handle);
-	return -98;
+    if (legacy)
+    {
+    /* only required for legacy style metadata */
+        ret = sqlite3_exec (handle, "DELETE FROM layer_statistics", NULL, NULL, &err_msg);
+        if (ret != SQLITE_OK) {
+	    fprintf (stderr, "DELETE FROM layer_statistics error: %s\n", err_msg);
+	    sqlite3_free(err_msg);
+	    sqlite3_close(handle);
+	    return -98;
+	}
     }
     ret = sqlite3_exec (handle, "DELETE FROM spatialite_history WHERE geometry_column IS NOT NULL", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -669,7 +673,7 @@ int main (int argc, char *argv[])
     sqlite3 *handle;
     char *err_msg = NULL;
 
-/* testing current style metadata layout >= v.3.1.0 */
+/* testing current style metadata layout >= v.4.0.0 */
     spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -686,7 +690,7 @@ int main (int argc, char *argv[])
 	return -2;
     }
     
-    ret = do_test(handle);
+    ret = do_test(handle, 0);
     if (ret != 0) {
 	fprintf(stderr, "error while testing current style metadata layout\n");
 	return ret;
@@ -700,7 +704,7 @@ int main (int argc, char *argv[])
     
     spatialite_cleanup();
 
-/* testing legacy style metadata layout < v.3.1.0 */
+/* testing legacy style metadata layout <= v.3.1.0 */
     spatialite_init (0);
     ret = sqlite3_open_v2 ("test-legacy-3.0.1.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
     if (ret != SQLITE_OK) {
@@ -709,7 +713,7 @@ int main (int argc, char *argv[])
 	return -1;
     }
 	
-    ret = do_test(handle);
+    ret = do_test(handle, 1);
     if (ret != 0) {
 	fprintf(stderr, "error while testing legacy style metadata layout\n");
 	return ret;

@@ -422,9 +422,9 @@ int main (int argc, char *argv[])
     }
 
     sql = "SELECT row_count, extent_min_x, extent_max_y "
-          "FROM layer_statistics "
-          "WHERE raster_layer = 0 AND table_name LIKE 'roads' "
-          "AND geometry_column LIKE 'geom'";
+          "FROM geometry_columns_statistics "
+          "WHERE f_table_name LIKE 'roads' "
+          "AND f_geometry_column LIKE 'geom'";
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "Error: %s\n", err_msg);
@@ -432,21 +432,21 @@ int main (int argc, char *argv[])
         return -9;
     }
     if (rows != 1) {
-        fprintf (stderr, "Unexpected num of rows for LAYER_STATISTICS.\n");
+        fprintf (stderr, "Unexpected num of rows for GEOMETRY_COLUMNS_STATISTICS.\n");
         return  -10;
     }
     if (atoi(results[columns+0]) != 18) {
-        fprintf (stderr, "Unexpected error: LAYER_STATISTICS bad result row_count: %s\n", results[columns+0]);
+        fprintf (stderr, "Unexpected error: GEOMETRY_COLUMNS_STATISTICS bad result row_count: %s\n", results[columns+0]);
         return -11;
     }
     tic = fabs(atof(results[columns+1]) - 666057.648017325);
     if (tic >= 0.00000002) {
-        fprintf (stderr, "Unexpected error: LAYER_STATISTICS bad result extent_min_x: %s\n", results[columns+1]);
+        fprintf (stderr, "Unexpected error: GEOMETRY_COLUMNS_STATISTICS bad result extent_min_x: %s\n", results[columns+1]);
         return -12;
     }
     tic = fabs(atof(results[columns+2]) - 5170671.31627796);
     if (tic >= 0.0000002) {
-        fprintf (stderr, "Unexpected error: LAYER_STATISTICS bad result extent_max_y: %s\n", results[columns+2]);
+        fprintf (stderr, "Unexpected error: GEOMETRY_COLUMNS_STATISTICS bad result extent_max_y: %s\n", results[columns+2]);
         return -13;
     }
     sqlite3_free_table (results);
