@@ -1305,13 +1305,16 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "view_rowid TEXT NOT NULL,\n");
     strcat (sql, "f_table_name TEXT NOT NULL,\n");
     strcat (sql, "f_geometry_column TEXT NOT NULL,\n");
+    strcat (sql, "read_only INTEGER NOT NULL,\n");
     strcat (sql, "CONSTRAINT pk_geom_cols_views PRIMARY KEY ");
     strcat (sql, "(view_name, view_geometry),\n");
     strcat (sql, "CONSTRAINT fk_views_geom_cols FOREIGN KEY ");
     strcat (sql, "(f_table_name, f_geometry_column) ");
     strcat (sql, "REFERENCES geometry_columns ");
     strcat (sql, "(f_table_name, f_geometry_column) ");
-    strcat (sql, "ON DELETE CASCADE)");
+    strcat (sql, "ON DELETE CASCADE,\n");
+    strcat (sql, "CONSTRAINT ck_vw_rdonly CHECK (read_only IN ");
+    strcat (sql, "(0,1)))");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
       {
@@ -1658,11 +1661,14 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "FROM geometry_columns_auth\n");
     strcat (sql, "UNION\n");
     strcat (sql, "SELECT 'SpatialView' AS layer_type, ");
-    strcat (sql, "view_name AS table_name, ");
-    strcat (sql, "view_geometry AS geometry_column, ");
-    strcat (sql, "1 AS read_only, ");
-    strcat (sql, "hidden AS hidden\n");
-    strcat (sql, "FROM views_geometry_columns_auth\n");
+    strcat (sql, "a.view_name AS table_name, ");
+    strcat (sql, "a.view_geometry AS geometry_column, ");
+    strcat (sql, "b.read_only AS read_only, ");
+    strcat (sql, "a.hidden AS hidden\n");
+    strcat (sql, "FROM views_geometry_columns_auth AS a\n");
+    strcat (sql, "JOIN views_geometry_columns AS b ON (");
+    strcat (sql, "Upper(a.view_name) = Upper(b.view_name) AND ");
+    strcat (sql, "Upper(a.view_geometry) = Upper(b.view_geometry))\n");
     strcat (sql, "UNION\n");
     strcat (sql, "SELECT 'VirtualShape' AS layer_type, ");
     strcat (sql, "virt_name AS table_name, ");
@@ -19218,8 +19224,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -19303,8 +19308,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -19313,8 +19317,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }

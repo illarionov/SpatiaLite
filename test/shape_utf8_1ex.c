@@ -162,7 +162,10 @@ int do_test(sqlite3 *handle, int legacy)
 	return -16;
     }
 
-    ret = sqlite3_exec (handle, "INSERT INTO views_geometry_columns (view_name, view_geometry, view_rowid, f_table_name, f_geometry_column) VALUES ('route',  'Geometry', 'ROWID', 'beta', 'gamma')", NULL, NULL, &err_msg);
+    if (legacy)
+        ret = sqlite3_exec (handle, "INSERT INTO views_geometry_columns (view_name, view_geometry, view_rowid, f_table_name, f_geometry_column) VALUES ('route',  'Geometry', 'ROWID', 'beta', 'gamma')", NULL, NULL, &err_msg);
+    else
+        ret = sqlite3_exec (handle, "INSERT INTO views_geometry_columns (view_name, view_geometry, view_rowid, f_table_name, f_geometry_column, read_only) VALUES ('route',  'Geometry', 'ROWID', 'beta', 'gamma', 1)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "ViewsGeometryColumns route error: %s\n", err_msg);
 	sqlite3_free(err_msg);
