@@ -2259,19 +2259,12 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 		/* current metadata style >= v.4.0.0 */
 		strcat (trigger,
 			"WHERE (SELECT geometry_type FROM geometry_columns\n");
-	    }
-	  else
-	    {
-		/* legacy metadata style <= v.3.1.0 */
-		strcat (trigger, "WHERE (SELECT type FROM geometry_columns\n");
-	    }
-	  sprintf (dummy,
-		   "WHERE f_table_name = '%s' AND f_geometry_column = '%s'\n",
-		   sqltable, sqlcolumn);
-	  strcat (trigger, dummy);
-	  if (metadata_version == 3)
-	    {
-		/* current metadata style >= v.4.0.0 */
+		sprintf (dummy, "WHERE Upper(f_table_name) = Upper('%s') AND ",
+			 sqltable);
+		strcat (trigger, dummy);
+		sprintf (dummy, "Upper(f_geometry_column) = Upper('%s')\n",
+			 sqlcolumn);
+		strcat (trigger, dummy);
 		sprintf (dummy,
 			 "AND GeometryConstraints(NEW.%s, geometry_type, srid) = 1) IS NULL;\n",
 			 xcolname);
@@ -2279,6 +2272,11 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 	  else
 	    {
 		/* legacy metadata style <= v.3.1.0 */
+		strcat (trigger, "WHERE (SELECT type FROM geometry_columns\n");
+		sprintf (dummy,
+			 "WHERE f_table_name = '%s' AND f_geometry_column = '%s'\n",
+			 sqltable, sqlcolumn);
+		strcat (trigger, dummy);
 		sprintf (dummy,
 			 "AND GeometryConstraints(NEW.%s, type, srid, '%s') = 1) IS NULL;\n",
 			 xcolname, txt_dims);
@@ -2308,19 +2306,12 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 		/* current metadata style >= v.4.0.0 */
 		strcat (trigger,
 			"WHERE (SELECT geometry_type FROM geometry_columns\n");
-	    }
-	  else
-	    {
-		/* legacy metadata style <= v.3.1.0 */
-		strcat (trigger, "WHERE (SELECT type FROM geometry_columns\n");
-	    }
-	  sprintf (dummy,
-		   "WHERE f_table_name = '%s' AND f_geometry_column = '%s'\n",
-		   sqltable, sqlcolumn);
-	  strcat (trigger, dummy);
-	  if (metadata_version == 3)
-	    {
-		/* current metadata style >= v.4.0.0 */
+		sprintf (dummy, "WHERE Upper(f_table_name) = Upper('%s') AND ",
+			 sqltable);
+		strcat (trigger, dummy);
+		sprintf (dummy, "Upper(f_geometry_column) = Upper('%s')\n",
+			 sqlcolumn);
+		strcat (trigger, dummy);
 		sprintf (dummy,
 			 "AND GeometryConstraints(NEW.%s, geometry_type, srid) = 1) IS NULL;\n",
 			 xcolname);
@@ -2328,6 +2319,11 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 	  else
 	    {
 		/* legacy metadata style <= v.3.1.0 */
+		strcat (trigger, "WHERE (SELECT type FROM geometry_columns\n");
+		sprintf (dummy,
+			 "WHERE f_table_name = '%s' AND f_geometry_column = '%s'\n",
+			 sqltable, sqlcolumn);
+		strcat (trigger, dummy);
 		sprintf (dummy,
 			 "AND GeometryConstraints(NEW.%s, type, srid, '%s') = 1) IS NULL;\n",
 			 xcolname, txt_dims);
@@ -2356,9 +2352,11 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 		strcat (trigger, "FOR EACH ROW BEGIN\n");
 		strcat (trigger,
 			"UPDATE geometry_columns_time SET last_update = datetime('now')\n");
-		sprintf (dummy,
-			 "WHERE f_table_name = '%s' and f_geometry_column = '%s';\n",
-			 sqltable, sqlcolumn);
+		sprintf (dummy, "WHERE Upper(f_table_name) = Upper('%s') AND ",
+			 sqltable);
+		strcat (trigger, dummy);
+		sprintf (dummy, "Upper(f_geometry_column) = Upper('%s');\n",
+			 sqlcolumn);
 		strcat (trigger, dummy);
 		strcat (trigger, "END;");
 		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
@@ -2380,9 +2378,11 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 		strcat (trigger, "FOR EACH ROW BEGIN\n");
 		strcat (trigger,
 			"UPDATE geometry_columns_time SET last_insert = datetime('now')\n");
-		sprintf (dummy,
-			 "WHERE f_table_name = '%s' and f_geometry_column = '%s';\n",
-			 sqltable, sqlcolumn);
+		sprintf (dummy, "WHERE Upper(f_table_name) = Upper('%s') AND ",
+			 sqltable);
+		strcat (trigger, dummy);
+		sprintf (dummy, "Upper(f_geometry_column) = Upper('%s');\n",
+			 sqlcolumn);
 		strcat (trigger, dummy);
 		strcat (trigger, "END;");
 		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
@@ -2404,9 +2404,11 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 		strcat (trigger, "FOR EACH ROW BEGIN\n");
 		strcat (trigger,
 			"UPDATE geometry_columns_time SET last_delete = datetime('now')\n");
-		sprintf (dummy,
-			 "WHERE f_table_name = '%s' and f_geometry_column = '%s';\n",
-			 sqltable, sqlcolumn);
+		sprintf (dummy, "WHERE Upper(f_table_name) = Upper('%s') AND ",
+			 sqltable);
+		strcat (trigger, dummy);
+		sprintf (dummy, "Upper(f_geometry_column) = Upper('%s');\n",
+			 sqlcolumn);
 		strcat (trigger, dummy);
 		strcat (trigger, "END;");
 		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
@@ -19224,7 +19226,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -19308,7 +19311,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -19317,7 +19321,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
