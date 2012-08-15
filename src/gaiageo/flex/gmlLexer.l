@@ -43,6 +43,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 %option prefix="Gml"
 %option reentrant
 %option extra-type="struct gml_data *"
+%option noinput
+%option nounput
 
 /**
 *  The main string-token matcher.

@@ -65,6 +65,8 @@ Greg Wilson			gvwilson@cs.toronto.ca
 %option prefix="VanuatuWkt"
 %option reentrant
 %option extra-type="struct vanuatu_data *"
+%option nounput
+%option noinput
 
 /**
 *  The main string-token matcher.

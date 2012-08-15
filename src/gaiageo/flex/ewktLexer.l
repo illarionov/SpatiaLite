@@ -43,6 +43,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 %option prefix="Ewkt"
 %option reentrant
 %option extra-type="struct ewkt_data *"
+%option nounput
+%option noinput
 
 /**
 *  The main string-token matcher.

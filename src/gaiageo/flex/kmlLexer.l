@@ -43,6 +43,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 %option prefix="Kml"
 %option reentrant
 %option extra-type="struct kml_data *"
+%option noinput
+%option nounput
 
 /**
 *  The main string-token matcher.

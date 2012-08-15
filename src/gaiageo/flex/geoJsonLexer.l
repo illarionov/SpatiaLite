@@ -43,6 +43,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 %option prefix="GeoJson"
 %option reentrant
 %option extra-type="struct geoJson_data *"
+%option nounput
+%option noinput
 
 /**
 *  The main string-token matcher.
