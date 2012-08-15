@@ -1623,6 +1623,58 @@ virts_layer_statistics (sqlite3 * sqlite, const char *table, const char *column)
     return 1;
 }
 
+static int
+has_views_metadata (sqlite3 * sqlite)
+{
+/* testing if the VIEWS_GEOMETRY_COLUMNS table exists */
+    char sql[8192];
+    char **results;
+    int rows;
+    int columns;
+    int ret;
+    int i;
+    int defined = 0;
+    strcpy (sql, "PRAGMA table_info(views_geometry_columns)");
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	      defined = 1;
+      }
+    sqlite3_free_table (results);
+    return defined;
+}
+
+static int
+has_virts_metadata (sqlite3 * sqlite)
+{
+/* testing if the VIRTS_GEOMETRY_COLUMNS table exists */
+    char sql[8192];
+    char **results;
+    int rows;
+    int columns;
+    int ret;
+    int i;
+    int defined = 0;
+    strcpy (sql, "PRAGMA table_info(virts_geometry_columns)");
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	      defined = 1;
+      }
+    sqlite3_free_table (results);
+    return defined;
+}
+
 SPATIALITE_DECLARE int
 update_layer_statistics (sqlite3 * sqlite, const char *table,
 			 const char *column)
@@ -1630,9 +1682,15 @@ update_layer_statistics (sqlite3 * sqlite, const char *table,
 /* updating LAYER_STATISTICS metadata [main] */
     if (!genuine_layer_statistics (sqlite, table, column))
 	return 0;
-    if (!views_layer_statistics (sqlite, table, column))
-	return 0;
-    if (!virts_layer_statistics (sqlite, table, column))
-	return 0;
+    if (has_views_metadata (sqlite))
+      {
+	  if (!views_layer_statistics (sqlite, table, column))
+	      return 0;
+      }
+    if (has_virts_metadata (sqlite))
+      {
+	  if (!virts_layer_statistics (sqlite, table, column))
+	      return 0;
+      }
     return 1;
 }
