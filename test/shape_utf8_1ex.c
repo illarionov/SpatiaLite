@@ -79,7 +79,7 @@ int do_test(sqlite3 *handle, int legacy)
     int row_count;
 	
     ret = load_shapefile_ex (handle, "./shp/gaza/barrier", "barrier", "UTF-8", 4326, 
-			     NULL, "POINT", 1, 0, 1, 1, &row_count, err_msg);
+			     NULL, NULL, "POINT", 1, 0, 1, 1, &row_count, err_msg);
     if (!ret) {
         fprintf (stderr, "load_shapefile_ex() error for shp/gaza/barrier: %s\n", err_msg);
 	sqlite3_close(handle);
@@ -92,7 +92,7 @@ int do_test(sqlite3 *handle, int legacy)
     }
 
     ret = load_shapefile_ex (handle, "./shp/gaza/aeroway", "aeroway", "UTF-8", 4326, 
-			     "col1", "LINESTRING", 1, 0, 0, 0, &row_count, err_msg);
+			     "col1", NULL, "LINESTRING", 1, 0, 0, 0, &row_count, err_msg);
     if (!ret) {
         fprintf (stderr, "load_shapefile_ex() error for shp/gaza/aeroway: %s\n", err_msg);
 	sqlite3_close(handle);
@@ -105,7 +105,7 @@ int do_test(sqlite3 *handle, int legacy)
     }
 
     ret = load_shapefile_ex (handle, "./shp/gaza/route", "route", "UTF-8", 4326, 
-			     NULL, "MULTILINESTRING", 1, 0, 1, 1, &row_count, err_msg);
+			     NULL, NULL, "MULTILINESTRING", 1, 0, 1, 1, &row_count, err_msg);
     if (!ret) {
         fprintf (stderr, "load_shapefile_ex() error for shp/gaza/route: %s\n", err_msg);
 	sqlite3_close(handle);

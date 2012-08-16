@@ -278,15 +278,15 @@ load_shapefile (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 		int verbose, int spatial_index, int *rows, char *err_msg)
 {
     return load_shapefile_ex (sqlite, shp_path, table, charset, srid, column,
-			      NULL, coerce2d, compressed, verbose,
+			      NULL, NULL, coerce2d, compressed, verbose,
 			      spatial_index, rows, err_msg);
 }
 
 SPATIALITE_DECLARE int
 load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
-		   int srid, char *column, char *gtype, int coerce2d,
-		   int compressed, int verbose, int spatial_index, int *rows,
-		   char *err_msg)
+		   int srid, char *g_column, char *gtype, char *pk_column,
+		   int coerce2d, int compressed, int verbose, int spatial_index,
+		   int *rows, char *err_msg)
 {
     sqlite3_stmt *stmt = NULL;
     int ret;
@@ -310,10 +310,15 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
     int blob_size;
     char *geom_type;
     char *txt_dims;
-    char *geo_column = column;
+    char *geo_column = g_column;
     char *xgtype = gtype;
     char qtable[1024];
     char *xtable = NULL;
+    char qpk_name[1024];
+    char *xpk_name = NULL;
+    char *pk_name = "PK_UID";
+    int pk_type = SQLITE_INTEGER;
+    int pk_set;
     if (!geo_column)
 	geo_column = "Geometry";
     if (!xgtype)
@@ -470,10 +475,67 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
     col_name = malloc (sizeof (char *) * col_cnt);
     cnt = 0;
     seed = 0;
+    if (pk_column != NULL)
+      {
+	  /* validating the Primary Key column */
+	  dbf_field = shp->Dbf->First;
+	  while (dbf_field)
+	    {
+		if (strcasecmp (pk_column, dbf_field->Name) == 0)
+		  {
+		      /* ok, using this field as Primary Key */
+		      pk_name = pk_column;
+		      switch (dbf_field->Type)
+			{
+			case 'C':
+			    pk_type = SQLITE_TEXT;
+			    break;
+			case 'N':
+			    if (dbf_field->Decimals)
+				pk_type = SQLITE_FLOAT;
+			    else
+			      {
+				  if (dbf_field->Length <= 18)
+				      pk_type = SQLITE_INTEGER;
+				  else
+				      pk_type = SQLITE_FLOAT;
+			      }
+			    break;
+			case 'D':
+			    pk_type = SQLITE_FLOAT;
+			    break;
+			case 'F':
+			    pk_type = SQLITE_FLOAT;
+			    break;
+			case 'L':
+			    pk_type = SQLITE_INTEGER;
+			    break;
+			};
+		  }
+		dbf_field = dbf_field->Next;
+	    }
+      }
+    xpk_name = gaiaDoubleQuotedSql (pk_name);
+    if (xpk_name)
+      {
+	  strcpy (qpk_name, xpk_name);
+	  free (xpk_name);
+      }
     dbf_field = shp->Dbf->First;
     while (dbf_field)
       {
 	  /* preparing column names */
+	  if (strcasecmp (pk_name, dbf_field->Name) == 0)
+	    {
+		/* skipping the Primary Key field */
+		strcpy (dummyName, dbf_field->Name);
+		len = strlen (dummyName);
+		*(col_name + cnt) = malloc (len + 1);
+		strcpy (*(col_name + cnt), dummyName);
+		cnt++;
+		dbf_field = dbf_field->Next;
+		continue;
+	    }
 	  strcpy (dummyName, dbf_field->Name);
 	  dup = 0;
 	  for (idup = 0; idup < cnt; idup++)
@@ -481,7 +543,7 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 		if (strcasecmp (dummyName, *(col_name + idup)) == 0)
 		    dup = 1;
 	    }
-	  if (strcasecmp (dummyName, "PK_UID") == 0)
+	  if (strcasecmp (dummyName, pk_name) == 0)
 	      dup = 1;
 	  if (strcasecmp (dummyName, geo_column) == 0)
 	      dup = 1;
@@ -512,12 +574,24 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 	  goto clean_up;
       }
 /* creating the Table */
-    sprintf (sql, "CREATE TABLE \"%s\"", qtable);
-    strcat (sql, " (\nPK_UID INTEGER PRIMARY KEY AUTOINCREMENT");
+    sprintf (sql, "CREATE TABLE \"%s\" (\n\"%s\" ", qtable, qpk_name);
+    if (pk_type == SQLITE_TEXT)
+	strcat (sql, "TEXT PRIMARY KEY NOT NULL");
+    else if (pk_type == SQLITE_FLOAT)
+	strcat (sql, "DOUBLE PRIMARY KEY NOT NULL");
+    else
+	strcat (sql, "INTEGER PRIMARY KEY AUTOINCREMENT");
     cnt = 0;
     dbf_field = shp->Dbf->First;
     while (dbf_field)
       {
+	  if (strcasecmp (pk_name, dbf_field->Name) == 0)
+	    {
+		/* skipping the Primary Key field */
+		dbf_field = dbf_field->Next;
+		cnt++;
+		continue;
+	    }
 	  strcat (sql, ",\n\"");
 	  strcat (sql, *(col_name + cnt));
 	  cnt++;
@@ -786,12 +860,19 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 	    }
       }
     /* preparing the INSERT INTO parametrerized statement */
-    sprintf (sql, "INSERT INTO \"%s\" (PK_UID,", qtable);
+    sprintf (sql, "INSERT INTO \"%s\" (\"%s\",", qtable, qpk_name);
     cnt = 0;
     dbf_field = shp->Dbf->First;
     while (dbf_field)
       {
 	  /* columns corresponding to some DBF attribute */
+	  if (strcasecmp (pk_name, dbf_field->Name) == 0)
+	    {
+		/* skipping the Primary Key field */
+		dbf_field = dbf_field->Next;
+		cnt++;
+		continue;
+	    }
 	  strcat (sql, "\"");
 	  strcat (sql, *(col_name + cnt++));
 	  strcat (sql, "\" ,");
@@ -803,6 +884,12 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
     while (dbf_field)
       {
 	  /* column values */
+	  if (strcasecmp (pk_name, dbf_field->Name) == 0)
+	    {
+		/* skipping the Primary Key field */
+		dbf_field = dbf_field->Next;
+		continue;
+	    }
 	  strcat (sql, ", ?");
 	  dbf_field = dbf_field->Next;
       }
@@ -840,12 +927,43 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 	  /* binding query params */
 	  sqlite3_reset (stmt);
 	  sqlite3_clear_bindings (stmt);
-	  sqlite3_bind_int (stmt, 1, current_row);
+	  pk_set = 0;
+	  cnt = 0;
+	  dbf_field = shp->Dbf->First;
+	  while (dbf_field)
+	    {
+		/* Primary Key value */
+		if (strcasecmp (pk_name, dbf_field->Name) == 0)
+		  {
+		      if (pk_type == SQLITE_TEXT)
+			  sqlite3_bind_text (stmt, 1,
+					     dbf_field->Value->TxtValue,
+					     strlen (dbf_field->
+						     Value->TxtValue),
+					     SQLITE_STATIC);
+		      else if (pk_type == SQLITE_FLOAT)
+			  sqlite3_bind_double (stmt, 1,
+					       dbf_field->Value->DblValue);
+		      else
+			  sqlite3_bind_int64 (stmt, 1,
+					      dbf_field->Value->IntValue);
+		      pk_set = 1;
+		  }
+		dbf_field = dbf_field->Next;
+	    }
+	  if (!pk_set)
+	      sqlite3_bind_int (stmt, 1, current_row);
 	  cnt = 0;
 	  dbf_field = shp->Dbf->First;
 	  while (dbf_field)
 	    {
 		/* column values */
+		if (strcasecmp (pk_name, dbf_field->Name) == 0)
+		  {
+		      /* skipping the Primary Key field */
+		      dbf_field = dbf_field->Next;
+		      continue;
+		  }
 		if (!(dbf_field->Value))
 		    sqlite3_bind_null (stmt, cnt + 2);
 		else
@@ -1958,6 +2076,14 @@ SPATIALITE_DECLARE int
 load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 	  int verbose, int *rows, char *err_msg)
 {
+    return load_dbf_ex (sqlite, dbf_path, table, NULL, charset, verbose, rows,
+			err_msg);
+}
+
+SPATIALITE_DECLARE int
+load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
+	     char *charset, int verbose, int *rows, char *err_msg)
+{
     sqlite3_stmt *stmt;
     int ret;
     char *errMsg = NULL;
@@ -1978,6 +2104,11 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
     int deleted;
     char qtable[1024];
     char *xtable = NULL;
+    char qpk_name[1024];
+    char *xpk_name = NULL;
+    char *pk_name = "PK_UID";
+    int pk_type = SQLITE_INTEGER;
+    int pk_set;
     xtable = gaiaDoubleQuotedSql (table);
     if (xtable)
       {
@@ -2058,10 +2189,67 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
     col_name = malloc (sizeof (char *) * col_cnt);
     cnt = 0;
     seed = 0;
+    if (pk_column != NULL)
+      {
+	  /* validating the Primary Key column */
+	  dbf_field = dbf->Dbf->First;
+	  while (dbf_field)
+	    {
+		if (strcasecmp (pk_column, dbf_field->Name) == 0)
+		  {
+		      /* ok, using this field as Primary Key */
+		      pk_name = pk_column;
+		      switch (dbf_field->Type)
+			{
+			case 'C':
+			    pk_type = SQLITE_TEXT;
+			    break;
+			case 'N':
+			    if (dbf_field->Decimals)
+				pk_type = SQLITE_FLOAT;
+			    else
+			      {
+				  if (dbf_field->Length <= 18)
+				      pk_type = SQLITE_INTEGER;
+				  else
+				      pk_type = SQLITE_FLOAT;
+			      }
+			    break;
+			case 'D':
+			    pk_type = SQLITE_FLOAT;
+			    break;
+			case 'F':
+			    pk_type = SQLITE_FLOAT;
+			    break;
+			case 'L':
+			    pk_type = SQLITE_INTEGER;
+			    break;
+			};
+		  }
+		dbf_field = dbf_field->Next;
+	    }
+      }
+    xpk_name = gaiaDoubleQuotedSql (pk_name);
+    if (xpk_name)
+      {
+	  strcpy (qpk_name, xpk_name);
+	  free (xpk_name);
+      }
     dbf_field = dbf->Dbf->First;
     while (dbf_field)
       {
 	  /* preparing column names */
+	  if (strcasecmp (pk_name, dbf_field->Name) == 0)
+	    {
+		/* skipping the Primary Key field */
+		strcpy (dummyName, dbf_field->Name);
+		len = strlen (dummyName);
+		*(col_name + cnt) = malloc (len + 1);
+		strcpy (*(col_name + cnt), dummyName);
+		cnt++;
+		dbf_field = dbf_field->Next;
+		continue;
+	    }
 	  strcpy (dummyName, dbf_field->Name);
 	  dup = 0;
 	  for (idup = 0; idup < cnt; idup++)
@@ -2097,12 +2285,24 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 	  goto clean_up;
       }
 /* creating the Table */
-    sprintf (sql, "CREATE TABLE \"%s\"", qtable);
-    strcat (sql, " (\nPK_UID INTEGER PRIMARY KEY AUTOINCREMENT");
+    sprintf (sql, "CREATE TABLE \"%s\" (\n\"%s\" ", qtable, qpk_name);
+    if (pk_type == SQLITE_TEXT)
+	strcat (sql, "TEXT PRIMARY KEY NOT NULL");
+    else if (pk_type == SQLITE_FLOAT)
+	strcat (sql, "DOUBLE PRIMARY KEY NOT NULL");
+    else
+	strcat (sql, "INTEGER PRIMARY KEY AUTOINCREMENT");
     cnt = 0;
     dbf_field = dbf->Dbf->First;
     while (dbf_field)
       {
+	  if (strcasecmp (pk_name, dbf_field->Name) == 0)
+	    {
+		/* skipping the Primary Key field */
+		dbf_field = dbf_field->Next;
+		cnt++;
+		continue;
+	    }
 	  strcat (sql, ",\n\"");
 	  strcat (sql, *(col_name + cnt));
 	  cnt++;
@@ -2149,12 +2349,19 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 	  goto clean_up;
       }
     /* preparing the INSERT INTO parametrerized statement */
-    sprintf (sql, "INSERT INTO \"%s\" (PK_UID", qtable);
+    sprintf (sql, "INSERT INTO \"%s\" (\"%s\"", qtable, qpk_name);
     cnt = 0;
     dbf_field = dbf->Dbf->First;
     while (dbf_field)
       {
 	  /* columns corresponding to some DBF attribute */
+	  if (strcasecmp (pk_name, dbf_field->Name) == 0)
+	    {
+		/* skipping the Primary Key field */
+		dbf_field = dbf_field->Next;
+		cnt++;
+		continue;
+	    }
 	  strcat (sql, ",\"");
 	  strcat (sql, *(col_name + cnt++));
 	  strcat (sql, "\"");
@@ -2165,6 +2372,12 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
     while (dbf_field)
       {
 	  /* column values */
+	  if (strcasecmp (pk_name, dbf_field->Name) == 0)
+	    {
+		/* skipping the Primary Key field */
+		dbf_field = dbf_field->Next;
+		continue;
+	    }
 	  strcat (sql, ", ?");
 	  dbf_field = dbf_field->Next;
       }
@@ -2205,12 +2418,44 @@ load_dbf (sqlite3 * sqlite, char *dbf_path, char *table, char *charset,
 	  /* binding query params */
 	  sqlite3_reset (stmt);
 	  sqlite3_clear_bindings (stmt);
+	  pk_set = 0;
+	  cnt = 0;
+	  dbf_field = dbf->Dbf->First;
+	  while (dbf_field)
+	    {
+		/* Primary Key value */
+		if (strcasecmp (pk_name, dbf_field->Name) == 0)
+		  {
+		      if (pk_type == SQLITE_TEXT)
+			  sqlite3_bind_text (stmt, 1,
+					     dbf_field->Value->TxtValue,
+					     strlen (dbf_field->
+						     Value->TxtValue),
+					     SQLITE_STATIC);
+		      else if (pk_type == SQLITE_FLOAT)
+			  sqlite3_bind_double (stmt, 1,
+					       dbf_field->Value->DblValue);
+		      else
+			  sqlite3_bind_int64 (stmt, 1,
+					      dbf_field->Value->IntValue);
+		      pk_set = 1;
+		  }
+		dbf_field = dbf_field->Next;
+	    }
+	  if (!pk_set)
+	      sqlite3_bind_int (stmt, 1, current_row);
 	  sqlite3_bind_int (stmt, 1, current_row);
 	  cnt = 0;
 	  dbf_field = dbf->Dbf->First;
 	  while (dbf_field)
 	    {
 		/* column values */
+		if (strcasecmp (pk_name, dbf_field->Name) == 0)
+		  {
+		      /* skipping the Primary Key field */
+		      dbf_field = dbf_field->Next;
+		      continue;
+		  }
 		if (!(dbf_field->Value))
 		    sqlite3_bind_null (stmt, cnt + 2);
 		else

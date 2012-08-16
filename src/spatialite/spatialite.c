@@ -1614,7 +1614,8 @@ createAdvancedMetaData (sqlite3 * sqlite)
 	  return 0;
       }
 /* creating the VECTOR_LAYERS view */
-    strcpy (sql, "CREATE VIEW vector_layers AS\n");
+    strcpy (sql, "CREATE VIEW  IF NOT EXISTS ");
+    strcat (sql, "vector_layers AS\n");
     strcat (sql, "SELECT 'SpatialTable' AS layer_type, ");
     strcat (sql, "f_table_name AS table_name, ");
     strcat (sql, "f_geometry_column AS geometry_column, ");
@@ -1652,7 +1653,8 @@ createAdvancedMetaData (sqlite3 * sqlite)
 	  return 0;
       }
 /* creating the VECTOR_LAYERS_AUTH view */
-    strcpy (sql, "CREATE VIEW vector_layers_auth AS\n");
+    strcpy (sql, "CREATE VIEW  IF NOT EXISTS ");
+    strcat (sql, "vector_layers_auth AS\n");
     strcat (sql, "SELECT 'SpatialTable' AS layer_type, ");
     strcat (sql, "f_table_name AS table_name, ");
     strcat (sql, "f_geometry_column AS geometry_column, ");
@@ -1684,7 +1686,8 @@ createAdvancedMetaData (sqlite3 * sqlite)
 	  return 0;
       }
 /* creating the VECTOR_LAYERS_STATISTICS view */
-    strcpy (sql, "CREATE VIEW vector_layers_statistics AS\n");
+    strcpy (sql, "CREATE VIEW IF NOT EXISTS ");
+    strcat (sql, "vector_layers_statistics AS\n");
     strcat (sql, "SELECT 'SpatialTable' AS layer_type, ");
     strcat (sql, "f_table_name AS table_name, ");
     strcat (sql, "f_geometry_column AS geometry_column, ");
@@ -1725,7 +1728,8 @@ createAdvancedMetaData (sqlite3 * sqlite)
 	  return 0;
       }
 /* creating the VECTOR_LAYERS_FIELD_INFOS view */
-    strcpy (sql, "CREATE VIEW vector_layers_field_infos AS\n");
+    strcpy (sql, "CREATE VIEW IF NOT EXISTS ");
+    strcat (sql, "vector_layers_field_infos AS\n");
     strcat (sql, "SELECT 'SpatialTable' AS layer_type, ");
     strcat (sql, "f_table_name AS table_name, ");
     strcat (sql, "f_geometry_column AS geometry_column, ");
@@ -19226,8 +19230,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -19311,8 +19314,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -19321,8 +19323,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }

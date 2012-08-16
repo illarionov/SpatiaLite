@@ -136,8 +136,8 @@ extern "C"
 
  \sa load_shapefile_ex
 
- \note this function simply calls load_shapefile_ex by passing an
-  implicit gype = "AUTO" argument
+ \note this function simply calls load_shapefile_ex by passing 
+  implicit gype="AUTO" and pk_column=NULL arguments
  */
     SPATIALITE_DECLARE int load_shapefile (sqlite3 * sqlite, char *shp_path,
 					   char *table, char *charset, int srid,
@@ -154,12 +154,14 @@ extern "C"
  \param table the name of the table to be created
  \param charset a valid GNU ICONV charset to be used for DBF text strings
  \param srid the SRID to be set for Geometries
- \param column the name of the geometry column
+ \param geo_column the name of the geometry column
  \param gtype expected to be one of: "LINESTRING", "LINESTRINGZ", 
   "LINESTRINGM", "LINESTRINGZM", "MULTILINESTRING", "MULTILINESTRINGZ",
   "MULTILINESTRINGM", "MULTILINESTRINGZM", "POLYGON", "POLYGONZ", "POLYGONM", 
   "POLYGONZM", "MULTIPOLYGON", "MULTIPOLYGONZ", "MULTIPOLYGONM", 
   "MULTIPOLYGONZM" or "AUTO".
+ \param pk_column name of the Primary Key column; if NULL or mismatching
+ then "PK_UID" will be assumed by default.
  \param coerce2d if TRUE any Geometry will be casted to 2D [XY]
  \param compressed if TRUE compressed Geometries will be created
  \param verbose if TRUE a short report is shown on stderr
@@ -182,8 +184,8 @@ extern "C"
  */
     SPATIALITE_DECLARE int load_shapefile_ex (sqlite3 * sqlite, char *shp_path,
 					      char *table, char *charset,
-					      int srid, char *column,
-					      char *gtype, int coerce2d,
+					      int srid, char *geo_column,
+					      char *gtype, char *pk_column, int coerce2d,
 					      int compressed, int verbose,
 					      int spatial_index, int *rows,
 					      char *err_msg);
@@ -199,11 +201,38 @@ extern "C"
  \param rows on completion will contain the total number of actually exported rows
  \param err_msg on completion will contain an error message (if any)
 
+ \sa load_dbf_ex
+
+ \note this function simply calls load_dbf_ex by passing an
+  implicit pk_column=NULL argument
+
  \return 0 on failure, any other value on success
  */
     SPATIALITE_DECLARE int load_dbf (sqlite3 * sqlite, char *dbf_path,
 				     char *table, char *charset, int verbose,
 				     int *rows, char *err_msg);
+
+/**
+ Loads an external DBF file into a newly created table
+
+ \param sqlite handle to current DB connection
+ \param dbf_path pathname of the DBF file to be imported
+ \param table the name of the table to be created
+ \param pk_column name of the Primary Key column; if NULL or mismatching
+ then "PK_UID" will be assumed by default.
+ \param charset a valid GNU ICONV charset to be used for DBF text strings
+ \param verbose if TRUE a short report is shown on stderr
+ \param rows on completion will contain the total number of actually exported rows
+ \param err_msg on completion will contain an error message (if any)
+
+ \sa load_shapefile
+
+ \return 0 on failure, any other value on success
+ */
+    SPATIALITE_DECLARE int load_dbf_ex (sqlite3 * sqlite, char *dbf_path,
+				     char *table, char *pk_column, char *charset, int verbose,
+				     int *rows, char *err_msg);
+
 
 /**
  Dumps a full table into an external DBF file
