@@ -783,6 +783,8 @@ gaiaIsValid (gaiaGeomCollPtr geom)
 	return -1;
     if (gaiaIsToxic (geom))
 	return 0;
+    if (gaiaIsNotClosedGeomColl (geom))
+	return 0;
     g = gaiaToGeos (geom);
     ret = GEOSisValid (g);
     GEOSGeom_destroy (g);

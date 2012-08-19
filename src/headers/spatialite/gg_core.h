@@ -1169,11 +1169,44 @@ extern "C"
  \sa gaiaSanitize
 
  \note a \b toxic Geometry is a Geometry containing severely malformed
- Polygons: i.e. containing less than 4 Points, unclosed Rings and so on.
+ Polygons: i.e. containing less than 4 Points.
+ \n Or containing severely malformed Linestrings: i.e. containing less 
+ than 2 Points.
  \n Attempting to pass any toxic Geometry to GEOS supported functions
  will easily cause a crash.
  */
     GAIAGEO_DECLARE int gaiaIsToxic (gaiaGeomCollPtr geom);
+
+/**
+ Checks for not-closed Rings 
+
+ \param ring pointer to Ring object
+
+ \return 0 if the Ring in unclosed: otherwise any other different value.
+
+ \sa gaiaIsToxic, gaiaIsNotClosedGeomColl
+
+ \note unclosed Rings cause GEOS supported functions to crash.
+ \n SpatiaLite will always carefully check any Ring before passing it
+ to GEOS, eventually silently inserting a further point required so 
+ to properly close the figure.
+ \n This function allows to explicitly identify any unclosed Ring.
+ */
+    GAIAGEO_DECLARE int gaiaIsNotClosedRing (gaiaRingPtr ring);
+
+/**
+ Checks for not-closed Rings in a Geometry object
+
+ \param geom pointer to Geometry object
+
+ \return 0 if the Geometry has no unclosed Rings: otherwise any other different value.
+
+ \sa gaiaIsToxic, gaiaIsNotClosedRing
+
+ \note This function allows to explicitly identify any Geometry containing
+ at least one unclosed Ring.
+ */
+    GAIAGEO_DECLARE int gaiaIsNotClosedGeomColl (gaiaGeomCollPtr geom);
 
 /**
  Attempts to sanitize a possibly malformed Geometry object

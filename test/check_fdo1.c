@@ -229,7 +229,7 @@ int main (int argc, char *argv[])
       fprintf (stderr, "Unexpected error: NULL result\n");
       return -28;
     }
-    if (strncmp(results[1], "4009.651164", 11) != 0) {        
+    if (strncmp(results[1], "9960.931239", 11) != 0) {        
       fprintf (stderr, "Unexpected error: invalid result\n");
       return -29;
     }
@@ -251,7 +251,7 @@ int main (int argc, char *argv[])
       fprintf (stderr, "Unexpected error: NULL result\n");
       return -32;
     }
-    if (strncmp(results[1], "2524.6751596", 12) != 0) {        
+    if (strncmp(results[1], "69972.113393", 12) != 0) {        
       fprintf (stderr, "Unexpected error: invalid result\n");
       return -33;
     }

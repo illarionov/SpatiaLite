@@ -2257,8 +2257,6 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 		if (strcasecmp (dummyName, *(col_name + idup)) == 0)
 		    dup = 1;
 	    }
-	  if (strcasecmp (dummyName, "PK_UID") == 0)
-	      dup = 1;
 	  if (dup)
 	      sprintf (dummyName, "COL_%d", seed++);
 	  len = strlen (dummyName);

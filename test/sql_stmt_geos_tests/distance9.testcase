@@ -4,5 +4,5 @@ SELECT Distance(GeomFromText("LINESTRING(0 0, 0 0)"), GeomFromText("LINESTRING(0
 1 # rows (not including the header row)
 1 # columns
 Distance(GeomFromText("LINESTRING(0 0, 0 0)"), GeomFromText("LINESTRING(0 0, 0 5)"))
-(NULL)
+0.0
 

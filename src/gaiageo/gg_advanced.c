@@ -1164,48 +1164,9 @@ static int
 gaiaIsToxicLinestring (gaiaLinestringPtr line)
 {
 /* checking a Linestring */
-    double x0;
-    double y0;
-    double z0;
-    double m0;
-    double x1;
-    double y1;
-    double z1;
-    int iv;
-    int count = 0;
     if (line->Points < 2)
 	return 1;
-    for (iv = 0; iv < line->Points; iv++)
-      {
-	  /* counting how many not-repeated points are there */
-	  gaiaLineGetPoint (line, iv, &x0, &y0, &z0, &m0);
-	  if (iv == 0)
-	      count++;
-	  else
-	    {
-		if (line->DimensionModel == GAIA_XY
-		    || line->DimensionModel == GAIA_XY_M)
-		  {
-		      if (x0 == x1 && y0 == y1)
-			  ;
-		      else
-			  count++;
-		  }
-		else if (line->DimensionModel == GAIA_XY_Z
-			 || line->DimensionModel == GAIA_XY_Z_M)
-		  {
-		      if (x0 == x1 && y0 == y1 && z0 == z1)
-			  ;
-		      else
-			  count++;
-		  }
-	    }
-	  x1 = x0;
-	  y1 = y0;
-	  z1 = z0;
-      }
-    if (count > 1)
-	return 0;
+    return 0;
 
 /* not a valid Linestring, simply a degenerated Point */
     return 1;
@@ -1215,109 +1176,8 @@ static int
 gaiaIsToxicRing (gaiaRingPtr ring)
 {
 /* checking a Ring */
-    double x0;
-    double y0;
-    double z0;
-    double m0;
-    double x1;
-    double y1;
-    double z1;
-    double m1;
-    int iv;
-    int count = 0;
     if (ring->Points < 4)
 	return 1;
-/* checking for unclosed rings */
-    gaiaRingGetPoint (ring, 0, &x0, &y0, &z0, &m0);
-    gaiaRingGetPoint (ring, ring->Points - 1, &x1, &y1, &z1, &m1);
-    if (x0 == x1 && y0 == y1)
-	;
-    else
-      {
-	  /* not a closed figure */
-	  return 1;
-      }
-    for (iv = 0; iv < ring->Points; iv++)
-      {
-	  /* counting how many not-repeated points are there */
-	  gaiaRingGetPoint (ring, iv, &x0, &y0, &z0, &m0);
-	  if (iv == 0)
-	      count++;
-	  else
-	    {
-		if (ring->DimensionModel == GAIA_XY
-		    || ring->DimensionModel == GAIA_XY_M)
-		  {
-		      if (x0 == x1 && y0 == y1)
-			  ;
-		      else
-			  count++;
-		  }
-		else if (ring->DimensionModel == GAIA_XY_Z
-			 || ring->DimensionModel == GAIA_XY_Z_M)
-		  {
-		      if (x0 == x1 && y0 == y1 && z0 == z1)
-			  ;
-		      else
-			  count++;
-		  }
-	    }
-	  x1 = x0;
-	  y1 = y0;
-	  z1 = z0;
-      }
-    if (count > 3)
-	return 0;
-
-/* not a valid Ring, simply a degenerated Point or Linestring */
-    return 1;
-}
-
-static int
-gaiaIsSelfIntersectedRing (gaiaRingPtr ring, double *x, double *y)
-{
-/* checking a Ring for self-intersected points */
-    double x0;
-    double y0;
-    double z0;
-    double m0;
-    double x1;
-    double y1;
-    double z1;
-    double m1;
-    int iv;
-    int iv1;
-
-    for (iv = 1; iv < ring->Points; iv++)
-      {
-	  /* checking for self-intersections */
-	  gaiaRingGetPoint (ring, iv, &x0, &y0, &z0, &m0);
-	  for (iv1 = iv + 1; iv1 < ring->Points; iv1++)
-	    {
-		gaiaRingGetPoint (ring, iv1, &x1, &y1, &z1, &m1);
-		if (ring->DimensionModel == GAIA_XY
-		    || ring->DimensionModel == GAIA_XY_M)
-		  {
-		      if (x0 == x1 && y0 == y1)
-			{
-			    *x = x0;
-			    *y = y0;
-			    return 1;
-			}
-		  }
-		else if (ring->DimensionModel == GAIA_XY_Z
-			 || ring->DimensionModel == GAIA_XY_Z_M)
-		  {
-		      if (x0 == x1 && y0 == y1 && z0 == z1)
-			{
-			    *x = x0;
-			    *y = y0;
-			    return 1;
-			}
-		  }
-	    }
-      }
-
     return 0;
 }
 
@@ -1333,10 +1193,6 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
     gaiaLinestringPtr line;
     gaiaPolygonPtr polyg;
     gaiaRingPtr ring;
-    double minx;
-    double miny;
-    double maxx;
-    double maxy;
     if (!geom)
 	return 0;
     point = geom->FirstPoint;
@@ -1366,60 +1222,64 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
 		gaiaSetGeosErrorMsg ("gaiaIsToxic detected a toxic Ring");
 		return 1;
 	    }
-	  if (gaiaIsSelfIntersectedRing (ring, &minx, &miny))
-	    {
-		char buf[1024];
-		sprintf (buf, "gaiaIsToxic: self-intersection near %1.8f %1.8f",
-			 minx, miny);
-		gaiaSetGeosErrorMsg (buf);
-		return 1;
-	    }
-	  gaiaMbrRing (ring);
-	  minx = ring->MinX;
-	  miny = ring->MinY;
-	  maxx = ring->MaxX;
-	  maxy = ring->MaxY;
 	  for (ib = 0; ib < polyg->NumInteriors; ib++)
 	    {
-		const char *mismatch =
-		    "gaiaIsToxic detected a mismatchin Interior Ring";
 		ring = polyg->Interiors + ib;
 		if (gaiaIsToxicRing (ring))
 		  {
 		      gaiaSetGeosErrorMsg ("gaiaIsToxic detected a toxic Ring");
 		      return 1;
 		  }
-		if (gaiaIsSelfIntersectedRing (ring, &minx, &miny))
-		  {
-		      char buf[1024];
-		      sprintf (buf,
-			       "gaiaIsToxic: self-intersection near %1.8f %1.8f",
-			       minx, miny);
-		      gaiaSetGeosErrorMsg (buf);
-		      return 1;
-		  }
-		/* checking if the Interior Ring MBR falls outside the Exterior Ring */
-		gaiaMbrRing (ring);
-		if (ring->MinX < minx)
-		  {
-		      gaiaSetGeosErrorMsg (mismatch);
-		      return 1;
-		  }
-		if (ring->MinY < miny)
-		  {
-		      gaiaSetGeosErrorMsg (mismatch);
-		      return 1;
-		  }
-		if (ring->MaxX > maxx)
-		  {
-		      gaiaSetGeosErrorMsg (mismatch);
-		      return 1;
-		  }
-		if (ring->MaxY > maxy)
-		  {
-		      gaiaSetGeosErrorMsg (mismatch);
-		      return 1;
-		  }
+	    }
+	  polyg = polyg->Next;
+      }
+    return 0;
+}
+
+GAIAGEO_DECLARE int
+gaiaIsNotClosedRing (gaiaRingPtr ring)
+{
+/* checking a Ring for closure */
+    double x0;
+    double y0;
+    double z0;
+    double m0;
+    double x1;
+    double y1;
+    double z1;
+    double m1;
+    gaiaRingGetPoint (ring, 0, &x0, &y0, &z0, &m0);
+    gaiaRingGetPoint (ring, ring->Points - 1, &x1, &y1, &z1, &m1);
+    if (x0 == x1 && y0 == y1 && z0 == z1 && m0 == m1)
+	return 0;
+    else
+	return 1;
+}
+
+GAIAGEO_DECLARE int
+gaiaIsNotClosedGeomColl (gaiaGeomCollPtr geom)
+{
+/* 
+/ identifying not properly closed Rings 
+/ i.e. geoms making GEOS to crash !!!
+*/
+    int ib;
+    gaiaPolygonPtr polyg;
+    gaiaRingPtr ring;
+    if (!geom)
+	return 0;
+    polyg = geom->FirstPolygon;
+    while (polyg)
+      {
+	  /* checking POLYGONs */
+	  ring = polyg->Exterior;
+	  if (gaiaIsNotClosedRing (ring))
+	      return 1;
+	  for (ib = 0; ib < polyg->NumInteriors; ib++)
+	    {
+		ring = polyg->Interiors + ib;
+		if (gaiaIsNotClosedRing (ring))
+		    return 1;
 	    }
 	  polyg = polyg->Next;
       }

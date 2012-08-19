@@ -185,10 +185,10 @@ extern "C"
     SPATIALITE_DECLARE int load_shapefile_ex (sqlite3 * sqlite, char *shp_path,
 					      char *table, char *charset,
 					      int srid, char *geo_column,
-					      char *gtype, char *pk_column, int coerce2d,
-					      int compressed, int verbose,
-					      int spatial_index, int *rows,
-					      char *err_msg);
+					      char *gtype, char *pk_column,
+					      int coerce2d, int compressed,
+					      int verbose, int spatial_index,
+					      int *rows, char *err_msg);
 
 /**
  Loads an external DBF file into a newly created table
@@ -230,8 +230,9 @@ extern "C"
  \return 0 on failure, any other value on success
  */
     SPATIALITE_DECLARE int load_dbf_ex (sqlite3 * sqlite, char *dbf_path,
-				     char *table, char *pk_column, char *charset, int verbose,
-				     int *rows, char *err_msg);
+					char *table, char *pk_column,
+					char *charset, int verbose, int *rows,
+					char *err_msg);
 
 
 /**

@@ -4,4 +4,4 @@ SELECT IsRing(GeomFromText("LINESTRING(1 1, 1 1, 1 1, 1 1, 1 1)"))
 1 # rows (not including the header row)
 1 # columns
 IsRing(GeomFromText("LINESTRING(1 1, 1 1, 1 1, 1 1, 1 1)"))
--1
+1
