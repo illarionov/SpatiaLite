@@ -56,6 +56,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 
+#ifndef OMIT_GEOS		/* including GEOS */
+#include <geos_c.h>
+#endif
+
 #ifdef _WIN32
 #include "fnmatch4win.h"
 #include "scandir4win.h"
@@ -349,6 +353,18 @@ int run_all_testcases()
 #endif	/* end PROJ conditional */
 
 #ifndef OMIT_GEOS	/* only if GEOS is supported */
+    if (strcmp(GEOSversion (), "3.3") < 0)
+    {
+    /* 
+    /* skipping GEOS tests if some obsolete version is found 
+    /*
+    /* rationale: obsolete versions may return substantially
+    /* different results, thus causing many testcases to fail
+    */
+        fprintf(stderr, "WARNING: skipping GEOS testcases; obsolete version found !!!\n");
+        goto skip_geos;
+    }
+
     n = scandir("sql_stmt_geos_tests", &namelist, test_case_filter, alphasort);
     if (n < 0) {
 	perror("scandir");
@@ -373,9 +389,21 @@ int run_all_testcases()
 	free(namelist[i]);
     }
     free(namelist);
+skip_geos:
 #endif	/* end GEOS conditional */
 
 #ifdef GEOS_ADVANCED	/* only if GEOS_ADVANCED is supported */
+    if (strcmp(GEOSversion (), "3.3") < 0)
+    {
+    /* 
+    /* skipping GEOS tests if some obsolete version is found 
+    /*
+    /* rationale: obsolete versions may return substantially
+    /* different results, thus causing many testcases to fail
+    */
+        fprintf(stderr, "WARNING: skipping GEOS_ADVANCED testcases; obsolete version found !!!\n");
+        goto skip_geos_advanced;
+    }
     n = scandir("sql_stmt_geosadvanced_tests", &namelist, test_case_filter, alphasort);
     if (n < 0) {
 	perror("scandir");
@@ -400,6 +428,7 @@ int run_all_testcases()
 	free(namelist[i]);
     }
     free(namelist);
+skip_geos_advanced:
 #endif	/* end GEOS_ADVANCED conditional */
 
     return result;
