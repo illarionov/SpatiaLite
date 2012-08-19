@@ -1049,7 +1049,109 @@ extern "C"
 
 #endif				/* end GEOS advanced and experimental features */
 
+#ifndef DOXYGEN_SHOULD_IGNORE_THIS
+#ifdef ENABLE_LWGEOM
+#endif
+
+/**
+ Utility function: MakeValid
+
+ \param geom the input Geometry object.
+
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n this function will attempt to create a valid representation of a given 
+ invalid geometry without loosing any of the input vertices. 
+ \n Already-valid geometries are returned without further intervention. 
+ \n NULL will be returned if the passed argument is invalid.
+
+ \sa gaiaFreeGeomColl
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaMakeValid()
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMakeValid (gaiaGeomCollPtr geom);
+
+/**
+ Utility function: Segmentize
+
+ \param geom the input Geometry object.
+ \param dist the meximum segment length.
+
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n this function will return a modified geometry having no segment longer than the given distance. 
+ \n Distance computation is performed in 2d only.
+ \n all Points or segments shorter than 'dist' will be returned without further intervention. 
+ \n NULL will be returned if the passed argument is invalid.
+
+ \sa gaiaFreeGeomColl
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaSegmentize()
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSegmentize (gaiaGeomCollPtr geom,
+						    double dist);
+
+/**
+ Utility function: Azimuth
+
+ \param xa the X ccordinate of PointA.
+ \param ya the Y coordinate of PointA.
+ \param xb the X ccordinate of PointB.
+ \param yb the Y coordinate of PointB.
+ \param azimuth on completion this variable will contain the angle in radians from 
+  the horizontal of the vector defined by pointA and pointB. 
+ \n Angle is computed clockwise from down-to-up: on the clock: 12=0; 3=PI/2; 6=PI; 9=3PI/2.
+
+ \return 0 on failure: any other value on success
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE int gaiaAzimuth (double xa, double ya, double xb,
+				     double yb, double *azimuth);
+
+#endif				/* end LWGEOM support */
+
 #endif				/* end including GEOS */
+
+/**
+ Utility function: SnapToGrid
+
+ \param origin_x the X ccordinate identifying the Grid Origin.
+ \param origin_y the Y coordinate identifiying the Grid Origin.
+ \param size_x Grid cell size (X axis).
+ \param size_y Grid cell size (Y axis).
+ \param size_z Grid cell size (Z axis).
+ \param size_m Grid cell size (M axis).
+ 
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n this function will return a modified geometry having all points snapped to a regular Grid
+ defined by its origin and cell size.
+ \n Consecutive points falling on the same cell will be removed, eventually returning NULL if 
+ \n output points are not enough to define a geometry of the given type.
+ \n Collapsed geometries in a collection are stripped from it.
+ \n Specify 0 as size for any dimension you don't want to snap to a grid. 
+ \n NULL will be returned if the passed argument is invalid.
+
+ \sa gaiaFreeGeomColl
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaSegmentize()
+
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSnapToGrid (gaiaGeomCollPtr geom,
+						    double origin_x,
+						    double origin_y,
+						    double origin_z,
+						    double origin_m,
+						    double size_x,
+						    double size_y,
+						    double size_z,
+						    double size_m);
+
 
 #ifdef __cplusplus
 }

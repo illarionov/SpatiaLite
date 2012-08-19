@@ -85,14 +85,22 @@ extern "C"
  */
     SPATIALITE_DECLARE void spatialite_init (int verbose);
 
-    /**
-     Cleanup spatialite 
-     
-     This function performs general cleanup, essentially undoing the effect
-     of spatialite_init().
-     
-     \sa spatialite_init
-    */
+/**
+ Initializes the GEOS library. 
+ 
+ \note You are never supposed to invoke this function (internally handled).
+
+ */
+    SPATIALITE_DECLARE void spatialite_init_geos (void);
+
+/**
+ Cleanup spatialite 
+
+ This function performs general cleanup, essentially undoing the effect
+ of spatialite_init().
+
+ \sa spatialite_init
+*/
     SPATIALITE_DECLARE void spatialite_cleanup (void);
 
 /**

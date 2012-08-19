@@ -12853,6 +12853,323 @@ fnct_NRings (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaFreeGeomColl (geo);
 }
 
+static int
+getXYZMSinglePoint (gaiaGeomCollPtr geom, double *x, double *y, double *z,
+		    double *m)
+{
+/* check if this geometry is a simple Point (returning full coords) */
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  lns++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts == 1 && lns == 0 && pgs == 0)
+	;
+    else
+	return 0;
+    *x = geom->FirstPoint->X;
+    *y = geom->FirstPoint->Y;
+    if (geom->DimensionModel == GAIA_XY_Z
+	|| geom->DimensionModel == GAIA_XY_Z_M)
+	*z = geom->FirstPoint->Z;
+    else
+	*z = 0.0;
+    if (geom->DimensionModel == GAIA_XY_M
+	|| geom->DimensionModel == GAIA_XY_Z_M)
+	*m = geom->FirstPoint->M;
+    else
+	*m = 0.0;
+    return 1;
+}
+
+static void
+fnct_SnapToGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_SnapToGrid(BLOBencoded geom, double size)
+/ ST_SnapToGrid(BLOBencoded geom, double sizeX, double sizeY)
+/ ST_SnapToGrid(BLOBencoded geom, double originX, double originY, 
+/               double sizeX, double sizeY)
+/
+/ Snap all points of the input geometry to the grid defined by its 
+/ origin and cell size. Remove consecutive points falling on the same
+/ cell. Collapsed geometries in a collection are stripped from it.
+/
+/
+/ ST_SnapToGrid(BLOBencoded geom, BLOBencoded point, double sizeX,
+/               double sizeY, double sizeZ, double sizeM)
+/
+/ Snap all points of the input geometry to the grid defined by its 
+/ origin (the second argument, must be a point) and cell sizes.
+/ 
+/ Specify 0 as size for any dimension you don't want to snap to
+/ a grid.
+/ return NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int int_value;
+    double origin_x = 0.0;
+    double origin_y = 0.0;
+    double origin_z = 0.0;
+    double origin_m = 0.0;
+    double size_x;
+    double size_y;
+    double size_z = 0.0;
+    double size_m = 0.0;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr point = NULL;
+    gaiaGeomCollPtr result = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc == 2)
+      {
+	  /* ST_SnapToGrid(BLOBencoded geom, double size) */
+	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[1]);
+		size_x = int_value;
+		size_y = size_x;
+	    }
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	    {
+		size_x = sqlite3_value_double (argv[1]);
+		size_y = size_x;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 3)
+      {
+	  /* ST_SnapToGrid(BLOBencoded geom, double sizeX, double sizeY) */
+	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[1]);
+		size_x = int_value;
+	    }
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	    {
+		size_x = sqlite3_value_double (argv[1]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[2]);
+		size_y = int_value;
+	    }
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	    {
+		size_y = sqlite3_value_double (argv[2]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 5)
+      {
+	  /*
+	     / ST_SnapToGrid(BLOBencoded geom, double originX, double originY, 
+	     /               double sizeX, double sizeY)
+	   */
+	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[1]);
+		origin_x = int_value;
+	    }
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	    {
+		origin_x = sqlite3_value_double (argv[1]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[2]);
+		origin_y = int_value;
+	    }
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	    {
+		origin_y = sqlite3_value_double (argv[2]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[3]);
+		size_x = int_value;
+	    }
+	  else if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
+	    {
+		size_x = sqlite3_value_double (argv[3]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[4]);
+		size_y = int_value;
+	    }
+	  else if (sqlite3_value_type (argv[4]) == SQLITE_FLOAT)
+	    {
+		size_y = sqlite3_value_double (argv[4]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 6)
+      {
+	  /*
+	     / ST_SnapToGrid(BLOBencoded geom, BLOBencoded point, double sizeX,
+	     /               double sizeY, double sizeZ, double sizeM)
+	   */
+	  if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+	  n_bytes = sqlite3_value_bytes (argv[1]);
+	  point = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+	  if (!point)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (!getXYZMSinglePoint
+	      (point, &origin_x, &origin_y, &origin_z, &origin_m))
+	    {
+		gaiaFreeGeomColl (point);
+		sqlite3_result_null (context);
+		return;
+	    }
+	  gaiaFreeGeomColl (point);
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[2]);
+		size_x = int_value;
+	    }
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	    {
+		size_x = sqlite3_value_double (argv[2]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[3]);
+		size_y = int_value;
+	    }
+	  else if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
+	    {
+		size_y = sqlite3_value_double (argv[3]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[4]);
+		size_z = int_value;
+	    }
+	  else if (sqlite3_value_type (argv[4]) == SQLITE_FLOAT)
+	    {
+		size_z = sqlite3_value_double (argv[4]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[5]);
+		size_m = int_value;
+	    }
+	  else if (sqlite3_value_type (argv[5]) == SQLITE_FLOAT)
+	    {
+		size_m = sqlite3_value_double (argv[5]);
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  result =
+	      gaiaSnapToGrid (geo, origin_x, origin_y, origin_z, origin_m,
+			      size_x, size_y, size_z, size_m);
+	  if (result == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+}
+
 static char garsMapping[24] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J',
     'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
 };
@@ -18012,6 +18329,191 @@ fnct_RingsCutAtNodes (sqlite3_context * context, int argc,
 
 #endif /* end GEOS advanced and experimental features */
 
+#ifdef ENABLE_LWGEOM		/* enabling LWGEOM support */
+
+static void
+fnct_MakeValid (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ MakeValid(BLOBencoded geometry)
+/
+/ Attempts to make an invalid geometry valid without loosing vertices.
+/ NULL is returned for invalid arguments
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr result;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geo == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  result = gaiaMakeValid (geo);
+	  if (result == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
+fnct_Segmentize (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ Segmentize(BLOBencoded geometry, double dist)
+/
+/ Ensure every segment is at most 'dist' long
+/ NULL is returned for invalid arguments
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int int_value;
+    double dist;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr result;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	dist = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  dist = int_value;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geo == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  result = gaiaSegmentize (geo, dist);
+	  if (result == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static int
+getXYSinglePoint (gaiaGeomCollPtr geom, double *x, double *y)
+{
+/* check if this geometry is a simple Point (returning 2D coords) */
+    double z;
+    double m;
+    return getXYZMSinglePoint (geom, x, y, &z, &m);
+}
+
+static void
+fnct_Azimuth (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ Azimuth(BLOBencoded pointA, BLOBencoded pointB)
+/
+/ Returns the angle in radians from the horizontal of the vector 
+/ defined by pointA and pointB. 
+/ Angle is computed clockwise from down-to-up: on the clock: 
+/ 12=0; 3=PI/2; 6=PI; 9=3PI/2.
+/ NULL is returned for invalid arguments
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geom;
+    double x1;
+    double y1;
+    double x2;
+    double y2;
+    double azimuth;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+/* retrieving and validating the first point */
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geom == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (!getXYSinglePoint (geom, &x1, &y1))
+      {
+	  gaiaFreeGeomColl (geom);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    gaiaFreeGeomColl (geom);
+
+/* retrieving and validating the second point */
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+    n_bytes = sqlite3_value_bytes (argv[1]);
+    geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geom == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (!getXYSinglePoint (geom, &x2, &y2))
+      {
+	  gaiaFreeGeomColl (geom);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    gaiaFreeGeomColl (geom);
+
+    if (gaiaAzimuth (x1, y1, x2, y2, &azimuth))
+	sqlite3_result_double (context, azimuth);
+    else
+	sqlite3_result_null (context);
+}
+
+#endif /* end LWGEOM support */
+
 #endif /* end including GEOS */
 
 #ifndef OMIT_MATHSQL		/* supporting SQL math functions */
@@ -20259,6 +20761,22 @@ register_spatialite_sql_functions (sqlite3 * db)
     sqlite3_create_function (db, "ToGARS", 1, SQLITE_ANY, 0, fnct_ToGARS, 0, 0);
     sqlite3_create_function (db, "GARSMbr", 1, SQLITE_ANY, 0, fnct_GARSMbr, 0,
 			     0);
+    sqlite3_create_function (db, "SnapToGrid", 2, SQLITE_ANY, 0,
+			     fnct_SnapToGrid, 0, 0);
+    sqlite3_create_function (db, "ST_SnapToGrid", 2, SQLITE_ANY, 0,
+			     fnct_SnapToGrid, 0, 0);
+    sqlite3_create_function (db, "SnapToGrid", 3, SQLITE_ANY, 0,
+			     fnct_SnapToGrid, 0, 0);
+    sqlite3_create_function (db, "ST_SnapToGrid", 3, SQLITE_ANY, 0,
+			     fnct_SnapToGrid, 0, 0);
+    sqlite3_create_function (db, "SnapToGrid", 5, SQLITE_ANY, 0,
+			     fnct_SnapToGrid, 0, 0);
+    sqlite3_create_function (db, "ST_SnapToGrid", 5, SQLITE_ANY, 0,
+			     fnct_SnapToGrid, 0, 0);
+    sqlite3_create_function (db, "SnapToGrid", 6, SQLITE_ANY, 0,
+			     fnct_SnapToGrid, 0, 0);
+    sqlite3_create_function (db, "ST_SnapToGrid", 6, SQLITE_ANY, 0,
+			     fnct_SnapToGrid, 0, 0);
 
 #ifndef OMIT_GEOS		/* including GEOS */
     sqlite3_create_function (db, "BuildArea", 1, SQLITE_ANY, 0, fnct_BuildArea,
@@ -20694,6 +21212,23 @@ register_spatialite_sql_functions (sqlite3 * db)
 
 #endif /* end GEOS advanced and experimental features */
 
+#ifdef ENABLE_LWGEOM		/* enabling LWGEOM support */
+
+    sqlite3_create_function (db, "MakeValid", 1, SQLITE_ANY, 0,
+			     fnct_MakeValid, 0, 0);
+    sqlite3_create_function (db, "ST_MakeValid", 1, SQLITE_ANY, 0,
+			     fnct_MakeValid, 0, 0);
+    sqlite3_create_function (db, "Segmentize", 2, SQLITE_ANY, 0,
+			     fnct_Segmentize, 0, 0);
+    sqlite3_create_function (db, "ST_Segmentize", 2, SQLITE_ANY, 0,
+			     fnct_Segmentize, 0, 0);
+    sqlite3_create_function (db, "Azimuth", 2, SQLITE_ANY, 0, fnct_Azimuth, 0,
+			     0);
+    sqlite3_create_function (db, "ST_Azimuth", 2, SQLITE_ANY, 0, fnct_Azimuth,
+			     0, 0);
+
+#endif /* end LWGEOM support */
+
 #endif /* end including GEOS */
 }
 
@@ -20740,6 +21275,15 @@ init_spatialite_extension (sqlite3 * db, char **pzErrMsg,
     sqlite3_busy_timeout (db, 5000);
 
     return 0;
+}
+
+SPATIALITE_DECLARE void
+spatialite_init_geos (void)
+{
+/* initializes GEOS (or resets to initial state - as required by LWGEOM) */
+#ifndef OMIT_GEOS		/* initializing GEOS */
+    initGEOS (geos_warning, geos_error);
+#endif /* end GEOS  */
 }
 
 SPATIALITE_DECLARE void

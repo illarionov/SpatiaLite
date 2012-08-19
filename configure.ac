@@ -31,6 +31,8 @@ AH_TEMPLATE([OMIT_GEOS],
             [Should be defined in order to disable GEOS support.])
 AH_TEMPLATE([GEOS_ADVANCED],
             [Should be defined in order to enable GEOS_ADVANCED support.])
+AH_TEMPLATE([ENABLE_LWGEOM],
+            [Should be defined in order to enable LWGEOM support.])
 AH_TEMPLATE([OMIT_PROJ],
             [Should be defined in order to disable PROJ.4 support.])
 AH_TEMPLATE([OMIT_ICONV],
@@ -148,6 +150,49 @@ fi
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
+#   --enable-iconv
+#
+AC_ARG_ENABLE(iconv, [AS_HELP_STRING(
+  [--enable-iconv], [enables ICONV inclusion [default=yes]])],
+  [], [enable_iconv=yes])
+if test x"$enable_iconv" != "xno"; then
+  AC_CHECK_HEADERS(iconv.h,, [AC_MSG_ERROR([cannot find iconv.h, bailing out])])
+# on some systems "iconv()" lives in libc. On others it lives in libiconv
+#  on older systems "libiconv()" lives in libiconv
+  AC_SEARCH_LIBS(iconv,iconv,,
+    AC_SEARCH_LIBS(libiconv,iconv,,AC_MSG_ERROR(['libiconv' is required but it doesn't seem to be installed on this system.]),))
+  AC_SEARCH_LIBS(locale_charset,charset,,
+    AC_SEARCH_LIBS(nl_langinfo,c,,AC_MSG_ERROR(['libcharset' is required but it doesn't seem to be installed on this system.]),))
+else
+  AC_DEFINE(OMIT_ICONV)
+fi
+
+#-----------------------------------------------------------------------
+#   --enable-freexl
+#
+AC_ARG_ENABLE(freexl, [AS_HELP_STRING(
+  [--enable-freexl], [enables FreeXL inclusion [default=yes]])],
+  [], [enable_freexl=yes])
+if test x"$enable_freexl" != "xno"; then
+  AC_CHECK_HEADERS(freexl.h,, [AC_MSG_ERROR([cannot find freexl.h, bailing out])])
+  AC_SEARCH_LIBS(freexl_open,freexl,,AC_MSG_ERROR(['libfreexl' is required but it doesn't seem to be installed on this system.]),-lm)
+else
+  AC_DEFINE(OMIT_FREEXL)
+fi
+#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+#   --enable-epsg
+#
+AC_ARG_ENABLE(epsg, [AS_HELP_STRING(
+  [--enable-epsg], [enables full EPSG dataset support [default=yes]])],
+  [], [enable_epsg=yes])
+if test x"$enable_epsg" != "xyes"; then
+  AC_DEFINE(OMIT_EPSG)
+fi
+#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
 #   --enable-geos
 #
 AC_ARG_ENABLE(geos, [AS_HELP_STRING(
@@ -206,53 +251,27 @@ if test x"$enable_geos" != "xno"; then
 	  AC_SEARCH_LIBS(GEOSCoveredBy,geos_c,,AC_MSG_ERROR([obsolete 'libgeos_c' (< v.3.3.0). please retry specifying: --disable-geosadvanced.]))
 	  AC_DEFINE(GEOS_ADVANCED)
   fi
+
+  #-----------------------------------------------------------------------
+  #   --enable-lwgeom
+  #
+  AC_ARG_ENABLE(lwgeom, [AS_HELP_STRING(
+	  [--enable-lwgeom], [enables LWGEOM support [default=no]])],
+	  [], [enable_lwgeom=no])
+  if test x"$enable_lwgeom" != "xno"; then
+	  AC_CHECK_HEADERS(liblwgeom.h,, [AC_MSG_ERROR([cannot find liblwgeom.h, bailing out])])
+	  _save_ldflags="$LDFLAGS"
+	  LDFLAGS="$LDFLAGS -llwgeom"
+	  AC_LINK_IFELSE([AC_LANG_SOURCE([int main() { return 0; } 
+	    void lwgeom_init_allocators(void) { return; } ])],
+	    [AC_DEFINE(ENABLE_LWGEOM)], 
+            [AC_MSG_ERROR(['liblwgeom' is required but it doesn't seem to be installed on this system.])])
+	  LDFLAGS="$_save_ldflags"
+	  LIBS=$LIBS' -llwgeom'
+  fi
 else
   AC_DEFINE(OMIT_GEOS)
 fi
-
-#-----------------------------------------------------------------------
-#   --enable-iconv
-#
-AC_ARG_ENABLE(iconv, [AS_HELP_STRING(
-  [--enable-iconv], [enables ICONV inclusion [default=yes]])],
-  [], [enable_iconv=yes])
-if test x"$enable_iconv" != "xno"; then
-  AC_CHECK_HEADERS(iconv.h,, [AC_MSG_ERROR([cannot find iconv.h, bailing out])])
-# on some systems "iconv()" lives in libc. On others it lives in libiconv
-#  on older systems "libiconv()" lives in libiconv
-  AC_SEARCH_LIBS(iconv,iconv,,
-    AC_SEARCH_LIBS(libiconv,iconv,,AC_MSG_ERROR(['libiconv' is required but it doesn't seem to be installed on this system.]),))
-  AC_SEARCH_LIBS(locale_charset,charset,,
-    AC_SEARCH_LIBS(nl_langinfo,c,,AC_MSG_ERROR(['libcharset' is required but it doesn't seem to be installed on this system.]),))
-else
-  AC_DEFINE(OMIT_ICONV)
-fi
-
-#-----------------------------------------------------------------------
-#   --enable-freexl
-#
-AC_ARG_ENABLE(freexl, [AS_HELP_STRING(
-  [--enable-freexl], [enables FreeXL inclusion [default=yes]])],
-  [], [enable_freexl=yes])
-if test x"$enable_freexl" != "xno"; then
-  AC_CHECK_HEADERS(freexl.h,, [AC_MSG_ERROR([cannot find freexl.h, bailing out])])
-  AC_SEARCH_LIBS(freexl_open,freexl,,AC_MSG_ERROR(['libfreexl' is required but it doesn't seem to be installed on this system.]),-lm)
-else
-  AC_DEFINE(OMIT_FREEXL)
-fi
-#-----------------------------------------------------------------------
-
-#-----------------------------------------------------------------------
-#   --enable-epsg
-#
-AC_ARG_ENABLE(epsg, [AS_HELP_STRING(
-  [--enable-epsg], [enables full EPSG dataset support [default=yes]])],
-  [], [enable_epsg=yes])
-if test x"$enable_epsg" != "xyes"; then
-  AC_DEFINE(OMIT_EPSG)
-fi
-#-----------------------------------------------------------------------
-
 
 #-----------------------------------------------------------------------
 #    --enable-gcov

@@ -431,6 +431,33 @@ skip_geos:
 skip_geos_advanced:
 #endif	/* end GEOS_ADVANCED conditional */
 
+#ifdef ENABLE_LWGEOM	/* only if LWGEOM is supported */
+    n = scandir("sql_stmt_lwgeom_tests", &namelist, test_case_filter, alphasort);
+    if (n < 0) {
+	perror("scandir");
+	return -1;
+    }
+
+    for (i = 0; i < n; ++i) {
+	struct test_data *data;
+	char *path;
+	if (asprintf(&path, "sql_stmt_lwgeom_tests/%s", namelist[i]->d_name) < 0) {
+	    return -1;
+	}
+	data = read_one_case(path);
+	free(path);
+	
+	result = do_one_case(data);
+	
+	cleanup_test_data(data);
+	if (result != 0) {
+	    return result;
+	}
+	free(namelist[i]);
+    }
+    free(namelist);
+#endif	/* end LWGEOM conditional */
+
     return result;
 }
 
