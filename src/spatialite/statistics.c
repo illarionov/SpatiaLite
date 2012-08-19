@@ -241,8 +241,8 @@ do_update_layer_statistics_v4 (sqlite3 * sqlite, const char *table,
     strcpy (sql, "INSERT OR REPLACE INTO geometry_columns_statistics ");
     strcat (sql, "(f_table_name, f_geometry_column, last_verified, ");
     strcat (sql, "row_count, extent_min_x, extent_min_y, ");
-    strcat (sql, "extent_max_x, extent_max_y) ");
-    strcat (sql, "VALUES (?, ?, datetime('now'), ?, ?, ?, ?, ?)");
+    strcat (sql, "extent_max_x, extent_max_y) VALUES (?, ?, ");
+    strcat (sql, "strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), ?, ?, ?, ?, ?)");
 
 /* compiling SQL prepared statement */
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
@@ -446,8 +446,8 @@ do_update_views_layer_statistics_v4 (sqlite3 * sqlite, const char *table,
     strcpy (sql, "INSERT OR REPLACE INTO views_geometry_columns_statistics ");
     strcat (sql, "(view_name, view_geometry, last_verified, ");
     strcat (sql, "row_count, extent_min_x, extent_min_y, ");
-    strcat (sql, "extent_max_x, extent_max_y) ");
-    strcat (sql, "VALUES (?, ?, datetime('now'), ?, ?, ?, ?, ?)");
+    strcat (sql, "extent_max_x, extent_max_y) VALUES (?, ?, ");
+    strcat (sql, "strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), ?, ?, ?, ?, ?)");
 
 /* compiling SQL prepared statement */
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
@@ -651,8 +651,8 @@ do_update_virts_layer_statistics_v4 (sqlite3 * sqlite, const char *table,
     strcpy (sql, "INSERT OR REPLACE INTO virts_geometry_columns_statistics ");
     strcat (sql, "(virt_name, virt_geometry, last_verified, ");
     strcat (sql, "row_count, extent_min_x, extent_min_y, ");
-    strcat (sql, "extent_max_x, extent_max_y) ");
-    strcat (sql, "VALUES (?, ?, datetime('now'), ?, ?, ?, ?, ?)");
+    strcat (sql, "extent_max_x, extent_max_y) VALUES (?, ?, ");
+    strcat (sql, "strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), ?, ?, ?, ?, ?)");
 
 /* compiling SQL prepared statement */
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);

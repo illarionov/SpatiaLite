@@ -1263,9 +1263,9 @@ updateSpatiaLiteHistory (sqlite3 * sqlite, const char *table,
 
     strcpy (sql, "INSERT INTO spatialite_history ");
     strcat (sql, "(event_id, table_name, geometry_column, event, timestamp, ");
-    strcat (sql, "ver_sqlite, ver_splite) ");
-    strcat (sql,
-	    "VALUES (NULL, ?, ?, ?, DateTime('now'), sqlite_version(), spatialite_version())");
+    strcat (sql, "ver_sqlite, ver_splite) VALUES (NULL, ?, ?, ?, ");
+    strcat (sql, "strftime('%Y-%m-%dT%H:%M:%fZ', 'now'), ");
+    strcat (sql, "sqlite_version(), spatialite_version())");
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
@@ -1525,11 +1525,11 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "f_table_name TEXT NOT NULL,\n");
     strcat (sql, "f_geometry_column TEXT NOT NULL,\n");
     strcat (sql,
-	    "last_insert TIMESTAMP NOT NULL DEFAULT '0000-01-01 00:00:00',\n");
+	    "last_insert TIMESTAMP NOT NULL DEFAULT '0000-01-01T00:00:00.000Z',\n");
     strcat (sql,
-	    "last_update TIMESTAMP NOT NULL DEFAULT '0000-01-01 00:00:00',\n");
+	    "last_update TIMESTAMP NOT NULL DEFAULT '0000-01-01T00:00:00.000Z',\n");
     strcat (sql,
-	    "last_delete TIMESTAMP NOT NULL DEFAULT '0000-01-01 00:00:00',\n");
+	    "last_delete TIMESTAMP NOT NULL DEFAULT '0000-01-01T00:00:00.000Z',\n");
     strcat (sql, "CONSTRAINT pk_gc_time PRIMARY KEY ");
     strcat (sql, "(f_table_name, f_geometry_column),\n");
     strcat (sql, "CONSTRAINT fk_gc_time FOREIGN KEY ");
@@ -2355,7 +2355,7 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 			 xname, xtable);
 		strcat (trigger, "FOR EACH ROW BEGIN\n");
 		strcat (trigger,
-			"UPDATE geometry_columns_time SET last_update = datetime('now')\n");
+			"UPDATE geometry_columns_time SET last_update = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')\n");
 		sprintf (dummy, "WHERE Upper(f_table_name) = Upper('%s') AND ",
 			 sqltable);
 		strcat (trigger, dummy);
@@ -2381,7 +2381,7 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 			 xname, xtable);
 		strcat (trigger, "FOR EACH ROW BEGIN\n");
 		strcat (trigger,
-			"UPDATE geometry_columns_time SET last_insert = datetime('now')\n");
+			"UPDATE geometry_columns_time SET last_insert = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')\n");
 		sprintf (dummy, "WHERE Upper(f_table_name) = Upper('%s') AND ",
 			 sqltable);
 		strcat (trigger, dummy);
@@ -2407,7 +2407,7 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 			 xname, xtable);
 		strcat (trigger, "FOR EACH ROW BEGIN\n");
 		strcat (trigger,
-			"UPDATE geometry_columns_time SET last_delete = datetime('now')\n");
+			"UPDATE geometry_columns_time SET last_delete = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')\n");
 		sprintf (dummy, "WHERE Upper(f_table_name) = Upper('%s') AND ",
 			 sqltable);
 		strcat (trigger, dummy);
@@ -19230,7 +19230,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -19314,7 +19315,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -19323,7 +19325,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
