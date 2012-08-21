@@ -1454,6 +1454,10 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "text_values INTEGER NOT NULL,\n");
     strcat (sql, "blob_values INTEGER NOT NULL,\n");
     strcat (sql, "max_size INTEGER,\n");
+    strcat (sql, "integer_min INTEGER,\n");
+    strcat (sql, "integer_max INTEGER,\n");
+    strcat (sql, "double_min DOUBLE,\n");
+    strcat (sql, "double_max DOUBLE,\n");
     strcat (sql, "CONSTRAINT pk_gcfld_infos PRIMARY KEY ");
     strcat (sql, "(f_table_name, f_geometry_column, ordinal, column_name),\n");
     strcat (sql, "CONSTRAINT fk_gcfld_infos FOREIGN KEY ");
@@ -1480,6 +1484,10 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "text_values INTEGER NOT NULL,\n");
     strcat (sql, "blob_values INTEGER NOT NULL,\n");
     strcat (sql, "max_size INTEGER,\n");
+    strcat (sql, "integer_min INTEGER,\n");
+    strcat (sql, "integer_max INTEGER,\n");
+    strcat (sql, "double_min DOUBLE,\n");
+    strcat (sql, "double_max DOUBLE,\n");
     strcat (sql, "CONSTRAINT pk_vwgcfld_infos PRIMARY KEY ");
     strcat (sql, "(view_name, view_geometry, ordinal, column_name),\n");
     strcat (sql, "CONSTRAINT fk_vwgcfld_infos FOREIGN KEY ");
@@ -1506,6 +1514,10 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "text_values INTEGER NOT NULL,\n");
     strcat (sql, "blob_values INTEGER NOT NULL,\n");
     strcat (sql, "max_size INTEGER,\n");
+    strcat (sql, "integer_min INTEGER,\n");
+    strcat (sql, "integer_max INTEGER,\n");
+    strcat (sql, "double_min DOUBLE,\n");
+    strcat (sql, "double_max DOUBLE,\n");
     strcat (sql, "CONSTRAINT pk_vrtgcfld_infos PRIMARY KEY ");
     strcat (sql, "(virt_name, virt_geometry, ordinal, column_name),\n");
     strcat (sql, "CONSTRAINT fk_vrtgcfld_infos FOREIGN KEY ");
@@ -1740,7 +1752,11 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "double_values AS double_values, ");
     strcat (sql, "text_values AS text_values, ");
     strcat (sql, "blob_values AS blob_values, ");
-    strcat (sql, "max_size AS max_size\n");
+    strcat (sql, "max_size AS max_size, ");
+    strcat (sql, "integer_min AS integer_min, ");
+    strcat (sql, "integer_max AS integer_max, ");
+    strcat (sql, "double_min AS double_min, ");
+    strcat (sql, "double_max double_max\n");
     strcat (sql, "FROM geometry_columns_field_infos\n");
     strcat (sql, "UNION\n");
     strcat (sql, "SELECT 'SpatialView' AS layer_type, ");
@@ -1753,7 +1769,11 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "double_values AS double_values, ");
     strcat (sql, "text_values AS text_values, ");
     strcat (sql, "blob_values AS blob_values, ");
-    strcat (sql, "max_size AS max_size\n");
+    strcat (sql, "max_size AS max_size, ");
+    strcat (sql, "integer_min AS integer_min, ");
+    strcat (sql, "integer_max AS integer_max, ");
+    strcat (sql, "double_min AS double_min, ");
+    strcat (sql, "double_max double_max\n");
     strcat (sql, "FROM views_geometry_columns_field_infos\n");
     strcat (sql, "UNION\n");
     strcat (sql, "SELECT 'VirtualShape' AS layer_type, ");
@@ -1766,7 +1786,11 @@ createAdvancedMetaData (sqlite3 * sqlite)
     strcat (sql, "double_values AS double_values, ");
     strcat (sql, "text_values AS text_values, ");
     strcat (sql, "blob_values AS blob_values, ");
-    strcat (sql, "max_size AS max_size\n");
+    strcat (sql, "max_size AS max_size, ");
+    strcat (sql, "integer_min AS integer_min, ");
+    strcat (sql, "integer_max AS integer_max, ");
+    strcat (sql, "double_min AS double_min, ");
+    strcat (sql, "double_max double_max\n");
     strcat (sql, "FROM virts_geometry_columns_field_infos");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
@@ -2455,7 +2479,7 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 		strcat (trigger, dummy);
 		sprintf (xindex, "idx_%s_%s", tblname, colname);
 		clean_sql_string (xindex);
-		sprintf (dummy, "SELECT RTreeAlign('%s', NEW.ROWID, NEW.%s);",
+		sprintf (dummy, "SELECT RTreeAlign('%s', NEW.ROWID, NEW.%s);\n",
 			 xindex, xcolname);
 		strcat (trigger, dummy);
 		strcat (trigger, "END;");
@@ -2483,7 +2507,7 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 		strcat (trigger, dummy);
 		sprintf (xindex, "idx_%s_%s", tblname, colname);
 		clean_sql_string (xindex);
-		sprintf (dummy, "SELECT RTreeAlign('%s', NEW.ROWID, NEW.%s);",
+		sprintf (dummy, "SELECT RTreeAlign('%s', NEW.ROWID, NEW.%s);\n",
 			 xindex, xcolname);
 		strcat (trigger, dummy);
 		strcat (trigger, "END;");
@@ -19732,8 +19756,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -19817,8 +19840,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -19827,8 +19849,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }

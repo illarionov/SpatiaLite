@@ -95,6 +95,12 @@ struct field_item_infos
     int text_values;
     int blob_values;
     int max_size;
+    int int_minmax_set;
+    int int_min;
+    int int_max;
+    int dbl_minmax_set;
+    double dbl_min;
+    double dbl_max;
     struct field_item_infos *next;
 };
 
@@ -761,7 +767,8 @@ do_update_virts_layer_statistics (sqlite3 * sqlite, const char *table,
 
 static void
 update_field_infos (struct field_container_infos *infos, int ordinal,
-		    const char *col_name, const char *type, int size, int count)
+		    const char *col_name, const char *type, int size, int count,
+		    int int_min, int int_max, double dbl_min, double dbl_max)
 {
 /* updating the field container infos */
     int len;
@@ -774,9 +781,19 @@ update_field_infos (struct field_container_infos *infos, int ordinal,
 		if (strcasecmp (type, "null") == 0)
 		    p->null_values += count;
 		if (strcasecmp (type, "integer") == 0)
-		    p->integer_values += count;
+		  {
+		      p->integer_values += count;
+		      p->int_minmax_set = 1;
+		      p->int_min = int_min;
+		      p->int_max = int_max;
+		  }
 		if (strcasecmp (type, "real") == 0)
-		    p->double_values += count;
+		  {
+		      p->double_values += count;
+		      p->dbl_minmax_set = 1;
+		      p->dbl_min = dbl_min;
+		      p->dbl_max = dbl_max;
+		  }
 		if (strcasecmp (type, "text") == 0)
 		  {
 		      p->text_values += count;
@@ -805,13 +822,29 @@ update_field_infos (struct field_container_infos *infos, int ordinal,
     p->text_values = 0;
     p->blob_values = 0;
     p->max_size = -1;
+    p->int_minmax_set = 0;
+    p->int_min = 0;
+    p->int_max = 0;
+    p->dbl_minmax_set = 0;
+    p->dbl_min = 0.0;
+    p->dbl_max = 0.0;
     p->next = NULL;
     if (strcasecmp (type, "null") == 0)
 	p->null_values += count;
     if (strcasecmp (type, "integer") == 0)
-	p->integer_values += count;
+      {
+	  p->integer_values += count;
+	  p->int_minmax_set = 1;
+	  p->int_min = int_min;
+	  p->int_max = int_max;
+      }
     if (strcasecmp (type, "real") == 0)
-	p->double_values += count;
+      {
+	  p->double_values += count;
+	  p->dbl_minmax_set = 1;
+	  p->dbl_min = dbl_min;
+	  p->dbl_max = dbl_max;
+      }
     if (strcasecmp (type, "text") == 0)
       {
 	  p->text_values += count;
@@ -880,8 +913,9 @@ do_update_field_infos (sqlite3 * sqlite, const char *table,
     strcpy (sql, "INSERT INTO geometry_columns_field_infos ");
     strcat (sql, "(f_table_name, f_geometry_column, ordinal, ");
     strcat (sql, "column_name, null_values, integer_values, ");
-    strcat (sql, "double_values, text_values, blob_values, max_size) ");
-    strcat (sql, "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    strcat (sql, "double_values, text_values, blob_values, max_size, ");
+    strcat (sql, "integer_min, integer_max, double_min, double_max) ");
+    strcat (sql, "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
 /* compiling SQL prepared statement */
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
@@ -907,6 +941,26 @@ do_update_field_infos (sqlite3 * sqlite, const char *table,
 	      sqlite3_bind_null (stmt, 10);
 	  else
 	      sqlite3_bind_int (stmt, 10, p->max_size);
+	  if (p->int_minmax_set)
+	    {
+		sqlite3_bind_int (stmt, 11, p->int_min);
+		sqlite3_bind_int (stmt, 12, p->int_max);
+	    }
+	  else
+	    {
+		sqlite3_bind_null (stmt, 11);
+		sqlite3_bind_null (stmt, 12);
+	    }
+	  if (p->dbl_minmax_set)
+	    {
+		sqlite3_bind_double (stmt, 13, p->dbl_min);
+		sqlite3_bind_double (stmt, 14, p->dbl_max);
+	    }
+	  else
+	    {
+		sqlite3_bind_null (stmt, 13);
+		sqlite3_bind_null (stmt, 14);
+	    }
 	  ret = sqlite3_step (stmt);
 	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 	      ;
@@ -955,8 +1009,9 @@ do_update_views_field_infos (sqlite3 * sqlite, const char *table,
     strcpy (sql, "INSERT INTO views_geometry_columns_field_infos ");
     strcat (sql, "(view_name, view_geometry, ordinal, ");
     strcat (sql, "column_name, null_values, integer_values, ");
-    strcat (sql, "double_values, text_values, blob_values, max_size) ");
-    strcat (sql, "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    strcat (sql, "double_values, text_values, blob_values, max_size, ");
+    strcat (sql, "integer_min, integer_max, double_min, double_max) ");
+    strcat (sql, "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
 /* compiling SQL prepared statement */
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
@@ -982,6 +1037,26 @@ do_update_views_field_infos (sqlite3 * sqlite, const char *table,
 	      sqlite3_bind_null (stmt, 10);
 	  else
 	      sqlite3_bind_int (stmt, 10, p->max_size);
+	  if (p->int_minmax_set)
+	    {
+		sqlite3_bind_int (stmt, 11, p->int_min);
+		sqlite3_bind_int (stmt, 12, p->int_max);
+	    }
+	  else
+	    {
+		sqlite3_bind_null (stmt, 11);
+		sqlite3_bind_null (stmt, 12);
+	    }
+	  if (p->dbl_minmax_set)
+	    {
+		sqlite3_bind_double (stmt, 13, p->dbl_min);
+		sqlite3_bind_double (stmt, 14, p->dbl_max);
+	    }
+	  else
+	    {
+		sqlite3_bind_null (stmt, 13);
+		sqlite3_bind_null (stmt, 14);
+	    }
 	  ret = sqlite3_step (stmt);
 	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 	      ;
@@ -1030,8 +1105,9 @@ do_update_virts_field_infos (sqlite3 * sqlite, const char *table,
     strcpy (sql, "INSERT INTO virts_geometry_columns_field_infos ");
     strcat (sql, "(virt_name, virt_geometry, ordinal, ");
     strcat (sql, "column_name, null_values, integer_values, ");
-    strcat (sql, "double_values, text_values, blob_values, max_size) ");
-    strcat (sql, "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    strcat (sql, "double_values, text_values, blob_values, max_size, ");
+    strcat (sql, "integer_min, integer_max, double_min, double_max) ");
+    strcat (sql, "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
 /* compiling SQL prepared statement */
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
@@ -1057,6 +1133,26 @@ do_update_virts_field_infos (sqlite3 * sqlite, const char *table,
 	      sqlite3_bind_null (stmt, 10);
 	  else
 	      sqlite3_bind_int (stmt, 10, p->max_size);
+	  if (p->int_minmax_set)
+	    {
+		sqlite3_bind_int (stmt, 11, p->int_min);
+		sqlite3_bind_int (stmt, 12, p->int_max);
+	    }
+	  else
+	    {
+		sqlite3_bind_null (stmt, 11);
+		sqlite3_bind_null (stmt, 12);
+	    }
+	  if (p->dbl_minmax_set)
+	    {
+		sqlite3_bind_double (stmt, 13, p->dbl_min);
+		sqlite3_bind_double (stmt, 14, p->dbl_max);
+	    }
+	  else
+	    {
+		sqlite3_bind_null (stmt, 13);
+		sqlite3_bind_null (stmt, 14);
+	    }
 	  ret = sqlite3_step (stmt);
 	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 	      ;
@@ -1094,6 +1190,10 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
     const char *sz;
     int size;
     int count;
+    int int_min;
+    int int_max;
+    int dbl_min;
+    int dbl_max;
     int error = 0;
     gaiaOutBuffer out_buf;
     struct field_container_infos infos;
@@ -1126,6 +1226,8 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
 		sprintf (sql2, ", %d, '%s', typeof(%s), max(length(%s))",
 			 ordinal, zcolumn, xcolumn, xcolumn);
 		gaiaAppendToOutBuffer (&out_buf, sql2);
+		sprintf (sql2, ", min(%s), max(%s)", xcolumn, xcolumn);
+		gaiaAppendToOutBuffer (&out_buf, sql2);
 	    }
       }
     sqlite3_free_table (results);
@@ -1149,7 +1251,7 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
 	  for (i = 1; i <= rows; i++)
 	    {
 		count = atoi (results[(i * columns) + 0]);
-		for (c = 1; c < columns; c += 4)
+		for (c = 1; c < columns; c += 6)
 		  {
 		      /* retrieving field infos */
 		      ordinal = atoi (results[(i * columns) + c + 0]);
@@ -1160,8 +1262,31 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
 			  size = -1;
 		      else
 			  size = atoi (sz);
+		      int_min = 0;
+		      int_max = 0;
+		      dbl_min = 0.0;
+		      dbl_max = 0.0;
+		      if (results[(i * columns) + c + 4] != NULL
+			  && results[(i * columns) + c + 5] != NULL)
+			{
+			    if (strcasecmp (type, "integer") == 0)
+			      {
+				  int_min =
+				      atoi (results[(i * columns) + c + 4]);
+				  int_max =
+				      atoi (results[(i * columns) + c + 5]);
+			      }
+			    if (strcasecmp (type, "real") == 0)
+			      {
+				  dbl_min =
+				      atof (results[(i * columns) + c + 4]);
+				  dbl_max =
+				      atof (results[(i * columns) + c + 5]);
+			      }
+			}
 		      update_field_infos (&infos, ordinal, col_name, type, size,
-					  count);
+					  count, int_min, int_max, dbl_min,
+					  dbl_max);
 		  }
 	    }
       }
