@@ -767,8 +767,7 @@ do_update_virts_layer_statistics (sqlite3 * sqlite, const char *table,
 
 static void
 update_field_infos (struct field_container_infos *infos, int ordinal,
-		    const char *col_name, const char *type, int size, int count,
-		    int int_min, int int_max, double dbl_min, double dbl_max)
+		    const char *col_name, const char *type, int size, int count)
 {
 /* updating the field container infos */
     int len;
@@ -781,19 +780,9 @@ update_field_infos (struct field_container_infos *infos, int ordinal,
 		if (strcasecmp (type, "null") == 0)
 		    p->null_values += count;
 		if (strcasecmp (type, "integer") == 0)
-		  {
-		      p->integer_values += count;
-		      p->int_minmax_set = 1;
-		      p->int_min = int_min;
-		      p->int_max = int_max;
-		  }
+		    p->integer_values += count;
 		if (strcasecmp (type, "real") == 0)
-		  {
-		      p->double_values += count;
-		      p->dbl_minmax_set = 1;
-		      p->dbl_min = dbl_min;
-		      p->dbl_max = dbl_max;
-		  }
+		    p->double_values += count;
 		if (strcasecmp (type, "text") == 0)
 		  {
 		      p->text_values += count;
@@ -832,19 +821,9 @@ update_field_infos (struct field_container_infos *infos, int ordinal,
     if (strcasecmp (type, "null") == 0)
 	p->null_values += count;
     if (strcasecmp (type, "integer") == 0)
-      {
-	  p->integer_values += count;
-	  p->int_minmax_set = 1;
-	  p->int_min = int_min;
-	  p->int_max = int_max;
-      }
+	p->integer_values += count;
     if (strcasecmp (type, "real") == 0)
-      {
-	  p->double_values += count;
-	  p->dbl_minmax_set = 1;
-	  p->dbl_min = dbl_min;
-	  p->dbl_max = dbl_max;
-      }
+	p->double_values += count;
     if (strcasecmp (type, "text") == 0)
       {
 	  p->text_values += count;
@@ -862,6 +841,47 @@ update_field_infos (struct field_container_infos *infos, int ordinal,
     if (infos->last != NULL)
 	infos->last->next = p;
     infos->last = p;
+}
+
+static void
+update_field_infos_int_minmax (struct field_container_infos *infos,
+			       const char *col_name, int int_min, int int_max)
+{
+/* updating the field container infos - Int MinMax */
+    int len;
+    struct field_item_infos *p = infos->first;
+    while (p)
+      {
+	  if (strcasecmp (col_name, p->col_name) == 0)
+	    {
+		p->int_minmax_set = 1;
+		p->int_min = int_min;
+		p->int_max = int_max;
+		return;
+	    }
+	  p = p->next;
+      }
+}
+
+static void
+update_field_infos_double_minmax (struct field_container_infos *infos,
+				  const char *col_name, double dbl_min,
+				  double dbl_max)
+{
+/* updating the field container infos - Double MinMax */
+    int len;
+    struct field_item_infos *p = infos->first;
+    while (p)
+      {
+	  if (strcasecmp (col_name, p->col_name) == 0)
+	    {
+		p->dbl_minmax_set = 1;
+		p->dbl_min = dbl_min;
+		p->dbl_max = dbl_max;
+		return;
+	    }
+	  p = p->next;
+      }
 }
 
 static void
@@ -1169,6 +1189,128 @@ do_update_virts_field_infos (sqlite3 * sqlite, const char *table,
 }
 
 static int
+do_compute_minmax (sqlite3 * sqlite, const char *table, const char *column,
+		   struct field_container_infos *infos, int stat_type)
+{
+/* Pass2 - computing Integer / Double min/max ranges */
+    char xtable[1024];
+    char xcolumn[1024];
+    char zcolumn[1024];
+    char sql[2048];
+    int int_min;
+    int int_max;
+    double dbl_min;
+    double dbl_max;
+    int ret;
+    int i;
+    int c;
+    char **results;
+    int rows;
+    int columns;
+    const char *col_name;
+    int is_double;
+    int comma = 0;
+    gaiaOutBuffer out_buf;
+    struct field_item_infos *ptr;
+
+    gaiaOutBufferInitialize (&out_buf);
+    gaiaAppendToOutBuffer (&out_buf, "SELECT DISTINCT ");
+    strcpy (xtable, table);
+    st_double_quoted_sql (xtable);
+    ptr = infos->first;
+    while (ptr)
+      {
+	  strcpy (xcolumn, ptr->col_name);
+	  st_double_quoted_sql (xcolumn);
+	  strcpy (zcolumn, ptr->col_name);
+	  st_clean_sql_string (zcolumn);
+	  if (ptr->integer_values >= 0 && ptr->double_values == 0
+	      && ptr->blob_values == 0 && ptr->text_values == 0)
+	    {
+		if (comma)
+		    sprintf (sql, ", 0, '%s', min(%s), max(%s)", zcolumn,
+			     xcolumn, xcolumn);
+		else
+		  {
+		      comma = 1;
+		      sprintf (sql, " 0, '%s', min(%s), max(%s)", zcolumn,
+			       xcolumn, xcolumn);
+		  }
+		gaiaAppendToOutBuffer (&out_buf, sql);
+	    }
+	  if (ptr->double_values >= 0 && ptr->integer_values == 0
+	      && ptr->blob_values == 0 && ptr->text_values == 0)
+	    {
+		if (comma)
+		    sprintf (sql, ", 1, '%s', min(%s), max(%s)", zcolumn,
+			     xcolumn, xcolumn);
+		else
+		  {
+		      comma = 1;
+		      sprintf (sql, " 1, '%s', min(%s), max(%s)", zcolumn,
+			       xcolumn, xcolumn);
+		  }
+		gaiaAppendToOutBuffer (&out_buf, sql);
+	    }
+	  ptr = ptr->next;
+      }
+    if (out_buf.Buffer == NULL)
+	return 0;
+    sprintf (sql, " FROM %s", xtable);
+    gaiaAppendToOutBuffer (&out_buf, sql);
+    fprintf (stderr, "%s\n", out_buf.Buffer);
+/* executing the SQL query */
+    ret = sqlite3_get_table (sqlite, out_buf.Buffer, &results, &rows, &columns,
+			     NULL);
+    gaiaOutBufferReset (&out_buf);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		for (c = 0; c < columns; c += 4)
+		  {
+		      /* retrieving field infos */
+		      is_double = atoi (results[(i * columns) + c + 0]);
+		      col_name = results[(i * columns) + c + 1];
+		      if (results[(i * columns) + c + 2] != NULL
+			  && results[(i * columns) + c + 3] != NULL)
+			{
+			    if (!is_double)
+			      {
+				  int_min =
+				      atoi (results[(i * columns) + c + 2]);
+				  int_max =
+				      atoi (results[(i * columns) + c + 3]);
+				  update_field_infos_int_minmax (infos,
+								 col_name,
+								 int_min,
+								 int_max);
+			      }
+			    else
+			      {
+				  dbl_min =
+				      atof (results[(i * columns) + c + 2]);
+				  dbl_max =
+				      atof (results[(i * columns) + c + 3]);
+				  update_field_infos_double_minmax (infos,
+								    col_name,
+								    dbl_min,
+								    dbl_max);
+			      }
+			}
+		  }
+	    }
+      }
+    sqlite3_free_table (results);
+
+    return 1;
+}
+
+static int
 do_compute_field_infos (sqlite3 * sqlite, const char *table,
 			const char *column, int stat_type)
 {
@@ -1190,10 +1332,6 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
     const char *sz;
     int size;
     int count;
-    int int_min;
-    int int_max;
-    int dbl_min;
-    int dbl_max;
     int error = 0;
     gaiaOutBuffer out_buf;
     struct field_container_infos infos;
@@ -1226,8 +1364,6 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
 		sprintf (sql2, ", %d, '%s', typeof(%s), max(length(%s))",
 			 ordinal, zcolumn, xcolumn, xcolumn);
 		gaiaAppendToOutBuffer (&out_buf, sql2);
-		sprintf (sql2, ", min(%s), max(%s)", xcolumn, xcolumn);
-		gaiaAppendToOutBuffer (&out_buf, sql2);
 	    }
       }
     sqlite3_free_table (results);
@@ -1238,9 +1374,8 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
     gaiaAppendToOutBuffer (&out_buf, sql2);
 
 /* executing the SQL query */
-    ret =
-	sqlite3_get_table (sqlite, out_buf.Buffer, &results, &rows, &columns,
-			   NULL);
+    ret = sqlite3_get_table (sqlite, out_buf.Buffer, &results, &rows, &columns,
+			     NULL);
     gaiaOutBufferReset (&out_buf);
     if (ret != SQLITE_OK)
 	return 0;
@@ -1251,7 +1386,7 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
 	  for (i = 1; i <= rows; i++)
 	    {
 		count = atoi (results[(i * columns) + 0]);
-		for (c = 1; c < columns; c += 6)
+		for (c = 1; c < columns; c += 4)
 		  {
 		      /* retrieving field infos */
 		      ordinal = atoi (results[(i * columns) + c + 0]);
@@ -1262,35 +1397,19 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
 			  size = -1;
 		      else
 			  size = atoi (sz);
-		      int_min = 0;
-		      int_max = 0;
-		      dbl_min = 0.0;
-		      dbl_max = 0.0;
-		      if (results[(i * columns) + c + 4] != NULL
-			  && results[(i * columns) + c + 5] != NULL)
-			{
-			    if (strcasecmp (type, "integer") == 0)
-			      {
-				  int_min =
-				      atoi (results[(i * columns) + c + 4]);
-				  int_max =
-				      atoi (results[(i * columns) + c + 5]);
-			      }
-			    if (strcasecmp (type, "real") == 0)
-			      {
-				  dbl_min =
-				      atof (results[(i * columns) + c + 4]);
-				  dbl_max =
-				      atof (results[(i * columns) + c + 5]);
-			      }
-			}
 		      update_field_infos (&infos, ordinal, col_name, type, size,
-					  count, int_min, int_max, dbl_min,
-					  dbl_max);
+					  count);
 		  }
 	    }
       }
     sqlite3_free_table (results);
+
+/* Pass-2: computing INTEGER and DOUBLE min/max ranges */
+    if (!error)
+      {
+	  if (!do_compute_minmax (sqlite, table, column, &infos, stat_type))
+	      error = 1;
+      }
 
     switch (stat_type)
       {
