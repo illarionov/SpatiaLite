@@ -1139,7 +1139,7 @@ extern "C"
  \sa gaiaFreeGeomColl
 
  \note you are responsible to destroy (before or after) any allocated Geometry,
- this including any Geometry returned by gaiaSegmentize()
+ this including any Geometry returned by gaiaSnapToGrid()
 
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSnapToGrid (gaiaGeomCollPtr geom,
@@ -1152,6 +1152,74 @@ extern "C"
 						    double size_z,
 						    double size_m);
 
+/**
+ Utility function: SquareGrid
+
+ \param geom the Geometry to be covered by the Grid.
+ \param origin_x the X ccordinate identifying the Grid Origin.
+ \param origin_y the Y coordinate identifiying the Grid Origin.
+ \param size the Grid cell-side size.
+ 
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n this function will always return a MultiPolygon 
+ \n NULL will be returned if any argument is invalid.
+
+ \sa gaiaFreeGeomColl, gaiaTriangularGrid, gaiaHexagonalGrid
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaSquareGrid()
+
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSquareGrid (gaiaGeomCollPtr geom,
+						    double origin_x,
+						    double origin_y,
+						    double size);
+
+/**
+ Utility function: TriangularGrid
+
+ \param geom the Geometry to be covered by the Grid.
+ \param origin_x the X ccordinate identifying the Grid Origin.
+ \param origin_y the Y coordinate identifiying the Grid Origin.
+ \param size the Grid cell-side size.
+ 
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n this function will always return a MultiPolygon 
+ \n NULL will be returned if any argument is invalid.
+
+ \sa gaiaFreeGeomColl, gaiaSquareGrid, gaiaHexagonalGrid
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaTriangularGrid()
+
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaTriangularGrid (gaiaGeomCollPtr geom,
+							double origin_x,
+							double origin_y,
+							double size);
+
+/**
+ Utility function: HexagonalGrid
+
+ \param geom the Geometry to be covered by the Grid.
+ \param origin_x the X ccordinate identifying the Grid Origin.
+ \param origin_y the Y coordinate identifiying the Grid Origin.
+ \param size the Grid cell-side size.
+ 
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n this function will always return a MultiPolygon 
+ \n NULL will be returned if any argument is invalid.
+
+ \sa gaiaFreeGeomColl, gaiaSquareGrid, gaiaTriangularGrid
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaHexagonalGrid()
+
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaHexagonalGrid (gaiaGeomCollPtr geom,
+						       double origin_x,
+						       double origin_y,
+						       double size);
 
 #ifdef __cplusplus
 }

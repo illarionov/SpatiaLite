@@ -713,3 +713,349 @@ gaiaSnapToGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
 	result->DeclaredType = GAIA_GEOMETRYCOLLECTION;
     return result;
 }
+
+#ifndef OMIT_GEOS		/* including GEOS */
+
+static void
+get_grid_bbox (gaiaGeomCollPtr geom, double *min_x, double *min_y,
+	       double *max_x, double *max_y)
+{
+/* extracting the BBOX representing the input geometry */
+    gaiaMbrGeometry (geom);
+    *min_x = geom->MinX;
+    *min_y = geom->MinY;
+    *max_x = geom->MaxX;
+    *max_y = geom->MaxY;
+}
+
+static void
+get_grid_base (double min_x, double min_y, double origin_x, double origin_y,
+	       double size, double *base_x, double *base_y)
+{
+/* determining the grid base-point [MinX/MinY] */
+    double x = rint ((min_x - origin_x) / size) * size + origin_x;
+    double y = rint ((min_y - origin_y) / size) * size + origin_y;
+    if (x > min_x)
+	*base_x = x - size;
+    else
+	*base_x = x;
+    if (y > min_y)
+	*base_y = y - size;
+    else
+	*base_y = y;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaSquareGrid (gaiaGeomCollPtr geom,
+		double origin_x, double origin_y, double size)
+{
+/* creating a regular grid [Square cells] */
+    double min_x;
+    double min_y;
+    double max_x;
+    double max_y;
+    double base_x;
+    double base_y;
+    double x1;
+    double y1;
+    double x2;
+    double y2;
+    double x3;
+    double y3;
+    double x4;
+    double y4;
+    int count = 0;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr rng;
+    gaiaGeomCollPtr result = NULL;
+    gaiaGeomCollPtr item = NULL;
+
+    if (size <= 0.0)
+	return NULL;
+
+    result = gaiaAllocGeomColl ();
+    result->Srid = geom->Srid;
+    get_grid_bbox (geom, &min_x, &min_y, &max_x, &max_y);
+    get_grid_base (min_x, min_y, origin_x, origin_y, size, &base_x, &base_y);
+    while (base_y < max_y)
+      {
+	  /* looping on grid rows */
+	  x1 = base_x;
+	  y1 = base_y;
+	  x2 = x1 + size;
+	  y2 = y1;
+	  x3 = x2;
+	  y3 = y1 + size;
+	  x4 = x1;
+	  y4 = y3;
+	  while (x1 < max_x)
+	    {
+		/* looping on grid columns */
+		item = gaiaAllocGeomColl ();
+
+		pg = gaiaAddPolygonToGeomColl (item, 5, 0);
+		rng = pg->Exterior;
+		gaiaSetPoint (rng->Coords, 0, x1, y1);
+		gaiaSetPoint (rng->Coords, 1, x2, y2);
+		gaiaSetPoint (rng->Coords, 2, x3, y3);
+		gaiaSetPoint (rng->Coords, 3, x4, y4);
+		gaiaSetPoint (rng->Coords, 4, x1, y1);
+
+		if (gaiaGeomCollIntersects (geom, item) == 1)
+		  {
+		      /* ok, inserting a valid cell */
+		      count++;
+		      pg = gaiaAddPolygonToGeomColl (result, 5, 0);
+		      rng = pg->Exterior;
+		      gaiaSetPoint (rng->Coords, 0, x1, y1);
+		      gaiaSetPoint (rng->Coords, 1, x2, y2);
+		      gaiaSetPoint (rng->Coords, 2, x3, y3);
+		      gaiaSetPoint (rng->Coords, 3, x4, y4);
+		      gaiaSetPoint (rng->Coords, 4, x1, y1);
+		  }
+		gaiaFreeGeomColl (item);
+		x1 += size;
+		x2 += size;
+		x3 += size;
+		x4 += size;
+	    }
+	  base_y += size;
+      }
+
+/* final check */
+    if (!count)
+      {
+	  /* empty grid */
+	  gaiaFreeGeomColl (result);
+	  return NULL;
+      }
+    return result;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaTriangularGrid (gaiaGeomCollPtr geom,
+		    double origin_x, double origin_y, double size)
+{
+/* creating a regular grid [Triangular cells] */
+    double min_x;
+    double min_y;
+    double max_x;
+    double max_y;
+    double base_x;
+    double base_y;
+    double x1;
+    double y1;
+    double x2;
+    double y2;
+    double x3;
+    double y3;
+    double x4;
+    double y4;
+    int count = 0;
+    int odd_even = 0;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr rng;
+    gaiaGeomCollPtr result = NULL;
+    gaiaGeomCollPtr item = NULL;
+
+    if (size <= 0.0)
+	return NULL;
+
+    result = gaiaAllocGeomColl ();
+    result->Srid = geom->Srid;
+    get_grid_bbox (geom, &min_x, &min_y, &max_x, &max_y);
+    get_grid_base (min_x, min_y, origin_x, origin_y, size, &base_x, &base_y);
+    while (base_y < max_y)
+      {
+	  /* looping on grid rows */
+	  if (odd_even)
+	      x1 = base_x - (size / 2.0);
+	  else
+	      x1 = base_x;
+	  y1 = base_y;
+	  x2 = x1 + size;
+	  y2 = y1;
+	  x3 = x1 + (size / 2.0);
+	  y3 = y1 + (size * sin (3.14159265358979323846 / 3.0));
+	  x4 = x3 + size;
+	  y4 = y3;
+	  while (x1 < max_x)
+	    {
+		/* looping on grid columns */
+		item = gaiaAllocGeomColl ();
+
+		pg = gaiaAddPolygonToGeomColl (item, 4, 0);
+		rng = pg->Exterior;
+		gaiaSetPoint (rng->Coords, 0, x1, y1);
+		gaiaSetPoint (rng->Coords, 1, x2, y2);
+		gaiaSetPoint (rng->Coords, 2, x3, y3);
+		gaiaSetPoint (rng->Coords, 3, x1, y1);
+
+		if (gaiaGeomCollIntersects (geom, item) == 1)
+		  {
+		      /* ok, inserting a valid cell [pointing upside] */
+		      count++;
+		      pg = gaiaAddPolygonToGeomColl (result, 4, 0);
+		      rng = pg->Exterior;
+		      gaiaSetPoint (rng->Coords, 0, x1, y1);
+		      gaiaSetPoint (rng->Coords, 1, x2, y2);
+		      gaiaSetPoint (rng->Coords, 2, x3, y3);
+		      gaiaSetPoint (rng->Coords, 3, x1, y1);
+		  }
+		gaiaFreeGeomColl (item);
+
+		item = gaiaAllocGeomColl ();
+
+		pg = gaiaAddPolygonToGeomColl (item, 4, 0);
+		rng = pg->Exterior;
+		gaiaSetPoint (rng->Coords, 0, x3, y3);
+		gaiaSetPoint (rng->Coords, 1, x2, y2);
+		gaiaSetPoint (rng->Coords, 2, x4, y4);
+		gaiaSetPoint (rng->Coords, 3, x3, y3);
+
+		if (gaiaGeomCollIntersects (geom, item) == 1)
+		  {
+		      /* ok, inserting a valid cell [pointing downside] */
+		      count++;
+		      pg = gaiaAddPolygonToGeomColl (result, 4, 0);
+		      rng = pg->Exterior;
+		      gaiaSetPoint (rng->Coords, 0, x3, y3);
+		      gaiaSetPoint (rng->Coords, 1, x2, y2);
+		      gaiaSetPoint (rng->Coords, 2, x4, y4);
+		      gaiaSetPoint (rng->Coords, 3, x3, y3);
+		  }
+		gaiaFreeGeomColl (item);
+
+		x1 += size;
+		x2 += size;
+		x3 += size;
+		x4 += size;
+	    }
+	  base_y += (size * sin (3.14159265358979323846 / 3.0));
+	  if (odd_even)
+	      odd_even = 0;
+	  else
+	      odd_even = 1;
+      }
+
+/* final check */
+    if (!count)
+      {
+	  /* empty grid */
+	  gaiaFreeGeomColl (result);
+	  return NULL;
+      }
+    return result;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaHexagonalGrid (gaiaGeomCollPtr geom,
+		   double origin_x, double origin_y, double size)
+{
+/* creating a regular grid [Hexagonal cells] */
+    double min_x;
+    double min_y;
+    double max_x;
+    double max_y;
+    double base_x;
+    double base_y;
+    double x1;
+    double y1;
+    double x2;
+    double y2;
+    double x3;
+    double y3;
+    double x4;
+    double y4;
+    double x5;
+    double y5;
+    double x6;
+    double y6;
+    int count = 0;
+    int odd_even = 0;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr rng;
+    gaiaGeomCollPtr result = NULL;
+    gaiaGeomCollPtr item = NULL;
+
+    if (size <= 0.0)
+	return NULL;
+
+    result = gaiaAllocGeomColl ();
+    result->Srid = geom->Srid;
+    get_grid_bbox (geom, &min_x, &min_y, &max_x, &max_y);
+    get_grid_base (min_x, min_y, origin_x, origin_y, size, &base_x, &base_y);
+    while (base_y < max_y)
+      {
+	  /* looping on grid rows */
+	  if (odd_even)
+	      x1 = base_x - (size + (size / 2.0));
+	  else
+	      x1 = base_x;
+	  y1 = base_y;
+	  x2 = x1 + (size / 2.0);
+	  y2 = y1 - (size * sin (3.14159265358979323846 / 3.0));
+	  x3 = x2 + size;
+	  y3 = y2;
+	  x4 = x1 + (size * 2.0);
+	  y4 = y1;
+	  x5 = x3;
+	  y5 = y1 + (size * sin (3.14159265358979323846 / 3.0));
+	  x6 = x2;
+	  y6 = y5;
+	  while (x1 < max_x)
+	    {
+		/* looping on grid columns */
+		item = gaiaAllocGeomColl ();
+
+		pg = gaiaAddPolygonToGeomColl (item, 7, 0);
+		rng = pg->Exterior;
+		gaiaSetPoint (rng->Coords, 0, x1, y1);
+		gaiaSetPoint (rng->Coords, 1, x2, y2);
+		gaiaSetPoint (rng->Coords, 2, x3, y3);
+		gaiaSetPoint (rng->Coords, 3, x4, y4);
+		gaiaSetPoint (rng->Coords, 4, x5, y5);
+		gaiaSetPoint (rng->Coords, 5, x6, y6);
+		gaiaSetPoint (rng->Coords, 6, x1, y1);
+
+		if (gaiaGeomCollIntersects (geom, item) == 1)
+		  {
+		      /* ok, inserting a valid cell */
+		      count++;
+		      pg = gaiaAddPolygonToGeomColl (result, 7, 0);
+		      rng = pg->Exterior;
+		      gaiaSetPoint (rng->Coords, 0, x1, y1);
+		      gaiaSetPoint (rng->Coords, 1, x2, y2);
+		      gaiaSetPoint (rng->Coords, 2, x3, y3);
+		      gaiaSetPoint (rng->Coords, 3, x4, y4);
+		      gaiaSetPoint (rng->Coords, 4, x5, y5);
+		      gaiaSetPoint (rng->Coords, 5, x6, y6);
+		      gaiaSetPoint (rng->Coords, 6, x1, y1);
+		  }
+		gaiaFreeGeomColl (item);
+
+		x1 += size * 3.0;
+		x2 += size * 3.0;
+		x3 += size * 3.0;
+		x4 += size * 3.0;
+		x5 += size * 3.0;
+		x6 += size * 3.0;
+	    }
+	  base_y += (size * sin (3.14159265358979323846 / 3.0));
+	  if (odd_even)
+	      odd_even = 0;
+	  else
+	      odd_even = 1;
+      }
+
+/* final check */
+    if (!count)
+      {
+	  /* empty grid */
+	  gaiaFreeGeomColl (result);
+	  return NULL;
+      }
+    return result;
+}
+
+#endif /* end including GEOS */

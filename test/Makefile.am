@@ -2360,6 +2360,57 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_geos_tests/union7.testcase \
 	sql_stmt_geos_tests/union8.testcase \
 	sql_stmt_geos_tests/union9.testcase \
+	sql_stmt_geos_tests/hexgrid1.testcase \
+	sql_stmt_geos_tests/hexgrid2.testcase \
+	sql_stmt_geos_tests/hexgrid3.testcase \
+	sql_stmt_geos_tests/hexgrid4.testcase \
+	sql_stmt_geos_tests/hexgrid5.testcase \
+	sql_stmt_geos_tests/hexgrid6.testcase \
+	sql_stmt_geos_tests/hexgrid7.testcase \
+	sql_stmt_geos_tests/hexgrid8.testcase \
+	sql_stmt_geos_tests/hexgrid9.testcase \
+	sql_stmt_geos_tests/hexgrid10.testcase \
+	sql_stmt_geos_tests/hexgrid11.testcase \
+	sql_stmt_geos_tests/hexgrid12.testcase \
+	sql_stmt_geos_tests/hexgrid13.testcase \
+	sql_stmt_geos_tests/hexgrid14.testcase \
+	sql_stmt_geos_tests/hexgrid15.testcase \
+	sql_stmt_geos_tests/hexgrid16.testcase \
+	sql_stmt_geos_tests/hexgrid17.testcase \
+	sql_stmt_geos_tests/squaregrid1.testcase \
+	sql_stmt_geos_tests/squaregrid2.testcase \
+	sql_stmt_geos_tests/squaregrid3.testcase \
+	sql_stmt_geos_tests/squaregrid4.testcase \
+	sql_stmt_geos_tests/squaregrid5.testcase \
+	sql_stmt_geos_tests/squaregrid6.testcase \
+	sql_stmt_geos_tests/squaregrid7.testcase \
+	sql_stmt_geos_tests/squaregrid8.testcase \
+	sql_stmt_geos_tests/squaregrid9.testcase \
+	sql_stmt_geos_tests/squaregrid10.testcase \
+	sql_stmt_geos_tests/squaregrid11.testcase \
+	sql_stmt_geos_tests/squaregrid12.testcase \
+	sql_stmt_geos_tests/squaregrid13.testcase \
+	sql_stmt_geos_tests/squaregrid14.testcase \
+	sql_stmt_geos_tests/squaregrid15.testcase \
+	sql_stmt_geos_tests/squaregrid16.testcase \
+	sql_stmt_geos_tests/squaregrid17.testcase \
+	sql_stmt_geos_tests/trianggrid1.testcase \
+	sql_stmt_geos_tests/trianggrid2.testcase \
+	sql_stmt_geos_tests/trianggrid3.testcase \
+	sql_stmt_geos_tests/trianggrid4.testcase \
+	sql_stmt_geos_tests/trianggrid5.testcase \
+	sql_stmt_geos_tests/trianggrid6.testcase \
+	sql_stmt_geos_tests/trianggrid7.testcase \
+	sql_stmt_geos_tests/trianggrid8.testcase \
+	sql_stmt_geos_tests/trianggrid9.testcase \
+	sql_stmt_geos_tests/trianggrid10.testcase \
+	sql_stmt_geos_tests/trianggrid11.testcase \
+	sql_stmt_geos_tests/trianggrid12.testcase \
+	sql_stmt_geos_tests/trianggrid13.testcase \
+	sql_stmt_geos_tests/trianggrid14.testcase \
+	sql_stmt_geos_tests/trianggrid15.testcase \
+	sql_stmt_geos_tests/trianggrid16.testcase \
+	sql_stmt_geos_tests/trianggrid17.testcase \
 	sql_stmt_tests/us_ch_m.testcase \
 	sql_stmt_tests/us_ft_m.testcase \
 	sql_stmt_tests/us_in_m.testcase \

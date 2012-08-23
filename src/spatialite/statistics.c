@@ -1258,7 +1258,6 @@ do_compute_minmax (sqlite3 * sqlite, const char *table, const char *column,
 	return 0;
     sprintf (sql, " FROM %s", xtable);
     gaiaAppendToOutBuffer (&out_buf, sql);
-    fprintf (stderr, "%s\n", out_buf.Buffer);
 /* executing the SQL query */
     ret = sqlite3_get_table (sqlite, out_buf.Buffer, &results, &rows, &columns,
 			     NULL);
