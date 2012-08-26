@@ -2450,6 +2450,15 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_lwgeom_tests/st_makevalid5.testcase \
 	sql_stmt_lwgeom_tests/st_makevalid6.testcase \
 	sql_stmt_lwgeom_tests/st_makevalid7.testcase \
+	sql_stmt_lwgeom_tests/st_makevalid8.testcase \
+	sql_stmt_lwgeom_tests/st_makevaliddiscarded1.testcase \
+	sql_stmt_lwgeom_tests/st_makevaliddiscarded2.testcase \
+	sql_stmt_lwgeom_tests/st_makevaliddiscarded3.testcase \
+	sql_stmt_lwgeom_tests/st_makevaliddiscarded4.testcase \
+	sql_stmt_lwgeom_tests/st_makevaliddiscarded5.testcase \
+	sql_stmt_lwgeom_tests/st_makevaliddiscarded6.testcase \
+	sql_stmt_lwgeom_tests/st_makevaliddiscarded7.testcase \
+	sql_stmt_lwgeom_tests/st_makevaliddiscarded8.testcase \
 	sql_stmt_lwgeom_tests/st_segmentize1.testcase \
 	sql_stmt_lwgeom_tests/st_segmentize2.testcase \
 	sql_stmt_lwgeom_tests/st_segmentize3.testcase \
@@ -2498,6 +2507,55 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_lwgeom_tests/st_azimuth15.testcase \
 	sql_stmt_lwgeom_tests/st_azimuth16.testcase \
 	sql_stmt_lwgeom_tests/st_azimuth17.testcase \
+	sql_stmt_lwgeom_tests/st_split1.testcase \
+	sql_stmt_lwgeom_tests/st_split2.testcase \
+	sql_stmt_lwgeom_tests/st_split3.testcase \
+	sql_stmt_lwgeom_tests/st_split4.testcase \
+	sql_stmt_lwgeom_tests/st_split5.testcase \
+	sql_stmt_lwgeom_tests/st_split6.testcase \
+	sql_stmt_lwgeom_tests/st_split7.testcase \
+	sql_stmt_lwgeom_tests/st_split8.testcase \
+	sql_stmt_lwgeom_tests/st_split9.testcase \
+	sql_stmt_lwgeom_tests/st_split10.testcase \
+	sql_stmt_lwgeom_tests/st_split11.testcase \
+	sql_stmt_lwgeom_tests/st_split12.testcase \
+	sql_stmt_lwgeom_tests/st_split13.testcase \
+	sql_stmt_lwgeom_tests/st_split14.testcase \
+	sql_stmt_lwgeom_tests/st_split15.testcase \
+	sql_stmt_lwgeom_tests/st_split16.testcase \
+	sql_stmt_lwgeom_tests/st_split17.testcase \
+	sql_stmt_lwgeom_tests/st_split18.testcase \
+	sql_stmt_lwgeom_tests/st_split19.testcase \
+	sql_stmt_lwgeom_tests/st_split20.testcase \
+	sql_stmt_lwgeom_tests/st_split21.testcase \
+	sql_stmt_lwgeom_tests/st_split22.testcase \
+	sql_stmt_lwgeom_tests/st_split23.testcase \
+	sql_stmt_lwgeom_tests/st_split24.testcase \
+	sql_stmt_lwgeom_tests/st_split25.testcase \
+	sql_stmt_lwgeom_tests/st_split26.testcase \
+	sql_stmt_lwgeom_tests/st_split27.testcase \
+	sql_stmt_lwgeom_tests/st_split28.testcase \
+	sql_stmt_lwgeom_tests/st_split29.testcase \
+	sql_stmt_lwgeom_tests/st_split30.testcase \
+	sql_stmt_lwgeom_tests/st_split31.testcase \
+	sql_stmt_lwgeom_tests/st_split32.testcase \
+	sql_stmt_lwgeom_tests/st_split33.testcase \
+	sql_stmt_lwgeom_tests/st_split34.testcase \
+	sql_stmt_lwgeom_tests/st_split35.testcase \
+	sql_stmt_lwgeom_tests/st_split36.testcase \
+	sql_stmt_lwgeom_tests/st_split37.testcase \
+	sql_stmt_lwgeom_tests/st_split38.testcase \
+	sql_stmt_lwgeom_tests/st_split39.testcase \
+	sql_stmt_lwgeom_tests/st_split40.testcase \
+	sql_stmt_lwgeom_tests/st_split41.testcase \
+	sql_stmt_lwgeom_tests/st_split42.testcase \
+	sql_stmt_lwgeom_tests/st_split43.testcase \
+	sql_stmt_lwgeom_tests/st_split44.testcase \
+	sql_stmt_lwgeom_tests/st_split45.testcase \
+	sql_stmt_lwgeom_tests/st_split46.testcase \
+	sql_stmt_lwgeom_tests/st_split47.testcase \
+	sql_stmt_lwgeom_tests/st_split48.testcase \
+	sql_stmt_lwgeom_tests/st_split49.testcase \
 	sql_stmt_tests/startpoint1.testcase \
 	sql_stmt_tests/startpoint2.testcase \
 	sql_stmt_tests/startpoint3.testcase \

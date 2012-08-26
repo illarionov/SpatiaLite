@@ -1064,7 +1064,7 @@ extern "C"
  \n Already-valid geometries are returned without further intervention. 
  \n NULL will be returned if the passed argument is invalid.
 
- \sa gaiaFreeGeomColl
+ \sa gaiaFreeGeomColl, gaiaMakeValidDiscarded
 
  \note you are responsible to destroy (before or after) any allocated Geometry,
  this including any Geometry returned by gaiaMakeValid()
@@ -1072,6 +1072,28 @@ extern "C"
  \remark \b LWGEOM support required.
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMakeValid (gaiaGeomCollPtr geom);
+
+/**
+ Utility function: MakeValidDiscarded
+
+ \param geom the input Geometry object.
+
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n this function will attempt to collect any invalid item (offending
+ geometries) discarded by gaiaMakeValid while building a valid Geometry.
+ \n Saving any discarded item could be useful for a finer (manual) adjustment.
+ \n NULL will be returned if gaiaMakeValid hasn't identified any offending item 
+ to be discarded during the validation.
+
+ \sa gaiaFreeGeomColl, gaiaMakeValid
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaMakeValidDiscarded()
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMakeValidDiscarded (gaiaGeomCollPtr
+							    geom);
 
 /**
  Utility function: Segmentize
@@ -1112,6 +1134,72 @@ extern "C"
  */
     GAIAGEO_DECLARE int gaiaAzimuth (double xa, double ya, double xb,
 				     double yb, double *azimuth);
+
+/**
+ Utility function: Split
+
+ \param input the input Geometry object.
+ \param blade the blade Geometry object.
+
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n The function supports splitting a line by point, a line by line, a polygon by line.
+
+ \sa gaiaFreeGeomColl, gaiaSplitLeft, gaiaSplitRight
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaSplit()
+ 
+ \note gaiaSplit will return both the \b left and the \b right split halves at the same time.
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSplit (gaiaGeomCollPtr input,
+					       gaiaGeomCollPtr blade);
+
+/**
+ Utility function: SplitLeft
+
+ \param input the input Geometry object.
+ \param blade the blade Geometry object.
+
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n The function supports splitting a line by point, a line by line, a polygon by line.
+
+ \sa gaiaFreeGeomColl, gaiaSplit, gaiaSplitRight
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaSplitLeft()
+ 
+ \note gaiaSplitLeft will only return the \b left split half; NULL may be eventually
+ returned if empty.
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSplitLeft (gaiaGeomCollPtr input,
+						   gaiaGeomCollPtr blade);
+
+/**
+ Utility function: SplitRight
+
+ \param input the input Geometry object.
+ \param blade the blade Geometry object.
+
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n The function supports splitting a line by point, a line by line, a polygon by line.
+
+ \sa gaiaFreeGeomColl, gaiaSplit, gaiaSplitLeft
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaSplitRight()
+ 
+ \note gaiaSplitLeft will only return the \b right split half; NULL may be eventually
+ returned if empty.
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSplitRight (gaiaGeomCollPtr input,
+						    gaiaGeomCollPtr blade);
+
 
 #endif				/* end LWGEOM support */
 

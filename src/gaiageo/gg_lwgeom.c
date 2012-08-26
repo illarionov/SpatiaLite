@@ -466,14 +466,14 @@ toLWGeom (const gaiaGeomCollPtr gaia)
 }
 
 static gaiaGeomCollPtr
-fromLWGeom (const LWGEOM * lwgeom, const int dimension_model,
-	    const int declared_type)
+fromLWGeomIncremental (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
 {
 /* converting a LWGEOM Geometry into a GAIA Geometry */
-    gaiaGeomCollPtr gaia = NULL;
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
     gaiaRingPtr rng;
+    int dimension_model = gaia->DimensionModel;
+    int declared_type = gaia->DeclaredType;
     LWGEOM *lwg2 = NULL;
     LWPOINT *lwp = NULL;
     LWLINE *lwl = NULL;
@@ -497,14 +497,6 @@ fromLWGeom (const LWGEOM * lwgeom, const int dimension_model,
     if (lwgeom_is_empty (lwgeom))
 	return NULL;
 
-    if (dimension_model == GAIA_XY_Z)
-	gaia = gaiaAllocGeomCollXYZ ();
-    else if (dimension_model == GAIA_XY_M)
-	gaia = gaiaAllocGeomCollXYM ();
-    else if (dimension_model == GAIA_XY_Z_M)
-	gaia = gaiaAllocGeomCollXYZM ();
-    else
-	gaia = gaiaAllocGeomColl ();
     switch (lwgeom->type)
       {
       case POINTTYPE:
@@ -896,10 +888,105 @@ fromLWGeom (const LWGEOM * lwgeom, const int dimension_model,
     return gaia;
 }
 
+static gaiaGeomCollPtr
+fromLWGeom (const LWGEOM * lwgeom, const int dimension_model,
+	    const int declared_type)
+{
+/* converting a LWGEOM Geometry into a GAIA Geometry */
+    gaiaGeomCollPtr gaia = NULL;
+
+    if (lwgeom == NULL)
+	return NULL;
+    if (lwgeom_is_empty (lwgeom))
+	return NULL;
+
+    if (dimension_model == GAIA_XY_Z)
+	gaia = gaiaAllocGeomCollXYZ ();
+    else if (dimension_model == GAIA_XY_M)
+	gaia = gaiaAllocGeomCollXYM ();
+    else if (dimension_model == GAIA_XY_Z_M)
+	gaia = gaiaAllocGeomCollXYZM ();
+    else
+	gaia = gaiaAllocGeomColl ();
+    gaia->DeclaredType = declared_type;
+    fromLWGeomIncremental (gaia, lwgeom);
+
+    return gaia;
+}
+
+static gaiaGeomCollPtr
+fromLWGeomValidated (const LWGEOM * lwgeom, const int dimension_model,
+		     const int declared_type)
+{
+/* 
+/ converting a LWGEOM Geometry into a GAIA Geometry 
+/ first collection - validated items
+*/
+    gaiaGeomCollPtr gaia = NULL;
+    LWGEOM *lwg2 = NULL;
+    LWCOLLECTION *lwc = NULL;
+    int ngeoms;
+
+    if (lwgeom == NULL)
+	return NULL;
+    if (lwgeom_is_empty (lwgeom))
+	return NULL;
+
+    switch (lwgeom->type)
+      {
+      case COLLECTIONTYPE:
+	  lwc = (LWCOLLECTION *) lwgeom;
+	  ngeoms = lwc->ngeoms;
+	  if (ngeoms <= 2)
+	    {
+		lwg2 = lwc->geoms[0];
+		gaia = fromLWGeom (lwg2, dimension_model, declared_type);
+	    }
+	  break;
+      default:
+	  gaia = fromLWGeom (lwgeom, dimension_model, declared_type);
+	  break;
+      }
+
+    return gaia;
+}
+
+static gaiaGeomCollPtr
+fromLWGeomDiscarded (const LWGEOM * lwgeom, const int dimension_model,
+		     const int declared_type)
+{
+/* 
+/ converting a LWGEOM Geometry into a GAIA Geometry 
+/ second collection - discarded items
+*/
+    gaiaGeomCollPtr gaia = NULL;
+    LWGEOM *lwg2 = NULL;
+    LWCOLLECTION *lwc = NULL;
+    int ngeoms;
+
+    if (lwgeom == NULL)
+	return NULL;
+    if (lwgeom_is_empty (lwgeom))
+	return NULL;
+
+    if (lwgeom->type == COLLECTIONTYPE)
+      {
+	  lwc = (LWCOLLECTION *) lwgeom;
+	  ngeoms = lwc->ngeoms;
+	  if (ngeoms >= 2)
+	    {
+		lwg2 = lwc->geoms[1];
+		gaia = fromLWGeom (lwg2, dimension_model, declared_type);
+	    }
+      }
+
+    return gaia;
+}
+
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaMakeValid (gaiaGeomCollPtr geom)
 {
-/* wrapping LWGEOM MakeValid */
+/* wrapping LWGEOM MakeValid [collecting valid items] */
     LWGEOM *g1;
     LWGEOM *g2;
     gaiaGeomCollPtr result;
@@ -909,8 +996,38 @@ gaiaMakeValid (gaiaGeomCollPtr geom)
     g1 = toLWGeom (geom);
     g2 = lwgeom_make_valid (g1);
     if (!g2)
+      {
+	  lwgeom_free (g1);
+	  return NULL;
+      }
+    result = fromLWGeomValidated (g2, geom->DimensionModel, geom->DeclaredType);
+    spatialite_init_geos ();
+    lwgeom_free (g1);
+    lwgeom_free (g2);
+    if (result == NULL)
 	return NULL;
-    result = fromLWGeom (g2, geom->DimensionModel, geom->DeclaredType);
+    result->Srid = geom->Srid;
+    return result;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaMakeValidDiscarded (gaiaGeomCollPtr geom)
+{
+/* wrapping LWGEOM MakeValid [collecting discarder items] */
+    LWGEOM *g1;
+    LWGEOM *g2;
+    gaiaGeomCollPtr result;
+
+    if (!geom)
+	return NULL;
+    g1 = toLWGeom (geom);
+    g2 = lwgeom_make_valid (g1);
+    if (!g2)
+      {
+	  lwgeom_free (g1);
+	  return NULL;
+      }
+    result = fromLWGeomDiscarded (g2, geom->DimensionModel, geom->DeclaredType);
     spatialite_init_geos ();
     lwgeom_free (g1);
     lwgeom_free (g2);
@@ -935,7 +1052,10 @@ gaiaSegmentize (gaiaGeomCollPtr geom, double dist)
     g1 = toLWGeom (geom);
     g2 = lwgeom_segmentize2d (g1, dist);
     if (!g2)
-	return NULL;
+      {
+	  lwgeom_free (g1);
+	  return NULL;
+      }
     result = fromLWGeom (g2, geom->DimensionModel, geom->DeclaredType);
     spatialite_init_geos ();
     lwgeom_free (g1);
@@ -943,6 +1063,545 @@ gaiaSegmentize (gaiaGeomCollPtr geom, double dist)
     if (result == NULL)
 	return NULL;
     result->Srid = geom->Srid;
+    return result;
+}
+
+static int
+check_split_args (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
+{
+/* testing Split arguments */
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    int i_lns = 0;
+    int i_pgs = 0;
+    int b_pts = 0;
+    int b_lns = 0;
+
+    if (!input)
+	return 0;
+    if (!blade)
+	return 0;
+
+/* testing the Input type */
+    if (input->FirstPoint != NULL)
+      {
+	  /* Point(s) on Input is forbidden !!!! */
+	  return 0;
+      }
+    ln = input->FirstLinestring;
+    while (ln)
+      {
+	  /* counting how many Linestrings are there */
+	  i_lns++;
+	  ln = ln->Next;
+      }
+    pg = input->FirstPolygon;
+    while (pg)
+      {
+	  /* counting how many Polygons are there */
+	  i_pgs++;
+	  pg = pg->Next;
+      }
+    if (i_lns + i_pgs == 0)
+      {
+	  /* empty Input */
+	  return 0;
+      }
+
+/* testing the Blade type */
+    pt = blade->FirstPoint;
+    while (pt)
+      {
+	  /* counting how many Points are there */
+	  b_pts++;
+	  pt = pt->Next;
+      }
+    if (b_pts > 1)
+      {
+	  /* MultiPoint on Blade is forbidden !!!! */
+	  return 0;
+      }
+    ln = blade->FirstLinestring;
+    while (ln)
+      {
+	  /* counting how many Linestrings are there */
+	  b_lns++;
+	  ln = ln->Next;
+      }
+    if (b_lns > 1)
+      {
+	  /* MultiLinestring on Blade is forbidden !!!! */
+	  return 0;
+      }
+    if (blade->FirstPolygon != NULL)
+      {
+	  /* Polygon(s) on Blade is forbidden !!!! */
+	  return 0;
+      }
+    if (b_pts + b_lns == 0)
+      {
+	  /* empty Blade */
+	  return 0;
+      }
+    if (b_pts + b_lns > 1)
+      {
+	  /* invalid Blade [point + linestring] */
+	  return 0;
+      }
+
+/* compatibility check */
+    if (b_lns == 1)
+      {
+	  /* Linestring blade is always valid */
+	  return 1;
+      }
+    if (i_lns >= 1 && b_pts == 1)
+      {
+	  /* Linestring or MultiLinestring input and Point blade is allowed */
+	  return 1;
+      }
+
+    return 0;
+}
+
+static void
+set_split_gtype (gaiaGeomCollPtr geom)
+{
+/* assignign the actual geometry type */
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  /* counting how many Points are there */
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  /* counting how many Linestrings are there */
+	  lns++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  /* counting how many Polygons are there */
+	  pgs++;
+	  pg = pg->Next;
+      }
+
+    if (pts == 1 && lns == 0 && pgs == 0)
+      {
+	  geom->DeclaredType = GAIA_POINT;
+	  return;
+      }
+    if (pts > 1 && lns == 0 && pgs == 0)
+      {
+	  geom->DeclaredType = GAIA_MULTIPOINT;
+	  return;
+      }
+    if (pts == 0 && lns == 1 && pgs == 0)
+      {
+	  geom->DeclaredType = GAIA_LINESTRING;
+	  return;
+      }
+    if (pts == 0 && lns > 1 && pgs == 0)
+      {
+	  geom->DeclaredType = GAIA_MULTILINESTRING;
+	  return;
+      }
+    if (pts == 0 && lns == 0 && pgs == 1)
+      {
+	  geom->DeclaredType = GAIA_POLYGON;
+	  return;
+      }
+    if (pts == 0 && lns == 0 && pgs > 1)
+      {
+	  geom->DeclaredType = GAIA_MULTIPOLYGON;
+	  return;
+      }
+    geom->DeclaredType = GAIA_GEOMETRYCOLLECTION;
+}
+
+static LWGEOM *
+toLWGeomLinestring (gaiaLinestringPtr ln, int srid)
+{
+/* converting a GAIA Linestring into a LWGEOM Geometry */
+    int iv;
+    double x;
+    double y;
+    double z;
+    double m;
+    int has_z = 0;
+    int has_m = 0;
+    POINTARRAY *pa;
+    POINT4D point;
+
+    if (ln->DimensionModel == GAIA_XY_Z || ln->DimensionModel == GAIA_XY_Z_M)
+	has_z = 1;
+    if (ln->DimensionModel == GAIA_XY_M || ln->DimensionModel == GAIA_XY_Z_M)
+	has_m = 1;
+    pa = ptarray_construct (has_z, has_m, ln->Points);
+    for (iv = 0; iv < ln->Points; iv++)
+      {
+	  /* copying vertices */
+	  if (ln->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+	    }
+	  else if (ln->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln->Coords, iv, &x, &y);
+	    }
+	  point.x = x;
+	  point.y = y;
+	  if (has_z)
+	      point.z = z;
+	  if (has_m)
+	      point.m = m;
+	  ptarray_set_point4d (pa, iv, &point);
+      }
+    return (LWGEOM *) lwline_construct (srid, NULL, pa);
+}
+
+static LWGEOM *
+toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
+{
+/* converting a GAIA Linestring into a LWGEOM Geometry */
+    int iv;
+    int ib;
+    double x;
+    double y;
+    double z;
+    double m;
+    int ngeoms;
+    int has_z = 0;
+    int has_m = 0;
+    gaiaRingPtr rng;
+    POINTARRAY *pa;
+    POINTARRAY **ppaa;
+    POINT4D point;
+
+    if (pg->DimensionModel == GAIA_XY_Z || pg->DimensionModel == GAIA_XY_Z_M)
+	has_z = 1;
+    if (pg->DimensionModel == GAIA_XY_M || pg->DimensionModel == GAIA_XY_Z_M)
+	has_m = 1;
+    ngeoms = pg->NumInteriors;
+    ppaa = lwalloc (sizeof (POINTARRAY *) * (ngeoms + 1));
+    rng = pg->Exterior;
+    ppaa[0] = ptarray_construct (has_z, has_m, rng->Points);
+    for (iv = 0; iv < rng->Points; iv++)
+      {
+	  /* copying vertices - Exterior Ring */
+	  if (pg->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+	    }
+	  else if (pg->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+	    }
+	  else if (pg->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (rng->Coords, iv, &x, &y);
+	    }
+	  point.x = x;
+	  point.y = y;
+	  if (has_z)
+	      point.z = z;
+	  if (has_m)
+	      point.m = m;
+	  ptarray_set_point4d (ppaa[0], iv, &point);
+      }
+    for (ib = 0; ib < pg->NumInteriors; ib++)
+      {
+	  /* copying vertices - Interior Rings */
+	  rng = pg->Interiors + ib;
+	  ppaa[1 + ib] = ptarray_construct (has_z, has_m, rng->Points);
+	  for (iv = 0; iv < rng->Points; iv++)
+	    {
+		if (pg->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (rng->Coords, iv, &x, &y, &z);
+		  }
+		else if (pg->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (rng->Coords, iv, &x, &y, &m);
+		  }
+		else if (pg->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (rng->Coords, iv, &x, &y, &z, &m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (rng->Coords, iv, &x, &y);
+		  }
+		point.x = x;
+		point.y = y;
+		if (has_z)
+		    point.z = z;
+		if (has_m)
+		    point.m = m;
+		ptarray_set_point4d (ppaa[1 + ib], iv, &point);
+	    }
+      }
+    return (LWGEOM *) lwpoly_construct (srid, NULL, ngeoms + 1, ppaa);
+}
+
+static gaiaGeomCollPtr
+fromLWGeomLeft (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
+{
+/* 
+/ converting a LWGEOM Geometry into a GAIA Geometry 
+/ collecting "left side" items
+*/
+    LWGEOM *lwg2 = NULL;
+    LWCOLLECTION *lwc = NULL;
+    int ngeoms;
+    int ig;
+
+    if (lwgeom == NULL)
+	return NULL;
+    if (lwgeom_is_empty (lwgeom))
+	return NULL;
+
+    if (lwgeom->type == COLLECTIONTYPE)
+      {
+	  lwc = (LWCOLLECTION *) lwgeom;
+	  ngeoms = lwc->ngeoms;
+	  for (ig = 0; ig < ngeoms; ig += 2)
+	    {
+		lwg2 = lwc->geoms[ig];
+		fromLWGeomIncremental (gaia, lwg2);
+	    }
+      }
+    else
+	gaia = fromLWGeom (lwgeom, gaia->DimensionModel, gaia->DeclaredType);
+
+    return gaia;
+}
+
+static gaiaGeomCollPtr
+fromLWGeomRight (gaiaGeomCollPtr gaia, const LWGEOM * lwgeom)
+{
+/* 
+/ converting a LWGEOM Geometry into a GAIA Geometry 
+/ collecting "right side" items
+*/
+    LWGEOM *lwg2 = NULL;
+    LWCOLLECTION *lwc = NULL;
+    int ngeoms;
+    int ig;
+
+    if (lwgeom == NULL)
+	return NULL;
+    if (lwgeom_is_empty (lwgeom))
+	return NULL;
+
+    if (lwgeom->type == COLLECTIONTYPE)
+      {
+	  lwc = (LWCOLLECTION *) lwgeom;
+	  ngeoms = lwc->ngeoms;
+	  for (ig = 1; ig < ngeoms; ig += 2)
+	    {
+		lwg2 = lwc->geoms[ig];
+		fromLWGeomIncremental (gaia, lwg2);
+	    }
+      }
+
+    return gaia;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaSplit (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
+{
+/* wrapping LWGEOM Split */
+    LWGEOM *g1;
+    LWGEOM *g2;
+    LWGEOM *g3;
+    gaiaGeomCollPtr result;
+
+    if (!check_split_args (input, blade))
+	return NULL;
+
+    g1 = toLWGeom (input);
+    g2 = toLWGeom (blade);
+    g3 = lwgeom_split (g1, g2);
+    if (!g3)
+      {
+	  lwgeom_free (g1);
+	  lwgeom_free (g2);
+	  return NULL;
+      }
+    result = fromLWGeom (g3, input->DimensionModel, input->DeclaredType);
+    spatialite_init_geos ();
+    lwgeom_free (g1);
+    lwgeom_free (g2);
+    lwgeom_free (g3);
+    if (result == NULL)
+	return NULL;
+    result->Srid = input->Srid;
+    set_split_gtype (result);
+    return result;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaSplitLeft (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
+{
+/* wrapping LWGEOM Split [left half] */
+    LWGEOM *g1;
+    LWGEOM *g2;
+    LWGEOM *g3;
+    gaiaGeomCollPtr result = NULL;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+
+    if (!check_split_args (input, blade))
+	return NULL;
+
+    if (input->DimensionModel == GAIA_XY_Z)
+	result = gaiaAllocGeomCollXYZ ();
+    else if (input->DimensionModel == GAIA_XY_M)
+	result = gaiaAllocGeomCollXYM ();
+    else if (input->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaAllocGeomCollXYZM ();
+    else
+	result = gaiaAllocGeomColl ();
+
+    g2 = toLWGeom (blade);
+
+    ln = input->FirstLinestring;
+    while (ln)
+      {
+	  /* splitting some Linestring */
+	  g1 = toLWGeomLinestring (ln, input->Srid);
+	  g3 = lwgeom_split (g1, g2);
+	  if (g3)
+	    {
+		result = fromLWGeomLeft (result, g3);
+		lwgeom_free (g3);
+	    }
+	  spatialite_init_geos ();
+	  lwgeom_free (g1);
+	  ln = ln->Next;
+      }
+    pg = input->FirstPolygon;
+    while (pg)
+      {
+	  /* splitting some Polygon */
+	  g1 = toLWGeomPolygon (pg, input->Srid);
+	  g3 = lwgeom_split (g1, g2);
+	  if (g3)
+	    {
+		result = fromLWGeomLeft (result, g3);
+		lwgeom_free (g3);
+	    }
+	  spatialite_init_geos ();
+	  lwgeom_free (g1);
+	  pg = pg->Next;
+      }
+
+    lwgeom_free (g2);
+    if (result == NULL)
+	return NULL;
+    if (result->FirstPoint == NULL && result->FirstLinestring == NULL
+	&& result->FirstPolygon == NULL)
+      {
+	  gaiaFreeGeomColl (result);
+	  return NULL;
+      }
+    result->Srid = input->Srid;
+    set_split_gtype (result);
+    return result;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaSplitRight (gaiaGeomCollPtr input, gaiaGeomCollPtr blade)
+{
+/* wrapping LWGEOM Split [right half] */
+    LWGEOM *g1;
+    LWGEOM *g2;
+    LWGEOM *g3;
+    gaiaGeomCollPtr result = NULL;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+
+    if (!check_split_args (input, blade))
+	return NULL;
+
+    if (input->DimensionModel == GAIA_XY_Z)
+	result = gaiaAllocGeomCollXYZ ();
+    else if (input->DimensionModel == GAIA_XY_M)
+	result = gaiaAllocGeomCollXYM ();
+    else if (input->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaAllocGeomCollXYZM ();
+    else
+	result = gaiaAllocGeomColl ();
+
+    g2 = toLWGeom (blade);
+
+    ln = input->FirstLinestring;
+    while (ln)
+      {
+	  /* splitting some Linestring */
+	  g1 = toLWGeomLinestring (ln, input->Srid);
+	  g3 = lwgeom_split (g1, g2);
+	  if (g3)
+	    {
+		result = fromLWGeomRight (result, g3);
+		lwgeom_free (g3);
+	    }
+	  spatialite_init_geos ();
+	  lwgeom_free (g1);
+	  ln = ln->Next;
+      }
+    pg = input->FirstPolygon;
+    while (pg)
+      {
+	  /* splitting some Polygon */
+	  g1 = toLWGeomPolygon (pg, input->Srid);
+	  g3 = lwgeom_split (g1, g2);
+	  if (g3)
+	    {
+		result = fromLWGeomRight (result, g3);
+		lwgeom_free (g3);
+	    }
+	  spatialite_init_geos ();
+	  lwgeom_free (g1);
+	  pg = pg->Next;
+      }
+
+    lwgeom_free (g2);
+    if (result == NULL)
+	return NULL;
+    if (result->FirstPoint == NULL && result->FirstLinestring == NULL
+	&& result->FirstPolygon == NULL)
+      {
+	  gaiaFreeGeomColl (result);
+	  return NULL;
+      }
+    result->Srid = input->Srid;
+    set_split_gtype (result);
     return result;
 }
 

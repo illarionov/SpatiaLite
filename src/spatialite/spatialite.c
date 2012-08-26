@@ -18875,6 +18875,51 @@ fnct_MakeValid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_MakeValidDiscarded (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ MakeValidDiscarded(BLOBencoded geometry)
+/
+/ Strictly related to MakeValid(); useful to collect any offending item
+/ discarded during the validation process.
+/ NULL is returned for invalid arguments (or if no discarded items are found)
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr result;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geo == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  result = gaiaMakeValidDiscarded (geo);
+	  if (result == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
 fnct_Segmentize (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -18929,6 +18974,192 @@ fnct_Segmentize (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	    }
       }
     gaiaFreeGeomColl (geo);
+}
+
+static void
+fnct_Split (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ Split(BLOBencoded input, BLOBencoded blade)
+/
+/ Returns a collection of geometries resulting by splitting a geometry
+/ NULL is returned for invalid arguments
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr input = NULL;
+    gaiaGeomCollPtr blade = NULL;
+    gaiaGeomCollPtr result;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    input = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (input == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+    n_bytes = sqlite3_value_bytes (argv[1]);
+    blade = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (blade == NULL)
+      {
+	  gaiaFreeGeomColl (input);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    else
+      {
+	  result = gaiaSplit (input, blade);
+	  if (result == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = input->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (input);
+    gaiaFreeGeomColl (blade);
+}
+
+static void
+fnct_SplitLeft (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ SplitLeft(BLOBencoded input, BLOBencoded blade)
+/
+/ Returns a collection of geometries resulting by splitting a geometry [left half]
+/ NULL is returned for invalid arguments
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr input = NULL;
+    gaiaGeomCollPtr blade = NULL;
+    gaiaGeomCollPtr result;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    input = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (input == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+    n_bytes = sqlite3_value_bytes (argv[1]);
+    blade = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (blade == NULL)
+      {
+	  gaiaFreeGeomColl (input);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    else
+      {
+	  result = gaiaSplitLeft (input, blade);
+	  if (result == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = input->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (input);
+    gaiaFreeGeomColl (blade);
+}
+
+static void
+fnct_SplitRight (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ SplitRight(BLOBencoded input, BLOBencoded blade)
+/
+/ Returns a collection of geometries resulting by splitting a geometry [right half]
+/ NULL is returned for invalid arguments
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr input = NULL;
+    gaiaGeomCollPtr blade = NULL;
+    gaiaGeomCollPtr result;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    input = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (input == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+    n_bytes = sqlite3_value_bytes (argv[1]);
+    blade = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (blade == NULL)
+      {
+	  gaiaFreeGeomColl (input);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    else
+      {
+	  result = gaiaSplitRight (input, blade);
+	  if (result == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = input->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (input);
+    gaiaFreeGeomColl (blade);
 }
 
 static int
@@ -21742,6 +21973,10 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_MakeValid, 0, 0);
     sqlite3_create_function (db, "ST_MakeValid", 1, SQLITE_ANY, 0,
 			     fnct_MakeValid, 0, 0);
+    sqlite3_create_function (db, "MakeValidDiscarded", 1, SQLITE_ANY, 0,
+			     fnct_MakeValidDiscarded, 0, 0);
+    sqlite3_create_function (db, "ST_MakeValidDiscarded", 1, SQLITE_ANY, 0,
+			     fnct_MakeValidDiscarded, 0, 0);
     sqlite3_create_function (db, "Segmentize", 2, SQLITE_ANY, 0,
 			     fnct_Segmentize, 0, 0);
     sqlite3_create_function (db, "ST_Segmentize", 2, SQLITE_ANY, 0,
@@ -21750,6 +21985,17 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     0);
     sqlite3_create_function (db, "ST_Azimuth", 2, SQLITE_ANY, 0, fnct_Azimuth,
 			     0, 0);
+    sqlite3_create_function (db, "Split", 2, SQLITE_ANY, 0, fnct_Split, 0, 0);
+    sqlite3_create_function (db, "ST_Split", 2, SQLITE_ANY, 0, fnct_Split,
+			     0, 0);
+    sqlite3_create_function (db, "SplitLeft", 2, SQLITE_ANY, 0, fnct_SplitLeft,
+			     0, 0);
+    sqlite3_create_function (db, "ST_SplitLeft", 2, SQLITE_ANY, 0,
+			     fnct_SplitLeft, 0, 0);
+    sqlite3_create_function (db, "SplitRight", 2, SQLITE_ANY, 0,
+			     fnct_SplitRight, 0, 0);
+    sqlite3_create_function (db, "ST_SplitRight", 2, SQLITE_ANY, 0,
+			     fnct_SplitRight, 0, 0);
 
 #endif /* end LWGEOM support */
 

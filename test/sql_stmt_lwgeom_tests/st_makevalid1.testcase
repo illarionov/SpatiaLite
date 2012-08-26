@@ -1,7 +1,7 @@
 ST_MakeValid - Invalid BLOB (error)
 :memory: #use in-memory database
-SELECT ST_IsValid(ST_MakeValid(zeroblob(4)));
+SELECT ST_MakeValid(zeroblob(4));
 1 # rows (not including the header row)
 1 # columns
-ST_IsValid(ST_MakeValid(zeroblob(4)))
--1
+ST_MakeValid(zeroblob(4))
+(NULL)

@@ -1,7 +1,7 @@
 ST_MakeValid - NULL BLOB (error)
 :memory: #use in-memory database
-SELECT ST_IsValid(ST_MakeValid(NULL));
+SELECT ST_MakeValid(NULL);
 1 # rows (not including the header row)
 1 # columns
-ST_IsValid(ST_MakeValid(NULL))
--1
+ST_MakeValid(NULL)
+(NULL)
