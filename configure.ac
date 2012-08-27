@@ -31,6 +31,8 @@ AH_TEMPLATE([OMIT_GEOS],
             [Should be defined in order to disable GEOS support.])
 AH_TEMPLATE([GEOS_ADVANCED],
             [Should be defined in order to enable GEOS_ADVANCED support.])
+AH_TEMPLATE([GEOS_TRUNK],
+            [Should be defined in order to enable GEOS_TRUNK experimental support.])
 AH_TEMPLATE([ENABLE_LWGEOM],
             [Should be defined in order to enable LWGEOM support.])
 AH_TEMPLATE([OMIT_PROJ],
@@ -250,6 +252,17 @@ if test x"$enable_geos" != "xno"; then
   if test x"$enable_geosadvanced" != "xno"; then
 	  AC_SEARCH_LIBS(GEOSCoveredBy,geos_c,,AC_MSG_ERROR([obsolete 'libgeos_c' (< v.3.3.0). please retry specifying: --disable-geosadvanced.]))
 	  AC_DEFINE(GEOS_ADVANCED)
+  fi
+
+  #-----------------------------------------------------------------------
+  #   --enable-geostrunk
+  #
+  AC_ARG_ENABLE(geostrunk, [AS_HELP_STRING(
+	  [--enable-geostrunk], [enables GEOS-trunk experimental features [default=no]])],
+	  [], [enable_geostrunk=no])
+  if test x"$enable_geostrunk" != "xno"; then
+	  AC_SEARCH_LIBS(GEOSDelaunayTriangulation,geos_c,,AC_MSG_ERROR(['libgeos_c' (>= v.3.4.0) is required but it doesn't seem to be installed on this system.]))
+	  AC_DEFINE(GEOS_TRUNK)
   fi
 
   #-----------------------------------------------------------------------

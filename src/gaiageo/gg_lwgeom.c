@@ -1294,7 +1294,6 @@ toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
     int has_z = 0;
     int has_m = 0;
     gaiaRingPtr rng;
-    POINTARRAY *pa;
     POINTARRAY **ppaa;
     POINT4D point;
 

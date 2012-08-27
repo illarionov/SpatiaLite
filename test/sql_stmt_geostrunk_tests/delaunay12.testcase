@@ -1,0 +1,7 @@
+ST_DelaunayTriangulation - (only_edges=no)
+:memory: #use in-memory database
+SELECT AsText(ST_ForceLHR(ST_DelaunayTriangulation(GeomFromText('MULTIPOINT(0 0, 1 1, 2 2, 0 1, 2 1)'), 0)));
+1 # rows (not including the header row)
+1 # columns
+AsText(ST_ForceLHR(ST_DelaunayTriangulation(GeomFromText('MULTIPOINT(0 0, 1 1, 2 2, 0 1, 2 1)'), 0)))
+MULTIPOLYGON(((0 1, 1 1, 0 0, 0 1)), ((0 1, 2 2, 1 1, 0 1)), ((2 2, 2 1, 1 1, 2 2)), ((0 0, 1 1, 2 1, 0 0)))

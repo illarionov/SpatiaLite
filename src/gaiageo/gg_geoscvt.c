@@ -79,7 +79,6 @@ toGeosGeometry (const gaiaGeomCollPtr gaia)
     double x0;
     double y0;
     double z0;
-    double m0;
     gaiaPointPtr pt;
     gaiaLinestringPtr ln;
     gaiaPolygonPtr pg;
@@ -262,7 +261,6 @@ toGeosGeometry (const gaiaGeomCollPtr gaia)
 			    /* saving the first vertex */
 			    x0 = x;
 			    y0 = y;
-			    m0 = m;
 			}
 		      GEOSCoordSeq_setX (cs, iv, x);
 		      GEOSCoordSeq_setY (cs, iv, y);
@@ -275,7 +273,6 @@ toGeosGeometry (const gaiaGeomCollPtr gaia)
 			    x0 = x;
 			    y0 = y;
 			    z0 = z;
-			    m0 = m;
 			}
 		      GEOSCoordSeq_setX (cs, iv, x);
 		      GEOSCoordSeq_setY (cs, iv, y);
@@ -350,7 +347,6 @@ toGeosGeometry (const gaiaGeomCollPtr gaia)
 					/* saving the first vertex */
 					x0 = x;
 					y0 = y;
-					m0 = m;
 				    }
 				  GEOSCoordSeq_setX (cs, iv, x);
 				  GEOSCoordSeq_setY (cs, iv, y);
@@ -364,7 +360,6 @@ toGeosGeometry (const gaiaGeomCollPtr gaia)
 					x0 = x;
 					y0 = y;
 					z0 = z;
-					m0 = m;
 				    }
 				  GEOSCoordSeq_setX (cs, iv, x);
 				  GEOSCoordSeq_setY (cs, iv, y);
@@ -506,7 +501,6 @@ toGeosGeometry (const gaiaGeomCollPtr gaia)
 				  /* saving the first vertex */
 				  x0 = x;
 				  y0 = y;
-				  m0 = m;
 			      }
 			    GEOSCoordSeq_setX (cs, iv, x);
 			    GEOSCoordSeq_setY (cs, iv, y);
@@ -519,7 +513,6 @@ toGeosGeometry (const gaiaGeomCollPtr gaia)
 				  x0 = x;
 				  y0 = y;
 				  z0 = z;
-				  m0 = m;
 			      }
 			    GEOSCoordSeq_setX (cs, iv, x);
 			    GEOSCoordSeq_setY (cs, iv, y);
@@ -596,7 +589,6 @@ toGeosGeometry (const gaiaGeomCollPtr gaia)
 					      /* saving the first vertex */
 					      x0 = x;
 					      y0 = y;
-					      m0 = m;
 					  }
 					GEOSCoordSeq_setX (cs, iv, x);
 					GEOSCoordSeq_setY (cs, iv, y);
@@ -610,7 +602,6 @@ toGeosGeometry (const gaiaGeomCollPtr gaia)
 					      x0 = x;
 					      y0 = y;
 					      z0 = z;
-					      m0 = m;
 					  }
 					GEOSCoordSeq_setX (cs, iv, x);
 					GEOSCoordSeq_setY (cs, iv, y);

@@ -22,7 +22,8 @@ libgaiageo_la_SOURCES = gg_advanced.c \
 	gg_ewkt.c \
 	gg_geoJSON.c \
 	gg_kml.c \
-	gg_gml.c
+	gg_gml.c \
+	gg_voronoj.c
 
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 

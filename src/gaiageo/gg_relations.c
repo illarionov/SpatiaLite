@@ -55,6 +55,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <geos_c.h>
 #endif
 
+#include <spatialite_private.h>
 #include <spatialite/sqlite.h>
 
 #include <spatialite/gaiageo.h>
@@ -1349,7 +1350,7 @@ gaiaPolygonize (gaiaGeomCollPtr geom, int force_multi)
     return result;
 }
 
-#ifdef GEOS_ADVANCED		/* GEOS advanced and experimental features */
+#ifdef GEOS_ADVANCED		/* GEOS advanced features */
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaOffsetCurve (gaiaGeomCollPtr geom, double radius, int points,
@@ -4000,6 +4001,114 @@ gaiaLinesCutAtNodes (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
     return result;
 }
 
-#endif /* end GEOS advanced and experimental features */
+#endif /* end GEOS advanced features */
+
+#ifdef GEOS_TRUNK		/* GEOS experimental features */
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaDelaunayTriangulation (gaiaGeomCollPtr geom, double tolerance,
+			   int only_edges)
+{
+/* Delaunay Triangulation */
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr result;
+    if (!geom)
+	return NULL;
+    g1 = gaiaToGeos (geom);
+    g2 = GEOSDelaunayTriangulation (g1, tolerance, only_edges);
+    GEOSGeom_destroy (g1);
+    if (!g2)
+	return NULL;
+    if (geom->DimensionModel == GAIA_XY_Z)
+	result = gaiaFromGeos_XYZ (g2);
+    else if (geom->DimensionModel == GAIA_XY_M)
+	result = gaiaFromGeos_XYM (g2);
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaFromGeos_XYZM (g2);
+    else
+	result = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
+    if (result == NULL)
+	return NULL;
+    result->Srid = geom->Srid;
+    if (only_edges)
+	result->DeclaredType = GAIA_MULTILINESTRING;
+    else
+	result->DeclaredType = GAIA_MULTIPOLYGON;
+    return result;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaVoronojDiagram (gaiaGeomCollPtr geom, double extra_frame_size,
+		    double tolerance, int only_edges)
+{
+/* Voronoj Diagram */
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr result;
+    gaiaPolygonPtr pg;
+    int pgs = 0;
+    int errs = 0;
+    void *voronoj;
+    if (!geom)
+	return NULL;
+    g1 = gaiaToGeos (geom);
+    g2 = GEOSDelaunayTriangulation (g1, tolerance, 0);
+    GEOSGeom_destroy (g1);
+    if (!g2)
+	return NULL;
+    if (geom->DimensionModel == GAIA_XY_Z)
+	result = gaiaFromGeos_XYZ (g2);
+    else if (geom->DimensionModel == GAIA_XY_M)
+	result = gaiaFromGeos_XYM (g2);
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaFromGeos_XYZM (g2);
+    else
+	result = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
+    if (result == NULL)
+	return NULL;
+    pg = result->FirstPolygon;
+    while (pg)
+      {
+	  /* counting how many triangles are in Delaunay */
+	  if (voronoj_check (pg))
+	      pgs++;
+	  else
+	      errs++;
+	  pg = pg->Next;
+      }
+    if (pgs == 0 || errs)
+      {
+	  gaiaFreeGeomColl (result);
+	  return NULL;
+      }
+
+/* building the Voronoj Diagram from Delaunay */
+    voronoj = voronoj_build (pgs, result->FirstPolygon, extra_frame_size);
+    gaiaFreeGeomColl (result);
+
+/* creating the Geometry representing Voronoj */
+    if (geom->DimensionModel == GAIA_XY_Z)
+	result = gaiaAllocGeomCollXYZ ();
+    else if (geom->DimensionModel == GAIA_XY_M)
+	result = gaiaAllocGeomCollXYM ();
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaAllocGeomCollXYZM ();
+    else
+	result = gaiaAllocGeomColl ();
+    result = voronoj_export (voronoj, result, only_edges);
+    voronoj_free (voronoj);
+
+    result->Srid = geom->Srid;
+    if (only_edges)
+	result->DeclaredType = GAIA_MULTILINESTRING;
+    else
+	result->DeclaredType = GAIA_MULTIPOLYGON;
+    return result;
+}
+
+#endif /* end GEOS experimental features */
 
 #endif /* end including GEOS */

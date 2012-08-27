@@ -764,6 +764,7 @@ enable_epsg
 enable_geos
 with_geosconfig
 enable_geosadvanced
+enable_geostrunk
 enable_lwgeom
 enable_gcov
 '
@@ -1417,6 +1418,8 @@ Optional Features:
   --enable-epsg           enables full EPSG dataset support [default=yes]
   --enable-geos           enables GEOS inclusion [default=yes]
   --enable-geosadvanced   enables GEOS advanced features [default=yes]
+  --enable-geostrunk      enables GEOS-trunk experimental features
+                          [default=no]
   --enable-lwgeom         enables LWGEOM support [default=no]
   --enable-gcov           turn on code coverage analysis tools
 
@@ -2959,6 +2962,7 @@ $as_echo "#define NDEBUG 1" >>confdefs.h
 
 
 # config depending options
+
 
 
 
@@ -17786,6 +17790,79 @@ else
 fi
 
 	  $as_echo "#define GEOS_ADVANCED 1" >>confdefs.h
+
+  fi
+
+  #-----------------------------------------------------------------------
+  #   --enable-geostrunk
+  #
+  # Check whether --enable-geostrunk was given.
+if test "${enable_geostrunk+set}" = set; then :
+  enableval=$enable_geostrunk;
+else
+  enable_geostrunk=no
+fi
+
+  if test x"$enable_geostrunk" != "xno"; then
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing GEOSDelaunayTriangulation" >&5
+$as_echo_n "checking for library containing GEOSDelaunayTriangulation... " >&6; }
+if ${ac_cv_search_GEOSDelaunayTriangulation+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char GEOSDelaunayTriangulation ();
+int
+main ()
+{
+return GEOSDelaunayTriangulation ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' geos_c; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_GEOSDelaunayTriangulation=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_GEOSDelaunayTriangulation+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_GEOSDelaunayTriangulation+:} false; then :
+
+else
+  ac_cv_search_GEOSDelaunayTriangulation=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_GEOSDelaunayTriangulation" >&5
+$as_echo "$ac_cv_search_GEOSDelaunayTriangulation" >&6; }
+ac_res=$ac_cv_search_GEOSDelaunayTriangulation
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+  as_fn_error $? "'libgeos_c' (>= v.3.4.0) is required but it doesn't seem to be installed on this system." "$LINENO" 5
+fi
+
+	  $as_echo "#define GEOS_TRUNK 1" >>confdefs.h
 
   fi
 

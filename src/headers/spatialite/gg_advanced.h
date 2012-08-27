@@ -1047,7 +1047,60 @@ extern "C"
     GAIAGEO_DECLARE int gaiaGeomCollCoveredBy (gaiaGeomCollPtr geom1,
 					       gaiaGeomCollPtr geom2);
 
-#endif				/* end GEOS advanced and experimental features */
+#endif				/* end GEOS advanced features */
+
+#ifndef DOXYGEN_SHOULD_IGNORE_THIS
+#ifdef GEOS_TRUNK
+#endif
+
+/**
+ Delaunay Triangulation
+                                            
+ \param geom pointer to input Geometry object.
+ \param tolerance optional snapping tolerance.
+ \param only_edges if non-zero will return a MULTILINESTRING, otherwise it will
+  return a MULTIPOLYGON containing triangular POLYGONs.
+ 
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n NULL will be returned if any argument is invalid.
+
+ \sa gaiaFreeGeomColl, gaiaVoronojDiagram
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaDelaunayTriangulation()
+
+ \remark \b GEOS-TRUNK support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaDelaunayTriangulation (gaiaGeomCollPtr
+							       geom,
+							       double tolerance,
+							       int only_edges);
+
+/**
+ Voronoj Diagram
+                                            
+ \param geom pointer to input Geometry object.
+ \param extra_frame_size percent factor expanding the BBOX of input Geometry
+ \param tolerance optional snapping tolerance.
+ \param only_edges if non-zero will return a MULTILINESTRING, otherwise it will
+  return a MULTIPOLYGON.
+ 
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n NULL will be returned if any argument is invalid.
+
+ \sa gaiaFreeGeomColl, gaiaDelaunayTriangulation
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaVoronojDiagram()
+
+ \remark \b GEOS-TRUNK support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaVoronojDiagram (gaiaGeomCollPtr geom,
+							double extra_frame_size,
+							double tolerance,
+							int only_edges);
+
+#endif				/* end GEOS experimental features */
 
 #ifndef DOXYGEN_SHOULD_IGNORE_THIS
 #ifdef ENABLE_LWGEOM

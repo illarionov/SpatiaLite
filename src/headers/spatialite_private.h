@@ -111,6 +111,16 @@ extern "C"
 
     SPATIALITE_PRIVATE int checkSpatialMetaData (const void *sqlite);
 
+    SPATIALITE_PRIVATE int voronoj_check (void *pg);
+
+    SPATIALITE_PRIVATE void *voronoj_build (int pgs, void *first,
+					    double extra_frame_size);
+
+    SPATIALITE_PRIVATE void *voronoj_export (void *voronoj, void *result,
+					    int only_edges);
+
+    SPATIALITE_PRIVATE void voronoj_free (void *voronoj);
+
 #ifdef __cplusplus
 }
 #endif

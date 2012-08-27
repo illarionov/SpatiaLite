@@ -2693,6 +2693,38 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_geosadvanced_tests/unaryunion6.testcase \
 	sql_stmt_geosadvanced_tests/unaryunion7.testcase \
 	sql_stmt_geosadvanced_tests/unaryunion8.testcase \
+	sql_stmt_geostrunk_tests/delaunay1.testcase \
+	sql_stmt_geostrunk_tests/delaunay2.testcase \
+	sql_stmt_geostrunk_tests/delaunay3.testcase \
+	sql_stmt_geostrunk_tests/delaunay4.testcase \
+	sql_stmt_geostrunk_tests/delaunay5.testcase \
+	sql_stmt_geostrunk_tests/delaunay6.testcase \
+	sql_stmt_geostrunk_tests/delaunay7.testcase \
+	sql_stmt_geostrunk_tests/delaunay8.testcase \
+	sql_stmt_geostrunk_tests/delaunay9.testcase \
+	sql_stmt_geostrunk_tests/delaunay10.testcase \
+	sql_stmt_geostrunk_tests/delaunay11.testcase \
+	sql_stmt_geostrunk_tests/delaunay12.testcase \
+	sql_stmt_geostrunk_tests/delaunay13.testcase \
+	sql_stmt_geostrunk_tests/voronoj1.testcase \
+	sql_stmt_geostrunk_tests/voronoj2.testcase \
+	sql_stmt_geostrunk_tests/voronoj3.testcase \
+	sql_stmt_geostrunk_tests/voronoj4.testcase \
+	sql_stmt_geostrunk_tests/voronoj5.testcase \
+	sql_stmt_geostrunk_tests/voronoj6.testcase \
+	sql_stmt_geostrunk_tests/voronoj8.testcase \
+	sql_stmt_geostrunk_tests/voronoj9.testcase \
+	sql_stmt_geostrunk_tests/voronoj10.testcase \
+	sql_stmt_geostrunk_tests/voronoj11.testcase \
+	sql_stmt_geostrunk_tests/voronoj12.testcase \
+	sql_stmt_geostrunk_tests/voronoj13.testcase \
+	sql_stmt_geostrunk_tests/voronoj14.testcase \
+	sql_stmt_geostrunk_tests/voronoj15.testcase \
+	sql_stmt_geostrunk_tests/voronoj16.testcase \
+	sql_stmt_geostrunk_tests/voronoj17.testcase \
+	sql_stmt_geostrunk_tests/voronoj18.testcase \
+	sql_stmt_geostrunk_tests/voronoj19.testcase \
+	sql_stmt_geostrunk_tests/voronoj20.testcase \
 	sql_stmt_tests/uncompressgeom1.testcase \
 	sql_stmt_tests/uncompressgeom2.testcase \
 	sql_stmt_tests/uncompressgeom3.testcase \

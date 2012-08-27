@@ -431,6 +431,45 @@ skip_geos:
 skip_geos_advanced:
 #endif	/* end GEOS_ADVANCED conditional */
 
+#ifdef GEOS_TRUNK	/* only if GEOS_TRUNK is supported */
+    if (strcmp(GEOSversion (), "3.3") < 0)
+    {
+    /* 
+    /* skipping GEOS tests if some obsolete version is found 
+    /*
+    /* rationale: obsolete versions may return substantially
+    /* different results, thus causing many testcases to fail
+    */
+        fprintf(stderr, "WARNING: skipping GEOS_TRUNK testcases; obsolete version found !!!\n");
+        goto skip_geos_trunk;
+    }
+    n = scandir("sql_stmt_geostrunk_tests", &namelist, test_case_filter, alphasort);
+    if (n < 0) {
+	perror("scandir");
+	return -1;
+    }
+
+    for (i = 0; i < n; ++i) {
+	struct test_data *data;
+	char *path;
+	if (asprintf(&path, "sql_stmt_geostrunk_tests/%s", namelist[i]->d_name) < 0) {
+	    return -1;
+	}
+	data = read_one_case(path);
+	free(path);
+	
+	result = do_one_case(data);
+	
+	cleanup_test_data(data);
+	if (result != 0) {
+	    return result;
+	}
+	free(namelist[i]);
+    }
+    free(namelist);
+skip_geos_trunk:
+#endif	/* end GEOS_TRUNK conditional */
+
 #ifdef ENABLE_LWGEOM	/* only if LWGEOM is supported */
     n = scandir("sql_stmt_lwgeom_tests", &namelist, test_case_filter, alphasort);
     if (n < 0) {

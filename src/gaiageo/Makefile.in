@@ -52,7 +52,8 @@ libgaiageo_la_LIBADD =
 am_libgaiageo_la_OBJECTS = gg_advanced.lo gg_endian.lo gg_geodesic.lo \
 	gg_geometries.lo gg_geoscvt.lo gg_relations.lo gg_lwgeom.lo \
 	gg_extras.lo gg_shape.lo gg_transform.lo gg_wkb.lo gg_wkt.lo \
-	gg_vanuatu.lo gg_ewkt.lo gg_geoJSON.lo gg_kml.lo gg_gml.lo
+	gg_vanuatu.lo gg_ewkt.lo gg_geoJSON.lo gg_kml.lo gg_gml.lo \
+	gg_voronoj.lo
 libgaiageo_la_OBJECTS = $(am_libgaiageo_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -252,7 +253,8 @@ libgaiageo_la_SOURCES = gg_advanced.c \
 	gg_ewkt.c \
 	gg_geoJSON.c \
 	gg_kml.c \
-	gg_gml.c
+	gg_gml.c \
+	gg_voronoj.c
 
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 EXTRA_DIST = Ewkt.h Ewkt.c lex.Ewkt.c \
@@ -328,6 +330,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_shape.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_transform.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_vanuatu.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_voronoj.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_wkb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_wkt.Plo@am__quote@
 

@@ -220,10 +220,26 @@ fnct_has_geos_advanced (sqlite3_context * context, int argc,
 /* SQL function:
 / HasGeosAdvanced()
 /
-/ return 1 if built including GEOS; otherwise 0
+/ return 1 if built including GEOS-ADVANCED; otherwise 0
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 #ifdef GEOS_ADVANCED		/* GEOS-ADVANCED is supported */
+    sqlite3_result_int (context, 1);
+#else
+    sqlite3_result_int (context, 0);
+#endif
+}
+
+static void
+fnct_has_geos_trunk (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ HasGeosTrunk()
+/
+/ return 1 if built including GEOS-TRUNK; otherwise 0
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+#ifdef GEOS_TRUNK		/* GEOS-TRUNK is supported */
     sqlite3_result_int (context, 1);
 #else
     sqlite3_result_int (context, 0);
@@ -17610,7 +17626,7 @@ fnct_BdMPolyFromWKB2 (sqlite3_context * context, int argc,
     return;
 }
 
-#ifdef GEOS_ADVANCED		/* GEOS advanced and experimental features */
+#ifdef GEOS_ADVANCED		/* GEOS advanced features */
 
 static void
 fnct_OffsetCurve (sqlite3_context * context, int argc, sqlite3_value ** argv)
@@ -18827,7 +18843,175 @@ fnct_RingsCutAtNodes (sqlite3_context * context, int argc,
     gaiaFreeGeomColl (geom2);
 }
 
-#endif /* end GEOS advanced and experimental features */
+#endif /* end GEOS advanced features */
+
+#ifdef GEOS_TRUNK		/* GEOS experimental features */
+
+static void
+fnct_DelaunayTriangulation (sqlite3_context * context, int argc,
+			    sqlite3_value ** argv)
+{
+/* SQL function:
+/ DelaunayTriangulation(BLOBencoded geometry [ , boolean onlyEdges ] 
+/    [ , double tolerance ] )
+/
+/ Attempts to build a Delaunay Triangulation using all points/vertices 
+/ found in the input geometry.
+/ NULL is returned for invalid arguments
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr result;
+    int int_value;
+    double tolerance = 0.0;
+    int only_edges = 0;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	      only_edges = sqlite3_value_int (argv[1]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 3)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	      tolerance = sqlite3_value_double (argv[2]);
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[2]);
+		tolerance = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geo == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  result = gaiaDelaunayTriangulation (geo, tolerance, only_edges);
+	  if (result == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
+fnct_VoronojDiagram (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ VoronojDiagram(BLOBencoded geometry [ , boolean onlyEdges ] 
+/    [ , double extra_frame_size ] [ , double tolerance ] )
+/
+/ Attempts to build a Voronoj Diagram using all points/vertices 
+/ found in the input geometry.
+/ NULL is returned for invalid arguments
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr result;
+    int int_value;
+    double tolerance = 0.0;
+    double extra_frame_size = -1.0;
+    int only_edges = 0;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	      only_edges = sqlite3_value_int (argv[1]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc >= 3)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	      extra_frame_size = sqlite3_value_double (argv[2]);
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[2]);
+		extra_frame_size = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 4)
+      {
+	  if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
+	      tolerance = sqlite3_value_double (argv[3]);
+	  else if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[3]);
+		tolerance = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geo == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  result =
+	      gaiaVoronojDiagram (geo, extra_frame_size, tolerance, only_edges);
+	  if (result == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+#endif /* end GEOS experimental features */
 
 #ifdef ENABLE_LWGEOM		/* enabling LWGEOM support */
 
@@ -20463,8 +20647,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -20548,8 +20731,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -20558,8 +20740,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -20869,6 +21050,8 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_has_geos, 0, 0);
     sqlite3_create_function (db, "HasGeosAdvanced", 0, SQLITE_ANY, 0,
 			     fnct_has_geos_advanced, 0, 0);
+    sqlite3_create_function (db, "HasGeosTrunk", 0, SQLITE_ANY, 0,
+			     fnct_has_geos_trunk, 0, 0);
     sqlite3_create_function (db, "HasMathSql", 0, SQLITE_ANY, 0,
 			     fnct_has_math_sql, 0, 0);
     sqlite3_create_function (db, "HasGeoCallbacks", 0, SQLITE_ANY, 0,
@@ -21895,7 +22078,7 @@ register_spatialite_sql_functions (sqlite3 * db)
     sqlite3_create_function (db, "ST_BdMPolyFromWKB", 2, SQLITE_ANY, 0,
 			     fnct_BdMPolyFromWKB2, 0, 0);
 
-#ifdef GEOS_ADVANCED		/* GEOS advanced and experimental features */
+#ifdef GEOS_ADVANCED		/* GEOS advanced features */
 
     sqlite3_create_function (db, "OffsetCurve", 3, SQLITE_ANY, 0,
 			     fnct_OffsetCurve, 0, 0);
@@ -21965,7 +22148,40 @@ register_spatialite_sql_functions (sqlite3 * db)
     sqlite3_create_function (db, "ST_RingsCutAtNodes", 1, SQLITE_ANY, 0,
 			     fnct_RingsCutAtNodes, 0, 0);
 
-#endif /* end GEOS advanced and experimental features */
+#endif /* end GEOS advanced features */
+
+#ifdef GEOS_TRUNK		/* GEOS experimental features */
+
+    sqlite3_create_function (db, "DelaunayTriangulation", 1, SQLITE_ANY, 0,
+			     fnct_DelaunayTriangulation, 0, 0);
+    sqlite3_create_function (db, "DelaunayTriangulation", 2, SQLITE_ANY, 0,
+			     fnct_DelaunayTriangulation, 0, 0);
+    sqlite3_create_function (db, "DelaunayTriangulation", 3, SQLITE_ANY, 0,
+			     fnct_DelaunayTriangulation, 0, 0);
+    sqlite3_create_function (db, "ST_DelaunayTriangulation", 1, SQLITE_ANY, 0,
+			     fnct_DelaunayTriangulation, 0, 0);
+    sqlite3_create_function (db, "ST_DelaunayTriangulation", 2, SQLITE_ANY, 0,
+			     fnct_DelaunayTriangulation, 0, 0);
+    sqlite3_create_function (db, "ST_DelaunayTriangulation", 3, SQLITE_ANY, 0,
+			     fnct_DelaunayTriangulation, 0, 0);
+    sqlite3_create_function (db, "VoronojDiagram", 1, SQLITE_ANY, 0,
+			     fnct_VoronojDiagram, 0, 0);
+    sqlite3_create_function (db, "VoronojDiagram", 2, SQLITE_ANY, 0,
+			     fnct_VoronojDiagram, 0, 0);
+    sqlite3_create_function (db, "VoronojDiagram", 3, SQLITE_ANY, 0,
+			     fnct_VoronojDiagram, 0, 0);
+    sqlite3_create_function (db, "VoronojDiagram", 4, SQLITE_ANY, 0,
+			     fnct_VoronojDiagram, 0, 0);
+    sqlite3_create_function (db, "ST_VoronojDiagram", 1, SQLITE_ANY, 0,
+			     fnct_VoronojDiagram, 0, 0);
+    sqlite3_create_function (db, "ST_VoronojDiagram", 2, SQLITE_ANY, 0,
+			     fnct_VoronojDiagram, 0, 0);
+    sqlite3_create_function (db, "ST_VoronojDiagram", 3, SQLITE_ANY, 0,
+			     fnct_VoronojDiagram, 0, 0);
+    sqlite3_create_function (db, "ST_VoronojDiagram", 4, SQLITE_ANY, 0,
+			     fnct_VoronojDiagram, 0, 0);
+
+#endif /* end GEOS experimental features */
 
 #ifdef ENABLE_LWGEOM		/* enabling LWGEOM support */
 
