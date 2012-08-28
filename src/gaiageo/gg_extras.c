@@ -746,8 +746,8 @@ get_grid_base (double min_x, double min_y, double origin_x, double origin_y,
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
-gaiaSquareGrid (gaiaGeomCollPtr geom,
-		double origin_x, double origin_y, double size)
+gaiaSquareGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
+		double size, int edges_only)
 {
 /* creating a regular grid [Square cells] */
     double min_x;
@@ -767,6 +767,7 @@ gaiaSquareGrid (gaiaGeomCollPtr geom,
     int count = 0;
     gaiaPolygonPtr pg;
     gaiaRingPtr rng;
+    gaiaLinestringPtr ln;
     gaiaGeomCollPtr result = NULL;
     gaiaGeomCollPtr item = NULL;
 
@@ -805,13 +806,33 @@ gaiaSquareGrid (gaiaGeomCollPtr geom,
 		  {
 		      /* ok, inserting a valid cell */
 		      count++;
-		      pg = gaiaAddPolygonToGeomColl (result, 5, 0);
-		      rng = pg->Exterior;
-		      gaiaSetPoint (rng->Coords, 0, x1, y1);
-		      gaiaSetPoint (rng->Coords, 1, x2, y2);
-		      gaiaSetPoint (rng->Coords, 2, x3, y3);
-		      gaiaSetPoint (rng->Coords, 3, x4, y4);
-		      gaiaSetPoint (rng->Coords, 4, x1, y1);
+		      if (edges_only)
+			{
+			    /* multilinestring */
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x1, y1);
+			    gaiaSetPoint (ln->Coords, 1, x2, y2);
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x2, y2);
+			    gaiaSetPoint (ln->Coords, 1, x3, y3);
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x3, y3);
+			    gaiaSetPoint (ln->Coords, 1, x4, y4);
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x4, y4);
+			    gaiaSetPoint (ln->Coords, 1, x1, y1);
+			}
+		      else
+			{
+			    /* polygon */
+			    pg = gaiaAddPolygonToGeomColl (result, 5, 0);
+			    rng = pg->Exterior;
+			    gaiaSetPoint (rng->Coords, 0, x1, y1);
+			    gaiaSetPoint (rng->Coords, 1, x2, y2);
+			    gaiaSetPoint (rng->Coords, 2, x3, y3);
+			    gaiaSetPoint (rng->Coords, 3, x4, y4);
+			    gaiaSetPoint (rng->Coords, 4, x1, y1);
+			}
 		  }
 		gaiaFreeGeomColl (item);
 		x1 += size;
@@ -829,12 +850,23 @@ gaiaSquareGrid (gaiaGeomCollPtr geom,
 	  gaiaFreeGeomColl (result);
 	  return NULL;
       }
+    if (!edges_only)
+      {
+	  result->DeclaredType = GAIA_MULTIPOLYGON;
+	  return result;
+      }
+
+    item = result;
+    result = gaiaUnaryUnion (item);
+    gaiaFreeGeomColl (item);
+    result->Srid = geom->Srid;
+    result->DeclaredType = GAIA_LINESTRING;
     return result;
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
-gaiaTriangularGrid (gaiaGeomCollPtr geom,
-		    double origin_x, double origin_y, double size)
+gaiaTriangularGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
+		    double size, int edges_only)
 {
 /* creating a regular grid [Triangular cells] */
     double min_x;
@@ -855,6 +887,7 @@ gaiaTriangularGrid (gaiaGeomCollPtr geom,
     int odd_even = 0;
     gaiaPolygonPtr pg;
     gaiaRingPtr rng;
+    gaiaLinestringPtr ln;
     gaiaGeomCollPtr result = NULL;
     gaiaGeomCollPtr item = NULL;
 
@@ -895,12 +928,29 @@ gaiaTriangularGrid (gaiaGeomCollPtr geom,
 		  {
 		      /* ok, inserting a valid cell [pointing upside] */
 		      count++;
-		      pg = gaiaAddPolygonToGeomColl (result, 4, 0);
-		      rng = pg->Exterior;
-		      gaiaSetPoint (rng->Coords, 0, x1, y1);
-		      gaiaSetPoint (rng->Coords, 1, x2, y2);
-		      gaiaSetPoint (rng->Coords, 2, x3, y3);
-		      gaiaSetPoint (rng->Coords, 3, x1, y1);
+		      if (edges_only)
+			{
+			    /* multilinestring */
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x1, y1);
+			    gaiaSetPoint (ln->Coords, 1, x2, y2);
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x2, y2);
+			    gaiaSetPoint (ln->Coords, 1, x3, y3);
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x3, y3);
+			    gaiaSetPoint (ln->Coords, 1, x1, y1);
+			}
+		      else
+			{
+			    /* polygon */
+			    pg = gaiaAddPolygonToGeomColl (result, 4, 0);
+			    rng = pg->Exterior;
+			    gaiaSetPoint (rng->Coords, 0, x1, y1);
+			    gaiaSetPoint (rng->Coords, 1, x2, y2);
+			    gaiaSetPoint (rng->Coords, 2, x3, y3);
+			    gaiaSetPoint (rng->Coords, 3, x1, y1);
+			}
 		  }
 		gaiaFreeGeomColl (item);
 
@@ -917,12 +967,29 @@ gaiaTriangularGrid (gaiaGeomCollPtr geom,
 		  {
 		      /* ok, inserting a valid cell [pointing downside] */
 		      count++;
-		      pg = gaiaAddPolygonToGeomColl (result, 4, 0);
-		      rng = pg->Exterior;
-		      gaiaSetPoint (rng->Coords, 0, x3, y3);
-		      gaiaSetPoint (rng->Coords, 1, x2, y2);
-		      gaiaSetPoint (rng->Coords, 2, x4, y4);
-		      gaiaSetPoint (rng->Coords, 3, x3, y3);
+		      if (edges_only)
+			{
+			    /* multilinestring */
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x1, y1);
+			    gaiaSetPoint (ln->Coords, 1, x2, y2);
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x2, y2);
+			    gaiaSetPoint (ln->Coords, 1, x3, y3);
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x3, y3);
+			    gaiaSetPoint (ln->Coords, 1, x1, y1);
+			}
+		      else
+			{
+			    /* polygon */
+			    pg = gaiaAddPolygonToGeomColl (result, 4, 0);
+			    rng = pg->Exterior;
+			    gaiaSetPoint (rng->Coords, 0, x3, y3);
+			    gaiaSetPoint (rng->Coords, 1, x2, y2);
+			    gaiaSetPoint (rng->Coords, 2, x4, y4);
+			    gaiaSetPoint (rng->Coords, 3, x3, y3);
+			}
 		  }
 		gaiaFreeGeomColl (item);
 
@@ -945,12 +1012,23 @@ gaiaTriangularGrid (gaiaGeomCollPtr geom,
 	  gaiaFreeGeomColl (result);
 	  return NULL;
       }
+    if (!edges_only)
+      {
+	  result->DeclaredType = GAIA_MULTIPOLYGON;
+	  return result;
+      }
+
+    item = result;
+    result = gaiaUnaryUnion (item);
+    gaiaFreeGeomColl (item);
+    result->Srid = geom->Srid;
+    result->DeclaredType = GAIA_LINESTRING;
     return result;
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
-gaiaHexagonalGrid (gaiaGeomCollPtr geom,
-		   double origin_x, double origin_y, double size)
+gaiaHexagonalGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
+		   double size, int edges_only)
 {
 /* creating a regular grid [Hexagonal cells] */
     double min_x;
@@ -975,6 +1053,7 @@ gaiaHexagonalGrid (gaiaGeomCollPtr geom,
     int odd_even = 0;
     gaiaPolygonPtr pg;
     gaiaRingPtr rng;
+    gaiaLinestringPtr ln;
     gaiaGeomCollPtr result = NULL;
     gaiaGeomCollPtr item = NULL;
 
@@ -1022,15 +1101,41 @@ gaiaHexagonalGrid (gaiaGeomCollPtr geom,
 		  {
 		      /* ok, inserting a valid cell */
 		      count++;
-		      pg = gaiaAddPolygonToGeomColl (result, 7, 0);
-		      rng = pg->Exterior;
-		      gaiaSetPoint (rng->Coords, 0, x1, y1);
-		      gaiaSetPoint (rng->Coords, 1, x2, y2);
-		      gaiaSetPoint (rng->Coords, 2, x3, y3);
-		      gaiaSetPoint (rng->Coords, 3, x4, y4);
-		      gaiaSetPoint (rng->Coords, 4, x5, y5);
-		      gaiaSetPoint (rng->Coords, 5, x6, y6);
-		      gaiaSetPoint (rng->Coords, 6, x1, y1);
+		      if (edges_only)
+			{
+			    /* multilinestring */
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x1, y1);
+			    gaiaSetPoint (ln->Coords, 1, x2, y2);
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x2, y2);
+			    gaiaSetPoint (ln->Coords, 1, x3, y3);
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x3, y3);
+			    gaiaSetPoint (ln->Coords, 1, x4, y4);
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x4, y4);
+			    gaiaSetPoint (ln->Coords, 1, x5, y5);
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x5, y5);
+			    gaiaSetPoint (ln->Coords, 1, x6, y6);
+			    ln = gaiaAddLinestringToGeomColl (result, 2);
+			    gaiaSetPoint (ln->Coords, 0, x6, y6);
+			    gaiaSetPoint (ln->Coords, 1, x1, y1);
+			}
+		      else
+			{
+			    /* polygon */
+			    pg = gaiaAddPolygonToGeomColl (result, 7, 0);
+			    rng = pg->Exterior;
+			    gaiaSetPoint (rng->Coords, 0, x1, y1);
+			    gaiaSetPoint (rng->Coords, 1, x2, y2);
+			    gaiaSetPoint (rng->Coords, 2, x3, y3);
+			    gaiaSetPoint (rng->Coords, 3, x4, y4);
+			    gaiaSetPoint (rng->Coords, 4, x5, y5);
+			    gaiaSetPoint (rng->Coords, 5, x6, y6);
+			    gaiaSetPoint (rng->Coords, 6, x1, y1);
+			}
 		  }
 		gaiaFreeGeomColl (item);
 
@@ -1055,6 +1160,17 @@ gaiaHexagonalGrid (gaiaGeomCollPtr geom,
 	  gaiaFreeGeomColl (result);
 	  return NULL;
       }
+    if (!edges_only)
+      {
+	  result->DeclaredType = GAIA_MULTIPOLYGON;
+	  return result;
+      }
+
+    item = result;
+    result = gaiaUnaryUnion (item);
+    gaiaFreeGeomColl (item);
+    result->Srid = geom->Srid;
+    result->DeclaredType = GAIA_LINESTRING;
     return result;
 }
 

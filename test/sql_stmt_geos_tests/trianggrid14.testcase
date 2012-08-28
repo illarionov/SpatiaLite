@@ -1,9 +1,9 @@
-TriangularGrid - Polygon geom - zero size
+TriangularGrid - Polygon geom - zeroblob origin
 :memory: #use in-memory database
-SELECT TriangularGrid(GeomFromText('POLYGON((3 3, 3 4, 4 4, 4 3, 3 3))', 4326), 0.0);
+SELECT TriangularGrid(GeomFromText('POLYGON((3 3, 3 4, 4 4, 4 3, 3 3))', 4326), 1.0, 0, zeroblob(4));
 1 # rows (not including the header row)
 1 # columns
-TriangularGrid(GeomFromText('POLYGON((3 3, 3 4, 4 4, 4 3, 3 3))', 4326), 0.0)
+TriangularGrid(GeomFromText('POLYGON((3 3, 3 4, 4 4, 4 3, 3 3))', 4326), 1.0, 0, zeroblob(4))
 (NULL)
 
 
