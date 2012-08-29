@@ -111,6 +111,14 @@ struct voronoj_aux
     struct voronoj_point *last_right;
 };
 
+struct concave_hull_str
+{
+/* a struct to implement StandardVariation and Variance for Concave Hull */
+    double mean;
+    double quot;
+    double count;
+};
+
 static double *
 voronoj_sorted_up (struct voronoj_aux *voronoj, int *count)
 {
@@ -1424,7 +1432,7 @@ voronoj_free (void *p_voronoj)
 }
 
 SPATIALITE_PRIVATE int
-voronoj_check (void *ppg)
+delaunay_triangle_check (void *ppg)
 {
 /* test if it's really a triangle */
     gaiaPolygonPtr pg = (gaiaPolygonPtr) ppg;
@@ -1432,6 +1440,394 @@ voronoj_check (void *ppg)
     if (rng->Points == 4 && pg->NumInteriors == 0)
 	return 1;
     return 0;
+}
+
+static void
+concave_hull_stats (struct concave_hull_str *concave, double length)
+{
+/* update concave hull statistics */
+    if (concave->count == 0)
+      {
+	  concave->count = 1.0;
+	  concave->mean = length;
+	  return;
+      }
+
+    concave->count += 1.0;
+    concave->quot = concave->quot + (((concave->count - 1.0) *
+				      ((length - concave->mean) *
+				       (length - concave->mean))) /
+				     concave->count);
+    concave->mean = concave->mean + ((length - concave->mean) / concave->count);
+}
+
+static int
+concave_hull_filter (double x1, double y1, double x2, double y2, double x3,
+		     double y3, double limit)
+{
+/* filtering triangles to be inserted into the Concave Hull */
+    gaiaGeomCollPtr segm;
+    gaiaLinestringPtr ln;
+    double length;
+
+    segm = gaiaAllocGeomColl ();
+    ln = gaiaAddLinestringToGeomColl (segm, 2);
+    gaiaSetPoint (ln->Coords, 0, x1, y1);
+    gaiaSetPoint (ln->Coords, 1, x2, y2);
+    gaiaGeomCollLength (segm, &length);
+    gaiaFreeGeomColl (segm);
+    if (length >= limit)
+	return 0;
+
+    segm = gaiaAllocGeomColl ();
+    ln = gaiaAddLinestringToGeomColl (segm, 2);
+    gaiaSetPoint (ln->Coords, 0, x2, y2);
+    gaiaSetPoint (ln->Coords, 1, x3, y3);
+    gaiaGeomCollLength (segm, &length);
+    gaiaFreeGeomColl (segm);
+    if (length >= limit)
+	return 0;
+
+    segm = gaiaAllocGeomColl ();
+    ln = gaiaAddLinestringToGeomColl (segm, 2);
+    gaiaSetPoint (ln->Coords, 0, x3, y3);
+    gaiaSetPoint (ln->Coords, 1, x1, y1);
+    gaiaGeomCollLength (segm, &length);
+    gaiaFreeGeomColl (segm);
+    if (length >= limit)
+	return 0;
+
+    return 1;
+}
+
+static gaiaGeomCollPtr
+concave_hull_no_holes (gaiaGeomCollPtr in)
+{
+/* returning a Polygon surely not containing any hole */
+    gaiaGeomCollPtr out = NULL;
+    gaiaPolygonPtr pg_in;
+    gaiaPolygonPtr pg_out;
+    gaiaRingPtr rng_in;
+    gaiaRingPtr rng_out;
+    int iv;
+    double x;
+    double y;
+    double z;
+    double m;
+
+    if (in->DimensionModel == GAIA_XY_Z)
+	out = gaiaAllocGeomCollXYZ ();
+    else if (in->DimensionModel == GAIA_XY_M)
+	out = gaiaAllocGeomCollXYM ();
+    else if (in->DimensionModel == GAIA_XY_Z_M)
+	out = gaiaAllocGeomCollXYZM ();
+    else
+	out = gaiaAllocGeomColl ();
+    out->Srid = in->Srid;
+
+    pg_in = in->FirstPolygon;
+    while (pg_in)
+      {
+	  rng_in = pg_in->Exterior;
+	  pg_out = gaiaAddPolygonToGeomColl (out, rng_in->Points, 0);
+	  rng_out = pg_out->Exterior;
+	  for (iv = 0; iv < rng_in->Points; iv++)
+	    {
+		/* copying Exterior Ring vertices */
+		if (in->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (rng_in->Coords, iv, &x, &y, &z);
+		      gaiaSetPointXYZ (rng_out->Coords, iv, x, y, z);
+		  }
+		else if (in->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (rng_in->Coords, iv, &x, &y, &m);
+		      gaiaSetPointXYM (rng_out->Coords, iv, x, y, m);
+		  }
+		else if (in->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (rng_in->Coords, iv, &x, &y, &z, &m);
+		      gaiaSetPointXYZM (rng_out->Coords, iv, x, y, z, m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (rng_in->Coords, iv, &x, &y);
+		      gaiaSetPoint (rng_out->Coords, iv, x, y);
+		  }
+	    }
+	  pg_in = pg_in->Next;
+      }
+    return out;
+}
+
+SPATIALITE_PRIVATE void *
+concave_hull_build (void *p_first, int dimension_model, double factor,
+		    int allow_holes)
+{
+/* building the Concave Hull */
+    struct concave_hull_str concave;
+    gaiaPolygonPtr first = (gaiaPolygonPtr) p_first;
+    gaiaPolygonPtr pg;
+    gaiaRingPtr rng;
+    gaiaPolygonPtr pg_out;
+    gaiaRingPtr rng_out;
+    gaiaGeomCollPtr segm;
+    gaiaGeomCollPtr result;
+    gaiaLinestringPtr ln;
+    double x;
+    double y;
+    double z;
+    double m;
+    double x1;
+    double y1;
+    double x2;
+    double y2;
+    double x3;
+    double y3;
+    double length;
+    double std_dev;
+    int count;
+
+/* initializing the struct for mean and standard deviation */
+    concave.mean = 0.0;
+    concave.quot = 0.0;
+    concave.count = 0.0;
+
+    pg = first;
+    while (pg)
+      {
+	  /* examining each triangle / computing statistics distribution */
+	  rng = pg->Exterior;
+	  if (pg->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (rng->Coords, 0, &x, &y, &z);
+		x1 = x;
+		y1 = y;
+		gaiaGetPointXYZ (rng->Coords, 1, &x, &y, &z);
+		x2 = x;
+		y2 = y;
+		gaiaGetPointXYZ (rng->Coords, 2, &x, &y, &z);
+		x3 = x;
+		y3 = y;
+	    }
+	  else if (pg->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (rng->Coords, 0, &x, &y, &m);
+		x1 = x;
+		y1 = y;
+		gaiaGetPointXYM (rng->Coords, 1, &x, &y, &m);
+		x2 = x;
+		y2 = y;
+		gaiaGetPointXYM (rng->Coords, 2, &x, &y, &m);
+		x3 = x;
+		y3 = y;
+	    }
+	  else if (pg->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (rng->Coords, 0, &x, &y, &z, &m);
+		x1 = x;
+		y1 = y;
+		gaiaGetPointXYZM (rng->Coords, 1, &x, &y, &z, &m);
+		x2 = x;
+		y2 = y;
+		gaiaGetPointXYZM (rng->Coords, 2, &x, &y, &z, &m);
+		x3 = x;
+		y3 = y;
+	    }
+	  else
+	    {
+		gaiaGetPoint (rng->Coords, 0, &x, &y);
+		x1 = x;
+		y1 = y;
+		gaiaGetPoint (rng->Coords, 1, &x, &y);
+		x2 = x;
+		y2 = y;
+		gaiaGetPoint (rng->Coords, 2, &x, &y);
+		x3 = x;
+		y3 = y;
+	    }
+
+	  segm = gaiaAllocGeomColl ();
+	  ln = gaiaAddLinestringToGeomColl (segm, 2);
+	  gaiaSetPoint (ln->Coords, 0, x1, y1);
+	  gaiaSetPoint (ln->Coords, 1, x2, y2);
+	  gaiaGeomCollLength (segm, &length);
+	  gaiaFreeGeomColl (segm);
+	  concave_hull_stats (&concave, length);
+
+	  segm = gaiaAllocGeomColl ();
+	  ln = gaiaAddLinestringToGeomColl (segm, 2);
+	  gaiaSetPoint (ln->Coords, 0, x2, y2);
+	  gaiaSetPoint (ln->Coords, 1, x3, y3);
+	  gaiaGeomCollLength (segm, &length);
+	  gaiaFreeGeomColl (segm);
+	  concave_hull_stats (&concave, length);
+
+	  segm = gaiaAllocGeomColl ();
+	  ln = gaiaAddLinestringToGeomColl (segm, 2);
+	  gaiaSetPoint (ln->Coords, 0, x3, y3);
+	  gaiaSetPoint (ln->Coords, 1, x1, y1);
+	  gaiaGeomCollLength (segm, &length);
+	  gaiaFreeGeomColl (segm);
+	  concave_hull_stats (&concave, length);
+
+	  pg = pg->Next;
+      }
+
+    std_dev = sqrt (concave.quot / concave.count);
+
+/* creating the Geometry representing the Concave Hull */
+    if (dimension_model == GAIA_XY_Z)
+	result = gaiaAllocGeomCollXYZ ();
+    else if (dimension_model == GAIA_XY_M)
+	result = gaiaAllocGeomCollXYM ();
+    else if (dimension_model == GAIA_XY_Z_M)
+	result = gaiaAllocGeomCollXYZM ();
+    else
+	result = gaiaAllocGeomColl ();
+
+    count = 0;
+    pg = first;
+    while (pg)
+      {
+	  /* selecting triangles to be inserted */
+	  rng = pg->Exterior;
+	  if (pg->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (rng->Coords, 0, &x, &y, &z);
+		x1 = x;
+		y1 = y;
+		gaiaGetPointXYZ (rng->Coords, 1, &x, &y, &z);
+		x2 = x;
+		y2 = y;
+		gaiaGetPointXYZ (rng->Coords, 2, &x, &y, &z);
+		x3 = x;
+		y3 = y;
+	    }
+	  else if (pg->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (rng->Coords, 0, &x, &y, &m);
+		x1 = x;
+		y1 = y;
+		gaiaGetPointXYM (rng->Coords, 1, &x, &y, &m);
+		x2 = x;
+		y2 = y;
+		gaiaGetPointXYM (rng->Coords, 2, &x, &y, &m);
+		x3 = x;
+		y3 = y;
+	    }
+	  else if (pg->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (rng->Coords, 0, &x, &y, &z, &m);
+		x1 = x;
+		y1 = y;
+		gaiaGetPointXYZM (rng->Coords, 1, &x, &y, &z, &m);
+		x2 = x;
+		y2 = y;
+		gaiaGetPointXYZM (rng->Coords, 2, &x, &y, &z, &m);
+		x3 = x;
+		y3 = y;
+	    }
+	  else
+	    {
+		gaiaGetPoint (rng->Coords, 0, &x, &y);
+		x1 = x;
+		y1 = y;
+		gaiaGetPoint (rng->Coords, 1, &x, &y);
+		x2 = x;
+		y2 = y;
+		gaiaGetPoint (rng->Coords, 2, &x, &y);
+		x3 = x;
+		y3 = y;
+	    }
+
+	  if (concave_hull_filter (x1, y1, x2, y2, x3, y3, std_dev * factor))
+	    {
+		/* inserting this triangle into the Concave Hull */
+		pg_out = gaiaAddPolygonToGeomColl (result, 4, 0);
+		rng_out = pg_out->Exterior;
+		if (pg->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (rng->Coords, 0, &x, &y, &z);
+		      gaiaSetPointXYZ (rng_out->Coords, 0, x, y, z);
+		      gaiaGetPointXYZ (rng->Coords, 1, &x, &y, &z);
+		      gaiaSetPointXYZ (rng_out->Coords, 1, x, y, z);
+		      gaiaGetPointXYZ (rng->Coords, 2, &x, &y, &z);
+		      gaiaSetPointXYZ (rng_out->Coords, 2, x, y, z);
+		      gaiaGetPointXYZ (rng->Coords, 3, &x, &y, &z);
+		      gaiaSetPointXYZ (rng_out->Coords, 3, x, y, z);
+		  }
+		else if (pg->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (rng->Coords, 0, &x, &y, &m);
+		      gaiaSetPointXYM (rng_out->Coords, 0, x, y, m);
+		      gaiaGetPointXYM (rng->Coords, 1, &x, &y, &m);
+		      gaiaSetPointXYM (rng_out->Coords, 1, x, y, m);
+		      gaiaGetPointXYM (rng->Coords, 2, &x, &y, &m);
+		      gaiaSetPointXYM (rng_out->Coords, 2, x, y, m);
+		      gaiaGetPointXYM (rng->Coords, 3, &x, &y, &m);
+		      gaiaSetPointXYM (rng_out->Coords, 3, x, y, m);
+		  }
+		else if (pg->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (rng->Coords, 0, &x, &y, &z, &m);
+		      gaiaSetPointXYZM (rng_out->Coords, 0, x, y, z, m);
+		      gaiaGetPointXYZM (rng->Coords, 1, &x, &y, &z, &m);
+		      gaiaSetPointXYZM (rng_out->Coords, 1, x, y, z, m);
+		      gaiaGetPointXYZM (rng->Coords, 2, &x, &y, &z, &m);
+		      gaiaSetPointXYZM (rng_out->Coords, 2, x, y, z, m);
+		      gaiaGetPointXYZM (rng->Coords, 3, &x, &y, &z, &m);
+		      gaiaSetPointXYZM (rng_out->Coords, 3, x, y, z, m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (rng->Coords, 0, &x, &y);
+		      gaiaSetPoint (rng_out->Coords, 0, x, y);
+		      gaiaGetPoint (rng->Coords, 1, &x, &y);
+		      gaiaSetPoint (rng_out->Coords, 1, x, y);
+		      gaiaGetPoint (rng->Coords, 2, &x, &y);
+		      gaiaSetPoint (rng_out->Coords, 2, x, y);
+		      gaiaGetPoint (rng->Coords, 3, &x, &y);
+		      gaiaSetPoint (rng_out->Coords, 3, x, y);
+		  }
+		count++;
+	    }
+
+	  pg = pg->Next;
+      }
+
+    if (count == 0)
+      {
+	  gaiaFreeGeomColl (result);
+	  return NULL;
+      }
+
+/* merging all triangles into the Concave Hull */
+    segm = result;
+    result = gaiaUnaryUnion (segm);
+    gaiaFreeGeomColl (segm);
+    if (!result)
+	return NULL;
+    if (result->FirstPolygon == NULL)
+      {
+	  gaiaFreeGeomColl (result);
+	  return NULL;
+      }
+    if (allow_holes)
+	return result;
+
+/* suppressing any interior hole */
+    segm = result;
+    result = concave_hull_no_holes (segm);
+    gaiaFreeGeomColl (segm);
+    if (!result)
+	return NULL;
+    if (result->FirstPolygon == NULL)
+      {
+	  gaiaFreeGeomColl (result);
+	  return NULL;
+      }
+    return result;
 }
 
 #endif /* end GEOS experimental features */

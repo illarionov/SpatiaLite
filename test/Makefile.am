@@ -2418,6 +2418,25 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_geostrunk_tests/voronoj18.testcase \
 	sql_stmt_geostrunk_tests/voronoj19.testcase \
 	sql_stmt_geostrunk_tests/voronoj20.testcase \
+	sql_stmt_geostrunk_tests/concave_hull1.testcase \
+	sql_stmt_geostrunk_tests/concave_hull2.testcase \
+	sql_stmt_geostrunk_tests/concave_hull3.testcase \
+	sql_stmt_geostrunk_tests/concave_hull4.testcase \
+	sql_stmt_geostrunk_tests/concave_hull5.testcase \
+	sql_stmt_geostrunk_tests/concave_hull6.testcase \
+	sql_stmt_geostrunk_tests/concave_hull7.testcase \
+	sql_stmt_geostrunk_tests/concave_hull8.testcase \
+	sql_stmt_geostrunk_tests/concave_hull9.testcase \
+	sql_stmt_geostrunk_tests/concave_hull10.testcase \
+	sql_stmt_geostrunk_tests/concave_hull11.testcase \
+	sql_stmt_geostrunk_tests/concave_hull12.testcase \
+	sql_stmt_geostrunk_tests/concave_hull13.testcase \
+	sql_stmt_geostrunk_tests/concave_hull14.testcase \
+	sql_stmt_geostrunk_tests/concave_hull15.testcase \
+	sql_stmt_geostrunk_tests/concave_hull16.testcase \
+	sql_stmt_geostrunk_tests/concave_hull17.testcase \
+	sql_stmt_geostrunk_tests/concave_hull18.testcase \
+	sql_stmt_geostrunk_tests/concave_hull19.testcase \
 	sql_stmt_tests/uncompressgeom1.testcase \
 	sql_stmt_tests/uncompressgeom2.testcase \
 	sql_stmt_tests/uncompressgeom3.testcase \

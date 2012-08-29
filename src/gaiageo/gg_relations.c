@@ -4073,7 +4073,7 @@ gaiaVoronojDiagram (gaiaGeomCollPtr geom, double extra_frame_size,
     while (pg)
       {
 	  /* counting how many triangles are in Delaunay */
-	  if (voronoj_check (pg))
+	  if (delaunay_triangle_check (pg))
 	      pgs++;
 	  else
 	      errs++;
@@ -4106,6 +4106,66 @@ gaiaVoronojDiagram (gaiaGeomCollPtr geom, double extra_frame_size,
 	result->DeclaredType = GAIA_MULTILINESTRING;
     else
 	result->DeclaredType = GAIA_MULTIPOLYGON;
+    return result;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaConcaveHull (gaiaGeomCollPtr geom, double factor, double tolerance,
+		 int allow_holes)
+{
+/* Concave Hull */
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr result;
+    gaiaGeomCollPtr concave_hull;
+    gaiaPolygonPtr pg;
+    int pgs = 0;
+    int errs = 0;
+    void *voronoj;
+    if (!geom)
+	return NULL;
+    g1 = gaiaToGeos (geom);
+    g2 = GEOSDelaunayTriangulation (g1, tolerance, 0);
+    GEOSGeom_destroy (g1);
+    if (!g2)
+	return NULL;
+    if (geom->DimensionModel == GAIA_XY_Z)
+	result = gaiaFromGeos_XYZ (g2);
+    else if (geom->DimensionModel == GAIA_XY_M)
+	result = gaiaFromGeos_XYM (g2);
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaFromGeos_XYZM (g2);
+    else
+	result = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
+    if (result == NULL)
+	return NULL;
+    pg = result->FirstPolygon;
+    while (pg)
+      {
+	  /* counting how many triangles are in Delaunay */
+	  if (delaunay_triangle_check (pg))
+	      pgs++;
+	  else
+	      errs++;
+	  pg = pg->Next;
+      }
+    if (pgs == 0 || errs)
+      {
+	  gaiaFreeGeomColl (result);
+	  return NULL;
+      }
+
+/* building the Concave Hull from Delaunay */
+    concave_hull =
+	concave_hull_build (result->FirstPolygon, geom->DimensionModel, factor,
+			    allow_holes);
+    gaiaFreeGeomColl (result);
+    if (!concave_hull)
+	return NULL;
+    result = concave_hull;
+
+    result->Srid = geom->Srid;
     return result;
 }
 

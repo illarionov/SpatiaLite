@@ -18890,8 +18890,9 @@ fnct_DelaunayTriangulation (sqlite3_context * context, int argc,
 			    sqlite3_value ** argv)
 {
 /* SQL function:
-/ DelaunayTriangulation(BLOBencoded geometry [ , boolean onlyEdges ] 
-/    [ , double tolerance ] )
+/ DelaunayTriangulation(BLOBencoded geometry)
+/ DelaunayTriangulation(BLOBencoded geometry, boolean onlyEdges)
+/ DelaunayTriangulation(BLOBencoded geometry, boolean onlyEdges, double tolerance)
 /
 / Attempts to build a Delaunay Triangulation using all points/vertices 
 / found in the input geometry.
@@ -18963,8 +18964,12 @@ static void
 fnct_VoronojDiagram (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ VoronojDiagram(BLOBencoded geometry [ , boolean onlyEdges ] 
-/    [ , double extra_frame_size ] [ , double tolerance ] )
+/ VoronojDiagram(BLOBencoded geometry)
+/ VoronojDiagram(BLOBencoded geometry, boolean onlyEdges)
+/ VoronojDiagram(BLOBencoded geometry, boolean onlyEdges, 
+/        double extra_frame_size)
+/ VoronojDiagram(BLOBencoded geometry, boolean onlyEdges,
+/        double extra_frame_size, double tolerance)
 /
 / Attempts to build a Voronoj Diagram using all points/vertices 
 / found in the input geometry.
@@ -19033,6 +19038,98 @@ fnct_VoronojDiagram (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  result =
 	      gaiaVoronojDiagram (geo, extra_frame_size, tolerance, only_edges);
+	  if (result == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+}
+
+static void
+fnct_ConcaveHull (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ConcaveHull(BLOBencoded geometry)
+/ ConcaveHull(BLOBencoded geometry, double factor)
+/ ConcaveHull(BLOBencoded geometry, double factor, boolean allow_holes)
+/ ConcaveHull(BLOBencoded geometry, double factor,
+/        boolean allow_holes, double tolerance)
+/
+/ Attempts to build a ConcaveHull using all points/vertices 
+/ found in the input geometry.
+/ NULL is returned for invalid arguments
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr result;
+    int int_value;
+    double tolerance = 0.0;
+    double factor = 3.0;
+    int allow_holes = 0;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	      factor = sqlite3_value_double (argv[1]);
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[1]);
+		factor = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc >= 3)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	      allow_holes = sqlite3_value_int (argv[2]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 4)
+      {
+	  if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
+	      tolerance = sqlite3_value_double (argv[3]);
+	  else if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	    {
+		int_value = sqlite3_value_int (argv[3]);
+		tolerance = int_value;
+	    }
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geo == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  result = gaiaConcaveHull (geo, factor, tolerance, allow_holes);
 	  if (result == NULL)
 	      sqlite3_result_null (context);
 	  else
@@ -22233,6 +22330,22 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_VoronojDiagram, 0, 0);
     sqlite3_create_function (db, "ST_VoronojDiagram", 4, SQLITE_ANY, 0,
 			     fnct_VoronojDiagram, 0, 0);
+    sqlite3_create_function (db, "ConcaveHull", 1, SQLITE_ANY, 0,
+			     fnct_ConcaveHull, 0, 0);
+    sqlite3_create_function (db, "ConcaveHull", 2, SQLITE_ANY, 0,
+			     fnct_ConcaveHull, 0, 0);
+    sqlite3_create_function (db, "ConcaveHull", 3, SQLITE_ANY, 0,
+			     fnct_ConcaveHull, 0, 0);
+    sqlite3_create_function (db, "ConcaveHull", 4, SQLITE_ANY, 0,
+			     fnct_ConcaveHull, 0, 0);
+    sqlite3_create_function (db, "ST_ConcaveHull", 1, SQLITE_ANY, 0,
+			     fnct_ConcaveHull, 0, 0);
+    sqlite3_create_function (db, "ST_ConcaveHull", 2, SQLITE_ANY, 0,
+			     fnct_ConcaveHull, 0, 0);
+    sqlite3_create_function (db, "ST_ConcaveHull", 3, SQLITE_ANY, 0,
+			     fnct_ConcaveHull, 0, 0);
+    sqlite3_create_function (db, "ST_ConcaveHull", 4, SQLITE_ANY, 0,
+			     fnct_ConcaveHull, 0, 0);
 
 #endif /* end GEOS experimental features */
 

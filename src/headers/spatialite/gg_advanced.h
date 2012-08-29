@@ -1064,7 +1064,7 @@ extern "C"
  \return the pointer to newly created Geometry object: NULL on failure.
  \n NULL will be returned if any argument is invalid.
 
- \sa gaiaFreeGeomColl, gaiaVoronojDiagram
+ \sa gaiaFreeGeomColl, gaiaVoronojDiagram, gaiaConcaveHull
 
  \note you are responsible to destroy (before or after) any allocated Geometry,
  this including any Geometry returned by gaiaDelaunayTriangulation()
@@ -1099,6 +1099,38 @@ extern "C"
 							double extra_frame_size,
 							double tolerance,
 							int only_edges);
+
+/**
+ Concave Hull
+                                            
+ \param geom pointer to input Geometry object.
+ \param factor multiplier used for filtering Delaunay triangles: please read the note.
+ \param tolerance optional snapping tolerance.
+ \param allow_hows if FALSE any interior hole will be suppressed.
+ 
+ \return the pointer to newly created Geometry object (always of the Polygon type): 
+  NULL on failure.
+ \n NULL will be returned if any argument is invalid.
+
+ \sa gaiaFreeGeomColl, gaiaDelaunayTriangulation
+
+ \note This function will first create the Delauany Triangulation corresponding
+  to input Geometry, determining at the same time the \b standard \b deviation
+  for all edge's lengths.
+ \n Then in a second pass all Delaunay's triangles will be filtered, and all
+ triangles presenting at least one edge longer than \b standard \b deviation
+ \b * \b factor will be discarded. 
+ \n All filtered triangles will then be merged altogether so to create the Concave Hull.
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaConcaveHull()
+
+ \remark \b GEOS-TRUNK support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaConcaveHull (gaiaGeomCollPtr geom,
+						     double factor,
+						     double tolerance,
+						     int allow_holes);
 
 #endif				/* end GEOS experimental features */
 

@@ -111,15 +111,20 @@ extern "C"
 
     SPATIALITE_PRIVATE int checkSpatialMetaData (const void *sqlite);
 
-    SPATIALITE_PRIVATE int voronoj_check (void *pg);
+    SPATIALITE_PRIVATE int delaunay_triangle_check (void *pg);
 
     SPATIALITE_PRIVATE void *voronoj_build (int pgs, void *first,
 					    double extra_frame_size);
 
     SPATIALITE_PRIVATE void *voronoj_export (void *voronoj, void *result,
-					    int only_edges);
+					     int only_edges);
 
     SPATIALITE_PRIVATE void voronoj_free (void *voronoj);
+
+    SPATIALITE_PRIVATE void *concave_hull_build (void *first,
+						 int dimension_model,
+						 double factor,
+						 int allow_holes);
 
 #ifdef __cplusplus
 }
