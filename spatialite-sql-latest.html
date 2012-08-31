@@ -39,6 +39,8 @@
 			<li><a href="#p13">SQL functions for distance relationships</a></li>
 			<li><a href="#p14">SQL functions that implement spatial operators</a></li>
 			<li><a href="#p14b">SQL functions that implement spatial operators [GEOS advanced features]</a></li>
+			<li><a href="#p14c">SQL functions that implement spatial operators [GEOS experimental features]</a></li>
+			<li><a href="#p14d">SQL functions that implement spatial operators [LWGEOM features]</a></li>
 			<li><a href="#p15">SQL functions for coordinate transformations</a></li>
 			<li><a href="#p16">SQL functions for Spatial-MetaData and Spatial-Index handling</a></li>
 			<li><a href="#p16fdo">SQL functions implementing FDO/OGR compatibility</a></li>
@@ -79,13 +81,19 @@
 				<td colspan="3">TRUE if the underlaying library was built enabling <b>GEOS</b></td></tr>
 			<tr><td><b>HasGeosAdvanced</b></td>
 				<td>HasGeosAdvanced( void ) : <i>Boolean</i></td>
-				<td colspan="3">TRUE if the underlaying library was built enabling <b>GEOS_ADVANCED</b></td></tr>
+				<td colspan="3">TRUE if the underlaying library was built enabling <b>GEOSADVANCED</b></td></tr>
+			<tr><td><b>HasGeosTrunk</b></td>
+				<td>HasGeosTrunk( void ) : <i>Boolean</i></td>
+				<td colspan="3">TRUE if the underlaying library was built enabling <b>GEOSTRUNK</b></td></tr>
+			<tr><td><b>HasLwGeom</b></td>
+				<td>HasLwGeom( void ) : <i>Boolean</i></td>
+				<td colspan="3">TRUE if the underlaying library was built enabling <b>LWGEOM</b></td></tr>
 			<tr><td><b>HasEpsg</b></td>
 				<td>HasEpsg( void ) : <i>Boolean</i></td>
 				<td colspan="3">TRUE if the underlaying library was built enabling <b>EPSG</b></td></tr>
 			<tr><td><b>HasFreeXL</b></td>
 				<td>HasFreeXL( void ) : <i>Boolean</i></td>
-				<td colspan="3">TRUE if the underlaying library was built enabling <b>FreeXL</b></td></tr>
+				<td colspan="3">TRUE if the underlaying library was built enabling <b>FREEXL</b></td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
 				<h3><a name="math">SQL math functions</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
@@ -384,6 +392,33 @@
 				<td>a Linestring Geometry will be returned connecting all the input Points (accordingly to input sequence)<br>
 				<b><u>aggregate function</u></b><hr>
 				NULL will be returned if any error is encountered</td></tr>
+			<tr><td><b>SquareGrid</b></td>
+				<td>SquareGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i><hr>
+                                    ST_SquareGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a grid of square cells (having the edge length of <i>size</i>) precisely covering the input Geometry.<br>
+                                The returned Geometry will usually be of the <b>MultiPolygon</b> type (a collection of Squares), but will be a <b>MultiLinestring</b> if the optional <b>edges_only</b> argument is set to <b>TRUE</b><br>
+                                If the optional <b>origin</b> argument (expected to be a Point) is not specified then the (0,0) grid origin will be assumed by default.<hr>
+				NULL will be returned if any error is encountered.</td></tr>
+			<tr><td><b>TriangularGrid</b></td>
+				<td>TriangularGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i><hr>
+                                    ST_TriangularGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a grid of triangular cells (having the edge length of <i>size</i>) precisely covering the input Geometry.<br>
+                                The returned Geometry will usually be of the <b>MultiPolygon</b> type (a collection of Squares), but will be a <b>MultiLinestring</b> if the optional <b>edges_only</b> argument is set to <b>TRUE</b><br>
+                                If the optional <b>origin</b> argument (expected to be a Point) is not specified then the (0,0) grid origin will be assumed by default.<hr>
+				NULL will be returned if any error is encountered.</td></tr>
+			<tr><td><b>HexagonalGrid</b></td>
+				<td>HexagonalGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i><hr>
+                                    ST_HexagonalGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>return a grid of hexagonal cells (having the edge length of <i>size</i>) precisely covering the input Geometry.<br>
+                                The returned Geometry will usually be of the <b>MultiPolygon</b> type (a collection of Squares), but will be a <b>MultiLinestring</b> if the optional <b>edges_only</b> argument is set to <b>TRUE</b><br>
+                                If the optional <b>origin</b> argument (expected to be a Point) is not specified then the (0,0) grid origin will be assumed by default.<hr>
+				NULL will be returned if any error is encountered.</td></tr>
 			<tr><td><b>BuildMbr</b></td>
 				<td>BuildMbr( x1 <i>Double precision</i> , y1 <i>Double precision</i> ,
 				x2 <i>Double precision</i> , y2 <i>Double precision</i> [ , SRID <i>Integer</i>] ) : <i>Geometry</i></td>
@@ -1679,6 +1714,122 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 				<td>Return a derived geometry collection value with elements that match the specified range of measures.<br>
 				NULL will be returned if any error is encountered (or when no element corresponding to the given range of measures is found).<br>
                                 <u>Please note</u>: NULL will be returned if geom doesn't contain M-dimension, or if geom contains a Polygon, or if geom is a GeometryCollection.</td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
+				<h3><a name="p14c">SQL functions that implement spatial operators<br>[GEOS trunk features]</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th bgcolor="#d0d0d0">OGC<br>defined</th>
+				<th bgcolor="#d0d0d0">required<br>module</th>
+				<th bgcolor="#d0d0d0">Summary</th></tr>
+			<tr><td><b>DelaunayTriangulation</b></td>
+				<td>DelaunayTriangulation( geom <i>Geometry</i> [ , edges_only <i>Boolean</i> [ , tolerance <i>Double precision</i> ] ] ) : <i>Geometry</i><hr>
+					ST_DelaunayTriangulation( geom <i>Geometry</i> [ , edges_only <i>Boolean</i> [ , tolerance <i>Double precision</i> ] ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f07070">GEOS-trunk</td>
+				<td>return a geometric object representing the Delaunay Triangulation corresponding to the input Geometry<hr>
+					The input Geometry could have any arbitrary type; eventually all Linestring's / Polygon's vertices will be dissolved into Points, so to implicitly always get a MultiPoint.<br>
+					The returned Geometry will usually be of the <b>MultiPolygon</b> type (a collection of Triangles), but will be a <b>MultiLinestring</b> if the optional <b>edges_only</b> argument is set to <b>TRUE</b><br>
+                                        The optional argument <b>tolerance</b> is intended to normalize the input Geometry, suppressing repeated (or too close) Points.<br>
+					NULL is returned on failure.</td></tr>
+			<tr><td><b>VoronojDiagram</b></td>
+				<td>VoronojDiagram( geom <i>Geometry</i> [ , edges_only <i>Boolean</i> [ , frame_extra_size <i>Double precision</i> [ , tolerance <i>Double precision</i> ] ] ] ) : <i>Geometry</i><hr>
+					ST_VoronojDiagram( geom <i>Geometry</i> [ , edges_only <i>Boolean</i>  [ , frame_extra_size <i>Double precision</i> [ , tolerance <i>Double precision</i> ] ] ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f07070">GEOS-trunk</td>
+				<td>return a geometric object representing the Voronoj Diagram corresponding to the input Geometry<hr>
+					The input Geometry could have any arbitrary type; eventually all Linestring's / Polygon's vertices will be dissolved into Points, so to implicitly always get a MultiPoint.<br>
+					The returned Geometry will usually be of the <b>MultiPolygon</b> type, but will be a <b>MultiLinestring</b> if the optional <b>edges_only</b> argument is set to <b>TRUE</b><br>
+                                        The optional argument <b>extra_frame_size</b> allows to arbitrarily set the <i>percent</i> extension of the bounding frame: the default value is <b>5%</b>.<br>
+                                        The optional argument <b>tolerance</b> is intended to normalize the input Geometry, suppressing repeated (or too close) Points.<br>
+					NULL is returned on failure.</td></tr>
+			<tr><td><b>ConcaveHull</b></td>
+				<td>ConcaveHull( geom <i>Geometry</i> [ , factor <i>Double precision</i> [ , allow_holes <i>Boolean</i> [ , tolerance <i>Double precision</i> ] ] ] ) : <i>Geometry</i><hr>
+					ST_ConcaveHull( geom <i>Geometry</i> [ , factor <i>Double precision</i> [ , allow_holes <i>Boolean</i> [ , tolerance <i>Double precision</i> ] ] ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f07070">GEOS-trunk</td>
+				<td>return a geometric object representing the ConcaveHull corresponding to the input Geometry<hr>
+					The input Geometry could have any arbitrary type; eventually all Linestring's / Polygon's vertices will be dissolved into Points, so to implicitly always get a MultiPoint.<br>
+					The returned Geometry will always be of the <b>Polygon</b> or <b>MultiPolygon</b> type.<br>
+                                        The default <b>factor</b> applies a <b>3&sigma;</b> filtering; by declaring some <i>lower</i> factor you can get a more aggressive filtering effect.<br>
+                                        By setting the optional <b>allow_holes</b> argument to <b>TRUE</b> all <i>interior holes</i> will be preserved.<br>
+                                        The optional argument <b>tolerance</b> is intended to normalize the input Geometry, suppressing repeated (or too close) Points.<br>
+					NULL is returned on failure.</td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
+				<h3><a name="p14d">SQL functions that implement spatial operators<br>[LWGEOM features]</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th bgcolor="#d0d0d0">OGC<br>defined</th>
+				<th bgcolor="#d0d0d0">required<br>module</th>
+				<th bgcolor="#d0d0d0">Summary</th></tr>
+			<tr><td><b>MakeValid</b></td>
+				<td>MakeValid( geom <i>Geometry</i> ) : <i>Geometry</i><hr>
+					ST_MakeValid( geom <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>return a geometric object representing the <i>repaired</i> version of the input Geometry.<br>
+                                        If the input Geometry was already valid, then it will be returned exactly as it was.<br>
+					NULL is returned on failure.</td></tr>
+			<tr><td><b>MakeValidDiscarded</b></td>
+				<td>MakeValidDiscarded( geom <i>Geometry</i> ) : <i>Geometry</i><hr>
+					ST_MakeValidDiscarded( geom <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>return a geometric object containing all elements that would be eventually <i>discarded</i> by ST_MakeValid() while validating the same input Geometry.<br>
+					NULL is returned on failure, or if no <i>discarded</i> item exists.</td></tr>
+			<tr><td><b>Segmentize</b></td>
+				<td>Segmentize( geom <i>Geometry</i>, dist <i>Double precision</i>  ) : <i>Geometry</i><hr>
+					ST_Segmentize( geom <i>Geometry</i> , dist <i>Double precision</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>return a new Geometry corresponding to the input Geometry; as much Linestring / Ring vertices 
+                                        as required will be eventually interpolated so to ensure that no segment will be longer than <i>dist</i>.<br>
+					NULL is returned on failure.</td></tr>
+			<tr><td><b>Split</b></td>
+				<td>Split( geom <i>Geometry</i>, blade <i>Geometry</i>  ) : <i>Geometry</i><hr>
+					ST_Split( geom <i>Geometry</i> , blade <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>return a new Geometry collecting all items resulting by splitting the input Geometry by the <i>blade</i>.<br>
+					NULL is returned on failure.</td></tr>
+			<tr><td><b>SplitLeft</b></td>
+				<td>SplitLeft( geom <i>Geometry</i>, blade <i>Geometry</i>  ) : <i>Geometry</i><hr>
+					ST_SplitLeft( geom <i>Geometry</i> , blade <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>return a new Geometry collecting all items resulting by splitting the input Geometry by the <i>blade</i> and falling on the <i>left side</i>.<br>
+                                        All items not affected by the split operation (i.e. not intersecting the <i>blade</i>) will be returned into the <i>left</i> collection.<br>
+					NULL is returned on failure.</td></tr>
+			<tr><td><b>SplitRight</b></td>
+				<td>SplitRight( geom <i>Geometry</i>, blade <i>Geometry</i>  ) : <i>Geometry</i><hr>
+					ST_SplitRight( geom <i>Geometry</i> , blade <i>Geometry</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>return a new Geometry collecting all items resulting by splitting the input Geometry by the <i>blade</i> and falling on the <i>right side</i>.<br>
+					NULL is returned on failure (or if the <i>right side</i> is empty).</td></tr>
+			<tr><td><b>Azimuth</b></td>
+				<td>Azimuth( pt1 <i>Geometry</i>, pt2 <i>Geometry</i>  ) : <i>Double precision</i><hr>
+					ST_Azimuth( pt1 <i>Geometry</i> , pt2 <i>Geometry</i> ) : <i>Double precision</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>return the angle (in radians) from the horizontal of the vector defined by <b>pt1</b> and <b>pt2</b>.<br>
+                                        Both <b>pt1</b> and <b>pt2</b> are expected to be simple Points.<br>
+					NULL is returned on failure.<hr>
+                                        On the clock: 12=0; 3=PI/2; 6=PI; 9=3PI/2</td></tr>
+			<tr><td><b>SnapToGrid</b></td>
+				<td>SnapToGrid( geom <i>Geometry</i> , size <i>Double precision</i>  ) : <i>Geometry</i><br>
+				        SnapToGrid( geom <i>Geometry</i> , size_x <i>Double precision</i> , size_y <i>Double precision</i> ) : <i>Geometry</i><br>
+				        SnapToGrid( geom <i>Geometry</i> , origin_x <i>Double precision</i> , origin_y <i>Double precision</i> , size_x <i>Double precision</i> , size_y <i>Double precision</i> ) : <i>Geometry</i><br>
+                                        SnapToGrid( geom <i>Geometry</i> , origin <i>Geometry</i> , size_x <i>Double precision</i> , size_y <i>Double precision</i> , size_z <i>Double precision</i> , size_m <i>Double precision</i> ) : <i>Geometry</i><hr>
+					ST_SnapToGrid( geom <i>Geometry</i> , size <i>Double precision</i>  ) : <i>Geometry</i><br>
+					ST_SnapToGrid( geom <i>Geometry</i> , size_x <i>Double precision</i> , size_y <i>Double precision</i> )  ) : <i>Geometry</i><br>
+                                        ST_SnapToGrid( geom <i>Geometry</i> , origin_x <i>Double precision</i> , origin_y <i>Double precision</i> , size_x <i>Double precision</i> , size_y <i>Double precision</i> )  ) : <i>Geometry</i><br>
+                                        ST_SnapToGrid( geom <i>Geometry</i> , origin <i>Geometry</i> , size_x <i>Double precision</i> , size_y <i>Double precision</i> , size_z <i>Double precision</i> , size_m <i>Double precision</i> ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="##d0f0d0">base</td>
+				<td>return a new Geometry corresponding to the input Geometry; all points and vertices will be snapped to the grid defined by its origin and size(s).<br>
+                                        Removes all consecutive points falling on the same cell.<br>
+                                        All collapsed geometries will be stripped from the returned Geometry.<br>
+					NULL is returned on failure.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p15">SQL functions for coordinate transformations</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>

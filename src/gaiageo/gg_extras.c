@@ -1056,15 +1056,17 @@ gaiaHexagonalGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
     gaiaLinestringPtr ln;
     gaiaGeomCollPtr result = NULL;
     gaiaGeomCollPtr item = NULL;
+    double shift;
 
     if (size <= 0.0)
 	return NULL;
+    shift = size * sin (3.14159265358979323846 / 3.0);
 
     result = gaiaAllocGeomColl ();
     result->Srid = geom->Srid;
     get_grid_bbox (geom, &min_x, &min_y, &max_x, &max_y);
     get_grid_base (min_x, min_y, origin_x, origin_y, size, &base_x, &base_y);
-    while (base_y < max_y)
+    while ((base_y - shift) < max_y)
       {
 	  /* looping on grid rows */
 	  if (odd_even)
@@ -1073,13 +1075,13 @@ gaiaHexagonalGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
 	      x1 = base_x;
 	  y1 = base_y;
 	  x2 = x1 + (size / 2.0);
-	  y2 = y1 - (size * sin (3.14159265358979323846 / 3.0));
+	  y2 = y1 - shift;
 	  x3 = x2 + size;
 	  y3 = y2;
 	  x4 = x1 + (size * 2.0);
 	  y4 = y1;
 	  x5 = x3;
-	  y5 = y1 + (size * sin (3.14159265358979323846 / 3.0));
+	  y5 = y1 + shift;
 	  x6 = x2;
 	  y6 = y5;
 	  while (x1 < max_x)

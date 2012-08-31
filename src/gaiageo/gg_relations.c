@@ -4121,7 +4121,6 @@ gaiaConcaveHull (gaiaGeomCollPtr geom, double factor, double tolerance,
     gaiaPolygonPtr pg;
     int pgs = 0;
     int errs = 0;
-    void *voronoj;
     if (!geom)
 	return NULL;
     g1 = gaiaToGeos (geom);

@@ -848,7 +848,6 @@ update_field_infos_int_minmax (struct field_container_infos *infos,
 			       const char *col_name, int int_min, int int_max)
 {
 /* updating the field container infos - Int MinMax */
-    int len;
     struct field_item_infos *p = infos->first;
     while (p)
       {
@@ -869,7 +868,6 @@ update_field_infos_double_minmax (struct field_container_infos *infos,
 				  double dbl_max)
 {
 /* updating the field container infos - Double MinMax */
-    int len;
     struct field_item_infos *p = infos->first;
     while (p)
       {
@@ -1189,8 +1187,8 @@ do_update_virts_field_infos (sqlite3 * sqlite, const char *table,
 }
 
 static int
-do_compute_minmax (sqlite3 * sqlite, const char *table, const char *column,
-		   struct field_container_infos *infos, int stat_type)
+do_compute_minmax (sqlite3 * sqlite, const char *table,
+		   struct field_container_infos *infos)
 {
 /* Pass2 - computing Integer / Double min/max ranges */
     char xtable[1024];
@@ -1406,7 +1404,7 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
 /* Pass-2: computing INTEGER and DOUBLE min/max ranges */
     if (!error)
       {
-	  if (!do_compute_minmax (sqlite, table, column, &infos, stat_type))
+	  if (!do_compute_minmax (sqlite, table, &infos))
 	      error = 1;
       }
 

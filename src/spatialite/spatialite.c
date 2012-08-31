@@ -247,6 +247,22 @@ fnct_has_geos_trunk (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_has_lwgeom (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ HasLwGeom()
+/
+/ return 1 if built including LWGEOM; otherwise 0
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+#ifdef ENABLE_LWGEOM		/* LWGEOM is supported */
+    sqlite3_result_int (context, 1);
+#else
+    sqlite3_result_int (context, 0);
+#endif
+}
+
+static void
 fnct_has_iconv (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -13329,7 +13345,7 @@ fnct_SquareGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / ST_SquareGrid(BLOBencoded geom, double size, boolean edges_only, BLOBencoded origin)
 /
 / Builds a regular grid (Square cells) covering the geom.
-/ each cell has the side as defined by the size argument
+/ each cell has the edges's length as defined by the size argument
 / an arbitrary origin is supported (0,0 is assumed by default)
 / return NULL if any error is encountered
 */
@@ -13463,7 +13479,7 @@ fnct_TriangularGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / ST_TriangularGrid(BLOBencoded geom, double size, boolean edges_only, BLOBencoded origin)
 /
 / Builds a regular grid (Triangular cells) covering the geom.
-/ each cell has the side as defined by the size argument
+/ each cell has the edge's length as defined by the size argument
 / an arbitrary origin is supported (0,0 is assumed by default)
 / return NULL if any error is encountered
 */
@@ -13598,7 +13614,7 @@ fnct_HexagonalGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / ST_HexagonalGrid(BLOBencoded geom, double size, boolean edges_only, BLOBencoded origin)
 /
 / Builds a regular grid (Hexagonal cells) covering the geom.
-/ each cell has the side as defined by the size argument
+/ each cell has the edges's length as defined by the size argument
 / an arbitrary origin is supported (0,0 is assumed by default)
 / return NULL if any error is encountered
 */
@@ -21190,6 +21206,8 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_has_geos_advanced, 0, 0);
     sqlite3_create_function (db, "HasGeosTrunk", 0, SQLITE_ANY, 0,
 			     fnct_has_geos_trunk, 0, 0);
+    sqlite3_create_function (db, "HasLwGeom", 0, SQLITE_ANY, 0,
+			     fnct_has_lwgeom, 0, 0);
     sqlite3_create_function (db, "HasMathSql", 0, SQLITE_ANY, 0,
 			     fnct_has_math_sql, 0, 0);
     sqlite3_create_function (db, "HasGeoCallbacks", 0, SQLITE_ANY, 0,
