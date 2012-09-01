@@ -1929,12 +1929,6 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     strcat (sql, "(f_table_name, f_geometry_column),\n");
     strcat (sql, "CONSTRAINT fk_gc_srs FOREIGN KEY ");
     strcat (sql, "(srid) REFERENCES spatial_ref_sys (srid),\n");
-    strcat (sql, "CONSTRAINT ck_gc_type CHECK (geometry_type IN ");
-    strcat (sql, "(0,1,2,3,4,5,6,7,1000,1001,1002,1003,1004,1005,1006,");
-    strcat (sql, "1007,2000,2001,2002,2003,2004,2005,2006,2007,3000,3001,");
-    strcat (sql, "3002,3003,3004,3005,3006,3007)),\n");
-    strcat (sql, "CONSTRAINT ck_gc_dims CHECK (coord_dimension IN ");
-    strcat (sql, "(2,3,4)),\n");
     strcat (sql, "CONSTRAINT ck_gc_rtree CHECK ");
     strcat (sql, "(spatial_index_enabled IN (0,1,2)))");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
@@ -1948,6 +1942,156 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
     if (ret != SQLITE_OK)
 	goto error;
+/* creating the GEOMETRY_COLUMN triggers */
+    strcpy (sql, "CREATE TRIGGER 'geometry_columns_f_table_name_insert'\n");
+    strcat (sql, "BEFORE INSERT ON 'geometry_columns'\n");
+    strcat (sql, "FOR EACH ROW BEGIN\n");
+    strcat (sql,
+	    "SELECT RAISE(ABORT,'insert on geometry_columns violates constraint: ");
+    strcat (sql, "f_table_name value must not contain a single quote')\n");
+    strcat (sql, "WHERE NEW.f_table_name LIKE ('%''%');\n");
+    strcat (sql,
+	    "SELECT RAISE(ABORT,'insert on geometry_columns violates constraint: ");
+    strcat (sql, "f_table_name value must not contain a double quote')\n");
+    strcat (sql, "WHERE NEW.f_table_name LIKE ('%\"%');\n");
+    strcat (sql,
+	    "SELECT RAISE(ABORT,'insert on geometry_columns violates constraint: \n");
+    strcat (sql, "f_table_name value must be lower case')\n");
+    strcat (sql, "WHERE NEW.f_table_name <> lower(NEW.f_table_name);\n");
+    strcat (sql, "END");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
+    updateSpatiaLiteHistory (sqlite, "geometry_columns", NULL,
+			     "trigger 'geometry_columns_f_table_name_insert' successfully created");
+    strcpy (sql, "CREATE TRIGGER 'geometry_columns_f_table_name_update'\n");
+    strcat (sql, "BEFORE UPDATE OF 'f_table_name' ON 'geometry_columns'\n");
+    strcat (sql, "FOR EACH ROW BEGIN\n");
+    strcat (sql,
+	    "SELECT RAISE(ABORT,'update on geometry_columns violates constraint: ");
+    strcat (sql, "f_table_name value must not contain a single quote')\n");
+    strcat (sql, "WHERE NEW.f_table_name LIKE ('%''%');\n");
+    strcat (sql,
+	    "SELECT RAISE(ABORT,'update on geometry_columns violates constraint: ");
+    strcat (sql, "f_table_name value must not contain a double quote')\n");
+    strcat (sql, "WHERE NEW.f_table_name LIKE ('%\"%');\n");
+    strcat (sql,
+	    "SELECT RAISE(ABORT,'update on geometry_columns violates constraint: ");
+    strcat (sql, "f_table_name value must be lower case')\n");
+    strcat (sql, "WHERE NEW.f_table_name <> lower(NEW.f_table_name);\n");
+    strcat (sql, "END");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
+    updateSpatiaLiteHistory (sqlite, "geometry_columns", NULL,
+			     "trigger 'geometry_columns_f_table_name_update' successfully created");
+    strcpy (sql,
+	    "CREATE TRIGGER 'geometry_columns_f_geometry_column_insert'\n");
+    strcat (sql, "BEFORE INSERT ON 'geometry_columns'\n");
+    strcat (sql, "FOR EACH ROW BEGIN\n");
+    strcat (sql,
+	    "SELECT RAISE(ABORT,'insert on geometry_columns violates constraint: ");
+    strcat (sql, "f_geometry_column value must not contain a single quote')\n");
+    strcat (sql, "WHERE NEW.f_geometry_column LIKE ('%''%');\n");
+    strcat (sql,
+	    "SELECT RAISE(ABORT,'insert on geometry_columns violates constraint: \n");
+    strcat (sql, "f_geometry_column value must not contain a double quote')\n");
+    strcat (sql, "WHERE NEW.f_geometry_column LIKE ('%\"%');\n");
+    strcat (sql,
+	    "SELECT RAISE(ABORT,'insert on geometry_columns violates constraint: ");
+    strcat (sql, "f_geometry_column value must be lower case')\n");
+    strcat (sql,
+	    "WHERE NEW.f_geometry_column <> lower(NEW.f_geometry_column);\n");
+    strcat (sql, "END");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
+    updateSpatiaLiteHistory (sqlite, "geometry_columns", NULL,
+			     "trigger 'geometry_columns_f_geometry_column_insert' successfully created");
+    strcpy (sql,
+	    "CREATE TRIGGER 'geometry_columns_f_geometry_column_update'\n");
+    strcat (sql,
+	    "BEFORE UPDATE OF 'f_geometry_column' ON 'geometry_columns'\n");
+    strcat (sql, "FOR EACH ROW BEGIN\n");
+    strcat (sql,
+	    "SELECT RAISE(ABORT,'update on geometry_columns violates constraint: ");
+    strcat (sql, "f_geometry_column value must not contain a single quote')\n");
+    strcat (sql, "WHERE NEW.f_geometry_column LIKE ('%''%');\n");
+    strcat (sql,
+	    "SELECT RAISE(ABORT,'update on geometry_columns violates constraint: ");
+    strcat (sql, "f_geometry_column value must not contain a double quote')\n");
+    strcat (sql, "WHERE NEW.f_geometry_column LIKE ('%\"%');\n");
+    strcat (sql,
+	    "SELECT RAISE(ABORT,'update on geometry_columns violates constraint: ");
+    strcat (sql, "f_geometry_column value must be lower case')\n");
+    strcat (sql,
+	    "WHERE NEW.f_geometry_column <> lower(NEW.f_geometry_column);\n");
+    strcat (sql, "END");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
+    updateSpatiaLiteHistory (sqlite, "geometry_columns", NULL,
+			     "trigger 'geometry_columns_f_geometry_column_update' successfully created");
+    strcpy (sql, "CREATE TRIGGER 'geometry_columns_geometry_type_insert'\n");
+    strcat (sql, "BEFORE INSERT ON 'geometry_columns'\n");
+    strcat (sql, "FOR EACH ROW BEGIN\n");
+    strcat (sql, "SELECT RAISE(ABORT,'geometry_type must be one of ");
+    strcat (sql, "0,1,2,3,4,5,6,7,");
+    strcat (sql, "1000,1001,1002,1003,1004,1005,1006,1007,");
+    strcat (sql, "2000,2001,2002,2003,2004,2005,2006,2007,");
+    strcat (sql, "3000,3001,3002,3003,3004,3005,3006,3007')\n");
+    strcat (sql, "WHERE NOT(NEW.geometry_type IN (0,1,2,3,4,5,6,7,");
+    strcat (sql, "1000,1001,1002,1003,1004,1005,1006,1007,");
+    strcat (sql, "2000,2001,2002,2003,2004,2005,2006,2007,");
+    strcat (sql, "3000,3001,3002,3003,3004,3005,3006,3007));\n");
+    strcat (sql, "END");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
+    updateSpatiaLiteHistory (sqlite, "geometry_columns", NULL,
+			     "trigger 'geometry_columns_geometry_type_insert' successfully created");
+    strcpy (sql, "CREATE TRIGGER 'geometry_columns_geometry_type_update'\n");
+    strcat (sql, "BEFORE UPDATE OF 'geometry_type' ON 'geometry_columns'\n");
+    strcat (sql, "FOR EACH ROW BEGIN\n");
+    strcat (sql, "SELECT RAISE(ABORT,'geometry_type must be one of ");
+    strcat (sql, "0,1,2,3,4,5,6,7,");
+    strcat (sql, "1000,1001,1002,1003,1004,1005,1006,1007,");
+    strcat (sql, "2000,2001,2002,2003,2004,2005,2006,2007,");
+    strcat (sql, "3000,3001,3002,3003,3004,3005,3006,3007')\n");
+    strcat (sql, "WHERE NOT(NEW.geometry_type IN (0,1,2,3,4,5,6,7,");
+    strcat (sql, "1000,1001,1002,1003,1004,1005,1006,1007,");
+    strcat (sql, "2000,2001,2002,2003,2004,2005,2006,2007,");
+    strcat (sql, "3000,3001,3002,3003,3004,3005,3006,3007));\n");
+    strcat (sql, "END");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
+    updateSpatiaLiteHistory (sqlite, "geometry_columns", NULL,
+			     "trigger 'geometry_columns_geometry_type_update' successfully created");
+    strcpy (sql, "CREATE TRIGGER 'geometry_columns_coord_dimension_insert'\n");
+    strcat (sql, "BEFORE INSERT ON 'geometry_columns'\n");
+    strcat (sql, "FOR EACH ROW BEGIN\n");
+    strcat (sql,
+	    "SELECT RAISE(ABORT,'coord_dimension must be one of 1,2,3,4')\n");
+    strcat (sql, "WHERE NOT(NEW.coord_dimension IN (1,2,3,4));\n");
+    strcat (sql, "END");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
+    updateSpatiaLiteHistory (sqlite, "geometry_columns", NULL,
+			     "trigger 'geometry_columns_coord_dimension_insert' successfully created");
+    strcpy (sql, "CREATE TRIGGER 'geometry_columns_coord_dimension_update'\n");
+    strcat (sql, "BEFORE UPDATE OF 'coord_dimension' ON 'geometry_columns'\n");
+    strcat (sql, "FOR EACH ROW BEGIN\n");
+    strcat (sql,
+	    "SELECT RAISE(ABORT,'coord_dimension must be one of 1,2,3,4')\n");
+    strcat (sql, "WHERE NOT(NEW.coord_dimension IN (1,2,3,4));\n");
+    strcat (sql, "END");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+	goto error;
+    updateSpatiaLiteHistory (sqlite, "geometry_columns", NULL,
+			     "trigger 'geometry_columns_coord_dimension_update' successfully created");
 /* creating the GEOM_COLS_REF_SYS view */
     strcpy (sql, "CREATE VIEW geom_cols_ref_sys AS\n");
     strcat (sql, "SELECT f_table_name, f_geometry_column, geometry_type,\n");
@@ -2012,12 +2156,10 @@ fnct_InsertEpsgSrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 
 static int
 recoverGeomColumn (sqlite3 * sqlite, const char *table,
-		   const char *column, int xtype, int dims, int srid,
-		   char *xxcolumn)
+		   const char *column, int xtype, int dims, int srid)
 {
 /* checks if TABLE.COLUMN exists and has the required features */
     int ok = 1;
-    char sql[1024];
     int type;
     sqlite3_stmt *stmt;
     gaiaGeomCollPtr geom;
@@ -2025,48 +2167,63 @@ recoverGeomColumn (sqlite3 * sqlite, const char *table,
     int len;
     int ret;
     int i_col;
-    char xcolumn[1024];
-    char xtable[1024];
     int is_nullable = 1;
-    char **results;
-    int rows;
-    int columns;
-    int i;
-    char *errMsg = NULL;
+    char *p_table;
+    char *p_column;
+    char *sql_statement;
 
 /* testing if NOT NULL */
-    strcpy (xtable, (char *) table);
-    double_quoted_sql (xtable);
-    sprintf (sql, "PRAGMA table_info(%s)", xtable);
-    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    p_table = gaiaDoubleQuotedSql (table);
+    sql_statement = sqlite3_mprintf ("PRAGMA table_info(\"%s\")", p_table);
+    free (p_table);
+    ret =
+	sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			    &stmt, NULL);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("recoverGeomColumn: error: \"%s\"\n", errMsg);
-	  sqlite3_free (errMsg);
+	  spatialite_e ("recoverGeomColumn: \"%s\"\n", sqlite3_errmsg (sqlite));
 	  return 0;
       }
-    for (i = 1; i <= rows; i++)
+    while (1)
       {
-	  if (strcasecmp ((char *) column, results[(i * columns) + 1]) == 0)
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
 	    {
-		strcpy (xxcolumn, results[(i * columns) + 1]);
-		if (atoi (results[(i * columns) + 2]) != 0)
-		    is_nullable = 0;
+		if (strcasecmp
+		    (column, (const char *) sqlite3_column_text (stmt, 1)) == 0)
+		  {
+		      if (sqlite3_column_int (stmt, 2) != 0)
+			  is_nullable = 0;
+		  }
 	    }
       }
-    sqlite3_free_table (results);
+    sqlite3_finalize (stmt);
 
-    strcpy (xcolumn, (char *) column);
-    double_quoted_sql (xcolumn);
-    sprintf (sql, "SELECT %s FROM %s", xcolumn, xtable);
+    p_table = gaiaDoubleQuotedSql (table);
+    p_column = gaiaDoubleQuotedSql (column);
+    sql_statement =
+	sqlite3_mprintf ("SELECT \"%s\" FROM \"%s\"", p_column, p_table);
+    free (p_table);
+    free (p_column);
 /* compiling SQL prepared statement */
-    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    ret =
+	sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			    &stmt, NULL);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
       {
 	  spatialite_e ("recoverGeomColumn: error %d \"%s\"\n",
 			sqlite3_errcode (sqlite), sqlite3_errmsg (sqlite));
 	  return 0;
       }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, column, strlen (column), SQLITE_STATIC);
     while (1)
       {
 	  /* scrolling the result set rows */
@@ -2130,29 +2287,34 @@ recoverGeomColumn (sqlite3 * sqlite, const char *table,
 
 static void
 buildSpatialIndex (sqlite3 * sqlite, const unsigned char *table,
-		   const char *col_name)
+		   const char *column)
 {
 /* loading a SpatialIndex [RTree] */
-    char sql[2048];
-    char sql2[1024];
+    char *raw;
+    char *quoted_rtree;
+    char *quoted_table;
+    char *quoted_column;
+    char *sql_statement;
     char *errMsg = NULL;
     int ret;
-    char xname[1024];
-    char xtable[1024];
-    sprintf (xname, "idx_%s_%s", table, col_name);
-    double_quoted_sql (xname);
-    sprintf (sql, "INSERT INTO %s (pkid, xmin, xmax, ymin, ymax) ", xname);
-    strcpy (xname, col_name);
-    double_quoted_sql (xname);
-    strcpy (xtable, (char *) table);
-    double_quoted_sql (xtable);
-    sprintf (sql2,
-	     "SELECT ROWID, MbrMinX(%s), MbrMaxX(%s), MbrMinY(%s), MbrMaxY(%s) FROM %s",
-	     xname, xname, xname, xname, xtable);
-    strcat (sql, sql2);
-    sprintf (sql2, " WHERE MbrMinX(%s) IS NOT NULL", xname);
-    strcat (sql, sql2);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+
+    raw = sqlite3_mprintf ("idx_%s_%s", table, column);
+    quoted_rtree = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    quoted_table = gaiaDoubleQuotedSql ((const char *) table);
+    quoted_column = gaiaDoubleQuotedSql (column);
+    sql_statement = sqlite3_mprintf ("INSERT INTO \"%s\" "
+				     "(pkid, xmin, xmax, ymin, ymax) "
+				     "SELECT ROWID, MbrMinX(\"%s\"), MbrMaxX(\"%s\"), MbrMinY(\"%s\"), MbrMaxY(\"%s\") "
+				     "FROM \"%s\" WHERE MbrMinX(\"%s\") IS NOT NULL",
+				     quoted_rtree, quoted_column, quoted_column,
+				     quoted_column, quoted_column, quoted_table,
+				     quoted_column);
+    free (quoted_rtree);
+    free (quoted_table);
+    free (quoted_column);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
       {
 	  spatialite_e ("buildSpatialIndex error: \"%s\"\n", errMsg);
@@ -2160,615 +2322,1023 @@ buildSpatialIndex (sqlite3 * sqlite, const unsigned char *table,
       }
 }
 
+static int
+get_real_names (sqlite3 * sqlite, const char *table, const char *column,
+		char **real_table, char **real_column)
+{
+/* attempting to retrieve the "real" table and column names (upper/lowercase) */
+    char *p_table = NULL;
+    char *p_column = NULL;
+    char *sql_statement;
+    char *quoted;
+    const char *name;
+    int len;
+    sqlite3_stmt *stmt;
+    int ret;
+
+    sql_statement = sqlite3_mprintf ("SELECT name "
+				     "FROM sqlite_master WHERE type = 'table' "
+				     "AND Lower(name) = Lower(?)");
+/* compiling SQL prepared statement */
+    ret =
+	sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			    &stmt, NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("real_names: error %d \"%s\"\n",
+			sqlite3_errcode (sqlite), sqlite3_errmsg (sqlite));
+	  return 0;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		name = (const char *) sqlite3_column_text (stmt, 0);
+		len = sqlite3_column_bytes (stmt, 0);
+		if (p_table)
+		    free (p_table);
+		p_table = malloc (len + 1);
+		strcpy (p_table, name);
+	    }
+      }
+    sqlite3_finalize (stmt);
+
+    if (p_table == NULL)
+	return 0;
+
+    quoted = gaiaDoubleQuotedSql (p_table);
+    sql_statement = sqlite3_mprintf ("PRAGMA table_info(\"%s\")", quoted);
+    free (quoted);
+/* compiling SQL prepared statement */
+    ret =
+	sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			    &stmt, NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("real_names: error %d \"%s\"\n",
+			sqlite3_errcode (sqlite), sqlite3_errmsg (sqlite));
+	  free (p_table);
+	  return 0;
+      }
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		name = (const char *) sqlite3_column_text (stmt, 1);
+		len = sqlite3_column_bytes (stmt, 1);
+		if (strcasecmp (name, column) == 0)
+		  {
+		      if (p_column)
+			  free (p_column);
+		      p_column = malloc (len + 1);
+		      strcpy (p_column, name);
+		  }
+	    }
+      }
+    sqlite3_finalize (stmt);
+
+    if (p_column == NULL)
+      {
+	  free (p_table);
+	  return 0;
+      }
+
+    *real_table = p_table;
+    *real_column = p_column;
+    return 1;
+}
+
 static void
 updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 {
 /* updates triggers for some Spatial Column */
-    char sql[256];
-    char trigger[4096];
-    char **results;
     int ret;
-    int rows;
-    int columns;
-    int i;
-    char tblname[256];
-    char colname[256];
-    char col_index[32];
-    char col_dims[64];
+    int col_index;
+    const char *col_dims;
     int index;
     int cached;
     int dims;
     char *txt_dims;
     int len;
     char *errMsg = NULL;
-    char dummy[512];
-    char sqltable[1024];
-    char sqlcolumn[1024];
-    char xname[1024];
-    char xcolname[1024];
-    char xtable[1024];
-    char xindex[1024];
+    char *sql_statement;
+    char *raw;
+    char *quoted_trigger;
+    char *quoted_rtree;
+    char *quoted_table;
+    char *quoted_column;
+    char *p_table = NULL;
+    char *p_column = NULL;
+    sqlite3_stmt *stmt;
     struct spatial_index_str *first_idx = NULL;
     struct spatial_index_str *last_idx = NULL;
     struct spatial_index_str *curr_idx;
     struct spatial_index_str *next_idx;
     int metadata_version = checkSpatialMetaData (sqlite);
-    strcpy (sqltable, (char *) table);
-    clean_sql_string (sqltable);
-    strcpy (sqlcolumn, (char *) column);
-    clean_sql_string (sqlcolumn);
+
+    if (!get_real_names (sqlite, table, column, &p_table, &p_column))
+      {
+	  spatialite_e
+	      ("updateTableTriggers() error: not existing Table or Column\n");
+	  return;
+      }
     if (metadata_version == 3)
       {
 	  /* current metadata style >= v.4.0.0 */
-	  sprintf (sql,
-		   "SELECT f_table_name, f_geometry_column, spatial_index_enabled "
-		   "FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') "
-		   "AND Upper(f_geometry_column) = Upper('%s')", sqltable,
-		   sqlcolumn);
+	  sql_statement = sqlite3_mprintf ("SELECT spatial_index_enabled "
+					   "FROM geometry_columns WHERE Lower(f_table_name) = Lower(?) "
+					   "AND Lower(f_geometry_column) = Lower(?)");
       }
     else
       {
 	  /* legacy metadata style <= v.3.1.0 */
-	  sprintf (sql,
-		   "SELECT f_table_name, f_geometry_column, spatial_index_enabled, coord_dimension "
-		   "FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') "
-		   "AND Upper(f_geometry_column) = Upper('%s')", sqltable,
-		   sqlcolumn);
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT spatial_index_enabled, coord_dimension "
+			       "FROM geometry_columns WHERE Lower(f_table_name) = Lower(?) "
+			       "AND Lower(f_geometry_column) = Lower(?)");
       }
-    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+/* compiling SQL prepared statement */
+    ret =
+	sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			    &stmt, NULL);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("updateTableTriggers: \"%s\"\n", errMsg);
-	  sqlite3_free (errMsg);
+	  spatialite_e ("updateTableTriggers: error %d \"%s\"\n",
+			sqlite3_errcode (sqlite), sqlite3_errmsg (sqlite));
 	  return;
       }
-    for (i = 1; i <= rows; i++)
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, column, strlen (column), SQLITE_STATIC);
+    while (1)
       {
-	  /* preparing the triggers */
-	  strcpy (tblname, results[(i * columns)]);
-	  strcpy (colname, results[(i * columns) + 1]);
-	  strcpy (col_index, results[(i * columns) + 2]);
-	  if (metadata_version == 1)
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
 	    {
-		/* legacy metadata style <= v.3.1.0 */
-		strcpy (col_dims, results[(i * columns) + 3]);
-		dims = GAIA_XY;
-		if (strcasecmp (col_dims, "XYZ") == 0)
-		    dims = GAIA_XY_Z;
-		if (strcasecmp (col_dims, "XYM") == 0)
-		    dims = GAIA_XY_M;
-		if (strcasecmp (col_dims, "XYZM") == 0)
-		    dims = GAIA_XY_Z_M;
-		switch (dims)
+		col_index = sqlite3_column_int (stmt, 0);
+		if (metadata_version == 1)
 		  {
-		  case GAIA_XY_Z:
-		      txt_dims = "XYZ";
-		      break;
-		  case GAIA_XY_M:
-		      txt_dims = "XYM";
-		      break;
-		  case GAIA_XY_Z_M:
-		      txt_dims = "XYZM";
-		      break;
-		  default:
-		      txt_dims = "XY";
-		      break;
-		  };
-	    }
-	  if (atoi (col_index) == 1)
-	      index = 1;
-	  else
-	      index = 0;
-	  if (atoi (col_index) == 2)
-	      cached = 1;
-	  else
-	      cached = 0;
+		      /* legacy metadata style <= v.3.1.0 */
+		      col_dims = (const char *) sqlite3_column_text (stmt, 1);
+		      dims = GAIA_XY;
+		      if (strcasecmp (col_dims, "XYZ") == 0)
+			  dims = GAIA_XY_Z;
+		      if (strcasecmp (col_dims, "XYM") == 0)
+			  dims = GAIA_XY_M;
+		      if (strcasecmp (col_dims, "XYZM") == 0)
+			  dims = GAIA_XY_Z_M;
+		      switch (dims)
+			{
+			case GAIA_XY_Z:
+			    txt_dims = "XYZ";
+			    break;
+			case GAIA_XY_M:
+			    txt_dims = "XYM";
+			    break;
+			case GAIA_XY_Z_M:
+			    txt_dims = "XYZM";
+			    break;
+			default:
+			    txt_dims = "XY";
+			    break;
+			};
+		  }
+		index = 0;
+		cached = 0;
+		if (col_index == 1)
+		    index = 1;
+		if (col_index == 2)
+		    cached = 1;
 
-	  /* trying to delete old versions [v2.0, v2.2] triggers[if any] */
-	  strcpy (sqltable, (char *) tblname);
-	  clean_sql_string (sqltable);
-	  strcpy (sqlcolumn, (char *) colname);
-	  clean_sql_string (sqlcolumn);
-	  sprintf (xname, "gti_%s_%s", tblname, colname);
-	  double_quoted_sql (xname);
-	  sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-	  sprintf (xname, "gtu_%s_%s", tblname, colname);
-	  double_quoted_sql (xname);
-	  sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-	  sprintf (xname, "gsi_%s_%s", tblname, colname);
-	  double_quoted_sql (xname);
-	  sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-	  sprintf (xname, "gsu_%s_%s", tblname, colname);
-	  double_quoted_sql (xname);
-	  sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-	  /* end deletion old versions [v2.0, v2.2] triggers[if any] */
-
-	  /* deleting the old INSERT trigger TYPE [if any] */
-	  sprintf (xname, "ggi_%s_%s", tblname, colname);
-	  double_quoted_sql (xname);
-	  sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-	  /* inserting the new INSERT trigger TYPE */
-	  strcpy (xtable, tblname);
-	  double_quoted_sql (xtable);
-	  strcpy (xcolname, colname);
-	  double_quoted_sql (xcolname);
-	  sprintf (trigger, "CREATE TRIGGER %s BEFORE INSERT ON %s\n", xname,
-		   xtable);
-	  strcat (trigger, "FOR EACH ROW BEGIN\n");
-	  sprintf (dummy,
-		   "SELECT RAISE(ROLLBACK, '%s.%s violates Geometry constraint [geom-type or SRID not allowed]')\n",
-		   sqltable, sqlcolumn);
-	  strcat (trigger, dummy);
-	  if (metadata_version == 3)
-	    {
-		/* current metadata style >= v.4.0.0 */
-		strcat (trigger,
-			"WHERE (SELECT geometry_type FROM geometry_columns\n");
-		sprintf (dummy, "WHERE Upper(f_table_name) = Upper('%s') AND ",
-			 sqltable);
-		strcat (trigger, dummy);
-		sprintf (dummy, "Upper(f_geometry_column) = Upper('%s')\n",
-			 sqlcolumn);
-		strcat (trigger, dummy);
-		sprintf (dummy,
-			 "AND GeometryConstraints(NEW.%s, geometry_type, srid) = 1) IS NULL;\n",
-			 xcolname);
-	    }
-	  else
-	    {
-		/* legacy metadata style <= v.3.1.0 */
-		strcat (trigger, "WHERE (SELECT type FROM geometry_columns\n");
-		sprintf (dummy,
-			 "WHERE f_table_name = '%s' AND f_geometry_column = '%s'\n",
-			 sqltable, sqlcolumn);
-		strcat (trigger, dummy);
-		sprintf (dummy,
-			 "AND GeometryConstraints(NEW.%s, type, srid, '%s') = 1) IS NULL;\n",
-			 xcolname, txt_dims);
-	    }
-	  strcat (trigger, dummy);
-	  strcat (trigger, "END;");
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-	  /* deleting the old UPDATE trigger TYPE [if any] */
-	  sprintf (xname, "ggu_%s_%s", tblname, colname);
-	  double_quoted_sql (xname);
-	  sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-	  /* inserting the new UPDATE trigger TYPE */
-	  sprintf (trigger, "CREATE TRIGGER %s BEFORE UPDATE ON %s\n", xname,
-		   xtable);
-	  strcat (trigger, "FOR EACH ROW BEGIN\n");
-	  sprintf (dummy,
-		   "SELECT RAISE(ROLLBACK, '%s.%s violates Geometry constraint [geom-type or SRID not allowed]')\n",
-		   sqltable, sqlcolumn);
-	  strcat (trigger, dummy);
-	  if (metadata_version == 3)
-	    {
-		/* current metadata style >= v.4.0.0 */
-		strcat (trigger,
-			"WHERE (SELECT geometry_type FROM geometry_columns\n");
-		sprintf (dummy, "WHERE Upper(f_table_name) = Upper('%s') AND ",
-			 sqltable);
-		strcat (trigger, dummy);
-		sprintf (dummy, "Upper(f_geometry_column) = Upper('%s')\n",
-			 sqlcolumn);
-		strcat (trigger, dummy);
-		sprintf (dummy,
-			 "AND GeometryConstraints(NEW.%s, geometry_type, srid) = 1) IS NULL;\n",
-			 xcolname);
-	    }
-	  else
-	    {
-		/* legacy metadata style <= v.3.1.0 */
-		strcat (trigger, "WHERE (SELECT type FROM geometry_columns\n");
-		sprintf (dummy,
-			 "WHERE f_table_name = '%s' AND f_geometry_column = '%s'\n",
-			 sqltable, sqlcolumn);
-		strcat (trigger, dummy);
-		sprintf (dummy,
-			 "AND GeometryConstraints(NEW.%s, type, srid, '%s') = 1) IS NULL;\n",
-			 xcolname, txt_dims);
-	    }
-	  strcat (trigger, dummy);
-	  strcat (trigger, "END;");
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-	  /* inserting SpatialIndex information into the linked list */
-	  curr_idx = malloc (sizeof (struct spatial_index_str));
-	  len = strlen (tblname);
-	  curr_idx->TableName = malloc (len + 1);
-	  strcpy (curr_idx->TableName, tblname);
-	  len = strlen ((char *) colname);
-	  curr_idx->ColumnName = malloc (len + 1);
-	  strcpy (curr_idx->ColumnName, (char *) colname);
-	  curr_idx->ValidRtree = (char) index;
-	  curr_idx->ValidCache = (char) cached;
-	  curr_idx->Next = NULL;
-	  if (!first_idx)
-	      first_idx = curr_idx;
-	  if (last_idx)
-	      last_idx->Next = curr_idx;
-	  last_idx = curr_idx;
-	  /* deleting the old INSERT trigger SPATIAL_INDEX [if any] */
-	  sprintf (xname, "gii_%s_%s", tblname, colname);
-	  double_quoted_sql (xname);
-	  sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-
-	  if (metadata_version == 3)
-	    {
-		/* deleting the old UPDATE (timestamp) trigger [if any] */
-		sprintf (xname, "tmu_%s_%s", tblname, colname);
-		double_quoted_sql (xname);
-		sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
+		/* trying to delete old versions [v2.0, v2.2] triggers[if any] */
+		raw = sqlite3_mprintf ("gti_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+				     quoted_trigger);
+		free (quoted_trigger);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
 		    goto error;
-		/* deleting the old INSERT (timestamp) trigger [if any] */
-		sprintf (xname, "tmi_%s_%s", tblname, colname);
-		double_quoted_sql (xname);
-		sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
+		raw = sqlite3_mprintf ("gtu_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+				     quoted_trigger);
+		free (quoted_trigger);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
 		    goto error;
-		/* deleting the old DELETE (timestamp) trigger [if any] */
-		sprintf (xname, "tmd_%s_%s", tblname, colname);
-		double_quoted_sql (xname);
-		sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
+		raw = sqlite3_mprintf ("gsi_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+				     quoted_trigger);
+		free (quoted_trigger);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
 		    goto error;
-	    }
+		raw = sqlite3_mprintf ("gsu_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+				     quoted_trigger);
+		free (quoted_trigger);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
+		if (ret != SQLITE_OK)
+		    goto error;
+		/* end deletion old versions [v2.0, v2.2] triggers[if any] */
 
-	  if (index == 0 && cached == 0)
-	    {
+		/* deleting the old INSERT trigger TYPE [if any] */
+		raw = sqlite3_mprintf ("ggi_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+				     quoted_trigger);
+		free (quoted_trigger);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
+		if (ret != SQLITE_OK)
+		    goto error;
 
+		/* inserting the new INSERT trigger TYPE */
+		raw = sqlite3_mprintf ("ggi_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		quoted_table = gaiaDoubleQuotedSql (p_table);
+		quoted_column = gaiaDoubleQuotedSql (p_column);
 		if (metadata_version == 3)
 		  {
 		      /* current metadata style >= v.4.0.0 */
+		      sql_statement =
+			  sqlite3_mprintf
+			  ("CREATE TRIGGER \"%s\" BEFORE INSERT ON \"%s\"\n"
+			   "FOR EACH ROW BEGIN\n"
+			   "SELECT RAISE(ROLLBACK, '%q.%q violates Geometry constraint [geom-type or SRID not allowed]')\n"
+			   "WHERE (SELECT geometry_type FROM geometry_columns\n"
+			   "WHERE Lower(f_table_name) = Lower(%Q) AND "
+			   "Lower(f_geometry_column) = Lower(%Q)\n"
+			   "AND GeometryConstraints(NEW.\"%s\", geometry_type, srid) = 1) IS NULL;\nEND",
+			   quoted_trigger, quoted_table, p_table, p_column,
+			   p_table, p_column, quoted_column);
+		      free (quoted_trigger);
+		      free (quoted_table);
+		      free (quoted_column);
+		  }
+		else
+		  {
+		      /* legacy metadata style <= v.3.1.0 */
+		      sql_statement =
+			  sqlite3_mprintf
+			  ("CREATE TRIGGER \"%s\" BEFORE INSERT ON \"%s\"\n"
+			   "FOR EACH ROW BEGIN\n"
+			   "SELECT RAISE(ROLLBACK, '%q.%q violates Geometry constraint [geom-type or SRID not allowed]')\n"
+			   "WHERE (SELECT type FROM geometry_columns\n"
+			   "WHERE f_table_name = %Q AND f_geometry_column = %Q\n"
+			   "AND GeometryConstraints(NEW.\"%s\", type, srid, %Q) = 1) IS NULL;\nEND",
+			   quoted_trigger, quoted_table, p_table, p_column,
+			   p_table, p_column, quoted_column, txt_dims);
+		      free (quoted_trigger);
+		      free (quoted_table);
+		      free (quoted_column);
+		  }
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
+		if (ret != SQLITE_OK)
+		    goto error;
+		/* deleting the old UPDATE trigger TYPE [if any] */
+		raw = sqlite3_mprintf ("ggu_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+				     quoted_trigger);
+		free (quoted_trigger);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
+		if (ret != SQLITE_OK)
+		    goto error;
 
-		      /* inserting the new UPDATE (timestamp) trigger */
-		      sprintf (xname, "tmu_%s_%s", tblname, colname);
-		      double_quoted_sql (xname);
-		      sprintf (trigger,
-			       "CREATE TRIGGER %s AFTER UPDATE ON %s\n", xname,
-			       xtable);
-		      strcat (trigger, "FOR EACH ROW BEGIN\n");
-		      strcat (trigger,
-			      "UPDATE geometry_columns_time SET last_update = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')\n");
-		      sprintf (dummy,
-			       "WHERE Upper(f_table_name) = Upper('%s') AND ",
-			       sqltable);
-		      strcat (trigger, dummy);
-		      sprintf (dummy,
-			       "Upper(f_geometry_column) = Upper('%s');\n",
-			       sqlcolumn);
-		      strcat (trigger, dummy);
-		      strcat (trigger, "END;");
-		      ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
+		/* inserting the new UPDATE trigger TYPE */
+		raw = sqlite3_mprintf ("ggu_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		quoted_table = gaiaDoubleQuotedSql (p_table);
+		quoted_column = gaiaDoubleQuotedSql (p_column);
+		if (metadata_version == 3)
+		  {
+		      /* current metadata style >= v.4.0.0 */
+		      sql_statement =
+			  sqlite3_mprintf
+			  ("CREATE TRIGGER \"%s\" BEFORE UPDATE ON \"%s\"\n"
+			   "FOR EACH ROW BEGIN\n"
+			   "SELECT RAISE(ROLLBACK, '%q.%q violates Geometry constraint [geom-type or SRID not allowed]')\n"
+			   "WHERE (SELECT geometry_type FROM geometry_columns\n"
+			   "WHERE Lower(f_table_name) = Lower(%Q) AND "
+			   "Lower(f_geometry_column) = Lower(%Q)\n"
+			   "AND GeometryConstraints(NEW.\"%s\", geometry_type, srid) = 1) IS NULL;\nEND",
+			   quoted_trigger, quoted_table, p_table, p_column,
+			   p_table, p_column, quoted_column);
+		      free (quoted_trigger);
+		      free (quoted_table);
+		      free (quoted_column);
+		  }
+		else
+		  {
+		      /* legacy metadata style <= v.3.1.0 */
+		      sql_statement =
+			  sqlite3_mprintf
+			  ("CREATE TRIGGER \"%s\" BEFORE UPDATE ON \"%s\"\n"
+			   "FOR EACH ROW BEGIN\n"
+			   "SELECT RAISE(ROLLBACK, '%q.%q violates Geometry constraint [geom-type or SRID not allowed]')\n"
+			   "WHERE (SELECT type FROM geometry_columns\n"
+			   "WHERE f_table_name = %Q AND f_geometry_column = %Q\n"
+			   "AND GeometryConstraints(NEW.\"%s\", type, srid, %Q) = 1) IS NULL;\nEND",
+			   quoted_trigger, quoted_table, p_table, p_column,
+			   p_table, p_column, quoted_column, txt_dims);
+		      free (quoted_trigger);
+		      free (quoted_table);
+		      free (quoted_column);
+		  }
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
+		if (ret != SQLITE_OK)
+		    goto error;
+
+		/* inserting SpatialIndex information into the linked list */
+		curr_idx = malloc (sizeof (struct spatial_index_str));
+		len = strlen (p_table);
+		curr_idx->TableName = malloc (len + 1);
+		strcpy (curr_idx->TableName, p_table);
+		len = strlen (p_column);
+		curr_idx->ColumnName = malloc (len + 1);
+		strcpy (curr_idx->ColumnName, p_column);
+		curr_idx->ValidRtree = (char) index;
+		curr_idx->ValidCache = (char) cached;
+		curr_idx->Next = NULL;
+		if (!first_idx)
+		    first_idx = curr_idx;
+		if (last_idx)
+		    last_idx->Next = curr_idx;
+		last_idx = curr_idx;
+
+		/* deleting the old INSERT trigger SPATIAL_INDEX [if any] */
+		raw = sqlite3_mprintf ("gii_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+				     quoted_trigger);
+		free (quoted_trigger);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
+		if (ret != SQLITE_OK)
+		    goto error;
+
+		if (metadata_version == 3)
+		  {
+		      /* deleting the old UPDATE (timestamp) trigger [if any] */
+		      raw = sqlite3_mprintf ("tmu_%s_%s", p_table, p_column);
+		      quoted_trigger = gaiaDoubleQuotedSql (raw);
+		      sqlite3_free (raw);
+		      sql_statement =
+			  sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+					   quoted_trigger);
+		      free (quoted_trigger);
+		      ret =
+			  sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					&errMsg);
+		      sqlite3_free (sql_statement);
 		      if (ret != SQLITE_OK)
 			  goto error;
-
-		      /* inserting the new INSERT (timestamp) trigger */
-		      sprintf (xname, "tmi_%s_%s", tblname, colname);
-		      double_quoted_sql (xname);
-		      sprintf (trigger,
-			       "CREATE TRIGGER %s AFTER INSERT ON %s\n", xname,
-			       xtable);
-		      strcat (trigger, "FOR EACH ROW BEGIN\n");
-		      strcat (trigger,
-			      "UPDATE geometry_columns_time SET last_insert = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')\n");
-		      sprintf (dummy,
-			       "WHERE Upper(f_table_name) = Upper('%s') AND ",
-			       sqltable);
-		      strcat (trigger, dummy);
-		      sprintf (dummy,
-			       "Upper(f_geometry_column) = Upper('%s');\n",
-			       sqlcolumn);
-		      strcat (trigger, dummy);
-		      strcat (trigger, "END;");
-		      ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
+		      /* deleting the old INSERT (timestamp) trigger [if any] */
+		      raw = sqlite3_mprintf ("tmi_%s_%s", p_table, p_column);
+		      quoted_trigger = gaiaDoubleQuotedSql (raw);
+		      sqlite3_free (raw);
+		      sql_statement =
+			  sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+					   quoted_trigger);
+		      free (quoted_trigger);
+		      ret =
+			  sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					&errMsg);
+		      sqlite3_free (sql_statement);
 		      if (ret != SQLITE_OK)
 			  goto error;
-
-		      /* inserting the new DELETE (timestamp) trigger */
-		      sprintf (xname, "tmd_%s_%s", tblname, colname);
-		      double_quoted_sql (xname);
-		      sprintf (trigger,
-			       "CREATE TRIGGER %s AFTER DELETE ON %s\n", xname,
-			       xtable);
-		      strcat (trigger, "FOR EACH ROW BEGIN\n");
-		      strcat (trigger,
-			      "UPDATE geometry_columns_time SET last_delete = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')\n");
-		      sprintf (dummy,
-			       "WHERE Upper(f_table_name) = Upper('%s') AND ",
-			       sqltable);
-		      strcat (trigger, dummy);
-		      sprintf (dummy,
-			       "Upper(f_geometry_column) = Upper('%s');\n",
-			       sqlcolumn);
-		      strcat (trigger, dummy);
-		      strcat (trigger, "END;");
-		      ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
+		      /* deleting the old DELETE (timestamp) trigger [if any] */
+		      raw = sqlite3_mprintf ("tmd_%s_%s", p_table, p_column);
+		      quoted_trigger = gaiaDoubleQuotedSql (raw);
+		      sqlite3_free (raw);
+		      sql_statement =
+			  sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+					   quoted_trigger);
+		      free (quoted_trigger);
+		      ret =
+			  sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					&errMsg);
+		      sqlite3_free (sql_statement);
 		      if (ret != SQLITE_OK)
 			  goto error;
 		  }
-	    }
 
-	  /* deleting the old INSERT trigger SPATIAL_INDEX [if any] */
-	  sprintf (xname, "gid_%s_%s", tblname, colname);
-	  double_quoted_sql (xname);
-	  sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-	  /* deleting the old UPDATE trigger SPATIAL_INDEX [if any] */
-	  sprintf (xname, "giu_%s_%s", tblname, colname);
-	  double_quoted_sql (xname);
-	  sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-	  /* deleting the old DELETE trigger SPATIAL_INDEX [if any] */
-	  sprintf (xname, "gid_%s_%s", tblname, colname);
-	  double_quoted_sql (xname);
-	  sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-	  /* deleting the old INSERT trigger MBR_CACHE [if any] */
-	  sprintf (xname, "gci_%s_%s", tblname, colname);
-	  double_quoted_sql (xname);
-	  sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-	  /* deleting the old UPDATE trigger MBR_CACHE [if any] */
-	  sprintf (xname, "gcu_%s_%s", tblname, colname);
-	  double_quoted_sql (xname);
-	  sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-	  /* deleting the old UPDATE trigger MBR_CACHE [if any] */
-	  sprintf (xname, "gcd_%s_%s", tblname, colname);
-	  double_quoted_sql (xname);
-	  sprintf (trigger, "DROP TRIGGER IF EXISTS %s", xname);
-	  ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-	  if (ret != SQLITE_OK)
-	      goto error;
-
-	  if (index)
-	    {
-		/* inserting the new INSERT trigger RTree */
-		sprintf (xname, "gii_%s_%s", tblname, colname);
-		double_quoted_sql (xname);
-		sprintf (xindex, "idx_%s_%s", tblname, colname);
-		double_quoted_sql (xindex);
-		sprintf (trigger, "CREATE TRIGGER %s AFTER INSERT ON %s\n",
-			 xname, xtable);
-		strcat (trigger, "FOR EACH ROW BEGIN\n");
-		if (metadata_version == 3)
+		if (index == 0 && cached == 0)
 		  {
-		      /* current metadata style >= v.4.0.0 */
-		      strcat (trigger,
-			      "UPDATE geometry_columns_time SET last_insert = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')\n");
-		      sprintf (dummy,
-			       "WHERE Upper(f_table_name) = Upper('%s') AND ",
-			       sqltable);
-		      strcat (trigger, dummy);
-		      sprintf (dummy,
-			       "Upper(f_geometry_column) = Upper('%s');\n",
-			       sqlcolumn);
-		      strcat (trigger, dummy);
+
+		      if (metadata_version == 3)
+			{
+			    /* current metadata style >= v.4.0.0 */
+
+			    /* inserting the new UPDATE (timestamp) trigger */
+			    raw =
+				sqlite3_mprintf ("tmu_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER UPDATE ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "UPDATE geometry_columns_time SET last_update = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
+				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
+				 "Lower(f_geometry_column) = Lower(%Q);\nEND",
+				 quoted_trigger, quoted_table, p_table,
+				 p_column);
+			    free (quoted_trigger);
+			    free (quoted_table);
+			    ret =
+				sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					      &errMsg);
+			    sqlite3_free (sql_statement);
+			    if (ret != SQLITE_OK)
+				goto error;
+
+			    /* inserting the new INSERT (timestamp) trigger */
+			    raw =
+				sqlite3_mprintf ("tmi_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "UPDATE geometry_columns_time SET last_update = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
+				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
+				 "Lower(f_geometry_column) = Lower(%Q);\nEND",
+				 quoted_trigger, quoted_table, p_table,
+				 p_column);
+			    free (quoted_trigger);
+			    free (quoted_table);
+			    ret =
+				sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					      &errMsg);
+			    sqlite3_free (sql_statement);
+			    if (ret != SQLITE_OK)
+				goto error;
+
+			    /* inserting the new DELETE (timestamp) trigger */
+			    raw =
+				sqlite3_mprintf ("tmd_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER DELETE ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "UPDATE geometry_columns_time SET last_update = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
+				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
+				 "Lower(f_geometry_column) = Lower(%Q);\nEND",
+				 quoted_trigger, quoted_table, p_table,
+				 p_column);
+			    free (quoted_trigger);
+			    free (quoted_table);
+			    ret =
+				sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					      &errMsg);
+			    sqlite3_free (sql_statement);
+			    if (ret != SQLITE_OK)
+				goto error;
+			}
 		  }
-		sprintf (dummy, "DELETE FROM %s WHERE pkid=NEW.ROWID;\n",
-			 xindex);
-		sprintf (dummy, "SELECT RTreeAlign('%s', NEW.ROWID, NEW.%s);\n",
-			 xindex, xcolname);
-		strcat (trigger, dummy);
-		strcat (trigger, "END;");
-		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
+
+		/* deleting the old INSERT trigger SPATIAL_INDEX [if any] */
+		raw = sqlite3_mprintf ("gid_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+				     quoted_trigger);
+		free (quoted_trigger);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
 		    goto error;
 
-		/* inserting the new UPDATE trigger RTree */
-		sprintf (xname, "giu_%s_%s", tblname, colname);
-		double_quoted_sql (xname);
-		sprintf (xindex, "idx_%s_%s", tblname, colname);
-		double_quoted_sql (xindex);
-		sprintf (trigger, "CREATE TRIGGER %s AFTER UPDATE ON %s\n",
-			 xname, xtable);
-		strcat (trigger, "FOR EACH ROW BEGIN\n");
-		if (metadata_version == 3)
-		  {
-		      /* current metadata style >= v.4.0.0 */
-		      strcat (trigger,
-			      "UPDATE geometry_columns_time SET last_update = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')\n");
-		      sprintf (dummy,
-			       "WHERE Upper(f_table_name) = Upper('%s') AND ",
-			       sqltable);
-		      strcat (trigger, dummy);
-		      sprintf (dummy,
-			       "Upper(f_geometry_column) = Upper('%s');\n",
-			       sqlcolumn);
-		      strcat (trigger, dummy);
-		  }
-		sprintf (dummy, "DELETE FROM %s WHERE pkid=NEW.ROWID;\n",
-			 xindex);
-		sprintf (dummy, "SELECT RTreeAlign('%s', NEW.ROWID, NEW.%s);\n",
-			 xindex, xcolname);
-		strcat (trigger, dummy);
-		strcat (trigger, "END;");
-		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
+		/* deleting the old UPDATE trigger SPATIAL_INDEX [if any] */
+		raw = sqlite3_mprintf ("giu_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+				     quoted_trigger);
+		free (quoted_trigger);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
 		    goto error;
 
-		/* inserting the new DELETE trigger RTree */
-		sprintf (xname, "gid_%s_%s", tblname, colname);
-		double_quoted_sql (xname);
-		sprintf (xindex, "idx_%s_%s", tblname, colname);
-		double_quoted_sql (xindex);
-		sprintf (trigger, "CREATE TRIGGER %s AFTER DELETE ON %s\n",
-			 xname, xtable);
-		strcat (trigger, "FOR EACH ROW BEGIN\n");
-		if (metadata_version == 3)
-		  {
-		      /* current metadata style >= v.4.0.0 */
-		      strcat (trigger,
-			      "UPDATE geometry_columns_time SET last_delete = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')\n");
-		      sprintf (dummy,
-			       "WHERE Upper(f_table_name) = Upper('%s') AND ",
-			       sqltable);
-		      strcat (trigger, dummy);
-		      sprintf (dummy,
-			       "Upper(f_geometry_column) = Upper('%s');\n",
-			       sqlcolumn);
-		      strcat (trigger, dummy);
-		  }
-		sprintf (dummy, "DELETE FROM %s WHERE pkid = OLD.ROWID;\n",
-			 xindex);
-		strcat (trigger, dummy);
-		strcat (trigger, "END;");
-		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
-		if (ret != SQLITE_OK)
-		    goto error;
-	    }
-
-	  if (cached)
-	    {
-		/* inserting the new INSERT trigger SRID */
-		sprintf (xname, "gci_%s_%s", tblname, colname);
-		double_quoted_sql (xname);
-		sprintf (xindex, "cache_%s_%s", tblname, colname);
-		double_quoted_sql (xindex);
-		sprintf (trigger, "CREATE TRIGGER %s AFTER INSERT ON %s\n",
-			 xname, xtable);
-		strcat (trigger, "FOR EACH ROW BEGIN\n");
-		if (metadata_version == 3)
-		  {
-		      /* current metadata style >= v.4.0.0 */
-		      strcat (trigger,
-			      "UPDATE geometry_columns_time SET last_insert = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')\n");
-		      sprintf (dummy,
-			       "WHERE Upper(f_table_name) = Upper('%s') AND ",
-			       sqltable);
-		      strcat (trigger, dummy);
-		      sprintf (dummy,
-			       "Upper(f_geometry_column) = Upper('%s');\n",
-			       sqlcolumn);
-		      strcat (trigger, dummy);
-		  }
-		sprintf (dummy,
-			 "INSERT INTO %s (rowid, mbr) VALUES (NEW.ROWID,\nBuildMbrFilter(",
-			 xindex);
-		strcat (trigger, dummy);
-		sprintf (dummy, "MbrMinX(NEW.%s), ", xcolname);
-		strcat (trigger, dummy);
-		sprintf (dummy, "MbrMinY(NEW.%s), ", xcolname);
-		strcat (trigger, dummy);
-		sprintf (dummy, "MbrMaxX(NEW.%s), ", xcolname);
-		strcat (trigger, dummy);
-		sprintf (dummy, "MbrMaxY(NEW.%s)));\n", xcolname);
-		strcat (trigger, dummy);
-		strcat (trigger, "END;");
-		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
+		/* deleting the old DELETE trigger SPATIAL_INDEX [if any] */
+		raw = sqlite3_mprintf ("gid_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+				     quoted_trigger);
+		free (quoted_trigger);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
 		    goto error;
 
-		/* inserting the new UPDATE trigger SRID */
-		sprintf (xname, "gcu_%s_%s", tblname, colname);
-		double_quoted_sql (xname);
-		sprintf (xindex, "cache_%s_%s", tblname, colname);
-		double_quoted_sql (xindex);
-		sprintf (trigger, "CREATE TRIGGER %s AFTER UPDATE ON %s\n",
-			 xname, xtable);
-		strcat (trigger, "FOR EACH ROW BEGIN\n");
-		if (metadata_version == 3)
-		  {
-		      /* current metadata style >= v.4.0.0 */
-		      strcat (trigger,
-			      "UPDATE geometry_columns_time SET last_update = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')\n");
-		      sprintf (dummy,
-			       "WHERE Upper(f_table_name) = Upper('%s') AND ",
-			       sqltable);
-		      strcat (trigger, dummy);
-		      sprintf (dummy,
-			       "Upper(f_geometry_column) = Upper('%s');\n",
-			       sqlcolumn);
-		      strcat (trigger, dummy);
-		  }
-		sprintf (dummy, "UPDATE %s SET ", xindex);
-		strcat (trigger, dummy);
-		sprintf (dummy, "mbr = BuildMbrFilter(MbrMinX(NEW.%s), ",
-			 xcolname);
-		strcat (trigger, dummy);
-		sprintf (dummy, "MbrMinY(NEW.%s), ", xcolname);
-		strcat (trigger, dummy);
-		sprintf (dummy, "MbrMaxX(NEW.%s), ", xcolname);
-		strcat (trigger, dummy);
-		sprintf (dummy, "MbrMaxY(NEW.%s))\n", xcolname);
-		strcat (trigger, dummy);
-		strcat (trigger, "WHERE rowid = NEW.ROWID;\n");
-		strcat (trigger, "END;");
-		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
+		/* deleting the old INSERT trigger MBR_CACHE [if any] */
+		raw = sqlite3_mprintf ("gci_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+				     quoted_trigger);
+		free (quoted_trigger);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
 		    goto error;
 
-		/* inserting the new DELETE trigger SRID */
-		sprintf (xname, "gcd_%s_%s", tblname, colname);
-		double_quoted_sql (xname);
-		sprintf (xindex, "cache_%s_%s", tblname, colname);
-		double_quoted_sql (xindex);
-		sprintf (trigger, "CREATE TRIGGER %s AFTER DELETE ON %s\n",
-			 xname, xtable);
-		strcat (trigger, "FOR EACH ROW BEGIN\n");
-		if (metadata_version == 3)
-		  {
-		      /* current metadata style >= v.4.0.0 */
-		      strcat (trigger,
-			      "UPDATE geometry_columns_time SET last_delete = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')\n");
-		      sprintf (dummy,
-			       "WHERE Upper(f_table_name) = Upper('%s') AND ",
-			       sqltable);
-		      strcat (trigger, dummy);
-		      sprintf (dummy,
-			       "Upper(f_geometry_column) = Upper('%s');\n",
-			       sqlcolumn);
-		      strcat (trigger, dummy);
-		  }
-		sprintf (dummy, "DELETE FROM %s WHERE rowid = OLD.ROWID;\n",
-			 xindex);
-		strcat (trigger, dummy);
-		strcat (trigger, "END;");
-		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
+		/* deleting the old UPDATE trigger MBR_CACHE [if any] */
+		raw = sqlite3_mprintf ("gcu_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+				     quoted_trigger);
+		free (quoted_trigger);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
 		    goto error;
+
+		/* deleting the old UPDATE trigger MBR_CACHE [if any] */
+		raw = sqlite3_mprintf ("gcd_%s_%s", p_table, p_column);
+		quoted_trigger = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		sql_statement =
+		    sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"",
+				     quoted_trigger);
+		free (quoted_trigger);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
+		if (ret != SQLITE_OK)
+		    goto error;
+
+		if (index)
+		  {
+		      /* inserting the new INSERT trigger RTree */
+		      if (metadata_version == 3)
+			{
+			    /* current metadata style >= v.4.0.0 */
+			    raw =
+				sqlite3_mprintf ("gii_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    raw =
+				sqlite3_mprintf ("idx_%s_%s", p_table,
+						 p_column);
+			    quoted_rtree = gaiaDoubleQuotedSql (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    quoted_column = gaiaDoubleQuotedSql (p_column);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "UPDATE geometry_columns_time SET last_insert = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
+				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
+				 "Lower(f_geometry_column) = Lower(%Q);\n"
+				 "DELETE FROM \"%s\" WHERE pkid=NEW.ROWID;\n"
+				 "SELECT RTreeAlign(%Q, NEW.ROWID, NEW.\"%s\");\nEND",
+				 quoted_trigger, quoted_table, p_table,
+				 p_column, quoted_rtree, raw, quoted_column);
+			    sqlite3_free (raw);
+			    free (quoted_trigger);
+			    free (quoted_rtree);
+			    free (quoted_table);
+			    free (quoted_column);
+			}
+		      else
+			{
+			    /* legacy metadata style <= v.3.1.0 */
+			    raw =
+				sqlite3_mprintf ("gii_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    raw =
+				sqlite3_mprintf ("idx_%s_%s", p_table,
+						 p_column);
+			    quoted_rtree = gaiaDoubleQuotedSql (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    quoted_column = gaiaDoubleQuotedSql (p_column);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "DELETE FROM \"%s\" WHERE pkid=NEW.ROWID;\n"
+				 "SELECT RTreeAlign(%Q, NEW.ROWID, NEW.\"%s\");\nEND",
+				 quoted_trigger, quoted_table, quoted_rtree,
+				 raw, quoted_column);
+			    sqlite3_free (raw);
+			    free (quoted_trigger);
+			    free (quoted_rtree);
+			    free (quoted_table);
+			    free (quoted_column);
+			}
+		      ret =
+			  sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					&errMsg);
+		      sqlite3_free (sql_statement);
+		      if (ret != SQLITE_OK)
+			  goto error;
+
+		      /* inserting the new UPDATE trigger RTree */
+		      if (metadata_version == 3)
+			{
+			    /* current metadata style >= v.4.0.0 */
+			    raw =
+				sqlite3_mprintf ("giu_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    raw =
+				sqlite3_mprintf ("idx_%s_%s", p_table,
+						 p_column);
+			    quoted_rtree = gaiaDoubleQuotedSql (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    quoted_column = gaiaDoubleQuotedSql (p_column);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER UPDATE ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "UPDATE geometry_columns_time SET last_update = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
+				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
+				 "Lower(f_geometry_column) = Lower(%Q);\n"
+				 "DELETE FROM \"%s\" WHERE pkid=NEW.ROWID;\n"
+				 "SELECT RTreeAlign(%Q, NEW.ROWID, NEW.\"%s\");\nEND",
+				 quoted_trigger, quoted_table, p_table,
+				 p_column, quoted_rtree, raw, quoted_column);
+			    sqlite3_free (raw);
+			    free (quoted_trigger);
+			    free (quoted_rtree);
+			    free (quoted_table);
+			    free (quoted_column);
+			}
+		      else
+			{
+			    /* legacy metadata style <= v.3.1.0 */
+			    raw =
+				sqlite3_mprintf ("giu_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    raw =
+				sqlite3_mprintf ("idx_%s_%s", p_table,
+						 p_column);
+			    quoted_rtree = gaiaDoubleQuotedSql (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    quoted_column = gaiaDoubleQuotedSql (p_column);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER UPDATE ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "DELETE FROM \"%s\" WHERE pkid=NEW.ROWID;\n"
+				 "SELECT RTreeAlign(%Q, NEW.ROWID, NEW.\"%s\");\nEND",
+				 quoted_trigger, quoted_table, quoted_rtree,
+				 raw, quoted_column);
+			    sqlite3_free (raw);
+			    free (quoted_trigger);
+			    free (quoted_rtree);
+			    free (quoted_table);
+			    free (quoted_column);
+			}
+		      ret =
+			  sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					&errMsg);
+		      sqlite3_free (sql_statement);
+		      if (ret != SQLITE_OK)
+			  goto error;
+
+		      /* inserting the new DELETE trigger RTree */
+		      if (metadata_version == 3)
+			{
+			    /* current metadata style >= v.4.0.0 */
+			    raw =
+				sqlite3_mprintf ("gid_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    raw =
+				sqlite3_mprintf ("idx_%s_%s", p_table,
+						 p_column);
+			    quoted_rtree = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    quoted_column = gaiaDoubleQuotedSql (p_column);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER DELETE ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "UPDATE geometry_columns_time SET last_delete = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
+				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
+				 "Lower(f_geometry_column) = Lower(%Q);\n"
+				 "DELETE FROM \"%s\" WHERE pkid=OLD.ROWID;\nEND",
+				 quoted_trigger, quoted_table, p_table,
+				 p_column, quoted_rtree);
+			    free (quoted_trigger);
+			    free (quoted_rtree);
+			    free (quoted_table);
+			    free (quoted_column);
+			}
+		      else
+			{
+			    /* legacy metadata style <= v.3.1.0 */
+			    raw =
+				sqlite3_mprintf ("gid_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    raw =
+				sqlite3_mprintf ("idx_%s_%s", p_table,
+						 p_column);
+			    quoted_rtree = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    quoted_column = gaiaDoubleQuotedSql (p_column);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER DELETE ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "DELETE FROM \"%s\" WHERE pkid=OLD.ROWID;\nEND",
+				 quoted_trigger, quoted_table, quoted_rtree);
+			    free (quoted_trigger);
+			    free (quoted_rtree);
+			    free (quoted_table);
+			    free (quoted_column);
+			}
+		      ret =
+			  sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					&errMsg);
+		      sqlite3_free (sql_statement);
+		      if (ret != SQLITE_OK)
+			  goto error;
+		  }
+
+		if (cached)
+		  {
+		      /* inserting the new INSERT trigger MBRcache */
+		      if (metadata_version == 3)
+			{
+			    /* current metadata style >= v.4.0.0 */
+			    raw =
+				sqlite3_mprintf ("gci_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    raw =
+				sqlite3_mprintf ("cache_%s_%s", p_table,
+						 p_column);
+			    quoted_rtree = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    quoted_column = gaiaDoubleQuotedSql (p_column);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "UPDATE geometry_columns_time SET last_insert = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
+				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
+				 "Lower(f_geometry_column) = Lower(%Q);\n"
+				 "INSERT INTO \"%s\" (rowid, mbr) VALUES (NEW.ROWID,\nBuildMbrFilter("
+				 "MbrMinX(NEW.\"%s\"), MbrMinY(NEW.\"%s\"), MbrMaxX(NEW.\"%s\"), MbrMaxY(NEW.\"%s\")));\nEND",
+				 quoted_trigger, quoted_table, p_table,
+				 p_column, quoted_rtree, quoted_column,
+				 quoted_column, quoted_column, quoted_column);
+			    free (quoted_trigger);
+			    free (quoted_rtree);
+			    free (quoted_table);
+			    free (quoted_column);
+			}
+		      else
+			{
+			    /* legacy metadata style <= v.3.1.0 */
+			    raw =
+				sqlite3_mprintf ("gci_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    raw =
+				sqlite3_mprintf ("cache_%s_%s", p_table,
+						 p_column);
+			    quoted_rtree = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    quoted_column = gaiaDoubleQuotedSql (p_column);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "INSERT INTO \"%s\" (rowid, mbr) VALUES (NEW.ROWID,\nBuildMbrFilter("
+				 "MbrMinX(NEW.\"%s\"), MbrMinY(NEW.\"%s\"), MbrMaxX(NEW.\"%s\"), MbrMaxY(NEW.\"%s\")));\nEND",
+				 quoted_trigger, quoted_table, quoted_rtree,
+				 quoted_column, quoted_column, quoted_column,
+				 quoted_column);
+			    free (quoted_trigger);
+			    free (quoted_rtree);
+			    free (quoted_table);
+			    free (quoted_column);
+			}
+		      ret =
+			  sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					&errMsg);
+		      sqlite3_free (sql_statement);
+		      if (ret != SQLITE_OK)
+			  goto error;
+
+		      /* inserting the new UPDATE trigger MBRcache */
+		      if (metadata_version == 3)
+			{
+			    /* current metadata style >= v.4.0.0 */
+			    raw =
+				sqlite3_mprintf ("gcu_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    raw =
+				sqlite3_mprintf ("cache_%s_%s", p_table,
+						 p_column);
+			    quoted_rtree = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    quoted_column = gaiaDoubleQuotedSql (p_column);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER UPDATE ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "UPDATE geometry_columns_time SET last_update = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
+				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
+				 "Lower(f_geometry_column) = Lower(%Q);\n"
+				 "UPDATE \"%s\" SET mbr = BuildMbrFilter("
+				 "MbrMinX(NEW.\"%s\"), MbrMinY(NEW.\"%s\"), MbrMaxX(NEW.\"%s\"), MbrMaxY(NEW.\"%s\"))\n"
+				 "WHERE rowid = NEW.ROWID;\nEND",
+				 quoted_trigger, quoted_table, p_table,
+				 p_column, quoted_rtree,
+				 quoted_column, quoted_column, quoted_column,
+				 quoted_column);
+			    free (quoted_trigger);
+			    free (quoted_rtree);
+			    free (quoted_table);
+			    free (quoted_column);
+			}
+		      else
+			{
+			    /* legacy metadata style <= v.3.1.0 */
+			    raw =
+				sqlite3_mprintf ("gcu_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    raw =
+				sqlite3_mprintf ("cache_%s_%s", p_table,
+						 p_column);
+			    quoted_rtree = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    quoted_column = gaiaDoubleQuotedSql (p_column);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER UPDATE ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "UPDATE \"%s\" SET mbr = BuildMbrFilter("
+				 "MbrMinX(NEW.\"%s\"), MbrMinY(NEW.\"%s\"), MbrMaxX(NEW.\"%s\"), MbrMaxY(NEW.\"%s\"))\n"
+				 "WHERE rowid = NEW.ROWID;\nEND",
+				 quoted_trigger, quoted_table, quoted_rtree,
+				 quoted_column, quoted_column, quoted_column,
+				 quoted_column);
+			    free (quoted_trigger);
+			    free (quoted_rtree);
+			    free (quoted_table);
+			    free (quoted_column);
+			}
+		      ret =
+			  sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					&errMsg);
+		      sqlite3_free (sql_statement);
+		      if (ret != SQLITE_OK)
+			  goto error;
+
+		      /* inserting the new DELETE trigger MBRcache */
+		      if (metadata_version == 3)
+			{
+			    /* current metadata style >= v.4.0.0 */
+			    raw =
+				sqlite3_mprintf ("gcd_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    raw =
+				sqlite3_mprintf ("cache_%s_%s", p_table,
+						 p_column);
+			    quoted_rtree = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER DELETE ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "UPDATE geometry_columns_time SET last_delete = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
+				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
+				 "Lower(f_geometry_column) = Lower(%Q);\n"
+				 "DELETE FROM \"%s\" WHERE rowid = OLD.ROWID;\nEND",
+				 quoted_trigger, quoted_table, p_table,
+				 p_column, quoted_rtree);
+			    free (quoted_trigger);
+			    free (quoted_rtree);
+			    free (quoted_table);
+			}
+		      else
+			{
+			    /* legacy metadata style <= v.3.1.0 */
+			    raw =
+				sqlite3_mprintf ("gcd_%s_%s", p_table,
+						 p_column);
+			    quoted_trigger = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    raw =
+				sqlite3_mprintf ("cache_%s_%s", p_table,
+						 p_column);
+			    quoted_rtree = gaiaDoubleQuotedSql (raw);
+			    sqlite3_free (raw);
+			    quoted_table = gaiaDoubleQuotedSql (p_table);
+			    quoted_column = gaiaDoubleQuotedSql (p_column);
+			    sql_statement =
+				sqlite3_mprintf
+				("CREATE TRIGGER \"%s\" AFTER DELETE ON \"%s\"\n"
+				 "FOR EACH ROW BEGIN\n"
+				 "DELETE FROM \"%s\" WHERE rowid = OLD.ROWID;\nEND",
+				 quoted_trigger, quoted_table, quoted_rtree);
+			    free (quoted_trigger);
+			    free (quoted_rtree);
+			    free (quoted_table);
+			}
+		      ret =
+			  sqlite3_exec (sqlite, sql_statement, NULL, NULL,
+					&errMsg);
+		      sqlite3_free (sql_statement);
+		      if (ret != SQLITE_OK)
+			  goto error;
+		  }
+
 	    }
       }
-    sqlite3_free_table (results);
+    ret = sqlite3_finalize (stmt);
 /* now we'll adjust any related SpatialIndex as required */
     curr_idx = first_idx;
     while (curr_idx)
@@ -2776,13 +3346,16 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 	  if (curr_idx->ValidRtree)
 	    {
 		/* building RTree SpatialIndex */
-		sprintf (xindex, "idx_%s_%s", curr_idx->TableName,
-			 curr_idx->ColumnName);
-		double_quoted_sql (xindex);
-		sprintf (trigger, "CREATE VIRTUAL TABLE %s USING rtree(\n",
-			 xindex);
-		strcat (trigger, "pkid, xmin, xmax, ymin, ymax)");
-		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
+		raw = sqlite3_mprintf ("idx_%s_%s", curr_idx->TableName,
+				       curr_idx->ColumnName);
+		quoted_rtree = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		sql_statement = sqlite3_mprintf ("CREATE VIRTUAL TABLE \"%s\" "
+						 "USING rtree(pkid, xmin, xmax, ymin, ymax)",
+						 quoted_rtree);
+		free (quoted_rtree);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
 		    goto error;
 		buildSpatialIndex (sqlite,
@@ -2792,17 +3365,21 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 	  if (curr_idx->ValidCache)
 	    {
 		/* building MbrCache SpatialIndex */
-		sprintf (xindex, "cache_%s_%s", curr_idx->TableName,
-			 curr_idx->ColumnName);
-		double_quoted_sql (xindex);
-		strcpy (xtable, curr_idx->TableName);
-		double_quoted_sql (xtable);
-		strcpy (xcolname, curr_idx->ColumnName);
-		double_quoted_sql (xcolname);
-		sprintf (trigger,
-			 "CREATE VIRTUAL TABLE %s USING MbrCache(%s, %s)\n",
-			 xindex, xtable, xcolname);
-		ret = sqlite3_exec (sqlite, trigger, NULL, NULL, &errMsg);
+		raw = sqlite3_mprintf ("cache_%s_%s", curr_idx->TableName,
+				       curr_idx->ColumnName);
+		quoted_rtree = gaiaDoubleQuotedSql (raw);
+		sqlite3_free (raw);
+		quoted_table = gaiaDoubleQuotedSql (curr_idx->TableName);
+		quoted_column = gaiaDoubleQuotedSql (curr_idx->ColumnName);
+		sql_statement = sqlite3_mprintf ("CREATE VIRTUAL TABLE \"%s\" "
+						 "USING MbrCache(\"%s\", \"%s\")",
+						 quoted_rtree, quoted_table,
+						 quoted_column);
+		free (quoted_rtree);
+		free (quoted_table);
+		free (quoted_column);
+		ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+		sqlite3_free (sql_statement);
 		if (ret != SQLITE_OK)
 		    goto error;
 	    }
@@ -2824,6 +3401,10 @@ updateGeometryTriggers (sqlite3 * sqlite, const char *table, const char *column)
 	  free (curr_idx);
 	  curr_idx = next_idx;
       }
+    if (p_table)
+	free (p_table);
+    if (p_column)
+	free (p_column);
 }
 
 static void
@@ -2845,21 +3426,21 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
     int srid = -1;
     int dimension = 2;
     int dims = -1;
-    char dummy[32];
     char sql[1024];
-    char *errMsg = NULL;
     int ret;
-    char **results;
-    int rows;
-    int columns;
-    int i;
-    char tblname[256];
-    char xtable[1024];
-    char xcolumn[1024];
-    char sqltable[1024];
-    char sqlcolumn[1024];
     int notNull = 0;
     int metadata_version;
+    sqlite3_stmt *stmt;
+    char *p_table = NULL;
+    const char *name;
+    int len;
+    char *quoted_table;
+    char *quoted_column;
+    const char *p_type;
+    const char *p_dims;
+    int n_type;
+    int n_dims;
+    char *sql_statement;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
@@ -2967,25 +3548,36 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 	  return;
       }
 /* checking if the table exists */
-    strcpy (sqltable, table);
-    clean_sql_string (sqltable);
-    strcpy (sqlcolumn, column);
-    clean_sql_string (sqlcolumn);
-    sprintf (sql,
-	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Upper(name) = Upper('%s')",
-	     sqltable);
-    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    strcpy (sql,
+	    "SELECT name FROM sqlite_master WHERE type = 'table' AND Lower(name) = Lower(?)");
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("AddGeometryColumn: \"%s\"\n", errMsg);
-	  sqlite3_free (errMsg);
+	  spatialite_e ("AddGeometryColumn: \"%s\"\n", sqlite3_errmsg (sqlite));
+	  sqlite3_result_int (context, 0);
 	  return;
       }
-    *tblname = '\0';
-    for (i = 1; i <= rows; i++)
-	strcpy (tblname, results[(i * columns)]);
-    sqlite3_free_table (results);
-    if (*tblname == '\0')
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		name = (const char *) sqlite3_column_text (stmt, 0);
+		len = sqlite3_column_bytes (stmt, 0);
+		if (p_table)
+		    free (p_table);
+		p_table = malloc (len + 1);
+		strcpy (p_table, name);
+	    }
+      }
+    sqlite3_finalize (stmt);
+    if (!p_table)
       {
 	  spatialite_e
 	      ("AddGeometryColumn() error: table '%s' does not exist\n", table);
@@ -3003,232 +3595,243 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 	  return;
       }
 /* trying to add the column */
-    strcpy (xtable, table);
-    double_quoted_sql (xtable);
-    strcpy (xcolumn, column);
-    double_quoted_sql (xcolumn);
-    strcpy (sql, "ALTER TABLE ");
-    strcat (sql, xtable);
-    strcat (sql, " ADD COLUMN ");
-    strcat (sql, xcolumn);
-    strcat (sql, " ");
     switch (xtype)
       {
       case GAIA_POINT:
-	  strcat (sql, "POINT");
+	  p_type = "POINT";
 	  break;
       case GAIA_LINESTRING:
-	  strcat (sql, "LINESTRING");
+	  p_type = "LINESTRING";
 	  break;
       case GAIA_POLYGON:
-	  strcat (sql, "POLYGON");
+	  p_type = "POLYGON";
 	  break;
       case GAIA_MULTIPOINT:
-	  strcat (sql, "MULTIPOINT");
+	  p_type = "MULTIPOINT";
 	  break;
       case GAIA_MULTILINESTRING:
-	  strcat (sql, "MULTILINESTRING");
+	  p_type = "MULTILINESTRING";
 	  break;
       case GAIA_MULTIPOLYGON:
-	  strcat (sql, "MULTIPOLYGON");
+	  p_type = "MULTIPOLYGON";
 	  break;
       case GAIA_GEOMETRYCOLLECTION:
-	  strcat (sql, "GEOMETRYCOLLECTION");
+	  p_type = "GEOMETRYCOLLECTION";
 	  break;
       case -1:
-	  strcat (sql, "GEOMETRY");
+	  p_type = "GEOMETRY";
 	  break;
       };
+    quoted_table = gaiaDoubleQuotedSql (p_table);
+    quoted_column = gaiaDoubleQuotedSql (column);
     if (notNull)
       {
 	  /* adding a NOT NULL clause */
-	  strcat (sql, " NOT NULL DEFAULT ''");
+	  sql_statement =
+	      sqlite3_mprintf ("ALTER TABLE \"%s\" ADD COLUMN \"%s\" "
+			       "%s NOT NULL DEFAULT ''", quoted_table,
+			       quoted_column, p_type);
       }
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    else
+	sql_statement =
+	    sqlite3_mprintf ("ALTER TABLE \"%s\" ADD COLUMN \"%s\" %s ",
+			     quoted_table, quoted_column, p_type);
+    free (quoted_table);
+    free (quoted_column);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, NULL);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
-	goto error;
+      {
+	  spatialite_e ("AddGeometryColumn: \"%s\"\n", sqlite3_errmsg (sqlite));
+	  sqlite3_result_int (context, 0);
+	  free (p_table);
+	  return;
+      }
 /*ok, inserting into geometry_columns [Spatial Metadata] */
     if (metadata_version == 1)
       {
 	  /* legacy metadata style <= v.3.1.0 */
-	  strcpy (sql,
-		  "INSERT INTO geometry_columns (f_table_name, f_geometry_column, type, ");
-	  strcat (sql,
-		  "coord_dimension, srid, spatial_index_enabled) VALUES (");
-	  strcat (sql, "'");
-	  strcat (sql, sqltable);
-	  strcat (sql, "', '");
-	  strcat (sql, sqlcolumn);
-	  strcat (sql, "', '");
 	  switch (xtype)
 	    {
 	    case GAIA_POINT:
-		strcat (sql, "POINT");
+		p_type = "POINT";
 		break;
 	    case GAIA_LINESTRING:
-		strcat (sql, "LINESTRING");
+		p_type = "LINESTRING";
 		break;
 	    case GAIA_POLYGON:
-		strcat (sql, "POLYGON");
+		p_type = "POLYGON";
 		break;
 	    case GAIA_MULTIPOINT:
-		strcat (sql, "MULTIPOINT");
+		p_type = "MULTIPOINT";
 		break;
 	    case GAIA_MULTILINESTRING:
-		strcat (sql, "MULTILINESTRING");
+		p_type = "MULTILINESTRING";
 		break;
 	    case GAIA_MULTIPOLYGON:
-		strcat (sql, "MULTIPOLYGON");
+		p_type = "MULTIPOLYGON";
 		break;
 	    case GAIA_GEOMETRYCOLLECTION:
-		strcat (sql, "GEOMETRYCOLLECTION");
+		p_type = "GEOMETRYCOLLECTION";
 		break;
 	    case -1:
-		strcat (sql, "GEOMETRY");
+		p_type = "GEOMETRY";
 		break;
 	    };
-	  strcat (sql, "', '");
 	  switch (dims)
 	    {
 	    case GAIA_XY:
-		strcat (sql, "XY");
+		p_dims = "XY";
 		break;
 	    case GAIA_XY_Z:
-		strcat (sql, "XYZ");
+		p_dims = "XYZ";
 		break;
 	    case GAIA_XY_M:
-		strcat (sql, "XYM");
+		p_dims = "XYM";
 		break;
 	    case GAIA_XY_Z_M:
-		strcat (sql, "XYZM");
+		p_dims = "XYZM";
 		break;
 	    };
-	  strcat (sql, "', ");
-	  if (srid <= 0)
-	      strcat (sql, "-1");
-	  else
-	    {
-		sprintf (dummy, "%d", srid);
-		strcat (sql, dummy);
-	    }
-	  strcat (sql, ", 0)");
+	  sql_statement = sqlite3_mprintf ("INSERT INTO geometry_columns "
+					   "(f_table_name, f_geometry_column, type, coord_dimension, srid, "
+					   "spatial_index_enabled) VALUES (?, ?, %Q, %Q, ?, 0)",
+					   p_type, p_dims);
       }
     else
       {
 	  /* current metadata style >= v.4.0.0 */
-	  strcpy (sql,
-		  "INSERT INTO geometry_columns (f_table_name, f_geometry_column, geometry_type, ");
-	  strcat (sql,
-		  "coord_dimension, srid, spatial_index_enabled) VALUES (");
-	  strcat (sql, "'");
-	  strcat (sql, sqltable);
-	  strcat (sql, "', '");
-	  strcat (sql, sqlcolumn);
-	  strcat (sql, "', ");
 	  switch (xtype)
 	    {
 	    case GAIA_POINT:
 		if (dims == GAIA_XY_Z)
-		    strcat (sql, "1001, ");
+		    n_type = 1001;
 		else if (dims == GAIA_XY_M)
-		    strcat (sql, "2001, ");
+		    n_type = 2001;
 		else if (dims == GAIA_XY_Z_M)
-		    strcat (sql, "3001, ");
+		    n_type = 3001;
 		else
-		    strcat (sql, "1, ");
+		    n_type = 1;
 		break;
 	    case GAIA_LINESTRING:
 		if (dims == GAIA_XY_Z)
-		    strcat (sql, "1002, ");
+		    n_type = 1002;
 		else if (dims == GAIA_XY_M)
-		    strcat (sql, "2002, ");
+		    n_type = 2002;
 		else if (dims == GAIA_XY_Z_M)
-		    strcat (sql, "3002, ");
+		    n_type = 3002;
 		else
-		    strcat (sql, "2, ");
+		    n_type = 2;
 		break;
 	    case GAIA_POLYGON:
 		if (dims == GAIA_XY_Z)
-		    strcat (sql, "1003, ");
+		    n_type = 1003;
 		else if (dims == GAIA_XY_M)
-		    strcat (sql, "2003, ");
+		    n_type = 2003;
 		else if (dims == GAIA_XY_Z_M)
-		    strcat (sql, "3003, ");
+		    n_type = 3003;
 		else
-		    strcat (sql, "3, ");
+		    n_type = 3;
 		break;
 	    case GAIA_MULTIPOINT:
 		if (dims == GAIA_XY_Z)
-		    strcat (sql, "1004, ");
+		    n_type = 1004;
 		else if (dims == GAIA_XY_M)
-		    strcat (sql, "2004, ");
+		    n_type = 2004;
 		else if (dims == GAIA_XY_Z_M)
-		    strcat (sql, "3004, ");
+		    n_type = 3004;
 		else
-		    strcat (sql, "4, ");
+		    n_type = 4;
 		break;
 	    case GAIA_MULTILINESTRING:
 		if (dims == GAIA_XY_Z)
-		    strcat (sql, "1005, ");
+		    n_type = 1005;
 		else if (dims == GAIA_XY_M)
-		    strcat (sql, "2005, ");
+		    n_type = 2005;
 		else if (dims == GAIA_XY_Z_M)
-		    strcat (sql, "3005, ");
+		    n_type = 3005;
 		else
-		    strcat (sql, "5, ");
+		    n_type = 5;
 		break;
 	    case GAIA_MULTIPOLYGON:
 		if (dims == GAIA_XY_Z)
-		    strcat (sql, "1006, ");
+		    n_type = 1006;
 		else if (dims == GAIA_XY_M)
-		    strcat (sql, "2006, ");
+		    n_type = 2006;
 		else if (dims == GAIA_XY_Z_M)
-		    strcat (sql, "3006, ");
+		    n_type = 3006;
 		else
-		    strcat (sql, "6, ");
+		    n_type = 6;
 		break;
 	    case GAIA_GEOMETRYCOLLECTION:
 		if (dims == GAIA_XY_Z)
-		    strcat (sql, "1007, ");
+		    n_type = 1007;
 		else if (dims == GAIA_XY_M)
-		    strcat (sql, "2007, ");
+		    n_type = 2007;
 		else if (dims == GAIA_XY_Z_M)
-		    strcat (sql, "3007, ");
+		    n_type = 3007;
 		else
-		    strcat (sql, "7, ");
+		    n_type = 7;
 		break;
 	    case -1:
 		if (dims == GAIA_XY_Z)
-		    strcat (sql, "1000, ");
+		    n_type = 1000;
 		else if (dims == GAIA_XY_M)
-		    strcat (sql, "2000, ");
+		    n_type = 2000;
 		else if (dims == GAIA_XY_Z_M)
-		    strcat (sql, "3000, ");
+		    n_type = 3000;
 		else
-		    strcat (sql, "0, ");
+		    n_type = 0;
 		break;
 	    };
 	  switch (dims)
 	    {
 	    case GAIA_XY:
-		strcat (sql, "2");
+		n_dims = 2;
 		break;
 	    case GAIA_XY_Z:
 	    case GAIA_XY_M:
-		strcat (sql, "3");
+		n_dims = 3;
 		break;
 	    case GAIA_XY_Z_M:
-		strcat (sql, "4");
+		n_dims = 4;
 		break;
 	    };
-	  strcat (sql, ", ");
-	  sprintf (dummy, "%d", srid);
-	  strcat (sql, dummy);
-	  strcat (sql, ", 0)");
+	  sql_statement = sqlite3_mprintf ("INSERT INTO geometry_columns "
+					   "(f_table_name, f_geometry_column, geometry_type, coord_dimension, "
+					   "srid, spatial_index_enabled) VALUES (Lower(?), Lower(?), %d, %d, ?, 0)",
+					   n_type, n_dims);
       }
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    ret =
+	sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			    &stmt, NULL);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
-	goto error;
+      {
+	  spatialite_e ("AddGeometryColumn: \"%s\"\n", sqlite3_errmsg (sqlite));
+	  sqlite3_result_int (context, 0);
+	  free (p_table);
+	  return;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, p_table, strlen (p_table), SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, column, strlen (column), SQLITE_STATIC);
+    if (srid < 0)
+	sqlite3_bind_int (stmt, 3, -1);
+    else
+	sqlite3_bind_int (stmt, 3, srid);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("AddGeometryColumn() error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  goto error;
+      }
+    sqlite3_finalize (stmt);
     if (metadata_version == 3)
       {
 	  /* current metadata style >= v.4.0.0 */
@@ -3236,96 +3839,142 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 	  /* inserting a row into GEOMETRY_COLUMNS_AUTH */
 	  strcpy (sql,
 		  "INSERT OR REPLACE INTO geometry_columns_auth (f_table_name, f_geometry_column, ");
-	  strcat (sql, "read_only, hidden) VALUES (");
-	  strcat (sql, "'");
-	  strcat (sql, sqltable);
-	  strcat (sql, "', '");
-	  strcat (sql, sqlcolumn);
-	  strcat (sql, "', 0, 0)");
-	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+	  strcat (sql, "read_only, hidden) VALUES (Lower(?), Lower(?), 0, 0)");
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
 	  if (ret != SQLITE_OK)
-	      goto error;
+	    {
+		spatialite_e ("AddGeometryColumn: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_result_int (context, 0);
+		free (p_table);
+		return;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, column, strlen (column), SQLITE_STATIC);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("AddGeometryColumn() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		goto error;
+	    }
+	  sqlite3_finalize (stmt);
 	  /* inserting a row into GEOMETRY_COLUMNS_STATISTICS */
 	  strcpy (sql,
 		  "INSERT OR REPLACE INTO geometry_columns_statistics (f_table_name, f_geometry_column) ");
-	  strcat (sql, "VALUES (");
-	  strcat (sql, "'");
-	  strcat (sql, sqltable);
-	  strcat (sql, "', '");
-	  strcat (sql, sqlcolumn);
-	  strcat (sql, "')");
-	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+	  strcat (sql, "VALUES (Lower(?), Lower(?))");
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
 	  if (ret != SQLITE_OK)
-	      goto error;
+	    {
+		spatialite_e ("AddGeometryColumn: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_result_int (context, 0);
+		free (p_table);
+		return;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, column, strlen (column), SQLITE_STATIC);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("AddGeometryColumn() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		goto error;
+	    }
+	  sqlite3_finalize (stmt);
 	  /* inserting a row into GEOMETRY_COLUMNS_TIME */
 	  strcpy (sql,
 		  "INSERT OR REPLACE INTO geometry_columns_time (f_table_name, f_geometry_column) ");
-	  strcat (sql, "VALUES (");
-	  strcat (sql, "'");
-	  strcat (sql, sqltable);
-	  strcat (sql, "', '");
-	  strcat (sql, sqlcolumn);
-	  strcat (sql, "')");
-	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+	  strcat (sql, "VALUES (Lower(?), Lower(?))");
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
 	  if (ret != SQLITE_OK)
-	      goto error;
+	    {
+		spatialite_e ("AddGeometryColumn: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_result_int (context, 0);
+		free (p_table);
+		return;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, column, strlen (column), SQLITE_STATIC);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("AddGeometryColumn() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		goto error;
+	    }
+	  sqlite3_finalize (stmt);
       }
     updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
-    strcpy (sql, "Geometry [");
     switch (xtype)
       {
       case GAIA_POINT:
-	  strcat (sql, "POINT");
+	  p_type = "POINT";
 	  break;
       case GAIA_LINESTRING:
-	  strcat (sql, "LINESTRING");
+	  p_type = "LINESTRING";
 	  break;
       case GAIA_POLYGON:
-	  strcat (sql, "POLYGON");
+	  p_type = "POLYGON";
 	  break;
       case GAIA_MULTIPOINT:
-	  strcat (sql, "MULTIPOINT");
+	  p_type = "MULTIPOINT";
 	  break;
       case GAIA_MULTILINESTRING:
-	  strcat (sql, "MULTILINESTRING");
+	  p_type = "MULTILINESTRING";
 	  break;
       case GAIA_MULTIPOLYGON:
-	  strcat (sql, "MULTIPOLYGON");
+	  p_type = "MULTIPOLYGON";
 	  break;
       case GAIA_GEOMETRYCOLLECTION:
-	  strcat (sql, "GEOMETRYCOLLECTION");
+	  p_type = "GEOMETRYCOLLECTION";
 	  break;
       case -1:
-	  strcat (sql, "GEOMETRY");
+	  p_type = "GEOMETRY";
 	  break;
       };
-    strcat (sql, ",");
     switch (dims)
       {
       case GAIA_XY:
-	  strcat (sql, "XY");
+	  p_dims = "XY";
 	  break;
       case GAIA_XY_Z:
-	  strcat (sql, "XYZ");
+	  p_dims = "XYZ";
 	  break;
       case GAIA_XY_M:
-	  strcat (sql, "XYM");
+	  p_dims = "XYM";
 	  break;
       case GAIA_XY_Z_M:
-	  strcat (sql, "XYZM");
+	  p_dims = "XYZM";
 	  break;
       };
-    sprintf (sqlcolumn, ",SRID=%d", (srid <= 0) ? -1 : srid);
-    strcat (sql, sqlcolumn);
-    strcat (sql, "] successfully created");
-    updateSpatiaLiteHistory (sqlite, (const char *) table,
-			     (const char *) column, sql);
+    sql_statement =
+	sqlite3_mprintf ("Geometry [%s,%s,SRID=%d] successfully created",
+			 p_type, p_dims, (srid <= 0) ? -1 : srid);
+    updateSpatiaLiteHistory (sqlite, table, column, sql_statement);
+    sqlite3_free (sql_statement);
+    free (p_table);
     return;
   error:
-    spatialite_e ("AddGeometryColumn() error: \"%s\"\n", errMsg);
-    sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
+    free (p_table);
     return;
 }
 
@@ -3350,19 +3999,16 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     const unsigned char *txt_dims;
     int dimension = 2;
     int dims = -1;
-    char dummy[32];
     char sql[1024];
-    char *errMsg = NULL;
     int ret;
-    char **results;
-    int rows;
-    int columns;
-    int i;
-    char sqltable[1024];
-    char sqlcolumn[1024];
-    char xtable[1024];
-    char xcolumn[1024];
     int metadata_version;
+    sqlite3_stmt *stmt;
+    int exists = 0;
+    const char *p_type;
+    const char *p_dims;
+    int n_type;
+    int n_dims;
+    char *sql_statement;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
@@ -3469,30 +4115,36 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 	  return;
       }
 /* checking if the table exists */
-    strcpy (sqltable, table);
-    clean_sql_string (sqltable);
-    sprintf (sql,
-	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Upper(name) = Upper('%s')",
-	     sqltable);
-    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    strcpy (sql,
+	    "SELECT name FROM sqlite_master WHERE type = 'table' AND Lower(name) = Lower(?)");
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("RecoverGeometryColumn: \"%s\"\n", errMsg);
-	  sqlite3_free (errMsg);
+	  spatialite_e ("RecoverGeometryColumn: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_result_int (context, 0);
 	  return;
       }
-    *xtable = '\0';
-    for (i = 1; i <= rows; i++)
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+    while (1)
       {
-	  /* retrieving the real table name */
-	  strcpy (xtable, results[(i * columns)]);
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	    {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+		    exists = 1;
+	    }
       }
-    sqlite3_free_table (results);
-    if (*xtable == '\0')
+    sqlite3_finalize (stmt);
+    if (!exists)
       {
 	  spatialite_e
-	      ("RecoverGeometryColumn() error: table '%s' does not exist\n",
-	       table);
+	      ("AddGeometryColumn() error: table '%s' does not exist\n", table);
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -3627,231 +4279,289 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
       }
     if (xxtype == -1)
 	xtype = -1;		/* GEOMETRY */
-    if (!recoverGeomColumn (sqlite, xtable, column, xtype, dims, srid, xcolumn))
+    if (!recoverGeomColumn (sqlite, table, column, xtype, dims, srid))
       {
 	  spatialite_e ("RecoverGeometryColumn(): validation failed\n");
 	  sqlite3_result_int (context, 0);
 	  return;
       }
-    strcpy (sqltable, xtable);
-    clean_sql_string (sqltable);
-    strcpy (sqlcolumn, xcolumn);
-    clean_sql_string (sqlcolumn);
 /* deleting anyway any previous definition */
-    strcpy (sql, "DELETE FROM geometry_columns ");
-    strcat (sql, "WHERE Upper(f_table_name) = Upper('");
-    strcat (sql, sqltable);
-    strcat (sql, "') AND Upper(f_geometry_column) = Upper('");
-    strcat (sql, sqlcolumn);
-    strcat (sql, "')");
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    sql_statement = sqlite3_mprintf ("DELETE FROM geometry_columns "
+				     "WHERE Lower(f_table_name) = Lower(?) AND "
+				     "Lower(f_geometry_column) = Lower(?)");
+    ret =
+	sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			    &stmt, NULL);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
-	goto error;
+      {
+	  spatialite_e ("RecoverGeometryColumn: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, column, strlen (column), SQLITE_STATIC);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("RecoverGeometryColumn() error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  goto error;
+      }
+    sqlite3_finalize (stmt);
 
     if (metadata_version == 1)
       {
 	  /* legacy metadata style <= v.3.1.0 */
-	  strcpy (sql, "INSERT INTO geometry_columns (f_table_name, ");
-	  strcat (sql, "f_geometry_column, type, coord_dimension, srid, ");
-	  strcat (sql, "spatial_index_enabled) VALUES (");
-	  strcat (sql, "'");
-	  strcat (sql, sqltable);
-	  strcat (sql, "', '");
-	  strcat (sql, sqlcolumn);
-	  strcat (sql, "', '");
 	  switch (xtype)
 	    {
 	    case GAIA_POINT:
 	    case GAIA_POINTZ:
 	    case GAIA_POINTM:
 	    case GAIA_POINTZM:
-		strcat (sql, "POINT");
+		p_type = "POINT";
 		break;
 	    case GAIA_LINESTRING:
 	    case GAIA_LINESTRINGZ:
 	    case GAIA_LINESTRINGM:
 	    case GAIA_LINESTRINGZM:
-		strcat (sql, "LINESTRING");
+		p_type = "LINESTRING";
 		break;
 	    case GAIA_POLYGON:
 	    case GAIA_POLYGONZ:
 	    case GAIA_POLYGONM:
 	    case GAIA_POLYGONZM:
-		strcat (sql, "POLYGON");
+		p_type = "POLYGON";
 		break;
 	    case GAIA_MULTIPOINT:
 	    case GAIA_MULTIPOINTZ:
 	    case GAIA_MULTIPOINTM:
 	    case GAIA_MULTIPOINTZM:
-		strcat (sql, "MULTIPOINT");
+		p_type = "MULTIPOINT";
 		break;
 	    case GAIA_MULTILINESTRING:
 	    case GAIA_MULTILINESTRINGZ:
 	    case GAIA_MULTILINESTRINGM:
 	    case GAIA_MULTILINESTRINGZM:
-		strcat (sql, "MULTILINESTRING");
+		p_type = "MULTILINESTRING";
 		break;
 	    case GAIA_MULTIPOLYGON:
 	    case GAIA_MULTIPOLYGONZ:
 	    case GAIA_MULTIPOLYGONM:
 	    case GAIA_MULTIPOLYGONZM:
-		strcat (sql, "MULTIPOLYGON");
+		p_type = "MULTIPOLYGON";
 		break;
 	    case GAIA_GEOMETRYCOLLECTION:
 	    case GAIA_GEOMETRYCOLLECTIONZ:
 	    case GAIA_GEOMETRYCOLLECTIONM:
 	    case GAIA_GEOMETRYCOLLECTIONZM:
-		strcat (sql, "GEOMETRYCOLLECTION");
+		p_type = "GEOMETRYCOLLECTION";
 		break;
 	    case -1:
-		strcat (sql, "GEOMETRY");
+		p_type = "GEOMETRY";
 		break;
 	    };
 	  strcat (sql, "', '");
 	  switch (dims)
 	    {
 	    case GAIA_XY:
-		strcat (sql, "XY");
+		p_dims = "XY";
 		break;
 	    case GAIA_XY_Z:
-		strcat (sql, "XYZ");
+		p_dims = "XYZ";
 		break;
 	    case GAIA_XY_M:
-		strcat (sql, "XYM");
+		p_dims = "XYM";
 		break;
 	    case GAIA_XY_Z_M:
-		strcat (sql, "XYZM");
+		p_dims = "XYZM";
 		break;
 	    };
-	  strcat (sql, "', ");
+	  sql_statement = sqlite3_mprintf ("INSERT INTO geometry_columns "
+					   "(f_table_name, f_geometry_column, type, coord_dimension, srid, "
+					   "spatial_index_enabled) VALUES (Lower(?), Lower(?), %Q, %Q, ?, 0)",
+					   p_type, p_dims);
       }
     else
       {
 	  /* current metadata style >= v.4.0.0 */
-	  strcpy (sql, "INSERT INTO geometry_columns (f_table_name, ");
-	  strcat (sql, "f_geometry_column, geometry_type, coord_dimension, ");
-	  strcat (sql, "srid, spatial_index_enabled) VALUES (");
-	  strcat (sql, "'");
-	  strcat (sql, sqltable);
-	  strcat (sql, "', '");
-	  strcat (sql, sqlcolumn);
-	  strcat (sql, "', ");
 	  switch (xtype)
 	    {
 	    case GAIA_POINT:
-		strcat (sql, "1, 2, ");
+		n_type = 1;
+		n_dims = 2;
 		break;
 	    case GAIA_POINTZ:
-		strcat (sql, "1001, 3, ");
+		n_type = 1001;
+		n_dims = 3;
 		break;
 	    case GAIA_POINTM:
-		strcat (sql, "2001, 3, ");
+		n_type = 2001;
+		n_dims = 3;
 		break;
 	    case GAIA_POINTZM:
-		strcat (sql, "3001, 4, ");
+		n_type = 3001;
+		n_dims = 4;
 		break;
 	    case GAIA_LINESTRING:
-		strcat (sql, "2, 2, ");
+		n_type = 2;
+		n_dims = 2;
 		break;
 	    case GAIA_LINESTRINGZ:
-		strcat (sql, "2002, 3, ");
+		n_type = 1002;
+		n_dims = 3;
 		break;
 	    case GAIA_LINESTRINGM:
-		strcat (sql, "2002, 3, ");
+		n_type = 2002;
+		n_dims = 3;
 		break;
 	    case GAIA_LINESTRINGZM:
-		strcat (sql, "3002, 4, ");
+		n_type = 3002;
+		n_dims = 4;
 		break;
 	    case GAIA_POLYGON:
-		strcat (sql, "3, 2, ");
+		n_type = 3;
+		n_dims = 3;
 		break;
 	    case GAIA_POLYGONZ:
-		strcat (sql, "1003, 3, ");
+		n_type = 1003;
+		n_dims = 3;
 		break;
 	    case GAIA_POLYGONM:
-		strcat (sql, "2003, 3, ");
+		n_type = 2003;
+		n_dims = 3;
 		break;
 	    case GAIA_POLYGONZM:
-		strcat (sql, "3003, 4, ");
+		n_type = 3003;
+		n_dims = 4;
 		break;
 	    case GAIA_MULTIPOINT:
-		strcat (sql, "4, 2, ");
+		n_type = 4;
+		n_dims = 2;
 		break;
 	    case GAIA_MULTIPOINTZ:
-		strcat (sql, "1004, 3, ");
+		n_type = 1004;
+		n_dims = 3;
 		break;
 	    case GAIA_MULTIPOINTM:
-		strcat (sql, "2004, 3, ");
+		n_type = 2004;
+		n_dims = 3;
 		break;
 	    case GAIA_MULTIPOINTZM:
-		strcat (sql, "3004, 4, ");
+		n_type = 3004;
+		n_dims = 4;
 		break;
 	    case GAIA_MULTILINESTRING:
-		strcat (sql, "5, 2, ");
+		n_type = 5;
+		n_dims = 2;
 		break;
 	    case GAIA_MULTILINESTRINGZ:
-		strcat (sql, "1005, 3, ");
+		n_type = 1005;
+		n_dims = 3;
 		break;
 	    case GAIA_MULTILINESTRINGM:
-		strcat (sql, "2005, 3, ");
+		n_type = 2005;
+		n_dims = 3;
 		break;
 	    case GAIA_MULTILINESTRINGZM:
-		strcat (sql, "3005, 4, ");
+		n_type = 3005;
+		n_dims = 4;
 		break;
 	    case GAIA_MULTIPOLYGON:
-		strcat (sql, "6, 2, ");
+		n_type = 6;
+		n_dims = 2;
 		break;
 	    case GAIA_MULTIPOLYGONZ:
-		strcat (sql, "1006, 3, ");
+		n_type = 1006;
+		n_dims = 3;
 		break;
 	    case GAIA_MULTIPOLYGONM:
-		strcat (sql, "2006, 3, ");
+		n_type = 2006;
+		n_dims = 3;
 		break;
 	    case GAIA_MULTIPOLYGONZM:
-		strcat (sql, "3006, 4, ");
+		n_type = 3006;
+		n_dims = 4;
 		break;
 	    case GAIA_GEOMETRYCOLLECTION:
-		strcat (sql, "7, 2, ");
+		n_type = 7;
+		n_dims = 2;
 		break;
 	    case GAIA_GEOMETRYCOLLECTIONZ:
-		strcat (sql, "1007, 3, ");
+		n_type = 1007;
+		n_dims = 3;
 		break;
 	    case GAIA_GEOMETRYCOLLECTIONM:
-		strcat (sql, "2007, 3, ");
+		n_type = 2007;
+		n_dims = 3;
 		break;
 	    case GAIA_GEOMETRYCOLLECTIONZM:
-		strcat (sql, "3007, 4, ");
+		n_type = 3007;
+		n_dims = 4;
 		break;
 	    case -1:
 		switch (dims)
 		  {
 		  case GAIA_XY:
-		      strcat (sql, "0, 2, ");
+		      n_type = 0;
+		      n_dims = 2;
 		      break;
 		  case GAIA_XY_Z:
-		      strcat (sql, "1000, 2, ");
+		      n_type = 1000;
+		      n_dims = 3;
 		      break;
 		  case GAIA_XY_M:
-		      strcat (sql, "2000, 2, ");
+		      n_type = 2000;
+		      n_dims = 3;
 		      break;
 		  case GAIA_XY_Z_M:
-		      strcat (sql, "3000, 2, ");
+		      n_type = 3000;
+		      n_dims = 4;
 		      break;
 		  };
 		break;
 	    };
+	  sql_statement = sqlite3_mprintf ("INSERT INTO geometry_columns "
+					   "(f_table_name, f_geometry_column, geometry_type, coord_dimension, "
+					   "srid, spatial_index_enabled) VALUES (Lower(?), Lower(?), %d, %d, ?, 0)",
+					   n_type, n_dims);
       }
-    if (srid <= 0)
-	strcat (sql, "-1");
+    ret =
+	sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			    &stmt, NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("RecoverGeometryColumn: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, column, strlen (column), SQLITE_STATIC);
+    if (srid < 0)
+	sqlite3_bind_int (stmt, 3, -1);
+    else
+	sqlite3_bind_int (stmt, 3, srid);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
     else
       {
-	  sprintf (dummy, "%d", srid);
-	  strcat (sql, dummy);
+	  spatialite_e ("RecoverGeometryColumn() error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  goto error;
       }
-    strcat (sql, ", 0)");
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
-    if (ret != SQLITE_OK)
-	goto error;
+    sqlite3_finalize (stmt);
     if (metadata_version == 3)
       {
 	  /* current metadata style >= v.4.0.0 */
@@ -3859,95 +4569,136 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 	  /* inserting a row into GEOMETRY_COLUMNS_AUTH */
 	  strcpy (sql,
 		  "INSERT OR REPLACE INTO geometry_columns_auth (f_table_name, f_geometry_column, ");
-	  strcat (sql, "read_only, hidden) VALUES (");
-	  strcat (sql, "'");
-	  strcat (sql, sqltable);
-	  strcat (sql, "', '");
-	  strcat (sql, sqlcolumn);
-	  strcat (sql, "', 0, 0)");
-	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+	  strcat (sql, "read_only, hidden) VALUES (Lower(?), Lower(?), 0, 0)");
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
 	  if (ret != SQLITE_OK)
-	      goto error;
+	    {
+		spatialite_e ("RecoverGeometryColumn: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, column, strlen (column), SQLITE_STATIC);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("RecoverGeometryColumn() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		goto error;
+	    }
+	  sqlite3_finalize (stmt);
 	  /* inserting a row into GEOMETRY_COLUMNS_STATISTICS */
 	  strcpy (sql,
 		  "INSERT OR REPLACE INTO geometry_columns_statistics (f_table_name, f_geometry_column) ");
-	  strcat (sql, "VALUES (");
-	  strcat (sql, "'");
-	  strcat (sql, sqltable);
-	  strcat (sql, "', '");
-	  strcat (sql, sqlcolumn);
-	  strcat (sql, "')");
-	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+	  strcat (sql, "VALUES (Lower(?), Lower(?))");
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
 	  if (ret != SQLITE_OK)
-	      goto error;
+	    {
+		spatialite_e ("RecoverGeometryColumn: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, column, strlen (column), SQLITE_STATIC);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("RecoverGeometryColumn() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		goto error;
+	    }
+	  sqlite3_finalize (stmt);
 	  /* inserting a row into GEOMETRY_COLUMNS_TIME */
 	  strcpy (sql,
 		  "INSERT OR REPLACE INTO geometry_columns_time (f_table_name, f_geometry_column) ");
-	  strcat (sql, "VALUES (");
-	  strcat (sql, "'");
-	  strcat (sql, sqltable);
-	  strcat (sql, "', '");
-	  strcat (sql, sqlcolumn);
-	  strcat (sql, "')");
-	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+	  strcat (sql, "VALUES (Lower(?), Lower(?))");
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
 	  if (ret != SQLITE_OK)
-	      goto error;
+	    {
+		spatialite_e ("RecoverGeometryColumn: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, table, strlen (table), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, column, strlen (column), SQLITE_STATIC);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      ;
+	  else
+	    {
+		spatialite_e ("RecoverGeometryColumn() error: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		sqlite3_finalize (stmt);
+		goto error;
+	    }
+	  sqlite3_finalize (stmt);
       }
-    updateGeometryTriggers (sqlite, xtable, xcolumn);
+    updateGeometryTriggers (sqlite, table, column);
     sqlite3_result_int (context, 1);
-    strcpy (sql, "Geometry [");
     switch (xtype)
       {
       case GAIA_POINT:
-	  strcat (sql, "POINT");
+	  p_type = "POINT";
 	  break;
       case GAIA_LINESTRING:
-	  strcat (sql, "LINESTRING");
+	  p_type = "LINESTRING";
 	  break;
       case GAIA_POLYGON:
-	  strcat (sql, "POLYGON");
+	  p_type = "POLYGON";
 	  break;
       case GAIA_MULTIPOINT:
-	  strcat (sql, "MULTIPOINT");
+	  p_type = "MULTIPOINT";
 	  break;
       case GAIA_MULTILINESTRING:
-	  strcat (sql, "MULTILINESTRING");
+	  p_type = "MULTILINESTRING";
 	  break;
       case GAIA_MULTIPOLYGON:
-	  strcat (sql, "MULTIPOLYGON");
+	  p_type = "MULTIPOLYGON";
 	  break;
       case GAIA_GEOMETRYCOLLECTION:
-	  strcat (sql, "GEOMETRYCOLLECTION");
+	  p_type = "GEOMETRYCOLLECTION";
 	  break;
       case -1:
-	  strcat (sql, "GEOMETRY");
+	  p_type = "GEOMETRY";
 	  break;
       };
-    strcat (sql, ",");
     switch (dims)
       {
       case GAIA_XY:
-	  strcat (sql, "XY");
+	  p_dims = "XY";
 	  break;
       case GAIA_XY_Z:
-	  strcat (sql, "XYZ");
+	  p_dims = "XYZ";
 	  break;
       case GAIA_XY_M:
-	  strcat (sql, "XYM");
+	  p_dims = "XYM";
 	  break;
       case GAIA_XY_Z_M:
-	  strcat (sql, "XYZM");
+	  p_dims = "XYZM";
 	  break;
       };
-    sprintf (sqlcolumn, ",SRID=%d", (srid <= 0) ? -1 : srid);
-    strcat (sql, sqlcolumn);
-    strcat (sql, "] successfully recovered");
-    updateSpatiaLiteHistory (sqlite, (const char *) xtable,
-			     (const char *) xcolumn, sql);
+    sql_statement =
+	sqlite3_mprintf ("Geometry [%s,%s,SRID=%d] successfully recovered",
+			 p_type, p_dims, (srid <= 0) ? -1 : srid);
+    updateSpatiaLiteHistory (sqlite, table, column, sql_statement);
+    sqlite3_free (sql_statement);
     return;
   error:
-    spatialite_e ("RecoverGeometryColumn() error: \"%s\"\n", errMsg);
-    sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);
     return;
 }
@@ -3965,12 +4716,14 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
 */
     const unsigned char *table;
     const unsigned char *column;
-    char sql[1024];
+    char *p_table = NULL;
+    char *p_column = NULL;
+    sqlite3_stmt *stmt;
+    char *sql_statement;
+    char *raw;
+    char *quoted;
     char *errMsg = NULL;
     int ret;
-    char xname[1024];
-    char sqltable[1024];
-    char sqlcolumn[1024];
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
@@ -3989,117 +4742,198 @@ fnct_DiscardGeometryColumn (sqlite3_context * context, int argc,
 	  return;
       }
     column = sqlite3_value_text (argv[1]);
-    strcpy (sqltable, (char *) table);
-    clean_sql_string (sqltable);
-    strcpy (sqlcolumn, (char *) column);
-    clean_sql_string (sqlcolumn);
-    sprintf (sql,
-	     "DELETE FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') AND Upper(f_geometry_column) = Upper('%s')",
-	     sqltable, sqlcolumn);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+
+    sql_statement = sqlite3_mprintf ("DELETE FROM geometry_columns "
+				     "WHERE Lower(f_table_name) = Lower(?) "
+				     "AND Lower(f_geometry_column) = Lower(?)");
+    ret =
+	sqlite3_prepare_v2 (sqlite, sql_statement, strlen (sql_statement),
+			    &stmt, NULL);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
-	goto error;
+      {
+	  spatialite_e ("DiscardGeometryColumn: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, (const char *) table,
+		       strlen ((const char *) table), SQLITE_STATIC);
+    sqlite3_bind_text (stmt, 2, (const char *) column,
+		       strlen ((const char *) column), SQLITE_STATIC);
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	;
+    else
+      {
+	  spatialite_e ("DiscardGeometryColumn() error: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  goto error;
+      }
+    sqlite3_finalize (stmt);
 /* removing triggers too */
-    sprintf (xname, "ggi_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (!get_real_names
+	(sqlite, (const char *) table, (const char *) column, &p_table,
+	 &p_column))
+      {
+	  spatialite_e
+	      ("DiscardGeometryColumn() error: not existing Table or Column\n");
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    raw = sqlite3_mprintf ("ggi_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
-    sprintf (xname, "ggu_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    raw = sqlite3_mprintf ("ggu_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
-    sprintf (xname, "gii_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    raw = sqlite3_mprintf ("gii_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
-    sprintf (xname, "giu_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    raw = sqlite3_mprintf ("giu_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
-    sprintf (xname, "gid_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    raw = sqlite3_mprintf ("gid_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
-    sprintf (xname, "gci_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    raw = sqlite3_mprintf ("gci_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
-    sprintf (xname, "gcu_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    raw = sqlite3_mprintf ("gcu_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
-    sprintf (xname, "gcd_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    raw = sqlite3_mprintf ("gcd_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
-    sprintf (xname, "tmi_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    raw = sqlite3_mprintf ("tmi_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
-    sprintf (xname, "tmu_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    raw = sqlite3_mprintf ("tmu_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
-    sprintf (xname, "tmd_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    raw = sqlite3_mprintf ("tmd_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
 
     /* trying to delete old versions [v2.0, v2.2] triggers[if any] */
-    sprintf (xname, "gti_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    raw = sqlite3_mprintf ("gti_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
-    sprintf (xname, "gtu_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    raw = sqlite3_mprintf ("gtu_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
-    sprintf (xname, "gsi_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    raw = sqlite3_mprintf ("gsi_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
-    sprintf (xname, "gsu_%s_%s", (char *) table, (char *) column);
-    double_quoted_sql (xname);
-    sprintf (sql, "DROP TRIGGER IF EXISTS %s", xname);
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    raw = sqlite3_mprintf ("gsu_%s_%s", p_table, p_column);
+    quoted = gaiaDoubleQuotedSql (raw);
+    sqlite3_free (raw);
+    sql_statement = sqlite3_mprintf ("DROP TRIGGER IF EXISTS \"%s\"", quoted);
+    free (quoted);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &errMsg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
 	goto error;
     /* end deletion old versions [v2.0, v2.2] triggers[if any] */
 
     sqlite3_result_int (context, 1);
-    strcpy (sql, "Geometry successfully discarded");
-    updateSpatiaLiteHistory (sqlite, (const char *) table,
-			     (const char *) column, sql);
+    updateSpatiaLiteHistory (sqlite, p_table,
+			     p_column, "Geometry successfully discarded");
+    free (p_table);
+    free (p_column);
     return;
   error:
+    if (p_table)
+	free (p_table);
+    if (p_column)
+	free (p_column);
     spatialite_e ("DiscardGeometryColumn() error: \"%s\"\n", errMsg);
     sqlite3_free (errMsg);
     sqlite3_result_int (context, 0);

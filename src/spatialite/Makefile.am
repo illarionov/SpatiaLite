@@ -12,7 +12,7 @@ libsplite_la_SOURCES = mbrcache.c \
 	virtualfdo.c \
 	virtualspatialindex.c \
 	virtualnetwork.c \
-	virtualshape.c
+	virtualshape.c 
 
 libsplite_la_CFLAGS = -fvisibility=hidden
 

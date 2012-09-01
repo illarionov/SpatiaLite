@@ -233,7 +233,7 @@ int do_test(sqlite3 *handle, int legacy)
     ret = sqlite3_exec (handle, "DELETE FROM Councils WHERE lc_name = \"Ascoli Satriano\";",
 			NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
-	fprintf (stderr, "UPDATE error: %s\n", err_msg);
+	fprintf (stderr, "DELETE error: %s\n", err_msg);
 	sqlite3_free (err_msg);
 	return -39;
     }
