@@ -6,6 +6,7 @@ noinst_LTLIBRARIES = libsplite.la
 
 libsplite_la_SOURCES = mbrcache.c \
 	spatialite.c \
+	metatables.c \
 	statistics.c \
 	virtualdbf.c \
 	virtualXL.c \

@@ -126,6 +126,27 @@ extern "C"
 						 double factor,
 						 int allow_holes);
 
+    SPATIALITE_PRIVATE int createAdvancedMetaData (void *sqlite);
+
+    SPATIALITE_PRIVATE void updateSpatiaLiteHistory (void *sqlite,
+						     const char *table,
+						     const char *geom,
+						     const char *operation);
+
+    SPATIALITE_PRIVATE int createGeometryColumns (void *p_sqlite);
+
+    SPATIALITE_PRIVATE void
+	updateGeometryTriggers (void *p_sqlite, const char *table,
+				const char *column);
+
+    SPATIALITE_PRIVATE int
+	getRealSQLnames (void *p_sqlite, const char *table, const char *column,
+			 char **real_table, char **real_column);
+
+    SPATIALITE_PRIVATE void
+	buildSpatialIndex (void *p_sqlite, const unsigned char *table,
+			   const char *column);
+
 #ifdef __cplusplus
 }
 #endif

@@ -368,7 +368,7 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
       }
 /* checking if TABLE already exists */
     sprintf (sql,
-	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Upper(name) = Upper('%s')",
+	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Lower(name) = Lower('%s')",
 	     table);
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
@@ -1294,14 +1294,14 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	    {
 		/* current metadata style >= v.4.0.0 */
 		sprintf (sql,
-			 "SELECT geometry_type FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') AND Upper(f_geometry_column) = Upper('%s')",
+			 "SELECT geometry_type FROM geometry_columns WHERE Lower(f_table_name) = Lower('%s') AND Lower(f_geometry_column) = Lower('%s')",
 			 table, column);
 	    }
 	  else
 	    {
 		/* legacy metadata style <= v.3.1.0 */
 		sprintf (sql,
-			 "SELECT type, coord_dimension FROM geometry_columns WHERE Upper(f_table_name) = Upper('%s') AND Upper(f_geometry_column) = Upper('%s')",
+			 "SELECT type, coord_dimension FROM geometry_columns WHERE Lower(f_table_name) = Lower('%s') AND Lower(f_geometry_column) = Lower('%s')",
 			 table, column);
 	    }
 
@@ -1541,7 +1541,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	    }
 	  strcat (sql,
 		  "JOIN geometry_columns USING (f_table_name, f_geometry_column) ");
-	  sprintf (sql2, "WHERE view_name = '%s' AND view_geometry = '%s'",
+	  sprintf (sql2, "WHERE Lower(view_name) = Lower('%s') AND Lower(view_geometry) = Lower('%s')",
 		   table, column);
 	  strcat (sql, sql2);
 	  ret =
@@ -2117,7 +2117,7 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
       }
 /* checking if TABLE already exists */
     sprintf (sql,
-	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Upper(name) = Upper('%s')",
+	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Lower(name) = Lower('%s')",
 	     table);
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
@@ -2990,7 +2990,7 @@ is_table (sqlite3 * sqlite, const char *table)
     int ok = 0;
 
     strcpy (sql, "SELECT tbl_name FROM sqlite_master ");
-    strcat (sql, "WHERE type = 'table' AND Upper(tbl_name) = Upper('");
+    strcat (sql, "WHERE type = 'table' AND Lower(tbl_name) = Lower('");
     strcat (sql, table);
     strcat (sql, "')");
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
@@ -3506,14 +3506,14 @@ check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
 	  /* legacy metadata style <= v.3.1.0 */
 	  strcpy (sql, "SELECT type, coord_dimension, srid ");
       }
-    strcat (sql, "FROM geometry_columns WHERE Upper(f_table_name) = Upper('");
+    strcat (sql, "FROM geometry_columns WHERE Lower(f_table_name) = Lower('");
     quoted = gaiaSingleQuotedSql (inTable);
     if (quoted)
       {
 	  strcat (sql, quoted);
 	  free (quoted);
       }
-    strcat (sql, "') AND Upper(f_geometry_column) = Upper('");
+    strcat (sql, "') AND Lower(f_geometry_column) = Lower('");
     quoted = gaiaSingleQuotedSql (geom);
     if (quoted)
       {
@@ -3759,7 +3759,7 @@ check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
 
 /* cheching if Output Table already exists */
     strcpy (sql, "SELECT Count(*) FROM sqlite_master WHERE type ");
-    strcat (sql, "= 'table' AND Upper(tbl_name) = Upper('");
+    strcat (sql, "= 'table' AND Lower(tbl_name) = Lower('");
     quoted = gaiaSingleQuotedSql (outTable);
     if (quoted)
       {
@@ -4589,7 +4589,7 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
     int already_exists = 0;
 /* checking if TABLE already exists */
     sprintf (sql,
-	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Upper(name) = Upper('%s')",
+	     "SELECT name FROM sqlite_master WHERE type = 'table' AND Lower(name) = Lower('%s')",
 	     table);
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
