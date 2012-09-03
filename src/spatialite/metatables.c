@@ -236,8 +236,6 @@ create_views_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns", NULL,
-			     "table 'views_geometry_columns' successfully created");
 /* creating an INDEX supporting the GEOMETRY_COLUMNS FK */
     strcpy (sql, "CREATE INDEX IF NOT EXISTS ");
     strcat (sql, "idx_viewsjoin ON views_geometry_columns\n");
@@ -249,8 +247,6 @@ create_views_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns", NULL,
-			     "index 'idx_viewsjoin' successfully created");
 /* creating the VIEWS_GEOMETRY_COLUMNS triggers */
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgc_view_name_insert\n");
     strcat (sql, "BEFORE INSERT ON 'views_geometry_columns'\n");
@@ -275,8 +271,6 @@ create_views_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns", NULL,
-			     "trigger 'vwgc_view_name_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgc_view_name_update\n");
     strcat (sql, "BEFORE UPDATE OF 'view_name' ON 'views_geometry_columns'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -300,8 +294,6 @@ create_views_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns", NULL,
-			     "trigger 'vwgc_view_name_update' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgc_view_geometry_insert\n");
     strcat (sql, "BEFORE INSERT ON 'views_geometry_columns'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -325,8 +317,6 @@ create_views_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns", NULL,
-			     "trigger 'vwgc_view_geometry_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgc_view_geometry_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'view_geometry' ON 'views_geometry_columns'\n");
@@ -351,8 +341,6 @@ create_views_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns", NULL,
-			     "trigger 'vwgc_view_geometry_update' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgc_view_rowid_update\n");
     strcat (sql, "BEFORE UPDATE OF 'view_rowid' ON 'views_geometry_columns'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -376,8 +364,6 @@ create_views_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns", NULL,
-			     "trigger 'vwgc_view_rowid_update' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgc_view_rowid_insert\n");
     strcat (sql, "BEFORE INSERT ON 'views_geometry_columns'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -401,8 +387,6 @@ create_views_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns", NULL,
-			     "trigger 'vwgc_view_rowid_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgc_f_table_name_insert\n");
     strcat (sql, "BEFORE INSERT ON 'views_geometry_columns'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -426,8 +410,6 @@ create_views_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns", NULL,
-			     "trigger 'vwgc_f_table_name_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgc_f_table_name_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'f_table_name' ON 'views_geometry_columns'\n");
@@ -452,8 +434,6 @@ create_views_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns", NULL,
-			     "trigger 'vwgc_f_table_name_update' successfully created");
     strcpy (sql,
 	    "CREATE TRIGGER IF NOT EXISTS vwgc_f_geometry_column_insert\n");
     strcat (sql, "BEFORE INSERT ON 'views_geometry_columns'\n");
@@ -479,8 +459,6 @@ create_views_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns", NULL,
-			     "trigger 'vwgc_f_geometry_column_insert' successfully created");
     strcpy (sql,
 	    "CREATE TRIGGER IF NOT EXISTS vwgc_f_geometry_column_update\n");
     strcat (sql,
@@ -507,8 +485,6 @@ create_views_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns", NULL,
-			     "trigger 'vwgc_f_geometry_column_update' successfully created");
     return 1;
 }
 
@@ -537,8 +513,6 @@ create_virts_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns", NULL,
-			     "table 'virts_geometry_columns' successfully created");
 /* creating an INDEX supporting the SPATIAL_REF_SYS FK */
     strcpy (sql, "CREATE INDEX IF NOT EXISTS ");
     strcat (sql, "idx_virtssrid ON virts_geometry_columns\n");
@@ -550,8 +524,6 @@ create_virts_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns", NULL,
-			     "index 'idx_virtssrid' successfully created");
 /* creating the VIRTS_GEOMETRY_COLUMNS triggers */
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgc_virt_name_insert\n");
     strcat (sql, "BEFORE INSERT ON 'virts_geometry_columns'\n");
@@ -576,8 +548,6 @@ create_virts_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns", NULL,
-			     "trigger 'vtgc_virt_name_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgc_virt_name_update\n");
     strcat (sql, "BEFORE UPDATE OF 'virt_name' ON 'virts_geometry_columns'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -601,8 +571,6 @@ create_virts_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns", NULL,
-			     "trigger 'vtgc_view_name_update' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgc_virt_geometry_insert\n");
     strcat (sql, "BEFORE INSERT ON 'virts_geometry_columns'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -626,8 +594,6 @@ create_virts_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns", NULL,
-			     "trigger 'vtgc_virt_geometry_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgc_virt_geometry_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'virt_geometry' ON 'virts_geometry_columns'\n");
@@ -652,8 +618,6 @@ create_virts_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns", NULL,
-			     "trigger 'vtgc_virt_geometry_update' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgc_geometry_type_insert\n");
     strcat (sql, "BEFORE INSERT ON 'virts_geometry_columns'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -674,8 +638,6 @@ create_virts_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns", NULL,
-			     "trigger 'vtgc_geometry_type_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgc_geometry_type_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'geometry_type' ON 'virts_geometry_columns'\n");
@@ -697,8 +659,6 @@ create_virts_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns", NULL,
-			     "trigger 'vtgc_geometry_type_update' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgc_coord_dimension_insert\n");
     strcat (sql, "BEFORE INSERT ON 'virts_geometry_columns'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -713,8 +673,6 @@ create_virts_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns", NULL,
-			     "trigger 'vtgc_coord_dimension_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgc_coord_dimension_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'coord_dimension' ON 'virts_geometry_columns'\n");
@@ -730,8 +688,6 @@ create_virts_geometry_columns (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns", NULL,
-			     "trigger 'vtgc_coord_dimension_update' successfully created");
     return 1;
 }
 
@@ -765,8 +721,6 @@ create_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_statistics", NULL,
-			     "table 'geometry_columns_statistics' successfully created");
 /* creating the GEOMETRY_COLUMNS_STATISTICS triggers */
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS gcs_f_table_name_insert\n");
     strcat (sql, "BEFORE INSERT ON 'geometry_columns_statistics'\n");
@@ -791,8 +745,6 @@ create_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_statistics", NULL,
-			     "trigger 'gcs_f_table_name_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS gcs_f_table_name_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'f_table_name' ON 'geometry_columns_statistics'\n");
@@ -817,8 +769,6 @@ create_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_statistics", NULL,
-			     "trigger 'gcs_f_table_name_update' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS gcs_f_geometry_column_insert\n");
     strcat (sql, "BEFORE INSERT ON 'geometry_columns_statistics'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -843,8 +793,6 @@ create_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_statistics", NULL,
-			     "trigger 'gcs_f_geometry_column_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS gcs_f_geometry_column_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'f_geometry_column' ON 'geometry_columns_statistics'\n");
@@ -870,8 +818,6 @@ create_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_statistics", NULL,
-			     "trigger 'gcs_f_geometry_column_update' successfully created");
     return 1;
 }
 
@@ -905,8 +851,6 @@ create_views_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_statistics", NULL,
-			     "table 'views_geometry_columns_statistics' successfully created");
 /* creating the VIEWS_GEOMETRY_COLUMNS_STATISTICS triggers */
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgcs_view_name_insert\n");
     strcat (sql, "BEFORE INSERT ON 'views_geometry_columns_statistics'\n");
@@ -931,8 +875,6 @@ create_views_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_statistics", NULL,
-			     "trigger 'vwgcs_view_name_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgcs_view_name_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'view_name' ON 'views_geometry_columns_statistics'\n");
@@ -957,8 +899,6 @@ create_views_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_statistics", NULL,
-			     "trigger 'vwgcs_view_name_update' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgcs_view_geometry_insert\n");
     strcat (sql, "BEFORE INSERT ON 'views_geometry_columns_statistics'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -982,8 +922,6 @@ create_views_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_statistics", NULL,
-			     "trigger 'vwgcs_view_geometry_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgcs_view_geometry_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'view_geometry' ON 'views_geometry_columns_statistics'\n");
@@ -1008,8 +946,6 @@ create_views_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_statistics", NULL,
-			     "trigger 'vwgcs_view_geometry_update' successfully created");
     return 1;
 }
 
@@ -1043,8 +979,6 @@ create_virts_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns_statistics", NULL,
-			     "table 'virts_geometry_columns_statistics' successfully created");
 /* creating the VIRTS_GEOMETRY_COLUMNS_STATISTICS triggers */
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgcs_virt_name_insert\n");
     strcat (sql, "BEFORE INSERT ON 'virts_geometry_columns_statistics'\n");
@@ -1069,8 +1003,6 @@ create_virts_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns_statistics", NULL,
-			     "trigger 'vtgcs_virt_name_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgcs_virt_name_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'virt_name' ON 'virts_geometry_columns_statistics'\n");
@@ -1095,8 +1027,6 @@ create_virts_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns_statistics", NULL,
-			     "trigger 'vtgcs_virt_name_update' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgcs_virt_geometry_insert\n");
     strcat (sql, "BEFORE INSERT ON 'virts_geometry_columns_statistics'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -1120,8 +1050,6 @@ create_virts_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns_statistics", NULL,
-			     "trigger 'vtgcs_virt_geometry_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgcs_virt_geometry_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'virt_geometry' ON 'virts_geometry_columns_statistics'\n");
@@ -1146,8 +1074,6 @@ create_virts_geometry_columns_statistics (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns_statistics", NULL,
-			     "trigger 'vtgcs_virt_geometry_update' successfully created");
     return 1;
 }
 
@@ -1187,8 +1113,6 @@ create_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_field_infos", NULL,
-			     "table 'geometry_columns_field_infos' successfully created");
 /* creating the GEOMETRY_COLUMNS_FIELD_INFOS triggers */
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS gcfi_f_table_name_insert\n");
     strcat (sql, "BEFORE INSERT ON 'geometry_columns_field_infos'\n");
@@ -1213,8 +1137,6 @@ create_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_field_infos", NULL,
-			     "trigger 'gcfi_f_table_name_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS gcfi_f_table_name_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'f_table_name' ON 'geometry_columns_field_infos'\n");
@@ -1239,8 +1161,6 @@ create_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_field_infos", NULL,
-			     "trigger 'gcfi_f_table_name_update' successfully created");
     strcpy (sql,
 	    "CREATE TRIGGER IF NOT EXISTS gcfi_f_geometry_column_insert\n");
     strcat (sql, "BEFORE INSERT ON 'geometry_columns_field_infos'\n");
@@ -1266,8 +1186,6 @@ create_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_field_infos", NULL,
-			     "trigger 'gcfi_f_geometry_column_insert' successfully created");
     strcpy (sql,
 	    "CREATE TRIGGER IF NOT EXISTS gcfi_f_geometry_column_update\n");
     strcat (sql,
@@ -1294,8 +1212,6 @@ create_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_field_infos", NULL,
-			     "trigger 'gcfi_f_geometry_column_update' successfully created");
     return 1;
 }
 
@@ -1335,8 +1251,6 @@ create_views_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_field_infos", NULL,
-			     "table 'views_geometry_columns_field_infos' successfully created");
 /* creating the VIEWS_COLUMNS_FIELD_INFOS triggers */
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgcfi_view_name_insert\n");
     strcat (sql, "BEFORE INSERT ON 'views_geometry_columns_field_infos'\n");
@@ -1361,8 +1275,6 @@ create_views_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_field_infos", NULL,
-			     "trigger 'vwgcfi_view_name_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgcfi_view_name_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'view_name' ON 'views_geometry_columns_field_infos'\n");
@@ -1387,8 +1299,6 @@ create_views_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_field_infos", NULL,
-			     "trigger 'vwgcfi_view_name_update' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgcfi_view_geometry_insert\n");
     strcat (sql, "BEFORE INSERT ON 'views_geometry_columns_field_infos'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -1412,8 +1322,6 @@ create_views_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_field_infos", NULL,
-			     "trigger 'vwgcfi_view_geometry_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgcfi_view_geometry_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'view_geometry' ON 'views_geometry_columns_field_infos'\n");
@@ -1438,8 +1346,6 @@ create_views_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_field_infos", NULL,
-			     "trigger 'vwgcfi_view_geometry_update' successfully created");
     return 1;
 }
 
@@ -1479,8 +1385,6 @@ create_virts_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns_field_infos", NULL,
-			     "table 'virts_geometry_columns_field_infos' successfully created");
 /* creating the VIRTS_GEOMETRY_COLUMNS_FIELD_INFOS triggers */
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgcfi_virt_name_insert\n");
     strcat (sql, "BEFORE INSERT ON 'virts_geometry_columns_field_infos'\n");
@@ -1505,8 +1409,6 @@ create_virts_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virt_geometry_columns_field_infos", NULL,
-			     "trigger 'vtgcfi_virt_name_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgcfi_virt_name_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'virt_name' ON 'virts_geometry_columns_field_infos'\n");
@@ -1531,8 +1433,6 @@ create_virts_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virt_geometry_columns_field_infos", NULL,
-			     "trigger 'vtgcs_virt_name_update' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgcfi_virt_geometry_insert\n");
     strcat (sql, "BEFORE INSERT ON 'virts_geometry_columns_field_infos'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -1556,8 +1456,6 @@ create_virts_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns_field_infos", NULL,
-			     "trigger 'vtgcfi_virt_geometry_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgcfi_virt_geometry_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'virt_geometry' ON 'virts_geometry_columns_field_infos'\n");
@@ -1582,8 +1480,6 @@ create_virts_geometry_columns_field_infos (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns_field_infos", NULL,
-			     "trigger 'vtgcfi_virt_geometry_update' successfully created");
     return 1;
 }
 
@@ -1618,8 +1514,6 @@ create_geometry_columns_times (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_time", NULL,
-			     "table 'geometry_columns_time' successfully created");
 /* creating the GEOMETRY_COLUMNS_TIME triggers */
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS gctm_f_table_name_insert\n");
     strcat (sql, "BEFORE INSERT ON 'geometry_columns_time'\n");
@@ -1644,8 +1538,6 @@ create_geometry_columns_times (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_time", NULL,
-			     "trigger 'gctm_f_table_name_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS gctm_f_table_name_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'f_table_name' ON 'geometry_columns_time'\n");
@@ -1670,8 +1562,6 @@ create_geometry_columns_times (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_time", NULL,
-			     "trigger 'gctm_f_table_name_update' successfully created");
     strcpy (sql,
 	    "CREATE TRIGGER IF NOT EXISTS gctm_f_geometry_column_insert\n");
     strcat (sql, "BEFORE INSERT ON 'geometry_columns_time'\n");
@@ -1697,8 +1587,6 @@ create_geometry_columns_times (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_time", NULL,
-			     "trigger 'gctm_f_geometry_column_insert' successfully created");
     strcpy (sql,
 	    "CREATE TRIGGER IF NOT EXISTS gctm_f_geometry_column_update\n");
     strcat (sql,
@@ -1725,8 +1613,6 @@ create_geometry_columns_times (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_time", NULL,
-			     "trigger 'gctm_f_geometry_column_update' successfully created");
     return 1;
 }
 
@@ -1761,8 +1647,6 @@ create_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_auth", NULL,
-			     "table 'geometry_columns_auth' successfully created");
 /* creating the GEOMETRY_COLUMNS_AUTH triggers */
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS gcau_f_table_name_insert\n");
     strcat (sql, "BEFORE INSERT ON 'geometry_columns_auth'\n");
@@ -1787,8 +1671,6 @@ create_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_auth", NULL,
-			     "trigger 'gcau_f_table_name_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS gcau_f_table_name_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'f_table_name' ON 'geometry_columns_auth'\n");
@@ -1813,8 +1695,6 @@ create_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_auth", NULL,
-			     "trigger 'gcau_f_table_name_update' successfully created");
     strcpy (sql,
 	    "CREATE TRIGGER IF NOT EXISTS gcau_f_geometry_column_insert\n");
     strcat (sql, "BEFORE INSERT ON 'geometry_columns_auth'\n");
@@ -1840,8 +1720,6 @@ create_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_auth", NULL,
-			     "trigger 'gcau_f_geometry_column_insert' successfully created");
     strcpy (sql,
 	    "CREATE TRIGGER IF NOT EXISTS gcau_f_geometry_column_update\n");
     strcat (sql,
@@ -1868,8 +1746,6 @@ create_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "geometry_columns_auth", NULL,
-			     "trigger 'gcau_f_geometry_column_update' successfully created");
     return 1;
 }
 
@@ -1901,8 +1777,6 @@ create_views_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_auth", NULL,
-			     "table 'views_geometry_columns_auth' successfully created");
 /* creating the VIEWS_GEOMETRY_COLUMNS_AUTH triggers */
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgcau_view_name_insert\n");
     strcat (sql, "BEFORE INSERT ON 'views_geometry_columns_auth'\n");
@@ -1927,8 +1801,6 @@ create_views_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_auth", NULL,
-			     "trigger 'vwgcau_view_name_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgcau_view_name_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'view_name' ON 'views_geometry_columns_auth'\n");
@@ -1953,8 +1825,6 @@ create_views_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_auth", NULL,
-			     "trigger 'vwgcau_view_name_update' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgcau_view_geometry_insert\n");
     strcat (sql, "BEFORE INSERT ON 'views_geometry_columns_auth'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -1978,8 +1848,6 @@ create_views_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_auth", NULL,
-			     "trigger 'vwgcau_view_geometry_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vwgcau_view_geometry_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'view_geometry'  ON 'views_geometry_columns_auth'\n");
@@ -2004,8 +1872,6 @@ create_views_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "views_geometry_columns_auth", NULL,
-			     "trigger 'vwgcau_view_geometry_update' successfully created");
     return 1;
 }
 
@@ -2037,8 +1903,6 @@ create_virts_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns_auth", NULL,
-			     "table 'virts_geometry_columns_auth' successfully created");
 /* creating the VIRTS_GEOMETRY_COLUMNS_AUTH triggers */
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgcau_virt_name_insert\n");
     strcat (sql, "BEFORE INSERT ON 'virts_geometry_columns_auth'\n");
@@ -2063,8 +1927,6 @@ create_virts_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns_auth", NULL,
-			     "trigger 'vtgcau_virt_name_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgcau_virt_name_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'virt_name' ON 'virts_geometry_columns_auth'\n");
@@ -2089,8 +1951,6 @@ create_virts_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns_auth", NULL,
-			     "trigger 'vtgcau_virt_name_update' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgcau_virt_geometry_insert\n");
     strcat (sql, "BEFORE INSERT ON 'virts_geometry_columns_auth'\n");
     strcat (sql, "FOR EACH ROW BEGIN\n");
@@ -2114,8 +1974,6 @@ create_virts_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns_auth", NULL,
-			     "trigger 'vtgcau_virt_geometry_insert' successfully created");
     strcpy (sql, "CREATE TRIGGER IF NOT EXISTS vtgcau_virt_geometry_update\n");
     strcat (sql,
 	    "BEFORE UPDATE OF 'virt_geometry' ON 'virts_geometry_columns_auth'\n");
@@ -2140,8 +1998,6 @@ create_virts_geometry_columns_auth (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "virts_geometry_columns_auth", NULL,
-			     "trigger 'vtgcau_virt_geometry_update' successfully created");
     return 1;
 }
 
@@ -2190,8 +2046,6 @@ create_geometry_columns_views (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "vector_layers", NULL,
-			     "view 'vector_layers' successfully created");
 /* creating the VECTOR_LAYERS_AUTH view */
     strcpy (sql, "CREATE VIEW  IF NOT EXISTS ");
     strcat (sql, "vector_layers_auth AS\n");
@@ -2225,8 +2079,6 @@ create_geometry_columns_views (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "vector_layers_auth", NULL,
-			     "view 'vector_layers_auth' successfully created");
 /* creating the VECTOR_LAYERS_STATISTICS view */
     strcpy (sql, "CREATE VIEW IF NOT EXISTS ");
     strcat (sql, "vector_layers_statistics AS\n");
@@ -2269,8 +2121,6 @@ create_geometry_columns_views (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "vector_layers_statistics", NULL,
-			     "view 'vector_layers_statistics' successfully created");
 /* creating the VECTOR_LAYERS_FIELD_INFOS view */
     strcpy (sql, "CREATE VIEW IF NOT EXISTS ");
     strcat (sql, "vector_layers_field_infos AS\n");
@@ -2331,9 +2181,35 @@ create_geometry_columns_views (sqlite3 * sqlite)
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-    updateSpatiaLiteHistory (sqlite, "vector_layers_field_infos", NULL,
-			     "view 'vector_layers_field_infos' successfully created");
     return 1;
+}
+
+static int
+create_sql_statements_log (sqlite3 * sqlite)
+{
+    char sql[4186];
+    char *errMsg = NULL;
+    int ret;
+/* creating the SQL_STATEMENTS_LOG table */
+    strcpy (sql, "CREATE TABLE  IF NOT EXISTS ");
+    strcat (sql, "sql_statements_log (\n");
+    strcat (sql, "id INTEGER PRIMARY KEY AUTOINCREMENT,\n");
+strcat(sql, "time_start TIMESTAMP NOT NULL DEFAULT '0000-01-01T00:00:00.000Z',\n");
+strcat(sql, "time_end TIMESTAMP NOT NULL DEFAULT '0000-01-01T00:00:00.000Z',\n");
+strcat(sql, "user_agent TEXT NOT NULL,\n");
+strcat(sql, "sql_statement TEXT NOT NULL,\n");
+strcat(sql, "success INTEGER NOT NULL DEFAULT 0,\n");
+strcat(sql, "error_cause TEXT NOT NULL DEFAULT 'ABORTED',\n");
+    strcat (sql, "CONSTRAINT sqllog_success CHECK ");
+    strcat (sql, "(success IN (0,1)))");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s: %s\n", sql, errMsg);
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+return 1;
 }
 
 SPATIALITE_PRIVATE int
@@ -2366,6 +2242,8 @@ createAdvancedMetaData (void *p_sqlite)
     if (!create_virts_geometry_columns_auth (sqlite))
 	return 0;
     if (!create_geometry_columns_views (sqlite))
+	return 0;
+    if (!create_sql_statements_log (sqlite))
 	return 0;
 
     return 1;
@@ -2985,7 +2863,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 				sqlite3_mprintf
 				("CREATE TRIGGER \"%s\" AFTER INSERT ON \"%s\"\n"
 				 "FOR EACH ROW BEGIN\n"
-				 "UPDATE geometry_columns_time SET last_update = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
+				 "UPDATE geometry_columns_time SET last_insert = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
 				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
 				 "Lower(f_geometry_column) = Lower(%Q);\nEND",
 				 quoted_trigger, quoted_table, p_table,
@@ -3010,7 +2888,7 @@ updateGeometryTriggers (void *p_sqlite, const char *table, const char *column)
 				sqlite3_mprintf
 				("CREATE TRIGGER \"%s\" AFTER DELETE ON \"%s\"\n"
 				 "FOR EACH ROW BEGIN\n"
-				 "UPDATE geometry_columns_time SET last_update = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
+				 "UPDATE geometry_columns_time SET last_delete = strftime('%%Y-%%m-%%dT%%H:%%M:%%fZ', 'now')\n"
 				 "WHERE Lower(f_table_name) = Lower(%Q) AND "
 				 "Lower(f_geometry_column) = Lower(%Q);\nEND",
 				 quoted_trigger, quoted_table, p_table,
