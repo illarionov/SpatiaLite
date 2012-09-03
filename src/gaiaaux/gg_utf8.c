@@ -74,6 +74,7 @@ extern const char *locale_charset (void);
 #endif
 #endif
 
+#include <spatialite/sqlite.h>
 #include <spatialite/gaiaaux.h>
 
 GAIAAUX_DECLARE const char *

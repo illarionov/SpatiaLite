@@ -2194,12 +2194,14 @@ create_sql_statements_log (sqlite3 * sqlite)
     strcpy (sql, "CREATE TABLE  IF NOT EXISTS ");
     strcat (sql, "sql_statements_log (\n");
     strcat (sql, "id INTEGER PRIMARY KEY AUTOINCREMENT,\n");
-strcat(sql, "time_start TIMESTAMP NOT NULL DEFAULT '0000-01-01T00:00:00.000Z',\n");
-strcat(sql, "time_end TIMESTAMP NOT NULL DEFAULT '0000-01-01T00:00:00.000Z',\n");
-strcat(sql, "user_agent TEXT NOT NULL,\n");
-strcat(sql, "sql_statement TEXT NOT NULL,\n");
-strcat(sql, "success INTEGER NOT NULL DEFAULT 0,\n");
-strcat(sql, "error_cause TEXT NOT NULL DEFAULT 'ABORTED',\n");
+    strcat (sql,
+	    "time_start TIMESTAMP NOT NULL DEFAULT '0000-01-01T00:00:00.000Z',\n");
+    strcat (sql,
+	    "time_end TIMESTAMP NOT NULL DEFAULT '0000-01-01T00:00:00.000Z',\n");
+    strcat (sql, "user_agent TEXT NOT NULL,\n");
+    strcat (sql, "sql_statement TEXT NOT NULL,\n");
+    strcat (sql, "success INTEGER NOT NULL DEFAULT 0,\n");
+    strcat (sql, "error_cause TEXT NOT NULL DEFAULT 'ABORTED',\n");
     strcat (sql, "CONSTRAINT sqllog_success CHECK ");
     strcat (sql, "(success IN (0,1)))");
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
@@ -2209,7 +2211,7 @@ strcat(sql, "error_cause TEXT NOT NULL DEFAULT 'ABORTED',\n");
 	  sqlite3_free (errMsg);
 	  return 0;
       }
-return 1;
+    return 1;
 }
 
 SPATIALITE_PRIVATE int
