@@ -43,6 +43,15 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
+/*
+ 
+CREDITS:
+
+this module (wrapping liblwgeom APIs) has been entierely funded by:
+Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
+
+*/
+
 #include "config.h"
 
 #include <sys/types.h>

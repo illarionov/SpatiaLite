@@ -45,6 +45,16 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
+/*
+ 
+CREDITS:
+
+this module has been partly funded by:
+Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
+(exposing liblwgeom APIs as SpatiaLite own SQL functions) 
+
+*/
+
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
