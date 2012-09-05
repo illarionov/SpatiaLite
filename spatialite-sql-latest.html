@@ -1930,28 +1930,30 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE
 the return type is Integer, with a return value of 1 for success or 0 for failure</td></tr>
 			<tr><td><b>AddGeometryColumn</b></td>
 				<td>AddGeometryColumn( table <i>String</i> , column <i>String</i> , srid <i>Integer</i> ,
-geom_type <i>String</i> , dimension <i>String</i> [ , not_null <i>Integer</i> ] ) : <i>Integer</i></td>
+geom_type <i>String</i> [ , dimension <i>String</i> [ , not_null <i>Integer</i> ] ] ) : <i>Integer</i></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>Creates a new <u>geometry column</u> updating the Spatial Metadata tables and creating any
 required <u>trigger</u> in order to enforce constraints<hr>
 				<b>geom_type</b> has to be one of the followings:<ul>
-				<li>'POINT'</li>
-				<li>'LINESTRING'</li>
-				<li>'POLYGON'</li>
-				<li>'MULTIPOINT'</li>
-				<li>'MULTILINESTRING'</li>
-				<li>'MULTIPOLYGON'</li>
-				<li>'GEOMETRYCOLLECTION'</li>
+				<li>'POINT', 'POINTZ', 'POINTM', 'POINTZM'</li>
+				<li>'LINESTRING', 'LINESTRINGZ', 'LINESTRINGM', 'LINESTRINGZM'</li>
+				<li>'POLYGON', 'POLYGONZ', 'POLYGONM', 'POLYGONZM'</li>
+				<li>'MULTIPOINT', 'MULTIPOINTZ', 'MULTIPOINTM', 'MULTIPOINTZM'</li>
+				<li>'MULTILINESTRING', 'MULTILINESTRINGZ', 'MULTILINESTRINGM', 'MULTILINESTRINGZM'</li>
+				<li>'MULTIPOLYGON', 'MULTIPOLYGONZ', 'MULTIPOLYGONM', 'MULTIPOLYGONZM'</li>
+				<li>'GEOMETRYCOLLECTION', 'GEOMETRYCOLLECTIONZ', 'GEOMETRYCOLLECTIONZM', 'GEOMETRYCOLLECTIONZM'</li>
+				<li>'GEOMETRY', 'GEOMETRYZ', 'GEOMETRYM', 'GEOMETRYZM'</li>
 				</ul><b>dimension</b> has to be one of the followings:
 				<ul>
 				<li><b>'XY'</b> or <b>2</b>: 2D points, identified by <b>X</b> and <b>Y</b> coordinates</li>
 				<li><b>'XYM'</b>: 2D points, identified by <b>X</b> and <b>Y</b> coordinates. 
 				Each point stores an <b>M</b>-value (<i>measure</i>) as well</li>
 				<li><b>'XYZ'</b> or <b>3</b>: 3D points, identified by <b>X</b>, <b>Y</b> and <b>Z</b> coordinates</li>
-				<li><b>'XYZM'</b>: 3D points, identified by <b>X</b>, <b>Y</b> and <b>Z</b> coordinates. 
+				<li><b>'XYZM'</b> or <b>4</b>: 3D points, identified by <b>X</b>, <b>Y</b> and <b>Z</b> coordinates. 
 				Each point stores an <b>M</b>-value (<i>measure</i>) as well</li>
-				</ul><hr>
+				</ul>
+                                Please note: the <b>dimension</b> argument is optional; anyway, if specified, iy's expected to be consistent with the declared <b>geom_type</b><hr>
 the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE<hr>
 the optional 6th arg [<b>not_null</b>] is a non-standard extension required by the peculiar SQLite arch:<ul>
 				<li>if set to <b>0</b> [<i>false</i>], then the Geometry column will accept NULL values as well.
@@ -1960,7 +1962,7 @@ the optional 6th arg [<b>not_null</b>] is a non-standard extension required by t
 				</ul></td></tr>
 			<tr><td><b>RecoverGeometryColumn</b></td>
 				<td>RecoverGeometryColumn( table <i>String</i> , column <i>String</i> , srid <i>Integer</i> ,
-geom_type <i>String</i> , dimension <i>Integer</i> ) : <i>Integer</i></td>
+geom_type <i>String</i> [ , dimension <i>Integer</i> ] ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>Validates an existing ordinary column in order to possibly transform it in a real <u>geometry column</u>,

@@ -3670,6 +3670,7 @@ check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
 			    dims = "XYZM";
 			    break;
 			};
+		      *srid = atoi (results[(i * columns) + 1]);
 		  }
 		else
 		  {

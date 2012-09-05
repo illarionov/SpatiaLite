@@ -1467,7 +1467,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 			sqlite3_value ** argv)
 {
 /* SQL function:
-/ AddGeometryColumn(table, column, srid, type , dimension  [  , not-null ]  )
+/ AddGeometryColumn(table, column, srid, type [ , dimension  [  , not-null ] ] )
 /
 / creates a new COLUMN of given TYPE into TABLE
 / returns 1 on success
@@ -1481,6 +1481,7 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
     int srid = -1;
     int dimension = 2;
     int dims = -1;
+    int auto_dims = -1;
     char sql[1024];
     int ret;
     int notNull = 0;
@@ -1529,34 +1530,39 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 	  return;
       }
     type = sqlite3_value_text (argv[3]);
-    if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+    if (argc > 4)
       {
-	  dimension = sqlite3_value_int (argv[4]);
-	  if (dimension == 2)
-	      dims = GAIA_XY;
-	  if (dimension == 3)
-	      dims = GAIA_XY_Z;
+	  if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+	    {
+		dimension = sqlite3_value_int (argv[4]);
+		if (dimension == 2)
+		    dims = GAIA_XY;
+		if (dimension == 3)
+		    dims = GAIA_XY_Z;
+		if (dimension == 4)
+		    dims = GAIA_XY_Z_M;
+	    }
+	  else if (sqlite3_value_type (argv[4]) == SQLITE_TEXT)
+	    {
+		txt_dims = sqlite3_value_text (argv[4]);
+		if (strcasecmp ((char *) txt_dims, "XY") == 0)
+		    dims = GAIA_XY;
+		if (strcasecmp ((char *) txt_dims, "XYZ") == 0)
+		    dims = GAIA_XY_Z;
+		if (strcasecmp ((char *) txt_dims, "XYM") == 0)
+		    dims = GAIA_XY_M;
+		if (strcasecmp ((char *) txt_dims, "XYZM") == 0)
+		    dims = GAIA_XY_Z_M;
+	    }
+	  else
+	    {
+		spatialite_e
+		    ("AddGeometryColumn() error: argument 5 [dimension] is not of the Integer or Text type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
       }
-    else if (sqlite3_value_type (argv[4]) == SQLITE_TEXT)
-      {
-	  txt_dims = sqlite3_value_text (argv[4]);
-	  if (strcasecmp ((char *) txt_dims, "XY") == 0)
-	      dims = GAIA_XY;
-	  if (strcasecmp ((char *) txt_dims, "XYZ") == 0)
-	      dims = GAIA_XY_Z;
-	  if (strcasecmp ((char *) txt_dims, "XYM") == 0)
-	      dims = GAIA_XY_M;
-	  if (strcasecmp ((char *) txt_dims, "XYZM") == 0)
-	      dims = GAIA_XY_Z_M;
-      }
-    else
-      {
-	  spatialite_e
-	      ("AddGeometryColumn() error: argument 5 [dimension] is not of the Integer or Text type\n");
-	  sqlite3_result_int (context, 0);
-	  return;
-      }
-    if (argc > 5)
+    if (argc == 6)
       {
 	  /* optional NOT NULL arg */
 	  if (sqlite3_value_type (argv[5]) != SQLITE_INTEGER)
@@ -1570,21 +1576,165 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
       }
     xtype = GAIA_UNKNOWN;
     if (strcasecmp ((char *) type, "POINT") == 0)
-	xtype = GAIA_POINT;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = GAIA_POINT;
+      }
     if (strcasecmp ((char *) type, "LINESTRING") == 0)
-	xtype = GAIA_LINESTRING;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = GAIA_LINESTRING;
+      }
     if (strcasecmp ((char *) type, "POLYGON") == 0)
-	xtype = GAIA_POLYGON;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = GAIA_POLYGON;
+      }
     if (strcasecmp ((char *) type, "MULTIPOINT") == 0)
-	xtype = GAIA_MULTIPOINT;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = GAIA_MULTIPOINT;
+      }
     if (strcasecmp ((char *) type, "MULTILINESTRING") == 0)
-	xtype = GAIA_MULTILINESTRING;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = GAIA_MULTILINESTRING;
+      }
     if (strcasecmp ((char *) type, "MULTIPOLYGON") == 0)
-	xtype = GAIA_MULTIPOLYGON;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = GAIA_MULTIPOLYGON;
+      }
     if (strcasecmp ((char *) type, "GEOMETRYCOLLECTION") == 0)
-	xtype = GAIA_GEOMETRYCOLLECTION;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = GAIA_GEOMETRYCOLLECTION;
+      }
     if (strcasecmp ((char *) type, "GEOMETRY") == 0)
-	xtype = -1;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = -1;
+      }
+    if (strcasecmp ((char *) type, "POINTZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = GAIA_POINT;
+      }
+    if (strcasecmp ((char *) type, "LINESTRINGZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = GAIA_LINESTRING;
+      }
+    if (strcasecmp ((char *) type, "POLYGONZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = GAIA_POLYGON;
+      }
+    if (strcasecmp ((char *) type, "MULTIPOINTZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = GAIA_MULTIPOINT;
+      }
+    if (strcasecmp ((char *) type, "MULTILINESTRINGZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = GAIA_MULTILINESTRING;
+      }
+    if (strcasecmp ((char *) type, "MULTIPOLYGONZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = GAIA_MULTIPOLYGON;
+      }
+    if (strcasecmp ((char *) type, "GEOMETRYCOLLECTIONZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = GAIA_GEOMETRYCOLLECTION;
+      }
+    if (strcasecmp ((char *) type, "GEOMETRYZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = -1;
+      }
+    if (strcasecmp ((char *) type, "POINTM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = GAIA_POINT;
+      }
+    if (strcasecmp ((char *) type, "LINESTRINGM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = GAIA_LINESTRING;
+      }
+    if (strcasecmp ((char *) type, "POLYGONM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = GAIA_POLYGON;
+      }
+    if (strcasecmp ((char *) type, "MULTIPOINTM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = GAIA_MULTIPOINT;
+      }
+    if (strcasecmp ((char *) type, "MULTILINESTRINGM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = GAIA_MULTILINESTRING;
+      }
+    if (strcasecmp ((char *) type, "MULTIPOLYGONM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = GAIA_MULTIPOLYGON;
+      }
+    if (strcasecmp ((char *) type, "GEOMETRYCOLLECTIONM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = GAIA_GEOMETRYCOLLECTION;
+      }
+    if (strcasecmp ((char *) type, "GEOMETRYM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = -1;
+      }
+    if (strcasecmp ((char *) type, "POINTZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = GAIA_POINT;
+      }
+    if (strcasecmp ((char *) type, "LINESTRINGZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = GAIA_LINESTRING;
+      }
+    if (strcasecmp ((char *) type, "POLYGONZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = GAIA_POLYGON;
+      }
+    if (strcasecmp ((char *) type, "MULTIPOINTZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = GAIA_MULTIPOINT;
+      }
+    if (strcasecmp ((char *) type, "MULTILINESTRINGZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = GAIA_MULTILINESTRING;
+      }
+    if (strcasecmp ((char *) type, "MULTIPOLYGONZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = GAIA_MULTIPOLYGON;
+      }
+    if (strcasecmp ((char *) type, "GEOMETRYCOLLECTIONZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = GAIA_GEOMETRYCOLLECTION;
+      }
+    if (strcasecmp ((char *) type, "GEOMETRYZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = -1;
+      }
     if (xtype == GAIA_UNKNOWN)
       {
 	  spatialite_e
@@ -1592,10 +1742,19 @@ fnct_AddGeometryColumn (sqlite3_context * context, int argc,
 	  sqlite3_result_int (context, 0);
 	  return;
       }
+    if (dims < 0)
+	dims = auto_dims;
     if (dims == GAIA_XY || dims == GAIA_XY_Z || dims == GAIA_XY_M
 	|| dims == GAIA_XY_Z_M)
 	;
     else
+      {
+	  spatialite_e
+	      ("AddGeometryColumn() error: argument 5 [dimension] ILLEGAL VALUE\n");
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    if (auto_dims != GAIA_XY && dims != auto_dims)
       {
 	  spatialite_e
 	      ("AddGeometryColumn() error: argument 5 [dimension] ILLEGAL VALUE\n");
@@ -2054,6 +2213,7 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     const unsigned char *txt_dims;
     int dimension = 2;
     int dims = -1;
+    int auto_dims = -1;
     char sql[1024];
     int ret;
     int metadata_version;
@@ -2098,50 +2258,201 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 	  return;
       }
     type = sqlite3_value_text (argv[3]);
-    if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+    if (argc == 5)
       {
-	  dimension = sqlite3_value_int (argv[4]);
-	  if (dimension == 2)
-	      dims = GAIA_XY;
-	  if (dimension == 3)
-	      dims = GAIA_XY_Z;
-      }
-    else if (sqlite3_value_type (argv[4]) == SQLITE_TEXT)
-      {
-	  txt_dims = sqlite3_value_text (argv[4]);
-	  if (strcasecmp ((char *) txt_dims, "XY") == 0)
-	      dims = GAIA_XY;
-	  if (strcasecmp ((char *) txt_dims, "XYZ") == 0)
-	      dims = GAIA_XY_Z;
-	  if (strcasecmp ((char *) txt_dims, "XYM") == 0)
-	      dims = GAIA_XY_M;
-	  if (strcasecmp ((char *) txt_dims, "XYZM") == 0)
-	      dims = GAIA_XY_Z_M;
-      }
-    else
-      {
-	  spatialite_e
-	      ("RecoverGeometryColumn() error: argument 5 [dimension] is not of the Integer or Text type\n");
-	  sqlite3_result_int (context, 0);
-	  return;
+	  if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+	    {
+		dimension = sqlite3_value_int (argv[4]);
+		if (dimension == 2)
+		    dims = GAIA_XY;
+		if (dimension == 3)
+		    dims = GAIA_XY_Z;
+		if (dimension == 4)
+		    dims = GAIA_XY_Z_M;
+	    }
+	  else if (sqlite3_value_type (argv[4]) == SQLITE_TEXT)
+	    {
+		txt_dims = sqlite3_value_text (argv[4]);
+		if (strcasecmp ((char *) txt_dims, "XY") == 0)
+		    dims = GAIA_XY;
+		if (strcasecmp ((char *) txt_dims, "XYZ") == 0)
+		    dims = GAIA_XY_Z;
+		if (strcasecmp ((char *) txt_dims, "XYM") == 0)
+		    dims = GAIA_XY_M;
+		if (strcasecmp ((char *) txt_dims, "XYZM") == 0)
+		    dims = GAIA_XY_Z_M;
+	    }
+	  else
+	    {
+		spatialite_e
+		    ("RecoverGeometryColumn() error: argument 5 [dimension] is not of the Integer or Text type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
       }
     xtype = GAIA_UNKNOWN;
     if (strcasecmp ((char *) type, "POINT") == 0)
-	xtype = GAIA_POINT;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = GAIA_POINT;
+      }
     if (strcasecmp ((char *) type, "LINESTRING") == 0)
-	xtype = GAIA_LINESTRING;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = GAIA_LINESTRING;
+      }
     if (strcasecmp ((char *) type, "POLYGON") == 0)
-	xtype = GAIA_POLYGON;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = GAIA_POLYGON;
+      }
     if (strcasecmp ((char *) type, "MULTIPOINT") == 0)
-	xtype = GAIA_MULTIPOINT;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = GAIA_MULTIPOINT;
+      }
     if (strcasecmp ((char *) type, "MULTILINESTRING") == 0)
-	xtype = GAIA_MULTILINESTRING;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = GAIA_MULTILINESTRING;
+      }
     if (strcasecmp ((char *) type, "MULTIPOLYGON") == 0)
-	xtype = GAIA_MULTIPOLYGON;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = GAIA_MULTIPOLYGON;
+      }
     if (strcasecmp ((char *) type, "GEOMETRYCOLLECTION") == 0)
-	xtype = GAIA_GEOMETRYCOLLECTION;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = GAIA_GEOMETRYCOLLECTION;
+      }
     if (strcasecmp ((char *) type, "GEOMETRY") == 0)
-	xtype = -1;
+      {
+	  auto_dims = GAIA_XY;
+	  xtype = -1;
+      }
+    if (strcasecmp ((char *) type, "POINTZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = GAIA_POINT;
+      }
+    if (strcasecmp ((char *) type, "LINESTRINGZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = GAIA_LINESTRING;
+      }
+    if (strcasecmp ((char *) type, "POLYGONZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = GAIA_POLYGON;
+      }
+    if (strcasecmp ((char *) type, "MULTIPOINTZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = GAIA_MULTIPOINT;
+      }
+    if (strcasecmp ((char *) type, "MULTILINESTRINGZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = GAIA_MULTILINESTRING;
+      }
+    if (strcasecmp ((char *) type, "MULTIPOLYGONZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = GAIA_MULTIPOLYGON;
+      }
+    if (strcasecmp ((char *) type, "GEOMETRYCOLLECTIONZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = GAIA_GEOMETRYCOLLECTION;
+      }
+    if (strcasecmp ((char *) type, "GEOMETRYZ") == 0)
+      {
+	  auto_dims = GAIA_XY_Z;
+	  xtype = -1;
+      }
+    if (strcasecmp ((char *) type, "POINTM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = GAIA_POINT;
+      }
+    if (strcasecmp ((char *) type, "LINESTRINGM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = GAIA_LINESTRING;
+      }
+    if (strcasecmp ((char *) type, "POLYGONM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = GAIA_POLYGON;
+      }
+    if (strcasecmp ((char *) type, "MULTIPOINTM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = GAIA_MULTIPOINT;
+      }
+    if (strcasecmp ((char *) type, "MULTILINESTRINGM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = GAIA_MULTILINESTRING;
+      }
+    if (strcasecmp ((char *) type, "MULTIPOLYGONM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = GAIA_MULTIPOLYGON;
+      }
+    if (strcasecmp ((char *) type, "GEOMETRYCOLLECTIONM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = GAIA_GEOMETRYCOLLECTION;
+      }
+    if (strcasecmp ((char *) type, "GEOMETRYM") == 0)
+      {
+	  auto_dims = GAIA_XY_M;
+	  xtype = -1;
+      }
+    if (strcasecmp ((char *) type, "POINTZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = GAIA_POINT;
+      }
+    if (strcasecmp ((char *) type, "LINESTRINGZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = GAIA_LINESTRING;
+      }
+    if (strcasecmp ((char *) type, "POLYGONZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = GAIA_POLYGON;
+      }
+    if (strcasecmp ((char *) type, "MULTIPOINTZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = GAIA_MULTIPOINT;
+      }
+    if (strcasecmp ((char *) type, "MULTILINESTRINGZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = GAIA_MULTILINESTRING;
+      }
+    if (strcasecmp ((char *) type, "MULTIPOLYGONZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = GAIA_MULTIPOLYGON;
+      }
+    if (strcasecmp ((char *) type, "GEOMETRYCOLLECTIONZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = GAIA_GEOMETRYCOLLECTION;
+      }
+    if (strcasecmp ((char *) type, "GEOMETRYZM") == 0)
+      {
+	  auto_dims = GAIA_XY_Z_M;
+	  xtype = -1;
+      }
+    if (dims < 0)
+	dims = auto_dims;
     if (xtype == GAIA_UNKNOWN)
       {
 	  spatialite_e
@@ -2153,6 +2464,13 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 	|| dims == GAIA_XY_Z_M)
 	;
     else
+      {
+	  spatialite_e
+	      ("RecoverGeometryColumn() error: argument 5 [dimension] ILLEGAL VALUE\n");
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    if (auto_dims != GAIA_XY && dims != auto_dims)
       {
 	  spatialite_e
 	      ("RecoverGeometryColumn() error: argument 5 [dimension] ILLEGAL VALUE\n");
@@ -2199,7 +2517,8 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     if (!exists)
       {
 	  spatialite_e
-	      ("AddGeometryColumn() error: table '%s' does not exist\n", table);
+	      ("RecoverGeometryColumn() error: table '%s' does not exist\n",
+	       table);
 	  sqlite3_result_int (context, 0);
 	  return;
       }
@@ -2708,24 +3027,45 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
     switch (xtype)
       {
       case GAIA_POINT:
+      case GAIA_POINTZ:
+      case GAIA_POINTM:
+      case GAIA_POINTZM:
 	  p_type = "POINT";
 	  break;
       case GAIA_LINESTRING:
+      case GAIA_LINESTRINGZ:
+      case GAIA_LINESTRINGM:
+      case GAIA_LINESTRINGZM:
 	  p_type = "LINESTRING";
 	  break;
       case GAIA_POLYGON:
+      case GAIA_POLYGONZ:
+      case GAIA_POLYGONM:
+      case GAIA_POLYGONZM:
 	  p_type = "POLYGON";
 	  break;
       case GAIA_MULTIPOINT:
+      case GAIA_MULTIPOINTZ:
+      case GAIA_MULTIPOINTM:
+      case GAIA_MULTIPOINTZM:
 	  p_type = "MULTIPOINT";
 	  break;
       case GAIA_MULTILINESTRING:
+      case GAIA_MULTILINESTRINGZ:
+      case GAIA_MULTILINESTRINGM:
+      case GAIA_MULTILINESTRINGZM:
 	  p_type = "MULTILINESTRING";
 	  break;
       case GAIA_MULTIPOLYGON:
+      case GAIA_MULTIPOLYGONZ:
+      case GAIA_MULTIPOLYGONM:
+      case GAIA_MULTIPOLYGONZM:
 	  p_type = "MULTIPOLYGON";
 	  break;
       case GAIA_GEOMETRYCOLLECTION:
+      case GAIA_GEOMETRYCOLLECTIONZ:
+      case GAIA_GEOMETRYCOLLECTIONM:
+      case GAIA_GEOMETRYCOLLECTIONZM:
 	  p_type = "GEOMETRYCOLLECTION";
 	  break;
       case -1:
@@ -19687,7 +20027,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -19771,7 +20112,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -19780,7 +20122,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -20130,10 +20473,14 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_InitSpatialMetaData, 0, 0);
     sqlite3_create_function (db, "InsertEpsgSrid", 1, SQLITE_ANY, 0,
 			     fnct_InsertEpsgSrid, 0, 0);
+    sqlite3_create_function (db, "AddGeometryColumn", 4, SQLITE_ANY, 0,
+			     fnct_AddGeometryColumn, 0, 0);
     sqlite3_create_function (db, "AddGeometryColumn", 5, SQLITE_ANY, 0,
 			     fnct_AddGeometryColumn, 0, 0);
     sqlite3_create_function (db, "AddGeometryColumn", 6, SQLITE_ANY, 0,
 			     fnct_AddGeometryColumn, 0, 0);
+    sqlite3_create_function (db, "RecoverGeometryColumn", 4, SQLITE_ANY, 0,
+			     fnct_RecoverGeometryColumn, 0, 0);
     sqlite3_create_function (db, "RecoverGeometryColumn", 5, SQLITE_ANY, 0,
 			     fnct_RecoverGeometryColumn, 0, 0);
     sqlite3_create_function (db, "DiscardGeometryColumn", 2, SQLITE_ANY, 0,
