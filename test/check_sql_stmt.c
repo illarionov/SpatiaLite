@@ -155,7 +155,7 @@ int get_clean_line(FILE *f, char ** line)
 {
     size_t len = 0;
     ssize_t num_read = 0;
-    size_t end = 0;
+    ssize_t end = 0;
     char *tmp_line = NULL;
 
 #if !defined(_WIN32) &&!defined(__APPLE__)
@@ -356,10 +356,10 @@ int run_all_testcases()
     if (strcmp(GEOSversion (), "3.3") < 0)
     {
     /* 
-    /* skipping GEOS tests if some obsolete version is found 
-    /*
-    /* rationale: obsolete versions may return substantially
-    /* different results, thus causing many testcases to fail
+      skipping GEOS tests if some obsolete version is found 
+    
+      rationale: obsolete versions may return substantially
+      different results, thus causing many testcases to fail
     */
         fprintf(stderr, "WARNING: skipping GEOS testcases; obsolete version found !!!\n");
         goto skip_geos;
@@ -396,10 +396,10 @@ skip_geos:
     if (strcmp(GEOSversion (), "3.3") < 0)
     {
     /* 
-    /* skipping GEOS tests if some obsolete version is found 
-    /*
-    /* rationale: obsolete versions may return substantially
-    /* different results, thus causing many testcases to fail
+       skipping GEOS tests if some obsolete version is found 
+
+       rationale: obsolete versions may return substantially
+       different results, thus causing many testcases to fail
     */
         fprintf(stderr, "WARNING: skipping GEOS_ADVANCED testcases; obsolete version found !!!\n");
         goto skip_geos_advanced;
@@ -435,10 +435,10 @@ skip_geos_advanced:
     if (strcmp(GEOSversion (), "3.3") < 0)
     {
     /* 
-    /* skipping GEOS tests if some obsolete version is found 
-    /*
-    /* rationale: obsolete versions may return substantially
-    /* different results, thus causing many testcases to fail
+       skipping GEOS tests if some obsolete version is found 
+
+       rationale: obsolete versions may return substantially
+       different results, thus causing many testcases to fail
     */
         fprintf(stderr, "WARNING: skipping GEOS_TRUNK testcases; obsolete version found !!!\n");
         goto skip_geos_trunk;
