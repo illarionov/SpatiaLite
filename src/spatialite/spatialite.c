@@ -12575,410 +12575,6 @@ fnct_SnapToGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaFreeGeomColl (geo);
 }
 
-static void
-fnct_SquareGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
-{
-/* SQL function:
-/ ST_SquareGrid(BLOBencoded geom, double size)
-/ ST_SquareGrid(BLOBencoded geom, double size, boolean edges_only)
-/ ST_SquareGrid(BLOBencoded geom, double size, boolean edges_only, BLOBencoded origin)
-/
-/ Builds a regular grid (Square cells) covering the geom.
-/ each cell has the edges's length as defined by the size argument
-/ an arbitrary origin is supported (0,0 is assumed by default)
-/ return NULL if any error is encountered
-*/
-    unsigned char *p_blob;
-    int n_bytes;
-    int int_value;
-    double origin_x = 0.0;
-    double origin_y = 0.0;
-    double size;
-    int edges_only = 0;
-    gaiaGeomCollPtr geo = NULL;
-    gaiaGeomCollPtr point = NULL;
-    gaiaGeomCollPtr result = NULL;
-    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
-    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
-      {
-	  int_value = sqlite3_value_int (argv[1]);
-	  size = int_value;
-      }
-    else if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
-      {
-	  size = sqlite3_value_double (argv[1]);
-      }
-    else
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
-    if (size <= 0.0)
-      {
-	  /* negative side size */
-	  sqlite3_result_null (context);
-	  return;
-      }
-    if (argc >= 3)
-      {
-	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
-	      edges_only = sqlite3_value_int (argv[2]);
-	  else
-	    {
-		sqlite3_result_null (context);
-		return;
-	    }
-      }
-    if (argc == 4)
-      {
-	  if (sqlite3_value_type (argv[3]) != SQLITE_BLOB)
-	    {
-		sqlite3_result_null (context);
-		return;
-	    }
-	  p_blob = (unsigned char *) sqlite3_value_blob (argv[3]);
-	  n_bytes = sqlite3_value_bytes (argv[3]);
-	  point = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-	  if (!point)
-	    {
-		sqlite3_result_null (context);
-		return;
-	    }
-	  if (point->FirstLinestring != NULL)
-	      goto no_point;
-	  if (point->FirstPolygon != NULL)
-	      goto no_point;
-	  if (point->FirstPoint != NULL)
-	    {
-		if (point->FirstPoint == point->LastPoint)
-		  {
-		      origin_x = point->FirstPoint->X;
-		      origin_y = point->FirstPoint->Y;
-		      gaiaFreeGeomColl (point);
-		  }
-		else
-		    goto no_point;
-	    }
-	  else
-	      goto no_point;
-
-      }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    if (!geo)
-	sqlite3_result_null (context);
-    else
-      {
-	  if (geo->FirstPoint != NULL)
-	      goto no_polygon;
-	  if (geo->FirstLinestring != NULL)
-	      goto no_polygon;
-	  if (geo->FirstPolygon == NULL)
-	      goto no_polygon;
-	  result = gaiaSquareGrid (geo, origin_x, origin_y, size, edges_only);
-	  if (result == NULL)
-	      sqlite3_result_null (context);
-	  else
-	    {
-		/* builds the BLOB geometry to be returned */
-		int len;
-		unsigned char *p_result = NULL;
-		result->Srid = geo->Srid;
-		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
-		sqlite3_result_blob (context, p_result, len, free);
-		gaiaFreeGeomColl (result);
-	    }
-      }
-    gaiaFreeGeomColl (geo);
-    return;
-
-  no_point:
-    gaiaFreeGeomColl (point);
-    sqlite3_result_null (context);
-    return;
-
-  no_polygon:
-    gaiaFreeGeomColl (geo);
-    sqlite3_result_null (context);
-    return;
-}
-
-static void
-fnct_TriangularGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
-{
-/* SQL function:
-/ ST_TriangularGrid(BLOBencoded geom, double size)
-/ ST_TriangularGrid(BLOBencoded geom, double size, boolean edges_only)
-/ ST_TriangularGrid(BLOBencoded geom, double size, boolean edges_only, BLOBencoded origin)
-/
-/ Builds a regular grid (Triangular cells) covering the geom.
-/ each cell has the edge's length as defined by the size argument
-/ an arbitrary origin is supported (0,0 is assumed by default)
-/ return NULL if any error is encountered
-*/
-    unsigned char *p_blob;
-    int n_bytes;
-    int int_value;
-    double origin_x = 0.0;
-    double origin_y = 0.0;
-    double size;
-    int edges_only = 0;
-    gaiaGeomCollPtr geo = NULL;
-    gaiaGeomCollPtr point = NULL;
-    gaiaGeomCollPtr result = NULL;
-    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
-    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
-      {
-	  int_value = sqlite3_value_int (argv[1]);
-	  size = int_value;
-      }
-    else if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
-      {
-	  size = sqlite3_value_double (argv[1]);
-      }
-    else
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
-    if (size <= 0.0)
-      {
-	  /* negative side size */
-	  sqlite3_result_null (context);
-	  return;
-      }
-    if (argc >= 3)
-      {
-	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
-	      edges_only = sqlite3_value_int (argv[2]);
-	  else
-	    {
-		sqlite3_result_null (context);
-		return;
-	    }
-      }
-    if (argc == 4)
-      {
-	  if (sqlite3_value_type (argv[3]) != SQLITE_BLOB)
-	    {
-		sqlite3_result_null (context);
-		return;
-	    }
-	  p_blob = (unsigned char *) sqlite3_value_blob (argv[3]);
-	  n_bytes = sqlite3_value_bytes (argv[3]);
-	  point = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-	  if (!point)
-	    {
-		sqlite3_result_null (context);
-		return;
-	    }
-	  if (point->FirstLinestring != NULL)
-	      goto no_point;
-	  if (point->FirstPolygon != NULL)
-	      goto no_point;
-	  if (point->FirstPoint != NULL)
-	    {
-		if (point->FirstPoint == point->LastPoint)
-		  {
-		      origin_x = point->FirstPoint->X;
-		      origin_y = point->FirstPoint->Y;
-		      gaiaFreeGeomColl (point);
-		  }
-		else
-		    goto no_point;
-	    }
-	  else
-	      goto no_point;
-
-      }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    if (!geo)
-	sqlite3_result_null (context);
-    else
-      {
-	  if (geo->FirstPoint != NULL)
-	      goto no_polygon;
-	  if (geo->FirstLinestring != NULL)
-	      goto no_polygon;
-	  if (geo->FirstPolygon == NULL)
-	      goto no_polygon;
-	  result =
-	      gaiaTriangularGrid (geo, origin_x, origin_y, size, edges_only);
-	  if (result == NULL)
-	      sqlite3_result_null (context);
-	  else
-	    {
-		/* builds the BLOB geometry to be returned */
-		int len;
-		unsigned char *p_result = NULL;
-		result->Srid = geo->Srid;
-		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
-		sqlite3_result_blob (context, p_result, len, free);
-		gaiaFreeGeomColl (result);
-	    }
-      }
-    gaiaFreeGeomColl (geo);
-    return;
-
-  no_point:
-    gaiaFreeGeomColl (point);
-    sqlite3_result_null (context);
-    return;
-
-  no_polygon:
-    gaiaFreeGeomColl (geo);
-    sqlite3_result_null (context);
-    return;
-}
-
-static void
-fnct_HexagonalGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
-{
-/* SQL function:
-/ ST_HexagonalGrid(BLOBencoded geom, double size)
-/ ST_HexagonalGrid(BLOBencoded geom, double size, boolean edges_only)
-/ ST_HexagonalGrid(BLOBencoded geom, double size, boolean edges_only, BLOBencoded origin)
-/
-/ Builds a regular grid (Hexagonal cells) covering the geom.
-/ each cell has the edges's length as defined by the size argument
-/ an arbitrary origin is supported (0,0 is assumed by default)
-/ return NULL if any error is encountered
-*/
-    unsigned char *p_blob;
-    int n_bytes;
-    int int_value;
-    double origin_x = 0.0;
-    double origin_y = 0.0;
-    double size;
-    int edges_only = 0;
-    gaiaGeomCollPtr geo = NULL;
-    gaiaGeomCollPtr point = NULL;
-    gaiaGeomCollPtr result = NULL;
-    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
-    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
-      {
-	  int_value = sqlite3_value_int (argv[1]);
-	  size = int_value;
-      }
-    else if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
-      {
-	  size = sqlite3_value_double (argv[1]);
-      }
-    else
-      {
-	  sqlite3_result_null (context);
-	  return;
-      }
-    if (size <= 0.0)
-      {
-	  /* negative side size */
-	  sqlite3_result_null (context);
-	  return;
-      }
-    if (argc >= 3)
-      {
-	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
-	      edges_only = sqlite3_value_int (argv[2]);
-	  else
-	    {
-		sqlite3_result_null (context);
-		return;
-	    }
-      }
-    if (argc == 4)
-      {
-	  if (sqlite3_value_type (argv[3]) != SQLITE_BLOB)
-	    {
-		sqlite3_result_null (context);
-		return;
-	    }
-	  p_blob = (unsigned char *) sqlite3_value_blob (argv[3]);
-	  n_bytes = sqlite3_value_bytes (argv[3]);
-	  point = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-	  if (!point)
-	    {
-		sqlite3_result_null (context);
-		return;
-	    }
-	  if (point->FirstLinestring != NULL)
-	      goto no_point;
-	  if (point->FirstPolygon != NULL)
-	      goto no_point;
-	  if (point->FirstPoint != NULL)
-	    {
-		if (point->FirstPoint == point->LastPoint)
-		  {
-		      origin_x = point->FirstPoint->X;
-		      origin_y = point->FirstPoint->Y;
-		      gaiaFreeGeomColl (point);
-		  }
-		else
-		    goto no_point;
-	    }
-	  else
-	      goto no_point;
-
-      }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    if (!geo)
-	sqlite3_result_null (context);
-    else
-      {
-	  if (geo->FirstPoint != NULL)
-	      goto no_polygon;
-	  if (geo->FirstLinestring != NULL)
-	      goto no_polygon;
-	  if (geo->FirstPolygon == NULL)
-	      goto no_polygon;
-	  result =
-	      gaiaHexagonalGrid (geo, origin_x, origin_y, size, edges_only);
-	  if (result == NULL)
-	      sqlite3_result_null (context);
-	  else
-	    {
-		/* builds the BLOB geometry to be returned */
-		int len;
-		unsigned char *p_result = NULL;
-		result->Srid = geo->Srid;
-		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
-		sqlite3_result_blob (context, p_result, len, free);
-		gaiaFreeGeomColl (result);
-	    }
-      }
-    gaiaFreeGeomColl (geo);
-    return;
-
-  no_point:
-    gaiaFreeGeomColl (point);
-    sqlite3_result_null (context);
-    return;
-
-  no_polygon:
-    gaiaFreeGeomColl (geo);
-    sqlite3_result_null (context);
-    return;
-}
-
 static char garsMapping[24] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J',
     'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
 };
@@ -17784,6 +17380,410 @@ fnct_UnaryUnion (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_SquareGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_SquareGrid(BLOBencoded geom, double size)
+/ ST_SquareGrid(BLOBencoded geom, double size, boolean edges_only)
+/ ST_SquareGrid(BLOBencoded geom, double size, boolean edges_only, BLOBencoded origin)
+/
+/ Builds a regular grid (Square cells) covering the geom.
+/ each cell has the edges's length as defined by the size argument
+/ an arbitrary origin is supported (0,0 is assumed by default)
+/ return NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int int_value;
+    double origin_x = 0.0;
+    double origin_y = 0.0;
+    double size;
+    int edges_only = 0;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr point = NULL;
+    gaiaGeomCollPtr result = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  size = int_value;
+      }
+    else if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+      {
+	  size = sqlite3_value_double (argv[1]);
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (size <= 0.0)
+      {
+	  /* negative side size */
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc >= 3)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	      edges_only = sqlite3_value_int (argv[2]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 4)
+      {
+	  if (sqlite3_value_type (argv[3]) != SQLITE_BLOB)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  p_blob = (unsigned char *) sqlite3_value_blob (argv[3]);
+	  n_bytes = sqlite3_value_bytes (argv[3]);
+	  point = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+	  if (!point)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (point->FirstLinestring != NULL)
+	      goto no_point;
+	  if (point->FirstPolygon != NULL)
+	      goto no_point;
+	  if (point->FirstPoint != NULL)
+	    {
+		if (point->FirstPoint == point->LastPoint)
+		  {
+		      origin_x = point->FirstPoint->X;
+		      origin_y = point->FirstPoint->Y;
+		      gaiaFreeGeomColl (point);
+		  }
+		else
+		    goto no_point;
+	    }
+	  else
+	      goto no_point;
+
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  if (geo->FirstPoint != NULL)
+	      goto no_polygon;
+	  if (geo->FirstLinestring != NULL)
+	      goto no_polygon;
+	  if (geo->FirstPolygon == NULL)
+	      goto no_polygon;
+	  result = gaiaSquareGrid (geo, origin_x, origin_y, size, edges_only);
+	  if (result == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+    return;
+
+  no_point:
+    gaiaFreeGeomColl (point);
+    sqlite3_result_null (context);
+    return;
+
+  no_polygon:
+    gaiaFreeGeomColl (geo);
+    sqlite3_result_null (context);
+    return;
+}
+
+static void
+fnct_TriangularGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_TriangularGrid(BLOBencoded geom, double size)
+/ ST_TriangularGrid(BLOBencoded geom, double size, boolean edges_only)
+/ ST_TriangularGrid(BLOBencoded geom, double size, boolean edges_only, BLOBencoded origin)
+/
+/ Builds a regular grid (Triangular cells) covering the geom.
+/ each cell has the edge's length as defined by the size argument
+/ an arbitrary origin is supported (0,0 is assumed by default)
+/ return NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int int_value;
+    double origin_x = 0.0;
+    double origin_y = 0.0;
+    double size;
+    int edges_only = 0;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr point = NULL;
+    gaiaGeomCollPtr result = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  size = int_value;
+      }
+    else if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+      {
+	  size = sqlite3_value_double (argv[1]);
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (size <= 0.0)
+      {
+	  /* negative side size */
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc >= 3)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	      edges_only = sqlite3_value_int (argv[2]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 4)
+      {
+	  if (sqlite3_value_type (argv[3]) != SQLITE_BLOB)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  p_blob = (unsigned char *) sqlite3_value_blob (argv[3]);
+	  n_bytes = sqlite3_value_bytes (argv[3]);
+	  point = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+	  if (!point)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (point->FirstLinestring != NULL)
+	      goto no_point;
+	  if (point->FirstPolygon != NULL)
+	      goto no_point;
+	  if (point->FirstPoint != NULL)
+	    {
+		if (point->FirstPoint == point->LastPoint)
+		  {
+		      origin_x = point->FirstPoint->X;
+		      origin_y = point->FirstPoint->Y;
+		      gaiaFreeGeomColl (point);
+		  }
+		else
+		    goto no_point;
+	    }
+	  else
+	      goto no_point;
+
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  if (geo->FirstPoint != NULL)
+	      goto no_polygon;
+	  if (geo->FirstLinestring != NULL)
+	      goto no_polygon;
+	  if (geo->FirstPolygon == NULL)
+	      goto no_polygon;
+	  result =
+	      gaiaTriangularGrid (geo, origin_x, origin_y, size, edges_only);
+	  if (result == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+    return;
+
+  no_point:
+    gaiaFreeGeomColl (point);
+    sqlite3_result_null (context);
+    return;
+
+  no_polygon:
+    gaiaFreeGeomColl (geo);
+    sqlite3_result_null (context);
+    return;
+}
+
+static void
+fnct_HexagonalGrid (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_HexagonalGrid(BLOBencoded geom, double size)
+/ ST_HexagonalGrid(BLOBencoded geom, double size, boolean edges_only)
+/ ST_HexagonalGrid(BLOBencoded geom, double size, boolean edges_only, BLOBencoded origin)
+/
+/ Builds a regular grid (Hexagonal cells) covering the geom.
+/ each cell has the edges's length as defined by the size argument
+/ an arbitrary origin is supported (0,0 is assumed by default)
+/ return NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int int_value;
+    double origin_x = 0.0;
+    double origin_y = 0.0;
+    double size;
+    int edges_only = 0;
+    gaiaGeomCollPtr geo = NULL;
+    gaiaGeomCollPtr point = NULL;
+    gaiaGeomCollPtr result = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  int_value = sqlite3_value_int (argv[1]);
+	  size = int_value;
+      }
+    else if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+      {
+	  size = sqlite3_value_double (argv[1]);
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (size <= 0.0)
+      {
+	  /* negative side size */
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc >= 3)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	      edges_only = sqlite3_value_int (argv[2]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 4)
+      {
+	  if (sqlite3_value_type (argv[3]) != SQLITE_BLOB)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  p_blob = (unsigned char *) sqlite3_value_blob (argv[3]);
+	  n_bytes = sqlite3_value_bytes (argv[3]);
+	  point = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+	  if (!point)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  if (point->FirstLinestring != NULL)
+	      goto no_point;
+	  if (point->FirstPolygon != NULL)
+	      goto no_point;
+	  if (point->FirstPoint != NULL)
+	    {
+		if (point->FirstPoint == point->LastPoint)
+		  {
+		      origin_x = point->FirstPoint->X;
+		      origin_y = point->FirstPoint->Y;
+		      gaiaFreeGeomColl (point);
+		  }
+		else
+		    goto no_point;
+	    }
+	  else
+	      goto no_point;
+
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geo = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!geo)
+	sqlite3_result_null (context);
+    else
+      {
+	  if (geo->FirstPoint != NULL)
+	      goto no_polygon;
+	  if (geo->FirstLinestring != NULL)
+	      goto no_polygon;
+	  if (geo->FirstPolygon == NULL)
+	      goto no_polygon;
+	  result =
+	      gaiaHexagonalGrid (geo, origin_x, origin_y, size, edges_only);
+	  if (result == NULL)
+	      sqlite3_result_null (context);
+	  else
+	    {
+		/* builds the BLOB geometry to be returned */
+		int len;
+		unsigned char *p_result = NULL;
+		result->Srid = geo->Srid;
+		gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+		sqlite3_result_blob (context, p_result, len, free);
+		gaiaFreeGeomColl (result);
+	    }
+      }
+    gaiaFreeGeomColl (geo);
+    return;
+
+  no_point:
+    gaiaFreeGeomColl (point);
+    sqlite3_result_null (context);
+    return;
+
+  no_polygon:
+    gaiaFreeGeomColl (geo);
+    sqlite3_result_null (context);
+    return;
+}
+
+static void
 fnct_LinesCutAtNodes (sqlite3_context * context, int argc,
 		      sqlite3_value ** argv)
 {
@@ -21100,42 +21100,6 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_Polygonize_step, fnct_Polygonize_final);
     sqlite3_create_function (db, "ST_Polygonize", 1, SQLITE_ANY, 0, 0,
 			     fnct_Polygonize_step, fnct_Polygonize_final);
-    sqlite3_create_function (db, "SquareGrid", 2, SQLITE_ANY, 0,
-			     fnct_SquareGrid, 0, 0);
-    sqlite3_create_function (db, "SquareGrid", 3, SQLITE_ANY, 0,
-			     fnct_SquareGrid, 0, 0);
-    sqlite3_create_function (db, "SquareGrid", 4, SQLITE_ANY, 0,
-			     fnct_SquareGrid, 0, 0);
-    sqlite3_create_function (db, "ST_SquareGrid", 2, SQLITE_ANY, 0,
-			     fnct_SquareGrid, 0, 0);
-    sqlite3_create_function (db, "ST_SquareGrid", 3, SQLITE_ANY, 0,
-			     fnct_SquareGrid, 0, 0);
-    sqlite3_create_function (db, "ST_SquareGrid", 4, SQLITE_ANY, 0,
-			     fnct_SquareGrid, 0, 0);
-    sqlite3_create_function (db, "TriangularGrid", 2, SQLITE_ANY, 0,
-			     fnct_TriangularGrid, 0, 0);
-    sqlite3_create_function (db, "TriangularGrid", 3, SQLITE_ANY, 0,
-			     fnct_TriangularGrid, 0, 0);
-    sqlite3_create_function (db, "TriangularGrid", 4, SQLITE_ANY, 0,
-			     fnct_TriangularGrid, 0, 0);
-    sqlite3_create_function (db, "ST_TriangularGrid", 2, SQLITE_ANY, 0,
-			     fnct_TriangularGrid, 0, 0);
-    sqlite3_create_function (db, "ST_TriangularGrid", 3, SQLITE_ANY, 0,
-			     fnct_TriangularGrid, 0, 0);
-    sqlite3_create_function (db, "ST_TriangularGrid", 4, SQLITE_ANY, 0,
-			     fnct_TriangularGrid, 0, 0);
-    sqlite3_create_function (db, "HexagonalGrid", 2, SQLITE_ANY, 0,
-			     fnct_HexagonalGrid, 0, 0);
-    sqlite3_create_function (db, "HexagonalGrid", 3, SQLITE_ANY, 0,
-			     fnct_HexagonalGrid, 0, 0);
-    sqlite3_create_function (db, "HexagonalGrid", 4, SQLITE_ANY, 0,
-			     fnct_HexagonalGrid, 0, 0);
-    sqlite3_create_function (db, "ST_HexagonalGrid", 2, SQLITE_ANY, 0,
-			     fnct_HexagonalGrid, 0, 0);
-    sqlite3_create_function (db, "ST_HexagonalGrid", 3, SQLITE_ANY, 0,
-			     fnct_HexagonalGrid, 0, 0);
-    sqlite3_create_function (db, "ST_HexagonalGrid", 4, SQLITE_ANY, 0,
-			     fnct_HexagonalGrid, 0, 0);
 #endif /* end including GEOS */
 
     sqlite3_create_function (db, "DissolveSegments", 1, SQLITE_ANY, 0,
@@ -21550,6 +21514,42 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_UnaryUnion, 0, 0);
     sqlite3_create_function (db, "ST_UnaryUnion", 1, SQLITE_ANY, 0,
 			     fnct_UnaryUnion, 0, 0);
+    sqlite3_create_function (db, "SquareGrid", 2, SQLITE_ANY, 0,
+			     fnct_SquareGrid, 0, 0);
+    sqlite3_create_function (db, "SquareGrid", 3, SQLITE_ANY, 0,
+			     fnct_SquareGrid, 0, 0);
+    sqlite3_create_function (db, "SquareGrid", 4, SQLITE_ANY, 0,
+			     fnct_SquareGrid, 0, 0);
+    sqlite3_create_function (db, "ST_SquareGrid", 2, SQLITE_ANY, 0,
+			     fnct_SquareGrid, 0, 0);
+    sqlite3_create_function (db, "ST_SquareGrid", 3, SQLITE_ANY, 0,
+			     fnct_SquareGrid, 0, 0);
+    sqlite3_create_function (db, "ST_SquareGrid", 4, SQLITE_ANY, 0,
+			     fnct_SquareGrid, 0, 0);
+    sqlite3_create_function (db, "TriangularGrid", 2, SQLITE_ANY, 0,
+			     fnct_TriangularGrid, 0, 0);
+    sqlite3_create_function (db, "TriangularGrid", 3, SQLITE_ANY, 0,
+			     fnct_TriangularGrid, 0, 0);
+    sqlite3_create_function (db, "TriangularGrid", 4, SQLITE_ANY, 0,
+			     fnct_TriangularGrid, 0, 0);
+    sqlite3_create_function (db, "ST_TriangularGrid", 2, SQLITE_ANY, 0,
+			     fnct_TriangularGrid, 0, 0);
+    sqlite3_create_function (db, "ST_TriangularGrid", 3, SQLITE_ANY, 0,
+			     fnct_TriangularGrid, 0, 0);
+    sqlite3_create_function (db, "ST_TriangularGrid", 4, SQLITE_ANY, 0,
+			     fnct_TriangularGrid, 0, 0);
+    sqlite3_create_function (db, "HexagonalGrid", 2, SQLITE_ANY, 0,
+			     fnct_HexagonalGrid, 0, 0);
+    sqlite3_create_function (db, "HexagonalGrid", 3, SQLITE_ANY, 0,
+			     fnct_HexagonalGrid, 0, 0);
+    sqlite3_create_function (db, "HexagonalGrid", 4, SQLITE_ANY, 0,
+			     fnct_HexagonalGrid, 0, 0);
+    sqlite3_create_function (db, "ST_HexagonalGrid", 2, SQLITE_ANY, 0,
+			     fnct_HexagonalGrid, 0, 0);
+    sqlite3_create_function (db, "ST_HexagonalGrid", 3, SQLITE_ANY, 0,
+			     fnct_HexagonalGrid, 0, 0);
+    sqlite3_create_function (db, "ST_HexagonalGrid", 4, SQLITE_ANY, 0,
+			     fnct_HexagonalGrid, 0, 0);
     sqlite3_create_function (db, "LinesCutAtNodes", 2, SQLITE_ANY, 0,
 			     fnct_LinesCutAtNodes, 0, 0);
     sqlite3_create_function (db, "ST_LinesCutAtNodes", 2, SQLITE_ANY, 0,
