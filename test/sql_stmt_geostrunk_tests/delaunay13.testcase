@@ -1,4 +1,4 @@
-ST_DelaunayTriangulation - (only_edges=yes)
+ST_DelaunayTriangulation XY - (only_edges=yes)
 :memory: #use in-memory database
 SELECT AsText(ST_ForceLHR(ST_DelaunayTriangulation(GeomFromText('MULTIPOINT(0 0, 1 1, 2 2, 0 1, 2 1)'), 1)));
 1 # rows (not including the header row)

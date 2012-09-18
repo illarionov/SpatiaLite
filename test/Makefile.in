@@ -2706,6 +2706,12 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_geostrunk_tests/delaunay11.testcase \
 	sql_stmt_geostrunk_tests/delaunay12.testcase \
 	sql_stmt_geostrunk_tests/delaunay13.testcase \
+	sql_stmt_geostrunk_tests/delaunay14.testcase \
+	sql_stmt_geostrunk_tests/delaunay15.testcase \
+	sql_stmt_geostrunk_tests/delaunay16.testcase \
+	sql_stmt_geostrunk_tests/delaunay17.testcase \
+	sql_stmt_geostrunk_tests/delaunay18.testcase \
+	sql_stmt_geostrunk_tests/delaunay19.testcase \
 	sql_stmt_geostrunk_tests/voronoj1.testcase \
 	sql_stmt_geostrunk_tests/voronoj2.testcase \
 	sql_stmt_geostrunk_tests/voronoj3.testcase \
