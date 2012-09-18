@@ -228,12 +228,12 @@ if test x"$enable_geos" != "xno"; then
   fi
   # Extract the linker and include flags
   GEOS_LDFLAGS=`$GEOSCONFIG --ldflags`
-  GEOS_CPPFLAGS=-I`$GEOSCONFIG --includes`
+  GEOS_CFLAGS=-I`$GEOSCONFIG --includes`
   AC_SUBST([GEOS_LDFLAGS])
-  AC_SUBST([GEOS_CPPFLAGS])	
+  AC_SUBST([GEOS_CFLAGS])	
   # Ensure that we can parse geos_c.h
   CPPFLAGS_SAVE="$CPPFLAGS"
-  CPPFLAGS="$GEOS_CPPFLAGS"
+  CPPFLAGS="$GEOS_CFLAGS"
   AC_CHECK_HEADERS([geos_c.h],, [AC_MSG_ERROR([could not find geos_c.h - you may need to specify the directory of a geos-config file using --with-geosconfig])])
   CPPFLAGS="$CPPFLAGS_SAVE"	
   # Ensure we can link against libgeos_c

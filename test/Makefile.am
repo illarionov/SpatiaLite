@@ -1,3 +1,5 @@
+INCLUDES = @CFLAGS@ @GEOS_CFLAGS@
+
 check_PROGRAMS = check_endian \
 		check_version \
 		check_init \
