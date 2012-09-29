@@ -1,7 +1,7 @@
 ST_DelaunayTriangulation XY - (only_edges=yes)
 :memory: #use in-memory database
-SELECT AsText(ST_ForceLHR(ST_DelaunayTriangulation(GeomFromText('MULTIPOINT(0 0, 1 1, 2 2, 0 1, 2 1)'), 1)));
+SELECT ST_Length(ST_DelaunayTriangulation(GeomFromText('MULTIPOINT(0 0, 1 1, 2 2, 0 1, 2 1)'), 1));
 1 # rows (not including the header row)
 1 # columns
-AsText(ST_ForceLHR(ST_DelaunayTriangulation(GeomFromText('MULTIPOINT(0 0, 1 1, 2 2, 0 1, 2 1)'), 1)))
-MULTILINESTRING((0 1, 2 2), (0 0, 0 1), (0 0, 2 1), (2 1, 2 2), (1 1, 2 1), (1 1, 2 2), (0 1, 1 1), (0 0, 1 1))
+ST_Length(ST_DelaunayTriangulation(GeomFromText('MULTIPOINT(0 0, 1 1, 2 2, 0 1, 2 1)'), 1))
+11.3005:4

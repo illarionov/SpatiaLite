@@ -1309,6 +1309,41 @@ extern "C"
 				     double yb, double *azimuth);
 
 /**
+ Utility function: GeoHash
+
+ \param geom the input geometry.
+ \param precision the expected precision: if <= 0 will be automatically determined.
+
+ \return NULL on failure: a null-terminated text string on success
+
+ \note you are responsible to free (before or after) any text string returned
+  by gaiaGeoHash()
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE char *gaiaGeoHash (gaiaGeomCollPtr geom, int precision);
+
+/**
+ Utility function: AsX3D
+
+ \param geom the input geometry.
+ \param srs the WKT SRS definition.
+ \param precision the expected precision (coord decimal digits).
+ \param options 
+ \param refid the X3D namespace
+
+ \return NULL on failure: a null-terminated text string on success
+
+ \note you are responsible to free (before or after) any text string returned
+  by gaiaAsX3D()
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE char *gaiaAsX3D (gaiaGeomCollPtr geom, const char *srs,
+				     int precision, int options,
+				     const char *defid);
+
+/**
  Utility function: Split
 
  \param input the input Geometry object.

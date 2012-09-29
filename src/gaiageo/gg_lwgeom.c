@@ -1630,4 +1630,66 @@ gaiaAzimuth (double xa, double ya, double xb, double yb, double *azimuth)
     return 1;
 }
 
+GAIAGEO_DECLARE char *
+gaiaGeoHash (gaiaGeomCollPtr geom, int precision)
+{
+/* wrapping LWGEOM GeoHash */
+    LWGEOM *g;
+    char *result;
+    char *geo_hash;
+    int len;
+
+    if (!geom)
+	return NULL;
+    gaiaMbrGeometry (geom);
+    if (geom->MinX < -180.0 || geom->MaxX > 180.0 || geom->MinY < -90.0
+	|| geom->MaxY > 90.0)
+	return NULL;
+    g = toLWGeom (geom);
+    result = lwgeom_geohash (g, precision);
+    lwgeom_free (g);
+    if (result == NULL)
+	return NULL;
+    len = strlen (result);
+    if (len == 0)
+      {
+	  lwfree (result);
+	  return NULL;
+      }
+    geo_hash = malloc (len + 1);
+    strcpy (geo_hash, result);
+    lwfree (result);
+    return geo_hash;
+}
+
+GAIAGEO_DECLARE char *
+gaiaAsX3D (gaiaGeomCollPtr geom, const char *srs, int precision, int options,
+	   const char *defid)
+{
+/* wrapping LWGEOM AsX3D */
+    LWGEOM *g;
+    char *result;
+    char *x3d;
+    int len;
+
+    if (!geom)
+	return NULL;
+    gaiaMbrGeometry (geom);
+    g = toLWGeom (geom);
+    result = lwgeom_to_x3d3 (g, srs, precision, options, defid);
+    lwgeom_free (g);
+    if (result == NULL)
+	return NULL;
+    len = strlen (result);
+    if (len == 0)
+      {
+	  lwfree (result);
+	  return NULL;
+      }
+    x3d = malloc (len + 1);
+    strcpy (x3d, result);
+    lwfree (result);
+    return x3d;
+}
+
 #endif /* end enabling LWGEOM support */

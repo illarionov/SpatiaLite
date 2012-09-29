@@ -18817,6 +18817,184 @@ fnct_Azimuth (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
 }
 
+static void
+fnct_GeoHash (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ GeoHash(BLOBencoded geom)
+/ GeoHash(BLOBencoded geom, Integer precision)
+/
+/ Returns a GeoHash representation for input geometry
+/ (expected to be in longitude/latitude coords)
+/ NULL is returned for invalid arguments
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geom;
+    int precision = 0;
+    char *geo_hash;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc == 2)
+      {
+	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	      precision = sqlite3_value_int (argv[1]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geom == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    geo_hash = gaiaGeoHash (geom, precision);
+    if (geo_hash != NULL)
+      {
+	  int len = strlen (geo_hash);
+	  sqlite3_result_text (context, geo_hash, len, free);
+      }
+    else
+	sqlite3_result_null (context);
+    gaiaFreeGeomColl (geom);
+}
+
+static char *
+get_srs_by_srid (sqlite3 * sqlite, int srid, int longsrs)
+{
+/* retrieves the short- or long- srs reference for the given srid */
+    char sql[1024];
+    int ret;
+    const char *name;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    int len;
+    char *srs = NULL;
+
+    if (longsrs)
+	sprintf (sql,
+		 "SELECT 'urn:ogc:def:crs:' || auth_name || '::' || auth_srid "
+		 "FROM spatial_ref_sys WHERE srid = %d", srid);
+    else
+	sprintf (sql, "SELECT auth_name || ':' || auth_srid "
+		 "FROM spatial_ref_sys WHERE srid = %d", srid);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return NULL;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		name = results[(i * columns) + 0];
+		len = strlen (name);
+		srs = malloc (len + 1);
+		strcpy (srs, name);
+	    }
+      }
+    sqlite3_free_table (results);
+    return srs;
+}
+
+static void
+fnct_AsX3D (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ AsX3D(BLOBencoded geom)
+/ AsX3D(BLOBencoded geom, Integer precision)
+/ AsX3D(BLOBencoded geom, Integer precision, Integer options)
+/ AsX3D(BLOBencoded geom, Integer precision, Integer options, Text refid)
+/
+/ Returns an X3D representation for input geometry
+/ NULL is returned for invalid arguments
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geom;
+    int precision = 15;
+    int options = 0;
+    const char *refid = "";
+    char *srs = NULL;
+    char *x3d;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	      precision = sqlite3_value_int (argv[1]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc >= 3)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	      options = sqlite3_value_int (argv[2]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 4)
+      {
+	  if (sqlite3_value_type (argv[3]) == SQLITE_TEXT)
+	      refid = sqlite3_value_text (argv[3]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geom == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (geom->Srid > 0)
+      {
+	  int longshort = 0;
+	  if (options & 1)
+	      longshort = 1;
+	  srs = get_srs_by_srid (sqlite, geom->Srid, longshort);
+      }
+    x3d = gaiaAsX3D (geom, srs, precision, options, refid);
+    if (x3d != NULL)
+      {
+	  int len = strlen (x3d);
+	  sqlite3_result_text (context, x3d, len, free);
+      }
+    else
+	sqlite3_result_null (context);
+    gaiaFreeGeomColl (geom);
+    if (srs)
+	free (srs);
+}
+
 #endif /* end LWGEOM support */
 
 #endif /* end including GEOS */
@@ -21627,6 +21805,26 @@ register_spatialite_sql_functions (sqlite3 * db)
     sqlite3_create_function (db, "Azimuth", 2, SQLITE_ANY, 0, fnct_Azimuth, 0,
 			     0);
     sqlite3_create_function (db, "ST_Azimuth", 2, SQLITE_ANY, 0, fnct_Azimuth,
+			     0, 0);
+    sqlite3_create_function (db, "GeoHash", 1, SQLITE_ANY, 0, fnct_GeoHash, 0,
+			     0);
+    sqlite3_create_function (db, "GeoHash", 2, SQLITE_ANY, 0, fnct_GeoHash, 0,
+			     0);
+    sqlite3_create_function (db, "ST_GeoHash", 1, SQLITE_ANY, 0, fnct_GeoHash,
+			     0, 0);
+    sqlite3_create_function (db, "ST_GeoHash", 2, SQLITE_ANY, 0, fnct_GeoHash,
+			     0, 0);
+    sqlite3_create_function (db, "AsX3D", 1, SQLITE_ANY, 0, fnct_AsX3D, 0, 0);
+    sqlite3_create_function (db, "AsX3D", 2, SQLITE_ANY, 0, fnct_AsX3D, 0, 0);
+    sqlite3_create_function (db, "AsX3D", 3, SQLITE_ANY, 0, fnct_AsX3D, 0, 0);
+    sqlite3_create_function (db, "AsX3D", 4, SQLITE_ANY, 0, fnct_AsX3D, 0, 0);
+    sqlite3_create_function (db, "ST_AsX3D", 1, SQLITE_ANY, 0, fnct_AsX3D,
+			     0, 0);
+    sqlite3_create_function (db, "ST_AsX3D", 2, SQLITE_ANY, 0, fnct_AsX3D,
+			     0, 0);
+    sqlite3_create_function (db, "ST_AsX3D", 3, SQLITE_ANY, 0, fnct_AsX3D,
+			     0, 0);
+    sqlite3_create_function (db, "ST_AsX3D", 4, SQLITE_ANY, 0, fnct_AsX3D,
 			     0, 0);
     sqlite3_create_function (db, "Split", 2, SQLITE_ANY, 0, fnct_Split, 0, 0);
     sqlite3_create_function (db, "ST_Split", 2, SQLITE_ANY, 0, fnct_Split,

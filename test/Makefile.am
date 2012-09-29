@@ -2202,6 +2202,46 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_lwgeom_tests/st_azimuth15.testcase \
 	sql_stmt_lwgeom_tests/st_azimuth16.testcase \
 	sql_stmt_lwgeom_tests/st_azimuth17.testcase \
+	sql_stmt_lwgeom_tests/st_geohash1.testcase \
+	sql_stmt_lwgeom_tests/st_geohash2.testcase \
+	sql_stmt_lwgeom_tests/st_geohash3.testcase \
+	sql_stmt_lwgeom_tests/st_geohash4.testcase \
+	sql_stmt_lwgeom_tests/st_geohash5.testcase \
+	sql_stmt_lwgeom_tests/st_geohash6.testcase \
+	sql_stmt_lwgeom_tests/st_geohash7.testcase \
+	sql_stmt_lwgeom_tests/st_geohash8.testcase \
+	sql_stmt_lwgeom_tests/st_geohash9.testcase \
+	sql_stmt_lwgeom_tests/st_geohash10.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d1.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d2.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d3.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d4.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d5.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d6.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d7.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d8.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d9.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d10.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d11.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d12.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d13.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d14.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d15.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d16.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d17.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d18.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d19.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d20.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d21.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d22.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d23.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d24.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d25.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d26.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d27.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d28.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d29.testcase \
+	sql_stmt_lwgeom_tests/st_asx3d30.testcase \
 	sql_stmt_lwgeom_tests/st_split1.testcase \
 	sql_stmt_lwgeom_tests/st_split2.testcase \
 	sql_stmt_lwgeom_tests/st_split3.testcase \
