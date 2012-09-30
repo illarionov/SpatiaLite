@@ -531,13 +531,17 @@ extern "C"
 					    const char *pattern);
 
 /**
- Calculates the minimum distance intercurring between two Geometry objects
+ Calculates the maximum distance intercurring between two Geometry objects
 
  \param geom1 the first Geometry object 
  \param geom2 the second Geometry object 
  \param dist on completion this variable will contain the calculated distance
 
- \return 0 on failuer: any other value on success.
+ \return 0 on failure: any other value on success.
+
+ \sa gaia3DDistance, gaiaMaxDistance, gaia3DMaxDistance
+
+ \note this function always computes the 2D cartesian distance.
 
  \remark \b GEOS support required.
  */
@@ -1342,6 +1346,60 @@ extern "C"
     GAIAGEO_DECLARE char *gaiaAsX3D (gaiaGeomCollPtr geom, const char *srs,
 				     int precision, int options,
 				     const char *defid);
+
+/**
+ Calculates the minimum 3D distance intercurring between two Geometry objects
+
+ \param geom1 the first Geometry object 
+ \param geom2 the second Geometry object 
+ \param dist on completion this variable will contain the calculated distance
+
+ \return 0 on failure: any other value on success.
+
+ \sa gaiaGeomCollDistance, gaiaMaxDistance, gaia3DMaxDisance
+
+ \note this function computes the 3D cartesian distance (if Z is supported)
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE int gaia3DDistance (gaiaGeomCollPtr geom1,
+					gaiaGeomCollPtr geom2, double *dist);
+
+/**
+ Calculates the maximum 2D distance intercurring between two Geometry objects
+
+ \param geom1 the first Geometry object 
+ \param geom2 the second Geometry object 
+ \param dist on completion this variable will contain the calculated distance
+
+ \return 0 on failure: any other value on success.
+
+ \sa gaiaGeomCollDistance, gaia3DDistance, gaia3DMaxDistance
+
+ \note this function computes the 2D maximum cartesian distance (Z is always ignored)
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE int gaiaMaxDistance (gaiaGeomCollPtr geom1,
+					 gaiaGeomCollPtr geom2, double *dist);
+
+/**
+ Calculates the maximum 3D distance intercurring between two Geometry objects
+
+ \param geom1 the first Geometry object 
+ \param geom2 the second Geometry object 
+ \param dist on completion this variable will contain the calculated distance
+
+ \return 0 on failure: any other value on success.
+
+ \sa gaiaGeomCollDistance, gaia3DDistance, gaiaMaxDistance
+
+ \note this function computes the 3D maximum cartesian distance (if Z is supported)
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE int gaia3DMaxDistance (gaiaGeomCollPtr geom1,
+					   gaiaGeomCollPtr geom2, double *dist);
 
 /**
  Utility function: Split

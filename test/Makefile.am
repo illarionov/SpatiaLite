@@ -2242,6 +2242,36 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_lwgeom_tests/st_asx3d28.testcase \
 	sql_stmt_lwgeom_tests/st_asx3d29.testcase \
 	sql_stmt_lwgeom_tests/st_asx3d30.testcase \
+	sql_stmt_lwgeom_tests/3ddistance1.testcase \
+	sql_stmt_lwgeom_tests/3ddistance2.testcase \
+	sql_stmt_lwgeom_tests/3ddistance3.testcase \
+	sql_stmt_lwgeom_tests/3ddistance4.testcase \
+	sql_stmt_lwgeom_tests/3ddistance5.testcase \
+	sql_stmt_lwgeom_tests/3ddistance6.testcase \
+	sql_stmt_lwgeom_tests/3ddistance7.testcase \
+	sql_stmt_lwgeom_tests/3ddistance8.testcase \
+	sql_stmt_lwgeom_tests/3ddistance9.testcase \
+	sql_stmt_lwgeom_tests/3ddistance10.testcase \
+	sql_stmt_lwgeom_tests/maxdistance1.testcase \
+	sql_stmt_lwgeom_tests/maxdistance2.testcase \
+	sql_stmt_lwgeom_tests/maxdistance3.testcase \
+	sql_stmt_lwgeom_tests/maxdistance4.testcase \
+	sql_stmt_lwgeom_tests/maxdistance5.testcase \
+	sql_stmt_lwgeom_tests/maxdistance6.testcase \
+	sql_stmt_lwgeom_tests/maxdistance7.testcase \
+	sql_stmt_lwgeom_tests/maxdistance8.testcase \
+	sql_stmt_lwgeom_tests/maxdistance9.testcase \
+	sql_stmt_lwgeom_tests/maxdistance10.testcase \
+	sql_stmt_lwgeom_tests/3dmaxdistance1.testcase \
+	sql_stmt_lwgeom_tests/3dmaxdistance2.testcase \
+	sql_stmt_lwgeom_tests/3dmaxdistance3.testcase \
+	sql_stmt_lwgeom_tests/3dmaxdistance4.testcase \
+	sql_stmt_lwgeom_tests/3dmaxdistance5.testcase \
+	sql_stmt_lwgeom_tests/3dmaxdistance6.testcase \
+	sql_stmt_lwgeom_tests/3dmaxdistance7.testcase \
+	sql_stmt_lwgeom_tests/3dmaxdistance8.testcase \
+	sql_stmt_lwgeom_tests/3dmaxdistance9.testcase \
+	sql_stmt_lwgeom_tests/3dmaxdistance10.testcase \
 	sql_stmt_lwgeom_tests/st_split1.testcase \
 	sql_stmt_lwgeom_tests/st_split2.testcase \
 	sql_stmt_lwgeom_tests/st_split3.testcase \

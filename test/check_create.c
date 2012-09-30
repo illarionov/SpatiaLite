@@ -53,6 +53,7 @@ int main (int argc, char *argv[])
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
+    sqlite3_int64 log_pk;
 
     spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
@@ -124,6 +125,11 @@ int main (int argc, char *argv[])
 	sqlite3_close(handle);
 	return -10;
     }
+
+    gaiaInsertIntoSqlLog (handle, "test", "sql_statement_ok", &log_pk);
+    gaiaUpdateSqlLog (handle, log_pk, 1, NULL);
+    gaiaInsertIntoSqlLog (handle, "test", "sql_statement_no", &log_pk);
+    gaiaUpdateSqlLog (handle, log_pk, 0, "some error message");
 
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {

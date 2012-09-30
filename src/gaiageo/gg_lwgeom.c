@@ -1676,7 +1676,7 @@ gaiaAsX3D (gaiaGeomCollPtr geom, const char *srs, int precision, int options,
 	return NULL;
     gaiaMbrGeometry (geom);
     g = toLWGeom (geom);
-    result = lwgeom_to_x3d3 (g, srs, precision, options, defid);
+    result = lwgeom_to_x3d3 (g, (char *) srs, precision, options, defid);
     lwgeom_free (g);
     if (result == NULL)
 	return NULL;
@@ -1690,6 +1690,60 @@ gaiaAsX3D (gaiaGeomCollPtr geom, const char *srs, int precision, int options,
     strcpy (x3d, result);
     lwfree (result);
     return x3d;
+}
+
+GAIAGEO_DECLARE int
+gaia3DDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double *dist)
+{
+/* wrapping LWGEOM mindistance3d */
+    LWGEOM *g1;
+    LWGEOM *g2;
+    double d;
+
+    g1 = toLWGeom (geom1);
+    g2 = toLWGeom (geom2);
+
+    d = lwgeom_mindistance3d (g1, g2);
+    lwgeom_free (g1);
+    lwgeom_free (g2);
+    *dist = d;
+    return 1;
+}
+
+GAIAGEO_DECLARE int
+gaiaMaxDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double *dist)
+{
+/* wrapping LWGEOM maxdistance2d */
+    LWGEOM *g1;
+    LWGEOM *g2;
+    double d;
+
+    g1 = toLWGeom (geom1);
+    g2 = toLWGeom (geom2);
+
+    d = lwgeom_maxdistance2d (g1, g2);
+    lwgeom_free (g1);
+    lwgeom_free (g2);
+    *dist = d;
+    return 1;
+}
+
+GAIAGEO_DECLARE int
+gaia3DMaxDistance (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2, double *dist)
+{
+/* wrapping LWGEOM maxdistance2d */
+    LWGEOM *g1;
+    LWGEOM *g2;
+    double d;
+
+    g1 = toLWGeom (geom1);
+    g2 = toLWGeom (geom2);
+
+    d = lwgeom_maxdistance3d (g1, g2);
+    lwgeom_free (g1);
+    lwgeom_free (g2);
+    *dist = d;
+    return 1;
 }
 
 #endif /* end enabling LWGEOM support */
