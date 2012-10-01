@@ -7,6 +7,7 @@ check_PROGRAMS = check_endian \
 		check_geom_aux \
 		check_geometry_cols \
 		check_create \
+                check_bufovflw \
 		check_fdo1 \
 		check_fdo2 \
 		check_fdo3 \

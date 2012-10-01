@@ -53,6 +53,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/sqlite.h>
 
 #include <spatialite/gaiaaux.h>
+#include <spatialite_private.h>
 
 #ifdef _WIN32
 #define strcasecmp	_stricmp
@@ -692,7 +693,6 @@ gaiaUpdateSqlLog (sqlite3 * sqlite, sqlite3_int64 sqllog_pk, int success,
 {
 /* completing an event already inserted into the SQL Log */
     char *sql_statement;
-    int ret;
     char dummy[64];
 
     if (checkSpatialMetaData (sqlite) != 3)
@@ -721,6 +721,6 @@ gaiaUpdateSqlLog (sqlite3 * sqlite, sqlite3_int64 sqllog_pk, int success,
 					   (errMsg == NULL)
 					   ? "UNKNOWN" : errMsg, dummy);
       }
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, 0, NULL);
+    sqlite3_exec (sqlite, sql_statement, NULL, 0, NULL);
     sqlite3_free (sql_statement);
 }

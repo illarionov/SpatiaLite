@@ -53,21 +53,21 @@ host_triplet = @host@
 check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_init$(EXEEXT) check_init2$(EXEEXT) \
 	check_geom_aux$(EXEEXT) check_geometry_cols$(EXEEXT) \
-	check_create$(EXEEXT) check_fdo1$(EXEEXT) check_fdo2$(EXEEXT) \
-	check_fdo3$(EXEEXT) check_dbf_load$(EXEEXT) \
-	check_shp_load$(EXEEXT) check_shp_load_3d$(EXEEXT) \
-	shape_cp1252$(EXEEXT) shape_primitives$(EXEEXT) \
-	shape_utf8_1$(EXEEXT) shape_utf8_1ex$(EXEEXT) \
-	shape_utf8_2$(EXEEXT) shape_3d$(EXEEXT) \
-	check_xls_load$(EXEEXT) check_math_funcs$(EXEEXT) \
-	check_gaia_util$(EXEEXT) check_gaia_utf8$(EXEEXT) \
-	check_extension$(EXEEXT) check_recover_geom$(EXEEXT) \
-	check_sql_stmt$(EXEEXT) check_virtualtable1$(EXEEXT) \
-	check_virtualtable2$(EXEEXT) check_virtualtable3$(EXEEXT) \
-	check_virtualtable4$(EXEEXT) check_virtualtable5$(EXEEXT) \
-	check_virtualtable6$(EXEEXT) check_mbrcache$(EXEEXT) \
-	check_spatialindex$(EXEEXT) check_exif$(EXEEXT) \
-	check_relations_fncts$(EXEEXT) \
+	check_create$(EXEEXT) check_bufovflw$(EXEEXT) \
+	check_fdo1$(EXEEXT) check_fdo2$(EXEEXT) check_fdo3$(EXEEXT) \
+	check_dbf_load$(EXEEXT) check_shp_load$(EXEEXT) \
+	check_shp_load_3d$(EXEEXT) shape_cp1252$(EXEEXT) \
+	shape_primitives$(EXEEXT) shape_utf8_1$(EXEEXT) \
+	shape_utf8_1ex$(EXEEXT) shape_utf8_2$(EXEEXT) \
+	shape_3d$(EXEEXT) check_xls_load$(EXEEXT) \
+	check_math_funcs$(EXEEXT) check_gaia_util$(EXEEXT) \
+	check_gaia_utf8$(EXEEXT) check_extension$(EXEEXT) \
+	check_recover_geom$(EXEEXT) check_sql_stmt$(EXEEXT) \
+	check_virtualtable1$(EXEEXT) check_virtualtable2$(EXEEXT) \
+	check_virtualtable3$(EXEEXT) check_virtualtable4$(EXEEXT) \
+	check_virtualtable5$(EXEEXT) check_virtualtable6$(EXEEXT) \
+	check_mbrcache$(EXEEXT) check_spatialindex$(EXEEXT) \
+	check_exif$(EXEEXT) check_relations_fncts$(EXEEXT) \
 	check_extra_relations_fncts$(EXEEXT) \
 	check_geoscvt_fncts$(EXEEXT)
 subdir = test
@@ -83,6 +83,9 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+check_bufovflw_SOURCES = check_bufovflw.c
+check_bufovflw_OBJECTS = check_bufovflw.$(OBJEXT)
+check_bufovflw_LDADD = $(LDADD)
 check_create_SOURCES = check_create.c
 check_create_OBJECTS = check_create.$(OBJEXT)
 check_create_LDADD = $(LDADD)
@@ -211,9 +214,10 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = check_create.c check_dbf_load.c check_endian.c check_exif.c \
-	check_extension.c check_extra_relations_fncts.c check_fdo1.c \
-	check_fdo2.c check_fdo3.c check_gaia_utf8.c check_gaia_util.c \
+SOURCES = check_bufovflw.c check_create.c check_dbf_load.c \
+	check_endian.c check_exif.c check_extension.c \
+	check_extra_relations_fncts.c check_fdo1.c check_fdo2.c \
+	check_fdo3.c check_gaia_utf8.c check_gaia_util.c \
 	check_geom_aux.c check_geometry_cols.c check_geoscvt_fncts.c \
 	check_init.c check_init2.c check_math_funcs.c check_mbrcache.c \
 	check_recover_geom.c check_relations_fncts.c check_shp_load.c \
@@ -223,15 +227,15 @@ SOURCES = check_create.c check_dbf_load.c check_endian.c check_exif.c \
 	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
 	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
 	shape_utf8_1ex.c shape_utf8_2.c
-DIST_SOURCES = check_create.c check_dbf_load.c check_endian.c \
-	check_exif.c check_extension.c check_extra_relations_fncts.c \
-	check_fdo1.c check_fdo2.c check_fdo3.c check_gaia_utf8.c \
-	check_gaia_util.c check_geom_aux.c check_geometry_cols.c \
-	check_geoscvt_fncts.c check_init.c check_init2.c \
-	check_math_funcs.c check_mbrcache.c check_recover_geom.c \
-	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
-	check_spatialindex.c check_sql_stmt.c check_version.c \
-	check_virtualtable1.c check_virtualtable2.c \
+DIST_SOURCES = check_bufovflw.c check_create.c check_dbf_load.c \
+	check_endian.c check_exif.c check_extension.c \
+	check_extra_relations_fncts.c check_fdo1.c check_fdo2.c \
+	check_fdo3.c check_gaia_utf8.c check_gaia_util.c \
+	check_geom_aux.c check_geometry_cols.c check_geoscvt_fncts.c \
+	check_init.c check_init2.c check_math_funcs.c check_mbrcache.c \
+	check_recover_geom.c check_relations_fncts.c check_shp_load.c \
+	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
+	check_version.c check_virtualtable1.c check_virtualtable2.c \
 	check_virtualtable3.c check_virtualtable4.c \
 	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
 	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
@@ -3037,6 +3041,9 @@ clean-checkPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+check_bufovflw$(EXEEXT): $(check_bufovflw_OBJECTS) $(check_bufovflw_DEPENDENCIES) $(EXTRA_check_bufovflw_DEPENDENCIES) 
+	@rm -f check_bufovflw$(EXEEXT)
+	$(LINK) $(check_bufovflw_OBJECTS) $(check_bufovflw_LDADD) $(LIBS)
 check_create$(EXEEXT): $(check_create_OBJECTS) $(check_create_DEPENDENCIES) $(EXTRA_check_create_DEPENDENCIES) 
 	@rm -f check_create$(EXEEXT)
 	$(LINK) $(check_create_OBJECTS) $(check_create_LDADD) $(LIBS)
@@ -3158,6 +3165,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_bufovflw.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_create.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_dbf_load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_endian.Po@am__quote@
