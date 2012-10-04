@@ -53,10 +53,11 @@ int main (int argc, char *argv[])
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
-    int suffix_len = 128 * 1024;	/* 128 KB suffix */
+    int suffix_len = 12 /*8 * 1024*/;	/* 128 KB suffix */
     char *suffix;
     char *table_a;
     char *table_b;
+    char *topology;
     char *pk;
     char *name;
     char *geom;
@@ -81,7 +82,7 @@ int main (int argc, char *argv[])
 	return -2;
     }
 
-/* setting up very long (about 16 KB) table and column names */
+/* setting up very long table and column names */
     suffix = malloc(suffix_len);
     memset(suffix, 'z', suffix_len);  
     suffix[suffix_len-1] = '\0';
@@ -91,6 +92,7 @@ int main (int argc, char *argv[])
     pk = sqlite3_mprintf("id_%s", suffix);
     name = sqlite3_mprintf("name_%s", suffix);
     geom = sqlite3_mprintf("geom_%s", suffix);
+    topology = sqlite3_mprintf("topology_%s_", suffix);
 
 /* creating table "A" */
     sql = sqlite3_mprintf("CREATE TABLE %s (\n"
@@ -503,6 +505,70 @@ test7:
     }
     sqlite3_free_table (results);
 
+/* creating an MbrCache on table "B" */
+    sql = sqlite3_mprintf("SELECT CreateMbrCache(%Q, %Q)", table_b, geom);
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CreateMbrCache TABLE-B error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -49;
+    }
+    if (rows != 1 || columns != 1) {
+        fprintf (stderr, "Unexpected rows/columns (disable TABLE-B): r=%d c=%d\n", rows, columns);
+        return -50;
+    }
+    value = results[1];
+    if (strcmp ("1", value) != 0) {
+        fprintf (stderr, "Unexpected result (disable TABLE-B): %s\n", results[1]);
+        return -51;
+    }
+    sqlite3_free_table (results);
+
+/* checking the MbrCache on table "B" */
+    sql = sqlite3_mprintf("SELECT Count(*) FROM %s WHERE ROWID IN ("
+                          "SELECT ROWID FROM cache_%s_%s WHERE "
+                          "mbr = FilterMbrIntersects(0, 0, 11, 11))", table_b, table_b, geom);
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Test MbrCache error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -52;
+    }
+    if (rows != 1 || columns != 1) {
+        fprintf (stderr, "Unexpected rows/columns (MbrCache): r=%d c=%d\n", rows, columns);
+        return -53;
+    }
+    value = results[1];
+    if (strcmp ("1", value) != 0) {
+        fprintf (stderr, "Unexpected result (MbrCache): %s\n", results[1]);
+        return -54;
+    }
+    sqlite3_free_table (results);
+
+/* disabling the Spatial Index [MbrCache] on table "B" */
+    sql = sqlite3_mprintf("SELECT DisableSpatialIndex(%Q, %Q)", table_b, geom);
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "DisableSpatialIndex TABLE-B error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -55;
+    }
+    if (rows != 1 || columns != 1) {
+        fprintf (stderr, "Unexpected rows/columns (disable TABLE-B): r=%d c=%d\n", rows, columns);
+        return -56;
+    }
+    value = results[1];
+    if (strcmp ("1", value) != 0) {
+        fprintf (stderr, "Unexpected result (disable TABLE-B): %s\n", results[1]);
+        return -57;
+    }
+    sqlite3_free_table (results);
 
 /* discarding geometry from table "B" */
     sql = sqlite3_mprintf("SELECT DiscardGeometryColumn(%Q, %Q)", table_b, geom);
@@ -512,35 +578,44 @@ test7:
 	fprintf (stderr, "DiscardGeometryColumn TABLE-B error: %s\n", err_msg);
 	sqlite3_free(err_msg);
 	sqlite3_close(handle);
-	return -49;
+	return -58;
     }
     if (rows != 1 || columns != 1) {
         fprintf (stderr, "Unexpected rows/columns (discard TABLE-B): r=%d c=%d\n", rows, columns);
-        return -50;
+        return -59;
     }
     value = results[1];
     if (strcmp ("1", value) != 0) {
         fprintf (stderr, "Unexpected result (discard TABLE-B): %s\n", results[1]);
-        return -51;
+        return -60;
     }
     sqlite3_free_table (results);
 
-
-
-
-
-
-
-
-
-
-
-
+/* creating a topology */
+    sql = sqlite3_mprintf("SELECT CreateTopologyTables(%Q, 4326, 'XY')", topology);
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CreateTopologyTables error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -61;
+    }
+    if (rows != 1 || columns != 1) {
+        fprintf (stderr, "Unexpected rows/columns (CreateTopologyTables): r=%d c=%d\n", rows, columns);
+        return -62;
+    }
+    value = results[1];
+    if (strcmp ("1", value) != 0) {
+        fprintf (stderr, "Unexpected result (CreateTopologyTables): %s\n", results[1]);
+        return -63;
+    }
+    sqlite3_free_table (results);
 
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -11;
+	return -61;
     }
     
     spatialite_cleanup();
@@ -550,6 +625,7 @@ test7:
     sqlite3_free(pk);
     sqlite3_free(name);
     sqlite3_free(geom);
+    sqlite3_free(topology);
     
     return 0;
 }
