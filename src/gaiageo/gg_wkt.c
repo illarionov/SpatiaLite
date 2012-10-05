@@ -119,7 +119,7 @@ gaiaAppendToOutBuffer (gaiaOutBufferPtr buf, const char *text)
 	  int new_size;
 	  char *new_buf;
 	  if (buf->BufferSize == 0)
-	      new_size = 1024;
+	      new_size = (len + 1) + 1024;
 	  else if (buf->BufferSize <= 4196)
 	      new_size = buf->BufferSize + (len + 1) + 4196;
 	  else if (buf->BufferSize <= 65536)

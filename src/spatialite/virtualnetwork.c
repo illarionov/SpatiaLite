@@ -597,32 +597,15 @@ a_star_shortest_path (RoutingNodesPtr e, NetworkNodePtr nodes,
 
 /* END of A* Shortest Path implementation */
 
-static void
-vnet_double_quoted_sql (char *buf)
-{
-/* well-formatting a string to be used as an SQL name */
-    char tmp[1024];
-    char *in = tmp;
-    char *out = buf;
-    strcpy (tmp, buf);
-    *out++ = '"';
-    while (*in != '\0')
-      {
-	  if (*in == '"')
-	      *out++ = '"';
-	  *out++ = *in++;
-      }
-    *out++ = '"';
-    *out = '\0';
-}
 
-static void
-vnet_dequote (char *buf)
+static char *
+vnet_dequote (const char *buf)
 {
 /* dequoting an SQL string */
-    char tmp[1024];
-    char *in = tmp;
-    char *out = buf;
+    char *tmp_in;
+    char *tmp_out;
+    char *in;
+    char *out;
     char strip = '\0';
     int first = 0;
     int len = strlen (buf);
@@ -631,10 +614,18 @@ vnet_dequote (char *buf)
     if (buf[0] == '"' && buf[len - 1] == '"')
 	strip = '"';
     if (strip == '\0')
-	return;
-    strcpy (tmp, buf + 1);
-    len = strlen (tmp);
-    tmp[len - 1] = '\0';
+      {
+	  tmp_out = malloc (len + 1);
+	  strcpy (tmp_out, buf);
+	  return tmp_out;
+      }
+    tmp_in = malloc (len + 1);
+    tmp_out = malloc (len + 1);
+    in = tmp_in;
+    out = tmp_out;
+    strcpy (tmp_in, buf + 1);
+    len = strlen (tmp_in);
+    tmp_in[len - 1] = '\0';
     while (*in != '\0')
       {
 	  if (*in == strip)
@@ -656,6 +647,8 @@ vnet_dequote (char *buf)
 	  *out++ = *in++;
       }
     *out = '\0';
+    free (tmp_in);
+    return tmp_out;
 }
 
 static int
@@ -855,7 +848,7 @@ add_arc_geometry_to_solution (SolutionPtr solution, sqlite3_int64 arc_id,
     p->Points = points;
     p->Coords = coords;
     p->Srid = srid;
-    if (!name)
+    if (name == NULL)
 	p->Name = NULL;
     else
       {
@@ -877,7 +870,7 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 {
 /* formatting the Shortest Path solution */
     int i;
-    char sql[8192];
+    char *sql;
     int err;
     int error = 0;
     int ret;
@@ -886,20 +879,21 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
     int size;
     sqlite3_int64 from_id;
     sqlite3_int64 to_id;
-    char from_code[128];
-    char to_code[128];
-    char name[2048];
+    char *from_code;
+    char *to_code;
+    char *name;
     int tbd;
     int ind;
     int base = 0;
     int block = 128;
     int how_many;
     sqlite3_stmt *stmt;
-    char xfrom[1024];
-    char xto[1024];
-    char xgeom[1024];
-    char xname[1024];
-    char xtable[1024];
+    char *xfrom;
+    char *xto;
+    char *xgeom;
+    char *xname;
+    char *xtable;
+    gaiaOutBuffer sql_statement;
     if (cnt > 0)
       {
 	  /* building the solution */
@@ -917,47 +911,61 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 	  else
 	      how_many = block;
 /* preparing the Geometry representing this solution [reading arcs] */
+	  gaiaOutBufferInitialize (&sql_statement);
 	  if (graph->NameColumn)
 	    {
 		/* a Name column is defined */
-		strcpy (xfrom, graph->FromColumn);
-		vnet_double_quoted_sql (xfrom);
-		strcpy (xto, graph->ToColumn);
-		vnet_double_quoted_sql (xto);
-		strcpy (xgeom, graph->GeometryColumn);
-		vnet_double_quoted_sql (xgeom);
-		strcpy (xname, graph->NameColumn);
-		vnet_double_quoted_sql (xname);
-		strcpy (xtable, graph->TableName);
-		vnet_double_quoted_sql (xtable);
-		sprintf (sql,
-			 "SELECT ROWID, %s, %s, %s, %s FROM %s WHERE ROWID IN (",
-			 xfrom, xto, xgeom, xname, xtable);
+		xfrom = gaiaDoubleQuotedSql (graph->FromColumn);
+		xto = gaiaDoubleQuotedSql (graph->ToColumn);
+		xgeom = gaiaDoubleQuotedSql (graph->GeometryColumn);
+		xname = gaiaDoubleQuotedSql (graph->NameColumn);
+		xtable = gaiaDoubleQuotedSql (graph->TableName);
+		sql =
+		    sqlite3_mprintf
+		    ("SELECT ROWID, \"%s\", \"%s\", \"%s\", \"%s\" FROM \"%s\" WHERE ROWID IN (",
+		     xfrom, xto, xgeom, xname, xtable);
+		free (xfrom);
+		free (xto);
+		free (xgeom);
+		free (xname);
+		free (xtable);
+		gaiaAppendToOutBuffer (&sql_statement, sql);
+		sqlite3_free (sql);
 	    }
 	  else
 	    {
 		/* no Name column is defined */
-		strcpy (xfrom, graph->FromColumn);
-		vnet_double_quoted_sql (xfrom);
-		strcpy (xto, graph->ToColumn);
-		vnet_double_quoted_sql (xto);
-		strcpy (xgeom, graph->GeometryColumn);
-		vnet_double_quoted_sql (xgeom);
-		strcpy (xtable, graph->TableName);
-		vnet_double_quoted_sql (xtable);
-		sprintf (sql,
-			 "SELECT ROWID, %s, %s, %s FROM %s WHERE ROWID IN (",
-			 xfrom, xto, xgeom, xtable);
+		xfrom = gaiaDoubleQuotedSql (graph->FromColumn);
+		xto = gaiaDoubleQuotedSql (graph->ToColumn);
+		xgeom = gaiaDoubleQuotedSql (graph->GeometryColumn);
+		xtable = gaiaDoubleQuotedSql (graph->TableName);
+		sql =
+		    sqlite3_mprintf
+		    ("SELECT ROWID, \"%s\", \"%s\", \"%s\" FROM \"%s\" WHERE ROWID IN (",
+		     xfrom, xto, xgeom, xtable);
+		free (xfrom);
+		free (xto);
+		free (xgeom);
+		free (xtable);
+		gaiaAppendToOutBuffer (&sql_statement, sql);
+		sqlite3_free (sql);
 	    }
 	  for (i = 0; i < how_many; i++)
 	    {
 		if (i == 0)
-		    strcat (sql, "?");
+		    gaiaAppendToOutBuffer (&sql_statement, "?");
 		else
-		    strcat (sql, ",?");
+		    gaiaAppendToOutBuffer (&sql_statement, ",?");
 	    }
-	  strcat (sql, ")");
-	  ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+	  gaiaAppendToOutBuffer (&sql_statement, ")");
+	  if (sql_statement.Error == 0 && sql_statement.Buffer != NULL)
+	      ret =
+		  sqlite3_prepare_v2 (handle, sql_statement.Buffer,
+				      strlen (sql_statement.Buffer), &stmt,
+				      NULL);
+	  else
+	      ret = SQLITE_ERROR;
+	  gaiaOutBufferReset (&sql_statement);
 	  if (ret != SQLITE_OK)
 	    {
 		error = 1;
@@ -985,11 +993,11 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 		      arc_id = -1;
 		      from_id = -1;
 		      to_id = -1;
-		      *from_code = '\0';
-		      *to_code = '\0';
+		      from_code = NULL;
+		      to_code = NULL;
 		      blob = NULL;
 		      size = 0;
-		      *name = '\0';
+		      name = NULL;
 		      err = 0;
 		      if (sqlite3_column_type (stmt, 0) == SQLITE_INTEGER)
 			  arc_id = sqlite3_column_int64 (stmt, 0);
@@ -999,13 +1007,13 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 			{
 			    /* nodes are identified by TEXT codes */
 			    if (sqlite3_column_type (stmt, 1) == SQLITE_TEXT)
-				strcpy (from_code,
-					(char *) sqlite3_column_text (stmt, 1));
+				from_code =
+				    (char *) sqlite3_column_text (stmt, 1);
 			    else
 				err = 1;
 			    if (sqlite3_column_type (stmt, 2) == SQLITE_TEXT)
-				strcpy (to_code,
-					(char *) sqlite3_column_text (stmt, 2));
+				to_code =
+				    (char *) sqlite3_column_text (stmt, 2);
 			    else
 				err = 1;
 			}
@@ -1033,8 +1041,7 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 		      if (graph->NameColumn)
 			{
 			    if (sqlite3_column_type (stmt, 4) == SQLITE_TEXT)
-				strcpy (name,
-					(char *) sqlite3_column_text (stmt, 4));
+				name = (char *) sqlite3_column_text (stmt, 4);
 			}
 		      if (err)
 			  error = 1;
@@ -1064,12 +1071,15 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 					      double x;
 					      double y;
 					      gaiaGetPoint
-						  (geom->
-						   FirstLinestring->Coords, iv,
-						   &x, &y);
+						  (geom->FirstLinestring->
+						   Coords, iv, &x, &y);
 					      *(coords + ((iv * 2) + 0)) = x;
 					      *(coords + ((iv * 2) + 1)) = y;
 					  }
+					if (from_code == NULL)
+					    from_code = "";
+					if (to_code == NULL)
+					    to_code = "";
 					add_arc_geometry_to_solution (solution,
 								      arc_id,
 								      from_code,
@@ -1078,7 +1088,8 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 								      to_id,
 								      points,
 								      coords,
-								      geom->Srid,
+								      geom->
+								      Srid,
 								      name);
 				    }
 				  else
@@ -1574,16 +1585,17 @@ load_network (sqlite3 * handle, const char *table)
 /* loads the NETWORK struct */
     NetworkPtr graph = NULL;
     sqlite3_stmt *stmt;
-    char sql[1024];
+    char *sql;
     int ret;
     int header = 1;
     const unsigned char *blob;
     int size;
-    char xname[1024];
-    strcpy (xname, table);
-    vnet_double_quoted_sql (xname);
-    sprintf (sql, "SELECT NetworkData FROM %s ORDER BY Id", xname);
+    char *xname;
+    xname = gaiaDoubleQuotedSql (table);
+    sql = sqlite3_mprintf ("SELECT NetworkData FROM \"%s\" ORDER BY Id", xname);
+    free (xname);
     ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free (sql);
     if (ret != SQLITE_OK)
 	goto abort;
     while (1)
@@ -1650,41 +1662,40 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     int i;
     int n_rows;
     int n_columns;
-    char vtable[1024];
-    char table[1024];
+    char *vtable = NULL;
+    char *table = NULL;
     const char *col_name = NULL;
     char **results;
     char *err_msg = NULL;
-    char sql[4096];
+    char *sql;
     int ok_id;
     int ok_data;
-    char xname[1024];
+    char *xname;
     NetworkPtr graph = NULL;
     if (pAux)
 	pAux = pAux;		/* unused arg warning suppression */
 /* checking for table_name and geo_column_name */
     if (argc == 4)
       {
-	  strcpy (vtable, argv[2]);
-	  vnet_dequote (vtable);
-	  strcpy (table, argv[3]);
-	  vnet_dequote (table);
+	  vtable = vnet_dequote (argv[2]);
+	  table = vnet_dequote (argv[3]);
       }
     else
       {
 	  *pzErr =
 	      sqlite3_mprintf
 	      ("[VirtualNetwork module] CREATE VIRTUAL: illegal arg list {NETWORK-DATAtable}\n");
-	  return SQLITE_ERROR;
+	  goto error;
       }
 /* retrieving the base table columns */
     err = 0;
     ok_id = 0;
     ok_data = 0;
-    strcpy (xname, table);
-    vnet_double_quoted_sql (xname);
-    sprintf (sql, "PRAGMA table_info(%s)", xname);
+    xname = gaiaDoubleQuotedSql (table);
+    sql = sqlite3_mprintf ("PRAGMA table_info(\"%s\")", xname);
+    free (xname);
     ret = sqlite3_get_table (db, sql, &results, &n_rows, &n_columns, &err_msg);
+    sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
 	  err = 1;
@@ -1727,7 +1738,7 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  *pzErr =
 	      sqlite3_mprintf
 	      ("[VirtualNetwork module] cannot build a valid NETWORK\n");
-	  return SQLITE_ERROR;
+	  goto error;
       }
     p_vt->db = db;
     p_vt->graph = graph;
@@ -1737,31 +1748,61 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     p_vt->nRef = 0;
     p_vt->zErrMsg = NULL;
 /* preparing the COLUMNs for this VIRTUAL TABLE */
-    strcpy (buf, "CREATE TABLE ");
-    strcpy (xname, vtable);
-    vnet_double_quoted_sql (xname);
-    strcat (buf, xname);
-    strcat (buf, " (Algorithm TEXT, ArcRowid INTEGER, ");
+    xname = gaiaDoubleQuotedSql (vtable);
     if (p_vt->graph->NodeCode)
-	strcat (buf, "NodeFrom TEXT, NodeTo TEXT,");
+      {
+	  if (p_vt->graph->NameColumn)
+	    {
+		sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (Algorithm TEXT, "
+				       "ArcRowid INTEGER, NodeFrom TEXT, NodeTo TEXT,"
+				       " Cost DOUBLE, Geometry BLOB, Name TEXT)",
+				       xname);
+	    }
+	  else
+	    {
+		sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (Algorithm TEXT, "
+				       "ArcRowid INTEGER, NodeFrom TEXT, NodeTo TEXT,"
+				       " Cost DOUBLE, Geometry BLOB)", xname);
+	    }
+      }
     else
-	strcat (buf, "NodeFrom INTEGER, NodeTo INTEGER,");
-    strcat (buf, " Cost DOUBLE, Geometry BLOB");
-    if (p_vt->graph->NameColumn)
-	strcat (buf, ", Name TEXT)");
-    else
-	strcat (buf, ")");
-    if (sqlite3_declare_vtab (db, buf) != SQLITE_OK)
+      {
+	  if (p_vt->graph->NameColumn)
+	    {
+		sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (Algorithm TEXT, "
+				       "ArcRowid INTEGER, NodeFrom INTEGER, NodeTo INTEGER,"
+				       " Cost DOUBLE, Geometry BLOB, Name TEXT)",
+				       xname);
+	    }
+	  else
+	    {
+		sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (Algorithm TEXT, "
+				       "ArcRowid INTEGER, NodeFrom INTEGER, NodeTo INTEGER,"
+				       " Cost DOUBLE, Geometry BLOB)", xname);
+	    }
+      }
+    free (xname);
+    if (sqlite3_declare_vtab (db, sql) != SQLITE_OK)
       {
 	  *pzErr =
 	      sqlite3_mprintf
 	      ("[VirtualNetwork module] CREATE VIRTUAL: invalid SQL statement \"%s\"",
-	       buf);
-	  return SQLITE_ERROR;
+	       sql);
+	  sqlite3_free (sql);
+	  goto error;
       }
+    sqlite3_free (sql);
     *ppVTab = (sqlite3_vtab *) p_vt;
     p_vt->routing = routing_init (p_vt->graph);
+    free (table);
+    free (vtable);
     return SQLITE_OK;
+  error:
+    if (table)
+	free (table);
+    if (vtable)
+	free (vtable);
+    return SQLITE_ERROR;
 }
 
 static int

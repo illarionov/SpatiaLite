@@ -53,7 +53,7 @@ int main (int argc, char *argv[])
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
-    int suffix_len = 12 /*8 * 1024*/;	/* 128 KB suffix */
+    int suffix_len = 128 * 1024;	/* 128 KB suffix */
     char *suffix;
     char *table_a;
     char *table_b;

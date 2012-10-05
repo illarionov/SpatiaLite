@@ -11,6 +11,7 @@ check_PROGRAMS = check_endian \
 		check_fdo1 \
 		check_fdo2 \
 		check_fdo3 \
+                check_fdo_bufovflw \
 		check_dbf_load \
 		check_shp_load \
 		check_shp_load_3d \
@@ -33,6 +34,7 @@ check_PROGRAMS = check_endian \
 		check_virtualtable4 \
 		check_virtualtable5 \
 		check_virtualtable6 \
+                check_virtual_ovflw \
 		check_mbrcache \
 		check_spatialindex \
 		check_exif \

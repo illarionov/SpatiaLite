@@ -55,17 +55,18 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_geom_aux$(EXEEXT) check_geometry_cols$(EXEEXT) \
 	check_create$(EXEEXT) check_bufovflw$(EXEEXT) \
 	check_fdo1$(EXEEXT) check_fdo2$(EXEEXT) check_fdo3$(EXEEXT) \
-	check_dbf_load$(EXEEXT) check_shp_load$(EXEEXT) \
-	check_shp_load_3d$(EXEEXT) shape_cp1252$(EXEEXT) \
-	shape_primitives$(EXEEXT) shape_utf8_1$(EXEEXT) \
-	shape_utf8_1ex$(EXEEXT) shape_utf8_2$(EXEEXT) \
-	shape_3d$(EXEEXT) check_xls_load$(EXEEXT) \
-	check_math_funcs$(EXEEXT) check_gaia_util$(EXEEXT) \
-	check_gaia_utf8$(EXEEXT) check_extension$(EXEEXT) \
-	check_recover_geom$(EXEEXT) check_sql_stmt$(EXEEXT) \
-	check_virtualtable1$(EXEEXT) check_virtualtable2$(EXEEXT) \
-	check_virtualtable3$(EXEEXT) check_virtualtable4$(EXEEXT) \
-	check_virtualtable5$(EXEEXT) check_virtualtable6$(EXEEXT) \
+	check_fdo_bufovflw$(EXEEXT) check_dbf_load$(EXEEXT) \
+	check_shp_load$(EXEEXT) check_shp_load_3d$(EXEEXT) \
+	shape_cp1252$(EXEEXT) shape_primitives$(EXEEXT) \
+	shape_utf8_1$(EXEEXT) shape_utf8_1ex$(EXEEXT) \
+	shape_utf8_2$(EXEEXT) shape_3d$(EXEEXT) \
+	check_xls_load$(EXEEXT) check_math_funcs$(EXEEXT) \
+	check_gaia_util$(EXEEXT) check_gaia_utf8$(EXEEXT) \
+	check_extension$(EXEEXT) check_recover_geom$(EXEEXT) \
+	check_sql_stmt$(EXEEXT) check_virtualtable1$(EXEEXT) \
+	check_virtualtable2$(EXEEXT) check_virtualtable3$(EXEEXT) \
+	check_virtualtable4$(EXEEXT) check_virtualtable5$(EXEEXT) \
+	check_virtualtable6$(EXEEXT) check_virtual_ovflw$(EXEEXT) \
 	check_mbrcache$(EXEEXT) check_spatialindex$(EXEEXT) \
 	check_exif$(EXEEXT) check_relations_fncts$(EXEEXT) \
 	check_extra_relations_fncts$(EXEEXT) \
@@ -114,6 +115,9 @@ check_fdo2_LDADD = $(LDADD)
 check_fdo3_SOURCES = check_fdo3.c
 check_fdo3_OBJECTS = check_fdo3.$(OBJEXT)
 check_fdo3_LDADD = $(LDADD)
+check_fdo_bufovflw_SOURCES = check_fdo_bufovflw.c
+check_fdo_bufovflw_OBJECTS = check_fdo_bufovflw.$(OBJEXT)
+check_fdo_bufovflw_LDADD = $(LDADD)
 check_gaia_utf8_SOURCES = check_gaia_utf8.c
 check_gaia_utf8_OBJECTS = check_gaia_utf8.$(OBJEXT)
 check_gaia_utf8_LDADD = $(LDADD)
@@ -162,6 +166,9 @@ check_sql_stmt_LDADD = $(LDADD)
 check_version_SOURCES = check_version.c
 check_version_OBJECTS = check_version.$(OBJEXT)
 check_version_LDADD = $(LDADD)
+check_virtual_ovflw_SOURCES = check_virtual_ovflw.c
+check_virtual_ovflw_OBJECTS = check_virtual_ovflw.$(OBJEXT)
+check_virtual_ovflw_LDADD = $(LDADD)
 check_virtualtable1_SOURCES = check_virtualtable1.c
 check_virtualtable1_OBJECTS = check_virtualtable1.$(OBJEXT)
 check_virtualtable1_LDADD = $(LDADD)
@@ -217,28 +224,32 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 SOURCES = check_bufovflw.c check_create.c check_dbf_load.c \
 	check_endian.c check_exif.c check_extension.c \
 	check_extra_relations_fncts.c check_fdo1.c check_fdo2.c \
-	check_fdo3.c check_gaia_utf8.c check_gaia_util.c \
-	check_geom_aux.c check_geometry_cols.c check_geoscvt_fncts.c \
-	check_init.c check_init2.c check_math_funcs.c check_mbrcache.c \
-	check_recover_geom.c check_relations_fncts.c check_shp_load.c \
-	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
-	check_version.c check_virtualtable1.c check_virtualtable2.c \
-	check_virtualtable3.c check_virtualtable4.c \
-	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
-	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	check_fdo3.c check_fdo_bufovflw.c check_gaia_utf8.c \
+	check_gaia_util.c check_geom_aux.c check_geometry_cols.c \
+	check_geoscvt_fncts.c check_init.c check_init2.c \
+	check_math_funcs.c check_mbrcache.c check_recover_geom.c \
+	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
+	check_spatialindex.c check_sql_stmt.c check_version.c \
+	check_virtual_ovflw.c check_virtualtable1.c \
+	check_virtualtable2.c check_virtualtable3.c \
+	check_virtualtable4.c check_virtualtable5.c \
+	check_virtualtable6.c check_xls_load.c shape_3d.c \
+	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
 	shape_utf8_1ex.c shape_utf8_2.c
 DIST_SOURCES = check_bufovflw.c check_create.c check_dbf_load.c \
 	check_endian.c check_exif.c check_extension.c \
 	check_extra_relations_fncts.c check_fdo1.c check_fdo2.c \
-	check_fdo3.c check_gaia_utf8.c check_gaia_util.c \
-	check_geom_aux.c check_geometry_cols.c check_geoscvt_fncts.c \
-	check_init.c check_init2.c check_math_funcs.c check_mbrcache.c \
-	check_recover_geom.c check_relations_fncts.c check_shp_load.c \
-	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
-	check_version.c check_virtualtable1.c check_virtualtable2.c \
-	check_virtualtable3.c check_virtualtable4.c \
-	check_virtualtable5.c check_virtualtable6.c check_xls_load.c \
-	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	check_fdo3.c check_fdo_bufovflw.c check_gaia_utf8.c \
+	check_gaia_util.c check_geom_aux.c check_geometry_cols.c \
+	check_geoscvt_fncts.c check_init.c check_init2.c \
+	check_math_funcs.c check_mbrcache.c check_recover_geom.c \
+	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
+	check_spatialindex.c check_sql_stmt.c check_version.c \
+	check_virtual_ovflw.c check_virtualtable1.c \
+	check_virtualtable2.c check_virtualtable3.c \
+	check_virtualtable4.c check_virtualtable5.c \
+	check_virtualtable6.c check_xls_load.c shape_3d.c \
+	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
 	shape_utf8_1ex.c shape_utf8_2.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -3071,6 +3082,9 @@ check_fdo2$(EXEEXT): $(check_fdo2_OBJECTS) $(check_fdo2_DEPENDENCIES) $(EXTRA_ch
 check_fdo3$(EXEEXT): $(check_fdo3_OBJECTS) $(check_fdo3_DEPENDENCIES) $(EXTRA_check_fdo3_DEPENDENCIES) 
 	@rm -f check_fdo3$(EXEEXT)
 	$(LINK) $(check_fdo3_OBJECTS) $(check_fdo3_LDADD) $(LIBS)
+check_fdo_bufovflw$(EXEEXT): $(check_fdo_bufovflw_OBJECTS) $(check_fdo_bufovflw_DEPENDENCIES) $(EXTRA_check_fdo_bufovflw_DEPENDENCIES) 
+	@rm -f check_fdo_bufovflw$(EXEEXT)
+	$(LINK) $(check_fdo_bufovflw_OBJECTS) $(check_fdo_bufovflw_LDADD) $(LIBS)
 check_gaia_utf8$(EXEEXT): $(check_gaia_utf8_OBJECTS) $(check_gaia_utf8_DEPENDENCIES) $(EXTRA_check_gaia_utf8_DEPENDENCIES) 
 	@rm -f check_gaia_utf8$(EXEEXT)
 	$(LINK) $(check_gaia_utf8_OBJECTS) $(check_gaia_utf8_LDADD) $(LIBS)
@@ -3119,6 +3133,9 @@ check_sql_stmt$(EXEEXT): $(check_sql_stmt_OBJECTS) $(check_sql_stmt_DEPENDENCIES
 check_version$(EXEEXT): $(check_version_OBJECTS) $(check_version_DEPENDENCIES) $(EXTRA_check_version_DEPENDENCIES) 
 	@rm -f check_version$(EXEEXT)
 	$(LINK) $(check_version_OBJECTS) $(check_version_LDADD) $(LIBS)
+check_virtual_ovflw$(EXEEXT): $(check_virtual_ovflw_OBJECTS) $(check_virtual_ovflw_DEPENDENCIES) $(EXTRA_check_virtual_ovflw_DEPENDENCIES) 
+	@rm -f check_virtual_ovflw$(EXEEXT)
+	$(LINK) $(check_virtual_ovflw_OBJECTS) $(check_virtual_ovflw_LDADD) $(LIBS)
 check_virtualtable1$(EXEEXT): $(check_virtualtable1_OBJECTS) $(check_virtualtable1_DEPENDENCIES) $(EXTRA_check_virtualtable1_DEPENDENCIES) 
 	@rm -f check_virtualtable1$(EXEEXT)
 	$(LINK) $(check_virtualtable1_OBJECTS) $(check_virtualtable1_LDADD) $(LIBS)
@@ -3175,6 +3192,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_fdo1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_fdo2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_fdo3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_fdo_bufovflw.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gaia_utf8.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_gaia_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_geom_aux.Po@am__quote@
@@ -3191,6 +3209,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_spatialindex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_sql_stmt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_version.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtual_ovflw.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable3.Po@am__quote@

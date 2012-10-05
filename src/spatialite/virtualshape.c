@@ -104,31 +104,12 @@ typedef struct VirtualShapeCursorStruct
 } VirtualShapeCursor;
 typedef VirtualShapeCursor *VirtualShapeCursorPtr;
 
-static void
-vshp_double_quoted_sql (char *buf)
-{
-/* well-formatting a string to be used as an SQL name */
-    char tmp[1024];
-    char *in = tmp;
-    char *out = buf;
-    strcpy (tmp, buf);
-    *out++ = '"';
-    while (*in != '\0')
-      {
-	  if (*in == '"')
-	      *out++ = '"';
-	  *out++ = *in++;
-      }
-    *out++ = '"';
-    *out = '\0';
-}
-
 static int
 vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	     sqlite3_vtab ** ppVTab, char **pzErr)
 {
 /* creates the virtual table connected to some shapefile */
-    char buf[4096];
+    char *sql;
     char field[128];
     VirtualShapePtr p_vt;
     char path[2048];
@@ -143,8 +124,9 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     int seed;
     int dup;
     int idup;
-    char dummyName[4096];
+    char *xname;
     char **col_name = NULL;
+    gaiaOutBuffer sql_statement;
     if (pAux)
 	pAux = pAux;		/* unused arg warning suppression */
 /* checking for shapefile PATH */
@@ -200,17 +182,20 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (!(p_vt->Shp->Valid))
       {
 	  /* something is going the wrong way; creating a stupid default table */
-	  strcpy (dummyName, argv[2]);
-	  vshp_double_quoted_sql (dummyName);
-	  sprintf (buf, "CREATE TABLE %s (PKUID INTEGER, Geometry BLOB)",
-		   dummyName);
-	  if (sqlite3_declare_vtab (db, buf) != SQLITE_OK)
+	  xname = gaiaDoubleQuotedSql ((const char *) argv[2]);
+	  sql =
+	      sqlite3_mprintf
+	      ("CREATE TABLE \"%s\" (PKUID INTEGER, Geometry BLOB)", xname);
+	  free (xname);
+	  if (sqlite3_declare_vtab (db, sql) != SQLITE_OK)
 	    {
+		sqlite3_free (sql);
 		*pzErr =
 		    sqlite3_mprintf
 		    ("[VirtualShape module] cannot build a table from Shapefile\n");
 		return SQLITE_ERROR;
 	    }
+	  sqlite3_free (sql);
 	  *ppVTab = (sqlite3_vtab *) p_vt;
 	  return SQLITE_OK;
       }
@@ -222,11 +207,14 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	  gaiaShpAnalyze (p_vt->Shp);
       }
 /* preparing the COLUMNs for this VIRTUAL TABLE */
-    strcpy (buf, "CREATE TABLE ");
-    strcpy (dummyName, argv[2]);
-    vshp_double_quoted_sql (dummyName);
-    strcat (buf, dummyName);
-    strcat (buf, " (PKUID INTEGER, Geometry BLOB");
+    gaiaOutBufferInitialize (&sql_statement);
+    xname = gaiaDoubleQuotedSql (argv[2]);
+    sql =
+	sqlite3_mprintf ("CREATE TABLE \"%s\" (PKUID INTEGER, Geometry BLOB",
+			 xname);
+    free (xname);
+    gaiaAppendToOutBuffer (&sql_statement, sql);
+    sqlite3_free (sql);
 /* checking for duplicate / illegal column names and antialising them */
     col_cnt = 0;
     pFld = p_vt->Shp->Dbf->First;
@@ -242,43 +230,43 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     pFld = p_vt->Shp->Dbf->First;
     while (pFld)
       {
-	  sprintf (dummyName, "%s", pFld->Name);
-	  vshp_double_quoted_sql (dummyName);
+	  xname = gaiaDoubleQuotedSql (pFld->Name);
 	  dup = 0;
 	  for (idup = 0; idup < cnt; idup++)
 	    {
-		if (strcasecmp (dummyName, *(col_name + idup)) == 0)
+		if (strcasecmp (xname, *(col_name + idup)) == 0)
 		    dup = 1;
 	    }
-	  if (strcasecmp (dummyName, "PKUID") == 0)
+	  if (strcasecmp (xname, "\"PKUID\"") == 0)
 	      dup = 1;
-	  if (strcasecmp (dummyName, "Geometry") == 0)
+	  if (strcasecmp (xname, "\"Geometry\"") == 0)
 	      dup = 1;
 	  if (dup)
 	    {
-		sprintf (dummyName, "COL_%d", seed++);
-		vshp_double_quoted_sql (dummyName);
+		free (xname);
+		sql = sqlite3_mprintf ("COL_%d", seed++);
+		xname = gaiaDoubleQuotedSql (sql);
+		sqlite3_free (sql);
 	    }
 	  if (pFld->Type == 'N')
 	    {
 		if (pFld->Decimals > 0 || pFld->Length > 18)
-		    sprintf (field, "%s DOUBLE", dummyName);
+		    sql = sqlite3_mprintf (", \"%s\" DOUBLE", xname);
 		else
-		    sprintf (field, "%s INTEGER", dummyName);
+		    sql = sqlite3_mprintf (", \"%s\" INTEGER", xname);
 	    }
 	  else if (pFld->Type == 'F')
-	      sprintf (field, "%s DOUBLE", dummyName);
+	      sql = sqlite3_mprintf (", \"%s\" DOUBLE", xname);
 	  else
-	      sprintf (field, "%s VARCHAR(%d)", dummyName, pFld->Length);
-	  strcat (buf, ", ");
-	  strcat (buf, field);
-	  len = strlen (dummyName);
-	  *(col_name + cnt) = malloc (len + 1);
-	  strcpy (*(col_name + cnt), dummyName);
+	      sql =
+		  sqlite3_mprintf (", \"%s\" VARCHAR(%d)", xname, pFld->Length);
+	  gaiaAppendToOutBuffer (&sql_statement, sql);
+	  sqlite3_free (sql);
+	  *(col_name + cnt) = xname;
 	  cnt++;
 	  pFld = pFld->Next;
       }
-    strcat (buf, ")");
+    gaiaAppendToOutBuffer (&sql_statement, ")");
     if (col_name)
       {
 	  /* releasing memory allocation for column names */
@@ -286,14 +274,19 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	      free (*(col_name + cnt));
 	  free (col_name);
       }
-    if (sqlite3_declare_vtab (db, buf) != SQLITE_OK)
+    if (sql_statement.Error == 0 && sql_statement.Buffer != NULL)
       {
-	  *pzErr =
-	      sqlite3_mprintf
-	      ("[VirtualShape module] CREATE VIRTUAL: invalid SQL statement \"%s\"",
-	       buf);
-	  return SQLITE_ERROR;
+	  if (sqlite3_declare_vtab (db, sql_statement.Buffer) != SQLITE_OK)
+	    {
+		*pzErr =
+		    sqlite3_mprintf
+		    ("[VirtualShape module] CREATE VIRTUAL: invalid SQL statement \"%s\"",
+		     sql_statement.Buffer);
+		gaiaOutBufferReset (&sql_statement);
+		return SQLITE_ERROR;
+	    }
       }
+    gaiaOutBufferReset (&sql_statement);
     *ppVTab = (sqlite3_vtab *) p_vt;
     return SQLITE_OK;
 }
