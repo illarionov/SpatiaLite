@@ -53,7 +53,7 @@ int main (int argc, char *argv[])
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
-    int suffix_len = 128 * 1024;	/* 128 KB suffix */
+    int suffix_len = 12/*8 * 1024*/;	/* 128 KB suffix */
     char *suffix;
     char *table_a;
     char *table_b;
@@ -136,11 +136,7 @@ int main (int argc, char *argv[])
 
 /* inserting few valid rows on table "A" */
     sql = sqlite3_mprintf("INSERT INTO %s (%s, %s, %s) VALUES "
-                          "(1, 'alpha', MakePoint(1, 10, 4326)), "
-                          "(2, 'beta', MakePoint(2, 20, 4326)), "
-                          "(3, 'gamma', MakePoint(3, 30, 4326)), "
-                          "(4, 'delta', MakePoint(4, 40, 4326)), "
-                          "(5, 'epsilon', MakePoint(5, 50, 4326))", table_a, pk, name, geom);
+                          "(1, 'alpha', MakePoint(1, 10, 4326))", table_a, pk, name, geom);
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
     sqlite3_free(sql);
     if (ret != SQLITE_OK) {
@@ -148,6 +144,46 @@ int main (int argc, char *argv[])
 	sqlite3_free(err_msg);
 	sqlite3_close(handle);
 	return -6;
+    }
+    sql = sqlite3_mprintf("INSERT INTO %s (%s, %s, %s) VALUES "
+                          "(2, 'beta', MakePoint(2, 20, 4326))", table_a, pk, name, geom);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "INSERT INTO error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -106;
+    }
+    sql = sqlite3_mprintf("INSERT INTO %s (%s, %s, %s) VALUES "
+                          "(3, 'gamma', MakePoint(3, 30, 4326))", table_a, pk, name, geom);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "INSERT INTO error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -206;
+    }
+    sql = sqlite3_mprintf("INSERT INTO %s (%s, %s, %s) VALUES "
+                          "(4, 'delta', MakePoint(4, 40, 4326))", table_a, pk, name, geom);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "INSERT INTO error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -306;
+    }
+    sql = sqlite3_mprintf("INSERT INTO %s (%s, %s, %s) VALUES "
+                          "(5, 'epsilon', MakePoint(5, 50, 4326))", table_a, pk, name, geom);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "INSERT INTO error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -406;
     }
 
 /* inserting few invalid geometries on table "A" */
@@ -595,6 +631,8 @@ test7:
     }
     sqlite3_free_table (results);
 
+#ifdef GEOS_ADVANCED		/* GEOS advanced features */
+
 /* creating a topology */
     sql = sqlite3_mprintf("SELECT CreateTopologyTables(%Q, 4326, 'XY')", topology);
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
@@ -622,6 +660,8 @@ test7:
     sqlite3_free(name);
     sqlite3_free(geom);
     sqlite3_free(topology);
+
+#endif /* end GEOS advanced features */
 
 /* inserting a CRS (very long auth) */
     auth = sqlite3_mprintf("authority_%s", suffix);

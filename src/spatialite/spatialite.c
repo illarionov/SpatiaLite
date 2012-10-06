@@ -5243,1261 +5243,6 @@ fnct_RebuildGeometryTriggers (sqlite3_context * context, int argc,
     return;
 }
 
-
-static int
-check_topo_table (sqlite3 * sqlite, const char *table, int is_view)
-{
-/* checking if some Topology-related table/view already exists */
-    int exists = 0;
-    char *sql_statement;
-    char *errMsg = NULL;
-    int ret;
-    char **results;
-    int rows;
-    int columns;
-    int i;
-    sql_statement =
-	sqlite3_mprintf ("SELECT name FROM sqlite_master WHERE type = '%s'"
-			 "AND Upper(name) = Upper(%Q)",
-			 (!is_view) ? "table" : "view", table);
-    ret =
-	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
-			   &errMsg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  sqlite3_free (errMsg);
-	  return 0;
-      }
-    for (i = 1; i <= rows; i++)
-	exists = 1;
-    sqlite3_free_table (results);
-    return exists;
-}
-
-static int
-create_topo_nodes (sqlite3 * sqlite, const char *table, int srid, int dims)
-{
-/* creating the topo_nodes table */
-    char *sql_statement;
-    char *sqltable;
-    char *idx_name;
-    char *xidx_name;
-    int ret;
-    char *err_msg = NULL;
-    sqltable = gaiaDoubleQuotedSql (table);
-    sql_statement = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
-				     "node_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
-				     "node_code TEXT)", sqltable);
-    free (sqltable);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sql_statement =
-	sqlite3_mprintf
-	("SELECT AddGeometryColumn(%Q, 'Geometry', %d, 'POINT', '%s', 1)",
-	 table, srid, (dims == GAIA_XY_Z) ? "XYZ" : "XY");
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("AddGeometryColumn '%s'.'Geometry' error: %s\n",
-			table, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sql_statement =
-	sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, 'Geometry')", table);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CreateSpatialIndex '%s'.'Geometry' error: %s\n",
-			table, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sqltable = gaiaDoubleQuotedSql (table);
-    idx_name = sqlite3_mprintf ("idx_%s_code", table);
-    xidx_name = gaiaDoubleQuotedSql (idx_name);
-    sqlite3_free (idx_name);
-    sql_statement =
-	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (node_code)", xidx_name,
-			 sqltable);
-    free (sqltable);
-    free (xidx_name);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("Create Index '%s'('node_code') error: %s\n",
-			sqltable, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_topo_edges (sqlite3 * sqlite, const char *table, int srid, int dims)
-{
-/* creating the topo_edges table */
-    char *sql_statement;
-    char *sqltable;
-    char *idx_name;
-    char *xidx_name;
-    int ret;
-    char *err_msg = NULL;
-    sqltable = gaiaDoubleQuotedSql (table);
-    sql_statement = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
-				     "edge_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
-				     "node_from_code TEXT,\n"
-				     "node_to_code TEXT,\n"
-				     "edge_code TEXT)", sqltable);
-    free (sqltable);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sql_statement =
-	sqlite3_mprintf
-	("SELECT AddGeometryColumn(%Q, 'Geometry', %d, 'LINESTRING', '%s', 1)",
-	 table, srid, (dims == GAIA_XY_Z) ? "XYZ" : "XY");
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("AddGeometryColumn '%s'.'Geometry' error: %s\n",
-			table, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sql_statement =
-	sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, 'Geometry')", table);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CreateSpatialIndex '%s'.'Geometry' error: %s\n",
-			table, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sqltable = gaiaDoubleQuotedSql (table);
-    idx_name = sqlite3_mprintf ("idx_%s_code", table);
-    xidx_name = gaiaDoubleQuotedSql (idx_name);
-    sqlite3_free (idx_name);
-    sql_statement =
-	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (edge_code)", xidx_name,
-			 sqltable);
-    free (sqltable);
-    free (xidx_name);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("Create Index '%s'('edge_code') error: %s\n",
-			sqltable, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sqltable = gaiaDoubleQuotedSql (table);
-    idx_name = sqlite3_mprintf ("idx_%s_from", table);
-    xidx_name = gaiaDoubleQuotedSql (idx_name);
-    sqlite3_free (idx_name);
-    sql_statement =
-	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (node_from_code)",
-			 xidx_name, sqltable);
-    free (sqltable);
-    free (xidx_name);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("Create Index '%s'('node_from_code') error: %s\n",
-			sqltable, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sqltable = gaiaDoubleQuotedSql (table);
-    idx_name = sqlite3_mprintf ("idx_%s_to", table);
-    xidx_name = gaiaDoubleQuotedSql (idx_name);
-    sqlite3_free (idx_name);
-    sql_statement =
-	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (node_to_code)",
-			 xidx_name, sqltable);
-    free (sqltable);
-    free (xidx_name);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("Create Index '%s'('node_to_code') error: %s\n",
-			sqltable, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_topo_faces (sqlite3 * sqlite, const char *table)
-{
-/* creating the topo_faces table */
-    char *sql_statement;
-    char *sqltable;
-    char *idx_name;
-    char *xidx_name;
-    int ret;
-    char *err_msg = NULL;
-    sqltable = gaiaDoubleQuotedSql (table);
-    sql_statement = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
-				     "face_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
-				     "face_code TEXT)", sqltable);
-    free (sqltable);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sqltable = gaiaDoubleQuotedSql (table);
-    idx_name = sqlite3_mprintf ("idx_%s_code", table);
-    xidx_name = gaiaDoubleQuotedSql (idx_name);
-    sqlite3_free (idx_name);
-    sql_statement =
-	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (face_code)", xidx_name,
-			 sqltable);
-    free (sqltable);
-    free (xidx_name);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("Create Index '%s'('face_code') error: %s\n",
-			sqltable, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_topo_faces_edges (sqlite3 * sqlite, const char *table,
-			 const char *table2)
-{
-/* creating the topo_faces_edges table */
-    char *sql_statement;
-    char *sqltable;
-    char *sqltable2;
-    char *idx_name;
-    char *xidx_name;
-    int ret;
-    char *err_msg = NULL;
-    sqltable = gaiaDoubleQuotedSql (table);
-    sqltable2 = gaiaDoubleQuotedSql (table2);
-    sql_statement = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
-				     "face_id INTEGER NOT NULL,\n"
-				     "edge_code TEXT NOT NULL,\n"
-				     "orientation TEXT,\n"
-				     "CONSTRAINT pk_faces_edges PRIMARY KEY "
-				     "(face_id, edge_code),\n"
-				     "CONSTRAINT fk_faces_edges FOREIGN KEY "
-				     "(face_id) REFERENCES \"%s\" (face_id))\n",
-				     sqltable, sqltable2);
-    free (sqltable);
-    free (sqltable2);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sqltable = gaiaDoubleQuotedSql (table);
-    idx_name = sqlite3_mprintf ("idx_%s_edge", table);
-    xidx_name = gaiaDoubleQuotedSql (idx_name);
-    sqlite3_free (idx_name);
-    sql_statement =
-	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (edge_code)", xidx_name,
-			 sqltable);
-    free (sqltable);
-    free (xidx_name);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("Create Index '%s'('edge_code') error: %s\n",
-			sqltable, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_topo_curves (sqlite3 * sqlite, const char *table)
-{
-/* creating the topo_curves table */
-    char *sql_statement;
-    char *sqltable;
-    char *idx_name;
-    char *xidx_name;
-    int ret;
-    char *err_msg = NULL;
-    sqltable = gaiaDoubleQuotedSql (table);
-    sql_statement = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
-				     "curve_id INTEGER NOT NULL,\n"
-				     "edge_code TEXT NOT NULL,\n"
-				     "orientation TEXT,\n"
-				     "CONSTRAINT pk_curves PRIMARY KEY "
-				     "(curve_id, edge_code))\n", sqltable);
-    free (sqltable);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sqltable = gaiaDoubleQuotedSql (table);
-    idx_name = sqlite3_mprintf ("idx_%s_edge", table);
-    xidx_name = gaiaDoubleQuotedSql (idx_name);
-    sqlite3_free (idx_name);
-    sql_statement =
-	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (edge_code)", xidx_name,
-			 sqltable);
-    free (sqltable);
-    free (xidx_name);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("Create Index '%s'('edge_code') error: %s\n",
-			sqltable, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_topo_surfaces (sqlite3 * sqlite, const char *table)
-{
-/* creating the topo_surfaces table */
-    char *sql_statement;
-    char *sqltable;
-    char *idx_name;
-    char *xidx_name;
-    int ret;
-    char *err_msg = NULL;
-    sqltable = gaiaDoubleQuotedSql (table);
-    sql_statement = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
-				     "surface_id INTEGER NOT NULL,\n"
-				     "face_code TEXT NOT NULL,\n"
-				     "orientation TEXT,\n"
-				     "CONSTRAINT pk_surfaces PRIMARY KEY "
-				     "(surface_id, face_code))", sqltable);
-    free (sqltable);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    sqltable = gaiaDoubleQuotedSql (table);
-    idx_name = sqlite3_mprintf ("idx_%s_face", table);
-    xidx_name = gaiaDoubleQuotedSql (idx_name);
-    sqlite3_free (idx_name);
-    sql_statement =
-	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (face_code)", xidx_name,
-			 sqltable);
-    free (sqltable);
-    free (xidx_name);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("Create Index '%s'('face_code') error: %s\n",
-			sqltable, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_check_node_codes (sqlite3 * sqlite, const char *view,
-			 const char *table_nodes)
-{
-/* creating the check node codes VIEW */
-    char *sql_statement;
-    char *sqltable;
-    char *sqlview;
-    int ret;
-    char *err_msg = NULL;
-    sqlview = gaiaDoubleQuotedSql (view);
-    sqltable = gaiaDoubleQuotedSql (table_nodes);
-    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
-				     "SELECT node_code AS node_code, Count(node_id) AS count\n"
-				     "FROM \"%s\"\nGROUP BY node_code\nHAVING count > 1\n",
-				     sqlview, sqltable);
-    free (sqlview);
-    free (sqltable);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_check_node_geoms (sqlite3 * sqlite, const char *view,
-			 const char *table_nodes)
-{
-/* creating the check node geoms VIEW */
-    char *sql_statement;
-    char *sqltable;
-    char *sqlview;
-    int ret;
-    char *err_msg = NULL;
-    sqlview = gaiaDoubleQuotedSql (view);
-    sqltable = gaiaDoubleQuotedSql (table_nodes);
-    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
-				     "SELECT n1.node_id AS node1_id, n1.node_code AS node1_code, "
-				     "n2.node_id AS node2_id, n2.node_code AS node2_code\n"
-				     "FROM \"%s\" AS n1\nJOIN \"%s\" AS n2 ON (\n"
-				     "  n1.node_id <> n2.node_id AND\n"
-				     "  ST_Equals(n1.Geometry, n2.Geometry) = 1 AND\n"
-				     "  n2.node_id IN (\n	SELECT ROWID FROM SpatialIndex\n"
-				     "  WHERE f_table_name = %Q AND\n  search_frame = n1.Geometry))\n",
-				     sqlview, sqltable, sqltable, table_nodes);
-    free (sqlview);
-    free (sqltable);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_check_edge_codes (sqlite3 * sqlite, const char *view,
-			 const char *table_edges)
-{
-/* creating the check edge codes VIEW */
-    char *sql_statement;
-    char *sqltable;
-    char *sqlview;
-    int ret;
-    char *err_msg = NULL;
-    sqlview = gaiaDoubleQuotedSql (view);
-    sqltable = gaiaDoubleQuotedSql (table_edges);
-    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
-				     "SELECT edge_code AS edge_code, Count(edge_id) AS count\n"
-				     "FROM \"%s\"\nGROUP BY edge_code\nHAVING count > 1\n",
-				     sqlview, sqltable);
-    free (sqlview);
-    free (sqltable);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_check_edge_geoms (sqlite3 * sqlite, const char *view,
-			 const char *table_edges)
-{
-/* creating the check edge geoms VIEW */
-    char *sql_statement;
-    char *sqltable;
-    char *sqlview;
-    int ret;
-    char *err_msg = NULL;
-    sqlview = gaiaDoubleQuotedSql (view);
-    sqltable = gaiaDoubleQuotedSql (table_edges);
-    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
-				     "SELECT e1.edge_id AS edge1_id, e1.edge_code AS edge1_code, "
-				     "e2.edge_id AS edge2_id, e2.edge_code AS edge2_code\n"
-				     "FROM \"%s\" AS e1\nJOIN \"%s\" AS e2 ON (\n  e1.edge_id <> e2.edge_id AND\n"
-				     "NOT (e1.node_from_code = e2.node_from_code "
-				     "AND e1.node_to_code = e2.node_to_code) AND\n"
-				     "  ST_Crosses(e1.Geometry, e2.Geometry) = 1 AND\n"
-				     "  e2.edge_id IN (\n"
-				     "    SELECT ROWID FROM SpatialIndex\n"
-				     "	   WHERE f_table_name = %Q AND\n        search_frame = e1.Geometry))\n",
-				     sqlview, sqltable, sqltable, table_edges);
-    free (sqlview);
-    free (sqltable);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_check_edge_node_geoms (sqlite3 * sqlite, const char *view,
-			      const char *table_edges, const char *table_nodes)
-{
-/* creating the check edge/node geoms VIEW */
-    char *sql_statement;
-    char *sql_edges;
-    char *sql_nodes;
-    char *sqlview;
-    int ret;
-    char *err_msg = NULL;
-    sqlview = gaiaDoubleQuotedSql (view);
-    sql_edges = gaiaDoubleQuotedSql (table_edges);
-    sql_nodes = gaiaDoubleQuotedSql (table_nodes);
-    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
-				     "SELECT e.edge_id AS edge_id, n.node_id AS node_id\n"
-				     "FROM \"%s\" AS e,\n\"%s\" AS n\n"
-				     "WHERE ST_Intersects(e.Geometry, n.Geometry)\n"
-				     "  AND ST_Equals(ST_StartPoint(e.Geometry), n.Geometry) = 0\n"
-				     "  AND ST_Equals(ST_EndPoint(e.Geometry), n.Geometry) = 0\n"
-				     "  AND n.ROWID IN (\n    SELECT ROWID FROM SpatialIndex\n"
-				     "  WHERE f_table_name = %Q\n      AND search_frame = e.Geometry);",
-				     sqlview, sql_edges, sql_nodes,
-				     table_nodes);
-    free (sqlview);
-    free (sql_nodes);
-    free (sql_edges);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_check_face_codes (sqlite3 * sqlite, const char *view,
-			 const char *table_faces)
-{
-/* creating the check face codes VIEW */
-    char *sql_statement;
-    char *sqltable;
-    char *sqlview;
-    int ret;
-    char *err_msg = NULL;
-    sqlview = gaiaDoubleQuotedSql (view);
-    sqltable = gaiaDoubleQuotedSql (table_faces);
-    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
-				     "SELECT face_code AS face_code, Count(face_id) AS count\n"
-				     "FROM \"%s\"\nGROUP BY face_code\nHAVING count > 1\n",
-				     sqlview, sqltable);
-    free (sqltable);
-    free (sqlview);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_faces_resolved (sqlite3 * sqlite, const char *view, const char *faces,
-		       const char *faces_edges, const char *edges)
-{
-/* creating the Faces Resolved VIEW */
-    char *sql_statement;
-    char *sql_faces;
-    char *sql_faces_edges;
-    char *sql_edges;
-    char *sqlview;
-    int ret;
-    char *err_msg = NULL;
-    sqlview = gaiaDoubleQuotedSql (view);
-    sql_faces = gaiaDoubleQuotedSql (faces);
-    sql_faces_edges = gaiaDoubleQuotedSql (faces_edges);
-    sql_edges = gaiaDoubleQuotedSql (edges);
-    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
-				     "SELECT f.face_id AS face_id, f.face_code AS face_code, "
-				     "ST_Polygonize(e.Geometry) AS Geometry\n"
-				     "FROM \"%s\" AS f\nLEFT JOIN \"%s\" AS fe ON (fe.face_id = f.face_id)\n"
-				     "LEFT JOIN \"%s\" AS e ON (e.edge_code = fe.edge_code)\n"
-				     "GROUP BY f.face_id\n", sqlview, sql_faces,
-				     sql_faces_edges, sql_edges);
-    free (sqlview);
-    free (sql_faces);
-    free (sql_faces_edges);
-    free (sql_edges);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_curves_resolved (sqlite3 * sqlite, const char *view,
-			const char *curves, char *edges)
-{
-/* creating the Curves Resolved VIEW */
-    char *sql_statement;
-    char *sql_curves;
-    char *sql_edges;
-    char *sqlview;
-    int ret;
-    char *err_msg = NULL;
-    sqlview = gaiaDoubleQuotedSql (view);
-    sql_curves = gaiaDoubleQuotedSql (curves);
-    sql_edges = gaiaDoubleQuotedSql (edges);
-    sql_statement =
-	sqlite3_mprintf
-	("CREATE VIEW \"%s\" AS\nSELECT c.curve_id AS curve_id, "
-	 "CastToMultiLinestring(ST_Collect(e.Geometry)) AS Geometry\n"
-	 "FROM \"%s\" AS c\nLEFT JOIN \"%s\" AS e ON (e.edge_code = c.edge_code)\n"
-	 "GROUP BY c.curve_id\n", sqlview, sql_curves, sql_edges);
-    free (sqlview);
-    free (sql_edges);
-    free (sql_curves);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_surfaces_resolved (sqlite3 * sqlite, const char *view,
-			  const char *surfaces, const char *faces)
-{
-/* creating the Surfaces Resolved VIEW */
-    char *sql_statement;
-    char *sql_surfaces;
-    char *sql_faces;
-    char *sqlview;
-    int ret;
-    char *err_msg = NULL;
-    sqlview = gaiaDoubleQuotedSql (view);
-    sql_surfaces = gaiaDoubleQuotedSql (surfaces);
-    sql_faces = gaiaDoubleQuotedSql (faces);
-    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
-				     "SELECT s.surface_id AS surface_id,\n"
-				     "  CastToMultipolygon(ST_UnaryUnion(ST_Collect(f.Geometry))) AS Geometry\n"
-				     "FROM \"%s\" AS s\n"
-				     "LEFT JOIN \"%s\" AS f ON (f.face_code = s.face_code)\n"
-				     "GROUP BY s.surface_id\n", sqlview,
-				     sql_surfaces, sql_faces);
-    free (sqlview);
-    free (sql_surfaces);
-    free (sql_faces);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_dangling_nodes (sqlite3 * sqlite, const char *view,
-		       const char *nodes, const char *edges)
-{
-/* creating the Dangling Nodes VIEW */
-    char *sql_statement;
-    char *sql_nodes;
-    char *sql_edges;
-    char *sqlview;
-    int ret;
-    char *err_msg = NULL;
-    sqlview = gaiaDoubleQuotedSql (view);
-    sql_nodes = gaiaDoubleQuotedSql (nodes);
-    sql_edges = gaiaDoubleQuotedSql (edges);
-    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
-				     "SELECT n.node_id AS node_id\nFROM \"%s\" AS n\n"
-				     "LEFT JOIN \"%s\" AS e ON (n.node_code = e.node_from_code)\n"
-				     "WHERE e.edge_id IS NULL\nINTERSECT\nSELECT n.node_id AS node_id\n"
-				     "FROM \"%s\" AS n\nLEFT JOIN \"%s\" AS e ON (n.node_code = e.node_to_code)\n"
-				     "WHERE e.edge_id IS NULL\n", sqlview,
-				     sql_nodes, sql_edges, sql_nodes,
-				     sql_edges);
-    free (sqlview);
-    free (sql_nodes);
-    free (sql_edges);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_dangling_edges (sqlite3 * sqlite, const char *view,
-		       const char *edges, const char *faces_edges,
-		       const char *curves)
-{
-/* creating the Dangling Edges VIEW */
-    char *sql_statement;
-    char *sql_edges;
-    char *sql_faces_edges;
-    char *sql_curves;
-    char *sqlview;
-    int ret;
-    char *err_msg = NULL;
-    sqlview = gaiaDoubleQuotedSql (view);
-    sql_edges = gaiaDoubleQuotedSql (edges);
-    sql_faces_edges = gaiaDoubleQuotedSql (faces_edges);
-    sql_curves = gaiaDoubleQuotedSql (curves);
-    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
-				     "SELECT e.edge_id AS edge_id\nFROM \"%s\" AS e\n"
-				     "LEFT JOIN \"%s\" AS f ON (e.edge_code = f.edge_code)\n"
-				     "WHERE f.edge_code IS NULL\nINTERSECT\nSELECT e.edge_id AS edge_id\n"
-				     "FROM \"%s\" AS e\nLEFT JOIN \"%s\" AS c ON (e.edge_code = c.edge_code)\n"
-				     "WHERE c.edge_code IS NULL\n", sqlview,
-				     sql_edges, sql_faces_edges, sql_edges,
-				     sql_curves);
-    free (sqlview);
-    free (sql_edges);
-    free (sql_faces_edges);
-    free (sql_curves);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_check_edges_from_to (sqlite3 * sqlite, const char *view,
-			    const char *edges, const char *nodes)
-{
-/* creating the Edges/Nodes [from/to] VIEW */
-    char skeleton[2048];
-    char *sql_statement;
-    char *sql_edges;
-    char *sql_nodes;
-    char *sqlview;
-    int ret;
-    char *err_msg = NULL;
-    sqlview = gaiaDoubleQuotedSql (view);
-    sql_edges = gaiaDoubleQuotedSql (edges);
-    sql_nodes = gaiaDoubleQuotedSql (nodes);
-    strcpy (skeleton, "CREATE VIEW \"%s\" AS\n");
-    strcat (skeleton, "SELECT e.edge_id AS edge_id, n.node_id AS node_id,\n");
-    strcat (skeleton, "  n.node_code AS node_code,\n");
-    strcat (skeleton, "'Mismatching coords' AS error_cause\n");
-    strcat (skeleton, "FROM \"%s\" AS e\n");
-    strcat (skeleton, "JOIN \"%s\" AS n ON ");
-    strcat (skeleton, "(e.node_from_code = n.node_code)\n");
-    strcat (skeleton,
-	    "WHERE ST_Equals(ST_StartPoint(e.Geometry), n.Geometry) = 0\n");
-    strcat (skeleton, "UNION\n");
-    strcat (skeleton, "SELECT e.edge_id AS edge_id, n.node_id AS node_id,\n");
-    strcat (skeleton, "  n.node_code AS node_code,\n");
-    strcat (skeleton, " 'Mismatching coords' AS error_cause\n");
-    strcat (skeleton, "FROM \"%s\" AS e\n");
-    strcat (skeleton, "JOIN \"%s\" AS n ON ");
-    strcat (skeleton, "(e.node_to_code = n.node_code)\n");
-    strcat (skeleton,
-	    "WHERE ST_Equals(ST_EndPoint(e.Geometry), n.Geometry) = 0\n");
-    strcat (skeleton, "UNION\n");
-    strcat (skeleton, "SELECT e.edge_id AS edge_id, n.node_id AS node_id,\n");
-    strcat (skeleton, "  n.node_code AS node_code,\n");
-    strcat (skeleton, "  'Unresolved Node reference' AS error_cause\n");
-    strcat (skeleton, "FROM \"%s\" AS e\n");
-    strcat (skeleton, "LEFT JOIN \"%s\" AS n ON ");
-    strcat (skeleton, "(e.node_from_code = n.node_code)\n");
-    strcat (skeleton, "WHERE n.node_id IS NULL\n");
-    strcat (skeleton, "UNION\n");
-    strcat (skeleton, "SELECT e.edge_id AS edge_id, n.node_id AS node_id,\n");
-    strcat (skeleton, "  n.node_code AS node_code,\n");
-    strcat (skeleton, "  'Unresolved Node reference' AS error_cause\n");
-    strcat (skeleton, "FROM \"%s\" AS e\n");
-    strcat (skeleton, "LEFT JOIN \"%s\" AS n ON ");
-    strcat (skeleton, "(e.node_to_code = n.node_code)\n");
-    strcat (skeleton, "WHERE n.node_id IS NULL\n");
-    sql_statement = sqlite3_mprintf (skeleton, sqlview,
-				     sql_edges, sql_nodes, sql_edges, sql_nodes,
-				     sql_edges, sql_nodes, sql_edges,
-				     sql_nodes);
-    free (sqlview);
-    free (sql_edges);
-    free (sql_nodes);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-create_topo_master (sqlite3 * sqlite)
-{
-/* creating the topo_master table */
-    char sql[2048];
-    int ret;
-    char *err_msg = NULL;
-
-/* creating the table */
-    strcpy (sql, "CREATE TABLE topology_master (\n");
-    strcat (sql, "nodes TEXT NOT NULL,\n");
-    strcat (sql, "edges TEXT NOT NULL,\n");
-    strcat (sql, "faces TEXT NOT NULL,\n");
-    strcat (sql, "faces_edges TEXT NOT NULL,\n");
-    strcat (sql, "curves TEXT NOT NULL,\n");
-    strcat (sql, "surfaces TEXT NOT NULL,\n");
-    strcat (sql, "check_node_ids TEXT NOT NULL,\n");
-    strcat (sql, "check_node_geoms TEXT NOT NULL,\n");
-    strcat (sql, "check_edge_ids TEXT NOT NULL,\n");
-    strcat (sql, "check_edge_geoms TEXT NOT NULL,\n");
-    strcat (sql, "check_edge_node_geoms TEXT NOT NULL,\n");
-    strcat (sql, "check_face_ids TEXT NOT NULL,\n");
-    strcat (sql, "faces_resolved TEXT NOT NULL,\n");
-    strcat (sql, "curves_resolved TEXT NOT NULL,\n");
-    strcat (sql, "surfaces_resolved TEXT NOT NULL,\n");
-    strcat (sql, "dangling_nodes TEXT NOT NULL,\n");
-    strcat (sql, "dangling_edges TEXT NOT NULL,\n");
-    strcat (sql, "check_edges_from_to TEXT NOT NULL,\n");
-    strcat (sql, "coord_dimension TEXT NOT NULL,\n");
-    strcat (sql, "srid INTEGER NOT NULL,\n");
-    strcat (sql, "CONSTRAINT fk_topo_master FOREIGN KEY \n");
-    strcat (sql, "(srid) REFERENCES spatial_ref_sys (srid))");
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("CREATE TABLE 'topology_master' error: %s\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static int
-update_topo_master (sqlite3 * sqlite, const char *nodes, const char *edges,
-		    const char *faces, const char *faces_edges,
-		    const char *curves, const char *surfaces,
-		    const char *check_nodes, const char *check_node_geoms,
-		    const char *check_edges, const char *check_edge_geoms,
-		    const char *check_edge_node_geoms,
-		    const char *check_faces, const char *faces_res,
-		    const char *curves_res, const char *surfaces_res,
-		    const char *dangling_nodes, const char *dangling_edges,
-		    const char *check_edges_from_to, int srid, int dims)
-{
-/* updating the topo_master table */
-    char *sql_statement;
-    int ret;
-    char *err_msg = NULL;
-
-/* inserting Topology data into MASTER */
-    sql_statement = sqlite3_mprintf ("INSERT INTO topology_master "
-				     "(nodes, edges, faces, faces_edges, curves, surfaces, check_node_ids, "
-				     "check_node_geoms, check_edge_ids, check_edge_geoms, check_edge_node_geoms, "
-				     "check_face_ids, faces_resolved, curves_resolved, surfaces_resolved, "
-				     "dangling_nodes, dangling_edges, check_edges_from_to, coord_dimension, srid) "
-				     "VALUES (%Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %d)",
-				     nodes, edges, faces, faces_edges, curves,
-				     surfaces, check_nodes, check_node_geoms,
-				     check_edges, check_edge_geoms,
-				     check_edge_node_geoms, check_faces,
-				     faces_res, curves_res, surfaces_res,
-				     dangling_nodes, dangling_edges,
-				     check_edges_from_to,
-				     (dims == GAIA_XY_Z) ? "XYZ" : "XY", srid);
-    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
-    sqlite3_free (sql_statement);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("INSERT INTO 'topology_master' error: %s\n", err_msg);
-	  sqlite3_free (err_msg);
-	  return 0;
-      }
-    return 1;
-}
-
-static void
-fnct_CreateTopologyTables (sqlite3_context * context, int argc,
-			   sqlite3_value ** argv)
-{
-/* SQL function:
-/ CreateTopologyTables(srid, coord_dims)
-/  or
-/ CreateTopologyTables(prefix, srid, coord_dims)
-/
-/ creates any Topology related table 
-/ returns 1 on success
-/ 0 on failure
-*/
-    const char *prefix = "topo_";
-    const unsigned char *txt_dims;
-    int srid = -1;
-    int dimension;
-    int dims = -1;
-    char *table_curves;
-    char *table_surfaces;
-    char *table_nodes;
-    char *table_edges;
-    char *table_faces;
-    char *table_faces_edges;
-    char *view_check_node_codes;
-    char *view_check_node_geoms;
-    char *view_check_edge_codes;
-    char *view_check_edge_geoms;
-    char *view_check_edge_node_geoms;
-    char *view_check_face_codes;
-    char *view_faces_resolved;
-    char *view_curves_resolved;
-    char *view_surfaces_resolved;
-    char *view_dangling_nodes;
-    char *view_dangling_edges;
-    char *view_edges_check_from_to;
-    const char *tables[20];
-    int views[20];
-    int *p_view;
-    const char **p_tbl;
-    int ok_table;
-    int create_master = 1;
-    sqlite3 *sqlite = sqlite3_context_db_handle (context);
-    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (argc == 3)
-      {
-	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
-	    {
-		spatialite_e
-		    ("CreateTopologyTables() error: argument 1 [table_prefix] is not of the String type\n");
-		sqlite3_result_int (context, 0);
-		return;
-	    }
-	  prefix = (char *) sqlite3_value_text (argv[0]);
-	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
-	    {
-		spatialite_e
-		    ("CreateTopologyTables() error: argument 2 [SRID] is not of the Integer type\n");
-		sqlite3_result_int (context, 0);
-		return;
-	    }
-	  srid = sqlite3_value_int (argv[1]);
-	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
-	    {
-		dimension = sqlite3_value_int (argv[2]);
-		if (dimension == 2)
-		    dims = GAIA_XY;
-		if (dimension == 3)
-		    dims = GAIA_XY_Z;
-	    }
-	  else if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
-	    {
-		txt_dims = sqlite3_value_text (argv[2]);
-		if (strcasecmp ((char *) txt_dims, "XY") == 0)
-		    dims = GAIA_XY;
-		if (strcasecmp ((char *) txt_dims, "XYZ") == 0)
-		    dims = GAIA_XY_Z;
-	    }
-	  else
-	    {
-		spatialite_e
-		    ("CreateTopologyTables() error: argument 3 [dimension] is not of the Integer or Text type\n");
-		sqlite3_result_int (context, 0);
-		return;
-	    }
-      }
-    else
-      {
-	  if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
-	    {
-		spatialite_e
-		    ("CreateTopologyTables() error: argument 1 [SRID] is not of the Integer type\n");
-		sqlite3_result_int (context, 0);
-		return;
-	    }
-	  srid = sqlite3_value_int (argv[0]);
-	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
-	    {
-		dimension = sqlite3_value_int (argv[1]);
-		if (dimension == 2)
-		    dims = GAIA_XY;
-		if (dimension == 3)
-		    dims = GAIA_XY_Z;
-	    }
-	  else if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
-	    {
-		txt_dims = sqlite3_value_text (argv[1]);
-		if (strcasecmp ((char *) txt_dims, "XY") == 0)
-		    dims = GAIA_XY;
-		if (strcasecmp ((char *) txt_dims, "XYZ") == 0)
-		    dims = GAIA_XY_Z;
-	    }
-	  else
-	    {
-		spatialite_e
-		    ("CreateTopologyTables() error: argument 2 [dimension] is not of the Integer or Text type\n");
-		sqlite3_result_int (context, 0);
-		return;
-	    }
-      }
-    if (dims == GAIA_XY || dims == GAIA_XY_Z)
-	;
-    else
-      {
-	  spatialite_e
-	      ("CreateTopologyTables() error: [dimension] ILLEGAL VALUE\n");
-	  sqlite3_result_int (context, 0);
-	  return;
-      }
-    if (srid <= 0)
-      {
-	  spatialite_e ("CreateTopologyTables() error: [SRID] ILLEGAL VALUE\n");
-	  sqlite3_result_int (context, 0);
-	  return;
-      }
-
-/* checking Topology tables */
-    tables[0] = "topology_master";
-    views[0] = 0;
-    table_curves = sqlite3_mprintf ("%scurves", prefix);
-    tables[1] = table_curves;
-    views[1] = 0;
-    table_surfaces = sqlite3_mprintf ("%ssurfaces", prefix);
-    tables[2] = table_surfaces;
-    views[2] = 0;
-    table_nodes = sqlite3_mprintf ("%snodes", prefix);
-    tables[3] = table_nodes;
-    views[3] = 0;
-    table_edges = sqlite3_mprintf ("%sedges", prefix);
-    tables[4] = table_edges;
-    views[4] = 0;
-    table_faces = sqlite3_mprintf ("%sfaces", prefix);
-    tables[5] = table_faces;
-    views[5] = 0;
-    table_faces_edges = sqlite3_mprintf ("%sfaces_edges", prefix);
-    tables[6] = table_faces_edges;
-    views[6] = 0;
-    view_check_node_codes =
-	sqlite3_mprintf ("%snodes_check_dupl_codes", prefix);
-    tables[7] = view_check_node_codes;
-    views[7] = 1;
-    view_check_node_geoms =
-	sqlite3_mprintf ("%snodes_check_dupl_geoms", prefix);
-    tables[8] = view_check_node_geoms;
-    views[8] = 1;
-    view_check_edge_codes =
-	sqlite3_mprintf ("%sedges_check_dupl_codes", prefix);
-    tables[9] = view_check_edge_codes;
-    views[9] = 1;
-    view_check_edge_geoms =
-	sqlite3_mprintf ("%sedges_check_intersections", prefix);
-    tables[10] = view_check_edge_geoms;
-    views[10] = 1;
-    view_check_edge_node_geoms =
-	sqlite3_mprintf ("%sedges_check_nodes", prefix);
-    tables[11] = view_check_edge_node_geoms;
-    views[11] = 1;
-    view_check_face_codes =
-	sqlite3_mprintf ("%sfaces_check_dupl_codes", prefix);
-    tables[12] = view_check_face_codes;
-    views[12] = 1;
-    view_faces_resolved = sqlite3_mprintf ("%sfaces_resolved", prefix);
-    tables[13] = view_faces_resolved;
-    views[13] = 1;
-    view_curves_resolved = sqlite3_mprintf ("%scurves_resolved", prefix);
-    tables[14] = view_curves_resolved;
-    views[14] = 1;
-    view_surfaces_resolved = sqlite3_mprintf ("%ssurfaces_resolved", prefix);
-    tables[15] = view_surfaces_resolved;
-    views[15] = 1;
-    view_dangling_nodes = sqlite3_mprintf ("%sdangling_nodes", prefix);
-    tables[16] = view_dangling_nodes;
-    views[16] = 1;
-    view_dangling_edges = sqlite3_mprintf ("%sdangling_edges", prefix);
-    tables[17] = view_dangling_edges;
-    views[17] = 1;
-    view_edges_check_from_to =
-	sqlite3_mprintf ("%sedges_check_from_to", prefix);
-    tables[18] = view_edges_check_from_to;
-    views[18] = 1;
-    tables[19] = NULL;
-    p_view = views;
-    p_tbl = tables;
-    while (*p_tbl != NULL)
-      {
-	  ok_table = check_topo_table (sqlite, *p_tbl, *p_view);
-	  if (ok_table)
-	    {
-		if (strcmp (*p_tbl, "topology_master") == 0)
-		    create_master = 0;
-		else
-		  {
-		      spatialite_e
-			  ("CreateTopologyTables() error: table '%s' already exists\n",
-			   *p_tbl);
-		      goto error;
-		  }
-	    }
-	  p_tbl++;
-	  p_view++;
-      }
-
-/* creating Topology tables */
-    if (create_master)
-      {
-	  if (!create_topo_master (sqlite))
-	      goto error;
-      }
-    if (!create_topo_nodes (sqlite, table_nodes, srid, dims))
-	goto error;
-    if (!create_topo_edges (sqlite, table_edges, srid, dims))
-	goto error;
-    if (!create_topo_faces (sqlite, table_faces))
-	goto error;
-    if (!create_topo_faces_edges (sqlite, table_faces_edges, table_faces))
-	goto error;
-    if (!create_topo_curves (sqlite, table_curves))
-	goto error;
-    if (!create_topo_surfaces (sqlite, table_surfaces))
-	goto error;
-    if (!create_check_node_codes (sqlite, view_check_node_codes, table_nodes))
-	goto error;
-    if (!create_check_node_geoms (sqlite, view_check_node_geoms, table_nodes))
-	goto error;
-    if (!create_check_edge_codes (sqlite, view_check_edge_codes, table_edges))
-	goto error;
-    if (!create_check_edge_geoms (sqlite, view_check_edge_geoms, table_edges))
-	goto error;
-    if (!create_check_edge_node_geoms
-	(sqlite, view_check_edge_node_geoms, table_edges, table_nodes))
-	goto error;
-    if (!create_check_face_codes (sqlite, view_check_face_codes, table_faces))
-	goto error;
-    if (!create_faces_resolved
-	(sqlite, view_faces_resolved, table_faces, table_faces_edges,
-	 table_edges))
-	goto error;
-    if (!create_curves_resolved
-	(sqlite, view_curves_resolved, table_curves, table_edges))
-	goto error;
-    if (!create_surfaces_resolved
-	(sqlite, view_surfaces_resolved, table_surfaces, view_faces_resolved))
-	goto error;
-    if (!create_dangling_nodes
-	(sqlite, view_dangling_nodes, table_nodes, table_edges))
-	goto error;
-    if (!create_dangling_edges
-	(sqlite, view_dangling_edges, table_edges, table_faces_edges,
-	 table_curves))
-	goto error;
-    if (!create_check_edges_from_to
-	(sqlite, view_edges_check_from_to, table_edges, table_nodes))
-	goto error;
-    if (!update_topo_master
-	(sqlite, table_nodes, table_edges, table_faces, table_faces_edges,
-	 table_curves, table_surfaces, view_check_node_codes,
-	 view_check_node_geoms, view_check_edge_codes, view_check_edge_geoms,
-	 view_check_edge_node_geoms, view_check_face_codes, view_faces_resolved,
-	 view_curves_resolved, view_surfaces_resolved, view_dangling_nodes,
-	 view_dangling_edges, view_edges_check_from_to, srid, dims))
-	goto error;
-    updateSpatiaLiteHistory (sqlite, "*** TOPOLOGY ***", NULL,
-			     "Topology tables successfully created");
-    sqlite3_result_int (context, 1);
-    sqlite3_free (table_curves);
-    sqlite3_free (table_surfaces);
-    sqlite3_free (table_nodes);
-    sqlite3_free (table_edges);
-    sqlite3_free (table_faces);
-    sqlite3_free (table_faces_edges);
-    sqlite3_free (view_check_node_codes);
-    sqlite3_free (view_check_node_geoms);
-    sqlite3_free (view_check_edge_codes);
-    sqlite3_free (view_check_edge_geoms);
-    sqlite3_free (view_check_edge_node_geoms);
-    sqlite3_free (view_check_face_codes);
-    sqlite3_free (view_faces_resolved);
-    sqlite3_free (view_curves_resolved);
-    sqlite3_free (view_surfaces_resolved);
-    sqlite3_free (view_dangling_nodes);
-    sqlite3_free (view_dangling_edges);
-    sqlite3_free (view_edges_check_from_to);
-    return;
-
-  error:
-    sqlite3_result_int (context, 0);
-    sqlite3_free (table_curves);
-    sqlite3_free (table_surfaces);
-    sqlite3_free (table_nodes);
-    sqlite3_free (table_edges);
-    sqlite3_free (table_faces);
-    sqlite3_free (table_faces_edges);
-    sqlite3_free (view_check_node_codes);
-    sqlite3_free (view_check_node_geoms);
-    sqlite3_free (view_check_edge_codes);
-    sqlite3_free (view_check_edge_geoms);
-    sqlite3_free (view_check_edge_node_geoms);
-    sqlite3_free (view_check_face_codes);
-    sqlite3_free (view_faces_resolved);
-    sqlite3_free (view_curves_resolved);
-    sqlite3_free (view_surfaces_resolved);
-    sqlite3_free (view_dangling_nodes);
-    sqlite3_free (view_dangling_edges);
-    sqlite3_free (view_edges_check_from_to);
-    return;
-}
-
 static void
 fnct_UpdateLayerStatistics (sqlite3_context * context, int argc,
 			    sqlite3_value ** argv)
@@ -16469,6 +15214,1260 @@ fnct_BdMPolyFromWKB2 (sqlite3_context * context, int argc,
 
 #ifdef GEOS_ADVANCED		/* GEOS advanced features */
 
+static int
+check_topo_table (sqlite3 * sqlite, const char *table, int is_view)
+{
+/* checking if some Topology-related table/view already exists */
+    int exists = 0;
+    char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sql_statement =
+	sqlite3_mprintf ("SELECT name FROM sqlite_master WHERE type = '%s'"
+			 "AND Upper(name) = Upper(%Q)",
+			 (!is_view) ? "table" : "view", table);
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
+create_topo_nodes (sqlite3 * sqlite, const char *table, int srid, int dims)
+{
+/* creating the topo_nodes table */
+    char *sql_statement;
+    char *sqltable;
+    char *idx_name;
+    char *xidx_name;
+    int ret;
+    char *err_msg = NULL;
+    sqltable = gaiaDoubleQuotedSql (table);
+    sql_statement = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
+				     "node_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+				     "node_code TEXT)", sqltable);
+    free (sqltable);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql_statement =
+	sqlite3_mprintf
+	("SELECT AddGeometryColumn(%Q, 'Geometry', %d, 'POINT', '%s', 1)",
+	 table, srid, (dims == GAIA_XY_Z) ? "XYZ" : "XY");
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("AddGeometryColumn '%s'.'Geometry' error: %s\n",
+			table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql_statement =
+	sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, 'Geometry')", table);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CreateSpatialIndex '%s'.'Geometry' error: %s\n",
+			table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sqltable = gaiaDoubleQuotedSql (table);
+    idx_name = sqlite3_mprintf ("idx_%s_code", table);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    sqlite3_free (idx_name);
+    sql_statement =
+	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (node_code)", xidx_name,
+			 sqltable);
+    free (sqltable);
+    free (xidx_name);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Create Index '%s'('node_code') error: %s\n",
+			sqltable, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_topo_edges (sqlite3 * sqlite, const char *table, int srid, int dims)
+{
+/* creating the topo_edges table */
+    char *sql_statement;
+    char *sqltable;
+    char *idx_name;
+    char *xidx_name;
+    int ret;
+    char *err_msg = NULL;
+    sqltable = gaiaDoubleQuotedSql (table);
+    sql_statement = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
+				     "edge_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+				     "node_from_code TEXT,\n"
+				     "node_to_code TEXT,\n"
+				     "edge_code TEXT)", sqltable);
+    free (sqltable);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql_statement =
+	sqlite3_mprintf
+	("SELECT AddGeometryColumn(%Q, 'Geometry', %d, 'LINESTRING', '%s', 1)",
+	 table, srid, (dims == GAIA_XY_Z) ? "XYZ" : "XY");
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("AddGeometryColumn '%s'.'Geometry' error: %s\n",
+			table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql_statement =
+	sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, 'Geometry')", table);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CreateSpatialIndex '%s'.'Geometry' error: %s\n",
+			table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sqltable = gaiaDoubleQuotedSql (table);
+    idx_name = sqlite3_mprintf ("idx_%s_code", table);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    sqlite3_free (idx_name);
+    sql_statement =
+	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (edge_code)", xidx_name,
+			 sqltable);
+    free (sqltable);
+    free (xidx_name);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Create Index '%s'('edge_code') error: %s\n",
+			sqltable, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sqltable = gaiaDoubleQuotedSql (table);
+    idx_name = sqlite3_mprintf ("idx_%s_from", table);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    sqlite3_free (idx_name);
+    sql_statement =
+	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (node_from_code)",
+			 xidx_name, sqltable);
+    free (sqltable);
+    free (xidx_name);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Create Index '%s'('node_from_code') error: %s\n",
+			sqltable, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sqltable = gaiaDoubleQuotedSql (table);
+    idx_name = sqlite3_mprintf ("idx_%s_to", table);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    sqlite3_free (idx_name);
+    sql_statement =
+	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (node_to_code)",
+			 xidx_name, sqltable);
+    free (sqltable);
+    free (xidx_name);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Create Index '%s'('node_to_code') error: %s\n",
+			sqltable, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_topo_faces (sqlite3 * sqlite, const char *table)
+{
+/* creating the topo_faces table */
+    char *sql_statement;
+    char *sqltable;
+    char *idx_name;
+    char *xidx_name;
+    int ret;
+    char *err_msg = NULL;
+    sqltable = gaiaDoubleQuotedSql (table);
+    sql_statement = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
+				     "face_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+				     "face_code TEXT)", sqltable);
+    free (sqltable);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sqltable = gaiaDoubleQuotedSql (table);
+    idx_name = sqlite3_mprintf ("idx_%s_code", table);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    sqlite3_free (idx_name);
+    sql_statement =
+	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (face_code)", xidx_name,
+			 sqltable);
+    free (sqltable);
+    free (xidx_name);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Create Index '%s'('face_code') error: %s\n",
+			sqltable, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_topo_faces_edges (sqlite3 * sqlite, const char *table,
+			 const char *table2)
+{
+/* creating the topo_faces_edges table */
+    char *sql_statement;
+    char *sqltable;
+    char *sqltable2;
+    char *idx_name;
+    char *xidx_name;
+    int ret;
+    char *err_msg = NULL;
+    sqltable = gaiaDoubleQuotedSql (table);
+    sqltable2 = gaiaDoubleQuotedSql (table2);
+    sql_statement = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
+				     "face_id INTEGER NOT NULL,\n"
+				     "edge_code TEXT NOT NULL,\n"
+				     "orientation TEXT,\n"
+				     "CONSTRAINT pk_faces_edges PRIMARY KEY "
+				     "(face_id, edge_code),\n"
+				     "CONSTRAINT fk_faces_edges FOREIGN KEY "
+				     "(face_id) REFERENCES \"%s\" (face_id))\n",
+				     sqltable, sqltable2);
+    free (sqltable);
+    free (sqltable2);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sqltable = gaiaDoubleQuotedSql (table);
+    idx_name = sqlite3_mprintf ("idx_%s_edge", table);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    sqlite3_free (idx_name);
+    sql_statement =
+	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (edge_code)", xidx_name,
+			 sqltable);
+    free (sqltable);
+    free (xidx_name);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Create Index '%s'('edge_code') error: %s\n",
+			sqltable, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_topo_curves (sqlite3 * sqlite, const char *table)
+{
+/* creating the topo_curves table */
+    char *sql_statement;
+    char *sqltable;
+    char *idx_name;
+    char *xidx_name;
+    int ret;
+    char *err_msg = NULL;
+    sqltable = gaiaDoubleQuotedSql (table);
+    sql_statement = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
+				     "curve_id INTEGER NOT NULL,\n"
+				     "edge_code TEXT NOT NULL,\n"
+				     "orientation TEXT,\n"
+				     "CONSTRAINT pk_curves PRIMARY KEY "
+				     "(curve_id, edge_code))\n", sqltable);
+    free (sqltable);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sqltable = gaiaDoubleQuotedSql (table);
+    idx_name = sqlite3_mprintf ("idx_%s_edge", table);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    sqlite3_free (idx_name);
+    sql_statement =
+	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (edge_code)", xidx_name,
+			 sqltable);
+    free (sqltable);
+    free (xidx_name);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Create Index '%s'('edge_code') error: %s\n",
+			sqltable, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_topo_surfaces (sqlite3 * sqlite, const char *table)
+{
+/* creating the topo_surfaces table */
+    char *sql_statement;
+    char *sqltable;
+    char *idx_name;
+    char *xidx_name;
+    int ret;
+    char *err_msg = NULL;
+    sqltable = gaiaDoubleQuotedSql (table);
+    sql_statement = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
+				     "surface_id INTEGER NOT NULL,\n"
+				     "face_code TEXT NOT NULL,\n"
+				     "orientation TEXT,\n"
+				     "CONSTRAINT pk_surfaces PRIMARY KEY "
+				     "(surface_id, face_code))", sqltable);
+    free (sqltable);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE '%s' error: %s\n", table, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sqltable = gaiaDoubleQuotedSql (table);
+    idx_name = sqlite3_mprintf ("idx_%s_face", table);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    sqlite3_free (idx_name);
+    sql_statement =
+	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (face_code)", xidx_name,
+			 sqltable);
+    free (sqltable);
+    free (xidx_name);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Create Index '%s'('face_code') error: %s\n",
+			sqltable, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_check_node_codes (sqlite3 * sqlite, const char *view,
+			 const char *table_nodes)
+{
+/* creating the check node codes VIEW */
+    char *sql_statement;
+    char *sqltable;
+    char *sqlview;
+    int ret;
+    char *err_msg = NULL;
+    sqlview = gaiaDoubleQuotedSql (view);
+    sqltable = gaiaDoubleQuotedSql (table_nodes);
+    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
+				     "SELECT node_code AS node_code, Count(node_id) AS count\n"
+				     "FROM \"%s\"\nGROUP BY node_code\nHAVING count > 1\n",
+				     sqlview, sqltable);
+    free (sqlview);
+    free (sqltable);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_check_node_geoms (sqlite3 * sqlite, const char *view,
+			 const char *table_nodes)
+{
+/* creating the check node geoms VIEW */
+    char *sql_statement;
+    char *sqltable;
+    char *sqlview;
+    int ret;
+    char *err_msg = NULL;
+    sqlview = gaiaDoubleQuotedSql (view);
+    sqltable = gaiaDoubleQuotedSql (table_nodes);
+    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
+				     "SELECT n1.node_id AS node1_id, n1.node_code AS node1_code, "
+				     "n2.node_id AS node2_id, n2.node_code AS node2_code\n"
+				     "FROM \"%s\" AS n1\nJOIN \"%s\" AS n2 ON (\n"
+				     "  n1.node_id <> n2.node_id AND\n"
+				     "  ST_Equals(n1.Geometry, n2.Geometry) = 1 AND\n"
+				     "  n2.node_id IN (\n	SELECT ROWID FROM SpatialIndex\n"
+				     "  WHERE f_table_name = %Q AND\n  search_frame = n1.Geometry))\n",
+				     sqlview, sqltable, sqltable, table_nodes);
+    free (sqlview);
+    free (sqltable);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_check_edge_codes (sqlite3 * sqlite, const char *view,
+			 const char *table_edges)
+{
+/* creating the check edge codes VIEW */
+    char *sql_statement;
+    char *sqltable;
+    char *sqlview;
+    int ret;
+    char *err_msg = NULL;
+    sqlview = gaiaDoubleQuotedSql (view);
+    sqltable = gaiaDoubleQuotedSql (table_edges);
+    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
+				     "SELECT edge_code AS edge_code, Count(edge_id) AS count\n"
+				     "FROM \"%s\"\nGROUP BY edge_code\nHAVING count > 1\n",
+				     sqlview, sqltable);
+    free (sqlview);
+    free (sqltable);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_check_edge_geoms (sqlite3 * sqlite, const char *view,
+			 const char *table_edges)
+{
+/* creating the check edge geoms VIEW */
+    char *sql_statement;
+    char *sqltable;
+    char *sqlview;
+    int ret;
+    char *err_msg = NULL;
+    sqlview = gaiaDoubleQuotedSql (view);
+    sqltable = gaiaDoubleQuotedSql (table_edges);
+    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
+				     "SELECT e1.edge_id AS edge1_id, e1.edge_code AS edge1_code, "
+				     "e2.edge_id AS edge2_id, e2.edge_code AS edge2_code\n"
+				     "FROM \"%s\" AS e1\nJOIN \"%s\" AS e2 ON (\n  e1.edge_id <> e2.edge_id AND\n"
+				     "NOT (e1.node_from_code = e2.node_from_code "
+				     "AND e1.node_to_code = e2.node_to_code) AND\n"
+				     "  ST_Crosses(e1.Geometry, e2.Geometry) = 1 AND\n"
+				     "  e2.edge_id IN (\n"
+				     "    SELECT ROWID FROM SpatialIndex\n"
+				     "	   WHERE f_table_name = %Q AND\n        search_frame = e1.Geometry))\n",
+				     sqlview, sqltable, sqltable, table_edges);
+    free (sqlview);
+    free (sqltable);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_check_edge_node_geoms (sqlite3 * sqlite, const char *view,
+			      const char *table_edges, const char *table_nodes)
+{
+/* creating the check edge/node geoms VIEW */
+    char *sql_statement;
+    char *sql_edges;
+    char *sql_nodes;
+    char *sqlview;
+    int ret;
+    char *err_msg = NULL;
+    sqlview = gaiaDoubleQuotedSql (view);
+    sql_edges = gaiaDoubleQuotedSql (table_edges);
+    sql_nodes = gaiaDoubleQuotedSql (table_nodes);
+    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
+				     "SELECT e.edge_id AS edge_id, n.node_id AS node_id\n"
+				     "FROM \"%s\" AS e,\n\"%s\" AS n\n"
+				     "WHERE ST_Intersects(e.Geometry, n.Geometry)\n"
+				     "  AND ST_Equals(ST_StartPoint(e.Geometry), n.Geometry) = 0\n"
+				     "  AND ST_Equals(ST_EndPoint(e.Geometry), n.Geometry) = 0\n"
+				     "  AND n.ROWID IN (\n    SELECT ROWID FROM SpatialIndex\n"
+				     "  WHERE f_table_name = %Q\n      AND search_frame = e.Geometry);",
+				     sqlview, sql_edges, sql_nodes,
+				     table_nodes);
+    free (sqlview);
+    free (sql_nodes);
+    free (sql_edges);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_check_face_codes (sqlite3 * sqlite, const char *view,
+			 const char *table_faces)
+{
+/* creating the check face codes VIEW */
+    char *sql_statement;
+    char *sqltable;
+    char *sqlview;
+    int ret;
+    char *err_msg = NULL;
+    sqlview = gaiaDoubleQuotedSql (view);
+    sqltable = gaiaDoubleQuotedSql (table_faces);
+    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
+				     "SELECT face_code AS face_code, Count(face_id) AS count\n"
+				     "FROM \"%s\"\nGROUP BY face_code\nHAVING count > 1\n",
+				     sqlview, sqltable);
+    free (sqltable);
+    free (sqlview);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_faces_resolved (sqlite3 * sqlite, const char *view, const char *faces,
+		       const char *faces_edges, const char *edges)
+{
+/* creating the Faces Resolved VIEW */
+    char *sql_statement;
+    char *sql_faces;
+    char *sql_faces_edges;
+    char *sql_edges;
+    char *sqlview;
+    int ret;
+    char *err_msg = NULL;
+    sqlview = gaiaDoubleQuotedSql (view);
+    sql_faces = gaiaDoubleQuotedSql (faces);
+    sql_faces_edges = gaiaDoubleQuotedSql (faces_edges);
+    sql_edges = gaiaDoubleQuotedSql (edges);
+    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
+				     "SELECT f.face_id AS face_id, f.face_code AS face_code, "
+				     "ST_Polygonize(e.Geometry) AS Geometry\n"
+				     "FROM \"%s\" AS f\nLEFT JOIN \"%s\" AS fe ON (fe.face_id = f.face_id)\n"
+				     "LEFT JOIN \"%s\" AS e ON (e.edge_code = fe.edge_code)\n"
+				     "GROUP BY f.face_id\n", sqlview, sql_faces,
+				     sql_faces_edges, sql_edges);
+    free (sqlview);
+    free (sql_faces);
+    free (sql_faces_edges);
+    free (sql_edges);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_curves_resolved (sqlite3 * sqlite, const char *view,
+			const char *curves, char *edges)
+{
+/* creating the Curves Resolved VIEW */
+    char *sql_statement;
+    char *sql_curves;
+    char *sql_edges;
+    char *sqlview;
+    int ret;
+    char *err_msg = NULL;
+    sqlview = gaiaDoubleQuotedSql (view);
+    sql_curves = gaiaDoubleQuotedSql (curves);
+    sql_edges = gaiaDoubleQuotedSql (edges);
+    sql_statement =
+	sqlite3_mprintf
+	("CREATE VIEW \"%s\" AS\nSELECT c.curve_id AS curve_id, "
+	 "CastToMultiLinestring(ST_Collect(e.Geometry)) AS Geometry\n"
+	 "FROM \"%s\" AS c\nLEFT JOIN \"%s\" AS e ON (e.edge_code = c.edge_code)\n"
+	 "GROUP BY c.curve_id\n", sqlview, sql_curves, sql_edges);
+    free (sqlview);
+    free (sql_edges);
+    free (sql_curves);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_surfaces_resolved (sqlite3 * sqlite, const char *view,
+			  const char *surfaces, const char *faces)
+{
+/* creating the Surfaces Resolved VIEW */
+    char *sql_statement;
+    char *sql_surfaces;
+    char *sql_faces;
+    char *sqlview;
+    int ret;
+    char *err_msg = NULL;
+    sqlview = gaiaDoubleQuotedSql (view);
+    sql_surfaces = gaiaDoubleQuotedSql (surfaces);
+    sql_faces = gaiaDoubleQuotedSql (faces);
+    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
+				     "SELECT s.surface_id AS surface_id,\n"
+				     "  CastToMultipolygon(ST_UnaryUnion(ST_Collect(f.Geometry))) AS Geometry\n"
+				     "FROM \"%s\" AS s\n"
+				     "LEFT JOIN \"%s\" AS f ON (f.face_code = s.face_code)\n"
+				     "GROUP BY s.surface_id\n", sqlview,
+				     sql_surfaces, sql_faces);
+    free (sqlview);
+    free (sql_surfaces);
+    free (sql_faces);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_dangling_nodes (sqlite3 * sqlite, const char *view,
+		       const char *nodes, const char *edges)
+{
+/* creating the Dangling Nodes VIEW */
+    char *sql_statement;
+    char *sql_nodes;
+    char *sql_edges;
+    char *sqlview;
+    int ret;
+    char *err_msg = NULL;
+    sqlview = gaiaDoubleQuotedSql (view);
+    sql_nodes = gaiaDoubleQuotedSql (nodes);
+    sql_edges = gaiaDoubleQuotedSql (edges);
+    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
+				     "SELECT n.node_id AS node_id\nFROM \"%s\" AS n\n"
+				     "LEFT JOIN \"%s\" AS e ON (n.node_code = e.node_from_code)\n"
+				     "WHERE e.edge_id IS NULL\nINTERSECT\nSELECT n.node_id AS node_id\n"
+				     "FROM \"%s\" AS n\nLEFT JOIN \"%s\" AS e ON (n.node_code = e.node_to_code)\n"
+				     "WHERE e.edge_id IS NULL\n", sqlview,
+				     sql_nodes, sql_edges, sql_nodes,
+				     sql_edges);
+    free (sqlview);
+    free (sql_nodes);
+    free (sql_edges);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_dangling_edges (sqlite3 * sqlite, const char *view,
+		       const char *edges, const char *faces_edges,
+		       const char *curves)
+{
+/* creating the Dangling Edges VIEW */
+    char *sql_statement;
+    char *sql_edges;
+    char *sql_faces_edges;
+    char *sql_curves;
+    char *sqlview;
+    int ret;
+    char *err_msg = NULL;
+    sqlview = gaiaDoubleQuotedSql (view);
+    sql_edges = gaiaDoubleQuotedSql (edges);
+    sql_faces_edges = gaiaDoubleQuotedSql (faces_edges);
+    sql_curves = gaiaDoubleQuotedSql (curves);
+    sql_statement = sqlite3_mprintf ("CREATE VIEW \"%s\" AS\n"
+				     "SELECT e.edge_id AS edge_id\nFROM \"%s\" AS e\n"
+				     "LEFT JOIN \"%s\" AS f ON (e.edge_code = f.edge_code)\n"
+				     "WHERE f.edge_code IS NULL\nINTERSECT\nSELECT e.edge_id AS edge_id\n"
+				     "FROM \"%s\" AS e\nLEFT JOIN \"%s\" AS c ON (e.edge_code = c.edge_code)\n"
+				     "WHERE c.edge_code IS NULL\n", sqlview,
+				     sql_edges, sql_faces_edges, sql_edges,
+				     sql_curves);
+    free (sqlview);
+    free (sql_edges);
+    free (sql_faces_edges);
+    free (sql_curves);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_check_edges_from_to (sqlite3 * sqlite, const char *view,
+			    const char *edges, const char *nodes)
+{
+/* creating the Edges/Nodes [from/to] VIEW */
+    char skeleton[2048];
+    char *sql_statement;
+    char *sql_edges;
+    char *sql_nodes;
+    char *sqlview;
+    int ret;
+    char *err_msg = NULL;
+    sqlview = gaiaDoubleQuotedSql (view);
+    sql_edges = gaiaDoubleQuotedSql (edges);
+    sql_nodes = gaiaDoubleQuotedSql (nodes);
+    strcpy (skeleton, "CREATE VIEW \"%s\" AS\n");
+    strcat (skeleton, "SELECT e.edge_id AS edge_id, n.node_id AS node_id,\n");
+    strcat (skeleton, "  n.node_code AS node_code,\n");
+    strcat (skeleton, "'Mismatching coords' AS error_cause\n");
+    strcat (skeleton, "FROM \"%s\" AS e\n");
+    strcat (skeleton, "JOIN \"%s\" AS n ON ");
+    strcat (skeleton, "(e.node_from_code = n.node_code)\n");
+    strcat (skeleton,
+	    "WHERE ST_Equals(ST_StartPoint(e.Geometry), n.Geometry) = 0\n");
+    strcat (skeleton, "UNION\n");
+    strcat (skeleton, "SELECT e.edge_id AS edge_id, n.node_id AS node_id,\n");
+    strcat (skeleton, "  n.node_code AS node_code,\n");
+    strcat (skeleton, " 'Mismatching coords' AS error_cause\n");
+    strcat (skeleton, "FROM \"%s\" AS e\n");
+    strcat (skeleton, "JOIN \"%s\" AS n ON ");
+    strcat (skeleton, "(e.node_to_code = n.node_code)\n");
+    strcat (skeleton,
+	    "WHERE ST_Equals(ST_EndPoint(e.Geometry), n.Geometry) = 0\n");
+    strcat (skeleton, "UNION\n");
+    strcat (skeleton, "SELECT e.edge_id AS edge_id, n.node_id AS node_id,\n");
+    strcat (skeleton, "  n.node_code AS node_code,\n");
+    strcat (skeleton, "  'Unresolved Node reference' AS error_cause\n");
+    strcat (skeleton, "FROM \"%s\" AS e\n");
+    strcat (skeleton, "LEFT JOIN \"%s\" AS n ON ");
+    strcat (skeleton, "(e.node_from_code = n.node_code)\n");
+    strcat (skeleton, "WHERE n.node_id IS NULL\n");
+    strcat (skeleton, "UNION\n");
+    strcat (skeleton, "SELECT e.edge_id AS edge_id, n.node_id AS node_id,\n");
+    strcat (skeleton, "  n.node_code AS node_code,\n");
+    strcat (skeleton, "  'Unresolved Node reference' AS error_cause\n");
+    strcat (skeleton, "FROM \"%s\" AS e\n");
+    strcat (skeleton, "LEFT JOIN \"%s\" AS n ON ");
+    strcat (skeleton, "(e.node_to_code = n.node_code)\n");
+    strcat (skeleton, "WHERE n.node_id IS NULL\n");
+    sql_statement = sqlite3_mprintf (skeleton, sqlview,
+				     sql_edges, sql_nodes, sql_edges, sql_nodes,
+				     sql_edges, sql_nodes, sql_edges,
+				     sql_nodes);
+    free (sqlview);
+    free (sql_edges);
+    free (sql_nodes);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW '%s' error: %s\n", view, err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+create_topo_master (sqlite3 * sqlite)
+{
+/* creating the topo_master table */
+    char sql[2048];
+    int ret;
+    char *err_msg = NULL;
+
+/* creating the table */
+    strcpy (sql, "CREATE TABLE topology_master (\n");
+    strcat (sql, "nodes TEXT NOT NULL,\n");
+    strcat (sql, "edges TEXT NOT NULL,\n");
+    strcat (sql, "faces TEXT NOT NULL,\n");
+    strcat (sql, "faces_edges TEXT NOT NULL,\n");
+    strcat (sql, "curves TEXT NOT NULL,\n");
+    strcat (sql, "surfaces TEXT NOT NULL,\n");
+    strcat (sql, "check_node_ids TEXT NOT NULL,\n");
+    strcat (sql, "check_node_geoms TEXT NOT NULL,\n");
+    strcat (sql, "check_edge_ids TEXT NOT NULL,\n");
+    strcat (sql, "check_edge_geoms TEXT NOT NULL,\n");
+    strcat (sql, "check_edge_node_geoms TEXT NOT NULL,\n");
+    strcat (sql, "check_face_ids TEXT NOT NULL,\n");
+    strcat (sql, "faces_resolved TEXT NOT NULL,\n");
+    strcat (sql, "curves_resolved TEXT NOT NULL,\n");
+    strcat (sql, "surfaces_resolved TEXT NOT NULL,\n");
+    strcat (sql, "dangling_nodes TEXT NOT NULL,\n");
+    strcat (sql, "dangling_edges TEXT NOT NULL,\n");
+    strcat (sql, "check_edges_from_to TEXT NOT NULL,\n");
+    strcat (sql, "coord_dimension TEXT NOT NULL,\n");
+    strcat (sql, "srid INTEGER NOT NULL,\n");
+    strcat (sql, "CONSTRAINT fk_topo_master FOREIGN KEY \n");
+    strcat (sql, "(srid) REFERENCES spatial_ref_sys (srid))");
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE 'topology_master' error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static int
+update_topo_master (sqlite3 * sqlite, const char *nodes, const char *edges,
+		    const char *faces, const char *faces_edges,
+		    const char *curves, const char *surfaces,
+		    const char *check_nodes, const char *check_node_geoms,
+		    const char *check_edges, const char *check_edge_geoms,
+		    const char *check_edge_node_geoms,
+		    const char *check_faces, const char *faces_res,
+		    const char *curves_res, const char *surfaces_res,
+		    const char *dangling_nodes, const char *dangling_edges,
+		    const char *check_edges_from_to, int srid, int dims)
+{
+/* updating the topo_master table */
+    char *sql_statement;
+    int ret;
+    char *err_msg = NULL;
+
+/* inserting Topology data into MASTER */
+    sql_statement = sqlite3_mprintf ("INSERT INTO topology_master "
+				     "(nodes, edges, faces, faces_edges, curves, surfaces, check_node_ids, "
+				     "check_node_geoms, check_edge_ids, check_edge_geoms, check_edge_node_geoms, "
+				     "check_face_ids, faces_resolved, curves_resolved, surfaces_resolved, "
+				     "dangling_nodes, dangling_edges, check_edges_from_to, coord_dimension, srid) "
+				     "VALUES (%Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %Q, %d)",
+				     nodes, edges, faces, faces_edges, curves,
+				     surfaces, check_nodes, check_node_geoms,
+				     check_edges, check_edge_geoms,
+				     check_edge_node_geoms, check_faces,
+				     faces_res, curves_res, surfaces_res,
+				     dangling_nodes, dangling_edges,
+				     check_edges_from_to,
+				     (dims == GAIA_XY_Z) ? "XYZ" : "XY", srid);
+    ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("INSERT INTO 'topology_master' error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+static void
+fnct_CreateTopologyTables (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
+{
+/* SQL function:
+/ CreateTopologyTables(srid, coord_dims)
+/  or
+/ CreateTopologyTables(prefix, srid, coord_dims)
+/
+/ creates any Topology related table 
+/ returns 1 on success
+/ 0 on failure
+*/
+    const char *prefix = "topo_";
+    const unsigned char *txt_dims;
+    int srid = -1;
+    int dimension;
+    int dims = -1;
+    char *table_curves;
+    char *table_surfaces;
+    char *table_nodes;
+    char *table_edges;
+    char *table_faces;
+    char *table_faces_edges;
+    char *view_check_node_codes;
+    char *view_check_node_geoms;
+    char *view_check_edge_codes;
+    char *view_check_edge_geoms;
+    char *view_check_edge_node_geoms;
+    char *view_check_face_codes;
+    char *view_faces_resolved;
+    char *view_curves_resolved;
+    char *view_surfaces_resolved;
+    char *view_dangling_nodes;
+    char *view_dangling_edges;
+    char *view_edges_check_from_to;
+    const char *tables[20];
+    int views[20];
+    int *p_view;
+    const char **p_tbl;
+    int ok_table;
+    int create_master = 1;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (argc == 3)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		spatialite_e
+		    ("CreateTopologyTables() error: argument 1 [table_prefix] is not of the String type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  prefix = (char *) sqlite3_value_text (argv[0]);
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		spatialite_e
+		    ("CreateTopologyTables() error: argument 2 [SRID] is not of the Integer type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  srid = sqlite3_value_int (argv[1]);
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		dimension = sqlite3_value_int (argv[2]);
+		if (dimension == 2)
+		    dims = GAIA_XY;
+		if (dimension == 3)
+		    dims = GAIA_XY_Z;
+	    }
+	  else if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	    {
+		txt_dims = sqlite3_value_text (argv[2]);
+		if (strcasecmp ((char *) txt_dims, "XY") == 0)
+		    dims = GAIA_XY;
+		if (strcasecmp ((char *) txt_dims, "XYZ") == 0)
+		    dims = GAIA_XY_Z;
+	    }
+	  else
+	    {
+		spatialite_e
+		    ("CreateTopologyTables() error: argument 3 [dimension] is not of the Integer or Text type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+      }
+    else
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
+	    {
+		spatialite_e
+		    ("CreateTopologyTables() error: argument 1 [SRID] is not of the Integer type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  srid = sqlite3_value_int (argv[0]);
+	  if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	    {
+		dimension = sqlite3_value_int (argv[1]);
+		if (dimension == 2)
+		    dims = GAIA_XY;
+		if (dimension == 3)
+		    dims = GAIA_XY_Z;
+	    }
+	  else if (sqlite3_value_type (argv[1]) == SQLITE_TEXT)
+	    {
+		txt_dims = sqlite3_value_text (argv[1]);
+		if (strcasecmp ((char *) txt_dims, "XY") == 0)
+		    dims = GAIA_XY;
+		if (strcasecmp ((char *) txt_dims, "XYZ") == 0)
+		    dims = GAIA_XY_Z;
+	    }
+	  else
+	    {
+		spatialite_e
+		    ("CreateTopologyTables() error: argument 2 [dimension] is not of the Integer or Text type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+      }
+    if (dims == GAIA_XY || dims == GAIA_XY_Z)
+	;
+    else
+      {
+	  spatialite_e
+	      ("CreateTopologyTables() error: [dimension] ILLEGAL VALUE\n");
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    if (srid <= 0)
+      {
+	  spatialite_e ("CreateTopologyTables() error: [SRID] ILLEGAL VALUE\n");
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+
+/* checking Topology tables */
+    tables[0] = "topology_master";
+    views[0] = 0;
+    table_curves = sqlite3_mprintf ("%scurves", prefix);
+    tables[1] = table_curves;
+    views[1] = 0;
+    table_surfaces = sqlite3_mprintf ("%ssurfaces", prefix);
+    tables[2] = table_surfaces;
+    views[2] = 0;
+    table_nodes = sqlite3_mprintf ("%snodes", prefix);
+    tables[3] = table_nodes;
+    views[3] = 0;
+    table_edges = sqlite3_mprintf ("%sedges", prefix);
+    tables[4] = table_edges;
+    views[4] = 0;
+    table_faces = sqlite3_mprintf ("%sfaces", prefix);
+    tables[5] = table_faces;
+    views[5] = 0;
+    table_faces_edges = sqlite3_mprintf ("%sfaces_edges", prefix);
+    tables[6] = table_faces_edges;
+    views[6] = 0;
+    view_check_node_codes =
+	sqlite3_mprintf ("%snodes_check_dupl_codes", prefix);
+    tables[7] = view_check_node_codes;
+    views[7] = 1;
+    view_check_node_geoms =
+	sqlite3_mprintf ("%snodes_check_dupl_geoms", prefix);
+    tables[8] = view_check_node_geoms;
+    views[8] = 1;
+    view_check_edge_codes =
+	sqlite3_mprintf ("%sedges_check_dupl_codes", prefix);
+    tables[9] = view_check_edge_codes;
+    views[9] = 1;
+    view_check_edge_geoms =
+	sqlite3_mprintf ("%sedges_check_intersections", prefix);
+    tables[10] = view_check_edge_geoms;
+    views[10] = 1;
+    view_check_edge_node_geoms =
+	sqlite3_mprintf ("%sedges_check_nodes", prefix);
+    tables[11] = view_check_edge_node_geoms;
+    views[11] = 1;
+    view_check_face_codes =
+	sqlite3_mprintf ("%sfaces_check_dupl_codes", prefix);
+    tables[12] = view_check_face_codes;
+    views[12] = 1;
+    view_faces_resolved = sqlite3_mprintf ("%sfaces_resolved", prefix);
+    tables[13] = view_faces_resolved;
+    views[13] = 1;
+    view_curves_resolved = sqlite3_mprintf ("%scurves_resolved", prefix);
+    tables[14] = view_curves_resolved;
+    views[14] = 1;
+    view_surfaces_resolved = sqlite3_mprintf ("%ssurfaces_resolved", prefix);
+    tables[15] = view_surfaces_resolved;
+    views[15] = 1;
+    view_dangling_nodes = sqlite3_mprintf ("%sdangling_nodes", prefix);
+    tables[16] = view_dangling_nodes;
+    views[16] = 1;
+    view_dangling_edges = sqlite3_mprintf ("%sdangling_edges", prefix);
+    tables[17] = view_dangling_edges;
+    views[17] = 1;
+    view_edges_check_from_to =
+	sqlite3_mprintf ("%sedges_check_from_to", prefix);
+    tables[18] = view_edges_check_from_to;
+    views[18] = 1;
+    tables[19] = NULL;
+    p_view = views;
+    p_tbl = tables;
+    while (*p_tbl != NULL)
+      {
+	  ok_table = check_topo_table (sqlite, *p_tbl, *p_view);
+	  if (ok_table)
+	    {
+		if (strcmp (*p_tbl, "topology_master") == 0)
+		    create_master = 0;
+		else
+		  {
+		      spatialite_e
+			  ("CreateTopologyTables() error: table '%s' already exists\n",
+			   *p_tbl);
+		      goto error;
+		  }
+	    }
+	  p_tbl++;
+	  p_view++;
+      }
+
+/* creating Topology tables */
+    if (create_master)
+      {
+	  if (!create_topo_master (sqlite))
+	      goto error;
+      }
+    if (!create_topo_nodes (sqlite, table_nodes, srid, dims))
+	goto error;
+    if (!create_topo_edges (sqlite, table_edges, srid, dims))
+	goto error;
+    if (!create_topo_faces (sqlite, table_faces))
+	goto error;
+    if (!create_topo_faces_edges (sqlite, table_faces_edges, table_faces))
+	goto error;
+    if (!create_topo_curves (sqlite, table_curves))
+	goto error;
+    if (!create_topo_surfaces (sqlite, table_surfaces))
+	goto error;
+    if (!create_check_node_codes (sqlite, view_check_node_codes, table_nodes))
+	goto error;
+    if (!create_check_node_geoms (sqlite, view_check_node_geoms, table_nodes))
+	goto error;
+    if (!create_check_edge_codes (sqlite, view_check_edge_codes, table_edges))
+	goto error;
+    if (!create_check_edge_geoms (sqlite, view_check_edge_geoms, table_edges))
+	goto error;
+    if (!create_check_edge_node_geoms
+	(sqlite, view_check_edge_node_geoms, table_edges, table_nodes))
+	goto error;
+    if (!create_check_face_codes (sqlite, view_check_face_codes, table_faces))
+	goto error;
+    if (!create_faces_resolved
+	(sqlite, view_faces_resolved, table_faces, table_faces_edges,
+	 table_edges))
+	goto error;
+    if (!create_curves_resolved
+	(sqlite, view_curves_resolved, table_curves, table_edges))
+	goto error;
+    if (!create_surfaces_resolved
+	(sqlite, view_surfaces_resolved, table_surfaces, view_faces_resolved))
+	goto error;
+    if (!create_dangling_nodes
+	(sqlite, view_dangling_nodes, table_nodes, table_edges))
+	goto error;
+    if (!create_dangling_edges
+	(sqlite, view_dangling_edges, table_edges, table_faces_edges,
+	 table_curves))
+	goto error;
+    if (!create_check_edges_from_to
+	(sqlite, view_edges_check_from_to, table_edges, table_nodes))
+	goto error;
+    if (!update_topo_master
+	(sqlite, table_nodes, table_edges, table_faces, table_faces_edges,
+	 table_curves, table_surfaces, view_check_node_codes,
+	 view_check_node_geoms, view_check_edge_codes, view_check_edge_geoms,
+	 view_check_edge_node_geoms, view_check_face_codes, view_faces_resolved,
+	 view_curves_resolved, view_surfaces_resolved, view_dangling_nodes,
+	 view_dangling_edges, view_edges_check_from_to, srid, dims))
+	goto error;
+    updateSpatiaLiteHistory (sqlite, "*** TOPOLOGY ***", NULL,
+			     "Topology tables successfully created");
+    sqlite3_result_int (context, 1);
+    sqlite3_free (table_curves);
+    sqlite3_free (table_surfaces);
+    sqlite3_free (table_nodes);
+    sqlite3_free (table_edges);
+    sqlite3_free (table_faces);
+    sqlite3_free (table_faces_edges);
+    sqlite3_free (view_check_node_codes);
+    sqlite3_free (view_check_node_geoms);
+    sqlite3_free (view_check_edge_codes);
+    sqlite3_free (view_check_edge_geoms);
+    sqlite3_free (view_check_edge_node_geoms);
+    sqlite3_free (view_check_face_codes);
+    sqlite3_free (view_faces_resolved);
+    sqlite3_free (view_curves_resolved);
+    sqlite3_free (view_surfaces_resolved);
+    sqlite3_free (view_dangling_nodes);
+    sqlite3_free (view_dangling_edges);
+    sqlite3_free (view_edges_check_from_to);
+    return;
+
+  error:
+    sqlite3_result_int (context, 0);
+    sqlite3_free (table_curves);
+    sqlite3_free (table_surfaces);
+    sqlite3_free (table_nodes);
+    sqlite3_free (table_edges);
+    sqlite3_free (table_faces);
+    sqlite3_free (table_faces_edges);
+    sqlite3_free (view_check_node_codes);
+    sqlite3_free (view_check_node_geoms);
+    sqlite3_free (view_check_edge_codes);
+    sqlite3_free (view_check_edge_geoms);
+    sqlite3_free (view_check_edge_node_geoms);
+    sqlite3_free (view_check_face_codes);
+    sqlite3_free (view_faces_resolved);
+    sqlite3_free (view_curves_resolved);
+    sqlite3_free (view_surfaces_resolved);
+    sqlite3_free (view_dangling_nodes);
+    sqlite3_free (view_dangling_edges);
+    sqlite3_free (view_edges_check_from_to);
+    return;
+}
+
 static void
 fnct_OffsetCurve (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
@@ -20302,7 +20301,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -20386,7 +20386,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -20395,7 +20396,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -20781,10 +20783,6 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_DisableSpatialIndex, 0, 0);
     sqlite3_create_function (db, "RebuildGeometryTriggers", 2, SQLITE_ANY, 0,
 			     fnct_RebuildGeometryTriggers, 0, 0);
-    sqlite3_create_function (db, "CreateTopologyTables", 2, SQLITE_ANY, 0,
-			     fnct_CreateTopologyTables, 0, 0);
-    sqlite3_create_function (db, "CreateTopologyTables", 3, SQLITE_ANY, 0,
-			     fnct_CreateTopologyTables, 0, 0);
     sqlite3_create_function (db, "UpdateLayerStatistics", 0, SQLITE_ANY, 0,
 			     fnct_UpdateLayerStatistics, 0, 0);
     sqlite3_create_function (db, "UpdateLayerStatistics", 1, SQLITE_ANY, 0,
@@ -21717,6 +21715,10 @@ register_spatialite_sql_functions (sqlite3 * db)
 
 #ifdef GEOS_ADVANCED		/* GEOS advanced features */
 
+    sqlite3_create_function (db, "CreateTopologyTables", 2, SQLITE_ANY, 0,
+			     fnct_CreateTopologyTables, 0, 0);
+    sqlite3_create_function (db, "CreateTopologyTables", 3, SQLITE_ANY, 0,
+			     fnct_CreateTopologyTables, 0, 0);
     sqlite3_create_function (db, "OffsetCurve", 3, SQLITE_ANY, 0,
 			     fnct_OffsetCurve, 0, 0);
     sqlite3_create_function (db, "ST_OffsetCurve", 3, SQLITE_ANY, 0,
