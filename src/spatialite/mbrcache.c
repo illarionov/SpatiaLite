@@ -964,6 +964,7 @@ mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     ret =
 	sqlite3_get_table (db, sql_statement, &results, &n_rows, &n_columns,
 			   &err_msg);
+    sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
       {
 	  sqlite3_free (sql_statement);

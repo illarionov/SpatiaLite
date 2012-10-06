@@ -5325,7 +5325,7 @@ create_topo_nodes (sqlite3 * sqlite, const char *table, int srid, int dims)
     sqltable = gaiaDoubleQuotedSql (table);
     idx_name = sqlite3_mprintf ("idx_%s_code", table);
     xidx_name = gaiaDoubleQuotedSql (idx_name);
-    sqlite3_mprintf (idx_name);
+    sqlite3_free (idx_name);
     sql_statement =
 	sqlite3_mprintf ("CREATE INDEX \"%s\" ON \"%s\" (node_code)", xidx_name,
 			 sqltable);
@@ -5463,6 +5463,7 @@ create_topo_faces (sqlite3 * sqlite, const char *table)
     sql_statement = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n"
 				     "face_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
 				     "face_code TEXT)", sqltable);
+    free (sqltable);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
     sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
@@ -5563,6 +5564,7 @@ create_topo_curves (sqlite3 * sqlite, const char *table)
 				     "orientation TEXT,\n"
 				     "CONSTRAINT pk_curves PRIMARY KEY "
 				     "(curve_id, edge_code))\n", sqltable);
+    free (sqltable);
     ret = sqlite3_exec (sqlite, sql_statement, NULL, NULL, &err_msg);
     sqlite3_free (sql_statement);
     if (ret != SQLITE_OK)
@@ -6966,6 +6968,7 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     char *name_malloc = NULL;
     char *desc_malloc = NULL;
     char dummy[128];
+    char *xdummy;
     char proj_from[2048];
     char proj_to[2048];
     int precision = 15;
@@ -6995,10 +6998,11 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  break;
       case SQLITE_FLOAT:
 	  dbl_value = sqlite3_value_double (argv[0]);
-	  sprintf (dummy, "%1.6f", dbl_value);
-	  len = strlen (dummy);
+	  xdummy = sqlite3_mprintf ("%1.6f", dbl_value);
+	  len = strlen (xdummy);
 	  name_malloc = malloc (len + 1);
-	  strcpy (name_malloc, dummy);
+	  strcpy (name_malloc, xdummy);
+	  sqlite3_free (xdummy);
 	  name = name_malloc;
 	  break;
       case SQLITE_BLOB:
@@ -7032,10 +7036,11 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  break;
       case SQLITE_FLOAT:
 	  dbl_value = sqlite3_value_double (argv[1]);
-	  sprintf (dummy, "%1.6f", dbl_value);
-	  len = strlen (dummy);
+	  xdummy = sqlite3_mprintf ("%1.6f", dbl_value);
+	  len = strlen (xdummy);
 	  desc_malloc = malloc (len + 1);
-	  strcpy (desc_malloc, dummy);
+	  strcpy (desc_malloc, xdummy);
+	  sqlite3_free (xdummy);
 	  desc = desc_malloc;
 	  break;
       case SQLITE_BLOB:
@@ -10286,8 +10291,7 @@ fnct_SridFromAuthCRS (sqlite3_context * context, int argc,
     const unsigned char *auth_name;
     int auth_srid;
     int srid = -1;
-    char sql[1024];
-    char sql2[1024];
+    char *sql;
     char **results;
     int n_rows;
     int n_columns;
@@ -10309,13 +10313,13 @@ fnct_SridFromAuthCRS (sqlite3_context * context, int argc,
     auth_name = sqlite3_value_text (argv[0]);
     auth_srid = sqlite3_value_int (argv[1]);
 
-    sprintf (sql, "SELECT srid FROM spatial_ref_sys ");
-    sprintf (sql2, "WHERE Upper(auth_name) = Upper('%s') AND auth_srid = %d",
-	     auth_name, auth_srid);
-    strcat (sql, sql2);
+    sql = sqlite3_mprintf ("SELECT srid FROM spatial_ref_sys "
+			   "WHERE Upper(auth_name) = Upper(%Q) AND auth_srid = %d",
+			   auth_name, auth_srid);
     ret =
 	sqlite3_get_table (sqlite, sql, &results, &n_rows, &n_columns,
 			   &err_msg);
+    sqlite3_free (sql);
     if (ret != SQLITE_OK)
 	goto done;
     if (n_rows >= 1)

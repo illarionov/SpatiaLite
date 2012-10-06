@@ -107,7 +107,6 @@ vdbf_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 {
 /* creates the virtual table connected to some DBF */
     char *sql;
-    char field[128];
     VirtualDbfPtr p_vt;
     char path[2048];
     char encoding[128];

@@ -1656,7 +1656,6 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 {
 /* creates the virtual table connected to some shapefile */
     VirtualNetworkPtr p_vt;
-    char buf[1024];
     int err;
     int ret;
     int i;

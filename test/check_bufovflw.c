@@ -58,6 +58,10 @@ int main (int argc, char *argv[])
     char *table_a;
     char *table_b;
     char *topology;
+    char *auth;
+    char *kml1;
+    char *kml2;
+    char *kmlvalue;
     char *pk;
     char *name;
     char *geom;
@@ -612,20 +616,180 @@ test7:
     }
     sqlite3_free_table (results);
 
-    ret = sqlite3_close (handle);
-    if (ret != SQLITE_OK) {
-        fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -61;
-    }
-    
-    spatialite_cleanup();
-    free(suffix);
     sqlite3_free(table_a);
     sqlite3_free(table_b);
     sqlite3_free(pk);
     sqlite3_free(name);
     sqlite3_free(geom);
     sqlite3_free(topology);
+
+/* inserting a CRS (very long auth) */
+    auth = sqlite3_mprintf("authority_%s", suffix);
+    sql = sqlite3_mprintf("INSERT INTO spatial_ref_sys (srid, auth_name, auth_srid, "
+                          "ref_sys_name, proj4text, srtext) VALUES (NULL, %Q, 1122, "
+                          "'silly CRS', 'silly proj def', 'silly wkt def')", auth);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "INSERT CRS error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -64;
+    }
+
+/* checking for validity (SRID from Auth) */
+    sql = sqlite3_mprintf("SELECT SridFromAuthCrs(%Q, %d)", auth, 1122);
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Test TABLE-A error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -65;
+    }
+    if (rows != 1 || columns != 1) {
+        fprintf (stderr, "Unexpected rows/columns (SRID from Auth): r=%d c=%d\n", rows, columns);
+        return -66;
+    }
+    value = results[1];
+    if (strcmp ("325834", value) != 0) {
+        fprintf (stderr, "Unexpected result (SRID from Auth): %s\n", results[1]);
+        return -67;
+    }
+    sqlite3_free_table (results);
+
+/* deleting the odd CRS */
+    sql = "DELETE FROM spatial_ref_sys WHERE srid = 325834";
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "DELETE (CRS) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -68;
+    }
+
+    sqlite3_free(auth);
+
+/* checking AsKML (1) */
+    kml1 = sqlite3_mprintf("kml_name_%s", suffix);
+    kml2 = sqlite3_mprintf("kml_description_%s", suffix);
+    kmlvalue = sqlite3_mprintf("<Placemark><name>%s</name><description>%s</description>"
+                               "<Point><coordinates>1,2</coordinates></Point></Placemark>",
+                               kml1, kml2);
+    sql = sqlite3_mprintf("SELECT AsKml(%Q, %Q, MakePoint(1, 2, 4326), 300)", kml1, kml2);
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Test AsKML#1 error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -69;
+    }
+    if (rows != 1 || columns != 1) {
+        fprintf (stderr, "Unexpected rows/columns (AsKML#1): r=%d c=%d\n", rows, columns);
+        return -70;
+    }
+    value = results[1];
+    if (strcmp (kmlvalue, value) != 0) {
+        fprintf (stderr, "Unexpected result (AsKML#1): %s\n", results[1]);
+        return -71;
+    }
+    sqlite3_free_table (results);
+    sqlite3_free(kml1);
+    sqlite3_free(kml2);
+    sqlite3_free(kmlvalue);
+
+/* checking AsKML (2) */
+    kml1 = sqlite3_mprintf("%1.0f", 1E250);
+    kml2 = sqlite3_mprintf("%2.0f", 2E250);
+    kmlvalue = sqlite3_mprintf("<Placemark><name>%s.000000</name><description>%s.000000</description>"
+                               "<Point><coordinates>1.11111111111111116,2.222222222222222321"
+                               "</coordinates></Point></Placemark>",
+                               kml1, kml2);
+    sql = sqlite3_mprintf("SELECT AsKml(%s, %s, MakePoint("
+                          "1.1111111111111111111111111111111111111111111111111111111111111111111111111, "
+                          "2.2222222222222222222222222222222222222222222222222222222222222222222222222, "
+                          "4326), 300)", kml1, kml2);
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Test AsKML#2 error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -72;
+    }
+    if (rows != 1 || columns != 1) {
+        fprintf (stderr, "Unexpected rows/columns (AsKML#2): r=%d c=%d\n", rows, columns);
+        return -73;
+    }
+    value = results[1];
+    if (strcmp (kmlvalue, value) != 0) {
+        fprintf (stderr, "Unexpected result (AsKML#2): %s\n", results[1]);
+        return -74;
+    }
+    sqlite3_free_table (results);
+    sqlite3_free(kml1);
+    sqlite3_free(kml2);
+    sqlite3_free(kmlvalue);
+
+/* checking AsGML (1) */
+    kmlvalue = "<gml:Point srsName=\"EPSG:4326\"><gml:coordinates>"
+               "1.11111111111111116,2.222222222222222321</gml:coordinates></gml:Point>";
+    sql = "SELECT AsGml(MakePoint("
+          "1.1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111, "
+          "2.2222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222, "
+          "4326), 300)";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Test AsGML#1 error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -75;
+    }
+    if (rows != 1 || columns != 1) {
+        fprintf (stderr, "Unexpected rows/columns (AsGML#1): r=%d c=%d\n", rows, columns);
+        return -76;
+    }
+    value = results[1];
+    if (strcmp (kmlvalue, value) != 0) {
+        fprintf (stderr, "Unexpected result (AsGML#1): %s\n", results[1]);
+        return -77;
+    }
+    sqlite3_free_table (results);
+
+/* checking AsGML (2) */
+    kmlvalue = "<gml:Point srsName=\"EPSG:4326\"><gml:pos srsDimension=\"2\">"
+               "1.11111111111111116 2.222222222222222321</gml:pos></gml:Point>";
+    sql = "SELECT AsGml(3, MakePoint("
+          "1.1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111, "
+          "2.2222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222, "
+          "4326), 300)";
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Test AsGML#2 error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -78;
+    }
+    if (rows != 1 || columns != 1) {
+        fprintf (stderr, "Unexpected rows/columns (AsGML#2): r=%d c=%d\n", rows, columns);
+        return -79;
+    }
+    value = results[1];
+    if (strcmp (kmlvalue, value) != 0) {
+        fprintf (stderr, "Unexpected result (AsGML#2): %s\n", results[1]);
+        return -80;
+    }
+    sqlite3_free_table (results);
+
+    ret = sqlite3_close (handle);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
+	return -81;
+    }
+    
+    spatialite_cleanup();
+    free(suffix);
     
     return 0;
 }

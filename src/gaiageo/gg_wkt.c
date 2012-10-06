@@ -1471,6 +1471,8 @@ gaiaOutWktStrict (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom, int precision)
     gaiaPointPtr point;
     gaiaLinestringPtr line;
     gaiaPolygonPtr polyg;
+    if (precision > 18)
+	precision = 18;
     if (!geom)
 	return;
     point = geom->FirstPoint;
@@ -2132,6 +2134,8 @@ gaiaOutSvg (gaiaOutBufferPtr out_buf, gaiaGeomCollPtr geom, int relative,
     gaiaLinestringPtr line;
     gaiaPolygonPtr polyg;
     gaiaRingPtr ring;
+    if (precision > 18)
+	precision = 18;
     if (!geom)
 	return;
     point = geom->FirstPoint;
