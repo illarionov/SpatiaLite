@@ -273,13 +273,13 @@ if test x"$enable_geos" != "xno"; then
 	  [], [enable_lwgeom=no])
   if test x"$enable_lwgeom" != "xno"; then
 	  AC_CHECK_HEADERS(liblwgeom.h,, [AC_MSG_ERROR([cannot find liblwgeom.h, bailing out])])
-	  _save_ldflags="$LDFLAGS"
-	  LDFLAGS="$LDFLAGS -llwgeom"
-	  AC_LINK_IFELSE([AC_LANG_SOURCE([int main() { return 0; } 
+	  _save_libs="$LIBS"
+	  LIBS=$LIBS' -llwgeom'
+	  AC_LINK_IFELSE([AC_LANG_SOURCE([int main() { return lwgeom_make_valid(); return 0; }
 	    void lwgeom_init_allocators(void) { return; } ])],
-	    [AC_DEFINE(ENABLE_LWGEOM)], 
-            [AC_MSG_ERROR(['liblwgeom' is required but it doesn't seem to be installed on this system.])])
-	  LDFLAGS="$_save_ldflags"
+	    [AC_DEFINE(ENABLE_LWGEOM)],
+            [AC_MSG_ERROR(['liblwgeom' doesn't seem to be installed on this system; unsupported lwgeom_make_valid().])])
+	  LIBS="$_save_libs"
 	  LIBS=$LIBS' -llwgeom'
   fi
 else

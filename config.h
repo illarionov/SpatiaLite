@@ -2,13 +2,13 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Should be defined in order to enable LWGEOM support. */
-/* #undef ENABLE_LWGEOM */
+#define ENABLE_LWGEOM 1
 
 /* Should be defined in order to enable GEOS_ADVANCED support. */
-/* #undef GEOS_ADVANCED */
+#define GEOS_ADVANCED 1
 
 /* Should be defined in order to enable GEOS_TRUNK experimental support. */
-/* #undef GEOS_TRUNK */
+#define GEOS_TRUNK 1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
@@ -44,7 +44,7 @@
 #define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the <liblwgeom.h> header file. */
-/* #undef HAVE_LIBLWGEOM_H */
+#define HAVE_LIBLWGEOM_H 1
 
 /* Define to 1 if you have the `sqlite3' library (-lsqlite3). */
 #define HAVE_LIBSQLITE3 1

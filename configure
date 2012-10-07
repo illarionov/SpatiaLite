@@ -17891,22 +17891,22 @@ fi
 
 done
 
-	  _save_ldflags="$LDFLAGS"
-	  LDFLAGS="$LDFLAGS -llwgeom"
+	  _save_libs="$LIBS"
+	  LIBS=$LIBS' -llwgeom'
 	  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-int main() { return 0; }
+int main() { return lwgeom_make_valid(); return 0; }
 	    void lwgeom_init_allocators(void) { return; }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   $as_echo "#define ENABLE_LWGEOM 1" >>confdefs.h
 
 else
-  as_fn_error $? "'liblwgeom' is required but it doesn't seem to be installed on this system." "$LINENO" 5
+  as_fn_error $? "'liblwgeom' doesn't seem to be installed on this system; unsupported lwgeom_make_valid()." "$LINENO" 5
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-	  LDFLAGS="$_save_ldflags"
+	  LIBS="$_save_libs"
 	  LIBS=$LIBS' -llwgeom'
   fi
 else
