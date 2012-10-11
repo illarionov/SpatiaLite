@@ -52,6 +52,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 int main (int argc, char *argv[])
 {
+    int ret;
+    sqlite3 *handle;
     gaiaDynamicLinePtr dyn;
     gaiaDynamicLinePtr dyn2;
     gaiaDynamicLinePtr dyn3;
@@ -80,6 +82,12 @@ int main (int argc, char *argv[])
     gaiaOutBuffer wkt;
 
     spatialite_init (0);
+    ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (handle));
+	sqlite3_close(handle);
+	return -1000;
+    }
     gaiaOutBufferInitialize (&wkt);
 
 /* testing Dynamic Line */
@@ -976,6 +984,11 @@ int main (int argc, char *argv[])
     gaiaFreePolygon(polyg2);
     gaiaFreePolygon(polyg1);
 
+    ret = sqlite3_close (handle);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
+	return -1001;
+    }
     spatialite_cleanup();
 
     return 0;

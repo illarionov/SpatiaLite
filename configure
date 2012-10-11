@@ -17892,7 +17892,7 @@ fi
 done
 
 	  _save_libs="$LIBS"
-	  LIBS=$LIBS' -llwgeom'
+	  LIBS=$LIBS' -llwgeom -lgeos_c'
 	  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 int main() { return lwgeom_make_valid(); return 0; }
@@ -17907,7 +17907,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 	  LIBS="$_save_libs"
-	  LIBS=$LIBS' -llwgeom'
+	  LIBS=$LIBS' -llwgeom -lgeos_c'
   fi
 else
   $as_echo "#define OMIT_GEOS 1" >>confdefs.h

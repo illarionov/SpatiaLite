@@ -52,8 +52,9 @@ int main (int argc, char *argv[])
 {
     int ret;
     sqlite3 *handle;
+    sqlite3_stmt *stmt;
     char *err_msg = NULL;
-    int suffix_len = 12/*8 * 1024*/;	/* 128 KB suffix */
+    int suffix_len = 128 * 1024;	/* 128 KB suffix */
     char *suffix;
     char *table_a;
     char *table_b;
@@ -61,7 +62,7 @@ int main (int argc, char *argv[])
     char *auth;
     char *kml1;
     char *kml2;
-    char *kmlvalue;
+    char *resvalue;
     char *pk;
     char *name;
     char *geom;
@@ -70,6 +71,9 @@ int main (int argc, char *argv[])
     const char *value;
     int rows;
     int columns;
+    char *string;
+    int len;
+    char frmt[2048];
 
     spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
@@ -654,14 +658,14 @@ test7:
     }
     sqlite3_free_table (results);
 
+#endif /* end GEOS advanced features */
+
     sqlite3_free(table_a);
     sqlite3_free(table_b);
     sqlite3_free(pk);
     sqlite3_free(name);
     sqlite3_free(geom);
     sqlite3_free(topology);
-
-#endif /* end GEOS advanced features */
 
 /* inserting a CRS (very long auth) */
     auth = sqlite3_mprintf("authority_%s", suffix);
@@ -713,10 +717,24 @@ test7:
 /* checking AsKML (1) */
     kml1 = sqlite3_mprintf("kml_name_%s", suffix);
     kml2 = sqlite3_mprintf("kml_description_%s", suffix);
-    kmlvalue = sqlite3_mprintf("<Placemark><name>%s</name><description>%s</description>"
-                               "<Point><coordinates>1,2</coordinates></Point></Placemark>",
-                               kml1, kml2);
-    sql = sqlite3_mprintf("SELECT AsKml(%Q, %Q, MakePoint(1, 2, 4326), 300)", kml1, kml2);
+    strcpy(frmt, "<Placemark><name>%s</name><description>%s</description>"
+                 "<MultiGeometry><Point><coordinates>%1.0f,%1.0f"
+                 "</coordinates></Point><LineString><coordinates>0,0 "
+                 "%1.0f,%1.0f</coordinates></LineString>");
+    strcat(frmt, "<Polygon><outerBoundaryIs><LinearRing><coordinates>"
+                 "0,0 0,%1.0f %1.0f,%1.0f %1.0f,0 0,0"
+                 "</coordinates></LinearRing></outerBoundaryIs><innerBoundaryIs>"
+                 "<LinearRing><coordinates>5,5 5,%1.0f %1.0f,%1.0f "
+                 "%1.0f,5 5,5</coordinates></LinearRing></innerBoundaryIs>"
+                 "</Polygon></MultiGeometry></Placemark>");
+    resvalue = sqlite3_mprintf(frmt, kml1, kml2, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 
+                               1e128, 1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsKml(%Q, %Q, GeomFromText('GEOMETRYCOLLECTION("
+                          "POINT(%1.0f %1.0f), LINESTRING(0 0, %1.0f %1.0f), "
+                          "POLYGON((0 0, 0 %1.0f, %1.0f %1.0f, %1.0f 0, 0 0), "
+                          "(5 5, 5 %1.0f, %1.0f %1.0f, %1.0f 5, 5 5)))'"
+                          ", 4326), 300)", kml1, kml2, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                           1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     sqlite3_free(sql);
     if (ret != SQLITE_OK) {
@@ -730,26 +748,37 @@ test7:
         return -70;
     }
     value = results[1];
-    if (strcmp (kmlvalue, value) != 0) {
+    if (strcmp (resvalue, value) != 0) {
         fprintf (stderr, "Unexpected result (AsKML#1): %s\n", results[1]);
         return -71;
     }
     sqlite3_free_table (results);
     sqlite3_free(kml1);
     sqlite3_free(kml2);
-    sqlite3_free(kmlvalue);
+    sqlite3_free(resvalue);
 
 /* checking AsKML (2) */
-    kml1 = sqlite3_mprintf("%1.0f", 1E250);
-    kml2 = sqlite3_mprintf("%2.0f", 2E250);
-    kmlvalue = sqlite3_mprintf("<Placemark><name>%s.000000</name><description>%s.000000</description>"
-                               "<Point><coordinates>1.11111111111111116,2.222222222222222321"
-                               "</coordinates></Point></Placemark>",
-                               kml1, kml2);
-    sql = sqlite3_mprintf("SELECT AsKml(%s, %s, MakePoint("
-                          "1.1111111111111111111111111111111111111111111111111111111111111111111111111, "
-                          "2.2222222222222222222222222222222222222222222222222222222222222222222222222, "
-                          "4326), 300)", kml1, kml2);
+    kml1 = sqlite3_mprintf("%1.0f", 1e128);
+    kml2 = sqlite3_mprintf("%2.0f", 2e128);
+    strcpy(frmt, "<Placemark><name>%s</name><description>%s</description>"
+                 "<MultiGeometry><Point><coordinates>%1.0f,%1.0f,%1.0f"
+                 "</coordinates></Point><LineString><coordinates>0,0,0 "
+                 "%1.0f,%1.0f,%1.0f</coordinates></LineString>");
+    strcat(frmt, "<Polygon><outerBoundaryIs><LinearRing><coordinates>"
+                 "0,0,0 0,%1.0f,0 %1.0f,%1.0f,%1.0f %1.0f,0,0 0,0,0"
+                 "</coordinates></LinearRing></outerBoundaryIs><innerBoundaryIs>"
+                 "<LinearRing><coordinates>5,5,0 5,%1.0f,0 %1.0f,%1.0f,%1.0f "
+                 "%1.0f,5,0 5,5,0</coordinates></LinearRing></innerBoundaryIs>"
+                 "</Polygon></MultiGeometry></Placemark>");
+    resvalue = sqlite3_mprintf(frmt, kml1, kml2, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 
+                               1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsKml(%Q, %Q, GeomFromText('GEOMETRYCOLLECTIONZ("
+                          "POINTZ(%1.0f %1.0f %1.0f), LINESTRINGZ(0 0 0, %1.0f %1.0f %1.0f), "
+                          "POLYGONZ((0 0 0, 0 %1.0f 0, %1.0f %1.0f %1.0f, %1.0f 0 0, 0 0 0), "
+                          "(5 5 0, 5 %1.0f 0, %1.0f %1.0f %1.0f, %1.0f 5 0, 5 5 0)))'"
+                          ", 4326), 300)", kml1, kml2, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                           1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 
+                           1e128, 1e128);
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     sqlite3_free(sql);
     if (ret != SQLITE_OK) {
@@ -763,23 +792,37 @@ test7:
         return -73;
     }
     value = results[1];
-    if (strcmp (kmlvalue, value) != 0) {
+    if (strcmp (resvalue, value) != 0) {
         fprintf (stderr, "Unexpected result (AsKML#2): %s\n", results[1]);
         return -74;
     }
     sqlite3_free_table (results);
     sqlite3_free(kml1);
     sqlite3_free(kml2);
-    sqlite3_free(kmlvalue);
+    sqlite3_free(resvalue);
 
 /* checking AsGML (1) */
-    kmlvalue = "<gml:Point srsName=\"EPSG:4326\"><gml:coordinates>"
-               "1.11111111111111116,2.222222222222222321</gml:coordinates></gml:Point>";
-    sql = "SELECT AsGml(MakePoint("
-          "1.1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111, "
-          "2.2222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222, "
-          "4326), 300)";
+    strcpy(frmt, "<gml:MultiGeometry srsName=\"EPSG:4326\"><gml:geometryMember>"
+                 "<gml:Point><gml:coordinates>%1.0f,%1.0f</gml:coordinates>"
+                 "</gml:Point></gml:geometryMember><gml:geometryMember><gml:LineString>"
+                 "<gml:coordinates>0,0 %1.0f,%1.0f</gml:coordinates></gml:LineString>"
+                 "</gml:geometryMember><gml:geometryMember>");
+    strcat(frmt, "<gml:Polygon><gml:outerBoundaryIs><gml:LinearRing><gml:coordinates>"
+                 "0,0 0,%1.0f %1.0f,%1.0f %1.0f,0 0,0</gml:coordinates></gml:LinearRing>"
+                 "</gml:outerBoundaryIs><gml:innerBoundaryIs><gml:LinearRing><gml:coordinates>"
+                 "5,5 5,%1.0f %1.0f,%1.0f %1.0f,5 5,5</gml:coordinates></gml:LinearRing>"
+                 "</gml:innerBoundaryIs></gml:Polygon></gml:geometryMember></gml:MultiGeometry>");
+    resvalue = sqlite3_mprintf(frmt, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 
+                               1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsGml(GeomFromText('GEOMETRYCOLLECTION("
+                          "POINT(%1.0f %1.0f), LINESTRING(0 0, %1.0f %1.0f), "
+                          "POLYGON((0 0, 0 %1.0f, %1.0f %1.0f, %1.0f 0, 0 0), "
+                          "(5 5, 5 %1.0f, %1.0f %1.0f, %1.0f 5, 5 5)))'"
+                          ", 4326), 300)", 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                           1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 
+                           1e128, 1e128);
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    sqlite3_free(sql);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Test AsGML#1 error: %s\n", err_msg);
 	sqlite3_free(err_msg);
@@ -791,20 +834,37 @@ test7:
         return -76;
     }
     value = results[1];
-    if (strcmp (kmlvalue, value) != 0) {
+    if (strcmp (resvalue, value) != 0) {
         fprintf (stderr, "Unexpected result (AsGML#1): %s\n", results[1]);
         return -77;
     }
     sqlite3_free_table (results);
+    sqlite3_free(resvalue);
 
 /* checking AsGML (2) */
-    kmlvalue = "<gml:Point srsName=\"EPSG:4326\"><gml:pos srsDimension=\"2\">"
-               "1.11111111111111116 2.222222222222222321</gml:pos></gml:Point>";
-    sql = "SELECT AsGml(3, MakePoint("
-          "1.1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111, "
-          "2.2222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222, "
-          "4326), 300)";
+    strcpy(frmt, "<gml:MultiGeometry srsName=\"EPSG:4326\"><gml:geometryMember>"
+                 "<gml:Point><gml:pos srsDimension=\"3\">%1.0f %1.0f %1.0f</gml:pos>"
+                 "</gml:Point></gml:geometryMember><gml:geometryMember><gml:Curve><gml:segments>"
+                 "<gml:LineStringSegment><gml:posList srsDimension=\"3\">0 0 0 "
+                 "%1.0f %1.0f %1.0f</gml:posList></gml:LineStringSegment></gml:segments>"
+                 "</gml:Curve></gml:geometryMember><gml:geometryMember>");
+    strcat(frmt, "<gml:Polygon><gml:exterior><gml:LinearRing><gml:posList srsDimension=\"3\">"
+                 "0 0 0 0 %1.0f 0 %1.0f %1.0f %1.0f %1.0f 0 0 0 0 0</gml:posList>"
+                 "</gml:LinearRing></gml:exterior><gml:interior><gml:LinearRing>"
+                 "<gml:posList srsDimension=\"3\">5 5 0 5 %1.0f 0 %1.0f %1.0f %1.0f "
+                 "%1.0f 5 0 5 5 0</gml:posList></gml:LinearRing></gml:interior></gml:Polygon>"
+                 "</gml:geometryMember></gml:MultiGeometry>");
+    resvalue = sqlite3_mprintf(frmt, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 
+                               1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsGml(3, GeomFromText('GEOMETRYCOLLECTIONZ("
+                          "POINTZ(%1.0f %1.0f %1.0f), LINESTRINGZ(0 0 0, %1.0f %1.0f %1.0f), "
+                          "POLYGONZ((0 0 0, 0 %1.0f 0, %1.0f %1.0f %1.0f, %1.0f 0 0, 0 0 0), "
+                          "(5 5 0, 5 %1.0f 0, %1.0f %1.0f %1.0f, %1.0f 5 0, 5 5 0)))'"
+                          ", 4326), 300)", 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                           1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 
+                           1e128, 1e128);
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    sqlite3_free(sql);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Test AsGML#2 error: %s\n", err_msg);
 	sqlite3_free(err_msg);
@@ -816,18 +876,564 @@ test7:
         return -79;
     }
     value = results[1];
-    if (strcmp (kmlvalue, value) != 0) {
+    if (strcmp (resvalue, value) != 0) {
         fprintf (stderr, "Unexpected result (AsGML#2): %s\n", results[1]);
         return -80;
     }
     sqlite3_free_table (results);
+    sqlite3_free(resvalue);
+
+/* checking WKT 2D */
+    resvalue = sqlite3_mprintf("GEOMETRYCOLLECTION(POINT(%1.0f %1.0f), "
+                               "LINESTRING(0 0, %1.0f %1.0f), "
+                               "POLYGON((0 0, %1.0f 0, %1.0f %1.0f, 0 %1.0f, 0 0), "
+                               "(5 5, %1.0f 5, %1.0f %1.0f, 5 %1.0f, 5 5)))", 
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                                1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsText(GeomFromText('GEOMETRYCOLLECTION("
+                          "POINT(%1.0f %1.0f), LINESTRING(0 0, %1.0f %1.0f), "
+                          "POLYGON((0 0, %1.0f 0, %1.0f %1.0f, 0 %1.0f, 0 0), "
+                          "(5 5, %1.0f 5, %1.0f %1.0f, 5 %1.0f, 5 5)))'))", 
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                          1e128, 1e128, 1e128, 1e128);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK)
+    {
+	  fprintf (stderr, "WKT 2D: error \"%s\"\n", sqlite3_errmsg (handle));
+	  return -81;
+    }
+    string = NULL;
+    while (1)
+    {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	  {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+                {
+                    value = (const char *)sqlite3_column_text(stmt, 0);
+                    len = sqlite3_column_bytes(stmt, 0);
+                    string = malloc(len + 1);
+                    strcpy(string, value);
+                }
+	  }
+    }
+    ret = sqlite3_finalize (stmt);
+    if (string == NULL) {
+        fprintf (stderr, "Unexpected NULL result (WKT 2D)\n");
+        return -82;
+    }
+    if (strcmp (resvalue, string) != 0) {
+        fprintf (stderr, "Unexpected result (WKT 2D): %s\n", string);
+        return -83;
+    }
+    free(string);
+    sqlite3_free(resvalue);
+
+/* checking WKT 3D */
+    resvalue = sqlite3_mprintf("GEOMETRYCOLLECTION Z(POINT Z(%1.0f %1.0f %1.0f), "
+                               "LINESTRING Z(0 0 0, %1.0f %1.0f %1.0f), "
+                               "POLYGON Z((0 0 0, %1.0f 0 0, %1.0f %1.0f %1.0f, 0 %1.0f 0, 0 0 0), "
+                               "(5 5 0, %1.0f 5 0, %1.0f %1.0f %1.0f, 5 %1.0f 0, 5 5 0)))", 
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsText(GeomFromText('GEOMETRYCOLLECTIONZ("
+                          "POINTZ(%1.0f %1.0f %1.0f), LINESTRINGZ(0 0 0, %1.0f %1.0f %1.0f), "
+                          "POLYGONZ((0 0 0, %1.0f 0 0, %1.0f %1.0f %1.0f, 0 %1.0f 0, 0 0 0), "
+                          "(5 5 0, %1.0f 5 0, %1.0f %1.0f %1.0f, 5 %1.0f 0, 5 5 0)))'))", 
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK)
+    {
+	  fprintf (stderr, "WKT 3D: error \"%s\"\n", sqlite3_errmsg (handle));
+	  return -84;
+    }
+    string = NULL;
+    while (1)
+    {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	  {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+                {
+                    value = (const char *)sqlite3_column_text(stmt, 0);
+                    len = sqlite3_column_bytes(stmt, 0);
+                    string = malloc(len + 1);
+                    strcpy(string, value);
+                }
+	  }
+    }
+    ret = sqlite3_finalize (stmt);
+    if (string == NULL) {
+        fprintf (stderr, "Unexpected NULL result (WKT 3D)\n");
+        return -85;
+    }
+    if (strcmp (resvalue, string) != 0) {
+        fprintf (stderr, "Unexpected result (WKT 3D): %s\n", string);
+        return -86;
+    }
+    free(string);
+    sqlite3_free(resvalue);
+
+/* checking WKT M */
+    resvalue = sqlite3_mprintf("GEOMETRYCOLLECTION M(POINT M(%1.0f %1.0f %1.0f), "
+                               "LINESTRING M(0 0 0, %1.0f %1.0f %1.0f), "
+                               "POLYGON M((0 0 0, %1.0f 0 0, %1.0f %1.0f %1.0f, 0 %1.0f 0, 0 0 0), "
+                               "(5 5 0, %1.0f 5 0, %1.0f %1.0f %1.0f, 5 %1.0f 0, 5 5 0)))", 
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsText(GeomFromText('GEOMETRYCOLLECTIONM("
+                          "POINTM(%1.0f %1.0f %1.0f), LINESTRINGM(0 0 0, %1.0f %1.0f %1.0f), "
+                          "POLYGONM((0 0 0, %1.0f 0 0, %1.0f %1.0f %1.0f, 0 %1.0f 0, 0 0 0), "
+                          "(5 5 0, %1.0f 5 0, %1.0f %1.0f %1.0f, 5 %1.0f 0, 5 5 0)))'))", 
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK)
+    {
+	  fprintf (stderr, "WKT M: error \"%s\"\n", sqlite3_errmsg (handle));
+	  return -87;
+    }
+    string = NULL;
+    while (1)
+    {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	  {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+                {
+                    value = (const char *)sqlite3_column_text(stmt, 0);
+                    len = sqlite3_column_bytes(stmt, 0);
+                    string = malloc(len + 1);
+                    strcpy(string, value);
+                }
+	  }
+    }
+    ret = sqlite3_finalize (stmt);
+    if (string == NULL) {
+        fprintf (stderr, "Unexpected NULL result (WKT M)\n");
+        return -88;
+    }
+    if (strcmp (resvalue, string) != 0) {
+        fprintf (stderr, "Unexpected result (WKT M): %s\n", string);
+        return -89;
+    }
+    free(string);
+    sqlite3_free(resvalue);
+
+/* checking WKT 3D M */
+    resvalue = sqlite3_mprintf("GEOMETRYCOLLECTION ZM(POINT ZM(%1.0f %1.0f %1.0f %1.0f), "
+                               "LINESTRING ZM(0 0 0 0, %1.0f %1.0f %1.0f %1.0f), "
+                               "POLYGON ZM((0 0 0 0, %1.0f 0 0 0, %1.0f %1.0f %1.0f %1.0f, 0 %1.0f 0 0, 0 0 0 0), "
+                               "(5 5 0 0, %1.0f 5 0 0, %1.0f %1.0f %1.0f %1.0f, 5 %1.0f 0 0, 5 5 0 0)))", 
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsText(GeomFromText('GEOMETRYCOLLECTIONZM("
+                          "POINTZM(%1.0f %1.0f %1.0f %1.0f), LINESTRINGZM(0 0 0 0, %1.0f %1.0f %1.0f %1.0f), "
+                          "POLYGONZM((0 0 0 0, %1.0f 0 0 0, %1.0f %1.0f %1.0f %1.0f, 0 %1.0f 0 0, 0 0 0 0), "
+                          "(5 5 0 0, %1.0f 5 0 0, %1.0f %1.0f %1.0f %1.0f, 5 %1.0f 0 0, 5 5 0 0)))'))", 
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK)
+    {
+	  fprintf (stderr, "WKT 3D M: error \"%s\"\n", sqlite3_errmsg (handle));
+	  return -90;
+    }
+    string = NULL;
+    while (1)
+    {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	  {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+                {
+                    value = (const char *)sqlite3_column_text(stmt, 0);
+                    len = sqlite3_column_bytes(stmt, 0);
+                    string = malloc(len + 1);
+                    strcpy(string, value);
+                }
+	  }
+    }
+    ret = sqlite3_finalize (stmt);
+    if (string == NULL) {
+        fprintf (stderr, "Unexpected NULL result (WKT 3D M)\n");
+        return -91;
+    }
+    if (strcmp (resvalue, string) != 0) {
+        fprintf (stderr, "Unexpected result (WKT 3D M): %s\n", string);
+        return -92;
+    }
+    free(string);
+    sqlite3_free(resvalue);
+
+/* checking EWKT 2D */
+    resvalue = sqlite3_mprintf("SRID=4326;GEOMETRYCOLLECTION(POINT(%1.0f %1.0f),"
+                               "LINESTRING(0 0,%1.0f %1.0f),"
+                               "POLYGON((0 0,%1.0f 0,%1.0f %1.0f,0 %1.0f,0 0),"
+                               "(5 5,%1.0f 5,%1.0f %1.0f,5 %1.0f,5 5)))", 
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                                1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsEWKT(GeomFromText('GEOMETRYCOLLECTION("
+                          "POINT(%1.0f %1.0f), LINESTRING(0 0, %1.0f %1.0f), "
+                          "POLYGON((0 0, %1.0f 0, %1.0f %1.0f, 0 %1.0f, 0 0), "
+                          "(5 5, %1.0f 5, %1.0f %1.0f, 5 %1.0f, 5 5)))', 4326))", 
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                          1e128, 1e128, 1e128, 1e128);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK)
+    {
+	  fprintf (stderr, "EWKT 2D: error \"%s\"\n", sqlite3_errmsg (handle));
+	  return -93;
+    }
+    string = NULL;
+    while (1)
+    {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	  {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+                {
+                    value = (const char *)sqlite3_column_text(stmt, 0);
+                    len = sqlite3_column_bytes(stmt, 0);
+                    string = malloc(len + 1);
+                    strcpy(string, value);
+                }
+	  }
+    }
+    ret = sqlite3_finalize (stmt);
+    if (string == NULL) {
+        fprintf (stderr, "Unexpected NULL result (EWKT 2D)\n");
+        return -94;
+    }
+    if (strcmp (resvalue, string) != 0) {
+        fprintf (stderr, "Unexpected result (EWKT 2D): %s\n", string);
+        return -95;
+    }
+    free(string);
+    sqlite3_free(resvalue);
+
+/* checking EWKT 3D */
+    resvalue = sqlite3_mprintf("SRID=4326;GEOMETRYCOLLECTION(POINT(%1.0f %1.0f %1.0f),"
+                               "LINESTRING(0 0 0,%1.0f %1.0f %1.0f),"
+                               "POLYGON((0 0 0,%1.0f 0 0,%1.0f %1.0f %1.0f,0 %1.0f 0,0 0 0),"
+                               "(5 5 0,%1.0f 5 0,%1.0f %1.0f %1.0f,5 %1.0f 0,5 5 0)))", 
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsEWKT(GeomFromText('GEOMETRYCOLLECTIONZ("
+                          "POINTZ(%1.0f %1.0f %1.0f), LINESTRINGZ(0 0 0, %1.0f %1.0f %1.0f), "
+                          "POLYGONZ((0 0 0, %1.0f 0 0, %1.0f %1.0f %1.0f, 0 %1.0f 0, 0 0 0), "
+                          "(5 5 0, %1.0f 5 0, %1.0f %1.0f %1.0f, 5 %1.0f 0, 5 5 0)))', 4326))", 
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK)
+    {
+	  fprintf (stderr, "EWKT 3D: error \"%s\"\n", sqlite3_errmsg (handle));
+	  return -96;
+    }
+    string = NULL;
+    while (1)
+    {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	  {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+                {
+                    value = (const char *)sqlite3_column_text(stmt, 0);
+                    len = sqlite3_column_bytes(stmt, 0);
+                    string = malloc(len + 1);
+                    strcpy(string, value);
+                }
+	  }
+    }
+    ret = sqlite3_finalize (stmt);
+    if (string == NULL) {
+        fprintf (stderr, "Unexpected NULL result (EWKT 3D)\n");
+        return -97;
+    }
+    if (strcmp (resvalue, string) != 0) {
+        fprintf (stderr, "Unexpected result (EWKT 3D): %s\n", string);
+        return -98;
+    }
+    free(string);
+    sqlite3_free(resvalue);
+
+/* checking EWKT M */
+    resvalue = sqlite3_mprintf("SRID=4326;GEOMETRYCOLLECTIONM(POINTM(%1.0f %1.0f %1.0f),"
+                               "LINESTRINGM(0 0 0,%1.0f %1.0f %1.0f),"
+                               "POLYGONM((0 0 0,%1.0f 0 0,%1.0f %1.0f %1.0f,0 %1.0f 0,0 0 0),"
+                               "(5 5 0,%1.0f 5 0,%1.0f %1.0f %1.0f,5 %1.0f 0,5 5 0)))", 
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsEWKT(GeomFromText('GEOMETRYCOLLECTIONM("
+                          "POINTM(%1.0f %1.0f %1.0f), LINESTRINGM(0 0 0, %1.0f %1.0f %1.0f), "
+                          "POLYGONM((0 0 0, %1.0f 0 0, %1.0f %1.0f %1.0f, 0 %1.0f 0, 0 0 0), "
+                          "(5 5 0, %1.0f 5 0, %1.0f %1.0f %1.0f, 5 %1.0f 0, 5 5 0)))', 4326))", 
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK)
+    {
+	  fprintf (stderr, "EWKT M: error \"%s\"\n", sqlite3_errmsg (handle));
+	  return -99;
+    }
+    string = NULL;
+    while (1)
+    {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	  {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+                {
+                    value = (const char *)sqlite3_column_text(stmt, 0);
+                    len = sqlite3_column_bytes(stmt, 0);
+                    string = malloc(len + 1);
+                    strcpy(string, value);
+                }
+	  }
+    }
+    ret = sqlite3_finalize (stmt);
+    if (string == NULL) {
+        fprintf (stderr, "Unexpected NULL result (EWKT M)\n");
+        return -100;
+    }
+    if (strcmp (resvalue, string) != 0) {
+        fprintf (stderr, "Unexpected result (EWKT M): %s\n", string);
+        return -101;
+    }
+    free(string);
+    sqlite3_free(resvalue);
+
+/* checking EWKT 3D M */
+    resvalue = sqlite3_mprintf("SRID=4326;GEOMETRYCOLLECTION(POINT(%1.0f %1.0f %1.0f %1.0f),"
+                               "LINESTRING(0 0 0 0,%1.0f %1.0f %1.0f %1.0f),"
+                               "POLYGON((0 0 0 0,%1.0f 0 0 0,%1.0f %1.0f %1.0f %1.0f,0 %1.0f 0 0,0 0 0 0),"
+                               "(5 5 0 0,%1.0f 5 0 0,%1.0f %1.0f %1.0f %1.0f,5 %1.0f 0 0,5 5 0 0)))", 
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,1e128, 1e128,
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsEWKT(GeomFromText('GEOMETRYCOLLECTIONZM("
+                          "POINTZM(%1.0f %1.0f %1.0f %1.0f), LINESTRINGZM(0 0 0 0, %1.0f %1.0f %1.0f %1.0f), "
+                          "POLYGONZM((0 0 0 0, %1.0f 0 0 0, %1.0f %1.0f %1.0f %1.0f, 0 %1.0f 0 0, 0 0 0 0), "
+                          "(5 5 0 0, %1.0f 5 0 0, %1.0f %1.0f %1.0f %1.0f, 5 %1.0f 0 0, 5 5 0 0)))', 4326))", 
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,1e128, 1e128,
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK)
+    {
+	  fprintf (stderr, "EWKT 3D M: error \"%s\"\n", sqlite3_errmsg (handle));
+	  return -102;
+    }
+    string = NULL;
+    while (1)
+    {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	  {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+                {
+                    value = (const char *)sqlite3_column_text(stmt, 0);
+                    len = sqlite3_column_bytes(stmt, 0);
+                    string = malloc(len + 1);
+                    strcpy(string, value);
+                }
+	  }
+    }
+    ret = sqlite3_finalize (stmt);
+    if (string == NULL) {
+        fprintf (stderr, "Unexpected NULL result (EWKT 3D M)\n");
+        return -103;
+    }
+    if (strcmp (resvalue, string) != 0) {
+        fprintf (stderr, "Unexpected result (EWKT 3D M): %s\n", string);
+        return -104;
+    }
+    free(string);
+    sqlite3_free(resvalue);
+
+/* checking WKT Strict */
+    resvalue = sqlite3_mprintf("GEOMETRYCOLLECTION(POINT(%1.0f %1.0f),"
+                               "LINESTRING(0 0,%1.0f %1.0f),"
+                               "POLYGON((0 0,%1.0f 0,%1.0f %1.0f,0 %1.0f,0 0),"
+                               "(5 5,%1.0f 5,%1.0f %1.0f,5 %1.0f,5 5)))", 
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                                1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsWKT(GeomFromText('GEOMETRYCOLLECTIONZM("
+                          "POINTZM(%1.0f %1.0f %1.0f %1.0f), LINESTRINGZM(0 0 0 0, %1.0f %1.0f %1.0f %1.0f), "
+                          "POLYGONZM((0 0 0 0, %1.0f 0 0 0, %1.0f %1.0f %1.0f %1.0f, 0 %1.0f 0 0, 0 0 0 0), "
+                          "(5 5 0 0, %1.0f 5 0 0, %1.0f %1.0f %1.0f %1.0f, 5 %1.0f 0 0, 5 5 0 0)))', 4326))", 
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,1e128, 1e128,
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK)
+    {
+	  fprintf (stderr, "WKT Strict: error \"%s\"\n", sqlite3_errmsg (handle));
+	  return -105;
+    }
+    string = NULL;
+    while (1)
+    {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	  {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+                {
+                    value = (const char *)sqlite3_column_text(stmt, 0);
+                    len = sqlite3_column_bytes(stmt, 0);
+                    string = malloc(len + 1);
+                    strcpy(string, value);
+                }
+	  }
+    }
+    ret = sqlite3_finalize (stmt);
+    if (string == NULL) {
+        fprintf (stderr, "Unexpected NULL result (WKT Strict)\n");
+        return -106;
+    }
+    if (strcmp (resvalue, string) != 0) {
+        fprintf (stderr, "Unexpected result (WKT Strict): %s\n", string);
+        return -107;
+    }
+    free(string);
+    sqlite3_free(resvalue);
+
+/* checking GeoJSON 2D */
+    resvalue = sqlite3_mprintf("{\"type\":\"GeometryCollection\",\"crs\":{\"type\":\"name\",\"properties\":"
+                               "{\"name\":\"urn:ogc:def:crs:EPSG:4326\"}},\"bbox\":[0,0,%1.0f,%1.0f],"
+                               "\"geometries\":[{\"type\":\"Point\",\"coordinates\":[%1.0f,%1.0f]},"
+                               "{\"type\":\"LineString\",\"coordinates\":[[0,0],[%1.0f,%1.0f]]},"
+                               "{\"type\":\"Polygon\",\"coordinates\":"
+                               "[[[0,0],[%1.0f,0],[%1.0f,%1.0f],[0,%1.0f],[0,0]],"
+                               "[[5,5],[%1.0f,5],[%1.0f,%1.0f],[5,%1.0f],[5,5]]]}]}", 
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsGeoJSON(GeomFromText('GEOMETRYCOLLECTION("
+                          "POINT(%1.0f %1.0f), LINESTRING(0 0, %1.0f %1.0f), "
+                          "POLYGON((0 0, %1.0f 0, %1.0f %1.0f, 0 %1.0f, 0 0), "
+                          "(5 5, %1.0f 5, %1.0f %1.0f, 5 %1.0f, 5 5)))', 4326), 2, 5)", 
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                          1e128, 1e128, 1e128, 1e128);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK)
+    {
+	  fprintf (stderr, "GeoJSON 2D: error \"%s\"\n", sqlite3_errmsg (handle));
+	  return -108;
+    }
+    string = NULL;
+    while (1)
+    {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	  {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+                {
+                    value = (const char *)sqlite3_column_text(stmt, 0);
+                    len = sqlite3_column_bytes(stmt, 0);
+                    string = malloc(len + 1);
+                    strcpy(string, value);
+                }
+	  }
+    }
+    ret = sqlite3_finalize (stmt);
+    if (string == NULL) {
+        fprintf (stderr, "Unexpected NULL result (GeoJSON 2D)\n");
+        return -109;
+    }
+    if (strcmp (resvalue, string) != 0) {
+        fprintf (stderr, "Unexpected result (GeoJSON 2D): %s\n", string);
+        return -110;
+    }
+    free(string);
+    sqlite3_free(resvalue);
+
+/* checking GeoJSON 3D */
+    resvalue = sqlite3_mprintf("{\"type\":\"GeometryCollection\",\"crs\":{\"type\":\"name\",\"properties\":"
+                               "{\"name\":\"urn:ogc:def:crs:EPSG:4326\"}},\"bbox\":[0,0,%1.0f,%1.0f],"
+                               "\"geometries\":[{\"type\":\"Point\",\"coordinates\":[%1.0f,%1.0f,%1.0f]},"
+                               "{\"type\":\"LineString\",\"coordinates\":[[0,0,0],[%1.0f,%1.0f,%1.0f]]},"
+                               "{\"type\":\"Polygon\",\"coordinates\":"
+                               "[[[0,0,0],[%1.0f,0,0],[%1.0f,%1.0f,%1.0f],[0,%1.0f,0],[0,0,0]],"
+                               "[[5,5,0],[%1.0f,5,0],[%1.0f,%1.0f,%1.0f],[5,%1.0f,0],[5,5,0]]]}]}", 
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                                1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    sql = sqlite3_mprintf("SELECT AsGeoJSON(GeomFromText('GEOMETRYCOLLECTIONZ("
+                          "POINTZ(%1.0f %1.0f %1.0f), LINESTRINGZ(0 0 0, %1.0f %1.0f %1.0f), "
+                          "POLYGONZ((0 0 0, %1.0f 0 0, %1.0f %1.0f %1.0f, 0 %1.0f 0, 0 0 0), "
+                          "(5 5 0, %1.0f 5 0, %1.0f %1.0f %1.0f, 5 %1.0f 0, 5 5 0)))', 4326), 2, 5)", 
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128,
+                          1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128, 1e128);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK)
+    {
+	  fprintf (stderr, "GeoJSON 3D: error \"%s\"\n", sqlite3_errmsg (handle));
+	  return -111;
+    }
+    string = NULL;
+    while (1)
+    {
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;
+	  if (ret == SQLITE_ROW)
+	  {
+		if (sqlite3_column_type (stmt, 0) == SQLITE_TEXT)
+                {
+                    value = (const char *)sqlite3_column_text(stmt, 0);
+                    len = sqlite3_column_bytes(stmt, 0);
+                    string = malloc(len + 1);
+                    strcpy(string, value);
+                }
+	  }
+    }
+    ret = sqlite3_finalize (stmt);
+    if (string == NULL) {
+        fprintf (stderr, "Unexpected NULL result (GeoJSON 3D)\n");
+        return -112;
+    }
+    if (strcmp (resvalue, string) != 0) {
+        fprintf (stderr, "Unexpected result (GeoJSON 3D): %s\n", string);
+        return -113;
+    }
+    free(string);
+    sqlite3_free(resvalue);
 
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -81;
-    }
-    
+	return -114;
+    }        
+        
     spatialite_cleanup();
     free(suffix);
     
