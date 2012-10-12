@@ -101,18 +101,9 @@ int main (int argc, char *argv[])
       fprintf (stderr, "Unexpected error: NULL result\n");
       return -4;
     } 
-    if (strcmp(GEOSversion (), "3.3") > 0) {
-    /* 3.4.0 trunk swaps relative ordering !!!! */
-        if (strcmp(results[1], "MULTIPOINT Z(664642.363686 5169415.339218 294.37, 664350.17954 5171957.915655 314.52, 664964.447225 5170571.245732 318.25)") != 0) {        
-      	    fprintf (stderr, "Unexpected error: invalid result\n");
-        return -5;
-      }
-    }
-    else {
-        if (strcmp(results[1], "MULTIPOINT Z(664350.17954 5171957.915655 314.52, 664642.363686 5169415.339218 294.37, 664964.447225 5170571.245732 318.25)") != 0) {        
+    if (strcmp(results[1], "MULTIPOINT Z(664350.17954 5171957.915655 314.52, 664642.363686 5169415.339218 294.37, 664964.447225 5170571.245732 318.25)") != 0) {        
           fprintf (stderr, "Unexpected error: invalid result |%s|\n", results[1]);
         return -5;
-      }
     }
     sqlite3_free_table (results);
 
@@ -132,18 +123,9 @@ int main (int argc, char *argv[])
       fprintf (stderr, "Unexpected error: NULL result\n");
       return -8;
     } 
-    if (strcmp(GEOSversion (), "3.3") > 0) {
-    /* 3.4.0 trunk swaps relative ordering !!!! */
-        if (strcmp(results[1], "MULTIPOINT Z(665224.506512 5169827.907054 296.16, 665216.306643 5169825.707161 296.06)") != 0) {        
-      	    fprintf (stderr, "Unexpected error: invalid result\n");
+    if (strcmp(results[1], "MULTIPOINT Z(665216.306643 5169825.707161 296.06, 665224.506512 5169827.907054 296.16)") != 0) {        
+          fprintf (stderr, "Unexpected error: invalid result |%s|\n", results[1]);
         return -9;
-      }
-    }
-    else {
-        if (strcmp(results[1], "MULTIPOINT Z(665216.306643 5169825.707161 296.06, 665224.506512 5169827.907054 296.16)") != 0) {        
-          fprintf (stderr, "Unexpected error: invalid result\n");
-        return -9;
-      }
     }
     sqlite3_free_table (results);
 
@@ -160,21 +142,12 @@ int main (int argc, char *argv[])
       return -11;
     }
     if (results[1] == NULL) {
-      fprintf (stderr, "Unexpected error: NULL result\n");
+      fprintf (stderr, "Unexpected error: NULL result |%s|\n", results[1]);
       return -12;
     }
-    if (strcmp(GEOSversion (), "3.3") > 0) {
-    /* 3.4.0 trunk swaps relative ordering !!!! */
-        if (strcmp(results[1], "MULTIPOINT Z(667710.008189 5169402.894615 589.849976, 667687.978175 5169352.045712 583.140015)") != 0) {        
-      	    fprintf (stderr, "Unexpected error: invalid result\n");
-        return -13;
-      }
-    }
-    else {
-        if (strcmp(results[1], "MULTIPOINT Z(667687.978175 5169352.045712 583.140015, 667710.008189 5169402.894615 589.849976)") != 0) {        
-          fprintf (stderr, "Unexpected error: invalid result\n");
+    if (strcmp(results[1], "MULTIPOINT Z(667687.978175 5169352.045712 583.140015, 667710.008189 5169402.894615 589.849976)") != 0) {        
+          fprintf (stderr, "Unexpected error: invalid result b|%s|\n", results[1]);
           return -13;
-      }
     }
     sqlite3_free_table (results);
 

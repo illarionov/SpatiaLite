@@ -180,7 +180,7 @@ extern "C"
 
  \return the formatted string: NULL on failure
 
- \sa gaiaQuotedSql
+ \sa gaiaQuotedSql, gaiaDequotedSql
  
  \note this function simply is a convenience method corresponding to: 
  gaiaQuotedSQL(value, GAIA_SQL_SINGLE_QUOTE);
@@ -196,7 +196,7 @@ extern "C"
 
  \return the formatted string: NULL on failure
 
- \sa gaiaQuotedSql
+ \sa gaiaQuotedSql, gaiaDequotedSql
  
  \note this function simply is a convenience method corresponding to: 
  gaiaQuotedSQL(value, GAIA_SQL_DOUBLE_QUOTE);
@@ -213,7 +213,7 @@ extern "C"
 
  \return the formatted string: NULL on failure
 
- \sa gaiaSingleQuotedSql, gaiaDoubleQuotedSql
+ \sa gaiaSingleQuotedSql, gaiaDoubleQuotedSql, gaiaDequotedSql
 
  \note this function can safely handle strings of arbitrary length,
  and will return the formatted string into a dynamically allocated buffer 
@@ -221,6 +221,22 @@ extern "C"
  You are required to explicitly free() any string returned by this function.
  */
     GAIAAUX_DECLARE char *gaiaQuotedSql (const char *value, int quote);
+
+/**
+ Properly formats an SQL generic string (dequoting)
+
+ \param value the string to be dequoted
+
+ \return the formatted string: NULL on failure
+
+ \sa gaiaSingleQuotedSql, gaiaDoubleQuotedSql, gaiaQuotedSql
+
+ \note this function can safely handle strings of arbitrary length,
+ and will return the formatted string into a dynamically allocated buffer 
+ created by malloc(). 
+ You are required to explicitly free() any string returned by this function.
+ */
+    GAIAAUX_DECLARE char *gaiaDequotedSql (const char *value);
 
 /*
 / DEPRECATED FUNCTION: gaiaCleanSqlString()

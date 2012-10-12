@@ -904,11 +904,7 @@ mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	      && (*(vtable + len - 1) == '\'' || *(vtable + len - 1) == '"'))
 	    {
 /* the VirtualTableName is enclosed between quotes - we need to dequote it */
-		len = strlen (vtable);
-		xvtable = malloc (len + 1);
-		strcpy (xvtable, vtable + 1);
-		len = strlen (xvtable);
-		*(xvtable + len - 1) = '\0';
+		xvtable = gaiaDequotedSql (vtable);
 		vtable = xvtable;
 	    }
 	  table = argv[3];
@@ -917,11 +913,7 @@ mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	      && (*(table + len - 1) == '\'' || *(table + len - 1) == '"'))
 	    {
 /* the MainTableName is enclosed between quotes - we need to dequote it */
-		len = strlen (table);
-		xtable = malloc (len + 1);
-		strcpy (xtable, table + 1);
-		len = strlen (xtable);
-		*(xtable + len - 1) = '\0';
+		xtable = gaiaDequotedSql (table);
 		table = xtable;
 	    }
 	  column = argv[4];
@@ -930,11 +922,7 @@ mbrc_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	      && (*(column + len - 1) == '\'' || *(column + len - 1) == '"'))
 	    {
 /* the GeometryColumnName is enclosed between quotes - we need to dequote it */
-		len = strlen (column);
-		xcolumn = malloc (len + 1);
-		strcpy (xcolumn, column + 1);
-		len = strlen (xcolumn);
-		*(xcolumn + len - 1) = '\0';
+		xcolumn = gaiaDequotedSql (column);
 		column = xcolumn;
 	    }
 	  len = strlen (table);

@@ -47,6 +47,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include "sqlite3.h"
 #include "spatialite.h"
+#include <spatialite/gaiaaux.h>
 
 int main (int argc, char *argv[])
 {
@@ -1428,10 +1429,38 @@ test7:
     free(string);
     sqlite3_free(resvalue);
 
+/* checking gaiaDequotedSql */
+    resvalue = gaiaDequotedSql("'a''b''c''d''e''f''ghiklmnopqrst''u''vwy''z'");
+    if (strcmp(resvalue, "a'b'c'd'e'f'ghiklmnopqrst'u'vwy'z") != 0) {
+        fprintf (stderr, "Unexpected result (Dequote 1): %s\n", resvalue);
+        return -114;
+    }
+    free(resvalue);
+
+    resvalue = gaiaDequotedSql("\"abcdef\"\"ghijkmlmnopqsrt\"\"uvwy\"\"z\"");
+    if (strcmp(resvalue, "abcdef\"ghijkmlmnopqsrt\"uvwy\"z") != 0) {
+        fprintf (stderr, "Unexpected result (Dequote 2): %s\n", resvalue);
+        return -115;
+    }
+    free(resvalue);
+
+    resvalue = gaiaDequotedSql("abcdefghijkmlnopqrtsuvwyz");
+    if (strcmp(resvalue, "abcdefghijkmlnopqrtsuvwyz") != 0) {
+        fprintf (stderr, "Unexpected result (Dequote 3): %s\n", resvalue);
+        return -116;
+    }
+    free(resvalue);
+
+    resvalue = gaiaDequotedSql("'a''b''c''d''e''f''ghiklmnopqrst''u'vwy''z'");
+    if (resvalue != NULL) {
+        fprintf (stderr, "Unexpected result (Dequote 4): %s\n", resvalue);
+        return -117;
+    }
+
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -114;
+	return -118;
     }        
         
     spatialite_cleanup();

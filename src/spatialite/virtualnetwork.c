@@ -597,60 +597,6 @@ a_star_shortest_path (RoutingNodesPtr e, NetworkNodePtr nodes,
 
 /* END of A* Shortest Path implementation */
 
-
-static char *
-vnet_dequote (const char *buf)
-{
-/* dequoting an SQL string */
-    char *tmp_in;
-    char *tmp_out;
-    char *in;
-    char *out;
-    char strip = '\0';
-    int first = 0;
-    int len = strlen (buf);
-    if (buf[0] == '\'' && buf[len - 1] == '\'')
-	strip = '\'';
-    if (buf[0] == '"' && buf[len - 1] == '"')
-	strip = '"';
-    if (strip == '\0')
-      {
-	  tmp_out = malloc (len + 1);
-	  strcpy (tmp_out, buf);
-	  return tmp_out;
-      }
-    tmp_in = malloc (len + 1);
-    tmp_out = malloc (len + 1);
-    in = tmp_in;
-    out = tmp_out;
-    strcpy (tmp_in, buf + 1);
-    len = strlen (tmp_in);
-    tmp_in[len - 1] = '\0';
-    while (*in != '\0')
-      {
-	  if (*in == strip)
-	    {
-		if (first)
-		  {
-		      first = 0;
-		      in++;
-		      continue;
-		  }
-		else
-		  {
-		      first = 1;
-		      *out++ = *in++;
-		      continue;
-		  }
-	    }
-	  first = 0;
-	  *out++ = *in++;
-      }
-    *out = '\0';
-    free (tmp_in);
-    return tmp_out;
-}
-
 static int
 cmp_nodes_code (const void *p1, const void *p2)
 {
@@ -1071,8 +1017,9 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 					      double x;
 					      double y;
 					      gaiaGetPoint
-						  (geom->FirstLinestring->
-						   Coords, iv, &x, &y);
+						  (geom->
+						   FirstLinestring->Coords, iv,
+						   &x, &y);
 					      *(coords + ((iv * 2) + 0)) = x;
 					      *(coords + ((iv * 2) + 1)) = y;
 					  }
@@ -1088,8 +1035,7 @@ build_solution (sqlite3 * handle, NetworkPtr graph, SolutionPtr solution,
 								      to_id,
 								      points,
 								      coords,
-								      geom->
-								      Srid,
+								      geom->Srid,
 								      name);
 				    }
 				  else
@@ -1676,8 +1622,8 @@ vnet_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 /* checking for table_name and geo_column_name */
     if (argc == 4)
       {
-	  vtable = vnet_dequote (argv[2]);
-	  table = vnet_dequote (argv[3]);
+	  vtable = gaiaDequotedSql (argv[2]);
+	  table = gaiaDequotedSql (argv[3]);
       }
     else
       {

@@ -502,6 +502,68 @@ gaiaGeometryUnion (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 }
 
 GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaUnionCascaded (gaiaGeomCollPtr geom)
+{
+/* UnionCascaded (single Collection of polygons) */
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr result;
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    if (!geom)
+	return NULL;
+    if (gaiaIsToxic (geom))
+	return NULL;
+
+/* testing if geom only contains Polygons */
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  lns++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts || lns)
+	return NULL;
+    if (!pgs)
+	return NULL;
+
+    g1 = gaiaToGeos (geom);
+    g2 = GEOSUnionCascaded (g1);
+    GEOSGeom_destroy (g1);
+    if (!g2)
+	return NULL;
+    if (geom->DimensionModel == GAIA_XY_Z)
+	result = gaiaFromGeos_XYZ (g2);
+    else if (geom->DimensionModel == GAIA_XY_M)
+	result = gaiaFromGeos_XYM (g2);
+    else if (geom->DimensionModel == GAIA_XY_Z_M)
+	result = gaiaFromGeos_XYZM (g2);
+    else
+	result = gaiaFromGeos_XY (g2);
+    GEOSGeom_destroy (g2);
+    if (result == NULL)
+	return NULL;
+    result->Srid = geom->Srid;
+    return result;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
 gaiaGeometryDifference (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* builds a new geometry representing the "spatial difference" of GEOM-1 and GEOM-2 */

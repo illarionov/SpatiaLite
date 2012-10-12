@@ -580,7 +580,7 @@ extern "C"
  \return the pointer to newly created Geometry object representing the
  geometry Union of both input Geometries: NULL on failure.
 
- \sa gaiaFreeGeomColl, gaiaUnaryUnion
+ \sa gaiaFreeGeomColl, gaiaUnaryUnion, gaiaUnionCascaded
 
  \note you are responsible to destroy (before or after) any allocated Geometry,
  this including any Geometry returned by gaiaGeometryUnion()
@@ -589,6 +589,25 @@ extern "C"
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaGeometryUnion (gaiaGeomCollPtr geom1,
 						       gaiaGeomCollPtr geom2);
+
+/**
+ Spatial operator: Union Cascaded
+
+ \param geom the input Geometry object.
+
+ \return the pointer to newly created Geometry object: NULL on failure.
+ \n this function is similar to gaiaUnaryUnion, but it only accepts Polygons and 
+ MultiPolygons and it's now deprecated; anyway it's supported on older GEOS versions.
+ NULL on failure.
+
+ \sa gaiaFreeGeomColl, gaiaGeometryUnion, gaiaUnionUnion
+
+ \note you are responsible to destroy (before or after) any allocated Geometry,
+ this including any Geometry returned by gaiaUnionCascaded()
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaUnionCascaded (gaiaGeomCollPtr geom);
 
 /**
  Spatial operator: Difference
@@ -1005,7 +1024,7 @@ extern "C"
  works internally to the input Geometry itself.
  NULL on failure.
 
- \sa gaiaFreeGeomColl, gaiaGeometryUnion
+ \sa gaiaFreeGeomColl, gaiaGeometryUnion, gaiaUnionCascaded
 
  \note you are responsible to destroy (before or after) any allocated Geometry,
  this including any Geometry returned by gaiaUnaryUnion()

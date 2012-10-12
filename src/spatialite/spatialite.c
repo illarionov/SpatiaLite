@@ -96,6 +96,21 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 
 #define GAIA_UNUSED() if (argc || argv) argc = argc;
 
+struct gaia_geom_chain_item
+{
+/* a struct used to store a chain item */
+    gaiaGeomCollPtr geom;
+    struct gaia_geom_chain_item *next;
+};
+
+struct gaia_geom_chain
+{
+/* a struct used to store a dynamic chain of GeometryCollections */
+    int all_polygs;
+    struct gaia_geom_chain_item *first;
+    struct gaia_geom_chain_item *last;
+};
+
 #ifndef OMIT_GEOCALLBACKS	/* supporting RTree geometry callbacks */
 struct gaia_rtree_mbr
 {
@@ -13939,6 +13954,41 @@ fnct_Intersection (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaFreeGeomColl (geo2);
 }
 
+static int
+gaia_union_polygs (gaiaGeomCollPtr geom)
+{
+/* testing if this geometry simply contains Polygons */
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  lns++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts || lns)
+	return 0;
+    if (!pgs)
+	return 0;
+    return 1;
+}
+
 static void
 fnct_Union_step (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
@@ -13948,11 +13998,13 @@ fnct_Union_step (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / aggregate function - STEP
 /
 */
+    struct gaia_geom_chain *chain;
+    struct gaia_geom_chain_item *item;
     unsigned char *p_blob;
     int n_bytes;
     gaiaGeomCollPtr geom;
     gaiaGeomCollPtr result;
-    gaiaGeomCollPtr *p;
+    struct gaia_geom_chain **p;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
@@ -13964,20 +14016,46 @@ fnct_Union_step (sqlite3_context * context, int argc, sqlite3_value ** argv)
     geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
     if (!geom)
 	return;
-    p = sqlite3_aggregate_context (context, sizeof (gaiaGeomCollPtr));
+    p = sqlite3_aggregate_context (context, sizeof (struct gaia_geom_chain **));
     if (!(*p))
       {
 	  /* this is the first row */
-	  *p = geom;
+	  chain = malloc (sizeof (struct gaia_geom_chain));
+	  *p = chain;
+	  item = malloc (sizeof (struct gaia_geom_chain_item));
+	  item->geom = geom;
+	  item->next = NULL;
+	  chain->all_polygs = gaia_union_polygs (geom);
+	  chain->first = item;
+	  chain->last = item;
       }
     else
       {
 	  /* subsequent rows */
-	  result = gaiaGeometryUnion (*p, geom);
-	  gaiaFreeGeomColl (*p);
-	  *p = result;
-	  gaiaFreeGeomColl (geom);
+	  chain = *p;
+	  item = malloc (sizeof (struct gaia_geom_chain_item));
+	  item->geom = geom;
+	  item->next = NULL;
+	  if (!gaia_union_polygs (geom))
+	      chain->all_polygs = 0;
+	  chain->last->next = item;
+	  chain->last = item;
       }
+}
+
+static void
+gaia_free_geom_chain (struct gaia_geom_chain *chain)
+{
+    struct gaia_geom_chain_item *p = chain->first;
+    struct gaia_geom_chain_item *pn;
+    while (p)
+      {
+	  pn = p->next;
+	  gaiaFreeGeomColl (p->geom);
+	  free (p);
+	  p = pn;
+      }
+    free (chain);
 }
 
 static void
@@ -13989,21 +14067,100 @@ fnct_Union_final (sqlite3_context * context)
 / aggregate function - FINAL
 /
 */
+    gaiaGeomCollPtr tmp;
+    struct gaia_geom_chain *chain;
+    struct gaia_geom_chain_item *item;
+    gaiaGeomCollPtr aggregate;
     gaiaGeomCollPtr result;
-    gaiaGeomCollPtr *p = sqlite3_aggregate_context (context, 0);
+    struct gaia_geom_chain **p = sqlite3_aggregate_context (context, 0);
     if (!p)
       {
 	  sqlite3_result_null (context);
 	  return;
       }
-    result = *p;
-    if (!result)
+    chain = *p;
+
+#ifdef GEOS_ADVANCED
+/* we can apply UnaryUnion */
+    item = chain->first;
+    while (item)
+      {
+	  gaiaGeomCollPtr geom = item->geom;
+	  if (item == chain->first)
+	    {
+		/* initializing the aggregate geometry */
+		aggregate = geom;
+		item->geom = NULL;
+		item = item->next;
+		continue;
+	    }
+	  tmp = gaiaMergeGeometries (aggregate, geom);
+	  gaiaFreeGeomColl (aggregate);
+	  gaiaFreeGeomColl (geom);
+	  item->geom = NULL;
+	  aggregate = tmp;
+	  item = item->next;
+      }
+    result = gaiaUnaryUnion (aggregate);
+    gaiaFreeGeomColl (aggregate);
+/* end UnaryUnion */
+#else
+/* old GEOS; no UnaryUnion available */
+    if (chain->all_polygs)
+      {
+	  /* all Polygons: we can apply UnionCascaded */
+	  item = chain->first;
+	  while (item)
+	    {
+		gaiaGeomCollPtr geom = item->geom;
+		if (item == chain->first)
+		  {
+		      /* initializing the aggregate geometry */
+		      aggregate = geom;
+		      item->geom = NULL;
+		      item = item->next;
+		      continue;
+		  }
+		tmp = gaiaMergeGeometries (aggregate, geom);
+		gaiaFreeGeomColl (aggregate);
+		gaiaFreeGeomColl (geom);
+		item->geom = NULL;
+		aggregate = tmp;
+		item = item->next;
+	    }
+	  result = gaiaUnionCascaded (aggregate);
+	  gaiaFreeGeomColl (aggregate);
+      }
+    else
+      {
+	  /* mixed types: the hardest/slowest way */
+	  item = chain->first;
+	  while (item)
+	    {
+		gaiaGeomCollPtr geom = item->geom;
+		if (item == chain->first)
+		  {
+		      result = geom;
+		      item->geom = NULL;
+		      item = item->next;
+		      continue;
+		  }
+		tmp = gaiaGeometryUnion (result, geom);
+		gaiaFreeGeomColl (result);
+		gaiaFreeGeomColl (geom);
+		item->geom = NULL;
+		result = tmp;
+		item = item->next;
+	    }
+      }
+/* end old GEOS: no UnaryUnion available */
+#endif
+    gaia_free_geom_chain (chain);
+
+    if (result == NULL)
 	sqlite3_result_null (context);
     else if (gaiaIsEmpty (result))
-      {
-	  gaiaFreeGeomColl (result);
-	  sqlite3_result_null (context);
-      }
+	sqlite3_result_null (context);
     else
       {
 	  /* builds the BLOB geometry to be returned */
@@ -14011,8 +14168,8 @@ fnct_Union_final (sqlite3_context * context)
 	  unsigned char *p_result = NULL;
 	  gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
 	  sqlite3_result_blob (context, p_result, len, free);
-	  gaiaFreeGeomColl (result);
       }
+    gaiaFreeGeomColl (result);
 }
 
 static void
@@ -20301,8 +20458,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -20386,8 +20542,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -20396,8 +20551,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }

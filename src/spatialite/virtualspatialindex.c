@@ -90,51 +90,6 @@ typedef struct VirtualSpatialIndexCursorStruct
 } VirtualSpatialIndexCursor;
 typedef VirtualSpatialIndexCursor *VirtualSpatialIndexCursorPtr;
 
-static void
-vspidx_dequote (char *buf)
-{
-/* dequoting an SQL string */
-    char *tmp;
-    char *in;
-    char *out = buf;
-    char strip = '\0';
-    int first = 0;
-    int len = strlen (buf);
-    if (buf[0] == '\'' && buf[len - 1] == '\'')
-	strip = '\'';
-    if (buf[0] == '"' && buf[len - 1] == '"')
-	strip = '"';
-    if (strip == '\0')
-	return;
-    len = strlen (buf + 1);
-    tmp = malloc (len + 1);
-    strcpy (tmp, buf + 1);
-    in = tmp;
-    tmp[len - 1] = '\0';
-    while (*in != '\0')
-      {
-	  if (*in == strip)
-	    {
-		if (first)
-		  {
-		      first = 0;
-		      in++;
-		      continue;
-		  }
-		else
-		  {
-		      first = 1;
-		      *out++ = *in++;
-		      continue;
-		  }
-	    }
-	  first = 0;
-	  *out++ = *in++;
-      }
-    *out = '\0';
-    free (tmp);
-}
-
 static int
 vspidx_check_view_rtree (sqlite3 * sqlite, const char *table_name,
 			 const char *geom_column, char **real_table,
@@ -430,8 +385,7 @@ vspidx_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	pAux = pAux;		/* unused arg warning suppression */
     if (argc == 3)
       {
-	  vtable = (char *) argv[2];
-	  vspidx_dequote (vtable);
+	  vtable = gaiaDequotedSql ((char *) argv[2]);
       }
     else
       {
@@ -453,6 +407,7 @@ vspidx_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     buf = sqlite3_mprintf ("CREATE TABLE \"%s\" (f_table_name TEXT, "
 			   "f_geometry_column TEXT, search_frame BLOB)", xname);
     free (xname);
+    free (vtable);
     if (sqlite3_declare_vtab (db, buf) != SQLITE_OK)
       {
 	  sqlite3_free (buf);
