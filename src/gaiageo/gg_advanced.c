@@ -1195,6 +1195,8 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
     gaiaRingPtr ring;
     if (!geom)
 	return 0;
+    if (gaiaIsEmpty (geom))
+	return 1;
     point = geom->FirstPoint;
     while (point)
       {
