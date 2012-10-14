@@ -663,10 +663,16 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_geos_tests/bdpolyfromwkb7.testcase \
 	sql_stmt_geos_tests/bdpolyfromwkb8.testcase \
 	sql_stmt_geos_tests/bdpolyfromwkb9.testcase \
-	sql_stmt_tests/blobfromfile1.testcase \
-	sql_stmt_tests/blobfromfile2.testcase \
-	sql_stmt_tests/blobfromfile3.testcase \
-	sql_stmt_tests/blobfromfile4.testcase \
+	sql_stmt_security_tests/blobfromfile1.testcase \
+	sql_stmt_security_tests/blobfromfile2.testcase \
+	sql_stmt_security_tests/blobfromfile3.testcase \
+	sql_stmt_security_tests/blobfromfile4.testcase \
+	sql_stmt_security_tests/isXblob1.testcase \
+	sql_stmt_security_tests/isXblob2.testcase \
+	sql_stmt_security_tests/isXblob3.testcase \
+	sql_stmt_security_tests/isXblob4.testcase \
+	sql_stmt_security_tests/isXblob8.testcase \
+	sql_stmt_security_tests/isXblob9.testcase \
 	sql_stmt_geos_tests/boundary1.testcase \
 	sql_stmt_geos_tests/boundary2.testcase \
 	sql_stmt_geos_tests/boundary3.testcase \
@@ -1614,10 +1620,6 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_geos_tests/isvalid7.testcase \
 	sql_stmt_geos_tests/isvalid8.testcase \
 	sql_stmt_geos_tests/isvalid9.testcase \
-	sql_stmt_tests/isXblob1.testcase \
-	sql_stmt_tests/isXblob2.testcase \
-	sql_stmt_tests/isXblob3.testcase \
-	sql_stmt_tests/isXblob4.testcase \
 	sql_stmt_tests/isXblob5.testcase \
 	sql_stmt_tests/isXblob6.testcase \
 	sql_stmt_tests/isXblob7.testcase \

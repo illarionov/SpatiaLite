@@ -20458,7 +20458,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -20542,7 +20543,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -20551,7 +20553,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -20849,6 +20852,7 @@ fnct_cvtFromIndCh (sqlite3_context * context, int argc, sqlite3_value ** argv)
 static void
 register_spatialite_sql_functions (sqlite3 * db)
 {
+    const char *security_level;
     sqlite3_create_function (db, "spatialite_version", 0, SQLITE_ANY, 0,
 			     fnct_spatialite_version, 0, 0);
     sqlite3_create_function (db, "proj4_version", 0, SQLITE_ANY, 0,
@@ -21570,10 +21574,35 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_IsWebPBlob, 0, 0);
     sqlite3_create_function (db, "GeomFromExifGpsBlob", 1, SQLITE_ANY, 0,
 			     fnct_GeomFromExifGpsBlob, 0, 0);
-    sqlite3_create_function (db, "BlobFromFile", 1, SQLITE_ANY, 0,
-			     fnct_BlobFromFile, 0, 0);
-    sqlite3_create_function (db, "BlobToFile", 2, SQLITE_ANY, 0,
-			     fnct_BlobToFile, 0, 0);
+
+/*
+// enabling BlobFromFile and BlobToFile
+//
+// this two functions could potentially introduce serious security issues,
+// most notably when invoked from within some Trigger
+// - BlobToFile: some arbitrary code, possibly harmfull (e.g. virus or 
+//   trojan) could be installed on the local file-system, the user being
+//   completely unaware of this
+// - BlobFromFile: some file could be maliciously "stolen" from the local
+//   file system and then inseted into the DB
+//
+// so by default both functions are disabled.
+// if for any good/legitimate reason the user really wants to enable both
+// them the following environment variable has to be explicitly declared:
+//
+// SPATIALITE_SECURITY=relaxed
+//
+*/
+    security_level = getenv ("SPATIALITE_SECURITY");
+    if (security_level == NULL)
+	;
+    else if (strcasecmp (security_level, "relaxed") == 0)
+      {
+	  sqlite3_create_function (db, "BlobFromFile", 1, SQLITE_ANY, 0,
+				   fnct_BlobFromFile, 0, 0);
+	  sqlite3_create_function (db, "BlobToFile", 2, SQLITE_ANY, 0,
+				   fnct_BlobToFile, 0, 0);
+      }
 
 /* some Geodesic functions */
     sqlite3_create_function (db, "GreatCircleLength", 1, SQLITE_ANY, 0,
