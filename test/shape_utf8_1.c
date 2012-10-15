@@ -316,6 +316,7 @@ int main (int argc, char *argv[])
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
 	return -19;
     }
+    spatialite_cleanup();
 	
 #endif	/* end ICONV conditional */
 
