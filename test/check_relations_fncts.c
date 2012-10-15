@@ -771,6 +771,7 @@ int main (int argc, char *argv[])
 	returnValue = -91;
 	goto exit;
     }
+    result = gaiaGeomCollLength(g, &dummyResultArg);
     if (result == 1 && (dummyResultArg >= 122.84232 && dummyResultArg <= 122.84233))
         ;
     else {

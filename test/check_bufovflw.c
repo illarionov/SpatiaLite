@@ -41,6 +41,7 @@ the provisions above, a recipient may use your version of this file under
 the terms of any one of the MPL, the GPL or the LGPL.
  
 */
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -48,6 +49,24 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 #include <spatialite/gaiaaux.h>
+
+void cleanup_shapefile(const char *filename)
+{
+    char nam[1000];
+    
+    if (!filename) {
+	return;
+    }
+    
+    snprintf(nam, 1000, "%s.dbf", filename);
+    unlink(nam);
+    snprintf(nam, 1000, "%s.prj", filename);
+    unlink(nam);
+    snprintf(nam, 1000, "%s.shp", filename);
+    unlink(nam);
+    snprintf(nam, 1000, "%s.shx", filename);
+    unlink(nam);
+}
 
 int main (int argc, char *argv[])
 {
@@ -57,6 +76,11 @@ int main (int argc, char *argv[])
     char *err_msg = NULL;
     int suffix_len = 128 * 1024;	/* 128 KB suffix */
     char *suffix;
+    char *xtable;
+    char *shape;
+    char *shape2;
+    char *shape2geom;
+    char *dbf;
     char *table_a;
     char *table_b;
     char *topology;
@@ -75,6 +99,8 @@ int main (int argc, char *argv[])
     char *string;
     int len;
     char frmt[2048];
+    int row_count;
+    char *dumpname = __FILE__"dump";
 
     spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
@@ -98,6 +124,10 @@ int main (int argc, char *argv[])
 
     table_a = sqlite3_mprintf("table_a_%s", suffix);
     table_b = sqlite3_mprintf("table_b_%s", suffix);
+    shape2 = sqlite3_mprintf("shape_table_2_%s", suffix);
+    shape2geom = sqlite3_mprintf("shape_table_2_geom_%s", suffix);
+    shape = sqlite3_mprintf("shape_table_%s", suffix);
+    dbf = sqlite3_mprintf("dbf_tbale_%s", suffix);
     pk = sqlite3_mprintf("id_%s", suffix);
     name = sqlite3_mprintf("name_%s", suffix);
     geom = sqlite3_mprintf("geom_%s", suffix);
@@ -1456,12 +1486,139 @@ test7:
         fprintf (stderr, "Unexpected result (Dequote 4): %s\n", resvalue);
         return -117;
     }
+	
+/* checking load_shapefile */
+    ret = load_shapefile (handle, "./shp/gaza/route", shape, "UTF-8", 4326, 
+			  NULL, 1, 0, 1, 1, &row_count, err_msg);
+    if (!ret) {
+        fprintf (stderr, "load_shapefile() error: %s\n", err_msg);
+	sqlite3_close(handle);
+	return -118;
+    }
+    if (row_count != 2) {
+	fprintf (stderr, "unexpected row count for load_shapefile: %i\n", row_count);
+	sqlite3_close(handle);
+	return -119;
+    }
+/* checking dump_shapefile */
+    ret = dump_shapefile (handle, shape, "Geometry", dumpname, "UTF-8", "", 1, &row_count, err_msg);
+    if (!ret) {
+        fprintf (stderr, "dump_shapefile() error: %s\n", err_msg);
+	sqlite3_close(handle);
+	return -120;
+    }
+    cleanup_shapefile(dumpname);
+    if (row_count != 2) {
+	fprintf (stderr, "unexpected dump row count for shapefile: %i\n", row_count);
+	sqlite3_close(handle);
+	return -121;
+    }
+/* checking dump_kml */
+    ret = dump_kml (handle, shape, "geometry", dumpname, "sub_type", "name", 10);
+    if (!ret) {
+        fprintf (stderr, "dump_kml() error: %s\n", err_msg);
+	sqlite3_close(handle);
+	return -122;
+    }
+    unlink(dumpname);
+/* checking dump_geojson */
+    ret = dump_geojson(handle, shape, "col1", dumpname, 10, 5);
+    if (!ret) {
+        fprintf (stderr, "dump_geojson() error: %s\n", err_msg);
+       sqlite3_close(handle);
+       return -123;
+    }
+    unlink(dumpname);
+/* dropping virtual geometry */
+    sql = sqlite3_mprintf("SELECT DropVirtualGeometry(%Q)", shape);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "DROP VIRTUAL GEOMETRT /shp/gaza/barrier error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -124;
+    }
+    sqlite3_free(shape);
+
+/* checking load_dbf */
+    ret = load_dbf (handle, "./shapetest1.dbf", dbf, "UTF-8", 1, &row_count, err_msg);
+    if (!ret) {
+        fprintf (stderr, "load_dbf() error: %s\n", err_msg);
+	sqlite3_close(handle);
+	return -125;
+    }
+    if (row_count != 2) {
+	fprintf (stderr, "unexpected row count for load_dbf: %i\n", row_count);
+	sqlite3_close(handle);
+	return -126;
+    }
+/* checking dump_dbf */
+    ret = dump_dbf (handle, dbf, dumpname, "CP1252", err_msg);
+    if (!ret) {
+        fprintf (stderr, "dump_dbf() error for points: %s\n", err_msg);
+	sqlite3_close(handle);
+	return -127;
+    }
+    unlink(dumpname);
+    sqlite3_free(dbf);
+
+/* checking load_shapefile (2) */
+    ret = load_shapefile (handle, "./shp/merano-3d/polygons", shape2, "CP1252", 25832, 
+			  shape2geom, 0, 1, 1, 0, &row_count, err_msg);
+    if (!ret) {
+        fprintf (stderr, "load_shapefile() #2 error: %s\n", err_msg);
+	sqlite3_close(handle);
+	return -128;
+    }
+    if (row_count != 10) {
+	fprintf (stderr, "unexpected row count for load_shapefile #2: %i\n", row_count);
+	sqlite3_close(handle);
+	return -129;
+    }
+    xtable = gaiaDoubleQuotedSql(shape2);
+    sql = sqlite3_mprintf("INSERT INTO \"%s\" (FEATURE_ID, DATUM, HAUSNR) "
+                          "VALUES (1250000, 0.1, 'alpha')", xtable);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "INSERT polygons (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -130;
+    }
+    sql = sqlite3_mprintf("INSERT INTO \"%s\" (FEATURE_ID, DATUM, HAUSNR) "
+                          "VALUES (1250000, 0.1, 'alpha')", xtable);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "INSERT polygons (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -131;
+    }
+    sql = sqlite3_mprintf("INSERT INTO \"%s\" (FEATURE_ID, DATUM, TEXT_I) "
+                          "VALUES (1250000, 0.1, 'alpha')", xtable);
+    free(xtable);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "INSERT polygons (1) error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -132;
+    }
+
+    remove_duplicated_rows(handle, shape2);
+    elementary_geometries (handle, shape2, shape2geom, "elem_poly", "pk_elem", "mul_id");
+    sqlite3_free(shape2);
+    sqlite3_free(shape2geom);
 
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -118;
-    }        
+	return -133;
+    }
         
     spatialite_cleanup();
     free(suffix);
