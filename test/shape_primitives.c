@@ -77,7 +77,8 @@ int do_test(sqlite3 *handle)
     char *dumpname = __FILE__"dump";
     char *err_msg = NULL;
     int row_count;
-	int ret;
+    int ret;
+    gaiaVectorLayersListPtr list;
 	
     ret = sqlite3_exec (handle, "CREATE TABLE Point_Test (Name TEXT, Description TEXT)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -550,6 +551,16 @@ int do_test(sqlite3 *handle)
 	return -64;
     }
     cleanup_shapefile(dumpname);
+
+/* testing VectorLayersList (several flavors) */
+    list = gaiaGetVectorLayersList (handle, NULL, NULL, GAIA_VECTORS_LIST_FAST);
+    gaiaFreeVectorLayersList (list);
+    list = gaiaGetVectorLayersList (handle, NULL, NULL, GAIA_VECTORS_LIST_PRECISE);
+    gaiaFreeVectorLayersList (list);
+    list = gaiaGetVectorLayersList (handle, "Polygon_Test", "geomZM", GAIA_VECTORS_LIST_FAST);
+    gaiaFreeVectorLayersList (list);
+    list = gaiaGetVectorLayersList (handle, "Polygon_Test", "geomZM", GAIA_VECTORS_LIST_PRECISE);
+    gaiaFreeVectorLayersList (list);
     
     ret = sqlite3_exec (handle, "DROP TABLE Polygon_Test", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {

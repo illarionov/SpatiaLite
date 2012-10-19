@@ -52,7 +52,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = demo1$(EXEEXT) demo2$(EXEEXT) demo3$(EXEEXT) \
-	demo4$(EXEEXT)
+	demo4$(EXEEXT) demo5$(EXEEXT)
 subdir = examples
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -79,6 +79,9 @@ demo3_LDADD = $(LDADD)
 demo4_SOURCES = demo4.c
 demo4_OBJECTS = demo4.$(OBJEXT)
 demo4_LDADD = $(LDADD)
+demo5_SOURCES = demo5.c
+demo5_OBJECTS = demo5.$(OBJEXT)
+demo5_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -92,8 +95,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = demo1.c demo2.c demo3.c demo4.c
-DIST_SOURCES = demo1.c demo2.c demo3.c demo4.c
+SOURCES = demo1.c demo2.c demo3.c demo4.c demo5.c
+DIST_SOURCES = demo1.c demo2.c demo3.c demo4.c demo5.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -284,6 +287,9 @@ demo3$(EXEEXT): $(demo3_OBJECTS) $(demo3_DEPENDENCIES) $(EXTRA_demo3_DEPENDENCIE
 demo4$(EXEEXT): $(demo4_OBJECTS) $(demo4_DEPENDENCIES) $(EXTRA_demo4_DEPENDENCIES) 
 	@rm -f demo4$(EXEEXT)
 	$(LINK) $(demo4_OBJECTS) $(demo4_LDADD) $(LIBS)
+demo5$(EXEEXT): $(demo5_OBJECTS) $(demo5_DEPENDENCIES) $(EXTRA_demo5_DEPENDENCIES) 
+	@rm -f demo5$(EXEEXT)
+	$(LINK) $(demo5_OBJECTS) $(demo5_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -295,6 +301,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/demo2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/demo3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/demo4.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/demo5.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

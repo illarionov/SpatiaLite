@@ -63,6 +63,7 @@ int main (int argc, char *argv[])
     int rows;
     int columns;
     double tic;
+    gaiaVectorLayersListPtr list;
 
     spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
@@ -414,11 +415,32 @@ int main (int argc, char *argv[])
     remove_duplicated_rows(handle, "points_xym");
     remove_duplicated_rows(handle, "points_xyzm");
 
+    sql = "CREATE VIEW test_view AS "
+          "SELECT ROWID AS ROWID, pk_elem AS id, geom AS geometry FROM roads_xyz";
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "CREATE test_view error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -52;
+    }
+
+    sql = "INSERT INTO views_geometry_columns (view_name, view_geometry, view_rowid, "
+          "f_table_name, f_geometry_column, read_only) VALUES "
+          "('test_view', 'geometry', 'rowid', 'roads_xyz', 'geom', 1)";
+    ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Register SpatialView error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -53;
+    }
+
     ret = update_layer_statistics (handle, NULL, NULL);
     if (!ret) {
         fprintf (stderr, "update_layer_statistics() error %s\n", err_msg);
 	sqlite3_close(handle);
-	return -8;
+	return -54;
     }
 
     sql = "SELECT row_count, extent_min_x, extent_max_y "
@@ -429,25 +451,25 @@ int main (int argc, char *argv[])
     if (ret != SQLITE_OK) {
         fprintf (stderr, "Error: %s\n", err_msg);
         sqlite3_free (err_msg);
-        return -9;
+        return -55;
     }
     if (rows != 1) {
         fprintf (stderr, "Unexpected num of rows for GEOMETRY_COLUMNS_STATISTICS.\n");
-        return  -10;
+        return  -56;
     }
     if (atoi(results[columns+0]) != 18) {
         fprintf (stderr, "Unexpected error: GEOMETRY_COLUMNS_STATISTICS bad result row_count: %s\n", results[columns+0]);
-        return -11;
+        return -57;
     }
     tic = fabs(atof(results[columns+1]) - 666057.648017325);
     if (tic >= 0.00000002) {
         fprintf (stderr, "Unexpected error: GEOMETRY_COLUMNS_STATISTICS bad result extent_min_x: %s\n", results[columns+1]);
-        return -12;
+        return -58;
     }
     tic = fabs(atof(results[columns+2]) - 5170671.31627796);
     if (tic >= 0.0000002) {
         fprintf (stderr, "Unexpected error: GEOMETRY_COLUMNS_STATISTICS bad result extent_max_y: %s\n", results[columns+2]);
-        return -13;
+        return -59;
     }
     sqlite3_free_table (results);
 
@@ -456,13 +478,25 @@ int main (int argc, char *argv[])
 	fprintf (stderr, "DROP polygons error: %s\n", err_msg);
 	sqlite3_free(err_msg);
 	sqlite3_close(handle);
-	return -6;
+	return -60;
     }
     
+/* checking gaiaGetVectorLayersList() - ALL */
+    list = gaiaGetVectorLayersList(handle, NULL, NULL, GAIA_VECTORS_LIST_FAST);
+    gaiaFreeVectorLayersList(list);
+    
+/* checking gaiaGetVectorLayersList() - Table */
+    list = gaiaGetVectorLayersList(handle, "elem_points_xyz", NULL, GAIA_VECTORS_LIST_FAST);
+    gaiaFreeVectorLayersList(list);
+    
+/* checking gaiaGetVectorLayersList() - Table and Geometry */
+    list = gaiaGetVectorLayersList(handle, "elem_roads_xy", "geom", GAIA_VECTORS_LIST_FAST);
+    gaiaFreeVectorLayersList(list);
+
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -7;
+	return -61;
     }
 
     spatialite_cleanup();

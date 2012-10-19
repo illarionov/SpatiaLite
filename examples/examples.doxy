@@ -419,3 +419,193 @@ sample successfully terminated
 As for demo3.c, note the significant speed difference between the indexed
 and non-indexed queries.
 */
+
+/** \example demo5.c
+
+This is a sample C source showing how to use the SpatiaLite's API 
+gaiaGetVectorLayersList(), i.e. the one gathering statistic infos
+for Vector Layers.
+The typical output of this demo is shown below.
+
+By simply specifying a DB-path demo5 will print the complete list
+of all Vector Layers found in that DB:
+
+\verbatim
+$ ./demo5 /home/sandro/db-4.0.sqlite 
+SQLite version: 3.7.11
+SpatiaLite version: 4.0.0-RC2
+
+****** VectorLayersList (mode=FAST) *********
+VectorLayer: Type=BasedOnSqlTable TableName=com2011
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=8094
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220492.095518
+	ReadOnly=FALSE Hidden=FALSE
+VectorLayer: Type=BasedOnSqlTable TableName=prov2011
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=110
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220491.200018
+	ReadOnly=FALSE Hidden=FALSE
+VectorLayer: Type=BasedOnSqlTable TableName=reg2011
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=20
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220491.200018
+	ReadOnly=FALSE Hidden=FALSE
+VectorLayer: Type=BasedOnSqlView TableName=com_prov
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=8094
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220492.095518
+	ReadOnly=FALSE Hidden=FALSE
+VectorLayer: Type=BasedOnSqlView TableName=prov_reg
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=110
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220491.200018
+	ReadOnly=TRUE Hidden=FALSE
+VectorLayer: Type=BasedOnVirtualShape TableName=com2011a
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=8094
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220492.095518
+VectorLayer: Type=BasedOnVirtualShape TableName=prov2011a
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=110
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220491.200018
+VectorLayer: Type=BasedOnVirtualShape TableName=reg2011a
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=20
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220491.200018
+
+
+****** VectorLayersList (mode=PRECISE) *********
+VectorLayer: Type=BasedOnSqlTable TableName=com2011
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=8094
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220492.095518
+	ReadOnly=FALSE Hidden=FALSE
+VectorLayer: Type=BasedOnSqlTable TableName=prov2011
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=110
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220491.200018
+	ReadOnly=FALSE Hidden=FALSE
+VectorLayer: Type=BasedOnSqlTable TableName=reg2011
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=20
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220491.200018
+	ReadOnly=FALSE Hidden=FALSE
+VectorLayer: Type=BasedOnSqlView TableName=com_prov
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=8094
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220492.095518
+	ReadOnly=FALSE Hidden=FALSE
+VectorLayer: Type=BasedOnSqlView TableName=prov_reg
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=110
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220491.200018
+	ReadOnly=TRUE Hidden=FALSE
+VectorLayer: Type=BasedOnVirtualShape TableName=com2011a
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=8094
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220492.095518
+VectorLayer: Type=BasedOnVirtualShape TableName=prov2011a
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=110
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220491.200018
+VectorLayer: Type=BasedOnVirtualShape TableName=reg2011a
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=20
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220491.200018
+
+sample successfully terminated
+\endverbatim
+
+By optionally specifying a Layer name  demo5 will print a more detailed
+list for that single Layer:
+
+\verbatim
+$ ./demo5 /home/sandro/db-4.0.sqlite com2011
+SQLite version: 3.7.11
+SpatiaLite version: 4.0.0-RC2
+
+****** VectorLayersList (mode=FAST) *********
+VectorLayer: Type=BasedOnSqlTable TableName=com2011
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=8094
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220492.095518
+	ReadOnly=FALSE Hidden=FALSE
+		Field #0) FieldName=PRO_COM
+			IntegerValues=8094 
+			IntRange 1001 / 110010
+		Field #1) FieldName=COD_REG
+			IntegerValues=8094 
+			IntRange 1 / 20
+		Field #2) FieldName=COD_PRO
+			IntegerValues=8094 
+			IntRange 1 / 110
+		Field #3) FieldName=NOME_COM
+			TextValues=8094 
+			MaxSize/Length=35
+		Field #4) FieldName=NOME_TED
+			TextValues=8094 
+			MaxSize/Length=36
+		Field #5) FieldName=SHAPE_Leng
+			DoubleValues=8094 
+			DoubleRange 1566.303618 / 327044.574999
+		Field #6) FieldName=SHAPE_Area
+			DoubleValues=8094 
+			DoubleRange 120613.967719 / 1287358944.600000
+		Field #7) FieldName=Geometry
+			BlobValues=8094 
+			MaxSize/Length=222151
+
+
+****** VectorLayersList (mode=PRECISE) *********
+VectorLayer: Type=BasedOnSqlTable TableName=com2011
+	GeometryName=geometry SRID=23032 GeometryType=MULTIPOLYGON Dims=XY
+	RowCount=8094
+	ExtentMin 313360.999831 / 3933878.175118
+	ExtentMax 1312106.500031 / 5220492.095518
+	ReadOnly=FALSE Hidden=FALSE
+		Field #0) FieldName=PRO_COM
+			IntegerValues=8094 
+			IntRange 1001 / 110010
+		Field #1) FieldName=COD_REG
+			IntegerValues=8094 
+			IntRange 1 / 20
+		Field #2) FieldName=COD_PRO
+			IntegerValues=8094 
+			IntRange 1 / 110
+		Field #3) FieldName=NOME_COM
+			TextValues=8094 
+			MaxSize/Length=35
+		Field #4) FieldName=NOME_TED
+			TextValues=8094 
+			MaxSize/Length=36
+		Field #5) FieldName=SHAPE_Leng
+			DoubleValues=8094 
+			DoubleRange 1566.303618 / 327044.574999
+		Field #6) FieldName=SHAPE_Area
+			DoubleValues=8094 
+			DoubleRange 120613.967719 / 1287358944.600000
+		Field #7) FieldName=Geometry
+			BlobValues=8094 
+			MaxSize/Length=222151
+
+sample successfully terminated
+\endverbatim
+*/

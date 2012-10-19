@@ -537,5 +537,6 @@ we have to destroy each object using temporary storage before exit
     if (geo_coll)
 	gaiaFreeGeomColl (geo_coll);
     sqlite3_close (handle);
+    spatialite_cleanup();
     return 0;
 }

@@ -69,6 +69,8 @@ extern "C"
 {
 #endif
 
+#include <spatialite/gaiageo.h>
+
 /**
  Return the current library version.
  */
@@ -470,6 +472,40 @@ extern "C"
     SPATIALITE_DECLARE int update_layer_statistics (sqlite3 * sqlite,
 						    const char *table,
 						    const char *column);
+
+/**
+ Queries the Metadata tables supporting Vector Layers
+
+ \param handle SQLite handle to current DB connection.
+ \param table VectorLayer Table (or View, or VirtualShape).
+ \param geometry Geometry Column name.
+ \param mode one of GAIA_VECTORS_LIST_LOOSE or GAIA_VECTORS_LIST_STRICT.
+ 
+ \return the pointer to the newly created VectorLayersList object: NULL on failure
+
+ \sa gaiaFreeVectorLayersList
+
+ \note you are responsible to destroy (before or after) any allocated
+ VectorLayersList returned by gaiaGetVectorLayersList().
+ \n If the table arg is NULL all VectorLayers defined within the DB will be reported;
+  otherwise only a single Layer will be reported (if existing).
+ \n By defining the geometry arg (not NULL) you can further restrict the returned report.
+ \n When the mode arg is set to GAIA_VECTORS_LIST_FAST (default) then the returned infos
+  will be simply retrieved from the staticized statistic tables (faster, but could be inaccurate).
+ \n If the mode arg is set to GAIA_VECTORS_LIST_PRECISE a preliminary attempt to update the
+  statistic tables will be always performed (probably slower, but surely accurate).
+ */
+    SPATIALITE_DECLARE gaiaVectorLayersListPtr gaiaGetVectorLayersList (sqlite3 *
+								    handle, const char *table, const char *geometry, int mode);
+
+/**
+ Destroys a VectorLayersList object
+
+ \param ptr pointer to the VectorLayersList object to be destroyed
+
+ \sa gaiaGetVectorLayersList
+ */
+    SPATIALITE_DECLARE void gaiaFreeVectorLayersList (gaiaVectorLayersListPtr ptr);
 
 #ifdef __cplusplus
 }

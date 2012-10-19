@@ -82,10 +82,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define strcasecmp	_stricmp
 #endif /* not WIN32 */
 
-#define SPATIALITE_STATISTICS_GENUINE	1
-#define SPATIALITE_STATISTICS_VIEWS	2
-#define SPATIALITE_STATISTICS_VIRTS	3
-
 struct field_item_infos
 {
     int ordinal;
@@ -287,7 +283,6 @@ do_update_layer_statistics (sqlite3 * sqlite, const char *table,
     ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
     if (ret != SQLITE_OK)
 	return 0;
-
 /* binding INSERT params */
     sqlite3_reset (stmt);
     sqlite3_clear_bindings (stmt);
@@ -1260,11 +1255,65 @@ do_compute_minmax (sqlite3 * sqlite, const char *table,
     return 1;
 }
 
-static int
-do_compute_field_infos (sqlite3 * sqlite, const char *table,
-			const char *column, int stat_type)
+static void
+copy_attributes_into_layer (struct field_container_infos *infos,
+			    gaiaVectorLayerPtr lyr)
+{
+/* copying the AttributeField definitions into the VectorLayer */
+    gaiaLayerAttributeFieldPtr fld;
+    int len;
+    struct field_item_infos *p = infos->first;
+    while (p)
+      {
+	  /* adding an AttributeField definition */
+	  fld = malloc (sizeof (gaiaLayerAttributeField));
+	  fld->Ordinal = p->ordinal;
+	  len = strlen (p->col_name);
+	  fld->AttributeFieldName = malloc (len + 1);
+	  strcpy (fld->AttributeFieldName, p->col_name);
+	  fld->NullValuesCount = p->null_values;
+	  fld->IntegerValuesCount = p->integer_values;
+	  fld->DoubleValuesCount = p->double_values;
+	  fld->TextValuesCount = p->text_values;
+	  fld->BlobValuesCount = p->blob_values;
+	  fld->MaxSize = NULL;
+	  fld->IntRange = NULL;
+	  fld->DoubleRange = NULL;
+	  if (p->max_size)
+	    {
+		fld->MaxSize = malloc (sizeof (gaiaAttributeFieldMaxSize));
+		fld->MaxSize->MaxSize = p->max_size;
+	    }
+	  if (p->int_minmax_set)
+	    {
+		fld->IntRange = malloc (sizeof (gaiaAttributeFieldIntRange));
+		fld->IntRange->MinValue = p->int_min;
+		fld->IntRange->MaxValue = p->int_max;
+	    }
+	  if (p->dbl_minmax_set)
+	    {
+		fld->DoubleRange =
+		    malloc (sizeof (gaiaAttributeFieldDoubleRange));
+		fld->DoubleRange->MinValue = p->dbl_min;
+		fld->DoubleRange->MaxValue = p->dbl_max;
+	    }
+	  fld->Next = NULL;
+	  if (lyr->First == NULL)
+	      lyr->First = fld;
+	  if (lyr->Last != NULL)
+	      lyr->Last->Next = fld;
+	  lyr->Last = fld;
+	  p = p->next;
+      }
+}
+
+SPATIALITE_PRIVATE int
+doComputeFieldInfos (void *p_sqlite, const char *table,
+		     const char *column, int stat_type, void *p_lyr)
 {
 /* computes FIELD_INFOS [single table/geometry] */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    gaiaVectorLayerPtr lyr = (gaiaVectorLayerPtr) p_lyr;
     char *sql_statement;
     char *quoted;
     int ret;
@@ -1280,15 +1329,18 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
     int size;
     int count;
     int error = 0;
+    int comma = 0;
     gaiaOutBuffer out_buf;
+    gaiaOutBuffer group_by;
     struct field_container_infos infos;
 
     gaiaOutBufferInitialize (&out_buf);
+    gaiaOutBufferInitialize (&group_by);
     infos.first = NULL;
     infos.last = NULL;
 
 /* retrieving the column names for the current table */
-/* then building the SLQ query statement */
+/* then building the SQL query statement */
     quoted = gaiaDoubleQuotedSql (table);
     sql_statement = sqlite3_mprintf ("PRAGMA table_info(%s)", quoted);
     free (quoted);
@@ -1304,6 +1356,7 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
     else
       {
 	  gaiaAppendToOutBuffer (&out_buf, "SELECT DISTINCT Count(*)");
+	  gaiaAppendToOutBuffer (&group_by, "GROUP BY");
 	  for (i = 1; i <= rows; i++)
 	    {
 		ordinal = atoi (results[(i * columns) + 0]);
@@ -1311,10 +1364,21 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
 		quoted = gaiaDoubleQuotedSql (col_name);
 		sql_statement =
 		    sqlite3_mprintf
-		    (", %d, %Q, typeof(\"%s\"), max(length(\"%s\"))", ordinal,
-		     col_name, quoted, quoted);
+		    (", %d, %Q AS col_%d, typeof(\"%s\") AS typ_%d, max(length(\"%s\"))",
+		     ordinal, col_name, ordinal, quoted, ordinal, quoted);
 		free (quoted);
 		gaiaAppendToOutBuffer (&out_buf, sql_statement);
+		sqlite3_free (sql_statement);
+		if (!comma)
+		  {
+		      comma = 1;
+		      sql_statement =
+			  sqlite3_mprintf (" col_%d, typ_%d", ordinal, ordinal);
+		  }
+		else
+		    sql_statement =
+			sqlite3_mprintf (", col_%d, typ_%d", ordinal, ordinal);
+		gaiaAppendToOutBuffer (&group_by, sql_statement);
 		sqlite3_free (sql_statement);
 	    }
       }
@@ -1323,10 +1387,12 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
     if (out_buf.Buffer == NULL)
 	return 0;
     quoted = gaiaDoubleQuotedSql (table);
-    sql_statement = sqlite3_mprintf (" FROM \"%s\"", quoted);
+    sql_statement = sqlite3_mprintf (" FROM \"%s\" ", quoted);
     free (quoted);
     gaiaAppendToOutBuffer (&out_buf, sql_statement);
     sqlite3_free (sql_statement);
+    gaiaAppendToOutBuffer (&out_buf, group_by.Buffer);
+    gaiaOutBufferReset (&group_by);
 
 /* executing the SQL query */
     ret = sqlite3_get_table (sqlite, out_buf.Buffer, &results, &rows, &columns,
@@ -1368,6 +1434,14 @@ do_compute_field_infos (sqlite3 * sqlite, const char *table,
 
     switch (stat_type)
       {
+      case SPATIALITE_STATISTICS_LEGACY:
+	  if (!error)
+	      copy_attributes_into_layer (&infos, lyr);
+	  free_field_infos (&infos);
+	  if (error)
+	      return 0;
+	  return 1;
+	  break;
       case SPATIALITE_STATISTICS_GENUINE:
 	  if (!do_update_field_infos (sqlite, table, column, &infos))
 	      error = 1;
@@ -1480,7 +1554,7 @@ do_compute_layer_statistics (sqlite3 * sqlite, const char *table,
     if (metadata_version == 3)
       {
 	  /* current metadata style >= v.4.0.0 */
-	  if (!do_compute_field_infos (sqlite, table, column, stat_type))
+	  if (!doComputeFieldInfos (sqlite, table, column, stat_type, NULL))
 	      return 0;
       }
     return 1;

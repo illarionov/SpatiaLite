@@ -366,5 +366,6 @@ the idea is simply to simulate exactly the same conditions as above
 
   abort:
     sqlite3_close (handle);
+    spatialite_cleanup();
     return -1;
 }

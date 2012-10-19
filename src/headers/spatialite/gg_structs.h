@@ -617,6 +617,200 @@ extern "C"
 
 #endif				/* end ICONV (text reader) */
 
+/**
+ Layer Extent infos
+ */
+    typedef struct gaiaLayerExtentInfos
+    {
+/** row count (aka feature count) */
+	int Count;
+/** Extent: min X */
+	double MinX;		/* MBR - BBOX */
+/** Extent: min Y */
+	double MinY;		/* MBR - BBOX */
+/** Extent: max X */
+	double MaxX;		/* MBR - BBOX */
+/** Extent: max Y */
+	double MaxY;		/* MBR - BBOX */
+    } gaiaLayerExtent;
+
+/**
+ Typedef for Layer Extent infos
+
+ \sa gaiaLayerExtent
+ */
+    typedef gaiaLayerExtent *gaiaLayerExtentPtr;
+
+/**
+ Layer Auth infos
+ */
+    typedef struct gaiaLayerAuthInfos
+    {
+/** Read-Only layer: TRUE or FALSE */
+	int IsReadOnly;
+/** Hidden layer: TRUE or FALSE */
+	int IsHidden;
+    } gaiaLayerAuth;
+
+/**
+ Typedef for Layer Auth infos
+
+ \sa gaiaLayerAuth
+ */
+    typedef gaiaLayerAuth *gaiaLayerAuthPtr;
+
+/**
+ Attribute/Field MaxSize/Length infos
+ */
+    typedef struct gaiaAttributeFieldMaxSizeInfos
+    {
+/** MaxSize / MaxLength */
+	int MaxSize;
+    } gaiaAttributeFieldMaxSize;
+
+/**
+ Typedef for Attribute/Field MaxSize/Length infos
+
+ \sa gaiaAttributeFieldMaxSize
+ */
+    typedef gaiaAttributeFieldMaxSize *gaiaAttributeFieldMaxSizePtr;
+
+/**
+ Attribute/Field Integer range infos
+ */
+    typedef struct gaiaAttributeFieldIntRangeInfos
+    {
+/** Minimum value */
+	sqlite3_int64 MinValue;
+/** Maximum value */
+	sqlite3_int64 MaxValue;
+    } gaiaAttributeFieldIntRange;
+
+/**
+ Typedef for Attribute/Field Integer range infos
+
+ \sa gaiaAttributeFieldIntRange
+ */
+    typedef gaiaAttributeFieldIntRange *gaiaAttributeFieldIntRangePtr;
+
+/**
+ Attribute/Field Double range infos
+ */
+    typedef struct gaiaAttributeFieldDoubleRangeInfos
+    {
+/** Minimum value */
+	double MinValue;
+/** Maximum value */
+	double MaxValue;
+    } gaiaAttributeFieldDoubleRange;
+
+/**
+ Typedef for Attribute/Field Double range infos
+
+ \sa gaiaAttributeFieldDoubleRange
+ */
+    typedef gaiaAttributeFieldDoubleRange *gaiaAttributeFieldDoubleRangePtr;
+
+/**
+ LayerAttributeField infos
+ */
+    typedef struct gaiaLayerAttributeFieldInfos
+    {
+/** ordinal position */
+int Ordinal;
+/** SQL name of the corresponding column */
+	char *AttributeFieldName;
+/** total count of NULL values */
+	int NullValuesCount;
+/** total count of INTEGER values */
+int IntegerValuesCount;
+/** total count of DOUBLE values */
+int DoubleValuesCount;
+/** total count of TEXT values */
+int TextValuesCount;
+/** total count of BLOB values */
+int BlobValuesCount;
+/** pointer to MaxSize/Length infos (may be NULL) */
+gaiaAttributeFieldMaxSizePtr MaxSize;
+/** pointer to range of Integer values infos (may be NULL) */
+gaiaAttributeFieldIntRangePtr IntRange;
+/** pointer to range of Double values infos (may be NULL) */
+gaiaAttributeFieldDoubleRangePtr DoubleRange;
+/** pointer to next item (linked list) */
+struct gaiaLayerAttributeFieldInfos *Next;
+    } gaiaLayerAttributeField;
+
+/**
+ Typedef for Layer AttributeField infos
+
+ \sa gaiaLayerAttributeField
+ */
+    typedef gaiaLayerAttributeField *gaiaLayerAttributeFieldPtr;
+
+/**
+ Vector Layer item
+ */
+    typedef struct gaiaVectorLayerItem
+    {
+/** one of GAIA_VECTOR_UNKNOWN, GAIA_VECTOR_TABLE, GAIA_VECTOR_VIEW, 
+    GAIA_VECTOR_VIRTUAL */
+	int LayerType;
+/** SQL name of the corresponding table */
+	char *TableName;
+/** SQL name of the corresponding Geometry column */
+	char *GeometryName;
+/** SRID value */
+	int Srid;
+/** one of GAIA_VECTOR_UNKNOWN, GAIA_VECTOR_POINT, GAIA_VECTOR_LINESTRING, 
+    GAIA_VECTOR_POLYGON, GAIA_VECTOR_MULTIPOINT, GAIA_VECTOR_MULTILINESTRING, 
+    GAIA_VECTOR_MULTIPOLYGON, GAIA_VECTOR_GEOMETRYCOLLECTION, GAIA_VECTOR_GEOMETRY
+*/
+	int GeometryType;
+/** one of GAIA_VECTOR_UNKNOWN, GAIA_XY, GAIA_XY_Z, GAIA_XY_M, GAIA_XY_ZM */
+	int Dimensions;
+/** one of GAIA_VECTOR_UNKNOWN, GAIA_SPATIAL_INDEX_NONE, GAIA_SPATIAL_INDEX_RTREE, 
+    GAIA_SPATIAL_INDEX_MBRCACHE
+*/
+	int SpatialIndex;
+/** pointer to Extent infos (may be NULL) */
+	gaiaLayerExtentPtr ExtentInfos;
+/** pointer to Auth infos (may be NULL) */
+	gaiaLayerAuthPtr AuthInfos;
+/** pointer to first Field/Attribute (linked list) */
+gaiaLayerAttributeFieldPtr First;
+/** pointer to last Field/Attribute (linked list) */
+gaiaLayerAttributeFieldPtr Last;
+/** pointer to next item (linked list) */
+	struct gaiaVectorLayerItem *Next;
+    } gaiaVectorLayer;
+
+/**
+ Typedef for Vector Layer item
+
+ \sa gaiaVectorLayer
+ */
+    typedef gaiaVectorLayer *gaiaVectorLayerPtr;
+
+/**
+ Container for Vector Layers List
+ */
+    typedef struct gaiaVectorLayersListStr
+    {
+/** pointer to first vector layer (linked list) */
+	gaiaVectorLayerPtr First;
+/** pointer to last vector layer (linked list) */
+	gaiaVectorLayerPtr Last;
+/** pointer to currently set vector layer */
+	gaiaVectorLayerPtr Current;
+    } gaiaVectorLayersList;
+
+/**
+ Typedef for Vector Layers List
+
+ \sa gaiaVectorLayersList
+ */
+    typedef gaiaVectorLayersList *gaiaVectorLayersListPtr;
+
 #ifdef __cplusplus
 }
 #endif
