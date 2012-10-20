@@ -157,8 +157,11 @@ extern "C"
 			     const char *column, int stat_type, void *p_lyr);
 
     SPATIALITE_PRIVATE void
-	getProjParams (void * p_sqlite, int srid, char **params);
+	getProjParams (void *p_sqlite, int srid, char **params);
 
+    SPATIALITE_PRIVATE int
+	getEllipsoidParams (void *p_sqlite, int srid, double *a, double *b,
+			    double *rf);
 #ifdef __cplusplus
 }
 #endif

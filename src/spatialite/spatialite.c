@@ -12562,14 +12562,14 @@ fnct_SwapCoords (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaFreeGeomColl (geo);
 }
 
-static int
-get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
-		    double *rf)
+SPATIALITE_PRIVATE int
+getEllipsoidParams (void *p_sqlite, int srid, double *a, double *b, double *rf)
 {
 /* 
 / retrieves the PROJ +ellps=xx [+a=xx +b=xx] params 
 /from SPATIAL_SYS_REF table, if possible 
 */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
     char *proj4text;
     char *p_proj;
     char *p_ellps;
@@ -12577,6 +12577,15 @@ get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
     char *p_a;
     char *p_b;
     char *p_end;
+
+    if (srid == 0)
+      {
+	  /* 
+	     / SRID=0 is formally defined as "Undefined Geographic"
+	     / so will default to SRID=4326 (WGS84 Long/Lat)
+	   */
+	  srid = 4326;
+      }
     getProjParams (sqlite, srid, &proj4text);
     if (proj4text == NULL)
 	return 0;
@@ -14055,7 +14064,6 @@ fnct_Union_step (sqlite3_context * context, int argc, sqlite3_value ** argv)
     unsigned char *p_blob;
     int n_bytes;
     gaiaGeomCollPtr geom;
-    gaiaGeomCollPtr result;
     struct gaia_geom_chain **p;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
@@ -14803,6 +14811,7 @@ fnct_Distance (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / Distance(BLOBencoded geom1, BLOBencoded geom2)
+/ Distance(BLOBencoded geom1, BLOBencoded geom2, Boolen use_ellipsoid)
 /
 / returns the distance between GEOM-1 and GEOM-2
 */
@@ -14810,8 +14819,14 @@ fnct_Distance (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int n_bytes;
     gaiaGeomCollPtr geo1 = NULL;
     gaiaGeomCollPtr geo2 = NULL;
+    gaiaGeomCollPtr shortest = NULL;
     double dist;
+    int use_ellipsoid = -1;
+    double a;
+    double b;
+    double rf;
     int ret;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
@@ -14823,6 +14838,17 @@ fnct_Distance (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_null (context);
 	  return;
       }
+    if (argc == 3)
+      {
+	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  use_ellipsoid = sqlite3_value_int (argv[2]);
+	  if (use_ellipsoid != 0)
+	      use_ellipsoid = 1;
+      }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
     geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
@@ -14833,12 +14859,114 @@ fnct_Distance (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
+	  if (use_ellipsoid >= 0)
+	    {
+		/* attempting to identify the corresponding ellipsoid */
+		if (getEllipsoidParams (sqlite, geo1->Srid, &a, &b, &rf))
+		  {
+#ifdef GEOS_ADVANCED
+	/* GEOS advanced features support is strictly required */
+		      shortest = gaiaShortestLine (geo1, geo2);
+		      if (shortest == NULL)
+			  sqlite3_result_null (context);
+		      else if (shortest->FirstLinestring == NULL)
+			{
+			    gaiaFreeGeomColl (shortest);
+			    sqlite3_result_null (context);
+			}
+		      else
+			{
+			    /* computes the metric distance */
+			    double x0;
+			    double y0;
+			    double x1;
+			    double y1;
+			    double z;
+			    double m;
+			    gaiaLinestringPtr ln = shortest->FirstLinestring;
+			    dist = -1.0;
+			    if (ln->Points == 2)
+			      {
+				  if (ln->DimensionModel == GAIA_XY_Z)
+				    {
+					gaiaGetPointXYZ (ln->Coords, 0, &x0,
+							 &y0, &z);
+				    }
+				  else if (ln->DimensionModel == GAIA_XY_M)
+				    {
+					gaiaGetPointXYM (ln->Coords, 0, &x0,
+							 &y0, &m);
+				    }
+				  else if (ln->DimensionModel == GAIA_XY_Z_M)
+				    {
+					gaiaGetPointXYZM (ln->Coords, 0, &x0,
+							  &y0, &z, &m);
+				    }
+				  else
+				    {
+					gaiaGetPoint (ln->Coords, 0, &x0, &y0);
+				    }
+				  if (ln->DimensionModel == GAIA_XY_Z)
+				    {
+					gaiaGetPointXYZ (ln->Coords, 1, &x1,
+							 &y1, &z);
+				    }
+				  else if (ln->DimensionModel == GAIA_XY_M)
+				    {
+					gaiaGetPointXYM (ln->Coords, 1, &x1,
+							 &y1, &m);
+				    }
+				  else if (ln->DimensionModel == GAIA_XY_Z_M)
+				    {
+					gaiaGetPointXYZM (ln->Coords, 1, &x1,
+							  &y1, &z, &m);
+				    }
+				  else
+				    {
+					gaiaGetPoint (ln->Coords, 1, &x1, &y1);
+				    }
+				  if (use_ellipsoid)
+				      dist =
+					  gaiaGeodesicDistance (a, b, rf, x0,
+								y0, x1, y1);
+				  else
+				    {
+					a = 6378137.0;
+					rf = 298.257223563;
+					b = (a * (1.0 - (1.0 / rf)));
+					dist =
+					    gaiaGreatCircleDistance (a, b, x0,
+								     y0, x1,
+								     y1);
+				    }
+				  if (dist < 0.0)
+				    {
+					/* invalid distance */
+					sqlite3_result_null (context);
+				    }
+				  else
+				      sqlite3_result_double (context, dist);
+			      }
+			    else
+				sqlite3_result_null (context);
+			    gaiaFreeGeomColl (shortest);
+			}
+#else
+	/* GEOS advanced features support unavailable */
+		      sqlite3_result_null (context);
+#endif
+		  }
+		else
+		    sqlite3_result_null (context);
+		goto stop;
+	    }
 	  ret = gaiaGeomCollDistance (geo1, geo2, &dist);
 	  if (!ret)
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, dist);
       }
+  stop:
     gaiaFreeGeomColl (geo1);
     gaiaFreeGeomColl (geo2);
 }
@@ -20470,7 +20598,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
-	  if (get_ellipse_params (sqlite, geo->Srid, &a, &b, &rf))
+	  if (getEllipsoidParams (sqlite, geo->Srid, &a, &b, &rf))
 	    {
 		line = geo->FirstLinestring;
 		while (line)
@@ -20572,7 +20700,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 	sqlite3_result_null (context);
     else
       {
-	  if (get_ellipse_params (sqlite, geo->Srid, &a, &b, &rf))
+	  if (getEllipsoidParams (sqlite, geo->Srid, &a, &b, &rf))
 	    {
 		line = geo->FirstLinestring;
 		while (line)
@@ -21830,7 +21958,11 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     0, 0);
     sqlite3_create_function (db, "GLength", 1, SQLITE_ANY, 0, fnct_Length, 0,
 			     0);
+    sqlite3_create_function (db, "GLength", 2, SQLITE_ANY, 0, fnct_Length, 0,
+			     0);
     sqlite3_create_function (db, "ST_Length", 1, SQLITE_ANY, 0, fnct_Length,
+			     0, 0);
+    sqlite3_create_function (db, "ST_Length", 2, SQLITE_ANY, 0, fnct_Length,
 			     0, 0);
     sqlite3_create_function (db, "Area", 1, SQLITE_ANY, 0, fnct_Area, 0, 0);
     sqlite3_create_function (db, "ST_Area", 1, SQLITE_ANY, 0, fnct_Area, 0, 0);
@@ -21909,7 +22041,11 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     0, 0);
     sqlite3_create_function (db, "Distance", 2, SQLITE_ANY, 0, fnct_Distance,
 			     0, 0);
+    sqlite3_create_function (db, "Distance", 3, SQLITE_ANY, 0, fnct_Distance,
+			     0, 0);
     sqlite3_create_function (db, "ST_Distance", 2, SQLITE_ANY, 0,
+			     fnct_Distance, 0, 0);
+    sqlite3_create_function (db, "ST_Distance", 3, SQLITE_ANY, 0,
 			     fnct_Distance, 0, 0);
     sqlite3_create_function (db, "PtDistWithin", 3, SQLITE_ANY, 0,
 			     fnct_PtDistWithin, 0, 0);

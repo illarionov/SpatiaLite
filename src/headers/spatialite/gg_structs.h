@@ -55,6 +55,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define _GG_STRUCTS_H
 #endif
 
+#include <sys/types.h>
+
 #ifdef __cplusplus
 extern "C"
 {
