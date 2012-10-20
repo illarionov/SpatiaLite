@@ -13579,24 +13579,36 @@ fnct_IsValid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
-fnct_Length (sqlite3_context * context, int argc, sqlite3_value ** argv)
+length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
+	       int is_perimeter)
 {
-/* SQL function:
-/ GLength(BLOB encoded GEOMETRYCOLLECTION)
-/
-/ returns  the total length for current geometry 
-/ or NULL if any error is encountered
-*/
+/* common implementation supporting both ST_Length and ST_Perimeter */
     unsigned char *p_blob;
     int n_bytes;
     double length = 0.0;
     int ret;
+    int use_ellipsoid = -1;
+    double a;
+    double b;
+    double rf;
     gaiaGeomCollPtr geo = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
 	  sqlite3_result_null (context);
 	  return;
+      }
+    if (argc == 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  use_ellipsoid = sqlite3_value_int (argv[1]);
+	  if (use_ellipsoid != 0)
+	      use_ellipsoid = 1;
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
@@ -13605,13 +13617,196 @@ fnct_Length (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
-	  ret = gaiaGeomCollLength (geo, &length);
+	  if (use_ellipsoid >= 0)
+	    {
+		/* attempting to identify the corresponding ellipsoid */
+		if (getEllipsoidParams (sqlite, geo->Srid, &a, &b, &rf))
+		  {
+		      double l;
+		      int ib;
+		      gaiaLinestringPtr line;
+		      gaiaPolygonPtr polyg;
+		      gaiaRingPtr ring;
+		      if (use_ellipsoid)
+			{
+			    /* measuring on the Ellipsoid */
+			    if (!is_perimeter)
+			      {
+				  line = geo->FirstLinestring;
+				  while (line)
+				    {
+					/* Linestrings */
+					l = gaiaGeodesicTotalLength (a, b, rf,
+								     line->DimensionModel,
+								     line->
+								     Coords,
+								     line->
+								     Points);
+					if (l < 0.0)
+					  {
+					      length = -1.0;
+					      break;
+					  }
+					length += l;
+					line = line->Next;
+				    }
+			      }
+			    if (length >= 0)
+			      {
+				  if (is_perimeter)
+				    {
+					/* Polygons */
+					polyg = geo->FirstPolygon;
+					while (polyg)
+					  {
+					      /* exterior Ring */
+					      ring = polyg->Exterior;
+					      l = gaiaGeodesicTotalLength (a, b,
+									   rf,
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
+					      if (l < 0.0)
+						{
+						    length = -1.0;
+						    break;
+						}
+					      length += l;
+					      for (ib = 0;
+						   ib < polyg->NumInteriors;
+						   ib++)
+						{
+						    /* interior Rings */
+						    ring =
+							polyg->Interiors + ib;
+						    l = gaiaGeodesicTotalLength
+							(a, b, rf,
+							 ring->DimensionModel,
+							 ring->Coords,
+							 ring->Points);
+						    if (l < 0.0)
+						      {
+							  length = -1.0;
+							  break;
+						      }
+						    length += l;
+						}
+					      if (length < 0.0)
+						  break;
+					      polyg = polyg->Next;
+					  }
+				    }
+			      }
+			}
+		      else
+			{
+			    /* measuring on the Great Circle */
+			    if (!is_perimeter)
+			      {
+				  line = geo->FirstLinestring;
+				  while (line)
+				    {
+					/* Linestrings */
+					length +=
+					    gaiaGreatCircleTotalLength (a, b,
+									line->DimensionModel,
+									line->
+									Coords,
+									line->
+									Points);
+					line = line->Next;
+				    }
+			      }
+			    if (length >= 0)
+			      {
+				  if (is_perimeter)
+				    {
+					/* Polygons */
+					polyg = geo->FirstPolygon;
+					while (polyg)
+					  {
+					      /* exterior Ring */
+					      ring = polyg->Exterior;
+					      length +=
+						  gaiaGreatCircleTotalLength (a,
+									      b,
+									      ring->
+									      DimensionModel,
+									      ring->Coords,
+									      ring->Points);
+					      for (ib = 0;
+						   ib < polyg->NumInteriors;
+						   ib++)
+						{
+						    /* interior Rings */
+						    ring =
+							polyg->Interiors + ib;
+						    length +=
+							gaiaGreatCircleTotalLength
+							(a, b,
+							 ring->DimensionModel,
+							 ring->Coords,
+							 ring->Points);
+						}
+					      polyg = polyg->Next;
+					  }
+				    }
+			      }
+			}
+		      if (length < 0.0)
+			{
+			    /* invalid distance */
+			    sqlite3_result_null (context);
+			}
+		      else
+			  sqlite3_result_double (context, length);
+		  }
+		else
+		    sqlite3_result_null (context);
+		goto stop;
+	    }
+	  ret = gaiaGeomCollLengthOrPerimeter (geo, is_perimeter, &length);
 	  if (!ret)
 	      sqlite3_result_null (context);
 	  else
 	      sqlite3_result_double (context, length);
       }
+  stop:
     gaiaFreeGeomColl (geo);
+}
+
+static void
+fnct_Length (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_Length(BLOB encoded GEOMETRYCOLLECTION)
+/ ST_Length(BLOB encoded GEOMETRYCOLLECTION, Boolean use_ellipsoid)
+/
+/ returns  the total length for current geometry 
+/ or NULL if any error is encountered
+/
+/ Please note: starting since 4.0.0 this function will ignore
+/ any Polygon (only Linestrings will be considered)
+/
+*/
+    length_common (context, argc, argv, 0);
+}
+
+static void
+fnct_Perimeter (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ST_Perimeter(BLOB encoded GEOMETRYCOLLECTION)
+/ ST_Perimeter(BLOB encoded GEOMETRYCOLLECTION, Boolean use_ellipsoid)
+/
+/ returns  the total perimeter length for current geometry 
+/ or NULL if any error is encountered
+/
+/ Please note: starting since 4.0.0 this function will ignore
+/ any Linestring (only Polygons will be considered)
+/
+*/
+    length_common (context, argc, argv, 1);
 }
 
 static void
@@ -14865,7 +15060,7 @@ fnct_Distance (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		if (getEllipsoidParams (sqlite, geo1->Srid, &a, &b, &rf))
 		  {
 #ifdef GEOS_ADVANCED
-	/* GEOS advanced features support is strictly required */
+		      /* GEOS advanced features support is strictly required */
 		      shortest = gaiaShortestLine (geo1, geo2);
 		      if (shortest == NULL)
 			  sqlite3_result_null (context);
@@ -14952,7 +15147,7 @@ fnct_Distance (sqlite3_context * context, int argc, sqlite3_value ** argv)
 			    gaiaFreeGeomColl (shortest);
 			}
 #else
-	/* GEOS advanced features support unavailable */
+		      /* GEOS advanced features support unavailable */
 		      sqlite3_result_null (context);
 #endif
 		  }
@@ -21964,6 +22159,14 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     0, 0);
     sqlite3_create_function (db, "ST_Length", 2, SQLITE_ANY, 0, fnct_Length,
 			     0, 0);
+    sqlite3_create_function (db, "Perimeter", 1, SQLITE_ANY, 0, fnct_Perimeter,
+			     0, 0);
+    sqlite3_create_function (db, "Perimeter", 2, SQLITE_ANY, 0, fnct_Perimeter,
+			     0, 0);
+    sqlite3_create_function (db, "ST_Perimeter", 1, SQLITE_ANY, 0,
+			     fnct_Perimeter, 0, 0);
+    sqlite3_create_function (db, "ST_Perimeter", 2, SQLITE_ANY, 0,
+			     fnct_Perimeter, 0, 0);
     sqlite3_create_function (db, "Area", 1, SQLITE_ANY, 0, fnct_Area, 0, 0);
     sqlite3_create_function (db, "ST_Area", 1, SQLITE_ANY, 0, fnct_Area, 0, 0);
     sqlite3_create_function (db, "Centroid", 1, SQLITE_ANY, 0, fnct_Centroid,

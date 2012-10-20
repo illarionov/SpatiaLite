@@ -2338,6 +2338,20 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_geos_tests/st_length6.testcase \
 	sql_stmt_geos_tests/st_length7.testcase \
 	sql_stmt_geos_tests/st_length8.testcase \
+	sql_stmt_geos_tests/st_length9.testcase \
+	sql_stmt_geos_tests/st_length10.testcase \
+	sql_stmt_geos_tests/st_length11.testcase \
+	sql_stmt_geos_tests/st_perimeter1.testcase \
+	sql_stmt_geos_tests/st_perimeter2.testcase \
+	sql_stmt_geos_tests/st_perimeter3.testcase \
+	sql_stmt_geos_tests/st_perimeter4.testcase \
+	sql_stmt_geos_tests/st_perimeter5.testcase \
+	sql_stmt_geos_tests/st_perimeter6.testcase \
+	sql_stmt_geos_tests/st_perimeter7.testcase \
+	sql_stmt_geos_tests/st_perimeter8.testcase \
+	sql_stmt_geos_tests/st_perimeter9.testcase \
+	sql_stmt_geos_tests/st_perimeter10.testcase \
+	sql_stmt_geos_tests/st_perimeter11.testcase \
 	sql_stmt_tests/st_m1.testcase \
 	sql_stmt_tests/st_m2.testcase \
 	sql_stmt_tests/st_m3.testcase \

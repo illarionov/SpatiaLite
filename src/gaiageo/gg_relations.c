@@ -385,6 +385,34 @@ gaiaGeomCollLength (gaiaGeomCollPtr geom, double *xlength)
 }
 
 GAIAGEO_DECLARE int
+gaiaGeomCollLengthOrPerimeter (gaiaGeomCollPtr geom, int perimeter,
+			       double *xlength)
+{
+/* computes the total length or perimeter for this Geometry */
+    double length;
+    int ret;
+    GEOSGeometry *g;
+    int mode = GAIA2GEOS_ONLY_LINESTRINGS;
+    if (perimeter)
+	mode = GAIA2GEOS_ONLY_POLYGONS;
+    if (!geom)
+	return 0;
+    if (gaiaIsToxic (geom))
+	return 0;
+    g = gaiaToGeosSelective (geom, mode);
+    if (g == NULL)
+      {
+	  *xlength = 0.0;
+	  return 1;
+      }
+    ret = GEOSLength (g, &length);
+    GEOSGeom_destroy (g);
+    if (ret)
+	*xlength = length;
+    return ret;
+}
+
+GAIAGEO_DECLARE int
 gaiaGeomCollArea (gaiaGeomCollPtr geom, double *xarea)
 {
 /* computes the total area for this Geometry */

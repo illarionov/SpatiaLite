@@ -65,6 +65,11 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #define _GG_ADVANCED_H
 #endif
 
+#define GAIA2GEOS_ALL			0
+#define GAIA2GEOS_ONLY_POINTS		1
+#define GAIA2GEOS_ONLY_LINESTRINGS	2
+#define GAIA2GEOS_ONLY_POLYGONS		3
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -188,11 +193,33 @@ extern "C"
 
  \return handle to GEOS Geometry
  
- \sa gaiaFromGeos_XY, gaiaFromGeos_XYZ, gaiaFromGeos_XYM, gaiaFromGeos_XYZM
+ \sa gaiaFromGeos_XY, gaiaFromGeos_XYZ, gaiaFromGeos_XYM, gaiaFromGeos_XYZM,
+  gaiaToGeosSelective
+
+ \note convenience method, simply defaulting to gaiaToGeos(geom, GAIA2GEOS_ALL)
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE void *gaiaToGeos (const gaiaGeomCollPtr gaia);
+
+/**
+ Converts a Geometry object into a GEOS Geometry
+
+ \param gaia pointer to Geometry object
+ \param mode one of GAIA2GEOS_ALL, GAIA2GEOS_ONLY_POINTS,
+  GAIA2GEOS_ONLY_LINESTRINGS or GAIA2GEOS_ONLY_POLYGONS
+
+ \return handle to GEOS Geometry
+ 
+ \sa gaiaFromGeos_XY, gaiaFromGeos_XYZ, gaiaFromGeos_XYM, gaiaFromGeos_XYZM
+
+ \note if the mode argument is not GAIA2GEOS_ALL only elementary geometries
+  of the selected type will be passed to GEOS, ignoring any other.
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE void *gaiaToGeosSelective (const gaiaGeomCollPtr gaia,
+					       int mode);
 
 /**
  Converts a GEOS Geometry into a Geometry object [XY dims]
@@ -335,12 +362,31 @@ extern "C"
 
  \return 0 on failure: any other value on success
 
- \sa gaiaGeomCollArea, gaiaMeasureLength
+ \sa gaiaGeomCollArea, gaiaMeasureLength, gaiaGeomCollLengthOrPerimeter
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE int gaiaGeomCollLength (gaiaGeomCollPtr geom,
 					    double *length);
+
+/**
+ Measures the total Length or Perimeter for a Geometry object
+
+ \param geom pointer to Geometry object
+ \param perimeter if TRUE only Polygons will be considered, ignoring any Linesting
+ \n the opposite if FALSE (considering only Linestrings and ignoring any Polygon)
+ \param length on completion this variable will contain the measured length
+  or perimeter
+
+ \return 0 on failure: any other value on success
+
+ \sa gaiaGeomCollArea, gaiaMeasureLength, gaiaGeomCollLength
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE int gaiaGeomCollLengthOrPerimeter (gaiaGeomCollPtr geom,
+						       int perimeter,
+						       double *length);
 /**
  Measures the total Area for a Geometry object
 
