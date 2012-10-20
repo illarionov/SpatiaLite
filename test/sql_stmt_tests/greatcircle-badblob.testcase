@@ -1,4 +1,4 @@
-great circle distance - bad blob
+great circle length - bad blob
 :memory:
 SELECT GreatCircleLength(zeroblob(34));
 1 # rows

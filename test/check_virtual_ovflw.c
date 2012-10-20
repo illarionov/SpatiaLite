@@ -57,7 +57,7 @@ int main (int argc, char *argv[])
     char **results;
     int rows;
     int columns;
-    int suffix_len = 128 * 1024;	/* 128 KB suffix */
+    int suffix_len = 16 * 1024;	/* 16 KB suffix */
     char *suffix;
     char *table;
     char *sql;

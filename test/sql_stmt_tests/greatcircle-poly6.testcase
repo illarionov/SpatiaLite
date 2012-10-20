@@ -1,4 +1,4 @@
-great circle distance linestringzm
+great circle length linestringzm
 :memory:
 SELECT GreatCircleLength(GeomFromText("LINESTRINGZM(0 0 2 3, 0 1 3 4, 0 0 2 3)", 4326));
 1 # rows

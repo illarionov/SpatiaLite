@@ -1,4 +1,4 @@
-great circle distance polygonZM, Airy
+great circle length polygonZM, Airy
 :memory:
 SELECT GreatCircleLength(GeomFromText("POLYGONZM((0 0 2 3, 1 0 3 4, 0 0 2 3, 0 0 2 3))", 4188));
 1 # rows

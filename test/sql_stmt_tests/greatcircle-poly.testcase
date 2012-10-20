@@ -1,4 +1,4 @@
-great circle distance polygon
+great circle length polygon
 :memory:
 SELECT GreatCircleLength(GeomFromText("POLYGON((0 0, 1 0, 0 0, 0 0))", 4326));
 1 # rows

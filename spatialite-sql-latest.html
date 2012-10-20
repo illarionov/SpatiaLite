@@ -1102,7 +1102,7 @@ a Geometry will be returned representing the MBR for the corresponding GARS area
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>return a Point containing the last Point of c</td></tr>
-			<tr><td><b>Length</b></td>
+			<tr><td rowspan="2"><b>Length</b></td>
 				<td>GLength( c <i>Curve</i> ) : <i>Double precision</i>
 					<table><tbody><tr><td bgcolor="#d080ff">
 						OpenGis name for this function is <b>Length()</b>, but it conflicts with an SQLite reserved keyword
@@ -1111,7 +1111,34 @@ a Geometry will be returned representing the MBR for the corresponding GARS area
 				</td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
-				<td>return the length of c</td></tr>
+				<td>return the length of c<hr>
+Starting since v.4.0.0 this function will simply consider Linestrings and MultiLinestrings, ignoring any Polygon or MultiPolygon</td></tr>
+			<tr><td>GLength( c <i>Curve</i> , use_ellipsoid <i>Boolean</i> ) : <i>Double precision</i><hr>
+					ST_Length( c <i>Curve</i> , use_ellipsoid <i>Boolean</i> ) : <i>Double precision</i>
+				</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0b0">GEOS-advanced</td>
+				<td>return the length of c (measured in meters).<br>
+If the <b>use_ellipsoid</b> argument is set to <b>TRUE</b> the precise (but slower) length will be computed on the Ellipsoid, otherwise will be computed on the Great Cicle (approximative, but faster).<hr>
+This function only supports Long/Lat coordinates, and will return NULL for any planar CRS<hr>
+Starting since v.4.0.0 this function will simply consider Linestrings and MultiLinestrings, ignoring any Polygon or MultiPolygon</td></tr>
+			<tr><td rowspan="2"><b>Perimeter</b></td>
+				<td>Perimeter( s <i>Surface</i> ) : <i>Double precision</i>
+					ST_Perimeter( s <i>Surface</i> ) : <i>Double precision</i>
+				</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0d0">GEOS</td>
+				<td>return the perimeter of s<hr>
+Starting since v.4.0.0 this function will simply consider Polygons and MultiPolygons, ignoring any Linestring or MultiLinestring</td></tr>
+			<tr><td>Perimeter( s <i>Surface</i> , use_ellipsoid <i>Boolean</i> ) : <i>Double precision</i><hr>
+					ST_Perimeter( s <i>Surface</i> , use_ellipsoid <i>Boolean</i> ) : <i>Double precision</i>
+				</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0b0">GEOS-advanced</td>
+				<td>return the perimeter of s (measured in meters).<br>
+If the <b>use_ellipsoid</b> argument is set to <b>TRUE</b> the precise (but slower) perimeter will be computed on the Ellipsoid, otherwise will be computed on the Great Cicle (approximative, but faster).<hr>
+This function only supports Long/Lat coordinates, and will return NULL for any planar CRS<hr>
+Starting since v.4.0.0 this function will simply consider Polygons and MultiPolygons, ignoring any Linestring or MultiLinestring</td></tr>
 			<tr><td><b>Geodesic Length</b></td>
 				<td>GeodesicLength( c <i>Curve</i> ) : <i>Double precision</i></td>
 				<td></td>
@@ -1425,12 +1452,19 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 				<th bgcolor="#d0d0d0">OGC<br>defined</th>
 				<th bgcolor="#d0d0d0">required<br>module</th>
 				<th bgcolor="#d0d0d0">Summary</th></tr>
-			<tr><td><b>Distance</b></td>
+			<tr><td rowspan="2"><b>Distance</b></td>
 				<td>Distance( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Double precision</i><hr>
 					ST_Distance( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Double precision</i></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
-				<td>return the distance between geom1 and geom2</td></tr>
+				<td>return the distance between geom1 and geom2 (always measured in CRS units).</td></tr>
+			<tr><td>Distance( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> , use_ellipsoid <i>Boolean</i> ) : <i>Double precision</i><hr>
+					ST_Distance( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> , use_ellipsoid <i>Boolean</i> ) : <i>Double precision</i></td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0b0">GEOS-advanced</td>
+				<td>return the distance between geom1 and geom2 (measured in meters).<br>
+If the <b>use_ellipsoid</b> argument is set to <b>TRUE</b> the precise (but slower) distance will be computed on the Ellipsoid, otherwise will be computed on the Great Cicle (approximative, but faster).<hr>
+This function only supports Long/Lat coordinates, and will return NULL for any planar CRS</td></tr>
 			<tr><td><b>PtDistWithin</b></td>
 				<td>PtDistWithin( geom1 <i>Geometry</i> , geom2 <i>Geometry</i>, range <i>Double precision</i> [, use_spheroid <i>Integer</i> ] ) 
 					: <i>Integer</i></td>

@@ -1113,6 +1113,18 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_geos_tests/distance8.testcase \
 	sql_stmt_geos_tests/distance9.testcase \
 	sql_stmt_geos_tests/distance10.testcase \
+	sql_stmt_geosadvanced_tests/distance_geogr1.testcase \
+	sql_stmt_geosadvanced_tests/distance_geogr2.testcase \
+	sql_stmt_geosadvanced_tests/distance_geogr3.testcase \
+	sql_stmt_geosadvanced_tests/distance_geogr4.testcase \
+	sql_stmt_geosadvanced_tests/distance_geogr5.testcase \
+	sql_stmt_geosadvanced_tests/distance_geogr6.testcase \
+	sql_stmt_geosadvanced_tests/distance_geogr7.testcase \
+	sql_stmt_geosadvanced_tests/distance_geogr8.testcase \
+	sql_stmt_geosadvanced_tests/distance_geogr9.testcase \
+	sql_stmt_geosadvanced_tests/distance_geogr10.testcase \
+	sql_stmt_geosadvanced_tests/distance_geogr11.testcase \
+	sql_stmt_geosadvanced_tests/distance_geogr12.testcase \
 	sql_stmt_tests/dm_m.testcase \
 	sql_stmt_tests/DSC_1467.JPG \
 	sql_stmt_tests/DSCN0042.JPG \
@@ -2681,6 +2693,13 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_geos_tests/st_length9.testcase \
 	sql_stmt_geos_tests/st_length10.testcase \
 	sql_stmt_geos_tests/st_length11.testcase \
+	sql_stmt_geos_tests/st_length12.testcase \
+	sql_stmt_geos_tests/st_length13.testcase \
+	sql_stmt_geos_tests/st_length14.testcase \
+	sql_stmt_geos_tests/st_length15.testcase \
+	sql_stmt_geos_tests/st_length16.testcase \
+	sql_stmt_geos_tests/st_length17.testcase \
+	sql_stmt_geos_tests/st_length18.testcase \
 	sql_stmt_geos_tests/st_perimeter1.testcase \
 	sql_stmt_geos_tests/st_perimeter2.testcase \
 	sql_stmt_geos_tests/st_perimeter3.testcase \
@@ -2692,6 +2711,13 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_geos_tests/st_perimeter9.testcase \
 	sql_stmt_geos_tests/st_perimeter10.testcase \
 	sql_stmt_geos_tests/st_perimeter11.testcase \
+	sql_stmt_geos_tests/st_perimeter12.testcase \
+	sql_stmt_geos_tests/st_perimeter13.testcase \
+	sql_stmt_geos_tests/st_perimeter14.testcase \
+	sql_stmt_geos_tests/st_perimeter15.testcase \
+	sql_stmt_geos_tests/st_perimeter16.testcase \
+	sql_stmt_geos_tests/st_perimeter17.testcase \
+	sql_stmt_geos_tests/st_perimeter18.testcase \
 	sql_stmt_tests/st_m1.testcase \
 	sql_stmt_tests/st_m2.testcase \
 	sql_stmt_tests/st_m3.testcase \
