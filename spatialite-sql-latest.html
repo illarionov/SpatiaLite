@@ -1501,6 +1501,13 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 				<td>return a geometric object that is the convex hull of geom</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p14b">SQL functions that implement spatial operators<br>[GEOS advanced features]</a></h3></td></tr>
+			<tr><td><b>HausdorffDistance</b></td>
+				<td>HausdorffDistance( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Double precision</i><hr>
+					ST_HausdorffDistance( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Double precision</i></td>
+				<td>X</td>
+				<td align="center" bgcolor="#f0d0b0">GEOS-advanced</td>
+				<td>return the Hausdorff distance between geom1 and geom2<br>
+<a href="http://en.wikipedia.org/wiki/Hausdorff_distance">learn more</a></td></tr>
 			<tr><td><b>OffestCurve</b></td>
 				<td>OffsetCurve( geom <i>Curve</i> , radius <i>Double precision</i> , left_or_right <i>Integer</i> ) : <i>Curve</i><hr>
 					ST_OffsetCurve( geom <i>Curve</i> , radius <i>Double precision</i> , left_or_right <i>Integer</i> ) : <i>Curve</i></td>
@@ -1830,6 +1837,30 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
                                         Removes all consecutive points falling on the same cell.<br>
                                         All collapsed geometries will be stripped from the returned Geometry.<br>
 					NULL is returned on failure.</td></tr>
+			<tr><td><b>GeoHash</b></td>
+				<td>GeoHash( geom <i>Geometry</i> ) : <i>String</i><hr>
+					ST_GeoHash( geom <i>Geometry</i> ) : <i>String</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>Return a GeoHash representation (geohash.org) of the geometry.<br>
+                                    A GeoHash encodes a point into a text form that is sortable and searchable based on prefixing.<hr>
+                                    ST_GeoHash will not work with geometries that are not in geographic (lon/lat) coordinates</td></tr>
+			<tr><td><b>MaxDistance</b></td>
+				<td>MaxDistance( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Double precision</i><hr>
+					ST_MaxDistance( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Double precision</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>return the max distance between geom1 and geom2</td></tr>
+			<tr><td><b>3DDistance</b></td>
+				<td>ST_3DDistance( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Double precision</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>return the 3D-distance between geom1 and geom2 (Z coordinates will be considered)</td></tr>
+			<tr><td><b>3DMaxDistance</b></td>
+				<td>ST_3DMaxDistance( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Double precision</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>return the max 3D-distance between geom1 and geom2 (Z coordinates will be considered)</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p15">SQL functions for coordinate transformations</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
@@ -1888,7 +1919,9 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 					RotateCoordinates( geom <i>Geometry</i> , angleInDegrees <i>Double precision</i> ) : <i>Geometry</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
-				<td>return a geometric object obtained by rotating coordinates according to angleInDegrees value</td></tr>
+				<td>return a geometric object obtained by rotating coordinates according to angleInDegrees value.<hr>
+Positive angle = clockwise rotation.<br>
+Negative angle = counterclockwise rotation.</td></tr>
 			<tr><td><b>ReflectCoords</b><br><b>ReflectCoordinates</b></td>
 				<td>ReflectCoords( geom <i>Geometry</i> , xAxis <i>Integer</i> , yAxis <i>Integer</i> ) : <i>Geometry</i><hr>
 					ReflectCoordinates( geom <i>Geometry</i> , xAxis <i>Integer</i> , yAxis <i>Integer</i> ) : <i>Geometry</i></td>
