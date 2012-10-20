@@ -1845,6 +1845,19 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 				<td>Return a GeoHash representation (geohash.org) of the geometry.<br>
                                     A GeoHash encodes a point into a text form that is sortable and searchable based on prefixing.<hr>
                                     ST_GeoHash will not work with geometries that are not in geographic (lon/lat) coordinates</td></tr>
+			<tr><td><b>AsX3D</b></td>
+				<td>AsX3D( geom <i>Geometry</i> ) : <i>String</i><br>
+				AsX3D( geom <i>Geometry</i> , precision <i>Integer</i> ) : <i>String</i><br>
+				AsX3D( geom <i>Geometry</i> , precision <i>Integer</i> , options <i>Integer</i> ) : <i>String</i><br>
+				AsX3D( geom <i>Geometry</i> , precision <i>Integer</i> , options <i>Integer</i> , refid <i>String</i> ) : <i>String</i><hr>
+				ST_AsX3D( geom <i>Geometry</i> ) : <i>String</i><br>
+				ST_AsX3D( geom <i>Geometry</i> , precision <i>Integer</i> ) : <i>String</i><br>
+				ST_AsX3D( geom <i>Geometry</i> , precision <i>Integer</i> , options <i>Integer</i> ) : <i>String</i><br>
+				ST_AsX3D( geom <i>Geometry</i> , precision <i>Integer</i> , options <i>Integer</i> , refid <i>String</i> ) : <i>String</i>
+</td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>Returns a geometry as an X3D XML formatted node element.</td></tr>
 			<tr><td><b>MaxDistance</b></td>
 				<td>MaxDistance( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Double precision</i><hr>
 					ST_MaxDistance( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Double precision</i></td>
