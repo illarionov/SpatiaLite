@@ -1319,17 +1319,20 @@ mbrc_column (sqlite3_vtab_cursor * pCursor, sqlite3_context * pContext,
 	  if (column == 1)
 	    {
 		/* the MBR column */
-		char envelope[1024];
-		sprintf (envelope,
-			 "POLYGON((%1.2f %1.2f, %1.2f %1.2f, %1.2f %1.2f, %1.2f %1.2f, %1.2f %1.2f))",
-			 cursor->current_cell->minx, cursor->current_cell->miny,
-			 cursor->current_cell->maxx, cursor->current_cell->miny,
-			 cursor->current_cell->maxx, cursor->current_cell->maxy,
-			 cursor->current_cell->minx, cursor->current_cell->maxy,
-			 cursor->current_cell->minx,
-			 cursor->current_cell->miny);
+		char *envelope = sqlite3_mprintf ("POLYGON(("
+						  "%1.2f %1.2f, %1.2f %1.2f, %1.2f %1.2f, %1.2f %1.2f, %1.2f %1.2f))",
+						  cursor->current_cell->minx,
+						  cursor->current_cell->miny,
+						  cursor->current_cell->maxx,
+						  cursor->current_cell->miny,
+						  cursor->current_cell->maxx,
+						  cursor->current_cell->maxy,
+						  cursor->current_cell->minx,
+						  cursor->current_cell->maxy,
+						  cursor->current_cell->minx,
+						  cursor->current_cell->miny);
 		sqlite3_result_text (pContext, envelope, strlen (envelope),
-				     SQLITE_TRANSIENT);
+				     sqlite3_free);
 	    }
       }
     return SQLITE_OK;

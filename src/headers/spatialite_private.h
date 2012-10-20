@@ -156,6 +156,9 @@ extern "C"
 	doComputeFieldInfos (void *p_sqlite, const char *table,
 			     const char *column, int stat_type, void *p_lyr);
 
+    SPATIALITE_PRIVATE void
+	getProjParams (void * p_sqlite, int srid, char **params);
+
 #ifdef __cplusplus
 }
 #endif

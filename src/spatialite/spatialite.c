@@ -833,9 +833,19 @@ fnct_RTreeAlign (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	      && *(rtree_table + strlen (rtree_table) - 1) == '"')
 	    {
 		/* earlier versions may pass an already quoted name */
+		char *dequoted_table_name;
 		len = strlen (rtree_table);
 		table_name = malloc (len + 1);
 		strcpy (table_name, rtree_table);
+		dequoted_table_name = gaiaDequotedSql (table_name);
+		free (table_name);
+		if (dequoted_table_name == NULL)
+		  {
+		      sqlite3_result_int (context, -1);
+		      return;
+		  }
+		table_name = gaiaDoubleQuotedSql (dequoted_table_name);
+		free (dequoted_table_name);
 	    }
 	  else
 	      table_name = gaiaDoubleQuotedSql (rtree_table);
@@ -3427,8 +3437,14 @@ registerVirtual (sqlite3 * sqlite, const char *table)
       }
     for (i = 1; i <= rows; i++)
       {
-	  strcpy (gtype, results[(i * columns)]);
-	  srid = atoi (results[(i * columns) + 1]);
+	  if (results[(i * columns)] == NULL)
+	      *gtype = '\0';
+	  else
+	      strcpy (gtype, results[(i * columns)]);
+	  if (results[(i * columns) + 1] == NULL)
+	      srid = 0;
+	  else
+	      srid = atoi (results[(i * columns) + 1]);
       }
     sqlite3_free_table (results);
 
@@ -5590,21 +5606,26 @@ fnct_AsSvg3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 
 /* END of Klaus Foerster AsSvg() implementation */
 
-static void
-proj_params (sqlite3 * sqlite, int srid, char *proj_params)
+SPATIALITE_PRIVATE void
+getProjParams (void *p_sqlite, int srid, char **proj_params)
 {
 /* retrives the PROJ params from SPATIAL_SYS_REF table, if possible */
-    char sql[256];
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    char *sql;
     char **results;
     int rows;
     int columns;
     int i;
     int ret;
+    int len;
+    const char *proj4text;
     char *errMsg = NULL;
-    *proj_params = '\0';
-    sprintf (sql,
-	     "SELECT proj4text FROM spatial_ref_sys WHERE srid = %d", srid);
+    *proj_params = NULL;
+    sql =
+	sqlite3_mprintf
+	("SELECT proj4text FROM spatial_ref_sys WHERE srid = %d", srid);
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
+    sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
 	  spatialite_e ("unknown SRID: %d\t<%s>\n", srid, errMsg);
@@ -5612,8 +5633,16 @@ proj_params (sqlite3 * sqlite, int srid, char *proj_params)
 	  return;
       }
     for (i = 1; i <= rows; i++)
-	strcpy (proj_params, results[(i * columns)]);
-    if (*proj_params == '\0')
+      {
+	  proj4text = results[(i * columns)];
+	  if (proj4text != NULL)
+	    {
+		len = strlen (proj4text);
+		*proj_params = malloc (len + 1);
+		strcpy (*proj_params, proj4text);
+	    }
+      }
+    if (*proj_params == NULL)
 	spatialite_e ("unknown SRID: %d\n", srid);
     sqlite3_free_table (results);
 }
@@ -5634,8 +5663,8 @@ fnct_AsKml1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaOutBuffer out_buf;
     gaiaGeomCollPtr geo = NULL;
     gaiaGeomCollPtr geo_wgs84;
-    char proj_from[2048];
-    char proj_to[2048];
+    char *proj_from;
+    char *proj_to;
     int precision = 15;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
@@ -5673,14 +5702,20 @@ fnct_AsKml1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  else
 	    {
 		/* attempting to reproject into WGS84 */
-		proj_params (sqlite, geo->Srid, proj_from);
-		proj_params (sqlite, 4326, proj_to);
-		if (*proj_to == '\0' || *proj_from == '\0')
+		getProjParams (sqlite, geo->Srid, &proj_from);
+		getProjParams (sqlite, 4326, &proj_to);
+		if (proj_to == NULL || proj_from == NULL)
 		  {
+		      if (proj_from)
+			  free (proj_from);
+		      if (proj_to)
+			  free (proj_to);
 		      sqlite3_result_null (context);
 		      goto stop;
 		  }
 		geo_wgs84 = gaiaTransform (geo, proj_from, proj_to);
+		free (proj_from);
+		free (proj_to);
 		if (!geo_wgs84)
 		  {
 		      sqlite3_result_null (context);
@@ -5729,8 +5764,8 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
     char *desc_malloc = NULL;
     char dummy[128];
     char *xdummy;
-    char proj_from[2048];
-    char proj_to[2048];
+    char *proj_from;
+    char *proj_to;
     int precision = 15;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
@@ -5844,14 +5879,20 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  else
 	    {
 		/* attempting to reproject into WGS84 */
-		proj_params (sqlite, geo->Srid, proj_from);
-		proj_params (sqlite, 4326, proj_to);
-		if (*proj_to == '\0' || *proj_from == '\0')
+		getProjParams (sqlite, geo->Srid, &proj_from);
+		getProjParams (sqlite, 4326, &proj_to);
+		if (proj_to == NULL || proj_from == NULL)
 		  {
+		      if (proj_from != NULL)
+			  free (proj_from);
+		      if (proj_to != NULL)
+			  free (proj_to);
 		      sqlite3_result_null (context);
 		      goto stop;
 		  }
 		geo_wgs84 = gaiaTransform (geo, proj_from, proj_to);
+		free (proj_from);
+		free (proj_to);
 		if (!geo_wgs84)
 		  {
 		      sqlite3_result_null (context);
@@ -12529,15 +12570,15 @@ get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
 / retrieves the PROJ +ellps=xx [+a=xx +b=xx] params 
 /from SPATIAL_SYS_REF table, if possible 
 */
-    char proj4text[2048];
+    char *proj4text;
     char *p_proj;
     char *p_ellps;
     char *p_datum;
     char *p_a;
     char *p_b;
     char *p_end;
-    proj_params (sqlite, srid, proj4text);
-    if (*proj4text == '\0')
+    getProjParams (sqlite, srid, &proj4text);
+    if (proj4text == NULL)
 	return 0;
 /* parsing the proj4text geodesic string */
     p_proj = strstr (proj4text, "+proj=");
@@ -12547,12 +12588,12 @@ get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
     p_b = strstr (proj4text, "+b=");
 /* checking if +proj=longlat is true */
     if (!p_proj)
-	return 0;
+	goto invalid;
     p_end = strchr (p_proj, ' ');
     if (p_end)
 	*p_end = '\0';
     if (strcmp (p_proj + 6, "longlat") != 0)
-	return 0;
+	goto invalid;
     if (p_ellps)
       {
 	  /* trying to retrieve the ellipsoid params by name */
@@ -12560,7 +12601,7 @@ get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
 	  if (p_end)
 	      *p_end = '\0';
 	  if (gaiaEllipseParams (p_ellps + 7, a, b, rf))
-	      return 1;
+	      goto valid;
       }
     else if (p_datum)
       {
@@ -12573,7 +12614,7 @@ get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
 	  if (p_end)
 	      *p_end = '\0';
 	  if (gaiaEllipseParams (p_datum + 7, a, b, rf))
-	      return 1;
+	      goto valid;
       }
     if (p_a && p_b)
       {
@@ -12587,8 +12628,15 @@ get_ellipse_params (sqlite3 * sqlite, int srid, double *a, double *b,
 	  *a = atof (p_a + 3);
 	  *b = atof (p_b + 3);
 	  *rf = 1.0 / ((*a - *b) / *a);
-	  return 1;
+	  goto valid;
       }
+
+  valid:
+    free (proj4text);
+    return 1;
+
+  invalid:
+    free (proj4text);
     return 0;
 }
 
@@ -13269,8 +13317,8 @@ fnct_Transform (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaGeomCollPtr result;
     int srid_from;
     int srid_to;
-    char proj_from[2048];
-    char proj_to[2048];
+    char *proj_from;
+    char *proj_to;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
@@ -13292,18 +13340,22 @@ fnct_Transform (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
-	  *proj_from = '\0';
-	  *proj_to = '\0';
 	  srid_from = geo->Srid;
-	  proj_params (sqlite, srid_from, proj_from);
-	  proj_params (sqlite, srid_to, proj_to);
-	  if (*proj_to == '\0' || *proj_from == '\0')
+	  getProjParams (sqlite, srid_from, &proj_from);
+	  getProjParams (sqlite, srid_to, &proj_to);
+	  if (proj_to == NULL || proj_from == NULL)
 	    {
+		if (proj_from)
+		    free (proj_from);
+		if (proj_to)
+		    free (proj_to);
 		gaiaFreeGeomColl (geo);
 		sqlite3_result_null (context);
 		return;
 	    }
 	  result = gaiaTransform (geo, proj_from, proj_to);
+	  free (proj_from);
+	  free (proj_to);
 	  if (!result)
 	      sqlite3_result_null (context);
 	  else

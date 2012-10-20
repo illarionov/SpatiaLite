@@ -352,34 +352,6 @@ gmlCleanMapDynAlloc (struct gml_data *p_data, int clean_all)
       }
 }
 
-static void
-gml_proj_params (sqlite3 * sqlite, int srid, char *proj_params)
-{
-/* retrives the PROJ params from SPATIAL_SYS_REF table, if possible */
-    char sql[256];
-    char **results;
-    int rows;
-    int columns;
-    int i;
-    int ret;
-    char *errMsg = NULL;
-    *proj_params = '\0';
-    sprintf (sql,
-	     "SELECT proj4text FROM spatial_ref_sys WHERE srid = %d", srid);
-    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("unknown SRID: %d\t<%s>\n", srid, errMsg);
-	  sqlite3_free (errMsg);
-	  return;
-      }
-    for (i = 1; i <= rows; i++)
-	strcpy (proj_params, results[(i * columns)]);
-    if (*proj_params == '\0')
-	spatialite_e ("unknown SRID: %d\n", srid);
-    sqlite3_free_table (results);
-}
-
 static gmlDynamicPolygonPtr
 gml_alloc_dyn_polygon (struct gml_data *p_data)
 {
@@ -2230,8 +2202,8 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
     gaiaGeomCollPtr g;
     gaiaGeomCollPtr g2;
     gaiaGeomCollPtr geom;
-    char proj_from[2048];
-    char proj_to[2048];
+    char *proj_from;
+    char *proj_to;
 
     g = chain;
     while (g)
@@ -2390,10 +2362,9 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 			{
 			    /* we'll try to apply a reprojection */
 #ifndef OMIT_PROJ		/* but only if PROJ.4 is actually available */
-			    gml_proj_params (sqlite_handle, g->Srid, proj_from);
-			    gml_proj_params (sqlite_handle, geom->Srid,
-					     proj_to);
-			    if (*proj_to == '\0' || *proj_from == '\0')
+			    getProjParams (sqlite_handle, g->Srid, &proj_from);
+			    getProjParams (sqlite_handle, geom->Srid, &proj_to);
+			    if (proj_to == NULL || proj_from == NULL)
 				;
 			    else
 			      {
@@ -2403,6 +2374,10 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				  else
 				      delete_g2 = 1;
 			      }
+			    if (proj_from)
+				free (proj_from);
+			    if (proj_to)
+				free (proj_to);
 #endif
 			}
 		      pt = g2->FirstPoint;
@@ -2445,10 +2420,9 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 			{
 			    /* we'll try to apply a reprojection */
 #ifndef OMIT_PROJ		/* but only if PROJ.4 is actually available */
-			    gml_proj_params (sqlite_handle, g->Srid, proj_from);
-			    gml_proj_params (sqlite_handle, geom->Srid,
-					     proj_to);
-			    if (*proj_to == '\0' || *proj_from == '\0')
+			    getProjParams (sqlite_handle, g->Srid, &proj_from);
+			    getProjParams (sqlite_handle, geom->Srid, &proj_to);
+			    if (proj_to == NULL || proj_from == NULL)
 				;
 			    else
 			      {
@@ -2458,6 +2432,10 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				  else
 				      delete_g2 = 1;
 			      }
+			    if (proj_from)
+				free (proj_from);
+			    if (proj_to)
+				free (proj_to);
 #endif
 			}
 		      pt = g2->FirstPoint;
@@ -2505,10 +2483,9 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 			{
 			    /* we'll try to apply a reprojection */
 #ifndef OMIT_PROJ		/* but only if PROJ.4 is actually available */
-			    gml_proj_params (sqlite_handle, g->Srid, proj_from);
-			    gml_proj_params (sqlite_handle, geom->Srid,
-					     proj_to);
-			    if (*proj_to == '\0' || *proj_from == '\0')
+			    getProjParams (sqlite_handle, g->Srid, &proj_from);
+			    getProjParams (sqlite_handle, geom->Srid, &proj_to);
+			    if (proj_to == NULL || proj_from == NULL)
 				;
 			    else
 			      {
@@ -2518,6 +2495,10 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				  else
 				      delete_g2 = 1;
 			      }
+			    if (proj_from)
+				free (proj_from);
+			    if (proj_to)
+				free (proj_to);
 #endif
 			}
 		      ln = g2->FirstLinestring;
@@ -2562,10 +2543,9 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 			{
 			    /* we'll try to apply a reprojection */
 #ifndef OMIT_PROJ		/* but only if PROJ.4 is actually available */
-			    gml_proj_params (sqlite_handle, g->Srid, proj_from);
-			    gml_proj_params (sqlite_handle, geom->Srid,
-					     proj_to);
-			    if (*proj_to == '\0' || *proj_from == '\0')
+			    getProjParams (sqlite_handle, g->Srid, &proj_from);
+			    getProjParams (sqlite_handle, geom->Srid, &proj_to);
+			    if (proj_to == NULL || proj_from == NULL)
 				;
 			    else
 			      {
@@ -2575,6 +2555,10 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				  else
 				      delete_g2 = 1;
 			      }
+			    if (proj_from)
+				free (proj_from);
+			    if (proj_to)
+				free (proj_to);
 #endif
 			}
 		      ln = g2->FirstLinestring;
@@ -2623,10 +2607,9 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 			{
 			    /* we'll try to apply a reprojection */
 #ifndef OMIT_PROJ		/* but only if PROJ.4 is actually available */
-			    gml_proj_params (sqlite_handle, g->Srid, proj_from);
-			    gml_proj_params (sqlite_handle, geom->Srid,
-					     proj_to);
-			    if (*proj_to == '\0' || *proj_from == '\0')
+			    getProjParams (sqlite_handle, g->Srid, &proj_from);
+			    getProjParams (sqlite_handle, geom->Srid, &proj_to);
+			    if (proj_to == NULL || proj_from == NULL)
 				;
 			    else
 			      {
@@ -2636,6 +2619,10 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				  else
 				      delete_g2 = 1;
 			      }
+			    if (proj_from)
+				free (proj_from);
+			    if (proj_to)
+				free (proj_to);
 #endif
 			}
 		      pg = g2->FirstPolygon;
@@ -2691,10 +2678,9 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 			{
 			    /* we'll try to apply a reprojection */
 #ifndef OMIT_PROJ		/* but only if PROJ.4 is actually available */
-			    gml_proj_params (sqlite_handle, g->Srid, proj_from);
-			    gml_proj_params (sqlite_handle, geom->Srid,
-					     proj_to);
-			    if (*proj_to == '\0' || *proj_from == '\0')
+			    getProjParams (sqlite_handle, g->Srid, &proj_from);
+			    getProjParams (sqlite_handle, geom->Srid, &proj_to);
+			    if (proj_to == NULL || proj_from == NULL)
 				;
 			    else
 			      {
@@ -2704,6 +2690,10 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				  else
 				      delete_g2 = 1;
 			      }
+			    if (proj_from)
+				free (proj_from);
+			    if (proj_to)
+				free (proj_to);
 #endif
 			}
 		      pg = g2->FirstPolygon;
@@ -2760,10 +2750,9 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 			{
 			    /* we'll try to apply a reprojection */
 #ifndef OMIT_PROJ		/* but only if PROJ.4 is actually available */
-			    gml_proj_params (sqlite_handle, g->Srid, proj_from);
-			    gml_proj_params (sqlite_handle, geom->Srid,
-					     proj_to);
-			    if (*proj_to == '\0' || *proj_from == '\0')
+			    getProjParams (sqlite_handle, g->Srid, &proj_from);
+			    getProjParams (sqlite_handle, geom->Srid, &proj_to);
+			    if (proj_to == NULL || proj_from == NULL)
 				;
 			    else
 			      {
@@ -2773,6 +2762,10 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				  else
 				      delete_g2 = 1;
 			      }
+			    if (proj_from)
+				free (proj_from);
+			    if (proj_to)
+				free (proj_to);
 #endif
 			}
 		      pt = g2->FirstPoint;
@@ -2839,9 +2832,8 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 			{
 			    /* we'll try to apply a reprojection */
 #ifndef OMIT_PROJ		/* but only if PROJ.4 is actually available */
-			    gml_proj_params (sqlite_handle, g->Srid, proj_from);
-			    gml_proj_params (sqlite_handle, geom->Srid,
-					     proj_to);
+			    getProjParams (sqlite_handle, g->Srid, &proj_from);
+			    getProjParams (sqlite_handle, geom->Srid, &proj_to);
 			    if (*proj_to == '\0' || *proj_from == '\0')
 				;
 			    else
@@ -2852,6 +2844,10 @@ gml_validate_geometry (struct gml_data *p_data, gaiaGeomCollPtr chain,
 				  else
 				      delete_g2 = 1;
 			      }
+			    if (proj_from)
+				free (proj_from);
+			    if (proj_to)
+				free (proj_to);
 #endif
 			}
 		      pt = g2->FirstPoint;
