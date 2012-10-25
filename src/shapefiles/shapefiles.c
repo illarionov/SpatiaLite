@@ -987,9 +987,8 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 		      if (pk_type == SQLITE_TEXT)
 			  sqlite3_bind_text (stmt, 1,
 					     dbf_field->Value->TxtValue,
-					     strlen (dbf_field->
-						     Value->TxtValue),
-					     SQLITE_STATIC);
+					     strlen (dbf_field->Value->
+						     TxtValue), SQLITE_STATIC);
 		      else if (pk_type == SQLITE_FLOAT)
 			  sqlite3_bind_double (stmt, 1,
 					       dbf_field->Value->DblValue);
@@ -1030,8 +1029,8 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->Value->
-						       TxtValue),
+					       strlen (dbf_field->
+						       Value->TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -1100,10 +1099,6 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 	    }
 	  if (rows)
 	      *rows = current_row;
-	  if (qtable)
-	      free (qtable);
-	  if (qpk_name)
-	      free (qpk_name);
 	  return 0;
       }
     else
@@ -1369,6 +1364,119 @@ get_default_dbf_fields (sqlite3 * sqlite, const char *xtable,
     return 0;
 }
 
+static gaiaVectorLayersListPtr
+recover_unregistered_geometry (sqlite3 * handle, const char *table,
+			       const char *geometry)
+{
+/* attempting to recover an unregistered Geometry */
+    int len;
+    int error = 0;
+    gaiaVectorLayersListPtr list;
+    gaiaVectorLayerPtr lyr;
+
+/* allocating a VectorLayersList */
+    list = malloc (sizeof (gaiaVectorLayersList));
+    list->First = NULL;
+    list->Last = NULL;
+    list->Current = NULL;
+
+    lyr = malloc (sizeof (gaiaVectorLayer));
+    lyr->LayerType = GAIA_VECTOR_UNKNOWN;
+    len = strlen (table);
+    lyr->TableName = malloc (len + 1);
+    strcpy (lyr->TableName, table);
+    len = strlen (geometry);
+    lyr->GeometryName = malloc (len + 1);
+    strcpy (lyr->GeometryName, geometry);
+    lyr->Srid = 0;
+    lyr->GeometryType = GAIA_VECTOR_UNKNOWN;
+    lyr->Dimensions = GAIA_VECTOR_UNKNOWN;
+    lyr->SpatialIndex = GAIA_SPATIAL_INDEX_NONE;
+    lyr->ExtentInfos = NULL;
+    lyr->AuthInfos = NULL;
+    lyr->First = NULL;
+    lyr->Last = NULL;
+    lyr->Next = NULL;
+    list->Current = NULL;
+    if (list->First == NULL)
+	list->First = lyr;
+    if (list->Last != NULL)
+	list->Last->Next = lyr;
+    list->Last = lyr;
+
+    if (!doComputeFieldInfos
+	(handle, lyr->TableName, lyr->GeometryName,
+	 SPATIALITE_STATISTICS_LEGACY, lyr))
+	error = 1;
+
+    if (list->First == NULL || error)
+      {
+	  gaiaFreeVectorLayersList (list);
+	  return NULL;
+      }
+    return list;
+}
+
+static int
+compute_max_int_length (sqlite3_int64 min, sqlite3_int64 max)
+{
+/* determining the buffer size for some INT */
+    sqlite3_int64 scale = 10;
+    int pos_len = 1;
+    int neg_len;
+    while (1)
+      {
+	  if (max < scale)
+	      break;
+	  pos_len++;
+	  scale *= 10;
+      }
+    if (min >= 0)
+	return pos_len;
+    scale = -10;
+    neg_len = 2;
+    while (1)
+      {
+	  if (min > scale)
+	      break;
+	  neg_len++;
+	  scale *= 10;
+      }
+    if (neg_len > pos_len)
+	return neg_len;
+    return pos_len;
+}
+
+static double
+compute_max_dbl_length (double min, double max)
+{
+/* determining the buffer size for some DOUBLE */
+    double scale = 10.0;
+    int pos_len = 1;
+    int neg_len;
+    while (1)
+      {
+	  if (max < scale)
+	      break;
+	  pos_len++;
+	  scale *= 10.0;
+      }
+    if (min >= 0)
+	return pos_len + 7;
+    scale = -10.0;
+    neg_len = 2;
+    while (1)
+      {
+	  if (min > scale)
+	      break;
+	  neg_len++;
+	  scale *= 10.0;
+      }
+    if (neg_len > pos_len)
+	return neg_len + 7;
+    return pos_len + 7;
+}
+
 SPATIALITE_DECLARE int
 dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 		char *charset, char *geom_type, int verbose, int *xrows,
@@ -1380,29 +1488,23 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
     int shape = -1;
     int len;
     int ret;
-    char *errMsg = NULL;
     sqlite3_stmt *stmt;
-    int row1 = 0;
     int n_cols = 0;
     int offset = 0;
     int i;
     int rows = 0;
-    int type;
     char buf[256];
     char *xtable;
     char *xcolumn;
     const void *blob_value;
     gaiaShapefilePtr shp = NULL;
-    gaiaDbfListPtr dbf_export_list = NULL;
-    gaiaDbfListPtr dbf_list = NULL;
+    gaiaDbfListPtr dbf_list;
     gaiaDbfListPtr dbf_write;
     gaiaDbfFieldPtr dbf_field;
-    int *max_length = NULL;
-    int *sql_type = NULL;
-    int metadata_version = checkSpatialMetaData (sqlite);
+    gaiaVectorLayerPtr lyr = NULL;
+    gaiaLayerAttributeFieldPtr fld;
+    gaiaVectorLayersListPtr list;
 
-    xtable = gaiaDoubleQuotedSql (table);
-    xcolumn = gaiaDoubleQuotedSql (column);
     if (geom_type)
       {
 	  /* normalizing required geometry type */
@@ -1415,489 +1517,136 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	  if (strcasecmp ((char *) geom_type, "MULTIPOINT") == 0)
 	      shape = GAIA_POINT;
       }
-    if (shape < 0)
+/* is the datasource a genuine registered Geometry ?? */
+    list = gaiaGetVectorLayersList (sqlite, table, column,
+				    GAIA_VECTORS_LIST_PRECISE);
+    if (list == NULL)
       {
-	  /* preparing SQL statement [no type was explicitly required, so we'll read GEOMETRY_COLUMNS */
-	  char **results;
-	  int rows;
-	  int columns;
-	  int i;
-	  char metatype[256];
-	  char metadims[256];
-	  if (metadata_version == 3)
-	    {
-		/* current metadata style >= v.4.0.0 */
-		sql =
-		    sqlite3_mprintf
-		    ("SELECT geometry_type FROM geometry_columns "
-		     "WHERE Lower(f_table_name) = Lower(%Q) AND "
-		     "Lower(f_geometry_column) = Lower(%Q)", table, column);
-	    }
-	  else
-	    {
-		/* legacy metadata style <= v.3.1.0 */
-		sql =
-		    sqlite3_mprintf
-		    ("SELECT type, coord_dimension FROM geometry_columns "
-		     "WHERE Lower(f_table_name) = Lower(%Q) AND "
-		     "Lower(f_geometry_column) = Lower(%Q)", table, column);
-	    }
+	  /* attempting to recover an unregistered Geometry */
+	  list = recover_unregistered_geometry (sqlite, table, column);
+      }
 
-	  ret =
-	      sqlite3_get_table (sqlite, sql, &results, &rows, &columns,
-				 &errMsg);
-	  sqlite3_free (sql);
-	  if (ret != SQLITE_OK)
-	    {
-		if (!err_msg)
-		    spatialite_e ("dump shapefile MetaData error: <%s>\n",
-				  errMsg);
-		else
-		    sprintf (err_msg, "dump shapefile MetaData error: <%s>\n",
-			     errMsg);
-		sqlite3_free (errMsg);
-		return 0;
-	    }
-	  *metatype = '\0';
-	  *metadims = '\0';
-	  for (i = 1; i <= rows; i++)
-	    {
-		if (metadata_version == 3)
-		  {
-		      /* current metadata style >= v.3.1.0 */
-		      switch (atoi (results[(i * columns) + 0]))
-			{
-			case 0:
-			    strcpy (metatype, "GEOMETRY");
-			    strcpy (metadims, "XY");
-			    break;
-			case 1:
-			    strcpy (metatype, "POINT");
-			    strcpy (metadims, "XY");
-			    break;
-			case 2:
-			    strcpy (metatype, "LINESTRING");
-			    strcpy (metadims, "XY");
-			    break;
-			case 3:
-			    strcpy (metatype, "POLYGON");
-			    strcpy (metadims, "XY");
-			    break;
-			case 4:
-			    strcpy (metatype, "MULTIPOINT");
-			    strcpy (metadims, "XY");
-			    break;
-			case 5:
-			    strcpy (metatype, "MULTILINESTRING");
-			    strcpy (metadims, "XY");
-			    break;
-			case 6:
-			    strcpy (metatype, "MULTIPOLYGON");
-			    strcpy (metadims, "XY");
-			    break;
-			case 7:
-			    strcpy (metatype, "GEOMETRYCOLLECTION");
-			    strcpy (metadims, "XY");
-			    break;
-			case 1000:
-			    strcpy (metatype, "GEOMETRY");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 1001:
-			    strcpy (metatype, "POINT");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 1002:
-			    strcpy (metatype, "LINESTRING");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 1003:
-			    strcpy (metatype, "POLYGON");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 1004:
-			    strcpy (metatype, "MULTIPOINT");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 1005:
-			    strcpy (metatype, "MULTILINESTRING");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 1006:
-			    strcpy (metatype, "MULTIPOLYGON");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 1007:
-			    strcpy (metatype, "GEOMETRYCOLLECTION");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 2000:
-			    strcpy (metatype, "GEOMETRY");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 2001:
-			    strcpy (metatype, "POINT");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 2002:
-			    strcpy (metatype, "LINESTRING");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 2003:
-			    strcpy (metatype, "POLYGON");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 2004:
-			    strcpy (metatype, "MULTIPOINT");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 2005:
-			    strcpy (metatype, "MULTILINESTRING");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 2006:
-			    strcpy (metatype, "MULTIPOLYGON");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 2007:
-			    strcpy (metatype, "GEOMETRYCOLLECTION");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 3000:
-			    strcpy (metatype, "GEOMETRY");
-			    strcpy (metadims, "XYZM");
-			    break;
-			case 3001:
-			    strcpy (metatype, "POINT");
-			    strcpy (metadims, "XYZM");
-			    break;
-			case 3002:
-			    strcpy (metatype, "LINESTRING");
-			    strcpy (metadims, "XYZM");
-			    break;
-			case 3003:
-			    strcpy (metatype, "POLYGON");
-			    strcpy (metadims, "XYZM");
-			    break;
-			case 3004:
-			    strcpy (metatype, "MULTIPOINT");
-			    strcpy (metadims, "XYZM");
-			    break;
-			case 3005:
-			    strcpy (metatype, "MULTILINESTRING");
-			    strcpy (metadims, "XYZM");
-			    break;
-			case 3006:
-			    strcpy (metatype, "MULTIPOLYGON");
-			    strcpy (metadims, "XYZM");
-			    break;
-			case 3007:
-			    strcpy (metatype, "GEOMETRYCOLLECTION");
-			    strcpy (metadims, "XYZM");
-			    break;
-			};
-		  }
-		else
-		  {
-		      /* legacy metadata style <= v.3.1.0 */
-		      strcpy (metatype, results[(i * columns) + 0]);
-		      strcpy (metadims, results[(i * columns) + 1]);
-		  }
-	    }
-	  sqlite3_free_table (results);
-	  if (strcasecmp (metatype, "POINT") == 0)
-	    {
-		if (strcasecmp (metadims, "XYZ") == 0
-		    || strcmp (metadims, "3") == 0)
-		    shape = GAIA_POINTZ;
-		else if (strcasecmp (metadims, "XYM") == 0)
-		    shape = GAIA_POINTM;
-		else if (strcasecmp (metadims, "XYZM") == 0)
-		    shape = GAIA_POINTZM;
-		else
-		    shape = GAIA_POINT;
-	    }
-	  if (strcasecmp (metatype, "MULTIPOINT") == 0)
-	    {
-		if (strcasecmp (metadims, "XYZ") == 0
-		    || strcmp (metadims, "3") == 0)
-		    shape = GAIA_MULTIPOINTZ;
-		else if (strcasecmp (metadims, "XYM") == 0)
-		    shape = GAIA_MULTIPOINTM;
-		else if (strcasecmp (metadims, "XYZM") == 0)
-		    shape = GAIA_MULTIPOINTZM;
-		else
-		    shape = GAIA_MULTIPOINT;
-	    }
-	  if (strcasecmp (metatype, "LINESTRING") == 0
-	      || strcasecmp (metatype, "MULTILINESTRING") == 0)
-	    {
-		if (strcasecmp (metadims, "XYZ") == 0
-		    || strcmp (metadims, "3") == 0)
-		    shape = GAIA_LINESTRINGZ;
-		else if (strcasecmp (metadims, "XYM") == 0)
-		    shape = GAIA_LINESTRINGM;
-		else if (strcasecmp (metadims, "XYZM") == 0)
-		    shape = GAIA_LINESTRINGZM;
-		else
-		    shape = GAIA_LINESTRING;
-	    }
-	  if (strcasecmp (metatype, "POLYGON") == 0
-	      || strcasecmp (metatype, "MULTIPOLYGON") == 0)
-	    {
-		if (strcasecmp (metadims, "XYZ") == 0
-		    || strcmp (metadims, "3") == 0)
-		    shape = GAIA_POLYGONZ;
-		else if (strcasecmp (metadims, "XYM") == 0)
-		    shape = GAIA_POLYGONM;
-		else if (strcasecmp (metadims, "XYZM") == 0)
-		    shape = GAIA_POLYGONZM;
-		else
-		    shape = GAIA_POLYGON;
-	    }
-      }
-    if (shape < 0)
+    if (list != NULL)
+	lyr = list->First;
+    if (lyr == NULL)
       {
-	  /* preparing SQL statement [type still undefined, so we'll read VIEWS_GEOMETRY_COLUMNS */
-	  char **results;
-	  int rows;
-	  int columns;
-	  int i;
-	  char metatype[256];
-	  char metadims[256];
-	  if (metadata_version == 3)
-	    {
-		/* current metadata style >= v.4.0.0 */
-		sql =
-		    sqlite3_mprintf
-		    ("SELECT geometry_type FROM views_geometry_columns "
-		     "JOIN geometry_columns USING (f_table_name, f_geometry_column) "
-		     "WHERE Lower(view_name) = Lower(%Q) AND "
-		     "Lower(view_geometry) = Lower(%Q)", table, column);
-	    }
+	  if (!err_msg)
+	      spatialite_e
+		  ("Unable to detect GeometryType for \"%s\".\"%s\" ... sorry\n",
+		   table, column);
 	  else
-	    {
-		/* legacy metadata style <= v.3.1.0 */
-		sql =
-		    sqlite3_mprintf
-		    ("SELECT type, coord_dimension FROM views_geometry_columns "
-		     "JOIN geometry_columns USING (f_table_name, f_geometry_column) "
-		     "WHERE Lower(view_name) = Lower(%Q) AND "
-		     "Lower(view_geometry) = Lower(%Q)", table, column);
-	    }
-	  ret =
-	      sqlite3_get_table (sqlite, sql, &results, &rows, &columns,
-				 &errMsg);
-	  sqlite3_free (sql);
-	  if (ret != SQLITE_OK)
-	    {
-		if (!err_msg)
-		    spatialite_e ("dump shapefile MetaData error: <%s>\n",
-				  errMsg);
-		else
-		    sprintf (err_msg, "dump shapefile MetaData error: <%s>\n",
-			     errMsg);
-		sqlite3_free (errMsg);
-		return 0;
-	    }
-	  *metatype = '\0';
-	  *metadims = '\0';
-	  for (i = 1; i <= rows; i++)
-	    {
-		if (metadata_version == 3)
-		  {
-		      /* current metadata style >= v.4.0.0 */
-		      switch (atoi (results[(i * columns) + 0]))
-			{
-			case 0:
-			    strcpy (metatype, "GEOMETRY");
-			    strcpy (metadims, "XY");
-			    break;
-			case 1:
-			    strcpy (metatype, "POINT");
-			    strcpy (metadims, "XY");
-			    break;
-			case 2:
-			    strcpy (metatype, "LINESTRING");
-			    strcpy (metadims, "XY");
-			    break;
-			case 3:
-			    strcpy (metatype, "POLYGON");
-			    strcpy (metadims, "XY");
-			    break;
-			case 4:
-			    strcpy (metatype, "MULTIPOINT");
-			    strcpy (metadims, "XY");
-			    break;
-			case 5:
-			    strcpy (metatype, "MULTILINESTRING");
-			    strcpy (metadims, "XY");
-			    break;
-			case 6:
-			    strcpy (metatype, "MULTIPOLYGON");
-			    strcpy (metadims, "XY");
-			    break;
-			case 7:
-			    strcpy (metatype, "GEOMETRYCOLLECTION");
-			    strcpy (metadims, "XY");
-			    break;
-			case 1000:
-			    strcpy (metatype, "GEOMETRY");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 1001:
-			    strcpy (metatype, "POINT");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 1002:
-			    strcpy (metatype, "LINESTRING");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 1003:
-			    strcpy (metatype, "POLYGON");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 1004:
-			    strcpy (metatype, "MULTIPOINT");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 1005:
-			    strcpy (metatype, "MULTILINESTRING");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 1006:
-			    strcpy (metatype, "MULTIPOLYGON");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 1007:
-			    strcpy (metatype, "GEOMETRYCOLLECTION");
-			    strcpy (metadims, "XYZ");
-			    break;
-			case 2000:
-			    strcpy (metatype, "GEOMETRY");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 2001:
-			    strcpy (metatype, "POINT");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 2002:
-			    strcpy (metatype, "LINESTRING");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 2003:
-			    strcpy (metatype, "POLYGON");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 2004:
-			    strcpy (metatype, "MULTIPOINT");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 2005:
-			    strcpy (metatype, "MULTILINESTRING");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 2006:
-			    strcpy (metatype, "MULTIPOLYGON");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 2007:
-			    strcpy (metatype, "GEOMETRYCOLLECTION");
-			    strcpy (metadims, "XYM");
-			    break;
-			case 3000:
-			    strcpy (metatype, "GEOMETRY");
-			    strcpy (metadims, "XYZM");
-			    break;
-			case 3001:
-			    strcpy (metatype, "POINT");
-			    strcpy (metadims, "XYZM");
-			    break;
-			case 3002:
-			    strcpy (metatype, "LINESTRING");
-			    strcpy (metadims, "XYZM");
-			    break;
-			case 3003:
-			    strcpy (metatype, "POLYGON");
-			    strcpy (metadims, "XYZM");
-			    break;
-			case 3004:
-			    strcpy (metatype, "MULTIPOINT");
-			    strcpy (metadims, "XYZM");
-			    break;
-			case 3005:
-			    strcpy (metatype, "MULTILINESTRING");
-			    strcpy (metadims, "XYZM");
-			    break;
-			case 3006:
-			    strcpy (metatype, "MULTIPOLYGON");
-			    strcpy (metadims, "XYZM");
-			    break;
-			case 3007:
-			    strcpy (metatype, "GEOMETRYCOLLECTION");
-			    strcpy (metadims, "XYZM");
-			    break;
-			};
-		  }
-		else
-		  {
-		      /* legacy metadata style <= v.3.1.0 */
-		      strcpy (metatype, results[(i * columns) + 0]);
-		      strcpy (metadims, results[(i * columns) + 1]);
-		  }
-	    }
-	  sqlite3_free_table (results);
-	  if (strcasecmp (metatype, "POINT") == 0)
-	    {
-		if (strcasecmp (metadims, "XYZ") == 0
-		    || strcmp (metadims, "3") == 0)
-		    shape = GAIA_POINTZ;
-		else if (strcasecmp (metadims, "XYM") == 0)
-		    shape = GAIA_POINTM;
-		else if (strcasecmp (metadims, "XYZM") == 0)
-		    shape = GAIA_POINTZM;
-		else
-		    shape = GAIA_POINT;
-	    }
-	  if (strcasecmp (metatype, "MULTIPOINT") == 0)
-	    {
-		if (strcasecmp (metadims, "XYZ") == 0
-		    || strcmp (metadims, "3") == 0)
-		    shape = GAIA_MULTIPOINTZ;
-		else if (strcasecmp (metadims, "XYM") == 0)
-		    shape = GAIA_MULTIPOINTM;
-		else if (strcasecmp (metadims, "XYZM") == 0)
-		    shape = GAIA_MULTIPOINTZM;
-		else
-		    shape = GAIA_MULTIPOINT;
-	    }
-	  if (strcasecmp (metatype, "LINESTRING") == 0
-	      || strcasecmp (metatype, "MULTILINESTRING") == 0)
-	    {
-		if (strcasecmp (metadims, "XYZ") == 0
-		    || strcmp (metadims, "3") == 0)
-		    shape = GAIA_LINESTRINGZ;
-		else if (strcasecmp (metadims, "XYM") == 0)
-		    shape = GAIA_LINESTRINGM;
-		else if (strcasecmp (metadims, "XYZM") == 0)
-		    shape = GAIA_LINESTRINGZM;
-		else
-		    shape = GAIA_LINESTRING;
-	    }
-	  if (strcasecmp (metatype, "POLYGON") == 0
-	      || strcasecmp (metatype, "MULTIPOLYGON") == 0)
-	    {
-		if (strcasecmp (metadims, "XYZ") == 0
-		    || strcmp (metadims, "3") == 0)
-		    shape = GAIA_POLYGONZ;
-		else if (strcasecmp (metadims, "XYM") == 0)
-		    shape = GAIA_POLYGONM;
-		else if (strcasecmp (metadims, "XYZM") == 0)
-		    shape = GAIA_POLYGONZM;
-		else
-		    shape = GAIA_POLYGON;
-	    }
+	      sprintf (err_msg,
+		       "Unable to detect GeometryType for \"%s\".\"%s\" ... sorry\n",
+		       table, column);
+	  return 0;
       }
+
+    switch (lyr->GeometryType)
+      {
+      case GAIA_VECTOR_POINT:
+	  switch (lyr->Dimensions)
+	    {
+	    case GAIA_XY:
+		shape = GAIA_POINT;
+		break;
+	    case GAIA_XY_Z:
+		shape = GAIA_POINTZ;
+		break;
+	    case GAIA_XY_M:
+		shape = GAIA_POINTM;
+		break;
+	    case GAIA_XY_Z_M:
+		shape = GAIA_POINTZM;
+		break;
+	    };
+	  break;
+      case GAIA_VECTOR_LINESTRING:
+	  switch (lyr->Dimensions)
+	    {
+	    case GAIA_XY:
+		shape = GAIA_LINESTRING;
+		break;
+	    case GAIA_XY_Z:
+		shape = GAIA_LINESTRINGZ;
+		break;
+	    case GAIA_XY_M:
+		shape = GAIA_LINESTRINGM;
+		break;
+	    case GAIA_XY_Z_M:
+		shape = GAIA_LINESTRINGZM;
+		break;
+	    };
+	  break;
+      case GAIA_VECTOR_POLYGON:
+	  switch (lyr->Dimensions)
+	    {
+	    case GAIA_XY:
+		shape = GAIA_POLYGON;
+		break;
+	    case GAIA_XY_Z:
+		shape = GAIA_POLYGONZ;
+		break;
+	    case GAIA_XY_M:
+		shape = GAIA_POLYGONM;
+		break;
+	    case GAIA_XY_Z_M:
+		shape = GAIA_POLYGONZM;
+		break;
+	    };
+	  break;
+      case GAIA_VECTOR_MULTIPOINT:
+	  switch (lyr->Dimensions)
+	    {
+	    case GAIA_XY:
+		shape = GAIA_MULTIPOINT;
+		break;
+	    case GAIA_XY_Z:
+		shape = GAIA_MULTIPOINTZ;
+		break;
+	    case GAIA_XY_M:
+		shape = GAIA_MULTIPOINTM;
+		break;
+	    case GAIA_XY_Z_M:
+		shape = GAIA_MULTIPOINTZM;
+		break;
+	    };
+	  break;
+      case GAIA_VECTOR_MULTILINESTRING:
+	  switch (lyr->Dimensions)
+	    {
+	    case GAIA_XY:
+		shape = GAIA_MULTILINESTRING;
+		break;
+	    case GAIA_XY_Z:
+		shape = GAIA_MULTILINESTRINGZ;
+		break;
+	    case GAIA_XY_M:
+		shape = GAIA_MULTILINESTRINGM;
+		break;
+	    case GAIA_XY_Z_M:
+		shape = GAIA_MULTILINESTRINGZM;
+		break;
+	    };
+	  break;
+      case GAIA_VECTOR_MULTIPOLYGON:
+	  switch (lyr->Dimensions)
+	    {
+	    case GAIA_XY:
+		shape = GAIA_MULTIPOLYGON;
+		break;
+	    case GAIA_XY_Z:
+		shape = GAIA_MULTIPOLYGONZ;
+		break;
+	    case GAIA_XY_M:
+		shape = GAIA_MULTIPOLYGONM;
+		break;
+	    case GAIA_XY_Z_M:
+		shape = GAIA_MULTIPOLYGONZM;
+		break;
+	    };
+	  break;
+      };
+
     if (shape < 0)
       {
 	  if (!err_msg)
@@ -1915,8 +1664,12 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	    ("========\nDumping SQLite table '%s' into shapefile at '%s'\n",
 	     table, shp_path);
     /* preparing SQL statement */
+    xtable = gaiaDoubleQuotedSql (table);
+    xcolumn = gaiaDoubleQuotedSql (column);
     if (shape == GAIA_LINESTRING || shape == GAIA_LINESTRINGZ
-	|| shape == GAIA_LINESTRINGM || shape == GAIA_LINESTRINGZM)
+	|| shape == GAIA_LINESTRINGM || shape == GAIA_LINESTRINGZM ||
+	shape == GAIA_MULTILINESTRING || shape == GAIA_MULTILINESTRINGZ
+	|| shape == GAIA_MULTILINESTRINGM || shape == GAIA_MULTILINESTRINGZM)
       {
 	  sql =
 	      sqlite3_mprintf
@@ -1925,7 +1678,9 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	       "OR \"%s\" IS NULL", xtable, xcolumn, xcolumn, xcolumn);
       }
     else if (shape == GAIA_POLYGON || shape == GAIA_POLYGONZ
-	     || shape == GAIA_POLYGONM || shape == GAIA_POLYGONZM)
+	     || shape == GAIA_POLYGONM || shape == GAIA_POLYGONZM ||
+	     shape == GAIA_MULTIPOLYGON || shape == GAIA_MULTIPOLYGONZ
+	     || shape == GAIA_MULTIPOLYGONM || shape == GAIA_MULTIPOLYGONZM)
       {
 	  sql =
 	      sqlite3_mprintf
@@ -1954,101 +1709,80 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
 	goto sql_error;
-    while (1)
-      {
-	  /* Pass I - scrolling the result set to compute real DBF attributes' sizes and types */
-	  ret = sqlite3_step (stmt);
-	  if (ret == SQLITE_DONE)
-	      break;		/* end of result set */
-	  if (ret == SQLITE_ROW)
-	    {
-		/* processing a result set row */
-		row1++;
-		if (n_cols == 0)
-		  {
-		      /* this one is the first row, so we are going to prepare the DBF Fields list */
-		      n_cols = sqlite3_column_count (stmt);
-		      dbf_export_list = gaiaAllocDbfList ();
-		      max_length = malloc (sizeof (int) * n_cols);
-		      sql_type = malloc (sizeof (int) * n_cols);
-		      for (i = 0; i < n_cols; i++)
-			{
-			    /* initializes the DBF export fields */
-			    dummy = (char *) sqlite3_column_name (stmt, i);
-			    gaiaAddDbfField (dbf_export_list, dummy, '\0', 0, 0,
-					     0);
-			    max_length[i] = 0;
-			    sql_type[i] = SQLITE_NULL;
-			}
-		  }
-		for (i = 0; i < n_cols; i++)
-		  {
-		      /* update the DBF export fields analyzing fetched data */
-		      type = sqlite3_column_type (stmt, i);
-		      if (type == SQLITE_NULL || type == SQLITE_BLOB)
-			  continue;
-		      if (type == SQLITE_TEXT)
-			{
-			    len = sqlite3_column_bytes (stmt, i);
-			    sql_type[i] = SQLITE_TEXT;
-			    if (len > max_length[i])
-				max_length[i] = len;
-			}
-		      else if (type == SQLITE_FLOAT
-			       && sql_type[i] != SQLITE_TEXT)
-			  sql_type[i] = SQLITE_FLOAT;	/* promoting a numeric column to be DOUBLE */
-		      else if (type == SQLITE_INTEGER &&
-			       (sql_type[i] == SQLITE_NULL
-				|| sql_type[i] == SQLITE_INTEGER))
-			  sql_type[i] = SQLITE_INTEGER;	/* promoting a null column to be INTEGER */
-		      if (type == SQLITE_INTEGER && max_length[i] < 18)
-			  max_length[i] = 18;
-		      if (type == SQLITE_FLOAT && max_length[i] < 24)
-			  max_length[i] = 24;
-		  }
-	    }
-	  else
-	      goto sql_error;
-      }
-    if (!row1)
-	goto empty_result_set;
-    i = 0;
-    offset = 0;
+
+/* preparing the DBF fields list */
     dbf_list = gaiaAllocDbfList ();
-    dbf_field = dbf_export_list->First;
-    while (dbf_field)
+    offset = 0;
+    fld = lyr->First;
+    while (fld)
       {
-	  /* preparing the final DBF attribute list */
-	  if (sql_type[i] == SQLITE_NULL)
+	  int sql_type = SQLITE_NULL;
+	  int max_len;
+	  if (strcasecmp (fld->AttributeFieldName, column) == 0)
 	    {
-		i++;
-		dbf_field = dbf_field->Next;
+		/* ignoring the Geometry itself */
+		fld = fld->Next;
 		continue;
 	    }
-	  if (sql_type[i] == SQLITE_TEXT)
+	  if (fld->IntegerValuesCount > 0 && fld->DoubleValuesCount == 0
+	      && fld->TextValuesCount == 0)
 	    {
-		if (max_length[i] == 0)	/* avoiding ZERO-length fields */
-		    max_length[i] = 1;
-		gaiaAddDbfField (dbf_list, dbf_field->Name, 'C', offset,
-				 max_length[i], 0);
-		offset += max_length[i];
+		sql_type = SQLITE_INTEGER;
+		max_len = 18;
+		if (fld->IntRange)
+		    max_len =
+			compute_max_int_length (fld->IntRange->MinValue,
+						fld->IntRange->MaxValue);
 	    }
-	  if (sql_type[i] == SQLITE_FLOAT)
+	  if (fld->DoubleValuesCount > 0 && fld->TextValuesCount == 0)
 	    {
-		gaiaAddDbfField (dbf_list, dbf_field->Name, 'N', offset, 19, 6);
-		offset += 19;
+		sql_type = SQLITE_FLOAT;
+		max_len = 19;
+		if (fld->DoubleRange)
+		    max_len =
+			compute_max_dbl_length (fld->DoubleRange->MinValue,
+						fld->DoubleRange->MaxValue);
 	    }
-	  if (sql_type[i] == SQLITE_INTEGER)
+	  if (fld->TextValuesCount > 0)
 	    {
-		gaiaAddDbfField (dbf_list, dbf_field->Name, 'N', offset, 18, 0);
-		offset += 18;
+		sql_type = SQLITE_TEXT;
+		max_len = 255;
+		if (fld->MaxSize)
+		    max_len = fld->MaxSize->MaxSize;
 	    }
-	  i++;
-	  dbf_field = dbf_field->Next;
+	  if (sql_type == SQLITE_NULL)
+	    {
+		/* considering as TEXT(1) */
+		sql_type = SQLITE_TEXT;
+		max_len = 1;
+	    }
+	  /* adding a DBF field */
+	  if (sql_type == SQLITE_TEXT)
+	    {
+		if (max_len == 0)	/* avoiding ZERO-length fields */
+		    max_len = 1;
+		gaiaAddDbfField (dbf_list, fld->AttributeFieldName, 'C', offset,
+				 max_len, 0);
+		offset += max_len;
+	    }
+	  if (sql_type == SQLITE_FLOAT)
+	    {
+		if (max_len > 19)
+		    max_len = 19;
+		gaiaAddDbfField (dbf_list, fld->AttributeFieldName, 'N', offset,
+				 max_len, 6);
+		offset += max_len;
+	    }
+	  if (sql_type == SQLITE_INTEGER)
+	    {
+		if (max_len > 18)
+		    max_len = 18;
+		gaiaAddDbfField (dbf_list, fld->AttributeFieldName, 'N', offset,
+				 max_len, 0);
+		offset += max_len;
+	    }
+	  fld = fld->Next;
       }
-    free (max_length);
-    free (sql_type);
-    gaiaFreeDbfList (dbf_export_list);
 
   continue_exporting:
 /* resetting SQLite query */
@@ -2064,12 +1798,14 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
     output_prj_file (sqlite, shp_path, table, column);
     while (1)
       {
-	  /* Pass II - scrolling the result set to dump data into shapefile */
+	  /* scrolling the result set to dump data into shapefile */
 	  ret = sqlite3_step (stmt);
 	  if (ret == SQLITE_DONE)
 	      break;		/* end of result set */
 	  if (ret == SQLITE_ROW)
 	    {
+		if (n_cols == 0)
+		    n_cols = sqlite3_column_count (stmt);
 		rows++;
 		dbf_write = gaiaCloneDbfEntity (dbf_list);
 		for (i = 0; i < n_cols; i++)
@@ -2183,8 +1919,6 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
     sqlite3_finalize (stmt);
     free (xtable);
     free (xcolumn);
-    if (dbf_export_list)
-	gaiaFreeDbfList (dbf_export_list);
     if (dbf_list)
 	gaiaFreeDbfList (dbf_list);
     if (shp)
@@ -2198,8 +1932,6 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 /* shapefile can't be created/opened */
     free (xtable);
     free (xcolumn);
-    if (dbf_export_list)
-	gaiaFreeDbfList (dbf_export_list);
     if (dbf_list)
 	gaiaFreeDbfList (dbf_list);
     if (shp)
@@ -2208,26 +1940,6 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	spatialite_e ("ERROR: unable to open '%s' for writing", shp_path);
     else
 	sprintf (err_msg, "ERROR: unable to open '%s' for writing", shp_path);
-    return 0;
-  empty_result_set:
-/* the result set is empty - nothing to do */
-    if (get_default_dbf_fields (sqlite, xtable, &dbf_list))
-	goto continue_exporting;
-    free (xtable);
-    free (xcolumn);
-    sqlite3_finalize (stmt);
-    if (dbf_export_list)
-	gaiaFreeDbfList (dbf_export_list);
-    if (dbf_list)
-	gaiaFreeDbfList (dbf_list);
-    if (shp)
-	gaiaFreeShapefile (shp);
-    if (!err_msg)
-	spatialite_e
-	    ("The SQL SELECT returned an empty result set ... there is nothing to export ...");
-    else
-	sprintf (err_msg,
-		 "The SQL SELECT returned an empty result set ... there is nothing to export ...");
     return 0;
 }
 
@@ -2626,9 +2338,8 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 		      if (pk_type == SQLITE_TEXT)
 			  sqlite3_bind_text (stmt, 1,
 					     dbf_field->Value->TxtValue,
-					     strlen (dbf_field->
-						     Value->TxtValue),
-					     SQLITE_STATIC);
+					     strlen (dbf_field->Value->
+						     TxtValue), SQLITE_STATIC);
 		      else if (pk_type == SQLITE_FLOAT)
 			  sqlite3_bind_double (stmt, 1,
 					       dbf_field->Value->DblValue);
@@ -2670,8 +2381,8 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->Value->
-						       TxtValue),
+					       strlen (dbf_field->
+						       Value->TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -4938,8 +4649,8 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 						     cell.value.int_value);
 			    else if (cell.type == FREEXL_CELL_DOUBLE)
 				dummy = sqlite3_mprintf ("%1.2f ",
-							 cell.
-							 value.double_value);
+							 cell.value.
+							 double_value);
 			    else if (cell.type == FREEXL_CELL_TEXT
 				     || cell.type == FREEXL_CELL_SST_TEXT
 				     || cell.type == FREEXL_CELL_DATE
@@ -4950,8 +4661,8 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 				  if (len < 256)
 				      dummy =
 					  sqlite3_mprintf ("%s",
-							   cell.
-							   value.text_value);
+							   cell.value.
+							   text_value);
 				  else
 				      dummy = sqlite3_mprintf ("col_%d", col);
 			      }

@@ -4407,7 +4407,7 @@ get_table_layers_legacy (sqlite3 * handle, const char *table,
     ret = sqlite3_finalize (stmt);
 
   stop:
-    if (list->First == NULL || error)
+    if (error)
 	return 0;
     return 1;
 }
@@ -4584,7 +4584,7 @@ get_view_layers_legacy (sqlite3 * handle, const char *table,
     ret = sqlite3_finalize (stmt);
 
   stop:
-    if (list->First == NULL || error)
+    if (error)
 	return 0;
     return 1;
 }

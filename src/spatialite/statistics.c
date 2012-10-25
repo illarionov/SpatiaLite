@@ -1151,6 +1151,7 @@ do_compute_minmax (sqlite3 * sqlite, const char *table,
     const char *col_name;
     int is_double;
     int comma = 0;
+    int empty = 1;
     gaiaOutBuffer out_buf;
     struct field_item_infos *ptr;
 
@@ -1176,6 +1177,7 @@ do_compute_minmax (sqlite3 * sqlite, const char *table,
 		  }
 		gaiaAppendToOutBuffer (&out_buf, sql_statement);
 		sqlite3_free (sql_statement);
+		empty = 0;
 	    }
 	  if (ptr->double_values >= 0 && ptr->integer_values == 0
 	      && ptr->blob_values == 0 && ptr->text_values == 0)
@@ -1193,12 +1195,20 @@ do_compute_minmax (sqlite3 * sqlite, const char *table,
 		  }
 		gaiaAppendToOutBuffer (&out_buf, sql_statement);
 		sqlite3_free (sql_statement);
+		empty = 0;
 	    }
 	  free (quoted);
 	  ptr = ptr->next;
       }
     if (out_buf.Buffer == NULL)
 	return 0;
+    if (empty)
+      {
+	  /* no columns to check */
+	  gaiaOutBufferReset (&out_buf);
+	  return 1;
+
+      }
     quoted = gaiaDoubleQuotedSql (table);
     sql_statement = sqlite3_mprintf (" FROM \"%s\"", quoted);
     free (quoted);
@@ -1342,7 +1352,7 @@ doComputeFieldInfos (void *p_sqlite, const char *table,
 /* retrieving the column names for the current table */
 /* then building the SQL query statement */
     quoted = gaiaDoubleQuotedSql (table);
-    sql_statement = sqlite3_mprintf ("PRAGMA table_info(%s)", quoted);
+    sql_statement = sqlite3_mprintf ("PRAGMA table_info(\"%s\")", quoted);
     free (quoted);
     ret =
 	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
