@@ -12,16 +12,40 @@ LIBOBJ = src\gaiaaux\gg_sqlaux.obj src\gaiaaux\gg_utf8.obj \
 	src\gaiageo\gg_gml.obj src\gaiageo\gg_kml.obj \
 	src\gaiageo\gg_relations.obj src\gaiageo\gg_shape.obj \
 	src\gaiageo\gg_transform.obj src\gaiageo\gg_vanuatu.obj \
-	src\gaiageo\gg_wkb.obj src\gaiageo\gg_wkt.obj \
+	src\gaiageo\gg_wkb.obj src\gaiageo\gg_wkt.obj src\gaiageo\gg_extras.obj \
 	src\spatialite\mbrcache.obj src\shapefiles\shapefiles.obj \
 	src\spatialite\spatialite.obj src\spatialite\virtualdbf.obj \
 	src\spatialite\virtualfdo.obj src\spatialite\virtualnetwork.obj \
 	src\spatialite\virtualshape.obj src\spatialite\virtualspatialindex.obj \
+	src\spatialite\statistics.obj src\spatialite\metatables.obj \
 	src\spatialite\virtualXL.obj src\srsinit\srs_init.obj \
+	src\srsinit\epsg_inlined_00.obj src\srsinit\epsg_inlined_01.obj \
+	src\srsinit\epsg_inlined_02.obj src\srsinit\epsg_inlined_03.obj \
+	src\srsinit\epsg_inlined_04.obj src\srsinit\epsg_inlined_05.obj \
+	src\srsinit\epsg_inlined_06.obj src\srsinit\epsg_inlined_07.obj \
+	src\srsinit\epsg_inlined_08.obj src\srsinit\epsg_inlined_09.obj \
+	src\srsinit\epsg_inlined_10.obj src\srsinit\epsg_inlined_11.obj \
+	src\srsinit\epsg_inlined_12.obj src\srsinit\epsg_inlined_13.obj \
+	src\srsinit\epsg_inlined_14.obj src\srsinit\epsg_inlined_15.obj \
+	src\srsinit\epsg_inlined_16.obj src\srsinit\epsg_inlined_17.obj \
+	src\srsinit\epsg_inlined_18.obj src\srsinit\epsg_inlined_19.obj \
+	src\srsinit\epsg_inlined_20.obj src\srsinit\epsg_inlined_21.obj \
+	src\srsinit\epsg_inlined_22.obj src\srsinit\epsg_inlined_23.obj \
+	src\srsinit\epsg_inlined_24.obj src\srsinit\epsg_inlined_25.obj \
+	src\srsinit\epsg_inlined_26.obj src\srsinit\epsg_inlined_27.obj \
+	src\srsinit\epsg_inlined_28.obj src\srsinit\epsg_inlined_29.obj \
+	src\srsinit\epsg_inlined_30.obj src\srsinit\epsg_inlined_31.obj \
+	src\srsinit\epsg_inlined_32.obj src\srsinit\epsg_inlined_33.obj \
+	src\srsinit\epsg_inlined_34.obj src\srsinit\epsg_inlined_35.obj \
+	src\srsinit\epsg_inlined_36.obj src\srsinit\epsg_inlined_37.obj \
+	src\srsinit\epsg_inlined_38.obj src\srsinit\epsg_inlined_39.obj \
+	src\srsinit\epsg_inlined_40.obj src\srsinit\epsg_inlined_extra.obj \
+	src\srsinit\epsg_inlined_prussian.obj \
+	src\srsinit\epsg_inlined_wgs84_00.obj src\srsinit\epsg_inlined_wgs84_01.obj \
 	src\versioninfo\version.obj src\virtualtext\virtualtext.obj
 SPATIALITE_DLL = spatialite$(VERSION).dll
 
-CFLAGS = /nologo -I.\src\headers -IC:\OSGeo4W\include $(OPTFLAGS)
+CFLAGS = /nologo -I.\src\headers -I. -IC:\OSGeo4W\include $(OPTFLAGS)
 
 default:	all
 

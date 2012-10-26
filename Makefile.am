@@ -3,7 +3,7 @@ ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = dist-zip
 
 EXTRA_DIST = makefile.vc nmake.opt Android.mk mainpage.doxy README.coverage \
-	spatialite-sql-latest.html
+	spatialite-sql-latest.html config-msvc.h
 
 SUBDIRS = src test examples
 

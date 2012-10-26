@@ -51,7 +51,11 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <float.h>
 #include <string.h>
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+#include "config-msvc.h"
+#else
 #include "config.h"
+#endif
 
 #include <spatialite/sqlite.h>
 
@@ -2172,15 +2176,15 @@ gaiaExifTagGetHumanReadable (const gaiaExifTagPtr tag, char *str, int len,
 		  case 11:
 		      human = "Shade";
 		  case 12:
-		      human = "Daylight fluorescent (D 5700 – 7100K)";
+		      human = "Daylight fluorescent (D 5700 - 7100K)";
 		      break;
 		  case 13:
-		      human = "Day white fluorescent (N 4600 – 5400K)";
+		      human = "Day white fluorescent (N 4600 - 5400K)";
 		      break;
 		  case 14:
-		      human = "Cool white fluorescent (W 3900 – 4500K)";
+		      human = "Cool white fluorescent (W 3900 - 4500K)";
 		  case 15:
-		      human = "White fluorescent (WW 3200 – 3700K)";
+		      human = "White fluorescent (WW 3200 - 3700K)";
 		      break;
 		  case 17:
 		      human = "Standard light A";

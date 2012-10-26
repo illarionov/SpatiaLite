@@ -60,7 +60,11 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <string.h>
 #include <float.h>
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+#include "config-msvc.h"
+#else
 #include "config.h"
+#endif
 
 #include <spatialite/sqlite.h>
 #include <spatialite/gaiageo.h>

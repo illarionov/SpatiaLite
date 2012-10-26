@@ -50,7 +50,11 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+#include "config-msvc.h"
+#else
 #include "config.h"
+#endif
 
 #include <spatialite/sqlite.h>
 #include <spatialite/debug.h>
@@ -60,6 +64,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite_private.h>
 #include <spatialite/gaiaaux.h>
 #include <spatialite/gaiageo.h>
+
+#ifdef _WIN32
+#define strcasecmp	_stricmp
+#endif /* not WIN32 */
 
 struct spatial_index_str
 {

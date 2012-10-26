@@ -52,7 +52,11 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdio.h>
 #include <string.h>
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+#include "config-msvc.h"
+#else
 #include "config.h"
+#endif
 
 #include <spatialite/sqlite.h>
 #include <spatialite/debug.h>
@@ -68,6 +72,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #define strcasecmp	_stricmp
+#define strncasecmp	_strnicmp
 #endif
 
 struct dupl_column
@@ -1530,6 +1535,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	lyr = list->First;
     if (lyr == NULL)
       {
+gaiaFreeVectorLayersList(list);
 	  if (!err_msg)
 	      spatialite_e
 		  ("Unable to detect GeometryType for \"%s\".\"%s\" ... sorry\n",
@@ -1710,6 +1716,14 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
     if (ret != SQLITE_OK)
 	goto sql_error;
 
+if (lyr->First == NULL)
+{
+	/* the datasource is probably empty - zero rows */
+if (get_default_dbf_fields (sqlite, xtable, &dbf_list))
+	goto continue_exporting;
+}
+
+
 /* preparing the DBF fields list */
     dbf_list = gaiaAllocDbfList ();
     offset = 0;
@@ -1784,8 +1798,8 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	  fld = fld->Next;
       }
 
-  continue_exporting:
 /* resetting SQLite query */
+continue_exporting:
     ret = sqlite3_reset (stmt);
     if (ret != SQLITE_OK)
 	goto sql_error;
@@ -1907,6 +1921,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
     gaiaFreeShapefile (shp);
     free (xtable);
     free (xcolumn);
+gaiaFreeVectorLayersList(list);
     if (verbose)
 	spatialite_e ("\nExported %d rows into SHAPEFILE\n========\n", rows);
     if (xrows)
@@ -1919,6 +1934,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
     sqlite3_finalize (stmt);
     free (xtable);
     free (xcolumn);
+gaiaFreeVectorLayersList(list);
     if (dbf_list)
 	gaiaFreeDbfList (dbf_list);
     if (shp)
@@ -1932,6 +1948,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 /* shapefile can't be created/opened */
     free (xtable);
     free (xcolumn);
+gaiaFreeVectorLayersList(list);
     if (dbf_list)
 	gaiaFreeDbfList (dbf_list);
     if (shp)
