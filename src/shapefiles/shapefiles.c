@@ -51,6 +51,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"
@@ -992,8 +993,9 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 		      if (pk_type == SQLITE_TEXT)
 			  sqlite3_bind_text (stmt, 1,
 					     dbf_field->Value->TxtValue,
-					     strlen (dbf_field->Value->
-						     TxtValue), SQLITE_STATIC);
+					     strlen (dbf_field->
+						     Value->TxtValue),
+					     SQLITE_STATIC);
 		      else if (pk_type == SQLITE_FLOAT)
 			  sqlite3_bind_double (stmt, 1,
 					       dbf_field->Value->DblValue);
@@ -1034,8 +1036,8 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->
-						       Value->TxtValue),
+					       strlen (dbf_field->Value->
+						       TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -1426,56 +1428,50 @@ static int
 compute_max_int_length (sqlite3_int64 min, sqlite3_int64 max)
 {
 /* determining the buffer size for some INT */
-    sqlite3_int64 scale = 10;
-    int pos_len = 1;
-    int neg_len;
-    while (1)
+    int pos_len = 0;
+    int neg_len = 1;
+    sqlite3_int64 value = max;
+    while (value != 0)
       {
-	  if (max < scale)
-	      break;
 	  pos_len++;
-	  scale *= 10;
+	  value /= 10;
       }
     if (min >= 0)
 	return pos_len;
-    scale = -10;
-    neg_len = 2;
-    while (1)
+    value = min;
+    while (value != 0)
       {
-	  if (min > scale)
-	      break;
 	  neg_len++;
-	  scale *= 10;
+	  value /= 10;
       }
     if (neg_len > pos_len)
 	return neg_len;
     return pos_len;
 }
 
-static double
+static int
 compute_max_dbl_length (double min, double max)
 {
 /* determining the buffer size for some DOUBLE */
-    double scale = 10.0;
-    int pos_len = 1;
-    int neg_len;
-    while (1)
+    int pos_len = 0;
+    int neg_len = 1;
+    sqlite3_int64 value;
+    if (max >= 0.0)
+	value = floor (max);
+    else
+	value = ceil (max);
+    while (value != 0)
       {
-	  if (max < scale)
-	      break;
 	  pos_len++;
-	  scale *= 10.0;
+	  value /= 10;
       }
-    if (min >= 0)
+    if (min >= 0.0)
 	return pos_len + 7;
-    scale = -10.0;
-    neg_len = 2;
-    while (1)
+    value = ceil (min);
+    while (value != 0)
       {
-	  if (min > scale)
-	      break;
 	  neg_len++;
-	  scale *= 10.0;
+	  value /= 10;
       }
     if (neg_len > pos_len)
 	return neg_len + 7;
@@ -1535,7 +1531,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 	lyr = list->First;
     if (lyr == NULL)
       {
-gaiaFreeVectorLayersList(list);
+	  gaiaFreeVectorLayersList (list);
 	  if (!err_msg)
 	      spatialite_e
 		  ("Unable to detect GeometryType for \"%s\".\"%s\" ... sorry\n",
@@ -1716,12 +1712,12 @@ gaiaFreeVectorLayersList(list);
     if (ret != SQLITE_OK)
 	goto sql_error;
 
-if (lyr->First == NULL)
-{
-	/* the datasource is probably empty - zero rows */
-if (get_default_dbf_fields (sqlite, xtable, &dbf_list))
-	goto continue_exporting;
-}
+    if (lyr->First == NULL)
+      {
+	  /* the datasource is probably empty - zero rows */
+	  if (get_default_dbf_fields (sqlite, xtable, &dbf_list))
+	      goto continue_exporting;
+      }
 
 
 /* preparing the DBF fields list */
@@ -1799,7 +1795,7 @@ if (get_default_dbf_fields (sqlite, xtable, &dbf_list))
       }
 
 /* resetting SQLite query */
-continue_exporting:
+  continue_exporting:
     ret = sqlite3_reset (stmt);
     if (ret != SQLITE_OK)
 	goto sql_error;
@@ -1921,7 +1917,7 @@ continue_exporting:
     gaiaFreeShapefile (shp);
     free (xtable);
     free (xcolumn);
-gaiaFreeVectorLayersList(list);
+    gaiaFreeVectorLayersList (list);
     if (verbose)
 	spatialite_e ("\nExported %d rows into SHAPEFILE\n========\n", rows);
     if (xrows)
@@ -1934,7 +1930,7 @@ gaiaFreeVectorLayersList(list);
     sqlite3_finalize (stmt);
     free (xtable);
     free (xcolumn);
-gaiaFreeVectorLayersList(list);
+    gaiaFreeVectorLayersList (list);
     if (dbf_list)
 	gaiaFreeDbfList (dbf_list);
     if (shp)
@@ -1948,7 +1944,7 @@ gaiaFreeVectorLayersList(list);
 /* shapefile can't be created/opened */
     free (xtable);
     free (xcolumn);
-gaiaFreeVectorLayersList(list);
+    gaiaFreeVectorLayersList (list);
     if (dbf_list)
 	gaiaFreeDbfList (dbf_list);
     if (shp)
@@ -2355,8 +2351,9 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 		      if (pk_type == SQLITE_TEXT)
 			  sqlite3_bind_text (stmt, 1,
 					     dbf_field->Value->TxtValue,
-					     strlen (dbf_field->Value->
-						     TxtValue), SQLITE_STATIC);
+					     strlen (dbf_field->
+						     Value->TxtValue),
+					     SQLITE_STATIC);
 		      else if (pk_type == SQLITE_FLOAT)
 			  sqlite3_bind_double (stmt, 1,
 					       dbf_field->Value->DblValue);
@@ -2398,8 +2395,8 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->
-						       Value->TxtValue),
+					       strlen (dbf_field->Value->
+						       TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -4666,8 +4663,8 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 						     cell.value.int_value);
 			    else if (cell.type == FREEXL_CELL_DOUBLE)
 				dummy = sqlite3_mprintf ("%1.2f ",
-							 cell.value.
-							 double_value);
+							 cell.
+							 value.double_value);
 			    else if (cell.type == FREEXL_CELL_TEXT
 				     || cell.type == FREEXL_CELL_SST_TEXT
 				     || cell.type == FREEXL_CELL_DATE
@@ -4678,8 +4675,8 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 				  if (len < 256)
 				      dummy =
 					  sqlite3_mprintf ("%s",
-							   cell.value.
-							   text_value);
+							   cell.
+							   value.text_value);
 				  else
 				      dummy = sqlite3_mprintf ("col_%d", col);
 			      }
