@@ -1520,7 +1520,7 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
       }
 /* is the datasource a genuine registered Geometry ?? */
     list = gaiaGetVectorLayersList (sqlite, table, column,
-				    GAIA_VECTORS_LIST_PRECISE);
+				    GAIA_VECTORS_LIST_PESSIMISTIC);
     if (list == NULL)
       {
 	  /* attempting to recover an unregistered Geometry */

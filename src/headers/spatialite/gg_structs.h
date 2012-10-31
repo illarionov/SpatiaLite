@@ -719,27 +719,27 @@ extern "C"
     typedef struct gaiaLayerAttributeFieldInfos
     {
 /** ordinal position */
-int Ordinal;
+	int Ordinal;
 /** SQL name of the corresponding column */
 	char *AttributeFieldName;
 /** total count of NULL values */
 	int NullValuesCount;
 /** total count of INTEGER values */
-int IntegerValuesCount;
+	int IntegerValuesCount;
 /** total count of DOUBLE values */
-int DoubleValuesCount;
+	int DoubleValuesCount;
 /** total count of TEXT values */
-int TextValuesCount;
+	int TextValuesCount;
 /** total count of BLOB values */
-int BlobValuesCount;
+	int BlobValuesCount;
 /** pointer to MaxSize/Length infos (may be NULL) */
-gaiaAttributeFieldMaxSizePtr MaxSize;
+	gaiaAttributeFieldMaxSizePtr MaxSize;
 /** pointer to range of Integer values infos (may be NULL) */
-gaiaAttributeFieldIntRangePtr IntRange;
+	gaiaAttributeFieldIntRangePtr IntRange;
 /** pointer to range of Double values infos (may be NULL) */
-gaiaAttributeFieldDoubleRangePtr DoubleRange;
+	gaiaAttributeFieldDoubleRangePtr DoubleRange;
 /** pointer to next item (linked list) */
-struct gaiaLayerAttributeFieldInfos *Next;
+	struct gaiaLayerAttributeFieldInfos *Next;
     } gaiaLayerAttributeField;
 
 /**
@@ -779,9 +779,9 @@ struct gaiaLayerAttributeFieldInfos *Next;
 /** pointer to Auth infos (may be NULL) */
 	gaiaLayerAuthPtr AuthInfos;
 /** pointer to first Field/Attribute (linked list) */
-gaiaLayerAttributeFieldPtr First;
+	gaiaLayerAttributeFieldPtr First;
 /** pointer to last Field/Attribute (linked list) */
-gaiaLayerAttributeFieldPtr Last;
+	gaiaLayerAttributeFieldPtr Last;
 /** pointer to next item (linked list) */
 	struct gaiaVectorLayerItem *Next;
     } gaiaVectorLayer;

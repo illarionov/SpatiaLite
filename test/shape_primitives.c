@@ -555,11 +555,11 @@ int do_test(sqlite3 *handle)
 /* testing VectorLayersList (several flavors) */
     list = gaiaGetVectorLayersList (handle, NULL, NULL, GAIA_VECTORS_LIST_FAST);
     gaiaFreeVectorLayersList (list);
-    list = gaiaGetVectorLayersList (handle, NULL, NULL, GAIA_VECTORS_LIST_PRECISE);
+    list = gaiaGetVectorLayersList (handle, NULL, NULL, GAIA_VECTORS_LIST_PESSIMISTIC);
     gaiaFreeVectorLayersList (list);
     list = gaiaGetVectorLayersList (handle, "Polygon_Test", "geomZM", GAIA_VECTORS_LIST_FAST);
     gaiaFreeVectorLayersList (list);
-    list = gaiaGetVectorLayersList (handle, "Polygon_Test", "geomZM", GAIA_VECTORS_LIST_PRECISE);
+    list = gaiaGetVectorLayersList (handle, "Polygon_Test", "geomZM", GAIA_VECTORS_LIST_OPTIMISTIC);
     gaiaFreeVectorLayersList (list);
     
     ret = sqlite3_exec (handle, "DROP TABLE Polygon_Test", NULL, NULL, &err_msg);

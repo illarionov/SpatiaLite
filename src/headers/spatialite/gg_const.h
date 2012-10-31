@@ -65,8 +65,11 @@ extern "C"
 /** mode: FAST */
 #define GAIA_VECTORS_LIST_FAST		0
 
-/** mode: PRECISE */
-#define GAIA_VECTORS_LIST_PRECISE	1
+/** mode: OPTIMISTIC */
+#define GAIA_VECTORS_LIST_OPTIMISTIC	1
+
+/** mode: PESSIMISTIC */
+#define GAIA_VECTORS_LIST_PESSIMISTIC	2
 
 /* constant values for Vector Layer Types */
 

@@ -211,11 +211,11 @@ trying to connect the test DB:
     do_print_list (list, "FAST");
     gaiaFreeVectorLayersList (list);
 
-/* listing layers: PRECISE mode, actually updating before listing !!! */
+/* listing layers: PESSIMISTIC mode, actually updating before listing !!! */
     list =
 	gaiaGetVectorLayersList (handle, table, geometry,
-				 GAIA_VECTORS_LIST_PRECISE);
-    do_print_list (list, "PRECISE");
+				 GAIA_VECTORS_LIST_PESSIMISTIC);
+    do_print_list (list, "PESSIMISTIC");
     gaiaFreeVectorLayersList (list);
 
 /* disconnecting the test DB */

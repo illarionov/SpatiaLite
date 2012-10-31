@@ -5003,6 +5003,545 @@ compute_table_fields_statistics (sqlite3 * handle, const char *table,
     return 1;
 }
 
+static int
+check_v4_statistics (sqlite3 * handle)
+{
+/* checking if v.4.0.0 statistics tables are supported */
+    char *sql_statement;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+
+/* testing the SQL Query */
+    sql_statement =
+	sqlite3_mprintf ("SELECT g.table_name, g.geometry_column, "
+			 "s.row_count, s.extent_min_x, s.extent_min_y, "
+			 "s.extent_max_x, s.extent_max_y "
+			 "FROM vector_layers AS g "
+			 "LEFT JOIN vector_layers_statistics AS s ON "
+			 "(g.table_name = s.table_name AND "
+			 "g.geometry_column = s.geometry_column) LIMIT 1");
+    ret =
+	sqlite3_get_table (handle, sql_statement, &results, &rows, &columns,
+			   NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+	return 0;
+    sqlite3_free_table (results);
+
+    return 1;
+}
+
+static int
+check_v3_statistics (sqlite3 * handle)
+{
+/* checking if v.3.0.0 statistics tables are supported */
+    char *sql_statement;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+
+/* testing the SQL Query - Table-based Geometries */
+    sql_statement =
+	sqlite3_mprintf ("SELECT g.f_table_name, g.f_geometry_column, "
+			 "s.row_count, s.extent_min_x, s.extent_min_y, "
+			 "s.extent_max_x, s.extent_max_y "
+			 "FROM geometry_columns AS g "
+			 "LEFT JOIN layer_statistics AS s ON "
+			 "(g.f_table_name = s.table_name AND "
+			 "g.f_geometry_column = s.geometry_column) LIMIT 1");
+    ret =
+	sqlite3_get_table (handle, sql_statement, &results, &rows, &columns,
+			   NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+	return 0;
+    sqlite3_free_table (results);
+
+/* testing the SQL Query - View-based Geometries */
+    sql_statement =
+	sqlite3_mprintf ("SELECT g.view_name, g.view_geometry, "
+			 "s.row_count, s.extent_min_x, s.extent_min_y, "
+			 "s.extent_max_x, s.extent_max_y "
+			 "FROM views_geometry_columns AS g "
+			 "LEFT JOIN views_layer_statistics AS s ON "
+			 "(g.view_name = s.view_name AND "
+			 "g.view_geometry = s.view_geometry) LIMIT 1");
+    ret =
+	sqlite3_get_table (handle, sql_statement, &results, &rows, &columns,
+			   NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+	return 0;
+    sqlite3_free_table (results);
+
+/* testing the SQL Query - VirtualShape-based Geometries */
+    sql_statement =
+	sqlite3_mprintf ("SELECT g.virt_name, g.virt_geometry, "
+			 "s.row_count, s.extent_min_x, s.extent_min_y, "
+			 "s.extent_max_x, s.extent_max_y "
+			 "FROM virts_geometry_columns AS g "
+			 "LEFT JOIN virts_layer_statistics AS s ON "
+			 "(g.virt_name = s.virt_name AND "
+			 "g.virt_geometry = s.virt_geometry) LIMIT 1");
+    ret =
+	sqlite3_get_table (handle, sql_statement, &results, &rows, &columns,
+			   NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+	return 0;
+    sqlite3_free_table (results);
+
+    return 1;
+}
+
+static int
+check_v2_statistics (sqlite3 * handle)
+{
+/* checking if v.2.0.0 statistics tables are supported */
+    char *sql_statement;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+
+/* testing the SQL Query - Table-based Geometries */
+    sql_statement =
+	sqlite3_mprintf ("SELECT g.f_table_name, g.f_geometry_column, "
+			 "s.row_count, s.extent_min_x, s.extent_min_y, "
+			 "s.extent_max_x, s.extent_max_y "
+			 "FROM geometry_columns AS g "
+			 "LEFT JOIN layer_statistics AS s ON "
+			 "(g.f_table_name = s.table_name AND "
+			 "g.f_geometry_column = s.geometry_column) LIMIT 1");
+    ret =
+	sqlite3_get_table (handle, sql_statement, &results, &rows, &columns,
+			   NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+	return 0;
+    sqlite3_free_table (results);
+
+    return 1;
+}
+
+static int
+optimistic_layer_statistics_v4 (sqlite3 * handle, const char *table,
+					const char *geometry)
+{
+/* selective statistics update - v.4.0.0 layout */
+    char *sql_statement;
+    int ret;
+    const char *f_table_name;
+    const char *f_geometry_column;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    int error = 0;
+
+    if (table == NULL && geometry == NULL)
+      {
+	  /* processing any table/geometry found in GEOMETRY_COLUMNS */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.table_name, g.geometry_column "
+			       "FROM vector_layers AS g "
+			       "LEFT JOIN vector_layers_statistics AS s ON "
+			       "(g.table_name = s.table_name AND "
+			       "g.geometry_column = s.geometry_column) "
+			       "WHERE s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL");
+      }
+    else if (geometry == NULL)
+      {
+	  /* processing any geometry belonging to this table */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.table_name, g.geometry_column "
+			       "FROM vector_layers AS g "
+			       "LEFT JOIN vector_layers_statistics AS s ON "
+			       "(g.table_name = s.table_name AND "
+			       "g.geometry_column = s.geometry_column) "
+			       "WHERE Lower(g.table_name) = Lower(%Q) AND "
+			       "(s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL)", table);
+      }
+    else
+      {
+	  /* processing a single table/geometry entry */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.table_name, g.geometry_column "
+			       "FROM vector_layers AS g "
+			       "LEFT JOIN vector_layers_statistics AS s ON "
+			       "(g.table_name = s.table_name AND "
+			       "g.geometry_column = s.geometry_column) "
+			       "WHERE Lower(g.table_name) = Lower(%Q) AND "
+			       "Lower(g.geometry_column) = Lower(%Q) AND "
+			       "(s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL)", table, geometry);
+      }
+    ret =
+	sqlite3_get_table (handle, sql_statement, &results, &rows, &columns,
+			   NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+	return 0;
+
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		f_table_name = results[(i * columns) + 0];
+		f_geometry_column = results[(i * columns) + 1];
+		if (!update_layer_statistics
+		    (handle, f_table_name, f_geometry_column))
+		  {
+		      error = 1;
+		      break;
+		  }
+	    }
+      }
+    sqlite3_free_table (results);
+    if (error)
+	return 0;
+    return 1;
+}
+
+static int
+optimistic_layer_statistics_v3 (sqlite3 * handle, const char *table,
+					const char *geometry)
+{
+/* selective statistics update - v.3.0.0 layout */
+    char *sql_statement;
+    int ret;
+    const char *f_table_name;
+    const char *f_geometry_column;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    int error = 0;
+
+/* genuine Table-based Geometries */
+    if (table == NULL && geometry == NULL)
+      {
+	  /* processing any table/geometry found in GEOMETRY_COLUMNS */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.f_table_name, g.f_geometry_column "
+			       "FROM geometry_columns AS g "
+			       "LEFT JOIN layer_statistics AS s ON "
+			       "(g.f_table_name = s.table_name AND "
+			       "g.f_geometry_column = s.geometry_column) "
+			       "WHERE s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL");
+      }
+    else if (geometry == NULL)
+      {
+	  /* processing any geometry belonging to this table */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.f_table_name, g.f_geometry_column "
+			       "FROM geometry_columns AS g "
+			       "LEFT JOIN layer_statistics AS s ON "
+			       "(g.f_table_name = s.table_name AND "
+			       "g.f_geometry_column = s.geometry_column) "
+			       "WHERE Lower(g.f_table_name) = Lower(%Q) AND "
+			       "(s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL)", table);
+      }
+    else
+      {
+	  /* processing a single table/geometry entry */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.f_table_name, g.f_geometry_column "
+			       "FROM geometry_columns AS g "
+			       "LEFT JOIN layer_statistics AS s ON "
+			       "(g.f_table_name = s.table_name AND "
+			       "g.f_geometry_column = s.geometry_column) "
+			       "WHERE Lower(g.f_table_name) = Lower(%Q) AND "
+			       "Lower(g.f_geometry_column) = Lower(%Q) AND "
+			       "(s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL)", table, geometry);
+      }
+    ret =
+	sqlite3_get_table (handle, sql_statement, &results, &rows, &columns,
+			   NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+	return 0;
+
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		f_table_name = results[(i * columns) + 0];
+		f_geometry_column = results[(i * columns) + 1];
+		if (!update_layer_statistics
+		    (handle, f_table_name, f_geometry_column))
+		  {
+		      error = 1;
+		      break;
+		  }
+	    }
+      }
+    sqlite3_free_table (results);
+    if (error)
+	return 0;
+
+/* View Based Geometries */
+    if (table == NULL && geometry == NULL)
+      {
+	  /* processing any table/geometry found in GEOMETRY_COLUMNS */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.view_name, g.view_geometry "
+			       "FROM views_geometry_columns AS g "
+			       "LEFT JOIN views_layer_statistics AS s ON "
+			       "(g.view_name = s.view_name AND "
+			       "g.view_geometry = s.view_geometry) "
+			       "WHERE s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL");
+      }
+    else if (geometry == NULL)
+      {
+	  /* processing any geometry belonging to this table */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.view_name, g.view_geometry "
+			       "FROM views_geometry_columns AS g "
+			       "LEFT JOIN views_layer_statistics AS s ON "
+			       "(g.view_name = s.view_name AND "
+			       "g.view_geometry = s.view_geometry) "
+			       "WHERE Lower(g.view_name) = Lower(%Q) AND "
+			       "(s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL)", table);
+      }
+    else
+      {
+	  /* processing a single table/geometry entry */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.view_name, g.view_geometry "
+			       "FROM views_geometry_columns AS g "
+			       "LEFT JOIN views_layer_statistics AS s ON "
+			       "(g.view_name = s.view_name AND "
+			       "g.view_geometry = s.view_geometry) "
+			       "WHERE Lower(g.view_name) = Lower(%Q) AND "
+			       "Lower(g.view_geometry) = Lower(%Q) AND "
+			       "(s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL)", table, geometry);
+      }
+    ret =
+	sqlite3_get_table (handle, sql_statement, &results, &rows, &columns,
+			   NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+	return 0;
+
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		f_table_name = results[(i * columns) + 0];
+		f_geometry_column = results[(i * columns) + 1];
+		if (!update_layer_statistics
+		    (handle, f_table_name, f_geometry_column))
+		  {
+		      error = 1;
+		      break;
+		  }
+	    }
+      }
+    sqlite3_free_table (results);
+    if (error)
+	return 0;
+
+/* VirtualShape Based Geometries */
+    if (table == NULL && geometry == NULL)
+      {
+	  /* processing any table/geometry found in GEOMETRY_COLUMNS */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.virt_name, g.virt_geometry "
+			       "FROM virts_geometry_columns AS g "
+			       "LEFT JOIN virts_layer_statistics AS s ON "
+			       "(g.virt_name = s.virt_name AND "
+			       "g.virt_geometry = s.virt_geometry) "
+			       "WHERE s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL");
+      }
+    else if (geometry == NULL)
+      {
+	  /* processing any geometry belonging to this table */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.virt_name, g.virt_geometry "
+			       "FROM virts_geometry_columns AS g "
+			       "LEFT JOIN virts_layer_statistics AS s ON "
+			       "(g.virt_name = s.virt_name AND "
+			       "g.virt_geometry = s.virt_geometry) "
+			       "WHERE Lower(g.virt_name) = Lower(%Q) AND "
+			       "(s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL)", table);
+      }
+    else
+      {
+	  /* processing a single table/geometry entry */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.virt_name, g.virt_geometry "
+			       "FROM virts_geometry_columns AS g "
+			       "LEFT JOIN virts_layer_statistics AS s ON "
+			       "(g.virt_name = s.virt_name AND "
+			       "g.virt_geometry = s.virt_geometry) "
+			       "WHERE Lower(g.virt_name) = Lower(%Q) AND "
+			       "Lower(g.virt_geometry) = Lower(%Q) AND "
+			       "(s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL)", table, geometry);
+      }
+    ret =
+	sqlite3_get_table (handle, sql_statement, &results, &rows, &columns,
+			   NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+	return 0;
+
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		f_table_name = results[(i * columns) + 0];
+		f_geometry_column = results[(i * columns) + 1];
+		if (!update_layer_statistics
+		    (handle, f_table_name, f_geometry_column))
+		  {
+		      error = 1;
+		      break;
+		  }
+	    }
+      }
+    sqlite3_free_table (results);
+    if (error)
+	return 0;
+    return 1;
+}
+
+static int
+optimistic_layer_statistics_v2 (sqlite3 * handle, const char *table,
+					const char *geometry)
+{
+/* selective statistics update - v.2.0.0 layout */
+    char *sql_statement;
+    int ret;
+    const char *f_table_name;
+    const char *f_geometry_column;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    int error = 0;
+
+/* genuine Table-based Geometries */
+    if (table == NULL && geometry == NULL)
+      {
+	  /* processing any table/geometry found in GEOMETRY_COLUMNS */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.f_table_name, g.f_geometry_column "
+			       "FROM geometry_columns AS g "
+			       "LEFT JOIN layer_statistics AS s ON "
+			       "(g.f_table_name = s.table_name AND "
+			       "g.f_geometry_column = s.geometry_column) "
+			       "WHERE s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL");
+      }
+    else if (geometry == NULL)
+      {
+	  /* processing any geometry belonging to this table */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.f_table_name, g.f_geometry_column "
+			       "FROM geometry_columns AS g "
+			       "LEFT JOIN layer_statistics AS s ON "
+			       "(g.f_table_name = s.table_name AND "
+			       "g.f_geometry_column = s.geometry_column) "
+			       "WHERE Lower(g.f_table_name) = Lower(%Q) AND "
+			       "(s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL)", table);
+      }
+    else
+      {
+	  /* processing a single table/geometry entry */
+	  sql_statement =
+	      sqlite3_mprintf ("SELECT g.f_table_name, g.f_geometry_column "
+			       "FROM geometry_columns AS g "
+			       "LEFT JOIN layer_statistics AS s ON "
+			       "(g.f_table_name = s.table_name AND "
+			       "g.f_geometry_column = s.geometry_column) "
+			       "WHERE Lower(g.f_table_name) = Lower(%Q) AND "
+			       "Lower(g.f_geometry_column) = Lower(%Q) AND "
+			       "(s.row_count IS NULL OR s.extent_min_x IS NULL "
+			       "OR s.extent_min_y IS NULL OR s.extent_max_y IS NULL "
+			       "OR s.extent_max_y IS NULL)", table, geometry);
+      }
+    ret =
+	sqlite3_get_table (handle, sql_statement, &results, &rows, &columns,
+			   NULL);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+	return 0;
+
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		f_table_name = results[(i * columns) + 0];
+		f_geometry_column = results[(i * columns) + 1];
+		if (!update_layer_statistics
+		    (handle, f_table_name, f_geometry_column))
+		  {
+		      error = 1;
+		      break;
+		  }
+	    }
+      }
+    sqlite3_free_table (results);
+    if (error)
+	return 0;
+    return 1;
+}
+
+static int
+optimistic_layer_statistics (sqlite3 * handle, const char *table,
+				    const char *geometry)
+{
+/* selective statistics update */
+    if (check_v4_statistics (handle))
+	return optimistic_layer_statistics_v4 (handle, table, geometry);
+    else if (check_v3_statistics (handle))
+	return optimistic_layer_statistics_v3 (handle, table, geometry);
+    else if (check_v2_statistics (handle))
+	return optimistic_layer_statistics_v2 (handle, table, geometry);
+    else
+	return 0;
+}
+
 SPATIALITE_DECLARE gaiaVectorLayersListPtr
 gaiaGetVectorLayersList (sqlite3 * handle, const char *table,
 			 const char *geometry, int mode)
@@ -5011,11 +5550,21 @@ gaiaGetVectorLayersList (sqlite3 * handle, const char *table,
     gaiaVectorLayersListPtr list;
     int metadata_version;
 
-    if (mode == GAIA_VECTORS_LIST_PRECISE)
+    if (mode == GAIA_VECTORS_LIST_PESSIMISTIC)
       {
-	  /* updating statistics before querying */
+	  /* updating anyway the statistics before querying */
 	  if (!update_layer_statistics (handle, table, geometry))
 	      return NULL;
+      }
+    if (mode == GAIA_VECTORS_LIST_OPTIMISTIC)
+      {
+	  /* selectively updating the statistics before querying */
+	  if (!optimistic_layer_statistics (handle, table, geometry))
+{
+	  /* failure: defaulting to Pessimistic */
+	  if (!update_layer_statistics (handle, table, geometry))
+	      return NULL;
+}
       }
 
 /* allocating an empty VectorLayersList */
@@ -5052,7 +5601,7 @@ gaiaGetVectorLayersList (sqlite3 * handle, const char *table,
 	goto error;
     if (!get_table_auth_legacy (handle, table, geometry, list))
 	goto error;
-    if (table != NULL && mode == GAIA_VECTORS_LIST_PRECISE)
+    if (table != NULL && mode == GAIA_VECTORS_LIST_PESSIMISTIC)
       {
 	  if (!compute_table_fields_statistics (handle, table, geometry, list))
 	      goto error;

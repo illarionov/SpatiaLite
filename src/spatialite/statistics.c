@@ -133,6 +133,7 @@ check_layer_statistics (sqlite3 * sqlite)
     int extent_max_y = 0;
     int i;
     const char *name;
+    int has_pk = 0;
 
 /* checking the LAYER_STATISTICS table */
     ret =
@@ -176,22 +177,60 @@ check_layer_statistics (sqlite3 * sqlite)
 	|| extent_min_x || extent_max_x || extent_min_y || extent_max_y)
 	return 0;
 
+/* checking if GEOMETRY_COLUMNS has a Primary Key */
+    ret =
+	sqlite3_get_table (sqlite, "PRAGMA table_info(geometry_columns)",
+			   &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		name = results[(i * columns) + 5];
+		if (atoi (name) != 0)
+		    has_pk = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+
 /* attempting to create LAYER_STATISTICS */
-    strcpy (sql, "CREATE TABLE layer_statistics (\n");
-    strcat (sql, "raster_layer INTEGER NOT NULL,\n");
-    strcat (sql, "table_name TEXT NOT NULL,\n");
-    strcat (sql, "geometry_column TEXT NOT NULL,\n");
-    strcat (sql, "row_count INTEGER,\n");
-    strcat (sql, "extent_min_x DOUBLE,\n");
-    strcat (sql, "extent_min_y DOUBLE,\n");
-    strcat (sql, "extent_max_x DOUBLE,\n");
-    strcat (sql, "extent_max_y DOUBLE,\n");
-    strcat (sql, "CONSTRAINT pk_layer_statistics PRIMARY KEY ");
-    strcat (sql, "(raster_layer, table_name, geometry_column),\n");
-    strcat (sql, "CONSTRAINT fk_layer_statistics FOREIGN KEY ");
-    strcat (sql, "(table_name, geometry_column) REFERENCES ");
-    strcat (sql, "geometry_columns (f_table_name, f_geometry_column) ");
-    strcat (sql, "ON DELETE CASCADE)");
+    if (has_pk)
+      {
+	  /* GEOMETRY_COLUMNS has a Primary Key */
+	  strcpy (sql, "CREATE TABLE layer_statistics (\n");
+	  strcat (sql, "raster_layer INTEGER NOT NULL,\n");
+	  strcat (sql, "table_name TEXT NOT NULL,\n");
+	  strcat (sql, "geometry_column TEXT NOT NULL,\n");
+	  strcat (sql, "row_count INTEGER,\n");
+	  strcat (sql, "extent_min_x DOUBLE,\n");
+	  strcat (sql, "extent_min_y DOUBLE,\n");
+	  strcat (sql, "extent_max_x DOUBLE,\n");
+	  strcat (sql, "extent_max_y DOUBLE,\n");
+	  strcat (sql, "CONSTRAINT pk_layer_statistics PRIMARY KEY ");
+	  strcat (sql, "(raster_layer, table_name, geometry_column),\n");
+	  strcat (sql, "CONSTRAINT fk_layer_statistics FOREIGN KEY ");
+	  strcat (sql, "(table_name, geometry_column) REFERENCES ");
+	  strcat (sql, "geometry_columns (f_table_name, f_geometry_column) ");
+	  strcat (sql, "ON DELETE CASCADE)");
+      }
+    else
+      {
+	  /* there is no Primary Key on GEOMETRY_COLUMNS */
+	  strcpy (sql, "CREATE TABLE layer_statistics (\n");
+	  strcat (sql, "raster_layer INTEGER NOT NULL,\n");
+	  strcat (sql, "table_name TEXT NOT NULL,\n");
+	  strcat (sql, "geometry_column TEXT NOT NULL,\n");
+	  strcat (sql, "row_count INTEGER,\n");
+	  strcat (sql, "extent_min_x DOUBLE,\n");
+	  strcat (sql, "extent_min_y DOUBLE,\n");
+	  strcat (sql, "extent_max_x DOUBLE,\n");
+	  strcat (sql, "extent_max_y DOUBLE,\n");
+	  strcat (sql, "CONSTRAINT pk_layer_statistics PRIMARY KEY ");
+	  strcat (sql, "(raster_layer, table_name, geometry_column))");
+      }
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
     if (ret != SQLITE_OK)
 	return 0;
