@@ -140,6 +140,12 @@ extern "C"
 
     SPATIALITE_PRIVATE int createGeometryColumns (void *p_sqlite);
 
+    SPATIALITE_PRIVATE int check_layer_statistics (void *p_sqlite);
+
+    SPATIALITE_PRIVATE int check_views_layer_statistics (void *p_sqlite);
+
+    SPATIALITE_PRIVATE int check_virts_layer_statistics (void *p_sqlite);
+
     SPATIALITE_PRIVATE void
 	updateGeometryTriggers (void *p_sqlite, const char *table,
 				const char *column);

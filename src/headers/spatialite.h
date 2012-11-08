@@ -507,6 +507,21 @@ extern "C"
  */
     SPATIALITE_DECLARE void gaiaFreeVectorLayersList (gaiaVectorLayersListPtr ptr);
 
+/**
+ Drops a layer-table, removing any related dependency
+
+ \param sqlite handle to current DB connection
+ \param table name of the table to be removed
+
+ \note this function will drop a SpatialTable, SpatialView or VirtualShape being
+ properly registered within the Metadata tables.
+ \n an eventual Spatial Index will be dropped as well, and any row referring the
+ selected table will be removed from the Metadata tables.
+
+ \return 0 on failure, any other value on success
+ */
+    SPATIALITE_DECLARE int gaiaDropTable (sqlite3 * sqlite, const char *table);
+
 #ifdef __cplusplus
 }
 #endif

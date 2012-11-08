@@ -473,8 +473,8 @@ int main (int argc, char *argv[])
     }
     sqlite3_free_table (results);
 
-    ret = sqlite3_exec (handle, "DROP TABLE polygons", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
+    ret = gaiaDropTable (handle, "polygons");
+    if (!ret) {
 	fprintf (stderr, "DROP polygons error: %s\n", err_msg);
 	sqlite3_free(err_msg);
 	sqlite3_close(handle);

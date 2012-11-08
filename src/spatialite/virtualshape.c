@@ -483,7 +483,7 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 		  };
 		sql =
 		    sqlite3_mprintf
-		    ("INSERT OR REPLACE INTO virts_geometry_columns "
+		    ("INSERT OR IGNORE INTO virts_geometry_columns "
 		     "(virt_name, virt_geometry, geometry_type, coord_dimension, srid) "
 		     "VALUES (Lower(%Q), 'geometry', %d, %d, %d)", argv[2],
 		     xtype, xdims, p_vt->Srid);
@@ -514,11 +514,29 @@ vshp_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 		  };
 		sql =
 		    sqlite3_mprintf
-		    ("INSERT OR REPLACE INTO virts_geometry_columns "
+		    ("INSERT OR IGNORE INTO virts_geometry_columns "
 		     "(virt_name, virt_geometry, type, srid) "
 		     "VALUES (Lower(%Q), 'geometry', %Q, %d)", argv[2], xgtype,
 		     p_vt->Srid);
 	    }
+	  sqlite3_exec (db, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (checkSpatialMetaData (db) == 3)
+      {
+	  /* current metadata style >= v.4.0.0 */
+
+	  /* inserting a row into VIRTS_GEOMETRY_COLUMNS_AUTH */
+	  sql = sqlite3_mprintf ("INSERT OR IGNORE INTO "
+				 "virts_geometry_columns_auth (virt_name, virt_geometry, hidden) "
+				 "VALUES (Lower(%Q), 'geometry', 0)", argv[2]);
+	  sqlite3_exec (db, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+
+	  /* inserting a row into GEOMETRY_COLUMNS_STATISTICS */
+	  sql = sqlite3_mprintf ("INSERT OR IGNORE INTO "
+				 "virts_geometry_columns_statistics (virt_name, virt_geometry) "
+				 "VALUES (Lower(%Q), 'geometry')", argv[2]);
 	  sqlite3_exec (db, sql, NULL, NULL, NULL);
 	  sqlite3_free (sql);
       }

@@ -112,132 +112,6 @@ struct field_container_infos
 };
 
 static int
-check_layer_statistics (sqlite3 * sqlite)
-{
-/*
-/ checks the LAYER_STATISTICS table for validity;
-/ if the table doesn't exist, attempts to create
-*/
-    char sql[8192];
-    char **results;
-    int rows;
-    int columns;
-    int ret;
-    int raster_layer = 0;
-    int table_name = 0;
-    int geometry_column = 0;
-    int row_count = 0;
-    int extent_min_x = 0;
-    int extent_min_y = 0;
-    int extent_max_x = 0;
-    int extent_max_y = 0;
-    int i;
-    const char *name;
-    int has_pk = 0;
-
-/* checking the LAYER_STATISTICS table */
-    ret =
-	sqlite3_get_table (sqlite, "PRAGMA table_info(layer_statistics)",
-			   &results, &rows, &columns, NULL);
-    if (ret != SQLITE_OK)
-	return 0;
-    if (rows < 1)
-	;
-    else
-      {
-	  for (i = 1; i <= rows; i++)
-	    {
-		name = results[(i * columns) + 1];
-		if (strcasecmp (name, "raster_layer") == 0)
-		    raster_layer = 1;
-		if (strcasecmp (name, "table_name") == 0)
-		    table_name = 1;
-		if (strcasecmp (name, "geometry_column") == 0)
-		    geometry_column = 1;
-		if (strcasecmp (name, "row_count") == 0)
-		    row_count = 1;
-		if (strcasecmp (name, "extent_min_x") == 0)
-		    extent_min_x = 1;
-		if (strcasecmp (name, "extent_min_y") == 0)
-		    extent_min_y = 1;
-		if (strcasecmp (name, "extent_max_x") == 0)
-		    extent_max_x = 1;
-		if (strcasecmp (name, "extent_max_y") == 0)
-		    extent_max_y = 1;
-	    }
-      }
-    sqlite3_free_table (results);
-
-/* LAYER_STATISTICS already exists and has a valid layout */
-    if (raster_layer && table_name && geometry_column && row_count
-	&& extent_min_x && extent_max_x && extent_min_y && extent_max_y)
-	return 1;
-/* LAYER_STATISTICS already exists, but has an invalid layout */
-    if (raster_layer || table_name || geometry_column || row_count
-	|| extent_min_x || extent_max_x || extent_min_y || extent_max_y)
-	return 0;
-
-/* checking if GEOMETRY_COLUMNS has a Primary Key */
-    ret =
-	sqlite3_get_table (sqlite, "PRAGMA table_info(geometry_columns)",
-			   &results, &rows, &columns, NULL);
-    if (ret != SQLITE_OK)
-	return 0;
-    if (rows < 1)
-	;
-    else
-      {
-	  for (i = 1; i <= rows; i++)
-	    {
-		name = results[(i * columns) + 5];
-		if (atoi (name) != 0)
-		    has_pk = 1;
-	    }
-      }
-    sqlite3_free_table (results);
-
-/* attempting to create LAYER_STATISTICS */
-    if (has_pk)
-      {
-	  /* GEOMETRY_COLUMNS has a Primary Key */
-	  strcpy (sql, "CREATE TABLE layer_statistics (\n");
-	  strcat (sql, "raster_layer INTEGER NOT NULL,\n");
-	  strcat (sql, "table_name TEXT NOT NULL,\n");
-	  strcat (sql, "geometry_column TEXT NOT NULL,\n");
-	  strcat (sql, "row_count INTEGER,\n");
-	  strcat (sql, "extent_min_x DOUBLE,\n");
-	  strcat (sql, "extent_min_y DOUBLE,\n");
-	  strcat (sql, "extent_max_x DOUBLE,\n");
-	  strcat (sql, "extent_max_y DOUBLE,\n");
-	  strcat (sql, "CONSTRAINT pk_layer_statistics PRIMARY KEY ");
-	  strcat (sql, "(raster_layer, table_name, geometry_column),\n");
-	  strcat (sql, "CONSTRAINT fk_layer_statistics FOREIGN KEY ");
-	  strcat (sql, "(table_name, geometry_column) REFERENCES ");
-	  strcat (sql, "geometry_columns (f_table_name, f_geometry_column) ");
-	  strcat (sql, "ON DELETE CASCADE)");
-      }
-    else
-      {
-	  /* there is no Primary Key on GEOMETRY_COLUMNS */
-	  strcpy (sql, "CREATE TABLE layer_statistics (\n");
-	  strcat (sql, "raster_layer INTEGER NOT NULL,\n");
-	  strcat (sql, "table_name TEXT NOT NULL,\n");
-	  strcat (sql, "geometry_column TEXT NOT NULL,\n");
-	  strcat (sql, "row_count INTEGER,\n");
-	  strcat (sql, "extent_min_x DOUBLE,\n");
-	  strcat (sql, "extent_min_y DOUBLE,\n");
-	  strcat (sql, "extent_max_x DOUBLE,\n");
-	  strcat (sql, "extent_max_y DOUBLE,\n");
-	  strcat (sql, "CONSTRAINT pk_layer_statistics PRIMARY KEY ");
-	  strcat (sql, "(raster_layer, table_name, geometry_column))");
-      }
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
-    if (ret != SQLITE_OK)
-	return 0;
-    return 1;
-}
-
-static int
 do_update_layer_statistics_v4 (sqlite3 * sqlite, const char *table,
 			       const char *column, int count, int has_coords,
 			       double min_x, double min_y, double max_x,
@@ -355,89 +229,6 @@ do_update_layer_statistics (sqlite3 * sqlite, const char *table,
     if (ret != SQLITE_OK)
 	return 0;
     if (error)
-	return 0;
-    return 1;
-}
-
-static int
-check_views_layer_statistics (sqlite3 * sqlite)
-{
-/*
-/ checks the VIEWS_LAYER_STATISTICS table for validity;
-/ if the table doesn't exist, attempts to create
-*/
-    char sql[8192];
-    char **results;
-    int rows;
-    int columns;
-    int ret;
-    int view_name = 0;
-    int view_geometry = 0;
-    int row_count = 0;
-    int extent_min_x = 0;
-    int extent_min_y = 0;
-    int extent_max_x = 0;
-    int extent_max_y = 0;
-    int i;
-    const char *name;
-
-/* checking the VIEWS_LAYER_STATISTICS table */
-    ret =
-	sqlite3_get_table (sqlite, "PRAGMA table_info(views_layer_statistics)",
-			   &results, &rows, &columns, NULL);
-    if (ret != SQLITE_OK)
-	return 0;
-    if (rows < 1)
-	;
-    else
-      {
-	  for (i = 1; i <= rows; i++)
-	    {
-		name = results[(i * columns) + 1];
-		if (strcasecmp (name, "view_name") == 0)
-		    view_name = 1;
-		if (strcasecmp (name, "view_geometry") == 0)
-		    view_geometry = 1;
-		if (strcasecmp (name, "row_count") == 0)
-		    row_count = 1;
-		if (strcasecmp (name, "extent_min_x") == 0)
-		    extent_min_x = 1;
-		if (strcasecmp (name, "extent_min_y") == 0)
-		    extent_min_y = 1;
-		if (strcasecmp (name, "extent_max_x") == 0)
-		    extent_max_x = 1;
-		if (strcasecmp (name, "extent_max_y") == 0)
-		    extent_max_y = 1;
-	    }
-      }
-    sqlite3_free_table (results);
-
-/* VIEWS_LAYER_STATISTICS already exists and has a valid layout */
-    if (view_name && view_geometry && row_count && extent_min_x && extent_max_x
-	&& extent_min_y && extent_max_y)
-	return 1;
-/* VIEWS_LAYER_STATISTICS already exists, but has an invalid layout */
-    if (view_name || view_geometry || row_count || extent_min_x || extent_max_x
-	|| extent_min_y || extent_max_y)
-	return 0;
-
-/* attempting to create VIEWS_LAYER_STATISTICS */
-    strcpy (sql, "CREATE TABLE views_layer_statistics (\n");
-    strcat (sql, "view_name TEXT NOT NULL,\n");
-    strcat (sql, "view_geometry TEXT NOT NULL,\n");
-    strcat (sql, "row_count INTEGER,\n");
-    strcat (sql, "extent_min_x DOUBLE,\n");
-    strcat (sql, "extent_min_y DOUBLE,\n");
-    strcat (sql, "extent_max_x DOUBLE,\n");
-    strcat (sql, "extent_max_y DOUBLE,\n");
-    strcat (sql, "CONSTRAINT pk_views_layer_statistics PRIMARY KEY ");
-    strcat (sql, "(view_name, view_geometry),\n");
-    strcat (sql, "CONSTRAINT fk_views_layer_statistics FOREIGN KEY ");
-    strcat (sql, "(view_name, view_geometry) REFERENCES ");
-    strcat (sql, "views_geometry_columns (view_name, view_geometry) ");
-    strcat (sql, "ON DELETE CASCADE)");
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
-    if (ret != SQLITE_OK)
 	return 0;
     return 1;
 }
@@ -561,89 +352,6 @@ do_update_views_layer_statistics (sqlite3 * sqlite, const char *table,
     if (ret != SQLITE_OK)
 	return 0;
     if (error)
-	return 0;
-    return 1;
-}
-
-static int
-check_virts_layer_statistics (sqlite3 * sqlite)
-{
-/*
-/ checks the VIRTS_LAYER_STATISTICS table for validity;
-/ if the table doesn't exist, attempts to create
-*/
-    char sql[8192];
-    char **results;
-    int rows;
-    int columns;
-    int ret;
-    int virt_name = 0;
-    int virt_geometry = 0;
-    int row_count = 0;
-    int extent_min_x = 0;
-    int extent_min_y = 0;
-    int extent_max_x = 0;
-    int extent_max_y = 0;
-    int i;
-    const char *name;
-
-/* checking the VIRTS_LAYER_STATISTICS table */
-    ret =
-	sqlite3_get_table (sqlite, "PRAGMA table_info(virts_layer_statistics)",
-			   &results, &rows, &columns, NULL);
-    if (ret != SQLITE_OK)
-	return 0;
-    if (rows < 1)
-	;
-    else
-      {
-	  for (i = 1; i <= rows; i++)
-	    {
-		name = results[(i * columns) + 1];
-		if (strcasecmp (name, "virt_name") == 0)
-		    virt_name = 1;
-		if (strcasecmp (name, "virt_geometry") == 0)
-		    virt_geometry = 1;
-		if (strcasecmp (name, "row_count") == 0)
-		    row_count = 1;
-		if (strcasecmp (name, "extent_min_x") == 0)
-		    extent_min_x = 1;
-		if (strcasecmp (name, "extent_min_y") == 0)
-		    extent_min_y = 1;
-		if (strcasecmp (name, "extent_max_x") == 0)
-		    extent_max_x = 1;
-		if (strcasecmp (name, "extent_max_y") == 0)
-		    extent_max_y = 1;
-	    }
-      }
-    sqlite3_free_table (results);
-
-/* VIRTS_LAYER_STATISTICS already exists and has a valid layout */
-    if (virt_name && virt_geometry && row_count && extent_min_x && extent_max_x
-	&& extent_min_y && extent_max_y)
-	return 1;
-/* VIRTS_LAYER_STATISTICS already exists, but has an invalid layout */
-    if (virt_name || virt_geometry || row_count || extent_min_x || extent_max_x
-	|| extent_min_y || extent_max_y)
-	return 0;
-
-/* attempting to create VIRTS_LAYER_STATISTICS */
-    strcpy (sql, "CREATE TABLE virts_layer_statistics (\n");
-    strcat (sql, "virt_name TEXT NOT NULL,\n");
-    strcat (sql, "virt_geometry TEXT NOT NULL,\n");
-    strcat (sql, "row_count INTEGER,\n");
-    strcat (sql, "extent_min_x DOUBLE,\n");
-    strcat (sql, "extent_min_y DOUBLE,\n");
-    strcat (sql, "extent_max_x DOUBLE,\n");
-    strcat (sql, "extent_max_y DOUBLE,\n");
-    strcat (sql, "CONSTRAINT pk_virts_layer_statistics PRIMARY KEY ");
-    strcat (sql, "(virt_name, virt_geometry),\n");
-    strcat (sql, "CONSTRAINT fk_virts_layer_statistics FOREIGN KEY ");
-    strcat (sql, "(virt_name, virt_geometry) REFERENCES ");
-    strcat (sql, "virts_geometry_columns (virt_name, virt_geometry) ");
-    strcat (sql, "ON DELETE CASCADE)");
-    ret = sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
-    if (ret != SQLITE_OK)
 	return 0;
     return 1;
 }
@@ -1982,4 +1690,483 @@ update_layer_statistics (sqlite3 * sqlite, const char *table,
 	      return 0;
       }
     return 1;
+}
+
+struct drop_params
+{
+/* a struct supporting Drop Table */
+    char **rtrees;
+    int n_rtrees;
+    int is_view;
+    int ok_geometry_columns;
+    int ok_views_geometry_columns;
+    int ok_virts_geometry_columns;
+    int ok_geometry_columns_auth;
+    int ok_geometry_columns_field_infos;
+    int ok_geometry_columns_statistics;
+    int ok_views_geometry_columns_auth;
+    int ok_views_geometry_columns_field_infos;
+    int ok_views_geometry_columns_statistics;
+    int ok_virts_geometry_columns_auth;
+    int ok_virts_geometry_columns_field_infos;
+    int ok_virts_geometry_columns_statistics;
+    int ok_layer_statistics;
+    int ok_views_layer_statistics;
+    int ok_virts_layer_statistics;
+    int ok_layer_params;
+    int ok_layer_sub_classes;
+    int ok_layer_table_layout;
+};
+
+static int
+do_drop_table (sqlite3 * sqlite, const char *table, struct drop_params *aux)
+{
+/* performing the actual work */
+    int ret;
+    char *sql;
+    char *q_name;
+    int i;
+
+    if (aux->is_view)
+      {
+	  /* dropping a View */
+	  q_name = gaiaDoubleQuotedSql (table);
+	  sql = sqlite3_mprintf ("DROP VIEW IF EXISTS \"%s\"", q_name);
+	  free (q_name);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    else
+      {
+	  /* dropping a Table */
+	  q_name = gaiaDoubleQuotedSql (table);
+	  sql = sqlite3_mprintf ("DROP TABLE IF EXISTS \"%s\"", q_name);
+	  free (q_name);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+
+    for (i = 0; i < aux->n_rtrees; i++)
+      {
+	  /* dropping any R*Tree */
+	  q_name = gaiaDoubleQuotedSql (*(aux->rtrees + i));
+	  sql = sqlite3_mprintf ("DROP TABLE IF EXISTS \"%s\"", q_name);
+	  free (q_name);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+
+    if (aux->ok_layer_params)
+      {
+	  /* deleting from LAYER_PARAMS */
+	  sql = sqlite3_mprintf ("DELETE FROM layer_params "
+				 "WHERE lower(table_name) = lower(%Q)", table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_layer_sub_classes)
+      {
+	  /* deleting from LAYER_SUB_CLASSES */
+	  sql = sqlite3_mprintf ("DELETE FROM layer_sub_classes "
+				 "WHERE lower(table_name) = lower(%Q)", table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_layer_table_layout)
+      {
+	  /* deleting from LAYER_TABLE_LAYOUT */
+	  sql = sqlite3_mprintf ("DELETE FROM layer_table_layout "
+				 "WHERE lower(table_name) = lower(%Q)", table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_geometry_columns_auth)
+      {
+	  /* deleting from GEOMETRY_COLUMNS_AUTH */
+	  sql = sqlite3_mprintf ("DELETE FROM geometry_columns_auth "
+				 "WHERE lower(f_table_name) = lower(%Q)",
+				 table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_geometry_columns_field_infos)
+      {
+	  /* deleting from GEOMETRY_COLUMNS_FIELD_INFOS */
+	  sql = sqlite3_mprintf ("DELETE FROM geometry_columns_fiels_infos "
+				 "WHERE lower(f_table_name) = lower(%Q)",
+				 table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_geometry_columns_statistics)
+      {
+	  /* deleting from GEOMETRY_COLUMNS_STATISTICS */
+	  sql = sqlite3_mprintf ("DELETE FROM geometry_columns_statistics "
+				 "WHERE lower(f_table_name) = lower(%Q)",
+				 table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_views_geometry_columns_auth)
+      {
+	  /* deleting from VIEWS_GEOMETRY_COLUMNS_AUTH */
+	  sql = sqlite3_mprintf ("DELETE FROM views_geometry_columns_auth "
+				 "WHERE lower(view_name) = lower(%Q)", table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_views_geometry_columns_field_infos)
+      {
+	  /* deleting from VIEWS_GEOMETRY_COLUMNS_FIELD_INFOS */
+	  sql =
+	      sqlite3_mprintf ("DELETE FROM views_geometry_columns_fiels_infos "
+			       "WHERE view_name = %Q", table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_views_geometry_columns_statistics)
+      {
+	  /* deleting from VIEWS_GEOMETRY_COLUMNS_STATISTICS */
+	  sql =
+	      sqlite3_mprintf ("DELETE FROM views_geometry_columns_statistics "
+			       "WHERE lower(view_name) = lower(%Q)", table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_virts_geometry_columns_auth)
+      {
+	  /* deleting from VIRTS_GEOMETRY_COLUMNS_AUTH */
+	  sql = sqlite3_mprintf ("DELETE FROM virts_geometry_columns_auth "
+				 "WHERE lower(virt_name) = lower(%Q)", table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_virts_geometry_columns_field_infos)
+      {
+	  /* deleting from VIRTS_GEOMETRY_COLUMNS_FIELD_INFOS */
+	  sql =
+	      sqlite3_mprintf ("DELETE FROM virts_geometry_columns_fiels_infos "
+			       "WHERE lower(virt_name) = lower(%Q)", table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_virts_geometry_columns_statistics)
+      {
+	  /* deleting from VIRTS_GEOMETRY_COLUMNS_STATISTICS */
+	  sql =
+	      sqlite3_mprintf ("DELETE FROM virts_geometry_columns_statistics "
+			       "WHERE lower(virt_name) = lower(%Q)", table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_layer_statistics)
+      {
+	  /* deleting from LAYER_STATISTICS */
+	  sql = sqlite3_mprintf ("DELETE FROM layer_statistics "
+				 "WHERE lower(table_name) = lower(%Q)", table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_views_layer_statistics)
+      {
+	  /* deleting from VIEWS_LAYER_STATISTICS */
+	  sql = sqlite3_mprintf ("DELETE FROM views_layer_statistics "
+				 "WHERE lower(view_name) = lower(%Q)", table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_virts_layer_statistics)
+      {
+	  /* deleting from VIRTS_LAYER_STATISTICS */
+	  sql = sqlite3_mprintf ("DELETE FROM virts_layer_statistics "
+				 "WHERE lower(virt_name) = lower(%Q)", table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_geometry_columns)
+      {
+	  /* deleting from GEOMETRY_COLUMNS */
+	  sql = sqlite3_mprintf ("DELETE FROM geometry_columns "
+				 "WHERE lower(f_table_name) = lower(%Q)",
+				 table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_views_geometry_columns)
+      {
+	  /* deleting from VIEWS_GEOMETRY_COLUMNS */
+	  sql = sqlite3_mprintf ("DELETE FROM views_geometry_columns "
+				 "WHERE lower(view_name) = lower(%Q)", table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+    if (aux->ok_virts_geometry_columns)
+      {
+	  /* deleting from VIEWS_GEOMETRY_COLUMNS */
+	  sql = sqlite3_mprintf ("DELETE FROM virts_geometry_columns "
+				 "WHERE lower(virt_name) = lower(%Q)", table);
+	  sqlite3_exec (sqlite, sql, NULL, NULL, NULL);
+	  sqlite3_free (sql);
+      }
+
+    return 1;
+}
+
+static int
+do_drop_sub_view (sqlite3 * sqlite, const char *table, struct drop_params *aux)
+{
+/* dropping any depending View */
+    int ret;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    char *sql;
+    struct drop_params aux2;
+
+/* initializing the aux params */
+    aux2.rtrees = NULL;
+    aux2.n_rtrees = 0;
+    aux2.is_view = 1;
+    aux2.ok_geometry_columns = 0;
+    aux2.ok_views_geometry_columns = aux->ok_views_geometry_columns;
+    aux2.ok_virts_geometry_columns = aux->ok_virts_geometry_columns;
+    aux2.ok_geometry_columns_auth = aux->ok_geometry_columns_auth;
+    aux2.ok_geometry_columns_field_infos = aux->ok_geometry_columns_field_infos;
+    aux2.ok_geometry_columns_statistics = aux->ok_geometry_columns_statistics;
+    aux2.ok_views_geometry_columns_auth = aux->ok_views_geometry_columns_auth;
+    aux2.ok_views_geometry_columns_field_infos =
+	aux->ok_views_geometry_columns_field_infos;
+    aux2.ok_views_geometry_columns_statistics =
+	aux->ok_views_geometry_columns_statistics;
+    aux2.ok_virts_geometry_columns_auth = aux->ok_virts_geometry_columns_auth;
+    aux2.ok_virts_geometry_columns_field_infos =
+	aux->ok_virts_geometry_columns_field_infos;
+    aux2.ok_virts_geometry_columns_statistics =
+	aux->ok_virts_geometry_columns_statistics;
+    aux2.ok_layer_statistics = aux->ok_layer_statistics;
+    aux2.ok_views_layer_statistics = aux->ok_views_layer_statistics;
+    aux2.ok_virts_layer_statistics = aux->ok_virts_layer_statistics;
+    aux2.ok_layer_params = aux->ok_layer_params;
+    aux2.ok_layer_sub_classes = aux->ok_layer_sub_classes;
+    aux2.ok_layer_table_layout = aux->ok_layer_table_layout;
+
+
+    if (aux->ok_views_geometry_columns == 0)
+	return 1;
+
+/* identifying any View depending on the target */
+    sql = sqlite3_mprintf ("SELECT view_name FROM views_geometry_columns "
+			   "WHERE Lower(f_table_name) = Lower(%Q)", table);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		const char *name = results[(i * columns) + 0];
+		/* dropping the view itself */
+		if (!do_drop_table (sqlite, name, &aux2))
+		    return 0;
+	    }
+	  sqlite3_free_table (results);
+      }
+    return 1;
+}
+
+static int
+check_drop_layout (sqlite3 * sqlite, const char *table, struct drop_params *aux)
+{
+/* checking the actual DB configuration */
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    char jolly = '%';
+    char *x_name;
+    char *sql =
+	"SELECT type, name FROM sqlite_master WHERE type = 'table' or type = 'view'";
+    int ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	ret = 0;
+    else
+      {
+	  ret = 1;
+	  for (i = 1; i <= rows; i++)
+	    {
+		const char *type = results[(i * columns) + 0];
+		const char *name = results[(i * columns) + 1];
+		if (name)
+		  {
+		      /* checking which tables are actually defined */
+		      if (strcasecmp (name, "geometry_columns") == 0)
+			  aux->ok_geometry_columns = 1;
+		      if (strcasecmp (name, "views_geometry_columns") == 0)
+			  aux->ok_views_geometry_columns = 1;
+		      if (strcasecmp (name, "virts_geometry_columns") == 0)
+			  aux->ok_virts_geometry_columns = 1;
+		      if (strcasecmp (name, "geometry_columns_auth") == 0)
+			  aux->ok_geometry_columns_auth = 1;
+		      if (strcasecmp (name, "views_geometry_columns_auth") == 0)
+			  aux->ok_views_geometry_columns_auth = 1;
+		      if (strcasecmp (name, "virts_geometry_columns_auth") == 0)
+			  aux->ok_virts_geometry_columns_auth = 1;
+		      if (strcasecmp (name, "geometry_columns_statistics") == 0)
+			  aux->ok_geometry_columns_statistics = 1;
+		      if (strcasecmp (name, "views_geometry_columns_statistics")
+			  == 0)
+			  aux->ok_views_geometry_columns_statistics = 1;
+		      if (strcasecmp (name, "virts_geometry_columns_statistics")
+			  == 0)
+			  aux->ok_virts_geometry_columns_statistics = 1;
+		      if (strcasecmp (name, "geometry_columns_field_infos") ==
+			  0)
+			  aux->ok_geometry_columns_field_infos = 1;
+		      if (strcasecmp
+			  (name, "views_geometry_columns_field_infos") == 0)
+			  aux->ok_views_geometry_columns_field_infos = 1;
+		      if (strcasecmp
+			  (name, "virts_geometry_columns_field_infos") == 0)
+			  aux->ok_virts_geometry_columns_field_infos = 1;
+		      if (strcasecmp (name, "layer_params") == 0)
+			  aux->ok_layer_params = 1;
+		      if (strcasecmp (name, "layer_statistics") == 0)
+			  aux->ok_layer_statistics = 1;
+		      if (strcasecmp (name, "layer_sub_classes") == 0)
+			  aux->ok_layer_sub_classes = 1;
+		      if (strcasecmp (name, "layer_table_layout") == 0)
+			  aux->ok_layer_table_layout = 1;
+		      if (strcasecmp (name, "views_geometry_columns") == 0)
+			  aux->ok_views_geometry_columns = 1;
+		      if (strcasecmp (name, "virts_geometry_columns") == 0)
+			  aux->ok_virts_geometry_columns = 1;
+		      if (strcasecmp (name, "virts_geometry_columns") == 0)
+			  aux->ok_virts_geometry_columns = 1;
+		      if (strcasecmp (name, table) == 0)
+			{
+			    /* checking if the target is a view */
+			    if (strcasecmp (type, "view") == 0)
+				aux->is_view = 1;
+			}
+		  }
+	    }
+      }
+    sqlite3_free_table (results);
+    if (!ret)
+	return 0;
+
+/* identifying any possible R*Tree supporting the main target */
+    x_name = sqlite3_mprintf ("idx_%s_%c", table, jolly);
+    sql =
+	sqlite3_mprintf ("SELECT name FROM sqlite_master WHERE type = 'table' "
+			 "AND name LIKE(%Q) AND sql LIKE('%cvirtual%c') AND sql LIKE('%crtree%c')",
+			 x_name, jolly, jolly, jolly, jolly);
+    sqlite3_free (x_name);
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (rows < 1)
+	;
+    else
+      {
+/* allocating the rtrees array */
+	  aux->n_rtrees = rows;
+	  aux->rtrees = malloc (sizeof (char **) * aux->n_rtrees);
+	  for (i = 1; i <= rows; i++)
+	    {
+		const char *name = results[(i * columns) + 0];
+		int len = strlen (name);
+		*(aux->rtrees + (i - 1)) = malloc (len + 1);
+		strcpy (*(aux->rtrees + (i - 1)), name);
+	    }
+	  sqlite3_free_table (results);
+      }
+    return 1;
+}
+
+SPATIALITE_DECLARE int
+gaiaDropTable (sqlite3 * sqlite, const char *table)
+{
+/* dropping a Spatial Table and any other related stuff */
+    int ret;
+    struct drop_params aux;
+
+/* initializing the aux params */
+    aux.rtrees = NULL;
+    aux.n_rtrees = 0;
+    aux.is_view = 0;
+    aux.ok_geometry_columns = 0;
+    aux.ok_views_geometry_columns = 0;
+    aux.ok_virts_geometry_columns = 0;
+    aux.ok_geometry_columns_auth = 0;
+    aux.ok_geometry_columns_field_infos = 0;
+    aux.ok_geometry_columns_statistics = 0;
+    aux.ok_views_geometry_columns_auth = 0;
+    aux.ok_views_geometry_columns_field_infos = 0;
+    aux.ok_views_geometry_columns_statistics = 0;
+    aux.ok_virts_geometry_columns_auth = 0;
+    aux.ok_virts_geometry_columns_field_infos = 0;
+    aux.ok_virts_geometry_columns_statistics = 0;
+    aux.ok_layer_statistics = 0;
+    aux.ok_views_layer_statistics = 0;
+    aux.ok_virts_layer_statistics = 0;
+    aux.ok_layer_params = 0;
+    aux.ok_layer_sub_classes = 0;
+    aux.ok_layer_table_layout = 0;
+    if (table == NULL)
+	return 0;
+/* the whole operation is a single transaction */
+    ret = sqlite3_exec (sqlite, "BEGIN", NULL, NULL, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+/* checking the actual DB configuration */
+    if (!check_drop_layout (sqlite, table, &aux))
+	goto rollback;
+/* recursively dropping any depending View */
+    if (!do_drop_sub_view (sqlite, table, &aux))
+	goto rollback;
+    if (!do_drop_table (sqlite, table, &aux))
+	goto rollback;
+/* committing the still pending transaction */
+fprintf(stderr, "COMMIT\n");
+    ret = sqlite3_exec (sqlite, "COMMIT", NULL, NULL, NULL);
+    if (ret != SQLITE_OK)
+	goto rollback;
+    if (aux.rtrees)
+      {
+	  /* memory cleanup - rtrees */
+	  int i;
+	  for (i = 0; i < aux.n_rtrees; i++)
+	    {
+		if (*(aux.rtrees + i) != NULL)
+		    free (*(aux.rtrees + i));
+	    }
+	  free (aux.rtrees);
+      }
+fprintf(stderr, "OK 1\n");
+    return 1;
+
+  rollback:
+
+/* invalidating the still pending transaction */
+    sqlite3_exec (sqlite, "ROLLBACK", NULL, NULL, NULL);
+    if (aux.rtrees)
+      {
+	  /* memory cleanup - rtrees */
+	  int i;
+	  for (i = 0; i < aux.n_rtrees; i++)
+	    {
+		if (*(aux.rtrees + i) != NULL)
+		    free (*(aux.rtrees + i));
+	    }
+	  free (aux.rtrees);
+      }
+    return 0;
 }
