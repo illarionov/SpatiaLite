@@ -63,6 +63,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #ifdef _WIN32
 #define strcasecmp	_stricmp
+#define strncasecmp	_strnicmp
 #endif /* not WIN32 */
 
 static struct sqlite3_module my_spidx_module;

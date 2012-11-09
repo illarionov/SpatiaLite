@@ -9,7 +9,7 @@
 #undef ENABLE_LWGEOM
 
 /* Should be defined in order to enable GEOS_ADVANCED support. */
-#undef GEOS_ADVANCED
+#define GEOS_ADVANCED 1
 
 /* Should be defined in order to enable GEOS_TRUNK experimental support. */
 #undef GEOS_TRUNK

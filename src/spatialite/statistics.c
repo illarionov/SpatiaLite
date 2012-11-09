@@ -2135,7 +2135,6 @@ gaiaDropTable (sqlite3 * sqlite, const char *table)
     if (!do_drop_table (sqlite, table, &aux))
 	goto rollback;
 /* committing the still pending transaction */
-fprintf(stderr, "COMMIT\n");
     ret = sqlite3_exec (sqlite, "COMMIT", NULL, NULL, NULL);
     if (ret != SQLITE_OK)
 	goto rollback;
@@ -2150,7 +2149,6 @@ fprintf(stderr, "COMMIT\n");
 	    }
 	  free (aux.rtrees);
       }
-fprintf(stderr, "OK 1\n");
     return 1;
 
   rollback:
