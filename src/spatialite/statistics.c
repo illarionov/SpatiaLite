@@ -1722,7 +1722,6 @@ static int
 do_drop_table (sqlite3 * sqlite, const char *table, struct drop_params *aux)
 {
 /* performing the actual work */
-    int ret;
     char *sql;
     char *q_name;
     int i;
