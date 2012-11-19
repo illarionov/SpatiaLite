@@ -117,6 +117,17 @@ int do_test(sqlite3 *handle, int legacy)
 	return -8;
     }
 
+    if (legacy)
+    {
+        sqlite3_exec (handle, "DELETE FROM layer_statistics", NULL, NULL, NULL);
+        sqlite3_exec (handle, "DELETE FROM views_layer_statistics", NULL, NULL, NULL);
+    }
+    else
+    {
+        sqlite3_exec (handle, "DELETE FROM geometry_columns_statistics", NULL, NULL, NULL);
+        sqlite3_exec (handle, "DELETE FROM views_geometry_columns_statistics", NULL, NULL, NULL);
+    }
+
     ret = dump_shapefile (handle, "route", "Geometry", dumpname, "UTF-8", "", 1, &row_count, err_msg);
     if (!ret) {
         fprintf (stderr, "dump_shapefile() error for UTF-8_1 route: %s\n", err_msg);
@@ -163,9 +174,15 @@ int do_test(sqlite3 *handle, int legacy)
     }
 
     if (legacy)
+    {
+        sqlite3_exec (handle, "DELETE FROM layer_statistics", NULL, NULL, NULL);
         ret = sqlite3_exec (handle, "INSERT INTO views_geometry_columns (view_name, view_geometry, view_rowid, f_table_name, f_geometry_column) VALUES ('route',  'Geometry', 'ROWID', 'beta', 'gamma')", NULL, NULL, &err_msg);
+    }
     else
+    {
+        sqlite3_exec (handle, "DELETE FROM geometry_columns_statistics", NULL, NULL, NULL);
         ret = sqlite3_exec (handle, "INSERT INTO views_geometry_columns (view_name, view_geometry, view_rowid, f_table_name, f_geometry_column, read_only) VALUES (Lower('Route'),  Lower('Geometry'), Lower('ROWID'), Lower('Beta'), Lower('gamma'), 1)", NULL, NULL, &err_msg);
+    }
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "ViewsGeometryColumns route error: %s\n", err_msg);
 	sqlite3_free(err_msg);

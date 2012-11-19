@@ -4173,13 +4173,12 @@ addVectorLayerExtent (gaiaVectorLayersListPtr list, const char *table_name,
 	  if (strcasecmp (lyr->TableName, table_name) == 0
 	      && strcasecmp (lyr->GeometryName, geometry_column) == 0)
 	    {
-		gaiaLayerExtentPtr ext = malloc (sizeof (gaiaLayerExtent));
-		lyr->ExtentInfos = ext;
-		ext->Count = count;
-		ext->MinX = min_x;
-		ext->MinY = min_y;
-		ext->MaxX = max_x;
-		ext->MaxY = max_y;
+		lyr->ExtentInfos = malloc (sizeof (gaiaLayerExtent));
+		lyr->ExtentInfos->Count = count;
+		lyr->ExtentInfos->MinX = min_x;
+		lyr->ExtentInfos->MinY = min_y;
+		lyr->ExtentInfos->MaxX = max_x;
+		lyr->ExtentInfos->MaxY = max_y;
 		return;
 	    }
 	  lyr = lyr->Next;

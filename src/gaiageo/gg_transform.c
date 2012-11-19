@@ -1447,6 +1447,17 @@ gaiaTransform (gaiaGeomCollPtr org, char *proj_from, char *proj_to)
     projPJ from_cs = pj_init_plus (proj_from);
     projPJ to_cs = pj_init_plus (proj_to);
     gaiaGeomCollPtr dst;
+    if (!from_cs)
+      {
+	  if (to_cs)
+	      pj_free (to_cs);
+	  return NULL;
+      }
+    if (!to_cs)
+      {
+	  pj_free (from_cs);
+	  return NULL;
+      }
     if (org->DimensionModel == GAIA_XY_Z)
 	dst = gaiaAllocGeomCollXYZ ();
     else if (org->DimensionModel == GAIA_XY_M)
@@ -1458,10 +1469,6 @@ gaiaTransform (gaiaGeomCollPtr org, char *proj_from, char *proj_to)
 /* setting up projection parameters */
     from_angle = gaiaIsLongLat (proj_from);
     to_angle = gaiaIsLongLat (proj_to);
-    if (!from_cs)
-	return dst;
-    if (!to_cs)
-	return dst;
     cnt = 0;
     pt = org->FirstPoint;
     while (pt)

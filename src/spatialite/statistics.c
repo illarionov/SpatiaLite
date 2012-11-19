@@ -236,8 +236,8 @@ do_update_layer_statistics (sqlite3 * sqlite, const char *table,
 static int
 do_update_views_layer_statistics_v4 (sqlite3 * sqlite, const char *table,
 				     const char *column, int count,
-				     int has_coords, double min_x, double min_y,
-				     double max_x, double max_y)
+				     int has_coords, double min_x,
+				     double min_y, double max_x, double max_y)
 {
 /* update VIEWS_GEOMETRY_COLUMNS_STATISTICS Version >= 4.0.0 */
     char sql[8192];
@@ -359,8 +359,8 @@ do_update_views_layer_statistics (sqlite3 * sqlite, const char *table,
 static int
 do_update_virts_layer_statistics_v4 (sqlite3 * sqlite, const char *table,
 				     const char *column, int count,
-				     int has_coords, double min_x, double min_y,
-				     double max_x, double max_y)
+				     int has_coords, double min_x,
+				     double min_y, double max_x, double max_y)
 {
 /* update VIRTS_GEOMETRY_COLUMNS_STATISTICS Version >= 4.0.0 */
     char sql[8192];
@@ -1972,8 +1972,8 @@ do_drop_sub_view (sqlite3 * sqlite, const char *table, struct drop_params *aux)
 		if (!do_drop_table (sqlite, name, &aux2))
 		    return 0;
 	    }
-	  sqlite3_free_table (results);
       }
+    sqlite3_free_table (results);
     return 1;
 }
 
@@ -2085,8 +2085,8 @@ check_drop_layout (sqlite3 * sqlite, const char *table, struct drop_params *aux)
 		*(aux->rtrees + (i - 1)) = malloc (len + 1);
 		strcpy (*(aux->rtrees + (i - 1)), name);
 	    }
-	  sqlite3_free_table (results);
       }
+    sqlite3_free_table (results);
     return 1;
 }
 

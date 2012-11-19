@@ -320,7 +320,8 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
     char *xgtype = gtype;
     char *qtable = NULL;
     char *qpk_name = NULL;
-    char *pk_name = "PK_UID";
+    char *pk_name = NULL;
+    int pk_autoincr = 1;
     char *xname;
     int pk_type = SQLITE_INTEGER;
     int pk_set;
@@ -499,6 +500,7 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 		  {
 		      /* ok, using this field as Primary Key */
 		      pk_name = pk_column;
+		      pk_autoincr = 0;
 		      switch (dbf_field->Type)
 			{
 			case 'C':
@@ -528,6 +530,13 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 		  }
 		dbf_field = dbf_field->Next;
 	    }
+      }
+    if (pk_name == NULL)
+      {
+	  if (pk_column != NULL)
+	      pk_name = pk_column;
+	  else
+	      pk_name = "PK_UID";
       }
     qpk_name = gaiaDoubleQuotedSql (pk_name);
     dbf_field = shp->Dbf->First;
@@ -603,9 +612,14 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
       }
     else
       {
-	  sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n\"%s\" "
-				 "INTEGER PRIMARY KEY AUTOINCREMENT", qtable,
-				 qpk_name);
+	  if (pk_autoincr)
+	      sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n\"%s\" "
+				     "INTEGER PRIMARY KEY AUTOINCREMENT",
+				     qtable, qpk_name);
+	  else
+	      sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n\"%s\" "
+				     "INTEGER NOT NULL PRIMARY KEY", qtable,
+				     qpk_name);
       }
     gaiaAppendToOutBuffer (&sql_statement, sql);
     sqlite3_free (sql);
@@ -1989,7 +2003,8 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
     int deleted;
     char *qtable = NULL;
     char *qpk_name = NULL;
-    char *pk_name = "PK_UID";
+    char *pk_name = NULL;
+    int pk_autoincr = 1;
     gaiaOutBuffer sql_statement;
     int pk_type = SQLITE_INTEGER;
     int pk_set;
@@ -2090,6 +2105,7 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 		  {
 		      /* ok, using this field as Primary Key */
 		      pk_name = pk_column;
+		      pk_autoincr = 0;
 		      switch (dbf_field->Type)
 			{
 			case 'C':
@@ -2119,6 +2135,13 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 		  }
 		dbf_field = dbf_field->Next;
 	    }
+      }
+    if (pk_name == NULL)
+      {
+	  if (pk_column != NULL)
+	      pk_name = pk_column;
+	  else
+	      pk_name = "PK_UID";
       }
     qpk_name = gaiaDoubleQuotedSql (pk_name);
     dbf_field = dbf->Dbf->First;
@@ -2189,9 +2212,14 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
       }
     else
       {
-	  sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n\"%s\" "
-				 "INTEGER PRIMARY KEY AUTOINCREMENT", qtable,
-				 qpk_name);
+	  if (pk_autoincr)
+	      sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n\"%s\" "
+				     "INTEGER PRIMARY KEY AUTOINCREMENT",
+				     qtable, qpk_name);
+	  else
+	      sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (\n\"%s\" "
+				     "INTEGER NOT NULL PRIMARY KEY", qtable,
+				     qpk_name);
       }
     gaiaAppendToOutBuffer (&sql_statement, sql);
     sqlite3_free (sql);
