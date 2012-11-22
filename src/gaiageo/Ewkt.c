@@ -1612,9 +1612,6 @@ static void yy_reduce(
       case 143: /* geocoll_text ::= EWKT_OPEN_BRACKET multilinestring geocoll_text2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==143);
       case 144: /* geocoll_text ::= EWKT_OPEN_BRACKET multipolygon geocoll_text2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==144);
       case 145: /* geocoll_text ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_text geocoll_text2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==145);
-      case 160: /* geocoll_textm ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION_M geocoll_textm geocoll_textm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==160);
-      case 175: /* geocoll_textz ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_textz geocoll_textz2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==175);
-      case 190: /* geocoll_textzm ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_textzm geocoll_textzm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==190);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) ewkt_geomColl_xy( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);
@@ -1659,6 +1656,7 @@ static void yy_reduce(
       case 157: /* geocoll_textm ::= EWKT_OPEN_BRACKET multipointm geocoll_textm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==157);
       case 158: /* geocoll_textm ::= EWKT_OPEN_BRACKET multilinestringm geocoll_textm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==158);
       case 159: /* geocoll_textm ::= EWKT_OPEN_BRACKET multipolygonm geocoll_textm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==159);
+      case 160: /* geocoll_textm ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION_M geocoll_textm geocoll_textm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==160);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) ewkt_geomColl_xym( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);
@@ -1670,6 +1668,7 @@ static void yy_reduce(
       case 172: /* geocoll_textz ::= EWKT_OPEN_BRACKET multipointz geocoll_textz2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==172);
       case 173: /* geocoll_textz ::= EWKT_OPEN_BRACKET multilinestringz geocoll_textz2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==173);
       case 174: /* geocoll_textz ::= EWKT_OPEN_BRACKET multipolygonz geocoll_textz2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==174);
+      case 175: /* geocoll_textz ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_textz geocoll_textz2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==175);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) ewkt_geomColl_xyz( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);
@@ -1681,6 +1680,7 @@ static void yy_reduce(
       case 187: /* geocoll_textzm ::= EWKT_OPEN_BRACKET multipointzm geocoll_textzm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==187);
       case 188: /* geocoll_textzm ::= EWKT_OPEN_BRACKET multilinestringzm geocoll_textzm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==188);
       case 189: /* geocoll_textzm ::= EWKT_OPEN_BRACKET multipolygonzm geocoll_textzm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==189);
+      case 190: /* geocoll_textzm ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_textzm geocoll_textzm2 EWKT_CLOSE_BRACKET */ yytestcase(yyruleno==190);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) ewkt_geomColl_xyzm( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);

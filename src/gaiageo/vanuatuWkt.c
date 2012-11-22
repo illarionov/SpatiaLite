@@ -1598,9 +1598,6 @@ static void yy_reduce(
       case 145: /* geocoll_text ::= VANUATU_OPEN_BRACKET multilinestring geocoll_text2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==145);
       case 146: /* geocoll_text ::= VANUATU_OPEN_BRACKET multipolygon geocoll_text2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==146);
       case 147: /* geocoll_text ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION geocoll_text geocoll_text2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==147);
-      case 162: /* geocoll_textm ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_M geocoll_textm geocoll_textm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==162);
-      case 177: /* geocoll_textz ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_Z geocoll_textz geocoll_textz2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==177);
-      case 192: /* geocoll_textzm ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_ZM geocoll_textzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==192);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_geomColl_xy( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);
@@ -1645,6 +1642,7 @@ static void yy_reduce(
       case 159: /* geocoll_textm ::= VANUATU_OPEN_BRACKET multipointm geocoll_textm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==159);
       case 160: /* geocoll_textm ::= VANUATU_OPEN_BRACKET multilinestringm geocoll_textm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==160);
       case 161: /* geocoll_textm ::= VANUATU_OPEN_BRACKET multipolygonm geocoll_textm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==161);
+      case 162: /* geocoll_textm ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_M geocoll_textm geocoll_textm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==162);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_geomColl_xym( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);
@@ -1656,6 +1654,7 @@ static void yy_reduce(
       case 174: /* geocoll_textz ::= VANUATU_OPEN_BRACKET multipointz geocoll_textz2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==174);
       case 175: /* geocoll_textz ::= VANUATU_OPEN_BRACKET multilinestringz geocoll_textz2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==175);
       case 176: /* geocoll_textz ::= VANUATU_OPEN_BRACKET multipolygonz geocoll_textz2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==176);
+      case 177: /* geocoll_textz ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_Z geocoll_textz geocoll_textz2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==177);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_geomColl_xyz( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);
@@ -1667,6 +1666,7 @@ static void yy_reduce(
       case 189: /* geocoll_textzm ::= VANUATU_OPEN_BRACKET multipointzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==189);
       case 190: /* geocoll_textzm ::= VANUATU_OPEN_BRACKET multilinestringzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==190);
       case 191: /* geocoll_textzm ::= VANUATU_OPEN_BRACKET multipolygonzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==191);
+      case 192: /* geocoll_textzm ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_ZM geocoll_textzm geocoll_textzm2 VANUATU_CLOSE_BRACKET */ yytestcase(yyruleno==192);
 { 
 		((gaiaGeomCollPtr)yymsp[-2].minor.yy0)->Next = (gaiaGeomCollPtr)yymsp[-1].minor.yy0;
 		yygotominor.yy0 = (void *) vanuatu_geomColl_xyzm( p_data, (gaiaGeomCollPtr)yymsp[-2].minor.yy0);

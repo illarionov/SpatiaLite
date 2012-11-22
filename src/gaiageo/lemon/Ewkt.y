@@ -629,7 +629,7 @@ geocoll_textm(G) ::=
 EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION_M geocoll_textm(C) geocoll_textm2(X) EWKT_CLOSE_BRACKET.
 	{ 
 		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) ewkt_geomColl_xy( p_data, (gaiaGeomCollPtr)C);
+		G = (void *) ewkt_geomColl_xym( p_data, (gaiaGeomCollPtr)C);
 	}
 
 geocoll_textm2(X) ::=  . { X = NULL; }
@@ -716,7 +716,7 @@ geocoll_textz(G) ::=
 EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_textz(C) geocoll_textz2(X) EWKT_CLOSE_BRACKET.
 	{ 
 		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) ewkt_geomColl_xy( p_data, (gaiaGeomCollPtr)C);
+		G = (void *) ewkt_geomColl_xyz( p_data, (gaiaGeomCollPtr)C);
 	}
 
 
@@ -804,7 +804,7 @@ geocoll_textzm(G) ::=
 EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_textzm(C) geocoll_textzm2(X) EWKT_CLOSE_BRACKET.
 	{ 
 		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) ewkt_geomColl_xy( p_data, (gaiaGeomCollPtr)C);
+		G = (void *) ewkt_geomColl_xyzm( p_data, (gaiaGeomCollPtr)C);
 	}
 
 

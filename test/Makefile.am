@@ -1085,6 +1085,42 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/geomfromtext7.testcase \
 	sql_stmt_tests/geomfromtext8.testcase \
 	sql_stmt_tests/geomfromtext9.testcase \
+	sql_stmt_tests/geomfromtext10.testcase \
+	sql_stmt_tests/geomfromtext11.testcase \
+	sql_stmt_tests/geomfromtext12.testcase \
+	sql_stmt_tests/geomfromtext13.testcase \
+	sql_stmt_tests/geomfromtext14.testcase \
+	sql_stmt_tests/geomfromtext15.testcase \
+	sql_stmt_tests/geomfromtext16.testcase \
+	sql_stmt_tests/geomfromtext17.testcase \
+	sql_stmt_tests/geomfromtext18.testcase \
+	sql_stmt_tests/geomfromtext19.testcase \
+	sql_stmt_tests/geomfromtext20.testcase \
+	sql_stmt_tests/geomfromtext21.testcase \
+	sql_stmt_tests/geomfromtext22.testcase \
+	sql_stmt_tests/geomfromtext23.testcase \
+	sql_stmt_tests/geomfromtext24.testcase \
+	sql_stmt_tests/geomfromtext25.testcase \
+	sql_stmt_tests/geomfromtext26.testcase \
+	sql_stmt_tests/geomfromtext27.testcase \
+	sql_stmt_tests/geomfromtext28.testcase \
+	sql_stmt_tests/geomfromtext29.testcase \
+	sql_stmt_tests/geomfromtext30.testcase \
+	sql_stmt_tests/geomfromtext31.testcase \
+	sql_stmt_tests/geomfromtext32.testcase \
+	sql_stmt_tests/geomfromtext33.testcase \
+	sql_stmt_tests/geomfromtext34.testcase \
+	sql_stmt_tests/geomfromtext35.testcase \
+	sql_stmt_tests/geomfromtext36.testcase \
+	sql_stmt_tests/geomfromtext37.testcase \
+	sql_stmt_tests/geomfromtext38.testcase \
+	sql_stmt_tests/geomfromtext39.testcase \
+	sql_stmt_tests/geomfromtext40.testcase \
+	sql_stmt_tests/geomfromtext41.testcase \
+	sql_stmt_tests/geomfromtext42.testcase \
+	sql_stmt_tests/geomfromtext43.testcase \
+	sql_stmt_tests/geomfromtext44.testcase \
+	sql_stmt_tests/geomfromtext45.testcase \
 	sql_stmt_tests/geomtype10.testcase \
 	sql_stmt_tests/geomtype11.testcase \
 	sql_stmt_tests/geomtype12.testcase \

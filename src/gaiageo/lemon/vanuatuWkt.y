@@ -659,7 +659,7 @@ geocoll_textm(G) ::=
 VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_M geocoll_textm(C) geocoll_textm2(X) VANUATU_CLOSE_BRACKET.
 	{ 
 		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) vanuatu_geomColl_xy( p_data, (gaiaGeomCollPtr)C);
+		G = (void *) vanuatu_geomColl_xym( p_data, (gaiaGeomCollPtr)C);
 	}
 
 geocoll_textm2(X) ::=  . { X = NULL; }
@@ -746,7 +746,7 @@ geocoll_textz(G) ::=
 VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_Z geocoll_textz(C) geocoll_textz2(X) VANUATU_CLOSE_BRACKET.
 	{ 
 		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) vanuatu_geomColl_xy( p_data, (gaiaGeomCollPtr)C);
+		G = (void *) vanuatu_geomColl_xyz( p_data, (gaiaGeomCollPtr)C);
 	}
 
 geocoll_textz2(X) ::=  . { X = NULL; }
@@ -833,7 +833,7 @@ geocoll_textzm(G) ::=
 VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_ZM geocoll_textzm(C) geocoll_textzm2(X) VANUATU_CLOSE_BRACKET.
 	{ 
 		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)X;
-		G = (void *) vanuatu_geomColl_xy( p_data, (gaiaGeomCollPtr)C);
+		G = (void *) vanuatu_geomColl_xyzm( p_data, (gaiaGeomCollPtr)C);
 	}
 
 geocoll_textzm2(X) ::=  . { X = NULL; }
