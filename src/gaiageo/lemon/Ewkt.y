@@ -128,6 +128,17 @@ pointm(P) ::= EWKT_POINT_M EWKT_OPEN_BRACKET point_coordxym(Q) EWKT_CLOSE_BRACKE
 pointzm(P) ::= EWKT_POINT EWKT_OPEN_BRACKET point_coordxyzm(Q) EWKT_CLOSE_BRACKET. 
 	{ P = ewkt_buildGeomFromPoint( p_data, (gaiaPointPtr)Q); }
 
+// Point coordinates in different dimensions: MultiPoint((pt),(pt))
+// Create the point by calling the proper function in SpatiaLite :
+point_brkt_coordxy(P) ::= EWKT_OPEN_BRACKET coord(X) coord(Y) EWKT_CLOSE_BRACKET.  
+	{ P = (void *) ewkt_point_xy( p_data, (double *)X, (double *)Y); }
+point_brkt_coordxym(P) ::= EWKT_OPEN_BRACKET coord(X) coord(Y) coord(M) EWKT_CLOSE_BRACKET.  
+	{ P = (void *) ewkt_point_xym( p_data, (double *)X, (double *)Y, (double *)M); }
+point_brkt_coordxyz(P) ::= EWKT_OPEN_BRACKET coord(X) coord(Y) coord(Z) EWKT_CLOSE_BRACKET.  
+	{ P = (void *) ewkt_point_xyz( p_data, (double *)X, (double *)Y, (double *)Z); }
+point_brkt_coordxyzm(P) ::= EWKT_OPEN_BRACKET coord(X) coord(Y) coord(Z) coord(M) EWKT_CLOSE_BRACKET.  
+	{ P = (void *) ewkt_point_xyzm( p_data, (double *)X, (double *)Y, (double *)Z, (double *)M); }
+
 // Point coordinates in different dimensions.
 // Create the point by calling the proper function in SpatiaLite :
 point_coordxy(P) ::= coord(X) coord(Y). 
@@ -141,6 +152,25 @@ point_coordxyzm(P) ::= coord(X) coord(Y) coord(Z) coord(M).
 
 // All coordinates are assumed to be doubles (guaranteed by the flex tokenizer).
 coord(A) ::= EWKT_NUM(B). { A = B; } 
+
+
+// Rules to match an infinite number of points: MultiPoint((pt), (pt))
+// Also links the generated gaiaPointPtrs together
+extra_brkt_pointsxy(A) ::=  . { A = NULL; }
+extra_brkt_pointsxy(A) ::= EWKT_COMMA point_brkt_coordxy(P) extra_brkt_pointsxy(B).
+	{ ((gaiaPointPtr)P)->Next = (gaiaPointPtr)B;  A = P; }
+
+extra_brkt_pointsxym(A) ::=  . { A = NULL; }
+extra_brkt_pointsxym(A) ::= EWKT_COMMA point_brkt_coordxym(P) extra_brkt_pointsxym(B).
+	{ ((gaiaPointPtr)P)->Next = (gaiaPointPtr)B;  A = P; }
+
+extra_brkt_pointsxyz(A) ::=  .  { A = NULL; }
+extra_brkt_pointsxyz(A) ::= EWKT_COMMA point_brkt_coordxyz(P) extra_brkt_pointsxyz(B).
+	{ ((gaiaPointPtr)P)->Next = (gaiaPointPtr)B;  A = P; }
+
+extra_brkt_pointsxyzm(A) ::=  .  { A = NULL; }
+extra_brkt_pointsxyzm(A) ::= EWKT_COMMA point_brkt_coordxyzm(P) extra_brkt_pointsxyzm(B).
+	{ ((gaiaPointPtr)P)->Next = (gaiaPointPtr)B;  A = P; }
 
 
 // Rules to match an infinite number of points:
@@ -340,6 +370,26 @@ multipoint_textzm(M) ::= EWKT_OPEN_BRACKET point_coordxyzm(P) extra_pointsxyzm(Q
 	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q; 
 	   M = (void *) ewkt_multipoint_xyzm( p_data, (gaiaPointPtr)P);
 	}
+multipoint_text(M) ::= EWKT_OPEN_BRACKET point_brkt_coordxy(P) extra_brkt_pointsxy(Q) EWKT_CLOSE_BRACKET.
+	{ 
+	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q; 
+	   M = (void *) ewkt_multipoint_xy( p_data, (gaiaPointPtr)P);
+	}
+multipoint_textm(M) ::= EWKT_OPEN_BRACKET point_brkt_coordxym(P) extra_brkt_pointsxym(Q) EWKT_CLOSE_BRACKET.
+	{ 
+	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q; 
+	   M = (void *) ewkt_multipoint_xym( p_data, (gaiaPointPtr)P);
+	}
+multipoint_textz(M) ::= EWKT_OPEN_BRACKET point_brkt_coordxyz(P) extra_brkt_pointsxyz(Q) EWKT_CLOSE_BRACKET.
+	{ 
+	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q; 
+	   M = (void *) ewkt_multipoint_xyz( p_data, (gaiaPointPtr)P);
+	}
+multipoint_textzm(M) ::= EWKT_OPEN_BRACKET point_brkt_coordxyzm(P) extra_brkt_pointsxyzm(Q) EWKT_CLOSE_BRACKET.
+	{ 
+	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q; 
+	   M = (void *) ewkt_multipoint_xyzm( p_data, (gaiaPointPtr)P);
+	}
 
 
 // Syntax for a "multilinestring" object:
@@ -470,6 +520,30 @@ geocoll_text(G) ::= EWKT_OPEN_BRACKET polygon(P) geocoll_text2(X) EWKT_CLOSE_BRA
 		G = (void *) ewkt_geomColl_xy( p_data, (gaiaGeomCollPtr)P);
 	}
 
+geocoll_text(G) ::= EWKT_OPEN_BRACKET multipoint(P) geocoll_text2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xy( p_data, (gaiaGeomCollPtr)P);
+	}
+	
+geocoll_text(G) ::= EWKT_OPEN_BRACKET multilinestring(L) geocoll_text2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xy( p_data, (gaiaGeomCollPtr)L);
+	}
+	
+geocoll_text(G) ::= EWKT_OPEN_BRACKET multipolygon(P) geocoll_text2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xy( p_data, (gaiaGeomCollPtr)P);
+	}
+
+geocoll_text(G) ::= EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_text(C) geocoll_text2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xy( p_data, (gaiaGeomCollPtr)C);
+	}
+
 // Extra points, linestrings, or polygons
 geocoll_text2(X) ::=  . { X = NULL; }
 geocoll_text2(X) ::= EWKT_COMMA point(P) geocoll_text2(Y).
@@ -488,6 +562,30 @@ geocoll_text2(X) ::= EWKT_COMMA polygon(P) geocoll_text2(Y).
 	{
 		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
 		X = P;
+	}
+
+geocoll_text2(X) ::= EWKT_COMMA multipoint(P) geocoll_text2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+	
+geocoll_text2(X) ::= EWKT_COMMA multilinestring(L) geocoll_text2(Y).
+	{
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)Y;
+		X = L;
+	}
+	
+geocoll_text2(X) ::= EWKT_COMMA multipolygon(P) geocoll_text2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+
+geocoll_text2(X) ::= EWKT_COMMA EWKT_GEOMETRYCOLLECTION geocoll_text(C) geocoll_text2(Y).
+	{
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)Y;
+		X = C;
 	}
 
 
@@ -509,6 +607,31 @@ geocoll_textm(G) ::= EWKT_OPEN_BRACKET polygonm(P) geocoll_textm2(X) EWKT_CLOSE_
 		G = (void *) ewkt_geomColl_xym( p_data, (gaiaGeomCollPtr)P);
 	}
 
+geocoll_textm(G) ::= EWKT_OPEN_BRACKET multipointm(P) geocoll_textm2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xym( p_data, (gaiaGeomCollPtr)P);
+	}
+	
+geocoll_textm(G) ::= EWKT_OPEN_BRACKET multilinestringm(L) geocoll_textm2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xym( p_data, (gaiaGeomCollPtr)L);
+	}
+	
+geocoll_textm(G) ::= EWKT_OPEN_BRACKET multipolygonm(P) geocoll_textm2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xym( p_data, (gaiaGeomCollPtr)P);
+	}
+
+geocoll_textm(G) ::= 
+EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION_M geocoll_textm(C) geocoll_textm2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xy( p_data, (gaiaGeomCollPtr)C);
+	}
+
 geocoll_textm2(X) ::=  . { X = NULL; }
 geocoll_textm2(X) ::= EWKT_COMMA pointm(P) geocoll_textm2(Y).
 	{
@@ -526,6 +649,30 @@ geocoll_textm2(X) ::= EWKT_COMMA polygonm(P) geocoll_textm2(Y).
 	{
 		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
 		X = P;
+	}
+
+geocoll_textm2(X) ::= EWKT_COMMA multipointm(P) geocoll_textm2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+	
+geocoll_textm2(X) ::= EWKT_COMMA multilinestringm(L) geocoll_textm2(Y).
+	{
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)Y;
+		X = L;
+	}
+	
+geocoll_textm2(X) ::= EWKT_COMMA multipolygonm(P) geocoll_textm2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+
+geocoll_textm2(X) ::= EWKT_COMMA EWKT_GEOMETRYCOLLECTION_M geocoll_textm(C) geocoll_textm2(Y).
+	{
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)Y;
+		X = C;
 	}
 	
 
@@ -547,6 +694,32 @@ geocoll_textz(G) ::= EWKT_OPEN_BRACKET polygonz(P) geocoll_textz2(X) EWKT_CLOSE_
 		G = (void *) ewkt_geomColl_xyz( p_data, (gaiaGeomCollPtr)P);
 	}
 
+geocoll_textz(G) ::= EWKT_OPEN_BRACKET multipointz(P) geocoll_textz2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xyz( p_data, (gaiaGeomCollPtr)P);
+	}
+	
+geocoll_textz(G) ::= EWKT_OPEN_BRACKET multilinestringz(L) geocoll_textz2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xyz( p_data, (gaiaGeomCollPtr)L);
+	}
+	
+geocoll_textz(G) ::= EWKT_OPEN_BRACKET multipolygonz(P) geocoll_textz2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xyz( p_data, (gaiaGeomCollPtr)P);
+	}
+
+geocoll_textz(G) ::= 
+EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_textz(C) geocoll_textz2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xy( p_data, (gaiaGeomCollPtr)C);
+	}
+
+
 geocoll_textz2(X) ::=  . { X = NULL; }
 geocoll_textz2(X) ::= EWKT_COMMA pointz(P) geocoll_textz2(Y).
 	{
@@ -564,6 +737,30 @@ geocoll_textz2(X) ::= EWKT_COMMA polygonz(P) geocoll_textz2(Y).
 	{
 		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
 		X = P;
+	}
+
+geocoll_textz2(X) ::= EWKT_COMMA multipointz(P) geocoll_textz2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+	
+geocoll_textz2(X) ::= EWKT_COMMA multilinestringz(L) geocoll_textz2(Y).
+	{
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)Y;
+		X = L;
+	}
+	
+geocoll_textz2(X) ::= EWKT_COMMA multipolygonz(P) geocoll_textz2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+
+geocoll_textz2(X) ::= EWKT_COMMA EWKT_GEOMETRYCOLLECTION geocoll_textz(C) geocoll_textz2(Y).
+	{
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)Y;
+		X = C;
 	}
 	
 	
@@ -585,6 +782,32 @@ geocoll_textzm(G) ::= EWKT_OPEN_BRACKET polygonzm(P) geocoll_textzm2(X) EWKT_CLO
 		G = (void *) ewkt_geomColl_xyzm( p_data, (gaiaGeomCollPtr)P);
 	}
 
+geocoll_textzm(G) ::= EWKT_OPEN_BRACKET multipointzm(P) geocoll_textzm2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xyzm( p_data, (gaiaGeomCollPtr)P);
+	}
+	
+geocoll_textzm(G) ::= EWKT_OPEN_BRACKET multilinestringzm(L) geocoll_textzm2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xyzm( p_data, (gaiaGeomCollPtr)L);
+	}
+	
+geocoll_textzm(G) ::= EWKT_OPEN_BRACKET multipolygonzm(P) geocoll_textzm2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xyzm( p_data, (gaiaGeomCollPtr)P);
+	}
+
+geocoll_textzm(G) ::= 
+EWKT_OPEN_BRACKET EWKT_GEOMETRYCOLLECTION geocoll_textzm(C) geocoll_textzm2(X) EWKT_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) ewkt_geomColl_xy( p_data, (gaiaGeomCollPtr)C);
+	}
+
+
 geocoll_textzm2(X) ::=  . { X = NULL; }
 geocoll_textzm2(X) ::= EWKT_COMMA pointzm(P) geocoll_textzm2(Y).
 	{
@@ -602,4 +825,28 @@ geocoll_textzm2(X) ::= EWKT_COMMA polygonzm(P) geocoll_textzm2(Y).
 	{
 		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
 		X = P;
+	}
+
+geocoll_textzm2(X) ::= EWKT_COMMA multipointzm(P) geocoll_textzm2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+	
+geocoll_textzm2(X) ::= EWKT_COMMA multilinestringzm(L) geocoll_textzm2(Y).
+	{
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)Y;
+		X = L;
+	}
+	
+geocoll_textzm2(X) ::= EWKT_COMMA multipolygonzm(P) geocoll_textzm2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+
+geocoll_textzm2(X) ::= EWKT_COMMA EWKT_GEOMETRYCOLLECTION geocoll_textzm(C) geocoll_textzm2(Y).
+	{
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)Y;
+		X = C;
 	}

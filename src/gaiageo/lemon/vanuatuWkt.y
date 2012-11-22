@@ -159,6 +159,17 @@ pointz(P) ::= VANUATU_POINT_Z VANUATU_OPEN_BRACKET point_coordxyz(Q) VANUATU_CLO
 pointzm(P) ::= VANUATU_POINT_ZM VANUATU_OPEN_BRACKET point_coordxyzm(Q) VANUATU_CLOSE_BRACKET. 
 	{ P = vanuatu_buildGeomFromPoint( p_data, (gaiaPointPtr)Q);  }
 
+// Point coordinates in different dimensions: MultiPoint((pt),(pt))
+// Create the point by calling the proper function in SpatiaLite :
+point_brkt_coordxy(P) ::= VANUATU_OPEN_BRACKET coord(X) coord(Y) VANUATU_CLOSE_BRACKET.  
+	{ P = (void *) vanuatu_point_xy( p_data, (double *)X, (double *)Y); }
+point_brkt_coordxym(P) ::= VANUATU_OPEN_BRACKET coord(X) coord(Y) coord(M) VANUATU_CLOSE_BRACKET.  
+	{ P = (void *) vanuatu_point_xym( p_data, (double *)X, (double *)Y, (double *)M); }
+point_brkt_coordxyz(P) ::= VANUATU_OPEN_BRACKET coord(X) coord(Y) coord(Z) VANUATU_CLOSE_BRACKET.  
+	{ P = (void *) vanuatu_point_xyz( p_data, (double *)X, (double *)Y, (double *)Z); }
+point_brkt_coordxyzm(P) ::= VANUATU_OPEN_BRACKET coord(X) coord(Y) coord(Z) coord(M) VANUATU_CLOSE_BRACKET.  
+	{ P = (void *) vanuatu_point_xyzm( p_data, (double *)X, (double *)Y, (double *)Z, (double *)M); }
+
 // Point coordinates in different dimensions.
 // Create the point by calling the proper function in SpatiaLite :
 point_coordxy(P) ::= coord(X) coord(Y). 
@@ -172,6 +183,25 @@ point_coordxyzm(P) ::= coord(X) coord(Y) coord(Z) coord(M).
 
 // All coordinates are assumed to be doubles (guaranteed by the flex tokenizer).
 coord(A) ::= VANUATU_NUM(B). { A = B; } 
+
+
+// Rules to match an infinite number of points: MultiPoint((pt), (pt))
+// Also links the generated gaiaPointPtrs together
+extra_brkt_pointsxy(A) ::=  . { A = NULL; }
+extra_brkt_pointsxy(A) ::= VANUATU_COMMA point_brkt_coordxy(P) extra_brkt_pointsxy(B).
+	{ ((gaiaPointPtr)P)->Next = (gaiaPointPtr)B;  A = P; }
+
+extra_brkt_pointsxym(A) ::=  . { A = NULL; }
+extra_brkt_pointsxym(A) ::= VANUATU_COMMA point_brkt_coordxym(P) extra_brkt_pointsxym(B).
+	{ ((gaiaPointPtr)P)->Next = (gaiaPointPtr)B;  A = P; }
+
+extra_brkt_pointsxyz(A) ::=  .  { A = NULL; }
+extra_brkt_pointsxyz(A) ::= VANUATU_COMMA point_brkt_coordxyz(P) extra_brkt_pointsxyz(B).
+	{ ((gaiaPointPtr)P)->Next = (gaiaPointPtr)B;  A = P; }
+
+extra_brkt_pointsxyzm(A) ::=  .  { A = NULL; }
+extra_brkt_pointsxyzm(A) ::= VANUATU_COMMA point_brkt_coordxyzm(P) extra_brkt_pointsxyzm(B).
+	{ ((gaiaPointPtr)P)->Next = (gaiaPointPtr)B;  A = P; }
 
 
 // Rules to match an infinite number of points:
@@ -371,6 +401,26 @@ multipoint_textzm(M) ::= VANUATU_OPEN_BRACKET point_coordxyzm(P) extra_pointsxyz
 	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q; 
 	   M = (void *) vanuatu_multipoint_xyzm( p_data, (gaiaPointPtr)P);
 	}
+multipoint_text(M) ::= VANUATU_OPEN_BRACKET point_brkt_coordxy(P) extra_brkt_pointsxy(Q) VANUATU_CLOSE_BRACKET.
+	{ 
+	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q; 
+	   M = (void *) vanuatu_multipoint_xy( p_data, (gaiaPointPtr)P);
+	}
+multipoint_textm(M) ::= VANUATU_OPEN_BRACKET point_brkt_coordxym(P) extra_brkt_pointsxym(Q) VANUATU_CLOSE_BRACKET.
+	{ 
+	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q; 
+	   M = (void *) vanuatu_multipoint_xym( p_data, (gaiaPointPtr)P);
+	}
+multipoint_textz(M) ::= VANUATU_OPEN_BRACKET point_brkt_coordxyz(P) extra_brkt_pointsxyz(Q) VANUATU_CLOSE_BRACKET.
+	{ 
+	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q; 
+	   M = (void *) vanuatu_multipoint_xyz( p_data, (gaiaPointPtr)P);
+	}
+multipoint_textzm(M) ::= VANUATU_OPEN_BRACKET point_brkt_coordxyzm(P) extra_brkt_pointsxyzm(Q) VANUATU_CLOSE_BRACKET.
+	{ 
+	   ((gaiaPointPtr)P)->Next = (gaiaPointPtr)Q; 
+	   M = (void *) vanuatu_multipoint_xyzm( p_data, (gaiaPointPtr)P);
+	}
 
 
 // Syntax for a "multilinestring" object:
@@ -501,6 +551,30 @@ geocoll_text(G) ::= VANUATU_OPEN_BRACKET polygon(P) geocoll_text2(X) VANUATU_CLO
 		G = (void *) vanuatu_geomColl_xy( p_data, (gaiaGeomCollPtr)P);
 	}
 
+geocoll_text(G) ::= VANUATU_OPEN_BRACKET multipoint(P) geocoll_text2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xy( p_data, (gaiaGeomCollPtr)P);
+	}
+	
+geocoll_text(G) ::= VANUATU_OPEN_BRACKET multilinestring(L) geocoll_text2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xy( p_data, (gaiaGeomCollPtr)L);
+	}
+	
+geocoll_text(G) ::= VANUATU_OPEN_BRACKET multipolygon(P) geocoll_text2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xy( p_data, (gaiaGeomCollPtr)P);
+	}
+
+geocoll_text(G) ::= VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION geocoll_text(C) geocoll_text2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xy( p_data, (gaiaGeomCollPtr)C);
+	}
+
 // Extra points, linestrings, or polygons
 geocoll_text2(X) ::=  . { X = NULL; }
 geocoll_text2(X) ::= VANUATU_COMMA point(P) geocoll_text2(Y).
@@ -521,6 +595,30 @@ geocoll_text2(X) ::= VANUATU_COMMA polygon(P) geocoll_text2(Y).
 		X = P;
 	}
 
+geocoll_text2(X) ::= VANUATU_COMMA multipoint(P) geocoll_text2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+	
+geocoll_text2(X) ::= VANUATU_COMMA multilinestring(L) geocoll_text2(Y).
+	{
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)Y;
+		X = L;
+	}
+	
+geocoll_text2(X) ::= VANUATU_COMMA multipolygon(P) geocoll_text2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+
+geocoll_text2(X) ::= VANUATU_COMMA VANUATU_GEOMETRYCOLLECTION geocoll_text(C) geocoll_text2(Y).
+	{
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)Y;
+		X = C;
+	}
+
 
 geocoll_textm(G) ::= VANUATU_OPEN_BRACKET pointm(P) geocoll_textm2(X) VANUATU_CLOSE_BRACKET.
 	{ 
@@ -538,6 +636,30 @@ geocoll_textm(G) ::= VANUATU_OPEN_BRACKET polygonm(P) geocoll_textm2(X) VANUATU_
 	{ 
 		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
 		G = (void *) vanuatu_geomColl_xym( p_data, (gaiaGeomCollPtr)P);
+	}
+geocoll_textm(G) ::= VANUATU_OPEN_BRACKET multipointm(P) geocoll_textm2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xym( p_data, (gaiaGeomCollPtr)P);
+	}
+	
+geocoll_textm(G) ::= VANUATU_OPEN_BRACKET multilinestringm(L) geocoll_textm2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xym( p_data, (gaiaGeomCollPtr)L);
+	}
+	
+geocoll_textm(G) ::= VANUATU_OPEN_BRACKET multipolygonm(P) geocoll_textm2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xym( p_data, (gaiaGeomCollPtr)P);
+	}
+
+geocoll_textm(G) ::= 
+VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_M geocoll_textm(C) geocoll_textm2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xy( p_data, (gaiaGeomCollPtr)C);
 	}
 
 geocoll_textm2(X) ::=  . { X = NULL; }
@@ -557,6 +679,30 @@ geocoll_textm2(X) ::= VANUATU_COMMA polygonm(P) geocoll_textm2(Y).
 	{
 		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
 		X = P;
+	}
+
+geocoll_textm2(X) ::= VANUATU_COMMA multipointm(P) geocoll_textm2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+	
+geocoll_textm2(X) ::= VANUATU_COMMA multilinestringm(L) geocoll_textm2(Y).
+	{
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)Y;
+		X = L;
+	}
+	
+geocoll_textm2(X) ::= VANUATU_COMMA multipolygonm(P) geocoll_textm2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+
+geocoll_textm2(X) ::= VANUATU_COMMA VANUATU_GEOMETRYCOLLECTION_M geocoll_textm(C) geocoll_textm2(Y).
+	{
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)Y;
+		X = C;
 	}
 	
 
@@ -578,6 +724,31 @@ geocoll_textz(G) ::= VANUATU_OPEN_BRACKET polygonz(P) geocoll_textz2(X) VANUATU_
 		G = (void *) vanuatu_geomColl_xyz( p_data, (gaiaGeomCollPtr)P);
 	}
 
+geocoll_textz(G) ::= VANUATU_OPEN_BRACKET multipointz(P) geocoll_textz2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xyz( p_data, (gaiaGeomCollPtr)P);
+	}
+	
+geocoll_textz(G) ::= VANUATU_OPEN_BRACKET multilinestringz(L) geocoll_textz2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xyz( p_data, (gaiaGeomCollPtr)L);
+	}
+	
+geocoll_textz(G) ::= VANUATU_OPEN_BRACKET multipolygonz(P) geocoll_textz2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xyz( p_data, (gaiaGeomCollPtr)P);
+	}
+
+geocoll_textz(G) ::= 
+VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_Z geocoll_textz(C) geocoll_textz2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xy( p_data, (gaiaGeomCollPtr)C);
+	}
+
 geocoll_textz2(X) ::=  . { X = NULL; }
 geocoll_textz2(X) ::= VANUATU_COMMA pointz(P) geocoll_textz2(Y).
 	{
@@ -595,6 +766,30 @@ geocoll_textz2(X) ::= VANUATU_COMMA polygonz(P) geocoll_textz2(Y).
 	{
 		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
 		X = P;
+	}
+
+geocoll_textz2(X) ::= VANUATU_COMMA multipointz(P) geocoll_textz2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+	
+geocoll_textz2(X) ::= VANUATU_COMMA multilinestringz(L) geocoll_textz2(Y).
+	{
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)Y;
+		X = L;
+	}
+	
+geocoll_textz2(X) ::= VANUATU_COMMA multipolygonz(P) geocoll_textz2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+
+geocoll_textz2(X) ::= VANUATU_COMMA VANUATU_GEOMETRYCOLLECTION_Z geocoll_textz(C) geocoll_textz2(Y).
+	{
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)Y;
+		X = C;
 	}
 	
 	
@@ -616,6 +811,31 @@ geocoll_textzm(G) ::= VANUATU_OPEN_BRACKET polygonzm(P) geocoll_textzm2(X) VANUA
 		G = (void *) vanuatu_geomColl_xyzm( p_data, (gaiaGeomCollPtr)P);
 	}
 
+geocoll_textzm(G) ::= VANUATU_OPEN_BRACKET multipointzm(P) geocoll_textzm2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xyzm( p_data, (gaiaGeomCollPtr)P);
+	}
+	
+geocoll_textzm(G) ::= VANUATU_OPEN_BRACKET multilinestringzm(L) geocoll_textzm2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xyzm( p_data, (gaiaGeomCollPtr)L);
+	}
+	
+geocoll_textzm(G) ::= VANUATU_OPEN_BRACKET multipolygonzm(P) geocoll_textzm2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xyzm( p_data, (gaiaGeomCollPtr)P);
+	}
+
+geocoll_textzm(G) ::= 
+VANUATU_OPEN_BRACKET VANUATU_GEOMETRYCOLLECTION_ZM geocoll_textzm(C) geocoll_textzm2(X) VANUATU_CLOSE_BRACKET.
+	{ 
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)X;
+		G = (void *) vanuatu_geomColl_xy( p_data, (gaiaGeomCollPtr)C);
+	}
+
 geocoll_textzm2(X) ::=  . { X = NULL; }
 geocoll_textzm2(X) ::= VANUATU_COMMA pointzm(P) geocoll_textzm2(Y).
 	{
@@ -634,6 +854,31 @@ geocoll_textzm2(X) ::= VANUATU_COMMA polygonzm(P) geocoll_textzm2(Y).
 		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
 		X = P;
 	}
+
+geocoll_textzm2(X) ::= VANUATU_COMMA multipointzm(P) geocoll_textzm2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+	
+geocoll_textzm2(X) ::= VANUATU_COMMA multilinestringzm(L) geocoll_textzm2(Y).
+	{
+		((gaiaGeomCollPtr)L)->Next = (gaiaGeomCollPtr)Y;
+		X = L;
+	}
+	
+geocoll_textzm2(X) ::= VANUATU_COMMA multipolygonzm(P) geocoll_textzm2(Y).
+	{
+		((gaiaGeomCollPtr)P)->Next = (gaiaGeomCollPtr)Y;
+		X = P;
+	}
+
+geocoll_textzm2(X) ::= VANUATU_COMMA VANUATU_GEOMETRYCOLLECTION_ZM geocoll_textzm(C) geocoll_textzm2(Y).
+	{
+		((gaiaGeomCollPtr)C)->Next = (gaiaGeomCollPtr)Y;
+		X = C;
+	}
+
 
 /******************************************************************************
 ** This is the end of the code that was created by Team Vanuatu 

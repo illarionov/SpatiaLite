@@ -168,6 +168,7 @@ extern "C"
     SPATIALITE_PRIVATE int
 	getEllipsoidParams (void *p_sqlite, int srid, double *a, double *b,
 			    double *rf);
+
 #ifdef __cplusplus
 }
 #endif

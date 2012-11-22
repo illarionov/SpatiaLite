@@ -799,3 +799,4 @@ gaiaUpdateSqlLog (sqlite3 * sqlite, sqlite3_int64 sqllog_pk, int success,
     sqlite3_exec (sqlite, sql_statement, NULL, 0, NULL);
     sqlite3_free (sql_statement);
 }
+

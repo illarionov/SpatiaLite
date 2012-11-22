@@ -667,7 +667,7 @@ a Geometry will be returned representing the MBR for the corresponding GARS area
 					GeometryCollectionFromWKB( wkbGeometryCollection <i>Binary</i> [ , SRID <i>Integer</i>] ) : <i>GeometryCollection</i><hr>
 					ST_GeometryCollectionFromWKB( wkbGeometryCollection <i>Binary</i> [ , SRID <i>Integer</i>] ) : <i>GeometryCollection</i></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
-				<td align="center" bgcolor="#d0f0d0">nase</td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>construct a GeometryCollection</td></tr>
 			<tr><td><b>BdPolyFromWKB</b></td>
 				<td>BdPolyFromWKB( wkbMultilinestring <i>Binary</i> [ , SRID <i>Integer</i>] ) : <i>Polygon</i><hr>
@@ -1494,7 +1494,7 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 				<td>Difference( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Geometry</i><hr>
 					ST_Difference( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Geometry</i></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
-				<td align="center" bgcolor="#d0f0d0">GEOS</td>
+				<td align="center" bgcolor="#f0d0d0">GEOS</td>
 				<td>return a geometric object that is the closure of the set difference of geom1 and geom2</td></tr>
 			<tr><td><b>GUnion</b></td>
 				<td>GUnion( geom1 <i>Geometry</i> , geom2 <i>Geometry</i> ) : <i>Geometry</i>
@@ -1866,7 +1866,7 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
                                         ST_SnapToGrid( geom <i>Geometry</i> , origin_x <i>Double precision</i> , origin_y <i>Double precision</i> , size_x <i>Double precision</i> , size_y <i>Double precision</i> )  ) : <i>Geometry</i><br>
                                         ST_SnapToGrid( geom <i>Geometry</i> , origin <i>Geometry</i> , size_x <i>Double precision</i> , size_y <i>Double precision</i> , size_z <i>Double precision</i> , size_m <i>Double precision</i> ) : <i>Geometry</i></td>
 				<td></td>
-				<td align="center" bgcolor="##d0f0d0">base</td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>return a new Geometry corresponding to the input Geometry; all points and vertices will be snapped to the grid defined by its origin and size(s).<br>
                                         Removes all consecutive points falling on the same cell.<br>
                                         All collapsed geometries will be stripped from the returned Geometry.<br>

@@ -15020,7 +15020,6 @@ fnct_Distance (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int n_bytes;
     gaiaGeomCollPtr geo1 = NULL;
     gaiaGeomCollPtr geo2 = NULL;
-    gaiaGeomCollPtr shortest = NULL;
     double dist;
     int use_ellipsoid = -1;
     double a;
@@ -15067,7 +15066,7 @@ fnct_Distance (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		  {
 #ifdef GEOS_ADVANCED
 		      /* GEOS advanced features support is strictly required */
-		      shortest = gaiaShortestLine (geo1, geo2);
+		      gaiaGeomCollPtr shortest = gaiaShortestLine (geo1, geo2);
 		      if (shortest == NULL)
 			  sqlite3_result_null (context);
 		      else if (shortest->FirstLinestring == NULL)
