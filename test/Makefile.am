@@ -852,6 +852,41 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/fromewkt1.testcase \
 	sql_stmt_tests/fromewkt2.testcase \
 	sql_stmt_tests/fromewkt3.testcase \
+	sql_stmt_tests/fromewkt4.testcase \
+	sql_stmt_tests/fromewkt5.testcase \
+	sql_stmt_tests/fromewkt6.testcase \
+	sql_stmt_tests/fromewkt7.testcase \
+	sql_stmt_tests/fromewkt8.testcase \
+	sql_stmt_tests/fromewkt9.testcase \
+	sql_stmt_tests/fromewkt10.testcase \
+	sql_stmt_tests/fromewkt11.testcase \
+	sql_stmt_tests/fromewkt12.testcase \
+	sql_stmt_tests/fromewkt13.testcase \
+	sql_stmt_tests/fromewkt14.testcase \
+	sql_stmt_tests/fromewkt15.testcase \
+	sql_stmt_tests/fromewkt16.testcase \
+	sql_stmt_tests/fromewkt17.testcase \
+	sql_stmt_tests/fromewkt18.testcase \
+	sql_stmt_tests/fromewkt19.testcase \
+	sql_stmt_tests/fromewkt20.testcase \
+	sql_stmt_tests/fromewkt22.testcase \
+	sql_stmt_tests/fromewkt23.testcase \
+	sql_stmt_tests/fromewkt24.testcase \
+	sql_stmt_tests/fromewkt25.testcase \
+	sql_stmt_tests/fromewkt26.testcase \
+	sql_stmt_tests/fromewkt27.testcase \
+	sql_stmt_tests/fromewkt28.testcase \
+	sql_stmt_tests/fromewkt29.testcase \
+	sql_stmt_tests/fromewkt30.testcase \
+	sql_stmt_tests/fromewkt31.testcase \
+	sql_stmt_tests/fromewkt32.testcase \
+	sql_stmt_tests/fromewkt33.testcase \
+	sql_stmt_tests/fromewkt34.testcase \
+	sql_stmt_tests/fromewkt35.testcase \
+	sql_stmt_tests/fromewkt36.testcase \
+	sql_stmt_tests/fromewkt37.testcase \
+	sql_stmt_tests/fromewkt38.testcase \
+	sql_stmt_tests/fromewkt39.testcase \
 	sql_stmt_tests/fromgeojson10.testcase \
 	sql_stmt_tests/fromgeojson11.testcase \
 	sql_stmt_tests/fromgeojson12.testcase \
