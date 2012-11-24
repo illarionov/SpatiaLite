@@ -169,6 +169,9 @@ extern "C"
 	getEllipsoidParams (void *p_sqlite, int srid, double *a, double *b,
 			    double *rf);
 
+    SPATIALITE_PRIVATE const char *splite_lwgeom_version (void);
+
+
 #ifdef __cplusplus
 }
 #endif

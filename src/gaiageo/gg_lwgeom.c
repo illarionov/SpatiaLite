@@ -69,10 +69,19 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <spatialite/sqlite.h>
 #include <spatialite/gaiageo.h>
 #include <spatialite.h>
+#include <spatialite_private.h>
 
 #ifdef ENABLE_LWGEOM		/* enabling LWGEOM support */
 
 #include <liblwgeom.h>
+
+const char splitelwgeomversion[] = LIBLWGEOM_VERSION;
+
+SPATIALITE_PRIVATE const char *
+splite_lwgeom_version (void)
+{
+    return splitelwgeomversion;
+}
 
 void
 lwgeom_init_allocators (void)

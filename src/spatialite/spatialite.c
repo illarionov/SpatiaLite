@@ -266,6 +266,27 @@ fnct_has_geos_trunk (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_lwgeom_version (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ lwgeom_version()
+/
+/ return a text string representing the current LWGEOM version
+/ or NULL if LWGEOM is currently unsupported
+*/
+
+#ifdef ENABLE_LWGEOM		/* LWGEOM version */
+    int len;
+    const char *p_result = splite_lwgeom_version ();
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    len = strlen (p_result);
+    sqlite3_result_text (context, p_result, len, SQLITE_TRANSIENT);
+#else
+    sqlite3_result_null (context);
+#endif
+}
+
+static void
 fnct_has_lwgeom (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -13641,10 +13662,11 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 				    {
 					/* Linestrings */
 					l = gaiaGeodesicTotalLength (a, b, rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -13666,12 +13688,9 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -13715,10 +13734,11 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					/* Linestrings */
 					length +=
 					    gaiaGreatCircleTotalLength (a, b,
+									line->DimensionModel,
 									line->
-									DimensionModel,
-									line->Coords,
-									line->Points);
+									Coords,
+									line->
+									Points);
 					line = line->Next;
 				    }
 			      }
@@ -13735,11 +13755,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      length +=
 						  gaiaGreatCircleTotalLength (a,
 									      b,
-									      ring->DimensionModel,
 									      ring->
-									      Coords,
-									      ring->
-									      Points);
+									      DimensionModel,
+									      ring->Coords,
+									      ring->Points);
 					      for (ib = 0;
 						   ib < polyg->NumInteriors;
 						   ib++)
@@ -20838,7 +20857,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -20922,7 +20942,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -20931,7 +20952,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -21236,6 +21258,8 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_proj4_version, 0, 0);
     sqlite3_create_function (db, "geos_version", 0, SQLITE_ANY, 0,
 			     fnct_geos_version, 0, 0);
+    sqlite3_create_function (db, "lwgeom_version", 0, SQLITE_ANY, 0,
+			     fnct_lwgeom_version, 0, 0);
     sqlite3_create_function (db, "HasProj", 0, SQLITE_ANY, 0,
 			     fnct_has_proj, 0, 0);
     sqlite3_create_function (db, "HasGeos", 0, SQLITE_ANY, 0,
@@ -22613,6 +22637,11 @@ spatialite_init (int verbose)
 	  if (verbose)
 	      spatialite_i ("GEOS version ........: %s\n", GEOSversion ());
 #endif /* end GEOS version */
+#ifdef ENABLE_LWGEOM		/* LWGEOM version */
+	  if (verbose)
+	      spatialite_i ("LWGEOM version ......: %s\n",
+			    splite_lwgeom_version ());
+#endif /* end LWGEOM version */
       }
 }
 
