@@ -92,6 +92,6 @@ install: all
 	-mkdir $(INSTDIR)\include\spatialite
 	copy *.dll $(INSTDIR)\bin
 	copy *.lib $(INSTDIR)\lib
-	copy src\headers\*.h $(INSTDIR)\include
+	copy src\headers\spatialite.h $(INSTDIR)\include
 	copy src\headers\spatialite\*.h $(INSTDIR)\include\spatialite
 	
