@@ -11,7 +11,7 @@
 			i {color:navy;}
 		</style>
 	</head><body bgcolor="#fffff0">
-		<h2>SpatiaLite 4.0.0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SQL functions reference list</h2>
+		<h2>SpatiaLite 4.0.1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SQL functions reference list</h2>
 		<a href="https://www.gaia-gis.it/fossil/libspatialite">back</a>
 		<ul>
 			<li><a href="#version">SQL Version Info [and build options testing] functions</a></li>
@@ -1188,13 +1188,15 @@ calculations;
 				<td>return a Point guaranteed to lie on the Surface (or Curve)</td></tr>
 			<tr><td><b>Simplify</b></td>
 				<td>Simplify( c <i>Curve</i> , tolerance <i>Double precision</i> ) : <i>Curve</i><hr>
+                                ST_Simplify( c <i>Curve</i> , tolerance <i>Double precision</i> ) : <i>Curve</i><hr>
 				ST_Generalize( c <i>Curve</i> , tolerance <i>Double precision</i> ) : <i>Curve</i></td>
 				<td></td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
 				<td>return a geometric object representing a simplified version of <i>c</i> applying the Douglas-Peukert 
 algorithm with given <i>tolerance</i></td></tr>
 			<tr><td><b>SimplifyPreserveTopology</b></td>
-				<td>SimplifyPreserveTopology( c <i>Curve</i> , tolerance <i>Double precision</i> ) : <i>Curve</i></td>
+				<td>SimplifyPreserveTopology( c <i>Curve</i> , tolerance <i>Double precision</i> ) : <i>Curve</i><hr>
+                                ST_SimplifyPreserveTopology( c <i>Curve</i> , tolerance <i>Double precision</i> ) : <i>Curve</i></td></td>
 				<td></td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
 				<td>return a geometric object representing a simplified version of <i>c</i> applying the Douglas-Peukert 

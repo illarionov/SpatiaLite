@@ -22205,9 +22205,13 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_PointOnSurface, 0, 0);
     sqlite3_create_function (db, "Simplify", 2, SQLITE_ANY, 0, fnct_Simplify,
 			     0, 0);
+    sqlite3_create_function (db, "ST_Simplify", 2, SQLITE_ANY, 0, fnct_Simplify,
+			     0, 0);
     sqlite3_create_function (db, "ST_Generalize", 2, SQLITE_ANY, 0,
 			     fnct_Simplify, 0, 0);
     sqlite3_create_function (db, "SimplifyPreserveTopology", 2, SQLITE_ANY, 0,
+			     fnct_SimplifyPreserveTopology, 0, 0);
+    sqlite3_create_function (db, "ST_SimplifyPreserveTopology", 2, SQLITE_ANY, 0,
 			     fnct_SimplifyPreserveTopology, 0, 0);
     sqlite3_create_function (db, "ConvexHull", 1, SQLITE_ANY, 0,
 			     fnct_ConvexHull, 0, 0);
