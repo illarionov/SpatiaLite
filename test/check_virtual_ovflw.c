@@ -263,8 +263,14 @@ int main (int argc, char *argv[])
     spatialite_cleanup();
 
     spatialite_init (0);
+    ret = system("cp sql_stmt_tests/testdb1.sqlite testdb1.sqlite");
+    if (ret != 0)
+    {
+        fprintf(stderr, "cannot copy testdb1.sqlite database\n");
+        return -131;
+    }
 
-    ret = sqlite3_open_v2 ("./sql_stmt_tests/testdb1.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    ret = sqlite3_open_v2 ("testdb1.sqlite", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "cannot open testdb1.sqlite db: %s\n", sqlite3_errmsg (db_handle));
 	sqlite3_close (db_handle);
@@ -322,6 +328,12 @@ int main (int argc, char *argv[])
 
     sqlite3_close (db_handle);
     spatialite_cleanup();
+    ret = unlink("testdb1.sqlite");
+    if (ret != 0)
+    {
+        fprintf(stderr, "cannot remove testdb1 database\n");
+        return -39;
+    }
 
     free(suffix);    
     

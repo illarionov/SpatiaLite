@@ -69,7 +69,13 @@ int main (int argc, char *argv[])
     int columns;
 
     spatialite_init (0);
-    ret = sqlite3_open_v2 ("sql_stmt_tests/testFDO.sqlite", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    ret = system("cp sql_stmt_tests/testFDO.sqlite testFDO.sqlite");
+    if (ret != 0)
+    {
+        fprintf(stderr, "cannot copy testFDO.sqlite database\n");
+        return -1001;
+    }
+    ret = sqlite3_open_v2 ("testFDO.sqlite", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open testFDO.sqlite db: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
@@ -419,6 +425,12 @@ int main (int argc, char *argv[])
     }
     
     spatialite_cleanup();
+    ret = unlink("testFDO.sqlite");
+    if (ret != 0)
+    {
+        fprintf(stderr, "cannot remove testFDO database\n");
+        return -57;
+    }
 #endif	/* end GEOS conditional */
     
     return 0;
