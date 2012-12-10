@@ -60,10 +60,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/gaiageo.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
-static double 
-rint(double x)
+static double
+rint (double x)
 {
-     return floor(x + 0.5);
+    return floor (x + 0.5);
 }
 #endif
 
@@ -812,6 +812,7 @@ gaiaSquareGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
 		gaiaSetPoint (rng->Coords, 3, x4, y4);
 		gaiaSetPoint (rng->Coords, 4, x1, y1);
 
+		gaiaMbrGeometry (item);
 		if (gaiaGeomCollIntersects (geom, item) == 1)
 		  {
 		      /* ok, inserting a valid cell */
@@ -934,6 +935,7 @@ gaiaTriangularGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
 		gaiaSetPoint (rng->Coords, 2, x3, y3);
 		gaiaSetPoint (rng->Coords, 3, x1, y1);
 
+		gaiaMbrGeometry (item);
 		if (gaiaGeomCollIntersects (geom, item) == 1)
 		  {
 		      /* ok, inserting a valid cell [pointing upside] */
@@ -973,6 +975,7 @@ gaiaTriangularGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
 		gaiaSetPoint (rng->Coords, 2, x4, y4);
 		gaiaSetPoint (rng->Coords, 3, x3, y3);
 
+		gaiaMbrGeometry (item);
 		if (gaiaGeomCollIntersects (geom, item) == 1)
 		  {
 		      /* ok, inserting a valid cell [pointing downside] */
@@ -1109,6 +1112,7 @@ gaiaHexagonalGrid (gaiaGeomCollPtr geom, double origin_x, double origin_y,
 		gaiaSetPoint (rng->Coords, 5, x6, y6);
 		gaiaSetPoint (rng->Coords, 6, x1, y1);
 
+		gaiaMbrGeometry (item);
 		if (gaiaGeomCollIntersects (geom, item) == 1)
 		  {
 		      /* ok, inserting a valid cell */

@@ -431,7 +431,7 @@ extern "C"
 
  \sa gaiaGeomCollDisjoint, gaiaGeomCollIntersects, gaiaGeomCollOverlaps,
  gaiaGeomCollCrosses, gaiaGeomCollContains, gaiaGeomCollWithin,
- gaiaGeomCollTouches, gaiaGeomCollRelate
+ gaiaGeomCollTouches, gaiaGeomCollRelate, gaiaGeomCollPreparedDisjoint
 
  \remark \b GEOS support required.
  */
@@ -456,6 +456,29 @@ extern "C"
 					      gaiaGeomCollPtr geom2);
 
 /**
+ Spatial relationship evalution: Disjoint (GEOSPreparedGeometry)
+
+ \param geom1 the first Geometry object to be evaluated
+ \param blob1 the BLOB corresponding to the first Geometry
+ \param size1 the size (in bytes) of the first BLOB
+ \param geom2 the second Geometry object to be evaluated
+ \param blob2 the BLOB corresponding to the second Geometry
+ \param size12 the size (in bytes) of the second BLOB
+
+ \return 0 if false: any other value if true
+
+ \sa gaiaGeomCollDisjoint
+ 
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedDisjoint (gaiaGeomCollPtr geom1,
+						      unsigned char *blob1,
+						      int size1,
+						      gaiaGeomCollPtr geom2,
+						      unsigned char *blob2,
+						      int size2);
+
+/**
  Spatial relationship evalution: Intesects
 
  \param geom1 the first Geometry object to be evaluated
@@ -465,12 +488,34 @@ extern "C"
 
  \sa gaiaGeomCollEquals, gaiaGeomCollDisjoint, gaiaGeomCollOverlaps,
  gaiaGeomCollCrosses, gaiaGeomCollContains, gaiaGeomCollWithin,
- gaiaGeomCollTouches, gaiaGeomCollRelate
+ gaiaGeomCollTouches, gaiaGeomCollRelate, gaiaGeomCollPreparedIntersects
  
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE int gaiaGeomCollIntersects (gaiaGeomCollPtr geom1,
 						gaiaGeomCollPtr geom2);
+/**
+ Spatial relationship evalution: Intesects (GEOSPreparedGeometry)
+
+ \param geom1 the first Geometry object to be evaluated
+ \param blob1 the BLOB corresponding to the first Geometry
+ \param size1 the size (in bytes) of the first BLOB
+ \param geom2 the second Geometry object to be evaluated
+ \param blob2 the BLOB corresponding to the second Geometry
+ \param size12 the size (in bytes) of the second BLOB
+
+ \return 0 if false: any other value if true
+
+ \sa gaiaGeomCollIntersects
+ 
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedIntersects (gaiaGeomCollPtr geom1,
+							unsigned char *blob1,
+							int size1,
+							gaiaGeomCollPtr geom2,
+							unsigned char *blob2,
+							int size2);
 
 /**
  Spatial relationship evalution: Overlaps
@@ -482,12 +527,35 @@ extern "C"
 
  \sa gaiaGeomCollEquals, gaiaGeomCollDisjoint, gaiaGeomCollIntersects, 
  gaiaGeomCollCrosses, gaiaGeomCollContains, gaiaGeomCollWithin,
- gaiaGeomCollTouches, gaiaGeomCollRelate
+ gaiaGeomCollTouches, gaiaGeomCollRelate, gaiaGeomCollPreparedOverlaps
  
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE int gaiaGeomCollOverlaps (gaiaGeomCollPtr geom1,
 					      gaiaGeomCollPtr geom2);
+
+/**
+ Spatial relationship evalution: Overlaps (GEOSPreparedGeometry)
+
+ \param geom1 the first Geometry object to be evaluated
+ \param blob1 the BLOB corresponding to the first Geometry
+ \param size1 the size (in bytes) of the first BLOB
+ \param geom2 the second Geometry object to be evaluated
+ \param blob2 the BLOB corresponding to the second Geometry
+ \param size12 the size (in bytes) of the second BLOB
+
+ \return 0 if false: any other value if true
+
+ \sa gaiaGeomCollOverlaps
+ 
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedOverlaps (gaiaGeomCollPtr geom1,
+						      unsigned char *blob1,
+						      int size1,
+						      gaiaGeomCollPtr geom2,
+						      unsigned char *blob2,
+						      int size2);
 
 /**
  Spatial relationship evalution: Crosses
@@ -499,12 +567,35 @@ extern "C"
 
  \sa gaiaGeomCollEquals, gaiaGeomCollDisjoint, gaiaGeomCollIntersects, 
  gaiaGeomCollOverlaps, gaiaGeomCollContains, gaiaGeomCollWithin,
- gaiaGeomCollTouches, gaiaGeomCollRelate
+ gaiaGeomCollTouches, gaiaGeomCollRelate, gaiaGeomCollCrosses
  
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE int gaiaGeomCollCrosses (gaiaGeomCollPtr geom1,
 					     gaiaGeomCollPtr geom2);
+
+/**
+ Spatial relationship evalution: Crosses (GEOSPreparedGeometry)
+
+ \param geom1 the first Geometry object to be evaluated
+ \param blob1 the BLOB corresponding to the first Geometry
+ \param size1 the size (in bytes) of the first BLOB
+ \param geom2 the second Geometry object to be evaluated
+ \param blob2 the BLOB corresponding to the second Geometry
+ \param size12 the size (in bytes) of the second BLOB
+
+ \return 0 if false: any other value if true
+
+ \sa gaiaGeomCollCrosses
+ 
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedCrosses (gaiaGeomCollPtr geom1,
+						     unsigned char *blob1,
+						     int size1,
+						     gaiaGeomCollPtr geom2,
+						     unsigned char *blob2,
+						     int size2);
 
 /**
  Spatial relationship evalution: Contains
@@ -516,12 +607,35 @@ extern "C"
 
  \sa gaiaGeomCollEquals, gaiaGeomCollDisjoint, gaiaGeomCollIntersects, 
  gaiaGeomCollOverlaps, gaiaGeomCollCrosses, gaiaGeomCollWithin,
- gaiaGeomCollTouches, gaiaGeomCollRelate
+ gaiaGeomCollTouches, gaiaGeomCollRelate, gaiaGeomCollPreparedContains
  
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE int gaiaGeomCollContains (gaiaGeomCollPtr geom1,
 					      gaiaGeomCollPtr geom2);
+
+/**
+ Spatial relationship evalution: Contains (GEOSPreparedGeometry)
+
+ \param geom1 the first Geometry object to be evaluated
+ \param blob1 the BLOB corresponding to the first Geometry
+ \param size1 the size (in bytes) of the first BLOB
+ \param geom2 the second Geometry object to be evaluated
+ \param blob2 the BLOB corresponding to the second Geometry
+ \param size12 the size (in bytes) of the second BLOB
+
+ \return 0 if false: any other value if true
+
+ \sa gaiaGeomCollContains
+ 
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedContains (gaiaGeomCollPtr geom1,
+						      unsigned char *blob1,
+						      int size1,
+						      gaiaGeomCollPtr geom2,
+						      unsigned char *blob2,
+						      int size2);
 
 /**
  Spatial relationship evalution: Within
@@ -533,12 +647,35 @@ extern "C"
 
  \sa gaiaGeomCollEquals, gaiaGeomCollDisjoint, gaiaGeomCollIntersects, 
  gaiaGeomCollOverlaps, gaiaGeomCollCrosses, gaiaGeomCollContains, 
- gaiaGeomCollTouches, gaiaGeomCollRelate
+ gaiaGeomCollTouches, gaiaGeomCollRelate, gaiaGeomCollWithin
  
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE int gaiaGeomCollWithin (gaiaGeomCollPtr geom1,
 					    gaiaGeomCollPtr geom2);
+
+/**
+ Spatial relationship evalution: Within (GEOSPreparedGeometry)
+
+ \param geom1 the first Geometry object to be evaluated
+ \param blob1 the BLOB corresponding to the first Geometry
+ \param size1 the size (in bytes) of the first BLOB
+ \param geom2 the second Geometry object to be evaluated
+ \param blob2 the BLOB corresponding to the second Geometry
+ \param size12 the size (in bytes) of the second BLOB
+
+ \return 0 if false: any other value if true
+
+ \sa gaiaGeomCollPrepared
+ 
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedWithin (gaiaGeomCollPtr geom1,
+						    unsigned char *blob1,
+						    int size1,
+						    gaiaGeomCollPtr geom2,
+						    unsigned char *blob2,
+						    int size2);
 
 /**
  Spatial relationship evalution: Touches
@@ -550,12 +687,35 @@ extern "C"
 
  \sa gaiaGeomCollEquals, gaiaGeomCollDisjoint, gaiaGeomCollIntersects, 
  gaiaGeomCollOverlaps, gaiaGeomCollCrosses, gaiaGeomCollContains, 
- gaiaGeomCollWithin, gaiaGeomCollRelate
+ gaiaGeomCollWithin, gaiaGeomCollRelate, gaiaGeomCollPreparedTouches
  
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE int gaiaGeomCollTouches (gaiaGeomCollPtr geom1,
 					     gaiaGeomCollPtr geom2);
+
+/**
+ Spatial relationship evalution: Touches (GEOSPreparedGeometry)
+
+ \param geom1 the first Geometry object to be evaluated
+ \param blob1 the BLOB corresponding to the first Geometry
+ \param size1 the size (in bytes) of the first BLOB
+ \param geom2 the second Geometry object to be evaluated
+ \param blob2 the BLOB corresponding to the second Geometry
+ \param size12 the size (in bytes) of the second BLOB
+
+ \return 0 if false: any other value if true
+
+ \sa gaiaGeomCollTouches
+ 
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedTouches (gaiaGeomCollPtr geom1,
+						     unsigned char *blob1,
+						     int size1,
+						     gaiaGeomCollPtr geom2,
+						     unsigned char *blob2,
+						     int size2);
 
 /**
  Spatial relationship evalution: Relate
@@ -1110,6 +1270,29 @@ extern "C"
     GAIAGEO_DECLARE int gaiaGeomCollCovers (gaiaGeomCollPtr geom1,
 					    gaiaGeomCollPtr geom2);
 
+/** 
+ Topology check: test if a Geometry covers another one (GEOSPreparedGeometry)
+
+ \param geom1 pointer to first input Geometry object.
+ \param blob1 the BLOB corresponding to the first Geometry
+ \param size1 the size (in bytes) of the first BLOB
+ \param geom2 pointer to second input Geometry object.
+ \param blob2 the BLOB corresponding to the second Geometry
+ \param size12 the size (in bytes) of the second BLOB
+
+ \return 0 if false; any other value if geom1 \e spatially \e covers geom2.
+
+ \sa gaiaGeomCollCovers
+
+ \remark \b GEOS-ADVANCED support required.
+ */
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedCovers (gaiaGeomCollPtr geom1,
+						    unsigned char *blob1,
+						    int size1,
+						    gaiaGeomCollPtr geom2,
+						    unsigned char *blob2,
+						    int size2);
+
 /**
  Topology check: test if a Geometry is covered by another one
                                             
@@ -1125,6 +1308,30 @@ extern "C"
  */
     GAIAGEO_DECLARE int gaiaGeomCollCoveredBy (gaiaGeomCollPtr geom1,
 					       gaiaGeomCollPtr geom2);
+
+/**
+ Topology check: test if a Geometry is covered by another one (GEOSPreparedGeometry)
+                                            
+ \param geom1 pointer to first input Geometry object.
+ \param blob1 the BLOB corresponding to the first Geometry
+ \param size1 the size (in bytes) of the first BLOB
+ \param geom2 pointer to second input Geometry object.
+ \param blob2 the BLOB corresponding to the second Geometry
+ \param size12 the size (in bytes) of the second BLOB
+                                               
+ \return 0 if false; any other value if geom2 is \e spatially \e covered \e by
+ geom1.
+
+ \sa gaiaGeomCollCovers
+
+ \remark \b GEOS-ADVANCED support required.
+ */
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedCoveredBy (gaiaGeomCollPtr geom1,
+						       unsigned char *blob1,
+						       int size1,
+						       gaiaGeomCollPtr geom2,
+						       unsigned char *blob2,
+						       int size2);
 
 /**
  Utility function: SquareGrid

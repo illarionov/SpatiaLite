@@ -42,6 +42,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
+#include <zlib.h>
+
 /**
  \file spatialite_private.h
 
@@ -83,6 +85,21 @@ extern "C"
 #define SPATIALITE_STATISTICS_VIEWS	2
 #define SPATIALITE_STATISTICS_VIRTS	3
 #define SPATIALITE_STATISTICS_LEGACY	4
+
+    struct splite_geos_cache_item
+    {
+	unsigned char gaiaBlob[64];
+	int gaiaBlobSize;
+	uLong crc32;
+	void *geosGeom;
+	void *preparedGeosGeom;
+    };
+
+    struct splite_geos_cache
+    {
+	struct splite_geos_cache_item cacheItem1;
+	struct splite_geos_cache_item cacheItem2;
+    };
 
     struct epsg_defs
     {
@@ -170,6 +187,10 @@ extern "C"
 			    double *rf);
 
     SPATIALITE_PRIVATE const char *splite_lwgeom_version (void);
+
+    SPATIALITE_PRIVATE void splite_free_geos_cache_item (struct
+							 splite_geos_cache_item
+							 *p);
 
 
 #ifdef __cplusplus

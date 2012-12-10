@@ -49,6 +49,9 @@
 /* Define to 1 if you have the `sqlite3' library (-lsqlite3). */
 #define HAVE_LIBSQLITE3 1
 
+/* Define to 1 if you have the `z' library (-lz). */
+#define HAVE_LIBZ 1
+
 /* Define to 1 if you have the `localtime_r' function. */
 #define HAVE_LOCALTIME_R 1
 
@@ -128,6 +131,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
+
+/* Define to 1 if you have the <zlib.h> header file. */
+#define HAVE_ZLIB_H 1
 
 /* Define to 1 if `lstat' dereferences a symlink specified with a trailing
    slash. */

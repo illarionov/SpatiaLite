@@ -403,6 +403,8 @@ voronoj_internal (struct voronoj_triangle *triangle)
     gaiaSetPoint (rng->Coords, 2, triangle->x3, triangle->y3);
     gaiaSetPoint (rng->Coords, 3, triangle->x1, triangle->y1);
     gaiaAddPointToGeomColl (pt, triangle->cx, triangle->cy);
+    gaiaMbrGeometry (pt);
+    gaiaMbrGeometry (tri);
     ret = gaiaGeomCollIntersects (tri, pt);
     gaiaFreeGeomColl (pt);
     gaiaFreeGeomColl (tri);

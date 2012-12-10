@@ -68,6 +68,19 @@ the terms of any one of the MPL, the GPL or the LGPL.
 char gaia_geos_error_msg[2048];
 char gaia_geos_warning_msg[2048];
 
+SPATIALITE_PRIVATE void
+splite_free_geos_cache_item (struct splite_geos_cache_item *p)
+{
+#ifndef OMIT_GEOS		/* including GEOS */
+    if (p->preparedGeosGeom)
+	GEOSPreparedGeom_destroy (p->preparedGeosGeom);
+    if (p->geosGeom)
+	GEOSGeom_destroy (p->geosGeom);
+#endif
+    p->geosGeom = NULL;
+    p->preparedGeosGeom = NULL;
+}
+
 GAIAGEO_DECLARE void
 gaiaResetGeosMsg ()
 {
@@ -195,6 +208,187 @@ gaiaPolygonEquals (gaiaPolygonPtr polyg1, gaiaPolygonPtr polyg2)
 
 #ifndef OMIT_GEOS		/* including GEOS */
 
+static int
+splite_mbr_overlaps (gaiaGeomCollPtr g1, gaiaGeomCollPtr g2)
+{
+/* checks if two MBRs do overlap */
+    if (g1->MaxX < g2->MinX)
+	return 0;
+    if (g1->MinX > g2->MaxX)
+	return 0;
+    if (g1->MaxY < g2->MinY)
+	return 0;
+    if (g1->MinY > g2->MaxY)
+	return 0;
+    return 1;
+}
+
+static int
+splite_mbr_contains (gaiaGeomCollPtr g1, gaiaGeomCollPtr g2)
+{
+/* checks if MBR#1 fully contains MBR#2 */
+    if (g2->MinX < g1->MinX)
+	return 0;
+    if (g2->MaxX > g1->MaxX)
+	return 0;
+    if (g2->MinY < g1->MinY)
+	return 0;
+    if (g2->MaxY > g1->MaxY)
+	return 0;
+    return 1;
+}
+
+static int
+splite_mbr_within (gaiaGeomCollPtr g1, gaiaGeomCollPtr g2)
+{
+/* checks if MBR#1 is fully contained within MBR#2 */
+    if (g1->MinX < g2->MinX)
+	return 0;
+    if (g1->MaxX > g2->MaxX)
+	return 0;
+    if (g1->MinY < g2->MinY)
+	return 0;
+    if (g1->MaxY > g2->MaxY)
+	return 0;
+    return 1;
+}
+
+static int
+splite_mbr_equals (gaiaGeomCollPtr g1, gaiaGeomCollPtr g2)
+{
+/* checks if MBR#1 equals MBR#2 */
+    if (g1->MinX != g2->MinX)
+	return 0;
+    if (g1->MaxX != g2->MaxX)
+	return 0;
+    if (g1->MinY != g2->MinY)
+	return 0;
+    if (g1->MaxY != g2->MaxY)
+	return 0;
+    return 1;
+}
+
+static int
+evalGeosCacheItem (unsigned char *blob, int blob_size, uLong crc,
+		   struct splite_geos_cache_item *p)
+{
+/* evaluting if this one could be a valid cache hit */
+    if (blob_size != p->gaiaBlobSize)
+      {
+	  /* surely not a match; different size */
+	  return 0;
+      }
+    if (crc != p->crc32)
+      {
+	  /* surely not a match: different CRC32 */
+	  return 0;
+      }
+
+/* the first 46 bytes of the BLOB contain the MBR,
+   the SRID and the Type; so are assumed to represent 
+   a valid signature */
+    if (memcmp (blob, p->gaiaBlob, 46) == 0)
+	return 1;
+    return 0;
+}
+
+static int
+evalGeosCache (gaiaGeomCollPtr geom1, unsigned char *blob1, int size1,
+	       gaiaGeomCollPtr geom2, unsigned char *blob2, int size2,
+	       GEOSPreparedGeometry ** gPrep, gaiaGeomCollPtr * geom)
+{
+/* handling the internal GEOS cache */
+    extern struct splite_geos_cache spatialite_geos_cache;
+    struct splite_geos_cache_item *p1 = &(spatialite_geos_cache.cacheItem1);
+    struct splite_geos_cache_item *p2 = &(spatialite_geos_cache.cacheItem2);
+    uLong crc1 = crc32 (0L, blob1, size1);
+    uLong crc2 = crc32 (0L, blob2, size2);
+
+/* checking the first cache item */
+    if (evalGeosCacheItem (blob1, size1, crc1, p1))
+      {
+	  /* found a matching item */
+	  if (p1->preparedGeosGeom == NULL)
+	    {
+		/* preparing the GeosGeometries */
+		p1->geosGeom = gaiaToGeos (geom1);
+		if (p1->geosGeom)
+		  {
+		      p1->preparedGeosGeom =
+			  (void *) GEOSPrepare (p1->geosGeom);
+		      if (p1->preparedGeosGeom == NULL)
+			{
+			    /* unexpected failure */
+			    GEOSGeom_destroy (p1->geosGeom);
+			    p1->geosGeom = NULL;
+			}
+		  }
+	    }
+	  if (p1->preparedGeosGeom)
+	    {
+		/* returning the corresponding GeosPreparedGeometry */
+		*gPrep = p1->preparedGeosGeom;
+		*geom = geom2;
+		return 1;
+	    }
+	  return 0;
+      }
+
+/* checking the second cache item */
+    if (evalGeosCacheItem (blob2, size2, crc2, p2))
+      {
+	  /* found a matching item */
+	  if (p2->preparedGeosGeom == NULL)
+	    {
+		/* preparing the GeosGeometries */
+		p2->geosGeom = gaiaToGeos (geom2);
+		if (p2->geosGeom)
+		  {
+		      p2->preparedGeosGeom =
+			  (void *) GEOSPrepare (p2->geosGeom);
+		      if (p2->preparedGeosGeom == NULL)
+			{
+			    /* unexpected failure */
+			    GEOSGeom_destroy (p2->geosGeom);
+			    p2->geosGeom = NULL;
+			}
+		  }
+	    }
+	  if (p2->preparedGeosGeom)
+	    {
+		/* returning the corresponding GeosPreparedGeometry */
+		*gPrep = p2->preparedGeosGeom;
+		*geom = geom1;
+		return 1;
+	    }
+	  return 0;
+      }
+
+/* updating the GEOS cache item#1 */
+    memcpy (p1->gaiaBlob, blob1, 46);
+    p1->gaiaBlobSize = size1;
+    p1->crc32 = crc1;
+    if (p1->preparedGeosGeom)
+	GEOSPreparedGeom_destroy (p1->preparedGeosGeom);
+    if (p1->geosGeom)
+	GEOSGeom_destroy (p1->geosGeom);
+    p1->geosGeom = NULL;
+    p1->preparedGeosGeom = NULL;
+
+/* updating the GEOS cache item#2 */
+    memcpy (p2->gaiaBlob, blob2, 46);
+    p2->gaiaBlobSize = size2;
+    p2->crc32 = crc2;
+    if (p2->preparedGeosGeom)
+	GEOSPreparedGeom_destroy (p2->preparedGeosGeom);
+    if (p2->geosGeom)
+	GEOSGeom_destroy (p2->geosGeom);
+    p2->geosGeom = NULL;
+    p2->preparedGeosGeom = NULL;
+
+    return 0;
+}
+
 GAIAGEO_DECLARE int
 gaiaGeomCollEquals (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
@@ -206,6 +400,11 @@ gaiaGeomCollEquals (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_equals (geom1, geom2))
+	return 0;
+
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     ret = GEOSEquals (g1, g2);
@@ -219,12 +418,54 @@ gaiaGeomCollIntersects (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if two Geometries do "spatially intersects" */
     int ret;
+    GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_overlaps (geom1, geom2))
+	return 0;
+
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    ret = GEOSIntersects (g1, g2);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    return ret;
+}
+
+GAIAGEO_DECLARE int
+gaiaGeomCollPreparedIntersects (gaiaGeomCollPtr geom1, unsigned char *blob1,
+				int size1, gaiaGeomCollPtr geom2,
+				unsigned char *blob2, int size2)
+{
+/* checks if two Geometries do "spatially intersects" */
+    int ret;
+    GEOSPreparedGeometry *gPrep;
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr geom;
+    if (!geom1 || !geom2)
+	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_overlaps (geom1, geom2))
+	return 0;
+
+/* handling the internal GEOS cache */
+    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+      {
+	  g2 = gaiaToGeos (geom);
+	  ret = GEOSPreparedIntersects (gPrep, g2);
+	  GEOSGeom_destroy (g2);
+	  return ret;
+      }
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     ret = GEOSIntersects (g1, g2);
@@ -238,12 +479,55 @@ gaiaGeomCollDisjoint (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if two Geometries are "spatially disjoint" */
     int ret;
+    GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_overlaps (geom1, geom2))
+	return 1;
+
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    ret = GEOSDisjoint (g1, g2);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    return ret;
+}
+
+GAIAGEO_DECLARE int
+gaiaGeomCollPreparedDisjoint (gaiaGeomCollPtr geom1, unsigned char *blob1,
+			      int size1, gaiaGeomCollPtr geom2,
+			      unsigned char *blob2, int size2)
+{
+/* checks if two Geometries are "spatially disjoint" */
+    int ret;
+    GEOSPreparedGeometry *gPrep;
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr geom;
+    if (!geom1 || !geom2)
+	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_overlaps (geom1, geom2))
+	return 1;
+
+/* handling the internal GEOS cache */
+    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+      {
+	  g2 = gaiaToGeos (geom);
+	  ret = GEOSPreparedDisjoint (gPrep, g2);
+	  GEOSGeom_destroy (g2);
+	  return ret;
+      }
+
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     ret = GEOSDisjoint (g1, g2);
@@ -257,12 +541,55 @@ gaiaGeomCollOverlaps (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if two Geometries do "spatially overlaps" */
     int ret;
+    GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_overlaps (geom1, geom2))
+	return 0;
+
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    ret = GEOSOverlaps (g1, g2);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    return ret;
+}
+
+GAIAGEO_DECLARE int
+gaiaGeomCollPreparedOverlaps (gaiaGeomCollPtr geom1, unsigned char *blob1,
+			      int size1, gaiaGeomCollPtr geom2,
+			      unsigned char *blob2, int size2)
+{
+/* checks if two Geometries do "spatially overlaps" */
+    int ret;
+    GEOSPreparedGeometry *gPrep;
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr geom;
+    if (!geom1 || !geom2)
+	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_overlaps (geom1, geom2))
+	return 0;
+
+/* handling the internal GEOS cache */
+    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+      {
+	  g2 = gaiaToGeos (geom);
+	  ret = GEOSPreparedOverlaps (gPrep, g2);
+	  GEOSGeom_destroy (g2);
+	  return ret;
+      }
+
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     ret = GEOSOverlaps (g1, g2);
@@ -276,12 +603,55 @@ gaiaGeomCollCrosses (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if two Geometries do "spatially crosses" */
     int ret;
+    GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_overlaps (geom1, geom2))
+	return 0;
+
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    ret = GEOSCrosses (g1, g2);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    return ret;
+}
+
+GAIAGEO_DECLARE int
+gaiaGeomCollPreparedCrosses (gaiaGeomCollPtr geom1, unsigned char *blob1,
+			     int size1, gaiaGeomCollPtr geom2,
+			     unsigned char *blob2, int size2)
+{
+/* checks if two Geometries do "spatially crosses" */
+    int ret;
+    GEOSPreparedGeometry *gPrep;
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr geom;
+    if (!geom1 || !geom2)
+	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_overlaps (geom1, geom2))
+	return 0;
+
+/* handling the internal GEOS cache */
+    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+      {
+	  g2 = gaiaToGeos (geom);
+	  ret = GEOSPreparedCrosses (gPrep, g2);
+	  GEOSGeom_destroy (g2);
+	  return ret;
+      }
+
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     ret = GEOSCrosses (g1, g2);
@@ -295,12 +665,55 @@ gaiaGeomCollTouches (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if two Geometries do "spatially touches" */
     int ret;
+    GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_overlaps (geom1, geom2))
+	return 0;
+
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    ret = GEOSTouches (g1, g2);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    return ret;
+}
+
+GAIAGEO_DECLARE int
+gaiaGeomCollPreparedTouches (gaiaGeomCollPtr geom1, unsigned char *blob1,
+			     int size1, gaiaGeomCollPtr geom2,
+			     unsigned char *blob2, int size2)
+{
+/* checks if two Geometries do "spatially touches" */
+    int ret;
+    GEOSPreparedGeometry *gPrep;
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr geom;
+    if (!geom1 || !geom2)
+	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_overlaps (geom1, geom2))
+	return 0;
+
+/* handling the internal GEOS cache */
+    if (evalGeosCache (geom1, blob1, size1, geom2, blob1, size1, &gPrep, &geom))
+      {
+	  g2 = gaiaToGeos (geom);
+	  ret = GEOSPreparedTouches (gPrep, g2);
+	  GEOSGeom_destroy (g2);
+	  return ret;
+      }
+
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     ret = GEOSTouches (g1, g2);
@@ -314,12 +727,58 @@ gaiaGeomCollWithin (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if GEOM-1 is completely contained within GEOM-2 */
     int ret;
+    GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_within (geom1, geom2))
+	return 0;
+
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    ret = GEOSWithin (g1, g2);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    return ret;
+}
+
+GAIAGEO_DECLARE int
+gaiaGeomCollPreparedWithin (gaiaGeomCollPtr geom1, unsigned char *blob1,
+			    int size1, gaiaGeomCollPtr geom2,
+			    unsigned char *blob2, int size2)
+{
+/* checks if GEOM-1 is completely contained within GEOM-2 */
+    int ret;
+    GEOSPreparedGeometry *gPrep;
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr geom;
+    if (!geom1 || !geom2)
+	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_within (geom1, geom2))
+	return 0;
+
+/* handling the internal GEOS cache */
+    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+      {
+	  g2 = gaiaToGeos (geom);
+	  if (geom == geom2)
+	      ret = GEOSPreparedWithin (gPrep, g2);
+	  else
+	      ret = GEOSPreparedContains (gPrep, g2);
+	  GEOSGeom_destroy (g2);
+	  return ret;
+      }
+
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     ret = GEOSWithin (g1, g2);
@@ -333,12 +792,58 @@ gaiaGeomCollContains (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if GEOM-1 completely contains GEOM-2 */
     int ret;
+    GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
 	return -1;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_contains (geom1, geom2))
+	return 0;
+
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    ret = GEOSContains (g1, g2);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    return ret;
+}
+
+GAIAGEO_DECLARE int
+gaiaGeomCollPreparedContains (gaiaGeomCollPtr geom1, unsigned char *blob1,
+			      int size1, gaiaGeomCollPtr geom2,
+			      unsigned char *blob2, int size2)
+{
+/* checks if GEOM-1 completely contains GEOM-2 */
+    int ret;
+    GEOSPreparedGeometry *gPrep;
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr geom;
+    if (!geom1 || !geom2)
+	return -1;
+    if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
+	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_contains (geom1, geom2))
+	return 0;
+
+/* handling the internal GEOS cache */
+    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+      {
+	  g2 = gaiaToGeos (geom);
+	  if (geom == geom2)
+	      ret = GEOSPreparedContains (gPrep, g2);
+	  else
+	      ret = GEOSPreparedWithin (gPrep, g2);
+	  GEOSGeom_destroy (g2);
+	  return ret;
+      }
+
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     ret = GEOSContains (g1, g2);
@@ -470,6 +975,11 @@ gaiaGeometryIntersection (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 	return NULL;
     if (gaiaIsToxic (geom1) || gaiaIsToxic (geom2))
 	return NULL;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_overlaps (geom1, geom2))
+	return NULL;
+
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     g3 = GEOSIntersection (g1, g2);
@@ -2263,10 +2773,58 @@ gaiaGeomCollCovers (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if geom1 "spatially covers" geom2 */
     int ret;
+    GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
 	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_contains (geom1, geom2))
+	return 0;
+
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    ret = GEOSCovers (g1, g2);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    if (ret == 2)
+	return -1;
+    return ret;
+}
+
+GAIAGEO_DECLARE int
+gaiaGeomCollPreparedCovers (gaiaGeomCollPtr geom1, unsigned char *blob1,
+			    int size1, gaiaGeomCollPtr geom2,
+			    unsigned char *blob2, int size2)
+{
+/* checks if geom1 "spatially covers" geom2 */
+    int ret;
+    GEOSPreparedGeometry *gPrep;
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr geom;
+    if (!geom1 || !geom2)
+	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_contains (geom1, geom2))
+	return 0;
+
+/* handling the internal GEOS cache */
+    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+      {
+	  g2 = gaiaToGeos (geom);
+	  if (geom == geom2)
+	      ret = GEOSPreparedCovers (gPrep, g2);
+	  else
+	      ret = GEOSPreparedCoveredBy (gPrep, g2);
+	  GEOSGeom_destroy (g2);
+	  if (ret == 2)
+	      return -1;
+	  return ret;
+      }
+
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     ret = GEOSCovers (g1, g2);
@@ -2282,10 +2840,58 @@ gaiaGeomCollCoveredBy (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 {
 /* checks if geom1 is "spatially covered by" geom2 */
     int ret;
+    GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     if (!geom1 || !geom2)
 	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_within (geom1, geom2))
+	return 0;
+
+    g1 = gaiaToGeos (geom1);
+    g2 = gaiaToGeos (geom2);
+    ret = GEOSCoveredBy (g1, g2);
+    GEOSGeom_destroy (g1);
+    GEOSGeom_destroy (g2);
+    if (ret == 2)
+	return -1;
+    return ret;
+}
+
+GAIAGEO_DECLARE int
+gaiaGeomCollPreparedCoveredBy (gaiaGeomCollPtr geom1, unsigned char *blob1,
+			       int size1, gaiaGeomCollPtr geom2,
+			       unsigned char *blob2, int size2)
+{
+/* checks if geom1 is "spatially covered by" geom2 */
+    int ret;
+    GEOSPreparedGeometry *gPrep;
+    GEOSGeometry *g1;
+    GEOSGeometry *g2;
+    gaiaGeomCollPtr geom;
+    if (!geom1 || !geom2)
+	return -1;
+
+/* quick check based on MBRs comparison */
+    if (!splite_mbr_within (geom1, geom2))
+	return 0;
+
+/* handling the internal GEOS cache */
+    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+      {
+	  g2 = gaiaToGeos (geom);
+	  if (geom == geom2)
+	      ret = GEOSPreparedCoveredBy (gPrep, g2);
+	  else
+	      ret = GEOSPreparedCovers (gPrep, g2);
+	  GEOSGeom_destroy (g2);
+	  if (ret == 2)
+	      return -1;
+	  return ret;
+      }
+
     g1 = gaiaToGeos (geom1);
     g2 = gaiaToGeos (geom2);
     ret = GEOSCoveredBy (g1, g2);

@@ -76,6 +76,7 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <unistd.h>
 #endif
 
+
 #include <spatialite/sqlite.h>
 #include <spatialite/debug.h>
 
@@ -99,6 +100,13 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #endif /* not WIN32 */
 
 #define GAIA_UNUSED() if (argc || argv) argc = argc;
+
+/* 
+/ GLOBAL definition of the internal GEOS cache
+/ BEWARE: not thread-safe, so using a different
+/ connection for each thread is absolutely required
+*/
+struct splite_geos_cache spatialite_geos_cache;
 
 struct gaia_geom_chain_item
 {
@@ -14678,8 +14686,10 @@ fnct_Intersects (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / 0 otherwise
 / or -1 if any error is encountered
 */
-    unsigned char *p_blob;
-    int n_bytes;
+    unsigned char *blob1;
+    unsigned char *blob2;
+    int bytes1;
+    int bytes2;
     gaiaGeomCollPtr geo1 = NULL;
     gaiaGeomCollPtr geo2 = NULL;
     int ret;
@@ -14694,17 +14704,19 @@ fnct_Intersects (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_int (context, -1);
 	  return;
       }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
-    n_bytes = sqlite3_value_bytes (argv[1]);
-    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    blob1 = (unsigned char *) sqlite3_value_blob (argv[0]);
+    bytes1 = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (blob1, bytes1);
+    blob2 = (unsigned char *) sqlite3_value_blob (argv[1]);
+    bytes2 = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (blob2, bytes2);
     if (!geo1 || !geo2)
 	sqlite3_result_int (context, -1);
     else
       {
-	  ret = gaiaGeomCollIntersects (geo1, geo2);
+	  ret =
+	      gaiaGeomCollPreparedIntersects (geo1, blob1, bytes1, geo2, blob2,
+					      bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -14722,8 +14734,10 @@ fnct_Disjoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / 0 otherwise
 / or -1 if any error is encountered
 */
-    unsigned char *p_blob;
-    int n_bytes;
+    unsigned char *blob1;
+    unsigned char *blob2;
+    int bytes1;
+    int bytes2;
     gaiaGeomCollPtr geo1 = NULL;
     gaiaGeomCollPtr geo2 = NULL;
     int ret;
@@ -14738,17 +14752,19 @@ fnct_Disjoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_int (context, -1);
 	  return;
       }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
-    n_bytes = sqlite3_value_bytes (argv[1]);
-    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    blob1 = (unsigned char *) sqlite3_value_blob (argv[0]);
+    bytes1 = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (blob1, bytes1);
+    blob2 = (unsigned char *) sqlite3_value_blob (argv[1]);
+    bytes2 = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (blob2, bytes2);
     if (!geo1 || !geo2)
 	sqlite3_result_int (context, -1);
     else
       {
-	  ret = gaiaGeomCollDisjoint (geo1, geo2);
+	  ret =
+	      gaiaGeomCollPreparedDisjoint (geo1, blob1, bytes1, geo2, blob2,
+					    bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -14766,8 +14782,10 @@ fnct_Overlaps (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / 0 otherwise
 / or -1 if any error is encountered
 */
-    unsigned char *p_blob;
-    int n_bytes;
+    unsigned char *blob1;
+    unsigned char *blob2;
+    int bytes1;
+    int bytes2;
     gaiaGeomCollPtr geo1 = NULL;
     gaiaGeomCollPtr geo2 = NULL;
     int ret;
@@ -14782,17 +14800,19 @@ fnct_Overlaps (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_int (context, -1);
 	  return;
       }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
-    n_bytes = sqlite3_value_bytes (argv[1]);
-    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    blob1 = (unsigned char *) sqlite3_value_blob (argv[0]);
+    bytes1 = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (blob1, bytes1);
+    blob2 = (unsigned char *) sqlite3_value_blob (argv[1]);
+    bytes2 = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (blob2, bytes2);
     if (!geo1 || !geo2)
 	sqlite3_result_int (context, -1);
     else
       {
-	  ret = gaiaGeomCollOverlaps (geo1, geo2);
+	  ret =
+	      gaiaGeomCollPreparedOverlaps (geo1, blob1, bytes1, geo2, blob2,
+					    bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -14810,8 +14830,10 @@ fnct_Crosses (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / 0 otherwise
 / or -1 if any error is encountered
 */
-    unsigned char *p_blob;
-    int n_bytes;
+    unsigned char *blob1;
+    unsigned char *blob2;
+    int bytes1;
+    int bytes2;
     gaiaGeomCollPtr geo1 = NULL;
     gaiaGeomCollPtr geo2 = NULL;
     int ret;
@@ -14826,17 +14848,19 @@ fnct_Crosses (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_int (context, -1);
 	  return;
       }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
-    n_bytes = sqlite3_value_bytes (argv[1]);
-    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    blob1 = (unsigned char *) sqlite3_value_blob (argv[0]);
+    bytes1 = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (blob1, bytes1);
+    blob2 = (unsigned char *) sqlite3_value_blob (argv[1]);
+    bytes2 = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (blob2, bytes2);
     if (!geo1 || !geo2)
 	sqlite3_result_int (context, -1);
     else
       {
-	  ret = gaiaGeomCollCrosses (geo1, geo2);
+	  ret =
+	      gaiaGeomCollPreparedCrosses (geo1, blob1, bytes1, geo2, blob2,
+					   bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -14854,8 +14878,10 @@ fnct_Touches (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / 0 otherwise
 / or -1 if any error is encountered
 */
-    unsigned char *p_blob;
-    int n_bytes;
+    unsigned char *blob1;
+    unsigned char *blob2;
+    int bytes1;
+    int bytes2;
     gaiaGeomCollPtr geo1 = NULL;
     gaiaGeomCollPtr geo2 = NULL;
     int ret;
@@ -14870,17 +14896,19 @@ fnct_Touches (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_int (context, -1);
 	  return;
       }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
-    n_bytes = sqlite3_value_bytes (argv[1]);
-    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    blob1 = (unsigned char *) sqlite3_value_blob (argv[0]);
+    bytes1 = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (blob1, bytes1);
+    blob2 = (unsigned char *) sqlite3_value_blob (argv[1]);
+    bytes2 = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (blob2, bytes2);
     if (!geo1 || !geo2)
 	sqlite3_result_int (context, -1);
     else
       {
-	  ret = gaiaGeomCollTouches (geo1, geo2);
+	  ret =
+	      gaiaGeomCollPreparedTouches (geo1, blob1, bytes1, geo2, blob2,
+					   bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -14898,8 +14926,10 @@ fnct_Within (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / 0 otherwise
 / or -1 if any error is encountered
 */
-    unsigned char *p_blob;
-    int n_bytes;
+    unsigned char *blob1;
+    unsigned char *blob2;
+    int bytes1;
+    int bytes2;
     gaiaGeomCollPtr geo1 = NULL;
     gaiaGeomCollPtr geo2 = NULL;
     int ret;
@@ -14914,17 +14944,19 @@ fnct_Within (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_int (context, -1);
 	  return;
       }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
-    n_bytes = sqlite3_value_bytes (argv[1]);
-    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    blob1 = (unsigned char *) sqlite3_value_blob (argv[0]);
+    bytes1 = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (blob1, bytes1);
+    blob2 = (unsigned char *) sqlite3_value_blob (argv[1]);
+    bytes2 = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (blob2, bytes2);
     if (!geo1 || !geo2)
 	sqlite3_result_int (context, -1);
     else
       {
-	  ret = gaiaGeomCollWithin (geo1, geo2);
+	  ret =
+	      gaiaGeomCollPreparedWithin (geo1, blob1, bytes1, geo2, blob2,
+					  bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -14942,8 +14974,10 @@ fnct_Contains (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / 0 otherwise
 / or -1 if any error is encountered
 */
-    unsigned char *p_blob;
-    int n_bytes;
+    unsigned char *blob1;
+    unsigned char *blob2;
+    int bytes1;
+    int bytes2;
     gaiaGeomCollPtr geo1 = NULL;
     gaiaGeomCollPtr geo2 = NULL;
     int ret;
@@ -14958,17 +14992,19 @@ fnct_Contains (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_int (context, -1);
 	  return;
       }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
-    n_bytes = sqlite3_value_bytes (argv[1]);
-    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    blob1 = (unsigned char *) sqlite3_value_blob (argv[0]);
+    bytes1 = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (blob1, bytes1);
+    blob2 = (unsigned char *) sqlite3_value_blob (argv[1]);
+    bytes2 = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (blob2, bytes2);
     if (!geo1 || !geo2)
 	sqlite3_result_int (context, -1);
     else
       {
-	  ret = gaiaGeomCollContains (geo1, geo2);
+	  ret =
+	      gaiaGeomCollPreparedContains (geo1, blob1, bytes1, geo2, blob2,
+					    bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -17267,8 +17303,10 @@ fnct_Covers (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / 0 otherwise
 / or -1 if any error is encountered
 */
-    unsigned char *p_blob;
-    int n_bytes;
+    unsigned char *blob1;
+    unsigned char *blob2;
+    int bytes1;
+    int bytes2;
     gaiaGeomCollPtr geo1 = NULL;
     gaiaGeomCollPtr geo2 = NULL;
     int ret;
@@ -17283,17 +17321,19 @@ fnct_Covers (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_int (context, -1);
 	  return;
       }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
-    n_bytes = sqlite3_value_bytes (argv[1]);
-    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    blob1 = (unsigned char *) sqlite3_value_blob (argv[0]);
+    bytes1 = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (blob1, bytes1);
+    blob2 = (unsigned char *) sqlite3_value_blob (argv[1]);
+    bytes2 = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (blob2, bytes2);
     if (!geo1 || !geo2)
 	sqlite3_result_int (context, -1);
     else
       {
-	  ret = gaiaGeomCollCovers (geo1, geo2);
+	  ret =
+	      gaiaGeomCollPreparedCovers (geo1, blob1, bytes1, geo2, blob2,
+					  bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -17311,8 +17351,10 @@ fnct_CoveredBy (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / 0 otherwise
 / or -1 if any error is encountered
 */
-    unsigned char *p_blob;
-    int n_bytes;
+    unsigned char *blob1;
+    unsigned char *blob2;
+    int bytes1;
+    int bytes2;
     gaiaGeomCollPtr geo1 = NULL;
     gaiaGeomCollPtr geo2 = NULL;
     int ret;
@@ -17327,17 +17369,19 @@ fnct_CoveredBy (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_int (context, -1);
 	  return;
       }
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
-    n_bytes = sqlite3_value_bytes (argv[0]);
-    geo1 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
-    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
-    n_bytes = sqlite3_value_bytes (argv[1]);
-    geo2 = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    blob1 = (unsigned char *) sqlite3_value_blob (argv[0]);
+    bytes1 = sqlite3_value_bytes (argv[0]);
+    geo1 = gaiaFromSpatiaLiteBlobWkb (blob1, bytes1);
+    blob2 = (unsigned char *) sqlite3_value_blob (argv[1]);
+    bytes2 = sqlite3_value_bytes (argv[1]);
+    geo2 = gaiaFromSpatiaLiteBlobWkb (blob2, bytes2);
     if (!geo1 || !geo2)
 	sqlite3_result_int (context, -1);
     else
       {
-	  ret = gaiaGeomCollCoveredBy (geo1, geo2);
+	  ret =
+	      gaiaGeomCollPreparedCoveredBy (geo1, blob1, bytes1, geo2, blob2,
+					     bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -21249,9 +21293,28 @@ fnct_cvtFromIndCh (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+init_geos_cache ()
+{
+/* initializing an empty GEOS cache */
+    struct splite_geos_cache_item *p = &(spatialite_geos_cache.cacheItem1);
+    memset (p->gaiaBlob, '\0', 64);
+    p->gaiaBlobSize = 0;
+    p->crc32 = 0;
+    p->geosGeom = NULL;
+    p->preparedGeosGeom = NULL;
+    p = &(spatialite_geos_cache.cacheItem2);
+    memset (p->gaiaBlob, '\0', 64);
+    p->gaiaBlobSize = 0;
+    p->crc32 = 0;
+    p->geosGeom = NULL;
+    p->preparedGeosGeom = NULL;
+}
+
+static void
 register_spatialite_sql_functions (sqlite3 * db)
 {
     const char *security_level;
+    init_geos_cache ();
     sqlite3_create_function (db, "spatialite_version", 0, SQLITE_ANY, 0,
 			     fnct_spatialite_version, 0, 0);
     sqlite3_create_function (db, "proj4_version", 0, SQLITE_ANY, 0,
@@ -22211,8 +22274,8 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_Simplify, 0, 0);
     sqlite3_create_function (db, "SimplifyPreserveTopology", 2, SQLITE_ANY, 0,
 			     fnct_SimplifyPreserveTopology, 0, 0);
-    sqlite3_create_function (db, "ST_SimplifyPreserveTopology", 2, SQLITE_ANY, 0,
-			     fnct_SimplifyPreserveTopology, 0, 0);
+    sqlite3_create_function (db, "ST_SimplifyPreserveTopology", 2, SQLITE_ANY,
+			     0, fnct_SimplifyPreserveTopology, 0, 0);
     sqlite3_create_function (db, "ConvexHull", 1, SQLITE_ANY, 0,
 			     fnct_ConvexHull, 0, 0);
     sqlite3_create_function (db, "ST_ConvexHull", 1, SQLITE_ANY, 0,
@@ -22649,12 +22712,23 @@ spatialite_init (int verbose)
       }
 }
 
+static void
+free_geos_cache ()
+{
+/* initializing an empty GEOS cache */
+    struct splite_geos_cache_item *p = &(spatialite_geos_cache.cacheItem1);
+    splite_free_geos_cache_item (p);
+    p = &(spatialite_geos_cache.cacheItem2);
+    splite_free_geos_cache_item (p);
+}
+
 SPATIALITE_DECLARE void
 spatialite_cleanup ()
 {
 #ifndef OMIT_GEOS
     finishGEOS ();
 #endif
+    free_geos_cache ();
     sqlite3_reset_auto_extension ();
 }
 
