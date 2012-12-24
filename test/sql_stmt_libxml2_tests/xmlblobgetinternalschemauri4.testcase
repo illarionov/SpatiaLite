@@ -1,8 +1,8 @@
-XmlBlobGetInternalSchemaURI - TEXT XmlBLOB
+XmlGetInternalSchemaURI - TEXT XmlBLOB
 :memory: #use in-memory database
-SELECT XmlBlobGetInternalSchemaURI('alpha');
+SELECT XmlGetInternalSchemaURI('alpha');
 1 # rows (not including the header row)
 1 # columns
-XmlBlobGetInternalSchemaURI('alpha')
+XmlGetInternalSchemaURI('alpha')
 (NULL)
 

@@ -119,7 +119,7 @@ extern "C"
 
  \sa gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
  gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
- gaiaXmlBlobGetSchemaURI, gaiaXmlBlobGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
+ gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
  gaiaXmlBlobGetLastXPathError
 
@@ -146,7 +146,7 @@ extern "C"
 
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
  gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
- gaiaXmlBlobGetSchemaURI, gaiaXmlBlobGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
+ gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
  gaiaXmlBlobGetLastXPathError
 
@@ -171,7 +171,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlTextFromBlob, gaiaIsValidXmlBlob, 
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI,
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
- gaiaXmlBlobGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
  gaiaXmlBlobGetLastXPathError
 
@@ -197,7 +197,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsCompressedXmlBlob,
  gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI,
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
- gaiaXmlBlobGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
  gaiaXmlBlobGetLastXPathError
  */
@@ -214,7 +214,7 @@ extern "C"
 
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob,
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
- gaiaXmlBlobGetInternalSchemaURI, gaiaXmlBlobGetEncoding, gaiaXmlBlobCompression, 
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, gaiaXmlBlobCompression, 
  gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
  gaiaXmlBlobGetLastXPathError
  */
@@ -233,7 +233,7 @@ extern "C"
 
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob,
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
- gaiaXmlBlobGetInternalSchemaURI, gaiaXmlBlobGetEncoding, gaiaIsCompressedXmlBlob, 
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, gaiaIsCompressedXmlBlob, 
  gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
  gaiaXmlBlobGetLastXPathError
 
@@ -257,7 +257,7 @@ extern "C"
 
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
- gaiaXmlBlobGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError,
  gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
  */
@@ -275,7 +275,7 @@ extern "C"
 
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
  gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
- gaiaXmlBlobGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError,
  gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
  */
@@ -294,7 +294,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetSchemaURI,
- gaiaXmlBlobGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, 
  gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
  */
@@ -312,7 +312,7 @@ extern "C"
 
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
  gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
- gaiaXmlBlobGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError,
  gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
 
@@ -339,7 +339,7 @@ extern "C"
  \note the returned SchemaURI corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE char *gaiaXmlBlobGetInternalSchemaURI (const char *xml,
+    GAIAGEO_DECLARE char *gaiaXmlGetInternalSchemaURI (const char *xml,
 							   int xml_len);
 
 /**
@@ -353,7 +353,7 @@ extern "C"
 
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
  gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
- gaiaXmlBlobGetInternalSchemaURI, gaiaXmlBlobSchemaURI, 
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobSchemaURI, 
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError,
  gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
 
@@ -372,7 +372,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, 
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize, 
- gaiaXmlBlobGetSchemaURI, gaiaXmlBlobGetInternalSchemaURI,
+ gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobCompression, gaiaXmlBlobGetEncoding,
  gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
 
@@ -390,7 +390,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
- gaiaXmlBlobGetSchemaURI, gaiaXmlBlobGetInternalSchemaURI,
+ gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobCompression, gaiaXmlBlobGetEncoding,
  gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastXPathError
 
@@ -408,7 +408,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
- gaiaXmlBlobGetSchemaURI, gaiaXmlBlobGetInternalSchemaURI,
+ gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobCompression, gaiaXmlBlobGetEncoding,
  gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError
 

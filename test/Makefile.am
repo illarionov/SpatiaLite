@@ -40,7 +40,8 @@ check_PROGRAMS = check_endian \
 		check_exif \
 		check_relations_fncts \
 		check_extra_relations_fncts \
-		check_geoscvt_fncts
+		check_geoscvt_fncts \
+		check_libxml2
 
 AM_CFLAGS = -I@srcdir@/../src/headers -I@srcdir@
 AM_LDFLAGS = -L../src -lspatialite -lm $(GCOV_FLAGS)
@@ -2887,5 +2888,7 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_libxml2_tests/xmluncompress4.testcase \
 	sql_stmt_libxml2_tests/xmluncompress5.testcase \
 	sql_stmt_libxml2_tests/xmluncompress6.testcase \
-	sql_stmt_libxml2_tests/xmluncompress7.testcase
+	sql_stmt_libxml2_tests/xmluncompress7.testcase \
+	books.xml books.xsd opera.xml opera.xsd \
+	movies.xml movies.xsd books-bad.xml books-bad.xsd
 

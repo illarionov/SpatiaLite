@@ -21392,7 +21392,7 @@ fnct_XmlToBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  /* using the SchemaURI internally defined within the XMLDocument */
 	  char *internalSchemaURI =
-	      gaiaXmlBlobGetInternalSchemaURI (xml, xml_len);
+	      gaiaXmlGetInternalSchemaURI (xml, xml_len);
 	  if (internalSchemaURI == NULL)
 	    {
 		/* unable to identify the SchemaURI */
@@ -21568,7 +21568,7 @@ fnct_XmlBlobSchemaValidate (sqlite3_context * context, int argc,
       {
 	  /* using the SchemaURI internally defined within the XMLDocument */
 	  char *internalSchemaURI =
-	      gaiaXmlBlobGetInternalSchemaURI (xml, xml_len);
+	      gaiaXmlGetInternalSchemaURI (xml, xml_len);
 	  if (internalSchemaURI == NULL)
 	    {
 		/* unable to identify the SchemaURI */
@@ -21848,11 +21848,11 @@ fnct_XmlBlobGetEncoding (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_XmlBlobGetInternalSchemaURI (sqlite3_context * context, int argc,
+fnct_XmlGetInternalSchemaURI (sqlite3_context * context, int argc,
 				  sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlBlobGetInternalSchemaURI(XmlDocument)
+/ XmlGetInternalSchemaURI(XmlDocument)
 /
 / if the XMLDocument is valid and it contains an internally
 / defined SchemaURI then this SchemaURI will be returned
@@ -21869,7 +21869,7 @@ fnct_XmlBlobGetInternalSchemaURI (sqlite3_context * context, int argc,
       }
     xml = (const char *) sqlite3_value_text (argv[0]);
     xml_len = sqlite3_value_bytes (argv[0]);
-    schema_uri = gaiaXmlBlobGetInternalSchemaURI (xml, xml_len);
+    schema_uri = gaiaXmlGetInternalSchemaURI (xml, xml_len);
     if (schema_uri == NULL)
 	sqlite3_result_null (context);
     else
@@ -23297,8 +23297,8 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_XmlBlobHasSchemaURI, 0, 0);
     sqlite3_create_function (db, "XmlBlobGetSchemaURI", 1, SQLITE_ANY, 0,
 			     fnct_XmlBlobGetSchemaURI, 0, 0);
-    sqlite3_create_function (db, "XmlBlobGetInternalSchemaURI", 1, SQLITE_ANY,
-			     0, fnct_XmlBlobGetInternalSchemaURI, 0, 0);
+    sqlite3_create_function (db, "XmlGetInternalSchemaURI", 1, SQLITE_ANY,
+			     0, fnct_XmlGetInternalSchemaURI, 0, 0);
     sqlite3_create_function (db, "XmlBlobGetDocumentSize", 1, SQLITE_ANY, 0,
 			     fnct_XmlBlobGetDocumentSize, 0, 0);
     sqlite3_create_function (db, "XmlBlobGetEncoding", 1, SQLITE_ANY, 0,

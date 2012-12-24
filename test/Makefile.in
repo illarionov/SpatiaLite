@@ -70,7 +70,7 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_mbrcache$(EXEEXT) check_spatialindex$(EXEEXT) \
 	check_exif$(EXEEXT) check_relations_fncts$(EXEEXT) \
 	check_extra_relations_fncts$(EXEEXT) \
-	check_geoscvt_fncts$(EXEEXT)
+	check_geoscvt_fncts$(EXEEXT) check_libxml2$(EXEEXT)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -139,6 +139,9 @@ check_init_LDADD = $(LDADD)
 check_init2_SOURCES = check_init2.c
 check_init2_OBJECTS = check_init2.$(OBJEXT)
 check_init2_LDADD = $(LDADD)
+check_libxml2_SOURCES = check_libxml2.c
+check_libxml2_OBJECTS = check_libxml2.$(OBJEXT)
+check_libxml2_LDADD = $(LDADD)
 check_math_funcs_SOURCES = check_math_funcs.c
 check_math_funcs_OBJECTS = check_math_funcs.$(OBJEXT)
 check_math_funcs_LDADD = $(LDADD)
@@ -227,10 +230,10 @@ SOURCES = check_bufovflw.c check_create.c check_dbf_load.c \
 	check_fdo3.c check_fdo_bufovflw.c check_gaia_utf8.c \
 	check_gaia_util.c check_geom_aux.c check_geometry_cols.c \
 	check_geoscvt_fncts.c check_init.c check_init2.c \
-	check_math_funcs.c check_mbrcache.c check_recover_geom.c \
-	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
-	check_spatialindex.c check_sql_stmt.c check_version.c \
-	check_virtual_ovflw.c check_virtualtable1.c \
+	check_libxml2.c check_math_funcs.c check_mbrcache.c \
+	check_recover_geom.c check_relations_fncts.c check_shp_load.c \
+	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
+	check_version.c check_virtual_ovflw.c check_virtualtable1.c \
 	check_virtualtable2.c check_virtualtable3.c \
 	check_virtualtable4.c check_virtualtable5.c \
 	check_virtualtable6.c check_xls_load.c shape_3d.c \
@@ -242,10 +245,10 @@ DIST_SOURCES = check_bufovflw.c check_create.c check_dbf_load.c \
 	check_fdo3.c check_fdo_bufovflw.c check_gaia_utf8.c \
 	check_gaia_util.c check_geom_aux.c check_geometry_cols.c \
 	check_geoscvt_fncts.c check_init.c check_init2.c \
-	check_math_funcs.c check_mbrcache.c check_recover_geom.c \
-	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
-	check_spatialindex.c check_sql_stmt.c check_version.c \
-	check_virtual_ovflw.c check_virtualtable1.c \
+	check_libxml2.c check_math_funcs.c check_mbrcache.c \
+	check_recover_geom.c check_relations_fncts.c check_shp_load.c \
+	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
+	check_version.c check_virtual_ovflw.c check_virtualtable1.c \
 	check_virtualtable2.c check_virtualtable3.c \
 	check_virtualtable4.c check_virtualtable5.c \
 	check_virtualtable6.c check_xls_load.c shape_3d.c \
@@ -3125,7 +3128,116 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/wkttosql1.testcase \
 	sql_stmt_tests/wkttosql2.testcase \
 	sql_stmt_tests/wkttosql3.testcase \
-	sql_stmt_tests/yd_m.testcase 
+	sql_stmt_tests/yd_m.testcase \
+	sql_stmt_libxml2_tests/iscompressedxmlblob1.testcase \
+	sql_stmt_libxml2_tests/iscompressedxmlblob2.testcase \
+	sql_stmt_libxml2_tests/iscompressedxmlblob3.testcase \
+	sql_stmt_libxml2_tests/iscompressedxmlblob4.testcase \
+	sql_stmt_libxml2_tests/iscompressedxmlblob5.testcase \
+	sql_stmt_libxml2_tests/iscompressedxmlblob6.testcase \
+	sql_stmt_libxml2_tests/iscompressedxmlblob7.testcase \
+	sql_stmt_libxml2_tests/isschemavalidatedxmlblob1.testcase \
+	sql_stmt_libxml2_tests/isschemavalidatedxmlblob2.testcase \
+	sql_stmt_libxml2_tests/isschemavalidatedxmlblob3.testcase \
+	sql_stmt_libxml2_tests/isschemavalidatedxmlblob4.testcase \
+	sql_stmt_libxml2_tests/isschemavalidatedxmlblob5.testcase \
+	sql_stmt_libxml2_tests/isschemavalidatedxmlblob6.testcase \
+	sql_stmt_libxml2_tests/isvalidxmlblob1.testcase \
+	sql_stmt_libxml2_tests/isvalidxmlblob2.testcase \
+	sql_stmt_libxml2_tests/isvalidxmlblob3.testcase \
+	sql_stmt_libxml2_tests/isvalidxmlblob4.testcase \
+	sql_stmt_libxml2_tests/isvalidxmlblob5.testcase \
+	sql_stmt_libxml2_tests/isvalidxmlblob6.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetdocumentsize1.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetdocumentsize2.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetdocumentsize3.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetdocumentsize4.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetdocumentsize5.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetdocumentsize6.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetencoding1.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetencoding2.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetencoding3.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetencoding4.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetencoding5.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetencoding6.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetencoding7.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetinternalschemauri1.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetinternalschemauri2.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetinternalschemauri3.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetinternalschemauri4.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetinternalschemauri5.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetschemauri1.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetschemauri2.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetschemauri3.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetschemauri4.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetschemauri5.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetschemauri6.testcase \
+	sql_stmt_libxml2_tests/xmlblobhasschemauri1.testcase \
+	sql_stmt_libxml2_tests/xmlblobhasschemauri2.testcase \
+	sql_stmt_libxml2_tests/xmlblobhasschemauri3.testcase \
+	sql_stmt_libxml2_tests/xmlblobhasschemauri4.testcase \
+	sql_stmt_libxml2_tests/xmlblobhasschemauri5.testcase \
+	sql_stmt_libxml2_tests/xmlblobhasschemauri6.testcase \
+	sql_stmt_libxml2_tests/xmlcompress1.testcase \
+	sql_stmt_libxml2_tests/xmlcompress2.testcase \
+	sql_stmt_libxml2_tests/xmlcompress3.testcase \
+	sql_stmt_libxml2_tests/xmlcompress4.testcase \
+	sql_stmt_libxml2_tests/xmlcompress5.testcase \
+	sql_stmt_libxml2_tests/xmlcompress6.testcase \
+	sql_stmt_libxml2_tests/xmlcompress7.testcase \
+	sql_stmt_libxml2_tests/xmlfromblob10.testcase \
+	sql_stmt_libxml2_tests/xmlfromblob11.testcase \
+	sql_stmt_libxml2_tests/xmlfromblob12.testcase \
+	sql_stmt_libxml2_tests/xmlfromblob13.testcase \
+	sql_stmt_libxml2_tests/xmlfromblob1.testcase \
+	sql_stmt_libxml2_tests/xmlfromblob2.testcase \
+	sql_stmt_libxml2_tests/xmlfromblob3.testcase \
+	sql_stmt_libxml2_tests/xmlfromblob4.testcase \
+	sql_stmt_libxml2_tests/xmlfromblob5.testcase \
+	sql_stmt_libxml2_tests/xmlfromblob6.testcase \
+	sql_stmt_libxml2_tests/xmlfromblob7.testcase \
+	sql_stmt_libxml2_tests/xmlfromblob8.testcase \
+	sql_stmt_libxml2_tests/xmlfromblob9.testcase \
+	sql_stmt_libxml2_tests/xmltextfromblob10.testcase \
+	sql_stmt_libxml2_tests/xmltextfromblob11.testcase \
+	sql_stmt_libxml2_tests/xmltextfromblob12.testcase \
+	sql_stmt_libxml2_tests/xmltextfromblob13.testcase \
+	sql_stmt_libxml2_tests/xmltextfromblob1.testcase \
+	sql_stmt_libxml2_tests/xmltextfromblob2.testcase \
+	sql_stmt_libxml2_tests/xmltextfromblob3.testcase \
+	sql_stmt_libxml2_tests/xmltextfromblob4.testcase \
+	sql_stmt_libxml2_tests/xmltextfromblob5.testcase \
+	sql_stmt_libxml2_tests/xmltextfromblob6.testcase \
+	sql_stmt_libxml2_tests/xmltextfromblob7.testcase \
+	sql_stmt_libxml2_tests/xmltextfromblob8.testcase \
+	sql_stmt_libxml2_tests/xmltextfromblob9.testcase \
+	sql_stmt_libxml2_tests/xmltoblob10.testcase \
+	sql_stmt_libxml2_tests/xmltoblob11.testcase \
+	sql_stmt_libxml2_tests/xmltoblob12.testcase \
+	sql_stmt_libxml2_tests/xmltoblob13.testcase \
+	sql_stmt_libxml2_tests/xmltoblob14.testcase \
+	sql_stmt_libxml2_tests/xmltoblob15.testcase \
+	sql_stmt_libxml2_tests/xmltoblob16.testcase \
+	sql_stmt_libxml2_tests/xmltoblob17.testcase \
+	sql_stmt_libxml2_tests/xmltoblob18.testcase \
+	sql_stmt_libxml2_tests/xmltoblob1.testcase \
+	sql_stmt_libxml2_tests/xmltoblob2.testcase \
+	sql_stmt_libxml2_tests/xmltoblob3.testcase \
+	sql_stmt_libxml2_tests/xmltoblob4.testcase \
+	sql_stmt_libxml2_tests/xmltoblob5.testcase \
+	sql_stmt_libxml2_tests/xmltoblob6.testcase \
+	sql_stmt_libxml2_tests/xmltoblob7.testcase \
+	sql_stmt_libxml2_tests/xmltoblob8.testcase \
+	sql_stmt_libxml2_tests/xmltoblob9.testcase \
+	sql_stmt_libxml2_tests/xmluncompress1.testcase \
+	sql_stmt_libxml2_tests/xmluncompress2.testcase \
+	sql_stmt_libxml2_tests/xmluncompress3.testcase \
+	sql_stmt_libxml2_tests/xmluncompress4.testcase \
+	sql_stmt_libxml2_tests/xmluncompress5.testcase \
+	sql_stmt_libxml2_tests/xmluncompress6.testcase \
+	sql_stmt_libxml2_tests/xmluncompress7.testcase \
+	books.xml books.xsd opera.xml opera.xsd \
+	movies.xml movies.xsd books-bad.xml books-bad.xsd
 
 all: all-am
 
@@ -3224,6 +3336,9 @@ check_init$(EXEEXT): $(check_init_OBJECTS) $(check_init_DEPENDENCIES) $(EXTRA_ch
 check_init2$(EXEEXT): $(check_init2_OBJECTS) $(check_init2_DEPENDENCIES) $(EXTRA_check_init2_DEPENDENCIES) 
 	@rm -f check_init2$(EXEEXT)
 	$(LINK) $(check_init2_OBJECTS) $(check_init2_LDADD) $(LIBS)
+check_libxml2$(EXEEXT): $(check_libxml2_OBJECTS) $(check_libxml2_DEPENDENCIES) $(EXTRA_check_libxml2_DEPENDENCIES) 
+	@rm -f check_libxml2$(EXEEXT)
+	$(LINK) $(check_libxml2_OBJECTS) $(check_libxml2_LDADD) $(LIBS)
 check_math_funcs$(EXEEXT): $(check_math_funcs_OBJECTS) $(check_math_funcs_DEPENDENCIES) $(EXTRA_check_math_funcs_DEPENDENCIES) 
 	@rm -f check_math_funcs$(EXEEXT)
 	$(LINK) $(check_math_funcs_OBJECTS) $(check_math_funcs_LDADD) $(LIBS)
@@ -3318,6 +3433,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_geoscvt_fncts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_init2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_libxml2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_math_funcs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_mbrcache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_recover_geom.Po@am__quote@

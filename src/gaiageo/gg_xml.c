@@ -886,9 +886,9 @@ gaiaXmlBlobGetSchemaURI (const unsigned char *blob, int blob_size)
 }
 
 GAIAGEO_DECLARE char *
-gaiaXmlBlobGetInternalSchemaURI (const char *xml, int xml_len)
+gaiaXmlGetInternalSchemaURI (const char *xml, int xml_len)
 {
-/* Return the internally defined SchemaURI from a valid XmlBLOB buffer */
+/* Return the internally defined SchemaURI from a valid XmlDocument */
     xmlDocPtr xml_doc;
     char *uri = NULL;
     xmlXPathContextPtr xpathCtx;
@@ -905,10 +905,11 @@ gaiaXmlBlobGetInternalSchemaURI (const char *xml, int xml_len)
 	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
 	  return NULL;
       }
+
     if (vxpath_eval_expr
 	(xml_doc, "/*/@xsi:schemaLocation", &xpathCtx, &xpathObj))
       {
-	  /* attempting to extract the SchemaLocation */
+	  /* attempting first to extract xsi:schemaLocation */
 	  xmlNodeSetPtr nodeset = xpathObj->nodesetval;
 	  xmlNodePtr node;
 	  int num_nodes = (nodeset) ? nodeset->nodeNr : 0;
@@ -921,19 +922,64 @@ gaiaXmlBlobGetInternalSchemaURI (const char *xml, int xml_len)
 			{
 			    if (node->children->content != NULL)
 			      {
-				  int len =
-				      strlen ((const char *) node->children->
-					      content);
+				  const char *str =
+				      (const char *) (node->children->content);
+				  const char *ptr = str;
+				  int i;
+				  int len = strlen (str);
+				  for (i = len - 1; i >= 0; i--)
+				    {
+					if (*(str + i) == ' ')
+					  {
+					      /* last occurrence of SPACE [namespace/schema separator] */
+					      ptr = str + i + 1;
+					      break;
+					  }
+				    }
+				  len = strlen (ptr);
 				  uri = malloc (len + 1);
-				  strcpy (uri,
-					  (const char *) node->children->
-					  content);
+				  strcpy (uri, ptr);
 			      }
 			}
 		  }
 	    }
-	  xmlXPathFreeContext (xpathCtx);
+	  if (uri != NULL)
+	      xmlXPathFreeContext (xpathCtx);
 	  xmlXPathFreeObject (xpathObj);
+      }
+    if (uri == NULL)
+      {
+	  /* checking for xsi:noNamespaceSchemaLocation */
+	  if (vxpath_eval_expr
+	      (xml_doc, "/*/@xsi:noNamespaceSchemaLocation", &xpathCtx,
+	       &xpathObj))
+	    {
+		xmlNodeSetPtr nodeset = xpathObj->nodesetval;
+		xmlNodePtr node;
+		int num_nodes = (nodeset) ? nodeset->nodeNr : 0;
+		if (num_nodes == 1)
+		  {
+		      node = nodeset->nodeTab[0];
+		      if (node->type == XML_ATTRIBUTE_NODE)
+			{
+			    if (node->children != NULL)
+			      {
+				  if (node->children->content != NULL)
+				    {
+					int len =
+					    strlen ((const char *) node->
+						    children->content);
+					uri = malloc (len + 1);
+					strcpy (uri,
+						(const char *) node->
+						children->content);
+				    }
+			      }
+			}
+		  }
+		xmlXPathFreeContext (xpathCtx);
+		xmlXPathFreeObject (xpathObj);
+	    }
       }
 
     xmlFreeDoc (xml_doc);
