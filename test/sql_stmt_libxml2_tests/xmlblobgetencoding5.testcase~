@@ -1,8 +1,0 @@
-XmlBlobGetEncoding - TEXT XmlBLOB
-:memory: #use in-memory database
-SELECT XmlBlobGetEncoding('alpha');
-1 # rows (not including the header row)
-1 # columns
-XmlBlobGetEncoding('alpha')
-(NULL)
-

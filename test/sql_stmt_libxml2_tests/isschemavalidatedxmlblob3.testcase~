@@ -1,8 +1,0 @@
-IsSchemaValidatedXmlBlob - INTEGER XmlBLOB
-:memory: #use in-memory database
-SELECT IsSchemaValidatedXmlBlob(1);
-1 # rows (not including the header row)
-1 # columns
-IsSchemaValidatedXmlBlob(1)
--1
-

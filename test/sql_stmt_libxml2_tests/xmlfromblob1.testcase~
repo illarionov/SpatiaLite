@@ -1,8 +1,0 @@
-XmlToBlob - valid XMLDocument, compressed, SchemaURI (fail)
-:memory: #use in-memory database
-SELECT XmlToBlob('<a><b>text</b></a>', 1, 'alpha.xsd');
-1 # rows (not including the header row)
-1 # columns
-XmlToBlob('<a><b>text</b></a>', 1, 'alpha.xsd')
-(NULL)
-

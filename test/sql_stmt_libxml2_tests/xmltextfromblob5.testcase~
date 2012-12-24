@@ -1,8 +1,0 @@
-XmlTextFromBlob - invalid BLOB XmlBLOB
-:memory: #use in-memory database
-SELECT XmlFromBlob(zeroblob(100));
-1 # rows (not including the header row)
-1 # columns
-XmlFromBlob(zeroblob(100))
-(NULL)
-

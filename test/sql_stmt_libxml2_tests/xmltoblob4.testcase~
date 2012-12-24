@@ -1,8 +1,0 @@
-XmlToBlob - BLOB XMLDocument
-:memory: #use in-memory database
-SELECT XmlToBlob(zeroblob(4));
-1 # rows (not including the header row)
-1 # columns
-XmlToBlob(zeroblob(4))
-(NULL)
-

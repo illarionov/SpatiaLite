@@ -1,8 +1,0 @@
-XmlBlobGetDocumentSize - NULL XmlBLOB
-:memory: #use in-memory database
-SELECT XmlBlobGetDocumentSize(NULL);
-1 # rows (not including the header row)
-1 # columns
-XmlBlobGetDocumentSize(NULL)
-(NULL)
-

@@ -1,8 +1,0 @@
-XmlToBlob - valid XMLDocument, NULL comperssion
-:memory: #use in-memory database
-SELECT XmlToBlob('<a><b>text</b></a>', NULL);
-1 # rows (not including the header row)
-1 # columns
-XmlToBlob('<a><b>text</b></a>', NULL)
-(NULL)
-

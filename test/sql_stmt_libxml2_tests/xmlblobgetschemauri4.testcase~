@@ -1,8 +1,0 @@
-XmlBlobGetSchemaURI - TEXT XmlBLOB
-:memory: #use in-memory database
-SELECT XmlBlobGetSchemaURI('alpha');
-1 # rows (not including the header row)
-1 # columns
-XmlBlobGetSchemaURI('alpha')
-(NULL)
-

@@ -1,8 +1,0 @@
-XmlToBlob - valid XMLDocument, BLOB compression
-:memory: #use in-memory database
-SELECT XmlToBlob('<a><b>text</b></a>', zeroblob(4));
-1 # rows (not including the header row)
-1 # columns
-XmlToBlob('<a><b>text</b></a>', zeroblob(4))
-(NULL)
-

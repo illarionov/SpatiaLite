@@ -1,8 +1,0 @@
-IsValidXmlBlob - INTEGER XmlBLOB
-:memory: #use in-memory database
-SELECT IsValidXmlBlob(1);
-1 # rows (not including the header row)
-1 # columns
-IsValidXmlBlob(1)
-(NULL)
-
