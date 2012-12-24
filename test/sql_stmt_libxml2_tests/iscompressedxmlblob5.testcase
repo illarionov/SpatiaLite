@@ -1,0 +1,8 @@
+IsCompressedXmlBlob - invalid XmlBLOB
+:memory: #use in-memory database
+SELECT IsCompressedXmlBlob(zeroblob(100));
+1 # rows (not including the header row)
+1 # columns
+IsCompressedXmlBlob(zeroblob(100))
+-1
+

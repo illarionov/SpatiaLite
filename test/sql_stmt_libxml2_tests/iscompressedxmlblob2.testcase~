@@ -1,0 +1,8 @@
+IsCompressedXmlBlob - NULL XmlBLOB
+:memory: #use in-memory database
+SELECT IsCompressedXmlBlob(NULL);
+1 # rows (not including the header row)
+1 # columns
+IsCompressedXmlBlob(NULL)
+-1
+

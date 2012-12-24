@@ -1,0 +1,8 @@
+XmlToBlob - INTEGER XMLDocument
+:memory: #use in-memory database
+SELECT XmlToBlob(1);
+1 # rows (not including the header row)
+1 # columns
+XmlToBlob(1)
+(NULL)
+

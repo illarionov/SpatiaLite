@@ -1,0 +1,8 @@
+XmlBlobGetEncoding - INTEGER XmlBLOB
+:memory: #use in-memory database
+SELECT XmlBlobGetEncoding(1);
+1 # rows (not including the header row)
+1 # columns
+XmlBlobGetEncoding(1)
+(NULL)
+

@@ -1,0 +1,8 @@
+HasSchemaURIXmlBlob - invalid XmlBLOB
+:memory: #use in-memory database
+SELECT HasSchemaURIXmlBlob(zeroblob(100));
+1 # rows (not including the header row)
+1 # columns
+HasSchemaURIXmlBlob(zeroblob(100))
+-1
+

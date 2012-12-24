@@ -1,0 +1,8 @@
+IsValidXmlBlob - invalid XmlBLOB
+:memory: #use in-memory database
+SELECT IsValidXmlBlob(zeroblob(100));
+1 # rows (not including the header row)
+1 # columns
+IsValidXmlBlob(zeroblob(100))
+(NULL)
+

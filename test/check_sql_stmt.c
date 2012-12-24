@@ -528,6 +528,33 @@ skip_geos_trunk:
     free(namelist);
 #endif	/* end LWGEOM conditional */
 
+#ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
+    n = scandir("sql_stmt_libxml2_tests", &namelist, test_case_filter, alphasort);
+    if (n < 0) {
+	perror("scandir");
+	return -1;
+    }
+
+    for (i = 0; i < n; ++i) {
+	struct test_data *data;
+	char *path;
+	if (asprintf(&path, "sql_stmt_libxml2_tests/%s", namelist[i]->d_name) < 0) {
+	    return -1;
+	}
+	data = read_one_case(path);
+	free(path);
+	
+	result = do_one_case(data);
+	
+	cleanup_test_data(data);
+	if (result != 0) {
+	    return result;
+	}
+	free(namelist[i]);
+    }
+    free(namelist);
+#endif	/* end LIBXML2 conditional */
+
     return result;
 }
 

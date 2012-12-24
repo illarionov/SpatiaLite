@@ -1,0 +1,8 @@
+XmlBlobGetSchemaURI - INTEGER XmlDocument
+:memory: #use in-memory database
+SELECT XmlBlobGetSchemaURI(1);
+1 # rows (not including the header row)
+1 # columns
+XmlBlobGetSchemaURI(1)
+(NULL)
+

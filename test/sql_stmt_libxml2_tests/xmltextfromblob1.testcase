@@ -1,0 +1,8 @@
+XmlTextFromBlob - NULL XmlBLOB
+:memory: #use in-memory database
+SELECT XmlTextFromBlob(NULL);
+1 # rows (not including the header row)
+1 # columns
+XmlTextFromBlob(NULL)
+(NULL)
+

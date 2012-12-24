@@ -1,0 +1,7 @@
+XmlBlobUncompress - DOUBLE XmlBLOB
+:memory: #use in-memory database
+SELECT XmlBlobUncompress(1.1);
+1 # rows (not including the header row)
+1 # columns
+XmlBlobUncompress(1.1)
+(NULL)

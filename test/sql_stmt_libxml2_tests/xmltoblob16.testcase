@@ -1,0 +1,8 @@
+XmlToBlob - valid XMLDocument, compressed, InternalSchemaURI (fail)
+:memory: #use in-memory database
+SELECT XmlToBlob('<a><b>text</b></a>', 1, 1);
+1 # rows (not including the header row)
+1 # columns
+XmlToBlob('<a><b>text</b></a>', 1, 1)
+(NULL)
+

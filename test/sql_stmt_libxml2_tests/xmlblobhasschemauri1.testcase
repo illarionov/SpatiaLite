@@ -1,0 +1,8 @@
+XmlBlobHasSchemaURI - NULL XmlBLOB
+:memory: #use in-memory database
+SELECT XmlBlobHasSchemaURI(NULL);
+1 # rows (not including the header row)
+1 # columns
+XmlBlobHasSchemaURI(NULL)
+-1
+

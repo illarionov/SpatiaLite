@@ -1,0 +1,8 @@
+IsCompressedXmlBlob - valid XmlBLOB (uncompressed)
+:memory: #use in-memory database
+SELECT IsCompressedXmlBlob(x'0001AB12000000120000000000BACB3C613E3C623E746578743C2F623E3C2F613EBCF63D032ADD');
+1 # rows (not including the header row)
+1 # columns
+IsCompressedXmlBlob(x'0001AB12000000120000000000BACB3C613E3C623E746578743C2F623E3C2F613EBCF63D032ADD')
+0
+

@@ -1,0 +1,7 @@
+XmlBlobCompress - NULL XmlBLOB
+:memory: #use in-memory database
+SELECT XmlBlobCompress(NULL);
+1 # rows (not including the header row)
+1 # columns
+XmlBlobCompress(NULL)
+(NULL)

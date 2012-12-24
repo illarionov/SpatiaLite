@@ -1,0 +1,8 @@
+IsCompressedXmlBlob - TEXT XmlBLOB
+:memory: #use in-memory database
+SELECT IsCompressedXmlBlob('alpha');
+1 # rows (not including the header row)
+1 # columns
+IsCompressedXmlBlob('alpha')
+-1
+

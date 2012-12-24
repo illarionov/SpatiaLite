@@ -1,0 +1,8 @@
+XmlToBlob - not well-formed XMLDocument
+:memory: #use in-memory database
+SELECT Hex(XmlToBlob('<a><b>text</a></b>'));
+1 # rows (not including the header row)
+1 # columns
+Hex(XmlToBlob('<a><b>text</a></b>'))
+(NULL)
+

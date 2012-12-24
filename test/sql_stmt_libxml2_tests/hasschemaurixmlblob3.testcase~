@@ -1,0 +1,8 @@
+HasSchemaURIXmlBlob - DOUBLE XmlBLOB
+:memory: #use in-memory database
+SELECT HasSchemaURIXmlBlob(1.1);
+1 # rows (not including the header row)
+1 # columns
+HasSchemaURIXmlBlob(1.1)
+-1
+
