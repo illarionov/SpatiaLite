@@ -147,6 +147,8 @@ LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
+LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
+LIBXML2_LIBS = @LIBXML2_LIBS@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
@@ -168,6 +170,9 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -239,6 +244,7 @@ nobase_include_HEADERS = spatialite.h \
 	spatialite/gg_formats.h \
 	spatialite/gg_dynamic.h \
 	spatialite/gg_advanced.h \
+	spatialite/gg_xml.h \
 	spatialite/spatialite.h \
 	spatialite/sqlite.h \
 	spatialite/debug.h

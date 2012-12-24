@@ -210,6 +210,8 @@ LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
+LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
+LIBXML2_LIBS = @LIBXML2_LIBS@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
@@ -231,6 +233,9 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -306,7 +311,7 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./gaiaexif/libgaiaexif.la ./gaiageo/libgaiageo.la \
 	./spatialite/libsplite.la ./shapefiles/libshapefiles.la \
 	./srsinit/libsrsinit.la ./virtualtext/libvirtualtext.la \
-	$(am__append_1) $(am__append_2)
+	@LIBXML2_LIBS@ $(am__append_1) $(am__append_2)
 @ANDROID_FALSE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 5:1:0
 @ANDROID_TRUE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 5:1:0
 @MINGW_TRUE@libspatialite_la_LDFLAGS = -version-info 4:0:0 -no-undefined

@@ -71,7 +71,8 @@ am_libsplite_la_OBJECTS = libsplite_la-mbrcache.lo \
 	libsplite_la-statistics.lo libsplite_la-virtualdbf.lo \
 	libsplite_la-virtualXL.lo libsplite_la-virtualfdo.lo \
 	libsplite_la-virtualspatialindex.lo \
-	libsplite_la-virtualnetwork.lo libsplite_la-virtualshape.lo
+	libsplite_la-virtualnetwork.lo libsplite_la-virtualshape.lo \
+	libsplite_la-virtualxpath.lo
 libsplite_la_OBJECTS = $(am_libsplite_la_OBJECTS)
 libsplite_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libsplite_la_CFLAGS) \
@@ -142,6 +143,8 @@ LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
+LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
+LIBXML2_LIBS = @LIBXML2_LIBS@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
@@ -163,6 +166,9 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -222,7 +228,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = @CFLAGS@ @GEOS_CFLAGS@ -I$(top_srcdir)/src/headers
+INCLUDES = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@ \
+	-I$(top_srcdir)/src/headers
 noinst_LTLIBRARIES = libsplite.la
 libsplite_la_SOURCES = mbrcache.c \
 	spatialite.c \
@@ -233,7 +240,8 @@ libsplite_la_SOURCES = mbrcache.c \
 	virtualfdo.c \
 	virtualspatialindex.c \
 	virtualnetwork.c \
-	virtualshape.c 
+	virtualshape.c \
+	virtualxpath.c
 
 libsplite_la_CFLAGS = -fvisibility=hidden
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
@@ -299,6 +307,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualnetwork.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualshape.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualspatialindex.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualxpath.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -390,6 +399,13 @@ libsplite_la-virtualshape.lo: virtualshape.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='virtualshape.c' object='libsplite_la-virtualshape.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-virtualshape.lo `test -f 'virtualshape.c' || echo '$(srcdir)/'`virtualshape.c
+
+libsplite_la-virtualxpath.lo: virtualxpath.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -MT libsplite_la-virtualxpath.lo -MD -MP -MF $(DEPDIR)/libsplite_la-virtualxpath.Tpo -c -o libsplite_la-virtualxpath.lo `test -f 'virtualxpath.c' || echo '$(srcdir)/'`virtualxpath.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libsplite_la-virtualxpath.Tpo $(DEPDIR)/libsplite_la-virtualxpath.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='virtualxpath.c' object='libsplite_la-virtualxpath.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-virtualxpath.lo `test -f 'virtualxpath.c' || echo '$(srcdir)/'`virtualxpath.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

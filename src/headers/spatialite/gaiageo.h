@@ -72,5 +72,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "gg_formats.h"
 #include "gg_dynamic.h"
 #include "gg_advanced.h"
+#include "gg_xml.h"
 
 #endif /* _GAIAGEO_H */

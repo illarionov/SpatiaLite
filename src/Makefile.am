@@ -22,8 +22,7 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./spatialite/libsplite.la \
 	./shapefiles/libshapefiles.la \
 	./srsinit/libsrsinit.la \
-	./virtualtext/libvirtualtext.la
-
+	./virtualtext/libvirtualtext.la @LIBXML2_LIBS@
 
 if MINGW
 libspatialite_la_LDFLAGS = -version-info 4:0:0 -no-undefined

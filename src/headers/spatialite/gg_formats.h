@@ -107,6 +107,24 @@ extern "C"
 				      int little_endian_arch);
 
 /**
+ Import an UINT-32 value in endian-aware fashion
+ 
+ \param p endian-dependent representation (input buffer).
+ \param little_endian 0 if the input buffer is big-endian: any other value
+ for little-endian.
+ \param little_endian_arch the value returned by gaiaEndianArch()
+
+ \return the internal UINT value 
+
+ \sa gaiaEndianArch, gaiaExportU32
+
+ \note you are expected to pass an input buffer corresponding to an
+ allocation size of (at least) 4 bytes.
+ */
+    GAIAGEO_DECLARE unsigned int gaiaImportU32 (const unsigned char *p, int little_endian,
+				      int little_endian_arch);
+
+/**
  Import a FLOAT-32 value in endian-aware fashion
  
  \param p endian-dependent representation (input buffer).
@@ -196,6 +214,24 @@ extern "C"
  allocation size of (at least) 4 bytes.
  */
     GAIAGEO_DECLARE void gaiaExport32 (unsigned char *p, int value,
+				       int little_endian,
+				       int little_endian_arch);
+
+/**
+ Export an UINT-32 value in endian-aware fashion
+ 
+ \param p endian-dependent representation (output buffer).
+ \param value the internal value to be exported.
+ \param little_endian 0 if the output buffer has to be big-endian: any other value
+ for little-endian.
+ \param little_endian_arch the value returned by gaiaEndianArch()
+
+ \sa gaiaEndianArch, gaiaImportU32
+
+ \note you are expected to pass an output buffer corresponding to an
+ allocation size of (at least) 4 bytes.
+ */
+    GAIAGEO_DECLARE void gaiaExportU32 (unsigned char *p, unsigned int value,
 				       int little_endian,
 				       int little_endian_arch);
 

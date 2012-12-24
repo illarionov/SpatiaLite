@@ -2526,6 +2526,14 @@ gaiaGuessBlobType (const unsigned char *blob, int size)
       }
     if (geom)
 	return GAIA_GEOMETRY_BLOB;
+
+#ifdef ENABLE_LIBXML2		/* LIBXML2 enabled: supporting XML documents */
+
+    if (gaiaIsValidXmlBlob (blob, size))
+	return GAIA_XML_BLOB;
+
+#endif /* end LIBXML2: supporting XML documents */
+
     return GAIA_HEX_BLOB;
 }
 

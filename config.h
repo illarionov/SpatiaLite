@@ -1,6 +1,9 @@
 /* config.h.  Generated from config.h.in by configure.  */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Should be defined in order to enable LIBXML2 support. */
+#define ENABLE_LIBXML2 1
+
 /* Should be defined in order to enable LWGEOM support. */
 #define ENABLE_LWGEOM 1
 

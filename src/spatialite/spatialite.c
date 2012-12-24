@@ -106,7 +106,7 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 / BEWARE: not thread-safe, so using a different
 / connection for each thread is absolutely required
 */
-struct splite_geos_cache spatialite_geos_cache;
+struct splite_internal_cache spatialite_internal_cache;
 
 struct gaia_geom_chain_item
 {
@@ -295,6 +295,28 @@ fnct_lwgeom_version (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_libxml2_version (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
+{
+/* SQL function:
+/ libxml2_version()
+/
+/ return a text string representing the current LIBXML2 version
+/ or NULL if LIBXML2 is currently unsupported
+*/
+
+#ifdef ENABLE_LIBXML2		/* LIBXML2 version */
+    int len;
+    const char *p_result = gaia_libxml2_version ();
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    len = strlen (p_result);
+    sqlite3_result_text (context, p_result, len, free);
+#else
+    sqlite3_result_null (context);
+#endif
+}
+
+static void
 fnct_has_lwgeom (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -385,6 +407,22 @@ fnct_has_epsg (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
 #ifndef OMIT_EPSG		/* EPSG is supported */
+    sqlite3_result_int (context, 1);
+#else
+    sqlite3_result_int (context, 0);
+#endif
+}
+
+static void
+fnct_has_libxml2 (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ HasLibXML2()
+/
+/ return 1 if built including LIBXML2; otherwise 0
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+#ifdef ENABLE_LIBXML2		/* LIBXML2 is supported */
     sqlite3_result_int (context, 1);
 #else
     sqlite3_result_int (context, 0);
@@ -13670,11 +13708,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 				    {
 					/* Linestrings */
 					l = gaiaGeodesicTotalLength (a, b, rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -13696,9 +13733,12 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -13742,11 +13782,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					/* Linestrings */
 					length +=
 					    gaiaGreatCircleTotalLength (a, b,
-									line->DimensionModel,
 									line->
-									Coords,
-									line->
-									Points);
+									DimensionModel,
+									line->Coords,
+									line->Points);
 					line = line->Next;
 				    }
 			      }
@@ -13763,10 +13802,11 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      length +=
 						  gaiaGreatCircleTotalLength (a,
 									      b,
+									      ring->DimensionModel,
 									      ring->
-									      DimensionModel,
-									      ring->Coords,
-									      ring->Points);
+									      Coords,
+									      ring->
+									      Points);
 					      for (ib = 0;
 						   ib < polyg->NumInteriors;
 						   ib++)
@@ -20901,8 +20941,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -20986,8 +21025,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -20996,8 +21034,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -21292,17 +21329,636 @@ fnct_cvtFromIndCh (sqlite3_context * context, int argc, sqlite3_value ** argv)
     convertUnit (context, argc, argv, GAIA_IND_CH, GAIA_M);
 }
 
+#ifdef ENABLE_LIBXML2		/* including LIBXML2 */
+
 static void
-init_geos_cache ()
+fnct_XmlToBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
-/* initializing an empty GEOS cache */
-    struct splite_geos_cache_item *p = &(spatialite_geos_cache.cacheItem1);
+/* SQL function:
+/ XmlToBlob(text XMLdocument)
+/ XmlToBlob(text XMLdocument, bool compressed)
+/ XmlToBlob(text XMLdocument, bool compressed, text SchemaURI)
+/ XmlToBlob(text XMLdocument, bool compressed, int InternalSchemaURI)
+/
+/ returns the current XmlBlob by parsing an XMLdocument 
+/ or NULL if any error is encountered
+/
+/ - the XMLdocument should be "well formed"
+/ - if *compressed* is TRUE (default) the XmlBlob would be zipped
+/ - if *SchemaURI* in not NULL then only XMLdocuments succesfully
+/   passing a formal Schema Validation will be accepted as valid
+/ - if *InternalSchamaURI* is defined (any numeric value) then an
+/   attempt will be made in order to identify a SchemaURI defined
+/   internally within the XMLDocument itself.
+/   if such internal SchemaURI doesn't exists, or if the formal
+/   Schema Validation fails, NULL will be returned.
+*/
+    int len;
+    unsigned char *p_result = NULL;
+    const char *xml;
+    int xml_len;
+    int compressed = 1;
+    int use_internal_schema_uri = 0;
+    const char *schemaURI = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 3)
+      {
+	  if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	      use_internal_schema_uri = 1;
+	  else if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    xml = (const char *) sqlite3_value_text (argv[0]);
+    xml_len = sqlite3_value_bytes (argv[0]);
+    if (argc >= 2)
+	compressed = sqlite3_value_int (argv[1]);
+    if (use_internal_schema_uri)
+      {
+	  /* using the SchemaURI internally defined within the XMLDocument */
+	  char *internalSchemaURI =
+	      gaiaXmlBlobGetInternalSchemaURI (xml, xml_len);
+	  if (internalSchemaURI == NULL)
+	    {
+		/* unable to identify the SchemaURI */
+		p_result = NULL;
+	    }
+	  else
+	    {
+		/* ok, attempting to validate using the internal SchemaURI */
+		gaiaXmlToBlob (xml, xml_len, compressed, internalSchemaURI,
+			       &p_result, &len, NULL, NULL);
+		free (internalSchemaURI);
+	    }
+      }
+    else
+      {
+	  if (argc == 3)
+	      schemaURI = (const char *) sqlite3_value_text (argv[2]);
+	  gaiaXmlToBlob (xml, xml_len, compressed, schemaURI, &p_result, &len,
+			 NULL, NULL);
+      }
+    if (p_result == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    sqlite3_result_blob (context, p_result, len, free);
+}
+
+static void
+fnct_XmlFromBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XmlFromBlob(XmlBLOB)
+/ XmlFromBlob(XmlBLOB, int format)
+/
+/ returns the current XMLDocument (as BLOB) by parsing an XmlBLOB 
+/ or NULL if any error is encountered
+/
+/ the returned buffer will be always null-terminated
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    unsigned char *out;
+    int out_len;
+    int indent = 0;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc == 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    if (argc == 2)
+	indent = sqlite3_value_int (argv[1]);
+    gaiaXmlFromBlob (p_blob, n_bytes, indent, &out, &out_len);
+    if (out == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    sqlite3_result_blob (context, out, out_len, free);
+}
+
+static void
+fnct_XmlTextFromBlob (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
+{
+/* SQL function:
+/ XmlTextFromBlob(XmlBLOB)
+/ XmlTextFromBlob(XmlBLOB, int format)
+/
+/ returns the current XMLDocument (as UTF-8 TEXT) by parsing an XmlBLOB 
+/ or NULL if any error is encountered
+/
+/ the returned buffer will be always null-terminated
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    char *xml;
+    int len;
+    int indent = 0;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc == 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    if (argc == 2)
+	indent = sqlite3_value_int (argv[1]);
+    xml = gaiaXmlTextFromBlob (p_blob, n_bytes, indent);
+    if (xml == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    len = strlen ((const char *) xml);
+    sqlite3_result_text (context, (char *) xml, len, free);
+}
+
+static void
+fnct_XmlBlobSchemaValidate (sqlite3_context * context, int argc,
+			    sqlite3_value ** argv)
+{
+/* SQL function:
+/ XmlBlobSchemaValidate(XmlBLOB, text SchemaURI)
+/ XmlBlobSchemaValidate(XmlBLOB, text SchemaURI, bool compressed)
+/ XmlBlobSchemaValidate(XmlBLOB, int InternalSchemaURI)
+/ XmlBlobSchemaValidate(XmlBLOB, int InternalSchemaURI, bool compressed)
+/
+/ returns a validated XmlBLOB object if the SchemaValidation was succesfull
+/ or NULL if any error is encountered
+*/
+    int len;
+    unsigned char *p_result = NULL;
+    const unsigned char *p_blob;
+    int n_bytes;
+    char *xml;
+    int xml_len;
+    int compressed = 1;
+    const char *schemaURI = NULL;
+    int use_internal_schema_uri = 0;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+	use_internal_schema_uri = 1;
+    else if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc == 3)
+      {
+	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    if (argc == 3)
+	compressed = sqlite3_value_int (argv[2]);
+    gaiaXmlFromBlob (p_blob, n_bytes, 0, (unsigned char **) (&xml), &xml_len);
+    if (xml == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (use_internal_schema_uri)
+      {
+	  /* using the SchemaURI internally defined within the XMLDocument */
+	  char *internalSchemaURI =
+	      gaiaXmlBlobGetInternalSchemaURI (xml, xml_len);
+	  if (internalSchemaURI == NULL)
+	    {
+		/* unable to identify the SchemaURI */
+		p_result = NULL;
+	    }
+	  else
+	    {
+		/* ok, attempting to validate using the internal SchemaURI */
+		gaiaXmlToBlob (xml, xml_len, compressed, internalSchemaURI,
+			       &p_result, &len, NULL, NULL);
+		free (internalSchemaURI);
+	    }
+      }
+    else
+      {
+	  schemaURI = (const char *) sqlite3_value_text (argv[1]);
+	  gaiaXmlToBlob (xml, xml_len, compressed, schemaURI, &p_result, &len,
+			 NULL, NULL);
+      }
+    free (xml);
+    if (p_result == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    sqlite3_result_blob (context, p_result, len, free);
+}
+
+static void
+fnct_XmlBlobCompress (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
+{
+/* SQL function:
+/ XmlBlobCompress(XmlBLOB)
+/
+/ returns a compressed XmlBLOB object 
+/ or NULL if any error is encountered
+*/
+    int len;
+    unsigned char *p_result = NULL;
+    const unsigned char *p_blob;
+    int n_bytes;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    gaiaXmlBlobCompression (p_blob, n_bytes, 1, &p_result, &len);
+    if (p_result == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    sqlite3_result_blob (context, p_result, len, free);
+}
+
+static void
+fnct_XmlBlobUncompress (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ XmlBlobUncompress(XmlBLOB)
+/
+/ returns an uncompressed XmlBLOB object 
+/ or NULL if any error is encountered
+*/
+    int len;
+    unsigned char *p_result = NULL;
+    const unsigned char *p_blob;
+    int n_bytes;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    gaiaXmlBlobCompression (p_blob, n_bytes, 0, &p_result, &len);
+    if (p_result == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    sqlite3_result_blob (context, p_result, len, free);
+}
+
+static void
+fnct_IsValidXmlBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsValidXmlBlob(XmlBLOB)
+/
+/ returns TRUE if the current BLOB is an XmlBLOB, FALSE if not 
+/ or -1 if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int ret;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    ret = gaiaIsValidXmlBlob (p_blob, n_bytes);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_IsCompressedXmlBlob (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsCompressedXmlBlob(XmlBLOB)
+/
+/ returns TRUE if the current BLOB is a compressed XmlBLOB,
+/ FALSE if it's a valid uncompressed XmlBLOB 
+/ or -1 if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int ret;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    ret = gaiaIsCompressedXmlBlob (p_blob, n_bytes);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_IsSchemaValidatedXmlBlob (sqlite3_context * context, int argc,
+			       sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsSchemaValidatedXmlBlob(XmlBLOB)
+/
+/ returns TRUE if the current BLOB is a Schema validated XmlBLOB,
+/ FALSE if it's a valid but not validated XmlBLOB 
+/ or -1 if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int ret;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    ret = gaiaIsSchemaValidatedXmlBlob (p_blob, n_bytes);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_XmlBlobHasSchemaURI (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ XmlBlobHasSchemaURI(XmlBLOB)
+/
+/ returns TRUE if the current BLOB is a valid XmlBLOB having a SchemaURI,
+/ FALSE if it's a valid XmlBLOB not having a SchemaURI 
+/ or -1 if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int ret;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    ret = gaiaXmlBlobHasSchemaURI (p_blob, n_bytes);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_XmlBlobGetDocumentSize (sqlite3_context * context, int argc,
+			     sqlite3_value ** argv)
+{
+/* SQL function:
+/ XmlBlobGetDocumentSize(XmlBLOB)
+/
+/ if the BLOB is a valid XmlBLOB will return the XMLDocument size (in bytes)
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int ret;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    ret = gaiaXmlBlobGetDocumentSize (p_blob, n_bytes);
+    if (ret < 0)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_XmlBlobGetSchemaURI (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ XmlBlobGetSchemaURI(XmlBLOB)
+/
+/ if the BLOB is a valid XmlBLOB containing a SchemaURI then
+/ the SchemaURI will be returned
+/ return NULL on any other case
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    char *schema_uri;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    schema_uri = gaiaXmlBlobGetSchemaURI (p_blob, n_bytes);
+    if (schema_uri == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, schema_uri, strlen (schema_uri), free);
+}
+
+static void
+fnct_XmlBlobGetEncoding (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ XmlBlobGetEncoding(XmlBLOB)
+/
+/ if the BLOB is a valid XmlBLOB explicitly defining an encoding then
+/ the charset name will be returned
+/ return NULL on any other case
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    char *encoding;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    encoding = gaiaXmlBlobGetEncoding (p_blob, n_bytes);
+    if (encoding == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, encoding, strlen (encoding), free);
+}
+
+static void
+fnct_XmlBlobGetInternalSchemaURI (sqlite3_context * context, int argc,
+				  sqlite3_value ** argv)
+{
+/* SQL function:
+/ XmlBlobGetInternalSchemaURI(XmlDocument)
+/
+/ if the XMLDocument is valid and it contains an internally
+/ defined SchemaURI then this SchemaURI will be returned
+/ return NULL on any other case
+*/
+    const char *xml;
+    int xml_len;
+    char *schema_uri;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    xml = (const char *) sqlite3_value_text (argv[0]);
+    xml_len = sqlite3_value_bytes (argv[0]);
+    schema_uri = gaiaXmlBlobGetInternalSchemaURI (xml, xml_len);
+    if (schema_uri == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, schema_uri, strlen (schema_uri), free);
+}
+
+static void
+fnct_XmlBlobGetLastParseError (sqlite3_context * context, int argc,
+			       sqlite3_value ** argv)
+{
+/* SQL function:
+/ XmlBlobGetLastParseError()
+/
+/ return the most recent XML Parse error/warning (if any)
+/ return NULL on any other case
+*/
+    char *msg;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    msg = gaiaXmlBlobGetLastParseError ();
+    if (msg == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, msg, strlen (msg), SQLITE_STATIC);
+}
+
+static void
+fnct_XmlBlobGetLastValidateError (sqlite3_context * context, int argc,
+				  sqlite3_value ** argv)
+{
+/* SQL function:
+/ XmlBlobGetLastValidateError()
+/
+/ return the most recent XML Validate error/warning (if any)
+/ return NULL on any other case
+*/
+    char *msg;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    msg = gaiaXmlBlobGetLastValidateError ();
+    if (msg == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, msg, strlen (msg), SQLITE_STATIC);
+}
+
+static void
+fnct_XmlBlobGetLastXPathError (sqlite3_context * context, int argc,
+			       sqlite3_value ** argv)
+{
+/* SQL function:
+/ XmlBlobGetLastXPathError()
+/
+/ return the most recent XML Validate error/warning (if any)
+/ return NULL on any other case
+*/
+    char *msg;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    msg = gaiaXmlBlobGetLastXPathError ();
+    if (msg == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, msg, strlen (msg), SQLITE_STATIC);
+}
+
+#endif /* end including LIBXML2 */
+
+static void
+init_internal_cache ()
+{
+/* initializing an empty internal cache */
+    gaiaOutBufferPtr out;
+    struct splite_geos_cache_item *p;
+/* initializing the XML error buffers */
+    out = malloc (sizeof (gaiaOutBuffer));
+    gaiaOutBufferInitialize (out);
+    spatialite_internal_cache.xmlParsingErrors = out;
+    out = malloc (sizeof (gaiaOutBuffer));
+    gaiaOutBufferInitialize (out);
+    spatialite_internal_cache.xmlSchemaValidationErrors = out;
+    out = malloc (sizeof (gaiaOutBuffer));
+    gaiaOutBufferInitialize (out);
+    spatialite_internal_cache.xmlXPathErrors = out;
+/* initializing the GEOS cache */
+    p = &(spatialite_internal_cache.cacheItem1);
     memset (p->gaiaBlob, '\0', 64);
     p->gaiaBlobSize = 0;
     p->crc32 = 0;
     p->geosGeom = NULL;
     p->preparedGeosGeom = NULL;
-    p = &(spatialite_geos_cache.cacheItem2);
+    p = &(spatialite_internal_cache.cacheItem2);
     memset (p->gaiaBlob, '\0', 64);
     p->gaiaBlobSize = 0;
     p->crc32 = 0;
@@ -21314,7 +21970,7 @@ static void
 register_spatialite_sql_functions (sqlite3 * db)
 {
     const char *security_level;
-    init_geos_cache ();
+    init_internal_cache ();
     sqlite3_create_function (db, "spatialite_version", 0, SQLITE_ANY, 0,
 			     fnct_spatialite_version, 0, 0);
     sqlite3_create_function (db, "proj4_version", 0, SQLITE_ANY, 0,
@@ -21323,6 +21979,8 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_geos_version, 0, 0);
     sqlite3_create_function (db, "lwgeom_version", 0, SQLITE_ANY, 0,
 			     fnct_lwgeom_version, 0, 0);
+    sqlite3_create_function (db, "libxml2_version", 0, SQLITE_ANY, 0,
+			     fnct_libxml2_version, 0, 0);
     sqlite3_create_function (db, "HasProj", 0, SQLITE_ANY, 0,
 			     fnct_has_proj, 0, 0);
     sqlite3_create_function (db, "HasGeos", 0, SQLITE_ANY, 0,
@@ -21343,6 +22001,8 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_has_freeXL, 0, 0);
     sqlite3_create_function (db, "HasEpsg", 0, SQLITE_ANY, 0,
 			     fnct_has_epsg, 0, 0);
+    sqlite3_create_function (db, "HasLibXML2", 0, SQLITE_ANY, 0,
+			     fnct_has_libxml2, 0, 0);
     sqlite3_create_function (db, "GeometryConstraints", 3, SQLITE_ANY, 0,
 			     fnct_GeometryConstraints, 0, 0);
     sqlite3_create_function (db, "GeometryConstraints", 4, SQLITE_ANY, 0,
@@ -22602,6 +23262,55 @@ register_spatialite_sql_functions (sqlite3 * db)
 #endif /* end LWGEOM support */
 
 #endif /* end including GEOS */
+
+#ifdef ENABLE_LIBXML2		/* including LIBXML2 */
+
+    sqlite3_create_function (db, "XmlToBlob", 1, SQLITE_ANY, 0,
+			     fnct_XmlToBlob, 0, 0);
+    sqlite3_create_function (db, "XmlToBlob", 2, SQLITE_ANY, 0,
+			     fnct_XmlToBlob, 0, 0);
+    sqlite3_create_function (db, "XmlToBlob", 3, SQLITE_ANY, 0,
+			     fnct_XmlToBlob, 0, 0);
+    sqlite3_create_function (db, "XmlToBlob", 4, SQLITE_ANY, 0,
+			     fnct_XmlToBlob, 0, 0);
+    sqlite3_create_function (db, "XmlFromBlob", 1, SQLITE_ANY, 0,
+			     fnct_XmlFromBlob, 0, 0);
+    sqlite3_create_function (db, "XmlFromBlob", 2, SQLITE_ANY, 0,
+			     fnct_XmlFromBlob, 0, 0);
+    sqlite3_create_function (db, "XmlTextFromBlob", 1, SQLITE_ANY, 0,
+			     fnct_XmlTextFromBlob, 0, 0);
+    sqlite3_create_function (db, "XmlTextFromBlob", 2, SQLITE_ANY, 0,
+			     fnct_XmlTextFromBlob, 0, 0);
+    sqlite3_create_function (db, "XmlBlobSchemaValidate", 2, SQLITE_ANY, 0,
+			     fnct_XmlBlobSchemaValidate, 0, 0);
+    sqlite3_create_function (db, "XmlBlobCompress", 1, SQLITE_ANY, 0,
+			     fnct_XmlBlobCompress, 0, 0);
+    sqlite3_create_function (db, "XmlBlobUncompress", 1, SQLITE_ANY, 0,
+			     fnct_XmlBlobUncompress, 0, 0);
+    sqlite3_create_function (db, "IsValidXmlBlob", 1, SQLITE_ANY, 0,
+			     fnct_IsValidXmlBlob, 0, 0);
+    sqlite3_create_function (db, "IsSchemaValidatedXmlBlob", 1, SQLITE_ANY, 0,
+			     fnct_IsSchemaValidatedXmlBlob, 0, 0);
+    sqlite3_create_function (db, "IsCompressedXmlBlob", 1, SQLITE_ANY, 0,
+			     fnct_IsCompressedXmlBlob, 0, 0);
+    sqlite3_create_function (db, "XmlBlobHasSchemaURI", 1, SQLITE_ANY, 0,
+			     fnct_XmlBlobHasSchemaURI, 0, 0);
+    sqlite3_create_function (db, "XmlBlobGetSchemaURI", 1, SQLITE_ANY, 0,
+			     fnct_XmlBlobGetSchemaURI, 0, 0);
+    sqlite3_create_function (db, "XmlBlobGetInternalSchemaURI", 1, SQLITE_ANY,
+			     0, fnct_XmlBlobGetInternalSchemaURI, 0, 0);
+    sqlite3_create_function (db, "XmlBlobGetDocumentSize", 1, SQLITE_ANY, 0,
+			     fnct_XmlBlobGetDocumentSize, 0, 0);
+    sqlite3_create_function (db, "XmlBlobGetEncoding", 1, SQLITE_ANY, 0,
+			     fnct_XmlBlobGetEncoding, 0, 0);
+    sqlite3_create_function (db, "XmlBlobGetLastParseError", 0, SQLITE_ANY, 0,
+			     fnct_XmlBlobGetLastParseError, 0, 0);
+    sqlite3_create_function (db, "XmlBlobGetLastValidateError", 0, SQLITE_ANY,
+			     0, fnct_XmlBlobGetLastValidateError, 0, 0);
+    sqlite3_create_function (db, "XmlBlobGetLastXPathError", 0, SQLITE_ANY,
+			     0, fnct_XmlBlobGetLastXPathError, 0, 0);
+
+#endif /* end including LIBXML2 */
 }
 
 static void
@@ -22614,6 +23323,7 @@ init_spatialite_virtualtables (sqlite3 * db)
     virtualdbf_extension_init (db);
 /* initializing the VirtualText extension */
     virtualtext_extension_init (db);
+
 #ifndef OMIT_FREEXL
 /* initializing the VirtualXL  extension */
     virtualXL_extension_init (db);
@@ -22628,6 +23338,11 @@ init_spatialite_virtualtables (sqlite3 * db)
     virtualfdo_extension_init (db);
 /* initializing the VirtualSpatialIndex  extension */
     virtual_spatialindex_extension_init (db);
+
+#ifdef ENABLE_LIBXML2		/* including LIBXML2 */
+/* initializing the VirtualXPath extension */
+    virtual_xpath_extension_init (db);
+#endif /* LIBXML2 enabled/disable */
 }
 
 static int
@@ -22692,6 +23407,12 @@ spatialite_init (int verbose)
 		    ("\t- 'MbrCache'\t\t[Spatial Index - MBR cache]\n");
 		spatialite_i
 		    ("\t- 'VirtualSpatialIndex'\t[R*Tree metahandler]\n");
+
+#ifdef ENABLE_LIBXML2		/* VirtualXPath is supported */
+		spatialite_i
+		    ("\t- 'VirtualXPath'\t[XML Path Language - XPath]\n");
+#endif /* end including LIBXML2 */
+
 		spatialite_i
 		    ("\t- 'VirtualFDO'\t\t[FDO-OGR interoperability]\n");
 		spatialite_i ("\t- 'SpatiaLite'\t\t[Spatial SQL - OGC]\n");
@@ -22713,12 +23434,21 @@ spatialite_init (int verbose)
 }
 
 static void
-free_geos_cache ()
+free_internal_cache ()
 {
-/* initializing an empty GEOS cache */
-    struct splite_geos_cache_item *p = &(spatialite_geos_cache.cacheItem1);
+/* initializing an empty internal cache */
+    struct splite_geos_cache_item *p;
+/* freeing the XML error buffers */
+    gaiaOutBufferReset (spatialite_internal_cache.xmlParsingErrors);
+    gaiaOutBufferReset (spatialite_internal_cache.xmlSchemaValidationErrors);
+    gaiaOutBufferReset (spatialite_internal_cache.xmlXPathErrors);
+    free (spatialite_internal_cache.xmlParsingErrors);
+    free (spatialite_internal_cache.xmlSchemaValidationErrors);
+    free (spatialite_internal_cache.xmlXPathErrors);
+/* freeing the GEOS cache */
+    p = &(spatialite_internal_cache.cacheItem1);
     splite_free_geos_cache_item (p);
-    p = &(spatialite_geos_cache.cacheItem2);
+    p = &(spatialite_internal_cache.cacheItem2);
     splite_free_geos_cache_item (p);
 }
 
@@ -22728,7 +23458,7 @@ spatialite_cleanup ()
 #ifndef OMIT_GEOS
     finishGEOS ();
 #endif
-    free_geos_cache ();
+    free_internal_cache ();
     sqlite3_reset_auto_extension ();
 }
 

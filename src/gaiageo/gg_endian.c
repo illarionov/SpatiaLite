@@ -168,6 +168,58 @@ gaiaImport32 (const unsigned char *p, int little_endian, int little_endian_arch)
     return convert.int_value;
 }
 
+GAIAGEO_DECLARE unsigned int
+gaiaImportU32 (const unsigned char *p, int little_endian, int little_endian_arch)
+{
+/* fetches a 32bit uint from BLOB respecting declared endiannes */
+    union cvt
+    {
+	unsigned char byte[4];
+	unsigned int int_value;
+    } convert;
+    if (little_endian_arch)
+      {
+	  /* Litte-Endian architecture [e.g. x86] */
+	  if (!little_endian)
+	    {
+		/* Big Endian data */
+		convert.byte[0] = *(p + 3);
+		convert.byte[1] = *(p + 2);
+		convert.byte[2] = *(p + 1);
+		convert.byte[3] = *(p + 0);
+	    }
+	  else
+	    {
+		/* Little Endian data */
+		convert.byte[0] = *(p + 0);
+		convert.byte[1] = *(p + 1);
+		convert.byte[2] = *(p + 2);
+		convert.byte[3] = *(p + 3);
+	    }
+      }
+    else
+      {
+	  /* Big Endian architecture [e.g. PPC] */
+	  if (!little_endian)
+	    {
+		/* Big Endian data */
+		convert.byte[0] = *(p + 0);
+		convert.byte[1] = *(p + 1);
+		convert.byte[2] = *(p + 2);
+		convert.byte[3] = *(p + 3);
+	    }
+	  else
+	    {
+		/* Little Endian data */
+		convert.byte[0] = *(p + 3);
+		convert.byte[1] = *(p + 2);
+		convert.byte[2] = *(p + 1);
+		convert.byte[3] = *(p + 0);
+	    }
+      }
+    return convert.int_value;
+}
+
 GAIAGEO_DECLARE float
 gaiaImportF32 (const unsigned char *p, int little_endian,
 	       int little_endian_arch)
@@ -412,6 +464,59 @@ gaiaExport32 (unsigned char *p, int value, int little_endian,
     {
 	unsigned char byte[4];
 	int int_value;
+    } convert;
+    convert.int_value = value;
+    if (little_endian_arch)
+      {
+	  /* Litte-Endian architecture [e.g. x86] */
+	  if (!little_endian)
+	    {
+		/* Big Endian data */
+		*(p + 3) = convert.byte[0];
+		*(p + 2) = convert.byte[1];
+		*(p + 1) = convert.byte[2];
+		*(p + 0) = convert.byte[3];
+	    }
+	  else
+	    {
+		/* Little Endian data */
+		*(p + 0) = convert.byte[0];
+		*(p + 1) = convert.byte[1];
+		*(p + 2) = convert.byte[2];
+		*(p + 3) = convert.byte[3];
+	    }
+      }
+    else
+      {
+	  /* Big Endian architecture [e.g. PPC] */
+	  if (!little_endian)
+	    {
+		/* Big Endian data */
+		*(p + 0) = convert.byte[0];
+		*(p + 1) = convert.byte[1];
+		*(p + 2) = convert.byte[2];
+		*(p + 3) = convert.byte[3];
+	    }
+	  else
+	    {
+		/* Little Endian data */
+		*(p + 3) = convert.byte[0];
+		*(p + 2) = convert.byte[1];
+		*(p + 1) = convert.byte[2];
+		*(p + 0) = convert.byte[3];
+	    }
+      }
+}
+
+GAIAGEO_DECLARE void
+gaiaExportU32 (unsigned char *p, unsigned int value, int little_endian,
+	      int little_endian_arch)
+{
+/* stores a 32bit int into a BLOB respecting declared endiannes */
+    union cvt
+    {
+	unsigned char byte[4];
+	unsigned int int_value;
     } convert;
     convert.int_value = value;
     if (little_endian_arch)

@@ -50,3 +50,4 @@ int virtualnetwork_extension_init (sqlite3 * db);
 int virtualfdo_extension_init (sqlite3 * db);
 int mbrcache_extension_init (sqlite3 * db);
 int virtual_spatialindex_extension_init (sqlite3 * db);
+int virtual_xpath_extension_init (sqlite3 * db);

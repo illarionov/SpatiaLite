@@ -70,7 +70,7 @@ am_libgaiageo_la_OBJECTS = gg_advanced.lo gg_endian.lo gg_geodesic.lo \
 	gg_geometries.lo gg_geoscvt.lo gg_relations.lo gg_lwgeom.lo \
 	gg_extras.lo gg_shape.lo gg_transform.lo gg_wkb.lo gg_wkt.lo \
 	gg_vanuatu.lo gg_ewkt.lo gg_geoJSON.lo gg_kml.lo gg_gml.lo \
-	gg_voronoj.lo
+	gg_voronoj.lo gg_xml.lo
 libgaiageo_la_OBJECTS = $(am_libgaiageo_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -176,6 +176,8 @@ LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
+LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
+LIBXML2_LIBS = @LIBXML2_LIBS@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
@@ -197,6 +199,9 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -257,7 +262,8 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = flex lemon
-INCLUDES = @CFLAGS@ @GEOS_CFLAGS@ -I$(top_srcdir)/src/headers
+INCLUDES = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@ \
+	-I$(top_srcdir)/src/headers
 noinst_LTLIBRARIES = libgaiageo.la
 libgaiageo_la_SOURCES = gg_advanced.c \
 	gg_endian.c \
@@ -276,7 +282,8 @@ libgaiageo_la_SOURCES = gg_advanced.c \
 	gg_geoJSON.c \
 	gg_kml.c \
 	gg_gml.c \
-	gg_voronoj.c
+	gg_voronoj.c \
+	gg_xml.c
 
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 EXTRA_DIST = Ewkt.h Ewkt.c lex.Ewkt.c \
@@ -355,6 +362,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_voronoj.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_wkb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_wkt.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gg_xml.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

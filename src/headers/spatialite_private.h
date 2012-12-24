@@ -86,6 +86,21 @@ extern "C"
 #define SPATIALITE_STATISTICS_VIRTS	3
 #define SPATIALITE_STATISTICS_LEGACY	4
 
+    struct vxpath_ns
+    {
+/* a Namespace definition */
+	char *Prefix;
+	char *Href;
+	struct vxpath_ns *Next;
+    };
+
+    struct vxpath_namespaces
+    {
+/* Namespace container */
+	struct vxpath_ns *First;
+	struct vxpath_ns *Last;
+    };
+
     struct splite_geos_cache_item
     {
 	unsigned char gaiaBlob[64];
@@ -95,8 +110,11 @@ extern "C"
 	void *preparedGeosGeom;
     };
 
-    struct splite_geos_cache
+    struct splite_internal_cache
     {
+	void *xmlParsingErrors;
+	void *xmlSchemaValidationErrors;
+	void *xmlXPathErrors;
 	struct splite_geos_cache_item cacheItem1;
 	struct splite_geos_cache_item cacheItem2;
     };
@@ -192,6 +210,16 @@ extern "C"
 							 splite_geos_cache_item
 							 *p);
 
+    SPATIALITE_PRIVATE void
+	vxpath_free_namespaces (struct vxpath_namespaces *ns_list);
+
+    SPATIALITE_PRIVATE struct vxpath_namespaces *vxpath_get_namespaces (void
+									*p_xml_doc);
+
+    SPATIALITE_PRIVATE int vxpath_eval_expr (void *xml_doc,
+					     const char *xpath_expr,
+					     void *p_xpathCtx,
+					     void *p_xpathObj);
 
 #ifdef __cplusplus
 }

@@ -89,6 +89,8 @@ extern "C"
 #define GAIA_TIFF_BLOB		9
 /** this BLOB does actually contain a WebP image */
 #define GAIA_WEBP_BLOB		10
+/** this BLOB does actually contain a SpatiaLite XmlBLOB */
+#define GAIA_XML_BLOB		11
 
 /* constants used for EXIF value types */
 /** unrecognized EXIF value */

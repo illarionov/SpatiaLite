@@ -47,6 +47,8 @@ AH_TEMPLATE([OMIT_GEOCALLBACKS],
             [Should be defined in order to disable GEOCALLBACKS support.])
 AH_TEMPLATE([OMIT_FREEXL],
             [Should be defined in order to disable FREEXL support.])
+AH_TEMPLATE([ENABLE_LIBXML2],
+            [Should be defined in order to enable LIBXML2 support.])
 
 # Checks for header files.
 AC_CHECK_HEADERS(stdlib.h,, [AC_MSG_ERROR([cannot find stdlib.h, bailing out])])
@@ -286,6 +288,19 @@ if test x"$enable_geos" != "xno"; then
   fi
 else
   AC_DEFINE(OMIT_GEOS)
+fi
+
+#-----------------------------------------------------------------------
+#   --enable-libxml2
+#
+AC_ARG_ENABLE(libxml2, [AS_HELP_STRING(
+  [--enable-libxml2], [enables libxml2 inclusion [default=no]])],
+  [], [enable_libxml2=no])
+if test x"$enable_libxml2" != "xno"; then
+  PKG_CHECK_MODULES([LIBXML2], [libxml-2.0], , AC_MSG_ERROR(['libxml2' is required but it doesn't seem to be installed on this system.]))
+  AC_SUBST(LIBXML2_CFLAGS)
+  AC_SUBST(LIBXML2_LIBS)
+  AC_DEFINE(ENABLE_LIBXML2)
 fi
 
 #-----------------------------------------------------------------------
