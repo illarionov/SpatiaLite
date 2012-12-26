@@ -70,7 +70,8 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_mbrcache$(EXEEXT) check_spatialindex$(EXEEXT) \
 	check_exif$(EXEEXT) check_relations_fncts$(EXEEXT) \
 	check_extra_relations_fncts$(EXEEXT) \
-	check_geoscvt_fncts$(EXEEXT) check_libxml2$(EXEEXT)
+	check_geoscvt_fncts$(EXEEXT) check_libxml2$(EXEEXT) \
+	check_virtualxpath$(EXEEXT)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -190,6 +191,9 @@ check_virtualtable5_LDADD = $(LDADD)
 check_virtualtable6_SOURCES = check_virtualtable6.c
 check_virtualtable6_OBJECTS = check_virtualtable6.$(OBJEXT)
 check_virtualtable6_LDADD = $(LDADD)
+check_virtualxpath_SOURCES = check_virtualxpath.c
+check_virtualxpath_OBJECTS = check_virtualxpath.$(OBJEXT)
+check_virtualxpath_LDADD = $(LDADD)
 check_xls_load_SOURCES = check_xls_load.c
 check_xls_load_OBJECTS = check_xls_load.$(OBJEXT)
 check_xls_load_LDADD = $(LDADD)
@@ -236,8 +240,8 @@ SOURCES = check_bufovflw.c check_create.c check_dbf_load.c \
 	check_version.c check_virtual_ovflw.c check_virtualtable1.c \
 	check_virtualtable2.c check_virtualtable3.c \
 	check_virtualtable4.c check_virtualtable5.c \
-	check_virtualtable6.c check_xls_load.c shape_3d.c \
-	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	check_virtualtable6.c check_virtualxpath.c check_xls_load.c \
+	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
 	shape_utf8_1ex.c shape_utf8_2.c
 DIST_SOURCES = check_bufovflw.c check_create.c check_dbf_load.c \
 	check_endian.c check_exif.c check_extension.c \
@@ -251,8 +255,8 @@ DIST_SOURCES = check_bufovflw.c check_create.c check_dbf_load.c \
 	check_version.c check_virtual_ovflw.c check_virtualtable1.c \
 	check_virtualtable2.c check_virtualtable3.c \
 	check_virtualtable4.c check_virtualtable5.c \
-	check_virtualtable6.c check_xls_load.c shape_3d.c \
-	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	check_virtualtable6.c check_virtualxpath.c check_xls_load.c \
+	shape_3d.c shape_cp1252.c shape_primitives.c shape_utf8_1.c \
 	shape_utf8_1ex.c shape_utf8_2.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -3387,6 +3391,9 @@ check_virtualtable5$(EXEEXT): $(check_virtualtable5_OBJECTS) $(check_virtualtabl
 check_virtualtable6$(EXEEXT): $(check_virtualtable6_OBJECTS) $(check_virtualtable6_DEPENDENCIES) $(EXTRA_check_virtualtable6_DEPENDENCIES) 
 	@rm -f check_virtualtable6$(EXEEXT)
 	$(LINK) $(check_virtualtable6_OBJECTS) $(check_virtualtable6_LDADD) $(LIBS)
+check_virtualxpath$(EXEEXT): $(check_virtualxpath_OBJECTS) $(check_virtualxpath_DEPENDENCIES) $(EXTRA_check_virtualxpath_DEPENDENCIES) 
+	@rm -f check_virtualxpath$(EXEEXT)
+	$(LINK) $(check_virtualxpath_OBJECTS) $(check_virtualxpath_LDADD) $(LIBS)
 check_xls_load$(EXEEXT): $(check_xls_load_OBJECTS) $(check_xls_load_DEPENDENCIES) $(EXTRA_check_xls_load_DEPENDENCIES) 
 	@rm -f check_xls_load$(EXEEXT)
 	$(LINK) $(check_xls_load_OBJECTS) $(check_xls_load_LDADD) $(LIBS)
@@ -3450,6 +3457,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable4.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable6.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualxpath.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_xls_load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_3d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shape_cp1252.Po@am__quote@

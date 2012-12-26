@@ -41,7 +41,8 @@ check_PROGRAMS = check_endian \
 		check_relations_fncts \
 		check_extra_relations_fncts \
 		check_geoscvt_fncts \
-		check_libxml2
+		check_libxml2 \
+		check_virtualxpath
 
 AM_CFLAGS = -I@srcdir@/../src/headers -I@srcdir@
 AM_LDFLAGS = -L../src -lspatialite -lm $(GCOV_FLAGS)

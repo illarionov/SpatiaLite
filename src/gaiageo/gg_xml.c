@@ -117,25 +117,6 @@ spliteSchemaValidationError (void *ctx, const char *msg, ...)
 }
 
 static void
-spliteXPathError (void *ctx, const char *msg, ...)
-{
-/* appending to the current XPath Error buffer */
-    extern struct splite_internal_cache spatialite_internal_cache;
-    gaiaOutBufferPtr buf =
-	(gaiaOutBufferPtr) (spatialite_internal_cache.xmlXPathErrors);
-    char out[65536];
-    va_list args;
-
-    if (ctx != NULL)
-	ctx = NULL;		/* suppressing stupid compiler warnings (unused args) */
-
-    va_start (args, msg);
-    vsnprintf (out, 65536, msg, args);
-    gaiaAppendToOutBuffer (buf, out);
-    va_end (args);
-}
-
-static void
 spliteResetXmlErrors ()
 {
 /* resetting the XML Error buffers */
@@ -444,9 +425,10 @@ gaiaXmlBlobCompression (const unsigned char *blob,
     else if (compressed)
       {
 	  /* compressing the XML payload */
+	  uLong zLen;
 	  out_xml_len = in_xml_len;
-	  uLong zLen = compressBound (out_xml_len);
-	  xml = (unsigned char *) (blob + 15 + uri_len);
+	  zLen = compressBound (out_xml_len);
+	      xml = (unsigned char *) (blob + 15 + uri_len);
 	  zip_buf = malloc (zLen);
 	  if (compress
 	      (zip_buf, &zLen, (const Bytef *) xml,
@@ -967,12 +949,12 @@ gaiaXmlGetInternalSchemaURI (const char *xml, int xml_len)
 				  if (node->children->content != NULL)
 				    {
 					int len =
-					    strlen ((const char *) node->
-						    children->content);
+					    strlen ((const char *)
+						    node->children->content);
 					uri = malloc (len + 1);
 					strcpy (uri,
-						(const char *) node->
-						children->content);
+						(const char *) node->children->
+						content);
 				    }
 			      }
 			}
