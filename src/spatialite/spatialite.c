@@ -23332,7 +23332,7 @@ SPATIALITE_PRIVATE void
 init_spatialite_virtualtables (void *p_db, void *p_cache)
 {
     sqlite3 *db = (sqlite3 *) p_db;
-    -
+
 #ifndef OMIT_ICONV		/* when ICONV is disabled SHP/DBF/TXT cannot be supported */
 /* initializing the VirtualShape  extension */
 	virtualshape_extension_init (db);

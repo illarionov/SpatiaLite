@@ -199,6 +199,7 @@ main (int argc, char *argv[])
     const char *table = NULL;
     const char *geometry = NULL;
     gaiaVectorLayersListPtr list;
+    void *cache;
 
     for (i = 1; i < argc; i++)
       {
@@ -288,19 +289,6 @@ main (int argc, char *argv[])
       }
 
 
-/* 
-VERY IMPORTANT: 
-you must initialize the SpatiaLite extension [and related]
-BEFORE attempting to perform any other SQLite call 
-*/
-    spatialite_init (0);
-
-/* showing the SQLite version */
-    printf ("SQLite version: %s\n", sqlite3_libversion ());
-/* showing the SpatiaLite version */
-    printf ("SpatiaLite version: %s\n", spatialite_version ());
-    printf ("\n\n");
-
 /*
 trying to connect the test DB: 
 - this demo is intended to create an existing, already populated database
@@ -313,6 +301,16 @@ trying to connect the test DB:
 	  sqlite3_close (handle);
 	  return -1;
       }
+    cache = spatialite_alloc_connection ();
+    spatialite_init_ex (handle, cache, 0);
+
+
+/* showing the SQLite version */
+    printf ("SQLite version: %s\n", sqlite3_libversion ());
+/* showing the SpatiaLite version */
+    printf ("SpatiaLite version: %s\n", spatialite_version ());
+    printf ("\n\n");
+
 
 /* listing the requested layer(s) */
     list = gaiaGetVectorLayersList (handle, table, geometry, mode);
@@ -326,7 +324,7 @@ trying to connect the test DB:
 	  printf ("close() error: %s\n", sqlite3_errmsg (handle));
 	  return -1;
       }
-    spatialite_cleanup ();
+    spatialite_cleanup_ex (cache);
     printf ("\n\nsample successfully terminated\n");
     return 0;
 }
