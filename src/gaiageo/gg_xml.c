@@ -81,9 +81,8 @@ static void
 spliteParsingError (void *ctx, const char *msg, ...)
 {
 /* appending to the current Parsing Error buffer */
-    extern struct splite_internal_cache spatialite_internal_cache;
-    gaiaOutBufferPtr buf =
-	(gaiaOutBufferPtr) (spatialite_internal_cache.xmlParsingErrors);
+    struct splite_internal_cache *cache = (struct splite_internal_cache *) ctx;
+    gaiaOutBufferPtr buf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
     char out[65536];
     va_list args;
 
@@ -100,10 +99,9 @@ static void
 spliteSchemaValidationError (void *ctx, const char *msg, ...)
 {
 /* appending to the current SchemaValidation Error buffer */
-    extern struct splite_internal_cache spatialite_internal_cache;
+    struct splite_internal_cache *cache = (struct splite_internal_cache *) ctx;
     gaiaOutBufferPtr buf =
-	(gaiaOutBufferPtr)
-	(spatialite_internal_cache.xmlSchemaValidationErrors);
+	(gaiaOutBufferPtr) (cache->xmlSchemaValidationErrors);
     char out[65536];
     va_list args;
 
@@ -117,52 +115,45 @@ spliteSchemaValidationError (void *ctx, const char *msg, ...)
 }
 
 static void
-spliteResetXmlErrors ()
+spliteResetXmlErrors (struct splite_internal_cache *cache)
 {
 /* resetting the XML Error buffers */
-    extern struct splite_internal_cache spatialite_internal_cache;
-    gaiaOutBufferPtr buf =
-	(gaiaOutBufferPtr) (spatialite_internal_cache.xmlParsingErrors);
+    gaiaOutBufferPtr buf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
     gaiaOutBufferReset (buf);
-    buf =
-	(gaiaOutBufferPtr)
-	(spatialite_internal_cache.xmlSchemaValidationErrors);
+    buf = (gaiaOutBufferPtr) (cache->xmlSchemaValidationErrors);
     gaiaOutBufferReset (buf);
 }
 
 GAIAGEO_DECLARE char *
-gaiaXmlBlobGetLastParseError (void)
+gaiaXmlBlobGetLastParseError (void *ptr)
 {
 /* get the most recent XML Parse error/warning message */
-    extern struct splite_internal_cache spatialite_internal_cache;
-    gaiaOutBufferPtr buf =
-	(gaiaOutBufferPtr) (spatialite_internal_cache.xmlParsingErrors);
+    struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
+    gaiaOutBufferPtr buf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
     return buf->Buffer;
 }
 
 GAIAGEO_DECLARE char *
-gaiaXmlBlobGetLastValidateError (void)
+gaiaXmlBlobGetLastValidateError (void *ptr)
 {
 /* get the most recent XML Validate error/warning message */
-    extern struct splite_internal_cache spatialite_internal_cache;
+    struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
     gaiaOutBufferPtr buf =
-	(gaiaOutBufferPtr)
-	(spatialite_internal_cache.xmlSchemaValidationErrors);
+	(gaiaOutBufferPtr) (cache->xmlSchemaValidationErrors);
     return buf->Buffer;
 }
 
 GAIAGEO_DECLARE char *
-gaiaXmlBlobGetLastXPathError (void)
+gaiaXmlBlobGetLastXPathError (void *ptr)
 {
 /* get the most recent XML Validate error/warning message */
-    extern struct splite_internal_cache spatialite_internal_cache;
-    gaiaOutBufferPtr buf =
-	(gaiaOutBufferPtr) (spatialite_internal_cache.xmlXPathErrors);
+    struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
+    gaiaOutBufferPtr buf = (gaiaOutBufferPtr) (cache->xmlXPathErrors);
     return buf->Buffer;
 }
 
 GAIAGEO_DECLARE void
-gaiaXmlToBlob (const char *xml, int xml_len, int compressed,
+gaiaXmlToBlob (void *p_cache, const char *xml, int xml_len, int compressed,
 	       const char *schemaURI, unsigned char **result, int *size,
 	       char **parsing_errors, char **schema_validation_errors)
 {
@@ -181,18 +172,17 @@ gaiaXmlToBlob (const char *xml, int xml_len, int compressed,
     unsigned char *ptr;
     unsigned char flags = 0x00;
     int endian_arch = gaiaEndianArch ();
-    extern struct splite_internal_cache spatialite_internal_cache;
-    gaiaOutBufferPtr parsingBuf =
-	(gaiaOutBufferPtr) (spatialite_internal_cache.xmlParsingErrors);
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    gaiaOutBufferPtr parsingBuf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
     gaiaOutBufferPtr schemaValidationBuf =
-	(gaiaOutBufferPtr)
-	(spatialite_internal_cache.xmlSchemaValidationErrors);
+	(gaiaOutBufferPtr) (cache->xmlSchemaValidationErrors);
     xmlGenericErrorFunc silentError = (xmlGenericErrorFunc) spliteSilentError;
     xmlGenericErrorFunc parsingError = (xmlGenericErrorFunc) spliteParsingError;
     xmlGenericErrorFunc schemaError =
 	(xmlGenericErrorFunc) spliteSchemaValidationError;
 
-    spliteResetXmlErrors ();
+    spliteResetXmlErrors (cache);
 
     *result = NULL;
     *size = 0;
@@ -208,7 +198,7 @@ gaiaXmlToBlob (const char *xml, int xml_len, int compressed,
     if (schemaURI != NULL)
       {
 	  /* preparing the Schema */
-	  xmlSetGenericErrorFunc (NULL, schemaError);
+	  xmlSetGenericErrorFunc (cache, schemaError);
 	  schema_doc = xmlReadFile ((const char *) schemaURI, NULL, 0);
 	  if (schema_doc == NULL)
 	    {
@@ -242,7 +232,7 @@ gaiaXmlToBlob (const char *xml, int xml_len, int compressed,
       }
 
 /* testing if the XMLDocument is well-formed */
-    xmlSetGenericErrorFunc (NULL, parsingError);
+    xmlSetGenericErrorFunc (cache, parsingError);
     xml_doc =
 	xmlReadMemory ((const char *) xml, xml_len, "noname.xml", NULL, 0);
     if (xml_doc == NULL)
@@ -260,7 +250,7 @@ gaiaXmlToBlob (const char *xml, int xml_len, int compressed,
     if (schemaURI != NULL)
       {
 	  /* Schema validation */
-	  xmlSetGenericErrorFunc (NULL, schemaError);
+	  xmlSetGenericErrorFunc (cache, schemaError);
 	  valid_ctxt = xmlSchemaNewValidCtxt (schema);
 	  if (valid_ctxt == NULL)
 	    {
@@ -428,7 +418,7 @@ gaiaXmlBlobCompression (const unsigned char *blob,
 	  uLong zLen;
 	  out_xml_len = in_xml_len;
 	  zLen = compressBound (out_xml_len);
-	      xml = (unsigned char *) (blob + 15 + uri_len);
+	  xml = (unsigned char *) (blob + 15 + uri_len);
 	  zip_buf = malloc (zLen);
 	  if (compress
 	      (zip_buf, &zLen, (const Bytef *) xml,
@@ -675,6 +665,7 @@ gaiaXmlTextFromBlob (const unsigned char *blob, int blob_size, int indent)
       }
     utf8 = gaiaConvertToUTF8 (cvt, (const char *) out, out_len, &err);
     gaiaFreeUTF8Converter (cvt);
+    free (out);
     if (utf8 && !err)
       {
 	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
@@ -868,7 +859,7 @@ gaiaXmlBlobGetSchemaURI (const unsigned char *blob, int blob_size)
 }
 
 GAIAGEO_DECLARE char *
-gaiaXmlGetInternalSchemaURI (const char *xml, int xml_len)
+gaiaXmlGetInternalSchemaURI (void *p_cache, const char *xml, int xml_len)
 {
 /* Return the internally defined SchemaURI from a valid XmlDocument */
     xmlDocPtr xml_doc;
@@ -889,7 +880,7 @@ gaiaXmlGetInternalSchemaURI (const char *xml, int xml_len)
       }
 
     if (vxpath_eval_expr
-	(xml_doc, "/*/@xsi:schemaLocation", &xpathCtx, &xpathObj))
+	(p_cache, xml_doc, "/*/@xsi:schemaLocation", &xpathCtx, &xpathObj))
       {
 	  /* attempting first to extract xsi:schemaLocation */
 	  xmlNodeSetPtr nodeset = xpathObj->nodesetval;
@@ -933,7 +924,7 @@ gaiaXmlGetInternalSchemaURI (const char *xml, int xml_len)
       {
 	  /* checking for xsi:noNamespaceSchemaLocation */
 	  if (vxpath_eval_expr
-	      (xml_doc, "/*/@xsi:noNamespaceSchemaLocation", &xpathCtx,
+	      (p_cache, xml_doc, "/*/@xsi:noNamespaceSchemaLocation", &xpathCtx,
 	       &xpathObj))
 	    {
 		xmlNodeSetPtr nodeset = xpathObj->nodesetval;
@@ -953,8 +944,8 @@ gaiaXmlGetInternalSchemaURI (const char *xml, int xml_len)
 						    node->children->content);
 					uri = malloc (len + 1);
 					strcpy (uri,
-						(const char *) node->children->
-						content);
+						(const char *) node->
+						children->content);
 				    }
 			      }
 			}
@@ -1029,6 +1020,7 @@ gaiaXmlBlobGetEncoding (const unsigned char *blob, int blob_size)
 	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
 	  return NULL;
       }
+    free (xml);
     if (xml_doc->encoding)
       {
 	  /* using the internal character enconding */

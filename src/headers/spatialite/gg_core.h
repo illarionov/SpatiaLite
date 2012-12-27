@@ -1550,8 +1550,6 @@ extern "C"
  latitude values (-180.0 to 180.0 longitude and -90.0 to 90.0 latitude).
 
  \param geom pointer to Geometry object.
- \param shift_x X axis shift factor.
- \param shift_y Y axis shift factor.
 
  \sa gaiaScaleCoords, gaiaRotateCoords, gaiaReflectCoords, gaiaSwapCoords,
      gaiaShiftCoords3D, gaiaShiftLongitude

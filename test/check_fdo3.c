@@ -66,8 +66,8 @@ int main (int argc, char *argv[])
     char **results;
     int rows;
     int columns;
+    void *cache = spatialite_alloc_connection();
 
-    spatialite_init (0);
     ret = system("cp sql_stmt_tests/testFGF.sqlite testFGF.sqlite");
     if (ret != 0)
     {
@@ -80,6 +80,8 @@ int main (int argc, char *argv[])
 	sqlite3_close(handle);
 	return -1000;
     }
+
+    spatialite_init_ex (handle, cache, 0);
 
 /* FDO start-up */
     sql = "SELECT AutoFDOStart()";
@@ -171,7 +173,7 @@ int main (int argc, char *argv[])
 	return -15;
     }
     
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
     ret = unlink("testFGF.sqlite");
     if (ret != 0)
     {

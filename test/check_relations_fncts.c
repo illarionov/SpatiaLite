@@ -68,6 +68,7 @@ int main (int argc, char *argv[])
     gaiaGeomCollPtr g;
     gaiaPolygonPtr pg;
     gaiaRingPtr rng;
+    void *cache = spatialite_alloc_connection();
     
     /* Common setup */
     gaiaGeomCollPtr validGeometry = gaiaAllocGeomColl();
@@ -75,13 +76,14 @@ int main (int argc, char *argv[])
     double dummyResultArg2 = 0.0;
     
     /* Tests start here */
-    spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -1;
     }
+
+    spatialite_init_ex (handle, cache, 0);
     
     /* null inputs for a range of geometry functions */
     result = gaiaGeomCollEquals(0, validGeometry);
@@ -800,7 +802,7 @@ exit:
 	return -133;
     }
         
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
     return returnValue;
 
 #endif	/* end GEOS conditional */

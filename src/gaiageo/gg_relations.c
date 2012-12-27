@@ -293,14 +293,14 @@ evalGeosCacheItem (unsigned char *blob, int blob_size, uLong crc,
 }
 
 static int
-evalGeosCache (gaiaGeomCollPtr geom1, unsigned char *blob1, int size1,
-	       gaiaGeomCollPtr geom2, unsigned char *blob2, int size2,
-	       GEOSPreparedGeometry ** gPrep, gaiaGeomCollPtr * geom)
+evalGeosCache (struct splite_internal_cache *cache, gaiaGeomCollPtr geom1,
+	       unsigned char *blob1, int size1, gaiaGeomCollPtr geom2,
+	       unsigned char *blob2, int size2, GEOSPreparedGeometry ** gPrep,
+	       gaiaGeomCollPtr * geom)
 {
 /* handling the internal GEOS cache */
-    extern struct splite_internal_cache spatialite_internal_cache;
-    struct splite_geos_cache_item *p1 = &(spatialite_internal_cache.cacheItem1);
-    struct splite_geos_cache_item *p2 = &(spatialite_internal_cache.cacheItem2);
+    struct splite_geos_cache_item *p1 = &(cache->cacheItem1);
+    struct splite_geos_cache_item *p2 = &(cache->cacheItem2);
     uLong crc1 = crc32 (0L, blob1, size1);
     uLong crc2 = crc32 (0L, blob2, size2);
 
@@ -438,12 +438,15 @@ gaiaGeomCollIntersects (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 }
 
 GAIAGEO_DECLARE int
-gaiaGeomCollPreparedIntersects (gaiaGeomCollPtr geom1, unsigned char *blob1,
-				int size1, gaiaGeomCollPtr geom2,
-				unsigned char *blob2, int size2)
+gaiaGeomCollPreparedIntersects (void *p_cache, gaiaGeomCollPtr geom1,
+				unsigned char *blob1, int size1,
+				gaiaGeomCollPtr geom2, unsigned char *blob2,
+				int size2)
 {
 /* checks if two Geometries do "spatially intersects" */
     int ret;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
     GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
@@ -458,7 +461,8 @@ gaiaGeomCollPreparedIntersects (gaiaGeomCollPtr geom1, unsigned char *blob1,
 	return 0;
 
 /* handling the internal GEOS cache */
-    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+    if (evalGeosCache
+	(cache, geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
       {
 	  g2 = gaiaToGeos (geom);
 	  ret = GEOSPreparedIntersects (gPrep, g2);
@@ -498,12 +502,15 @@ gaiaGeomCollDisjoint (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 }
 
 GAIAGEO_DECLARE int
-gaiaGeomCollPreparedDisjoint (gaiaGeomCollPtr geom1, unsigned char *blob1,
-			      int size1, gaiaGeomCollPtr geom2,
-			      unsigned char *blob2, int size2)
+gaiaGeomCollPreparedDisjoint (void *p_cache, gaiaGeomCollPtr geom1,
+			      unsigned char *blob1, int size1,
+			      gaiaGeomCollPtr geom2, unsigned char *blob2,
+			      int size2)
 {
 /* checks if two Geometries are "spatially disjoint" */
     int ret;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
     GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
@@ -518,7 +525,8 @@ gaiaGeomCollPreparedDisjoint (gaiaGeomCollPtr geom1, unsigned char *blob1,
 	return 1;
 
 /* handling the internal GEOS cache */
-    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+    if (evalGeosCache
+	(cache, geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
       {
 	  g2 = gaiaToGeos (geom);
 	  ret = GEOSPreparedDisjoint (gPrep, g2);
@@ -559,12 +567,15 @@ gaiaGeomCollOverlaps (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 }
 
 GAIAGEO_DECLARE int
-gaiaGeomCollPreparedOverlaps (gaiaGeomCollPtr geom1, unsigned char *blob1,
-			      int size1, gaiaGeomCollPtr geom2,
-			      unsigned char *blob2, int size2)
+gaiaGeomCollPreparedOverlaps (void *p_cache, gaiaGeomCollPtr geom1,
+			      unsigned char *blob1, int size1,
+			      gaiaGeomCollPtr geom2, unsigned char *blob2,
+			      int size2)
 {
 /* checks if two Geometries do "spatially overlaps" */
     int ret;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
     GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
@@ -579,7 +590,8 @@ gaiaGeomCollPreparedOverlaps (gaiaGeomCollPtr geom1, unsigned char *blob1,
 	return 0;
 
 /* handling the internal GEOS cache */
-    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+    if (evalGeosCache
+	(cache, geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
       {
 	  g2 = gaiaToGeos (geom);
 	  ret = GEOSPreparedOverlaps (gPrep, g2);
@@ -620,12 +632,15 @@ gaiaGeomCollCrosses (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 }
 
 GAIAGEO_DECLARE int
-gaiaGeomCollPreparedCrosses (gaiaGeomCollPtr geom1, unsigned char *blob1,
-			     int size1, gaiaGeomCollPtr geom2,
-			     unsigned char *blob2, int size2)
+gaiaGeomCollPreparedCrosses (void *p_cache, gaiaGeomCollPtr geom1,
+			     unsigned char *blob1, int size1,
+			     gaiaGeomCollPtr geom2, unsigned char *blob2,
+			     int size2)
 {
 /* checks if two Geometries do "spatially crosses" */
     int ret;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
     GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
@@ -640,7 +655,8 @@ gaiaGeomCollPreparedCrosses (gaiaGeomCollPtr geom1, unsigned char *blob1,
 	return 0;
 
 /* handling the internal GEOS cache */
-    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+    if (evalGeosCache
+	(cache, geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
       {
 	  g2 = gaiaToGeos (geom);
 	  ret = GEOSPreparedCrosses (gPrep, g2);
@@ -681,12 +697,15 @@ gaiaGeomCollTouches (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 }
 
 GAIAGEO_DECLARE int
-gaiaGeomCollPreparedTouches (gaiaGeomCollPtr geom1, unsigned char *blob1,
-			     int size1, gaiaGeomCollPtr geom2,
-			     unsigned char *blob2, int size2)
+gaiaGeomCollPreparedTouches (void *p_cache, gaiaGeomCollPtr geom1,
+			     unsigned char *blob1, int size1,
+			     gaiaGeomCollPtr geom2, unsigned char *blob2,
+			     int size2)
 {
 /* checks if two Geometries do "spatially touches" */
     int ret;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
     GEOSPreparedGeometry *gPrep;
@@ -701,7 +720,8 @@ gaiaGeomCollPreparedTouches (gaiaGeomCollPtr geom1, unsigned char *blob1,
 	return 0;
 
 /* handling the internal GEOS cache */
-    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+    if (evalGeosCache
+	(cache, geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
       {
 	  g2 = gaiaToGeos (geom);
 	  ret = GEOSPreparedTouches (gPrep, g2);
@@ -742,12 +762,15 @@ gaiaGeomCollWithin (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 }
 
 GAIAGEO_DECLARE int
-gaiaGeomCollPreparedWithin (gaiaGeomCollPtr geom1, unsigned char *blob1,
-			    int size1, gaiaGeomCollPtr geom2,
-			    unsigned char *blob2, int size2)
+gaiaGeomCollPreparedWithin (void *p_cache, gaiaGeomCollPtr geom1,
+			    unsigned char *blob1, int size1,
+			    gaiaGeomCollPtr geom2, unsigned char *blob2,
+			    int size2)
 {
 /* checks if GEOM-1 is completely contained within GEOM-2 */
     int ret;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
     GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
@@ -762,7 +785,8 @@ gaiaGeomCollPreparedWithin (gaiaGeomCollPtr geom1, unsigned char *blob1,
 	return 0;
 
 /* handling the internal GEOS cache */
-    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+    if (evalGeosCache
+	(cache, geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
       {
 	  g2 = gaiaToGeos (geom);
 	  if (geom == geom2)
@@ -806,12 +830,15 @@ gaiaGeomCollContains (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 }
 
 GAIAGEO_DECLARE int
-gaiaGeomCollPreparedContains (gaiaGeomCollPtr geom1, unsigned char *blob1,
-			      int size1, gaiaGeomCollPtr geom2,
-			      unsigned char *blob2, int size2)
+gaiaGeomCollPreparedContains (void *p_cache, gaiaGeomCollPtr geom1,
+			      unsigned char *blob1, int size1,
+			      gaiaGeomCollPtr geom2, unsigned char *blob2,
+			      int size2)
 {
 /* checks if GEOM-1 completely contains GEOM-2 */
     int ret;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
     GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
@@ -826,7 +853,8 @@ gaiaGeomCollPreparedContains (gaiaGeomCollPtr geom1, unsigned char *blob1,
 	return 0;
 
 /* handling the internal GEOS cache */
-    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+    if (evalGeosCache
+	(cache, geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
       {
 	  g2 = gaiaToGeos (geom);
 	  if (geom == geom2)
@@ -2786,12 +2814,15 @@ gaiaGeomCollCovers (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 }
 
 GAIAGEO_DECLARE int
-gaiaGeomCollPreparedCovers (gaiaGeomCollPtr geom1, unsigned char *blob1,
-			    int size1, gaiaGeomCollPtr geom2,
-			    unsigned char *blob2, int size2)
+gaiaGeomCollPreparedCovers (void *p_cache, gaiaGeomCollPtr geom1,
+			    unsigned char *blob1, int size1,
+			    gaiaGeomCollPtr geom2, unsigned char *blob2,
+			    int size2)
 {
 /* checks if geom1 "spatially covers" geom2 */
     int ret;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
     GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
@@ -2804,7 +2835,8 @@ gaiaGeomCollPreparedCovers (gaiaGeomCollPtr geom1, unsigned char *blob1,
 	return 0;
 
 /* handling the internal GEOS cache */
-    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+    if (evalGeosCache
+	(cache, geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
       {
 	  g2 = gaiaToGeos (geom);
 	  if (geom == geom2)
@@ -2852,12 +2884,15 @@ gaiaGeomCollCoveredBy (gaiaGeomCollPtr geom1, gaiaGeomCollPtr geom2)
 }
 
 GAIAGEO_DECLARE int
-gaiaGeomCollPreparedCoveredBy (gaiaGeomCollPtr geom1, unsigned char *blob1,
-			       int size1, gaiaGeomCollPtr geom2,
-			       unsigned char *blob2, int size2)
+gaiaGeomCollPreparedCoveredBy (void *p_cache, gaiaGeomCollPtr geom1,
+			       unsigned char *blob1, int size1,
+			       gaiaGeomCollPtr geom2, unsigned char *blob2,
+			       int size2)
 {
 /* checks if geom1 is "spatially covered by" geom2 */
     int ret;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
     GEOSPreparedGeometry *gPrep;
     GEOSGeometry *g1;
     GEOSGeometry *g2;
@@ -2870,7 +2905,8 @@ gaiaGeomCollPreparedCoveredBy (gaiaGeomCollPtr geom1, unsigned char *blob1,
 	return 0;
 
 /* handling the internal GEOS cache */
-    if (evalGeosCache (geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
+    if (evalGeosCache
+	(cache, geom1, blob1, size1, geom2, blob2, size2, &gPrep, &geom))
       {
 	  g2 = gaiaToGeos (geom);
 	  if (geom == geom2)

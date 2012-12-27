@@ -270,7 +270,7 @@ extern "C"
 
  \sa gaiaUpdateSqlLog
 
- \note this function inserts an \i event into the SQL Log, and
+ \note this function inserts an \b event into the SQL Log, and
   is expected to be invoked immediately \b before executing the SQL
   statement itself.
  */
@@ -287,7 +287,7 @@ extern "C"
 
  \sa gaiaInsertIntoSqlLog
 
- \note this function completes an \i event inserted into the SQL Log, and
+ \note this function completes an \b event inserted into the SQL Log, and
   is expected to be invoked immediately \b after executing the SQL
   statement itself.
  */

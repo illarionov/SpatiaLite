@@ -283,15 +283,17 @@ int main (int argc, char *argv[])
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
+    void *cache = spatialite_alloc_connection();
 
 /* testing current style metadata layout >= v.4.0.0 */
-    spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open in-memory database: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -1;
     }
+
+    spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -312,9 +314,10 @@ int main (int argc, char *argv[])
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
 	return -19;
     }
+    spatialite_cleanup_ex (cache);
 
 /* testing legacy style metadata layout <= v.3.1.0 */
-    spatialite_init (0);
+    cache = spatialite_alloc_connection();
     ret = system("cp test-legacy-3.0.1.sqlite copy-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
@@ -327,6 +330,8 @@ int main (int argc, char *argv[])
 	sqlite3_close(handle);
 	return -1;
     }
+
+    spatialite_init_ex (handle, cache, 0);
 	
     ret = do_test(handle, 1);
     if (ret != 0) {
@@ -339,7 +344,7 @@ int main (int argc, char *argv[])
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
 	return -19;
     }
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
     ret = unlink("copy-legacy-3.0.1.sqlite");
     if (ret != 0)
     {

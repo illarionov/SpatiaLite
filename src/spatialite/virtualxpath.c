@@ -96,6 +96,7 @@ typedef struct VirtualXPathStruct
     int nRef;			/* # references: USED INTERNALLY BY SQLITE */
     char *zErrMsg;		/* error message: USE INTERNALLY BY SQLITE */
     sqlite3 *db;		/* the sqlite db holding the virtual table */
+    void *p_cache;		/* pointer to the internal cache */
     char *table;		/* the real-table name */
     char *column;		/* the real-column name */
 } VirtualXPath;
@@ -261,9 +262,8 @@ static void
 vxpathError (void *ctx, const char *msg, ...)
 {
 /* appending to the current XPath Error buffer */
-    extern struct splite_internal_cache spatialite_internal_cache;
-    gaiaOutBufferPtr buf =
-	(gaiaOutBufferPtr) (spatialite_internal_cache.xmlXPathErrors);
+    struct splite_internal_cache *cache = (struct splite_internal_cache *) ctx;
+    gaiaOutBufferPtr buf = (gaiaOutBufferPtr) (cache->xmlXPathErrors);
     char out[65536];
     va_list args;
 
@@ -277,35 +277,36 @@ vxpathError (void *ctx, const char *msg, ...)
 }
 
 static void
-vxpathResetXmlErrors ()
+vxpathResetXmlErrors (struct splite_internal_cache *cache)
 {
 /* resetting the XPath Error buffer */
-    extern struct splite_internal_cache spatialite_internal_cache;
-    gaiaOutBufferPtr buf =
-	(gaiaOutBufferPtr) (spatialite_internal_cache.xmlXPathErrors);
+    gaiaOutBufferPtr buf = (gaiaOutBufferPtr) (cache->xmlXPathErrors);
     gaiaOutBufferReset (buf);
 }
 
 SPATIALITE_PRIVATE int
-vxpath_eval_expr (void *x_xml_doc, const char *xpath_expr, void *x_xpathCtx,
-		  void *x_xpathObj)
+vxpath_eval_expr (void *p_cache, void *x_xml_doc, const char *xpath_expr,
+		  void *x_xpathCtx, void *x_xpathObj)
 {
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
 /* evaluating an XPath expression */
     xmlDocPtr xml_doc = (xmlDocPtr) x_xml_doc;
     xmlXPathContextPtr *p_xpathCtx = (xmlXPathContextPtr *) x_xpathCtx;
     xmlXPathObjectPtr *p_xpathObj = (xmlXPathObjectPtr *) x_xpathObj;
     xmlXPathObjectPtr xpathObj;
+    xmlXPathContextPtr xpathCtx;
     xmlGenericErrorFunc xpathError = (xmlGenericErrorFunc) vxpathError;
 
 /* attempting to identify all required Namespaces */
     struct vxpath_ns *ns;
     struct vxpath_namespaces *ns_list = vxpath_get_namespaces (xml_doc);
 
-    vxpathResetXmlErrors ();
-    xmlSetGenericErrorFunc (NULL, xpathError);
+    vxpathResetXmlErrors (cache);
+    xmlSetGenericErrorFunc (cache, xpathError);
 
 /* creating an XPath context */
-    xmlXPathContextPtr xpathCtx = xmlXPathNewContext (xml_doc);
+    xpathCtx = xmlXPathNewContext (xml_doc);
     if (xpathCtx == NULL)
       {
 	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
@@ -443,10 +444,17 @@ vxpath_read_row (VirtualXPathCursorPtr cursor)
 			    xmlXPathContextPtr xpathCtx;
 			    xmlXPathObjectPtr xpathObj;
 			    if (vxpath_eval_expr
-				(xml_doc, cursor->xpathExpr, &xpathCtx,
-				 &xpathObj))
+				(cursor->pVtab->p_cache, xml_doc,
+				 cursor->xpathExpr, &xpathCtx, &xpathObj))
 			      {
 				  free (xml);
+				  if (cursor->xpathObj)
+				      xmlXPathFreeObject (cursor->xpathObj);
+				  if (cursor->xpathContext)
+				      xmlXPathFreeContext
+					  (cursor->xpathContext);
+				  if (cursor->xmlDoc)
+				      xmlFreeDoc (cursor->xmlDoc);
 				  cursor->xmlDoc = xml_doc;
 				  cursor->xpathContext = xpathCtx;
 				  cursor->xpathObj = xpathObj;
@@ -454,6 +462,7 @@ vxpath_read_row (VirtualXPathCursorPtr cursor)
 				  break;
 			      }
 			    free (xml);
+			    xmlFreeDoc (xml_doc);
 			}
 		  }
 	    }
@@ -513,8 +522,6 @@ vxpath_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     char *sql;
     int okTable = 0;
     int okCol = 0;
-    if (pAux)
-	pAux = pAux;		/* unused arg warning suppression */
     if (argc == 5)
       {
 	  vtable = gaiaDequotedSql ((char *) argv[2]);
@@ -550,6 +557,7 @@ vxpath_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
     if (!p_vt)
 	return SQLITE_NOMEM;
     p_vt->db = db;
+    p_vt->p_cache = pAux;
     p_vt->nRef = 0;
     p_vt->zErrMsg = NULL;
     p_vt->table = table;
@@ -1056,7 +1064,7 @@ vxpath_rollback (sqlite3_vtab * pVTab)
 }
 
 int
-sqlite3VirtualXPathInit (sqlite3 * db)
+sqlite3VirtualXPathInit (sqlite3 * db, void *p_cache)
 {
     int rc = SQLITE_OK;
     my_xpath_module.iVersion = 1;
@@ -1078,14 +1086,14 @@ sqlite3VirtualXPathInit (sqlite3 * db)
     my_xpath_module.xCommit = &vxpath_commit;
     my_xpath_module.xRollback = &vxpath_rollback;
     my_xpath_module.xFindFunction = NULL;
-    sqlite3_create_module_v2 (db, "VirtualXPath", &my_xpath_module, NULL, 0);
+    sqlite3_create_module_v2 (db, "VirtualXPath", &my_xpath_module, p_cache, 0);
     return rc;
 }
 
 int
-virtual_xpath_extension_init (sqlite3 * db)
+virtual_xpath_extension_init (sqlite3 * db, void *p_cache)
 {
-    return sqlite3VirtualXPathInit (db);
+    return sqlite3VirtualXPathInit (db, p_cache);
 }
 
 #endif /* end LIBXML2: supporting XML documents */

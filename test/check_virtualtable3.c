@@ -66,8 +66,7 @@ int main (int argc, char *argv[])
     char **results;
     int rows;
     int columns;
-
-    spatialite_init (0);
+    void *cache = spatialite_alloc_connection();
 
     ret = sqlite3_open_v2 (":memory:", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -76,6 +75,8 @@ int main (int argc, char *argv[])
 	db_handle = NULL;
 	return -1;
     }
+
+    spatialite_init_ex (db_handle, cache, 0);
     
     ret = sqlite3_exec (db_handle, "create VIRTUAL TABLE dbftest USING VirtualDBF(shapetest1.dbf, UTF-8);", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -580,7 +581,7 @@ int main (int argc, char *argv[])
     sqlite3_free (err_msg);
 
     sqlite3_close (db_handle);
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
 #endif	/* end ICONV conditional */
     
     return 0;

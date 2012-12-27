@@ -104,6 +104,7 @@ extern "C"
 /**
  Creates an XmlBLOB buffer
 
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
  \param xml pointer to the XML document (XmlBLOB payload).
  \param xml_len lenght of the XML document (in bytes).
  \param compressed if TRUE the returned XmlBLOB will be zip-compressed.
@@ -127,8 +128,8 @@ extern "C"
  so you are responsible to free() it [unless SQLite will take care
  of memory cleanup via buffer binding].
  */
-    GAIAGEO_DECLARE void gaiaXmlToBlob (const char *xml, int xml_len,
-					int compressed,
+    GAIAGEO_DECLARE void gaiaXmlToBlob (void *p_cache, const char *xml,
+					int xml_len, int compressed,
 					const char *schamaURI,
 					unsigned char **result, int *size,
 					char **parsing_errors,
@@ -325,6 +326,7 @@ extern "C"
 /**
  Return the Internal SchemaURI from a valid XmlDocument
 
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
  \param xml pointer to the XML document 
  \param xml_len lenght of the XML document (in bytes).
 
@@ -339,8 +341,9 @@ extern "C"
  \note the returned SchemaURI corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE char *gaiaXmlGetInternalSchemaURI (const char *xml,
-							   int xml_len);
+    GAIAGEO_DECLARE char *gaiaXmlGetInternalSchemaURI (void *p_cache,
+						       const char *xml,
+						       int xml_len);
 
 /**
  Return the Charset Encoding from a valid XmlBLOB buffer
@@ -366,6 +369,8 @@ extern "C"
 /**
  Return the most recent XML Parse error/warning (if any)
 
+ \param ptr a memory pointer returned by spatialite_alloc_connection()
+
  \return the most recent XML Parse error/warning message (if any); 
   NULL in any other case.
 
@@ -374,15 +379,18 @@ extern "C"
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize, 
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobCompression, gaiaXmlBlobGetEncoding,
- gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
+ gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError,
+ splite_alloc_connection
 
  \note the returned error/warning message corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE char *gaiaXmlBlobGetLastParseError (void);
+    GAIAGEO_DECLARE char *gaiaXmlBlobGetLastParseError (void *p_cache);
 
 /**
  Return the most recent XML Validate error/warning (if any)
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
 
  \return the most recent XML Validate error/warning message (if any); 
   NULL in any other case.
@@ -392,15 +400,18 @@ extern "C"
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobCompression, gaiaXmlBlobGetEncoding,
- gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastXPathError
+ gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastXPathError,
+ splite_alloc_connection
 
  \note the returned error/warning message corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE char *gaiaXmlBlobGetLastValidateError (void);
+    GAIAGEO_DECLARE char *gaiaXmlBlobGetLastValidateError (void *p_cache);
 
 /**
  Return the most recent XPath error/warning (if any)
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
 
  \return the most recent XPath error/warning message (if any); 
   NULL in any other case.
@@ -410,12 +421,13 @@ extern "C"
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobCompression, gaiaXmlBlobGetEncoding,
- gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError
+ gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
+ splite_alloc_connection
 
  \note the returned error/warning message corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
-    GAIAGEO_DECLARE char *gaiaXmlBlobGetLastXPathError (void);
+    GAIAGEO_DECLARE char *gaiaXmlBlobGetLastXPathError (void *p_cache);
 
 #endif				/* end LIBXML2: supporting XML documents */
 

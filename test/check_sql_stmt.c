@@ -87,6 +87,7 @@ int do_one_case (const struct test_data *data)
     char **results;
     int rows;
     int columns;
+    void *cache = spatialite_alloc_connection();
 
     fprintf(stderr, "Test case: %s\n", data->test_case_name);
     /* This hack checks if the name ends with _RO */
@@ -102,6 +103,8 @@ int do_one_case (const struct test_data *data)
       db_handle = NULL;
       return -1;
     }
+
+    spatialite_init_ex (db_handle, cache, 0);
     
     ret = sqlite3_exec (db_handle, "SELECT InitSpatialMetadata()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -147,6 +150,8 @@ int do_one_case (const struct test_data *data)
     sqlite3_free_table (results);
 
     sqlite3_close (db_handle);
+        
+    spatialite_cleanup_ex(cache);
     
     return 0;
 }
@@ -553,6 +558,9 @@ skip_geos_trunk:
 	free(namelist[i]);
     }
     free(namelist);
+
+    xmlCleanupParser();
+
 #endif	/* end LIBXML2 conditional */
 
     return result;
@@ -580,8 +588,6 @@ int main (int argc, char *argv[])
 {
     int result = 0;
 
-    spatialite_init (0);
-
     if (argc == 1)
     {
 	result = run_all_testcases();
@@ -597,8 +603,6 @@ int main (int argc, char *argv[])
     /* forcing -1 seems to resolve this issue                 */
         result = -1;
     }
-
-    spatialite_cleanup();
 
     return result;
 }

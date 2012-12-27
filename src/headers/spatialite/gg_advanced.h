@@ -65,9 +65,16 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #define _GG_ADVANCED_H
 #endif
 
+/** Gaia-to-GEOS: all geometries */
 #define GAIA2GEOS_ALL			0
+
+/** Gaia-to-GEOS: only geometries of the Point type */
 #define GAIA2GEOS_ONLY_POINTS		1
+
+/** Gaia-to-GEOS: only geometries of the Linestring type */
 #define GAIA2GEOS_ONLY_LINESTRINGS	2
+
+/** Gaia-to-GEOS: only geometries of the Polygon type */
 #define GAIA2GEOS_ONLY_POLYGONS		3
 
 #ifdef __cplusplus
@@ -75,7 +82,9 @@ extern "C"
 {
 #endif
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 #ifndef OMIT_PROJ		/* including PROJ.4 */
+#endif
 
 /**
  Converts and angle from Radians into Degrees
@@ -318,7 +327,7 @@ extern "C"
 /**
  Checks if a Geometry object represents an OGC Closed Linestring
 
- \param line pointer to Geometry object.
+ \param geom pointer to Geometry object.
 
  \return 0 if false; any other value if true
 
@@ -458,12 +467,13 @@ extern "C"
 /**
  Spatial relationship evalution: Disjoint (GEOSPreparedGeometry)
 
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
  \param geom1 the first Geometry object to be evaluated
  \param blob1 the BLOB corresponding to the first Geometry
  \param size1 the size (in bytes) of the first BLOB
  \param geom2 the second Geometry object to be evaluated
  \param blob2 the BLOB corresponding to the second Geometry
- \param size12 the size (in bytes) of the second BLOB
+ \param size2 the size (in bytes) of the second BLOB
 
  \return 0 if false: any other value if true
 
@@ -471,7 +481,8 @@ extern "C"
  
  \remark \b GEOS support required.
  */
-    GAIAGEO_DECLARE int gaiaGeomCollPreparedDisjoint (gaiaGeomCollPtr geom1,
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedDisjoint (void *p_cache,
+						      gaiaGeomCollPtr geom1,
 						      unsigned char *blob1,
 						      int size1,
 						      gaiaGeomCollPtr geom2,
@@ -481,6 +492,7 @@ extern "C"
 /**
  Spatial relationship evalution: Intesects
 
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
  \param geom1 the first Geometry object to be evaluated
  \param geom2 the second Geometry object to be evaluated
 
@@ -502,7 +514,7 @@ extern "C"
  \param size1 the size (in bytes) of the first BLOB
  \param geom2 the second Geometry object to be evaluated
  \param blob2 the BLOB corresponding to the second Geometry
- \param size12 the size (in bytes) of the second BLOB
+ \param size2 the size (in bytes) of the second BLOB
 
  \return 0 if false: any other value if true
 
@@ -510,7 +522,8 @@ extern "C"
  
  \remark \b GEOS support required.
  */
-    GAIAGEO_DECLARE int gaiaGeomCollPreparedIntersects (gaiaGeomCollPtr geom1,
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedIntersects (void *p_cache,
+							gaiaGeomCollPtr geom1,
 							unsigned char *blob1,
 							int size1,
 							gaiaGeomCollPtr geom2,
@@ -537,12 +550,13 @@ extern "C"
 /**
  Spatial relationship evalution: Overlaps (GEOSPreparedGeometry)
 
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
  \param geom1 the first Geometry object to be evaluated
  \param blob1 the BLOB corresponding to the first Geometry
  \param size1 the size (in bytes) of the first BLOB
  \param geom2 the second Geometry object to be evaluated
  \param blob2 the BLOB corresponding to the second Geometry
- \param size12 the size (in bytes) of the second BLOB
+ \param size2 the size (in bytes) of the second BLOB
 
  \return 0 if false: any other value if true
 
@@ -550,7 +564,8 @@ extern "C"
  
  \remark \b GEOS support required.
  */
-    GAIAGEO_DECLARE int gaiaGeomCollPreparedOverlaps (gaiaGeomCollPtr geom1,
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedOverlaps (void *p_cache,
+						      gaiaGeomCollPtr geom1,
 						      unsigned char *blob1,
 						      int size1,
 						      gaiaGeomCollPtr geom2,
@@ -577,12 +592,13 @@ extern "C"
 /**
  Spatial relationship evalution: Crosses (GEOSPreparedGeometry)
 
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
  \param geom1 the first Geometry object to be evaluated
  \param blob1 the BLOB corresponding to the first Geometry
  \param size1 the size (in bytes) of the first BLOB
  \param geom2 the second Geometry object to be evaluated
  \param blob2 the BLOB corresponding to the second Geometry
- \param size12 the size (in bytes) of the second BLOB
+ \param size2 the size (in bytes) of the second BLOB
 
  \return 0 if false: any other value if true
 
@@ -590,7 +606,8 @@ extern "C"
  
  \remark \b GEOS support required.
  */
-    GAIAGEO_DECLARE int gaiaGeomCollPreparedCrosses (gaiaGeomCollPtr geom1,
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedCrosses (void *p_cache,
+						     gaiaGeomCollPtr geom1,
 						     unsigned char *blob1,
 						     int size1,
 						     gaiaGeomCollPtr geom2,
@@ -617,12 +634,13 @@ extern "C"
 /**
  Spatial relationship evalution: Contains (GEOSPreparedGeometry)
 
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
  \param geom1 the first Geometry object to be evaluated
  \param blob1 the BLOB corresponding to the first Geometry
  \param size1 the size (in bytes) of the first BLOB
  \param geom2 the second Geometry object to be evaluated
  \param blob2 the BLOB corresponding to the second Geometry
- \param size12 the size (in bytes) of the second BLOB
+ \param size2 the size (in bytes) of the second BLOB
 
  \return 0 if false: any other value if true
 
@@ -630,7 +648,8 @@ extern "C"
  
  \remark \b GEOS support required.
  */
-    GAIAGEO_DECLARE int gaiaGeomCollPreparedContains (gaiaGeomCollPtr geom1,
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedContains (void *p_cache,
+						      gaiaGeomCollPtr geom1,
 						      unsigned char *blob1,
 						      int size1,
 						      gaiaGeomCollPtr geom2,
@@ -657,12 +676,13 @@ extern "C"
 /**
  Spatial relationship evalution: Within (GEOSPreparedGeometry)
 
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
  \param geom1 the first Geometry object to be evaluated
  \param blob1 the BLOB corresponding to the first Geometry
  \param size1 the size (in bytes) of the first BLOB
  \param geom2 the second Geometry object to be evaluated
  \param blob2 the BLOB corresponding to the second Geometry
- \param size12 the size (in bytes) of the second BLOB
+ \param size2 the size (in bytes) of the second BLOB
 
  \return 0 if false: any other value if true
 
@@ -670,7 +690,8 @@ extern "C"
  
  \remark \b GEOS support required.
  */
-    GAIAGEO_DECLARE int gaiaGeomCollPreparedWithin (gaiaGeomCollPtr geom1,
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedWithin (void *p_cache,
+						    gaiaGeomCollPtr geom1,
 						    unsigned char *blob1,
 						    int size1,
 						    gaiaGeomCollPtr geom2,
@@ -697,12 +718,13 @@ extern "C"
 /**
  Spatial relationship evalution: Touches (GEOSPreparedGeometry)
 
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
  \param geom1 the first Geometry object to be evaluated
  \param blob1 the BLOB corresponding to the first Geometry
  \param size1 the size (in bytes) of the first BLOB
  \param geom2 the second Geometry object to be evaluated
  \param blob2 the BLOB corresponding to the second Geometry
- \param size12 the size (in bytes) of the second BLOB
+ \param size2 the size (in bytes) of the second BLOB
 
  \return 0 if false: any other value if true
 
@@ -710,7 +732,8 @@ extern "C"
  
  \remark \b GEOS support required.
  */
-    GAIAGEO_DECLARE int gaiaGeomCollPreparedTouches (gaiaGeomCollPtr geom1,
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedTouches (void *p_cache,
+						     gaiaGeomCollPtr geom1,
 						     unsigned char *blob1,
 						     int size1,
 						     gaiaGeomCollPtr geom2,
@@ -1273,12 +1296,13 @@ extern "C"
 /** 
  Topology check: test if a Geometry covers another one (GEOSPreparedGeometry)
 
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
  \param geom1 pointer to first input Geometry object.
  \param blob1 the BLOB corresponding to the first Geometry
  \param size1 the size (in bytes) of the first BLOB
  \param geom2 pointer to second input Geometry object.
  \param blob2 the BLOB corresponding to the second Geometry
- \param size12 the size (in bytes) of the second BLOB
+ \param size2 the size (in bytes) of the second BLOB
 
  \return 0 if false; any other value if geom1 \e spatially \e covers geom2.
 
@@ -1286,7 +1310,8 @@ extern "C"
 
  \remark \b GEOS-ADVANCED support required.
  */
-    GAIAGEO_DECLARE int gaiaGeomCollPreparedCovers (gaiaGeomCollPtr geom1,
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedCovers (void *p_cache,
+						    gaiaGeomCollPtr geom1,
 						    unsigned char *blob1,
 						    int size1,
 						    gaiaGeomCollPtr geom2,
@@ -1312,12 +1337,13 @@ extern "C"
 /**
  Topology check: test if a Geometry is covered by another one (GEOSPreparedGeometry)
                                             
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
  \param geom1 pointer to first input Geometry object.
  \param blob1 the BLOB corresponding to the first Geometry
  \param size1 the size (in bytes) of the first BLOB
  \param geom2 pointer to second input Geometry object.
  \param blob2 the BLOB corresponding to the second Geometry
- \param size12 the size (in bytes) of the second BLOB
+ \param size2 the size (in bytes) of the second BLOB
                                                
  \return 0 if false; any other value if geom2 is \e spatially \e covered \e by
  geom1.
@@ -1326,7 +1352,8 @@ extern "C"
 
  \remark \b GEOS-ADVANCED support required.
  */
-    GAIAGEO_DECLARE int gaiaGeomCollPreparedCoveredBy (gaiaGeomCollPtr geom1,
+    GAIAGEO_DECLARE int gaiaGeomCollPreparedCoveredBy (void *p_cache,
+						       gaiaGeomCollPtr geom1,
 						       unsigned char *blob1,
 						       int size1,
 						       gaiaGeomCollPtr geom2,
@@ -1470,7 +1497,7 @@ extern "C"
  \param geom pointer to input Geometry object.
  \param factor multiplier used for filtering Delaunay triangles: please read the note.
  \param tolerance optional snapping tolerance.
- \param allow_hows if FALSE any interior hole will be suppressed.
+ \param allow_holes if FALSE any interior hole will be suppressed.
  
  \return the pointer to newly created Geometry object (always of the Polygon type): 
   NULL on failure.
@@ -1617,7 +1644,7 @@ extern "C"
  */
     GAIAGEO_DECLARE char *gaiaAsX3D (gaiaGeomCollPtr geom, const char *srs,
 				     int precision, int options,
-				     const char *defid);
+				     const char *refid);
 
 /**
  Calculates the minimum 3D distance intercurring between two Geometry objects
@@ -1746,8 +1773,11 @@ extern "C"
 /**
  Utility function: SnapToGrid
 
+ \param geom the input Geometry object.
  \param origin_x the X ccordinate identifying the Grid Origin.
  \param origin_y the Y coordinate identifiying the Grid Origin.
+ \param origin_z the Z ccordinate identifying the Grid Origin.
+ \param origin_m the M coordinate identifiying the Grid Origin.
  \param size_x Grid cell size (X axis).
  \param size_y Grid cell size (Y axis).
  \param size_z Grid cell size (Z axis).

@@ -61,14 +61,16 @@ int main (int argc, char *argv[])
     int rows;
     int columns;
     int pt;
+    void *cache = spatialite_alloc_connection();
 
-    spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open in-memory database: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -1;
     }
+
+    spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -484,7 +486,7 @@ int main (int argc, char *argv[])
 	return -62;
     }
     
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
 #endif	/* end ICONV conditional */
 
     return 0;

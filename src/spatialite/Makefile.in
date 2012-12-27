@@ -67,10 +67,10 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libsplite_la_LIBADD =
 am_libsplite_la_OBJECTS = libsplite_la-mbrcache.lo \
-	libsplite_la-spatialite.lo libsplite_la-metatables.lo \
-	libsplite_la-statistics.lo libsplite_la-virtualdbf.lo \
-	libsplite_la-virtualXL.lo libsplite_la-virtualfdo.lo \
-	libsplite_la-virtualspatialindex.lo \
+	libsplite_la-spatialite.lo libsplite_la-spatialite_init.lo \
+	libsplite_la-metatables.lo libsplite_la-statistics.lo \
+	libsplite_la-virtualdbf.lo libsplite_la-virtualXL.lo \
+	libsplite_la-virtualfdo.lo libsplite_la-virtualspatialindex.lo \
 	libsplite_la-virtualnetwork.lo libsplite_la-virtualshape.lo \
 	libsplite_la-virtualxpath.lo
 libsplite_la_OBJECTS = $(am_libsplite_la_OBJECTS)
@@ -233,6 +233,7 @@ INCLUDES = @CFLAGS@ @GEOS_CFLAGS@ @LIBXML2_CFLAGS@ \
 noinst_LTLIBRARIES = libsplite.la
 libsplite_la_SOURCES = mbrcache.c \
 	spatialite.c \
+	spatialite_init.c \
 	metatables.c \
 	statistics.c \
 	virtualdbf.c \
@@ -300,6 +301,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-mbrcache.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-metatables.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-spatialite.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-spatialite_init.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-statistics.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualXL.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualdbf.Plo@am__quote@
@@ -343,6 +345,13 @@ libsplite_la-spatialite.lo: spatialite.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='spatialite.c' object='libsplite_la-spatialite.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-spatialite.lo `test -f 'spatialite.c' || echo '$(srcdir)/'`spatialite.c
+
+libsplite_la-spatialite_init.lo: spatialite_init.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -MT libsplite_la-spatialite_init.lo -MD -MP -MF $(DEPDIR)/libsplite_la-spatialite_init.Tpo -c -o libsplite_la-spatialite_init.lo `test -f 'spatialite_init.c' || echo '$(srcdir)/'`spatialite_init.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libsplite_la-spatialite_init.Tpo $(DEPDIR)/libsplite_la-spatialite_init.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='spatialite_init.c' object='libsplite_la-spatialite_init.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-spatialite_init.lo `test -f 'spatialite_init.c' || echo '$(srcdir)/'`spatialite_init.c
 
 libsplite_la-metatables.lo: metatables.c
 @am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -MT libsplite_la-metatables.lo -MD -MP -MF $(DEPDIR)/libsplite_la-metatables.Tpo -c -o libsplite_la-metatables.lo `test -f 'metatables.c' || echo '$(srcdir)/'`metatables.c

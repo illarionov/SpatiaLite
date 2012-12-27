@@ -101,13 +101,6 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 
 #define GAIA_UNUSED() if (argc || argv) argc = argc;
 
-/* 
-/ GLOBAL definition of the internal GEOS cache
-/ BEWARE: not thread-safe, so using a different
-/ connection for each thread is absolutely required
-*/
-struct splite_internal_cache spatialite_internal_cache;
-
 struct gaia_geom_chain_item
 {
 /* a struct used to store a chain item */
@@ -134,7 +127,7 @@ struct gaia_rtree_mbr
 };
 #endif /* end RTree geometry callbacks */
 
-SQLITE_EXTENSION_INIT1 struct stddev_str
+struct stddev_str
 {
 /* a struct to implement StandardVariation and Variance aggregate functions */
     int cleaned;
@@ -14755,7 +14748,8 @@ fnct_Intersects (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  ret =
-	      gaiaGeomCollPreparedIntersects (geo1, blob1, bytes1, geo2, blob2,
+	      gaiaGeomCollPreparedIntersects (sqlite3_user_data (context), geo1,
+					      blob1, bytes1, geo2, blob2,
 					      bytes2);
 	  sqlite3_result_int (context, ret);
       }
@@ -14803,8 +14797,8 @@ fnct_Disjoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  ret =
-	      gaiaGeomCollPreparedDisjoint (geo1, blob1, bytes1, geo2, blob2,
-					    bytes2);
+	      gaiaGeomCollPreparedDisjoint (sqlite3_user_data (context), geo1,
+					    blob1, bytes1, geo2, blob2, bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -14851,8 +14845,8 @@ fnct_Overlaps (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  ret =
-	      gaiaGeomCollPreparedOverlaps (geo1, blob1, bytes1, geo2, blob2,
-					    bytes2);
+	      gaiaGeomCollPreparedOverlaps (sqlite3_user_data (context), geo1,
+					    blob1, bytes1, geo2, blob2, bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -14899,8 +14893,8 @@ fnct_Crosses (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  ret =
-	      gaiaGeomCollPreparedCrosses (geo1, blob1, bytes1, geo2, blob2,
-					   bytes2);
+	      gaiaGeomCollPreparedCrosses (sqlite3_user_data (context), geo1,
+					   blob1, bytes1, geo2, blob2, bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -14947,8 +14941,8 @@ fnct_Touches (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  ret =
-	      gaiaGeomCollPreparedTouches (geo1, blob1, bytes1, geo2, blob2,
-					   bytes2);
+	      gaiaGeomCollPreparedTouches (sqlite3_user_data (context), geo1,
+					   blob1, bytes1, geo2, blob2, bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -14995,8 +14989,8 @@ fnct_Within (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  ret =
-	      gaiaGeomCollPreparedWithin (geo1, blob1, bytes1, geo2, blob2,
-					  bytes2);
+	      gaiaGeomCollPreparedWithin (sqlite3_user_data (context), geo1,
+					  blob1, bytes1, geo2, blob2, bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -15043,8 +15037,8 @@ fnct_Contains (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  ret =
-	      gaiaGeomCollPreparedContains (geo1, blob1, bytes1, geo2, blob2,
-					    bytes2);
+	      gaiaGeomCollPreparedContains (sqlite3_user_data (context), geo1,
+					    blob1, bytes1, geo2, blob2, bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -15442,7 +15436,7 @@ fnct_PtDistWithin (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaFreeGeomColl (geo2);
 }
 
-static void
+SPATIALITE_PRIVATE void
 geos_error (const char *fmt, ...)
 {
 /* reporting some GEOS error */
@@ -15456,7 +15450,7 @@ geos_error (const char *fmt, ...)
 }
 
 
-static void
+SPATIALITE_PRIVATE void
 geos_warning (const char *fmt, ...)
 {
 /* reporting some GEOS warning */
@@ -17372,8 +17366,8 @@ fnct_Covers (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  ret =
-	      gaiaGeomCollPreparedCovers (geo1, blob1, bytes1, geo2, blob2,
-					  bytes2);
+	      gaiaGeomCollPreparedCovers (sqlite3_user_data (context), geo1,
+					  blob1, bytes1, geo2, blob2, bytes2);
 	  sqlite3_result_int (context, ret);
       }
     gaiaFreeGeomColl (geo1);
@@ -17420,7 +17414,8 @@ fnct_CoveredBy (sqlite3_context * context, int argc, sqlite3_value ** argv)
     else
       {
 	  ret =
-	      gaiaGeomCollPreparedCoveredBy (geo1, blob1, bytes1, geo2, blob2,
+	      gaiaGeomCollPreparedCoveredBy (sqlite3_user_data (context), geo1,
+					     blob1, bytes1, geo2, blob2,
 					     bytes2);
 	  sqlite3_result_int (context, ret);
       }
@@ -21392,7 +21387,8 @@ fnct_XmlToBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  /* using the SchemaURI internally defined within the XMLDocument */
 	  char *internalSchemaURI =
-	      gaiaXmlGetInternalSchemaURI (xml, xml_len);
+	      gaiaXmlGetInternalSchemaURI (sqlite3_user_data (context), xml,
+					   xml_len);
 	  if (internalSchemaURI == NULL)
 	    {
 		/* unable to identify the SchemaURI */
@@ -21401,8 +21397,9 @@ fnct_XmlToBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  else
 	    {
 		/* ok, attempting to validate using the internal SchemaURI */
-		gaiaXmlToBlob (xml, xml_len, compressed, internalSchemaURI,
-			       &p_result, &len, NULL, NULL);
+		gaiaXmlToBlob (sqlite3_user_data (context), xml, xml_len,
+			       compressed, internalSchemaURI, &p_result, &len,
+			       NULL, NULL);
 		free (internalSchemaURI);
 	    }
       }
@@ -21410,8 +21407,8 @@ fnct_XmlToBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  if (argc == 3)
 	      schemaURI = (const char *) sqlite3_value_text (argv[2]);
-	  gaiaXmlToBlob (xml, xml_len, compressed, schemaURI, &p_result, &len,
-			 NULL, NULL);
+	  gaiaXmlToBlob (sqlite3_user_data (context), xml, xml_len, compressed,
+			 schemaURI, &p_result, &len, NULL, NULL);
       }
     if (p_result == NULL)
       {
@@ -21568,7 +21565,8 @@ fnct_XmlBlobSchemaValidate (sqlite3_context * context, int argc,
       {
 	  /* using the SchemaURI internally defined within the XMLDocument */
 	  char *internalSchemaURI =
-	      gaiaXmlGetInternalSchemaURI (xml, xml_len);
+	      gaiaXmlGetInternalSchemaURI (sqlite3_user_data (context), xml,
+					   xml_len);
 	  if (internalSchemaURI == NULL)
 	    {
 		/* unable to identify the SchemaURI */
@@ -21577,16 +21575,17 @@ fnct_XmlBlobSchemaValidate (sqlite3_context * context, int argc,
 	  else
 	    {
 		/* ok, attempting to validate using the internal SchemaURI */
-		gaiaXmlToBlob (xml, xml_len, compressed, internalSchemaURI,
-			       &p_result, &len, NULL, NULL);
+		gaiaXmlToBlob (sqlite3_user_data (context), xml, xml_len,
+			       compressed, internalSchemaURI, &p_result, &len,
+			       NULL, NULL);
 		free (internalSchemaURI);
 	    }
       }
     else
       {
 	  schemaURI = (const char *) sqlite3_value_text (argv[1]);
-	  gaiaXmlToBlob (xml, xml_len, compressed, schemaURI, &p_result, &len,
-			 NULL, NULL);
+	  gaiaXmlToBlob (sqlite3_user_data (context), xml, xml_len, compressed,
+			 schemaURI, &p_result, &len, NULL, NULL);
       }
     free (xml);
     if (p_result == NULL)
@@ -21849,7 +21848,7 @@ fnct_XmlBlobGetEncoding (sqlite3_context * context, int argc,
 
 static void
 fnct_XmlGetInternalSchemaURI (sqlite3_context * context, int argc,
-				  sqlite3_value ** argv)
+			      sqlite3_value ** argv)
 {
 /* SQL function:
 / XmlGetInternalSchemaURI(XmlDocument)
@@ -21869,7 +21868,8 @@ fnct_XmlGetInternalSchemaURI (sqlite3_context * context, int argc,
       }
     xml = (const char *) sqlite3_value_text (argv[0]);
     xml_len = sqlite3_value_bytes (argv[0]);
-    schema_uri = gaiaXmlGetInternalSchemaURI (xml, xml_len);
+    schema_uri =
+	gaiaXmlGetInternalSchemaURI (sqlite3_user_data (context), xml, xml_len);
     if (schema_uri == NULL)
 	sqlite3_result_null (context);
     else
@@ -21888,7 +21888,7 @@ fnct_XmlBlobGetLastParseError (sqlite3_context * context, int argc,
 */
     char *msg;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    msg = gaiaXmlBlobGetLastParseError ();
+    msg = gaiaXmlBlobGetLastParseError (sqlite3_user_data (context));
     if (msg == NULL)
 	sqlite3_result_null (context);
     else
@@ -21907,7 +21907,7 @@ fnct_XmlBlobGetLastValidateError (sqlite3_context * context, int argc,
 */
     char *msg;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    msg = gaiaXmlBlobGetLastValidateError ();
+    msg = gaiaXmlBlobGetLastValidateError (sqlite3_user_data (context));
     if (msg == NULL)
 	sqlite3_result_null (context);
     else
@@ -21926,7 +21926,7 @@ fnct_XmlBlobGetLastXPathError (sqlite3_context * context, int argc,
 */
     char *msg;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    msg = gaiaXmlBlobGetLastXPathError ();
+    msg = gaiaXmlBlobGetLastXPathError (sqlite3_user_data (context));
     if (msg == NULL)
 	sqlite3_result_null (context);
     else
@@ -21935,42 +21935,53 @@ fnct_XmlBlobGetLastXPathError (sqlite3_context * context, int argc,
 
 #endif /* end including LIBXML2 */
 
-static void
-init_internal_cache ()
+SPATIALITE_DECLARE void *
+spatialite_alloc_connection ()
 {
-/* initializing an empty internal cache */
+/* allocating and initializing an empty internal cache */
     gaiaOutBufferPtr out;
+    struct splite_internal_cache *cache;
     struct splite_geos_cache_item *p;
+
+    cache = malloc (sizeof (struct splite_internal_cache));
 /* initializing the XML error buffers */
     out = malloc (sizeof (gaiaOutBuffer));
     gaiaOutBufferInitialize (out);
-    spatialite_internal_cache.xmlParsingErrors = out;
+    cache->xmlParsingErrors = out;
     out = malloc (sizeof (gaiaOutBuffer));
     gaiaOutBufferInitialize (out);
-    spatialite_internal_cache.xmlSchemaValidationErrors = out;
+    cache->xmlSchemaValidationErrors = out;
     out = malloc (sizeof (gaiaOutBuffer));
     gaiaOutBufferInitialize (out);
-    spatialite_internal_cache.xmlXPathErrors = out;
+    cache->xmlXPathErrors = out;
 /* initializing the GEOS cache */
-    p = &(spatialite_internal_cache.cacheItem1);
+    p = &(cache->cacheItem1);
     memset (p->gaiaBlob, '\0', 64);
     p->gaiaBlobSize = 0;
     p->crc32 = 0;
     p->geosGeom = NULL;
     p->preparedGeosGeom = NULL;
-    p = &(spatialite_internal_cache.cacheItem2);
+    p = &(cache->cacheItem2);
     memset (p->gaiaBlob, '\0', 64);
     p->gaiaBlobSize = 0;
     p->crc32 = 0;
     p->geosGeom = NULL;
     p->preparedGeosGeom = NULL;
+    return cache;
 }
 
-static void
-register_spatialite_sql_functions (sqlite3 * db)
+SPATIALITE_PRIVATE void *
+register_spatialite_sql_functions (void *p_db, void *p_cache)
 {
+    sqlite3 *db = p_db;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
     const char *security_level;
-    init_internal_cache ();
+    if (cache == NULL)
+      {
+	  /* dirty compatibility mode: allocating an internal cache */
+	  cache = spatialite_alloc_connection ();
+      }
     sqlite3_create_function (db, "spatialite_version", 0, SQLITE_ANY, 0,
 			     fnct_spatialite_version, 0, 0);
     sqlite3_create_function (db, "proj4_version", 0, SQLITE_ANY, 0,
@@ -22965,32 +22976,33 @@ register_spatialite_sql_functions (sqlite3 * db)
     sqlite3_create_function (db, "Equals", 2, SQLITE_ANY, 0, fnct_Equals, 0, 0);
     sqlite3_create_function (db, "ST_Equals", 2, SQLITE_ANY, 0, fnct_Equals,
 			     0, 0);
-    sqlite3_create_function (db, "Intersects", 2, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "Intersects", 2, SQLITE_ANY, cache,
 			     fnct_Intersects, 0, 0);
-    sqlite3_create_function (db, "ST_Intersects", 2, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "ST_Intersects", 2, SQLITE_ANY, cache,
 			     fnct_Intersects, 0, 0);
-    sqlite3_create_function (db, "Disjoint", 2, SQLITE_ANY, 0, fnct_Disjoint,
-			     0, 0);
-    sqlite3_create_function (db, "ST_Disjoint", 2, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "Disjoint", 2, SQLITE_ANY, cache,
 			     fnct_Disjoint, 0, 0);
-    sqlite3_create_function (db, "Overlaps", 2, SQLITE_ANY, 0, fnct_Overlaps,
-			     0, 0);
-    sqlite3_create_function (db, "ST_Overlaps", 2, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "ST_Disjoint", 2, SQLITE_ANY, cache,
+			     fnct_Disjoint, 0, 0);
+    sqlite3_create_function (db, "Overlaps", 2, SQLITE_ANY, cache,
 			     fnct_Overlaps, 0, 0);
-    sqlite3_create_function (db, "Crosses", 2, SQLITE_ANY, 0, fnct_Crosses, 0,
+    sqlite3_create_function (db, "ST_Overlaps", 2, SQLITE_ANY, cache,
+			     fnct_Overlaps, 0, 0);
+    sqlite3_create_function (db, "Crosses", 2, SQLITE_ANY, cache, fnct_Crosses,
+			     0, 0);
+    sqlite3_create_function (db, "ST_Crosses", 2, SQLITE_ANY, cache,
+			     fnct_Crosses, 0, 0);
+    sqlite3_create_function (db, "Touches", 2, SQLITE_ANY, cache, fnct_Touches,
+			     0, 0);
+    sqlite3_create_function (db, "ST_Touches", 2, SQLITE_ANY, cache,
+			     fnct_Touches, 0, 0);
+    sqlite3_create_function (db, "Within", 2, SQLITE_ANY, cache, fnct_Within, 0,
 			     0);
-    sqlite3_create_function (db, "ST_Crosses", 2, SQLITE_ANY, 0, fnct_Crosses,
+    sqlite3_create_function (db, "ST_Within", 2, SQLITE_ANY, cache, fnct_Within,
 			     0, 0);
-    sqlite3_create_function (db, "Touches", 2, SQLITE_ANY, 0, fnct_Touches, 0,
-			     0);
-    sqlite3_create_function (db, "ST_Touches", 2, SQLITE_ANY, 0, fnct_Touches,
-			     0, 0);
-    sqlite3_create_function (db, "Within", 2, SQLITE_ANY, 0, fnct_Within, 0, 0);
-    sqlite3_create_function (db, "ST_Within", 2, SQLITE_ANY, 0, fnct_Within,
-			     0, 0);
-    sqlite3_create_function (db, "Contains", 2, SQLITE_ANY, 0, fnct_Contains,
-			     0, 0);
-    sqlite3_create_function (db, "ST_Contains", 2, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "Contains", 2, SQLITE_ANY, cache,
+			     fnct_Contains, 0, 0);
+    sqlite3_create_function (db, "ST_Contains", 2, SQLITE_ANY, cache,
 			     fnct_Contains, 0, 0);
     sqlite3_create_function (db, "Relate", 3, SQLITE_ANY, 0, fnct_Relate, 0, 0);
     sqlite3_create_function (db, "ST_Relate", 3, SQLITE_ANY, 0, fnct_Relate,
@@ -23062,12 +23074,13 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_SharedPaths, 0, 0);
     sqlite3_create_function (db, "ST_SharedPaths", 2, SQLITE_ANY, 0,
 			     fnct_SharedPaths, 0, 0);
-    sqlite3_create_function (db, "Covers", 2, SQLITE_ANY, 0, fnct_Covers, 0, 0);
-    sqlite3_create_function (db, "ST_Covers", 2, SQLITE_ANY, 0, fnct_Covers, 0,
+    sqlite3_create_function (db, "Covers", 2, SQLITE_ANY, cache, fnct_Covers, 0,
 			     0);
-    sqlite3_create_function (db, "CoveredBy", 2, SQLITE_ANY, 0, fnct_CoveredBy,
+    sqlite3_create_function (db, "ST_Covers", 2, SQLITE_ANY, cache, fnct_Covers,
 			     0, 0);
-    sqlite3_create_function (db, "ST_CoveredBy", 2, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "CoveredBy", 2, SQLITE_ANY, cache,
+			     fnct_CoveredBy, 0, 0);
+    sqlite3_create_function (db, "ST_CoveredBy", 2, SQLITE_ANY, cache,
 			     fnct_CoveredBy, 0, 0);
     sqlite3_create_function (db, "Line_Interpolate_Point", 2, SQLITE_ANY, 0,
 			     fnct_LineInterpolatePoint, 0, 0);
@@ -23265,13 +23278,13 @@ register_spatialite_sql_functions (sqlite3 * db)
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 
-    sqlite3_create_function (db, "XmlToBlob", 1, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "XmlToBlob", 1, SQLITE_ANY, cache,
 			     fnct_XmlToBlob, 0, 0);
-    sqlite3_create_function (db, "XmlToBlob", 2, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "XmlToBlob", 2, SQLITE_ANY, cache,
 			     fnct_XmlToBlob, 0, 0);
-    sqlite3_create_function (db, "XmlToBlob", 3, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "XmlToBlob", 3, SQLITE_ANY, cache,
 			     fnct_XmlToBlob, 0, 0);
-    sqlite3_create_function (db, "XmlToBlob", 4, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "XmlToBlob", 4, SQLITE_ANY, cache,
 			     fnct_XmlToBlob, 0, 0);
     sqlite3_create_function (db, "XmlFromBlob", 1, SQLITE_ANY, 0,
 			     fnct_XmlFromBlob, 0, 0);
@@ -23281,7 +23294,7 @@ register_spatialite_sql_functions (sqlite3 * db)
 			     fnct_XmlTextFromBlob, 0, 0);
     sqlite3_create_function (db, "XmlTextFromBlob", 2, SQLITE_ANY, 0,
 			     fnct_XmlTextFromBlob, 0, 0);
-    sqlite3_create_function (db, "XmlBlobSchemaValidate", 2, SQLITE_ANY, 0,
+    sqlite3_create_function (db, "XmlBlobSchemaValidate", 2, SQLITE_ANY, cache,
 			     fnct_XmlBlobSchemaValidate, 0, 0);
     sqlite3_create_function (db, "XmlBlobCompress", 1, SQLITE_ANY, 0,
 			     fnct_XmlBlobCompress, 0, 0);
@@ -23298,27 +23311,31 @@ register_spatialite_sql_functions (sqlite3 * db)
     sqlite3_create_function (db, "XmlBlobGetSchemaURI", 1, SQLITE_ANY, 0,
 			     fnct_XmlBlobGetSchemaURI, 0, 0);
     sqlite3_create_function (db, "XmlGetInternalSchemaURI", 1, SQLITE_ANY,
-			     0, fnct_XmlGetInternalSchemaURI, 0, 0);
+			     cache, fnct_XmlGetInternalSchemaURI, 0, 0);
     sqlite3_create_function (db, "XmlBlobGetDocumentSize", 1, SQLITE_ANY, 0,
 			     fnct_XmlBlobGetDocumentSize, 0, 0);
     sqlite3_create_function (db, "XmlBlobGetEncoding", 1, SQLITE_ANY, 0,
 			     fnct_XmlBlobGetEncoding, 0, 0);
-    sqlite3_create_function (db, "XmlBlobGetLastParseError", 0, SQLITE_ANY, 0,
-			     fnct_XmlBlobGetLastParseError, 0, 0);
+    sqlite3_create_function (db, "XmlBlobGetLastParseError", 0, SQLITE_ANY,
+			     cache, fnct_XmlBlobGetLastParseError, 0, 0);
     sqlite3_create_function (db, "XmlBlobGetLastValidateError", 0, SQLITE_ANY,
-			     0, fnct_XmlBlobGetLastValidateError, 0, 0);
+			     cache, fnct_XmlBlobGetLastValidateError, 0, 0);
     sqlite3_create_function (db, "XmlBlobGetLastXPathError", 0, SQLITE_ANY,
-			     0, fnct_XmlBlobGetLastXPathError, 0, 0);
+			     cache, fnct_XmlBlobGetLastXPathError, 0, 0);
 
 #endif /* end including LIBXML2 */
+
+    return cache;
 }
 
-static void
-init_spatialite_virtualtables (sqlite3 * db)
+SPATIALITE_PRIVATE void
+init_spatialite_virtualtables (void *p_db, void *p_cache)
 {
+    sqlite3 *db = (sqlite3 *) p_db;
+    -
 #ifndef OMIT_ICONV		/* when ICONV is disabled SHP/DBF/TXT cannot be supported */
 /* initializing the VirtualShape  extension */
-    virtualshape_extension_init (db);
+	virtualshape_extension_init (db);
 /* initializing the VirtualDbf  extension */
     virtualdbf_extension_init (db);
 /* initializing the VirtualText extension */
@@ -23341,28 +23358,31 @@ init_spatialite_virtualtables (sqlite3 * db)
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 /* initializing the VirtualXPath extension */
-    virtual_xpath_extension_init (db);
+    virtual_xpath_extension_init (db, p_cache);
 #endif /* LIBXML2 enabled/disable */
 }
 
+#ifdef LOADABLE_EXTENSION	/* loadable-extension only */
 static int
 init_spatialite_extension (sqlite3 * db, char **pzErrMsg,
 			   const sqlite3_api_routines * pApi)
 {
+    void *p_cache;
     SQLITE_EXTENSION_INIT2 (pApi);
 /* setting the POSIX locale for numeric */
     setlocale (LC_NUMERIC, "POSIX");
     *pzErrMsg = NULL;
 
-    register_spatialite_sql_functions (db);
+    p_cache = register_spatialite_sql_functions (db, NULL);
 
-    init_spatialite_virtualtables (db);
+    init_spatialite_virtualtables (db, p_cache);
 
 /* setting a timeout handler */
     sqlite3_busy_timeout (db, 5000);
 
     return 0;
 }
+#endif
 
 SPATIALITE_DECLARE void
 spatialite_init_geos (void)
@@ -23373,16 +23393,9 @@ spatialite_init_geos (void)
 #endif /* end GEOS  */
 }
 
-SPATIALITE_DECLARE void
-spatialite_init (int verbose)
+SPATIALITE_PRIVATE void
+spatialite_splash_screen (int verbose)
 {
-/* used when SQLite initializes SpatiaLite via statically linked lib */
-
-#ifndef OMIT_GEOS		/* initializing GEOS */
-    initGEOS (geos_warning, geos_error);
-#endif /* end GEOS  */
-
-    sqlite3_auto_extension ((void (*)(void)) init_spatialite_extension);
     if (isatty (1))
       {
 	  /* printing "hello" message only when stdout is on console */
@@ -23433,35 +23446,64 @@ spatialite_init (int verbose)
       }
 }
 
-static void
-free_internal_cache ()
+#ifndef LOADABLE_EXTENSION
+SPATIALITE_DECLARE void
+spatialite_init_ex (sqlite3 * db_handle, void *p_cache, int verbose)
 {
-/* initializing an empty internal cache */
+/* used when SQLite initializes as an ordinary lib */
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+
+/* setting the POSIX locale for numeric */
+    setlocale (LC_NUMERIC, "POSIX");
+
+#ifndef OMIT_GEOS		/* initializing GEOS */
+    initGEOS (geos_warning, geos_error);
+#endif /* end GEOS  */
+
+    register_spatialite_sql_functions (db_handle, cache);
+
+    init_spatialite_virtualtables (db_handle, p_cache);
+    spatialite_splash_screen (verbose);
+
+/* setting a timeout handler */
+    sqlite3_busy_timeout (db_handle, 5000);
+}
+
+static void
+free_internal_cache (struct splite_internal_cache *cache)
+{
+/* freeing an internal cache */
     struct splite_geos_cache_item *p;
 /* freeing the XML error buffers */
-    gaiaOutBufferReset (spatialite_internal_cache.xmlParsingErrors);
-    gaiaOutBufferReset (spatialite_internal_cache.xmlSchemaValidationErrors);
-    gaiaOutBufferReset (spatialite_internal_cache.xmlXPathErrors);
-    free (spatialite_internal_cache.xmlParsingErrors);
-    free (spatialite_internal_cache.xmlSchemaValidationErrors);
-    free (spatialite_internal_cache.xmlXPathErrors);
+    gaiaOutBufferReset (cache->xmlParsingErrors);
+    gaiaOutBufferReset (cache->xmlSchemaValidationErrors);
+    gaiaOutBufferReset (cache->xmlXPathErrors);
+    free (cache->xmlParsingErrors);
+    free (cache->xmlSchemaValidationErrors);
+    free (cache->xmlXPathErrors);
 /* freeing the GEOS cache */
-    p = &(spatialite_internal_cache.cacheItem1);
+    p = &(cache->cacheItem1);
     splite_free_geos_cache_item (p);
-    p = &(spatialite_internal_cache.cacheItem2);
+    p = &(cache->cacheItem2);
     splite_free_geos_cache_item (p);
+/* freeing the cache itself */
+    free (cache);
 }
 
 SPATIALITE_DECLARE void
-spatialite_cleanup ()
+spatialite_cleanup_ex (void *ptr)
 {
+    struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
 #ifndef OMIT_GEOS
     finishGEOS ();
 #endif
-    free_internal_cache ();
+    free_internal_cache (cache);
     sqlite3_reset_auto_extension ();
 }
+#endif /* not built as loadable-extension only */
 
+#ifdef LOADABLE_EXTENSION	/* loadable-extension only */
 #if !(defined _WIN32) || defined(__MINGW__)
 /* MSVC is unable to understand this declaration */
 __attribute__ ((visibility ("default")))
@@ -23478,6 +23520,7 @@ __attribute__ ((visibility ("default")))
 
     return init_spatialite_extension (db, pzErrMsg, pApi);
 }
+#endif
 
 SPATIALITE_DECLARE sqlite3_int64
 math_llabs (sqlite3_int64 value)

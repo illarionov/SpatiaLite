@@ -605,7 +605,7 @@ extern "C"
  \param offset the offset (in bytes) on the input buffer where the Point definition is expected to start.
  \param blob_size lenght (in bytes) of the input buffer.
  \param endian (boolean) states if the EWKB input buffer is little- or big-endian encode.
- \param endiam_arch (boolean) states if the target CPU has a little- or big-endian architecture.
+ \param endian_arch (boolean) states if the target CPU has a little- or big-endian architecture.
  \param dims dimensions: one of GAIA_XY, GAIA_XY_Z, GAIA_XY_M or GAIA_XY_Z_M
 
  \return -1 on failure; otherwise the offset where the next object starts.
@@ -628,7 +628,7 @@ extern "C"
  \param offset the offset (in bytes) on the input buffer where the Point definition is expected to start.
  \param blob_size lenght (in bytes) of the input buffer.
  \param endian (boolean) states if the EWKB input buffer is little- or big-endian encode.
- \param endiam_arch (boolean) states if the target CPU has a little- or big-endian architecture.
+ \param endian_arch (boolean) states if the target CPU has a little- or big-endian architecture.
  \param dims dimensions: one of GAIA_XY, GAIA_XY_Z, GAIA_XY_M or GAIA_XY_Z_M
 
  \return -1 on failure; otherwise the offset where the next object starts.
@@ -651,7 +651,7 @@ extern "C"
  \param offset the offset (in bytes) on the input buffer where the Point definition is expected to start.
  \param blob_size lenght (in bytes) of the input buffer.
  \param endian (boolean) states if the EWKB input buffer is little- or big-endian encode.
- \param endiam_arch (boolean) states if the target CPU has a little- or big-endian architecture.
+ \param endian_arch (boolean) states if the target CPU has a little- or big-endian architecture.
  \param dims dimensions: one of GAIA_XY, GAIA_XY_Z, GAIA_XY_M or GAIA_XY_Z_M
 
  \return -1 on failure; otherwise the offset where the next object starts.
@@ -672,7 +672,7 @@ extern "C"
  \param offset the offset (in bytes) on the input buffer where the Point definition is expected to start.
  \param blob_size lenght (in bytes) of the input buffer.
  \param endian (boolean) states if the EWKB input buffer is little- or big-endian encode.
- \param endiam_arch (boolean) states if the target CPU has a little- or big-endian architecture.
+ \param endian_arch (boolean) states if the target CPU has a little- or big-endian architecture.
  \param dims dimensions: one of GAIA_XY, GAIA_XY_Z, GAIA_XY_M or GAIA_XY_Z_M
 
  \return -1 on failure; otherwise the offset where the next object starts.

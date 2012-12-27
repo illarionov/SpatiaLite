@@ -54,13 +54,13 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
 
 static int
-check_bad_xml ()
+check_bad_xml (void *cache)
 {
 /* parsing a not-well-formed XML Sample */
     FILE *fl;
     int sz = 0;
     int rd;
-    unsigned char *xml = NULL;
+    char *xml = NULL;
     unsigned char *p_result = NULL;
     int len;
     char *err1;
@@ -81,7 +81,7 @@ check_bad_xml ()
     }
     if (fseek(fl, 0, SEEK_END) == 0)
         sz = ftell(fl);
-    xml = (unsigned char *) malloc(sz);
+    xml = (char *) malloc(sz);
     rewind(fl);
     rd = fread(xml, 1, sz, fl);
     if (rd != sz) {
@@ -91,7 +91,7 @@ check_bad_xml ()
     fclose(fl);
 
 /* parsing the XMLDocument */
-    gaiaXmlToBlob (xml, rd, 1, NULL, &p_result, &len, &err1, &err2); 
+    gaiaXmlToBlob (cache, xml, rd, 1, NULL, &p_result, &len, &err1, &err2); 
     if (p_result != NULL) {
         fprintf (stderr, "this is not a well-formed XML !!!\n");
         return 0;
@@ -102,13 +102,13 @@ check_bad_xml ()
 }
 
 static int
-check_bad_schema ()
+check_bad_schema (void *cache)
 {
 /* validating by invalid Schema */
     FILE *fl;
     int sz = 0;
     int rd;
-    unsigned char *xml = NULL;
+    char *xml = NULL;
     unsigned char *p_result = NULL;
     int len;
     char *err1;
@@ -122,7 +122,7 @@ check_bad_schema ()
     }
     if (fseek(fl, 0, SEEK_END) == 0)
         sz = ftell(fl);
-    xml = (unsigned char *) malloc(sz);
+    xml = (char *) malloc(sz);
     rewind(fl);
     rd = fread(xml, 1, sz, fl);
     if (rd != sz) {
@@ -132,7 +132,7 @@ check_bad_schema ()
     fclose(fl);
 
 /* validating the XMLDocument */
-    gaiaXmlToBlob (xml, rd, 1, "books-bad.xsd", &p_result, &len, &err1, &err2); 
+    gaiaXmlToBlob (cache, xml, rd, 1, "books-bad.xsd", &p_result, &len, &err1, &err2); 
     if (p_result != NULL) {
         fprintf (stderr, "this is not a valid XML !!!\n");
         return 0;
@@ -143,13 +143,13 @@ check_bad_schema ()
 }
 
 static int
-check_validate (const char *path)
+check_validate (void *cache, const char *path)
 {
 /* validating an XML Sample */
     FILE *fl;
     int sz = 0;
     int rd;
-    unsigned char *xml = NULL;
+    char *xml = NULL;
     char *schema_uri = NULL;
     char *schema_uri2 = NULL;
     unsigned char *p_result = NULL;
@@ -163,7 +163,7 @@ check_validate (const char *path)
     }
     if (fseek(fl, 0, SEEK_END) == 0)
         sz = ftell(fl);
-    xml = (unsigned char *) malloc(sz);
+    xml = (char *) malloc(sz);
     rewind(fl);
     rd = fread(xml, 1, sz, fl);
     if (rd != sz) {
@@ -173,13 +173,13 @@ check_validate (const char *path)
     fclose(fl);
 
 /* extracting the Internal SchemaURI */
-    schema_uri = gaiaXmlGetInternalSchemaURI (xml, rd);
+    schema_uri = gaiaXmlGetInternalSchemaURI (cache, xml, rd);
     if (schema_uri == NULL) {
         fprintf (stderr, "unable to identify the Schema for \"%s\"\n", path);
         return 0;
     }
 /* validating the XMLDocument */
-    gaiaXmlToBlob (xml, rd, 1, schema_uri, &p_result, &len, NULL, NULL);
+    gaiaXmlToBlob (cache, xml, rd, 1, schema_uri, &p_result, &len, NULL, NULL);
     if (p_result == NULL) {
         fprintf (stderr, "unable to validate \"%s\"\n", path);
         return 0;
@@ -198,7 +198,7 @@ check_validate (const char *path)
         return 0;
     }
     if (strcmp (schema_uri, schema_uri2) != 0) {
-        fprintf (stderr, "%s: mismatching SchemaURI \"%s\" (expected \"%s\")\n", schema_uri2, schema_uri);
+        fprintf (stderr, "%s: mismatching SchemaURI \"%s\" (expected \"%s\")\n", path, schema_uri2, schema_uri);
         return 0;
     }
      
@@ -211,13 +211,13 @@ check_validate (const char *path)
 }
 
 static int
-check_parse (const char *path)
+check_parse (void *cache, const char *path)
 {
 /* parsing an XML Sample */
     FILE *fl;
     int sz = 0;
     int rd;
-    unsigned char *xml = NULL;
+    char *xml = NULL;
     int compressed_sz;
     int uncompressed_sz;
     int doc_sz;
@@ -235,7 +235,7 @@ check_parse (const char *path)
     }
     if (fseek(fl, 0, SEEK_END) == 0)
         sz = ftell(fl);
-    xml = (unsigned char *) malloc(sz);
+    xml = (char *) malloc(sz);
     rewind(fl);
     rd = fread(xml, 1, sz, fl);
     if (rd != sz) {
@@ -245,7 +245,7 @@ check_parse (const char *path)
     fclose(fl);
 
 /* parsing the XMLDocument (no validation / compressed) */
-    gaiaXmlToBlob (xml, rd, 1, NULL, &p_result, &compressed_sz, NULL, NULL);
+    gaiaXmlToBlob (cache, xml, rd, 1, NULL, &p_result, &compressed_sz, NULL, NULL);
     if (p_result == NULL) {
         fprintf (stderr, "unable to parse(1) \"%s\"\n", path);
         return 0;
@@ -267,7 +267,7 @@ check_parse (const char *path)
     free(p_result);
 
 /* parsing the XMLDocument (no validation / not compressed) */
-    gaiaXmlToBlob (xml, rd, 0, NULL, &p_result, &uncompressed_sz, NULL, NULL);
+    gaiaXmlToBlob (cache, xml, rd, 0, NULL, &p_result, &uncompressed_sz, NULL, NULL);
     if (p_result == NULL) {
         fprintf (stderr, "unable to parse(2) \"%s\"\n", path);
         return 0;
@@ -351,8 +351,8 @@ int main (int argc, char *argv[])
 {
     int ret;
     sqlite3 *handle;
+    void *cache = spatialite_alloc_connection();
 
-    spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (handle));
@@ -360,42 +360,46 @@ int main (int argc, char *argv[])
 	return -1;
     }
 
+    spatialite_init_ex (handle, cache, 0);
+
 #ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
 
-    if (!check_parse("books.xml")) {
+    if (!check_parse(cache, "books.xml")) {
         fprintf (stderr, "unable to parse \"books.xml\"\n");
         return -2;
     }
-    if (!check_parse("opera.xml")) {
+    if (!check_parse(cache, "opera.xml")) {
         fprintf (stderr, "unable to parse \"opera.xml\"\n");
         return -3;
     }
-    if (!check_parse("movies.xml")) {
+    if (!check_parse(cache, "movies.xml")) {
         fprintf (stderr, "unable to parse \"movies.xml\"\n");
         return -4;
     }
 
-    if (!check_validate("books.xml")) {
+    if (!check_validate(cache, "books.xml")) {
         fprintf (stderr, "unable to validate \"books.xml\"\n");
         return -5;
     }
-    if (!check_validate("opera.xml")) {
+    if (!check_validate(cache, "opera.xml")) {
         fprintf (stderr, "unable to validate \"opera.xml\"\n");
         return -6;
     }
-    if (!check_validate("movies.xml")) {
+    if (!check_validate(cache, "movies.xml")) {
         fprintf (stderr, "unable to validate \"movies.xml\"\n");
         return -7;
     }
 
-    if (!check_bad_xml()) {
+    if (!check_bad_xml(cache)) {
         fprintf (stderr, "unable to test not well-formed XML\n");
         return -8;
     }
-    if (!check_bad_schema()) {
+    if (!check_bad_schema(cache)) {
         fprintf (stderr, "unable to test invalid Schema\n");
         return -9;
     }
+
+    xmlCleanupParser();
 
 #endif
     
@@ -405,7 +409,7 @@ int main (int argc, char *argv[])
 	return -10;
     }
         
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
     
     return 0;
 }

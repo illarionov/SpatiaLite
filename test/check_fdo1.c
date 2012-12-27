@@ -67,20 +67,23 @@ int main (int argc, char *argv[])
     char **results;
     int rows;
     int columns;
+    void *cache = spatialite_alloc_connection();
 
-    spatialite_init (0);
     ret = system("cp sql_stmt_tests/testFDO.sqlite testFDO.sqlite");
     if (ret != 0)
     {
         fprintf(stderr, "cannot copy testFDO.sqlite database\n");
         return -1001;
     }
+
     ret = sqlite3_open_v2 ("testFDO.sqlite", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open testFDO.sqlite db: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -1000;
     }
+
+    spatialite_init_ex (handle, cache, 0);
 
 /* FDO start-up */
     sql = "SELECT AutoFDOStart()";
@@ -424,7 +427,7 @@ int main (int argc, char *argv[])
 	return -56;
     }
     
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
     ret = unlink("testFDO.sqlite");
     if (ret != 0)
     {

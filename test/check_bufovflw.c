@@ -101,14 +101,17 @@ int main (int argc, char *argv[])
     char frmt[2048];
     int row_count;
     char *dumpname = __FILE__"dump";
+    void *cache = spatialite_alloc_connection();
 
-    spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -1;
     }
+
+    spatialite_init_ex (handle, cache, 0);
+
     ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "InitSpatialMetadata() error: %s\n", err_msg);
@@ -1620,7 +1623,7 @@ test7:
 	return -133;
     }
         
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
     free(suffix);
     
     return 0;

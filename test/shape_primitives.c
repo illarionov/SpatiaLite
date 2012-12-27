@@ -604,8 +604,8 @@ int main (int argc, char *argv[])
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
+    void *cache = spatialite_alloc_connection();
 
-    spatialite_init (0);
 /* testing current style metadata layout >= v.4.0.0 */
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -613,6 +613,8 @@ int main (int argc, char *argv[])
 	sqlite3_close(handle);
 	return -1;
     }
+
+    spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata()", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -628,11 +630,11 @@ int main (int argc, char *argv[])
 	return ret;
     }
 
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
     sqlite3_close(handle);
 	
 /* testing legacy style metadata layout <= v.3.1.0 */
-    spatialite_init (0);
+    cache = spatialite_alloc_connection();
     ret = system("cp test-legacy-3.0.1.sqlite copy-legacy-3.0.1.sqlite");
     if (ret != 0)
     {
@@ -645,6 +647,8 @@ int main (int argc, char *argv[])
 	sqlite3_close(handle);
 	return -1;
     }
+
+    spatialite_init_ex (handle, cache, 0);
 	
     ret = do_test(handle);
     if (ret != 0) {
@@ -652,7 +656,7 @@ int main (int argc, char *argv[])
 	return ret;
     }
 
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
     sqlite3_close(handle);
     ret = unlink("copy-legacy-3.0.1.sqlite");
     if (ret != 0)
@@ -662,7 +666,7 @@ int main (int argc, char *argv[])
     }
 	
 /* testing legacy style metadata layout (v.2.3.1) */
-    spatialite_init (0);
+    cache = spatialite_alloc_connection();
     ret = system("cp test-legacy-2.3.1.sqlite copy-legacy-2.3.1.sqlite");
     if (ret != 0)
     {
@@ -675,6 +679,8 @@ int main (int argc, char *argv[])
 	sqlite3_close(handle);
 	return -1;
     }
+
+    spatialite_init_ex (handle, cache, 0);
 	
     ret = do_test(handle);
     if (ret != 0) {
@@ -682,7 +688,7 @@ int main (int argc, char *argv[])
 	return ret;
     }
 
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
     sqlite3_close(handle);
     ret = unlink("copy-legacy-2.3.1.sqlite");
     if (ret != 0)

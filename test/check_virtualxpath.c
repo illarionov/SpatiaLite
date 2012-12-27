@@ -52,13 +52,13 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "spatialite.h"
 
 static int
-load_xml (sqlite3 *db_handle, sqlite3_stmt *stmt, const char *path)
+load_xml (void *cache, sqlite3 *db_handle, sqlite3_stmt *stmt, const char *path)
 {
 /* loading an XMLDocument into the DB */
     FILE *fl;
     int sz = 0;
     int rd;
-    unsigned char *xml = NULL;
+    char *xml = NULL;
     unsigned char *p_result = NULL;
     int len;
     int ret;
@@ -81,7 +81,7 @@ load_xml (sqlite3 *db_handle, sqlite3_stmt *stmt, const char *path)
     fclose(fl);
 
 /* parsing the XMLDocument */
-    gaiaXmlToBlob (xml, rd, 1, NULL, &p_result, &len, NULL, NULL); 
+    gaiaXmlToBlob (cache, xml, rd, 1, NULL, &p_result, &len, NULL, NULL); 
     if (p_result == NULL) {
         fprintf (stderr, "\"%s\": not a well-formed XML !!!\n", path);
         return 0;
@@ -111,8 +111,7 @@ int main (int argc, char *argv[])
     char **results;
     int rows;
     int columns;
-
-    spatialite_init (0);
+    void *cache = spatialite_alloc_connection();
 
     ret = sqlite3_open_v2 (":memory:", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -120,7 +119,8 @@ int main (int argc, char *argv[])
 	sqlite3_close (db_handle);
 	db_handle = NULL;
 	return -1;
-    }    
+    }  
+    spatialite_init_ex (db_handle, cache, 0);  
     
 /* creating the base XML table */
     sql_statement = "CREATE TABLE test (id INTEGER PRIMARY "
@@ -140,15 +140,15 @@ int main (int argc, char *argv[])
 	  fprintf (stderr, "PrepareStatement: error \"%s\"\n", sqlite3_errmsg (db_handle));
 	  return -3;
     }
-    if (!load_xml(db_handle, stmt, "books.xml")) {
+    if (!load_xml(cache, db_handle, stmt, "books.xml")) {
         fprintf (stderr, "Unable to load \"books.xml\"");
         return -4;
     }
-    if (!load_xml(db_handle, stmt, "opera.xml")) {
+    if (!load_xml(cache, db_handle, stmt, "opera.xml")) {
         fprintf (stderr, "Unable to load \"opera.xml\"");
         return -5;
     }
-    if (!load_xml(db_handle, stmt, "movies.xml")) {
+    if (!load_xml(cache, db_handle, stmt, "movies.xml")) {
         fprintf (stderr, "Unable to load \"movies.xml\"");
         return -6;
     }
@@ -374,7 +374,9 @@ int main (int argc, char *argv[])
     }
 
     sqlite3_close (db_handle);
-    spatialite_cleanup();
+    spatialite_cleanup_ex(cache);
+
+    xmlCleanupParser();
 
 #endif	/* end LIBXML2 conditional */    
     return 0;

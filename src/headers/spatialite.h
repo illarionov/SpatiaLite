@@ -64,6 +64,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define _SPATIALITE_H
 #endif
 
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -77,15 +78,44 @@ extern "C"
     SPATIALITE_DECLARE const char *spatialite_version (void);
 
 /**
+ Initializes the internal memory block supporting each connection
+
+ \sa spatialite_init_ex, spatialite_cleanup_ex
+
+ */
+    SPATIALITE_DECLARE void *spatialite_alloc_connection (void);
+
+/**
  Initializes the library. 
 
+ This function is now \b DEPRECATED because is not reentrant (not thread safe);
+ use spatialite_init_ex() for all new development.
+
  \param verbose if TRUE a short start-up message is shown on stderr
+
+ \sa spatialite_cleanup, spatialite_init_ex
 
  \note You absolutely must invoke this function before attempting to perform
  any other SpatiaLite's call.
 
  */
     SPATIALITE_DECLARE void spatialite_init (int verbose);
+
+/**
+ Initializes the library. 
+
+ \param db_handle handle to the current SQLite connection
+ \param ptr a memory pointer returned by spatialite_alloc_connection()
+ \param verbose if TRUE a short start-up message is shown on stderr
+
+ \sa spatialite_alloc_connection, spatialite_cleanup_ex, spatialite_init
+
+ \note You absolutely must invoke this function before attempting to perform
+ any other SpatiaLite's call.
+
+ */
+    SPATIALITE_DECLARE void spatialite_init_ex (sqlite3 * db_handle, void *ptr,
+						int verbose);
 
 /**
  Initializes the GEOS library. 
@@ -98,12 +128,27 @@ extern "C"
 /**
  Cleanup spatialite 
 
+ This function is now \b DEPRECATED; use spatialite_cleanup_ex() for all new development.
+
  This function performs general cleanup, essentially undoing the effect
  of spatialite_init().
 
  \sa spatialite_init
 */
     SPATIALITE_DECLARE void spatialite_cleanup (void);
+
+/**
+ Cleanup spatialite
+
+ This function performs general cleanup, essentially undoing the effect
+ of spatialite_init_ex().
+
+ \param ptr the same memory pointer passed to the corresponding call to
+ spatialite_init_ex() and returned by spatialite_alloc_connection()
+
+ \sa spatialite_init_ex, spatialite_alloc_connection
+*/
+    SPATIALITE_DECLARE void spatialite_cleanup_ex (void *ptr);
 
 /**
  Dumps a full geometry-table into an external Shapefile
@@ -495,8 +540,10 @@ extern "C"
  \n If the mode arg is set to GAIA_VECTORS_LIST_PRECISE a preliminary attempt to update the
   statistic tables will be always performed (probably slower, but surely accurate).
  */
-    SPATIALITE_DECLARE gaiaVectorLayersListPtr gaiaGetVectorLayersList (sqlite3 *
-								    handle, const char *table, const char *geometry, int mode);
+    SPATIALITE_DECLARE gaiaVectorLayersListPtr gaiaGetVectorLayersList (sqlite3	*handle,
+									const char *table,
+									const char *geometry,
+									int mode);
 
 /**
  Destroys a VectorLayersList object
@@ -505,7 +552,8 @@ extern "C"
 
  \sa gaiaGetVectorLayersList
  */
-    SPATIALITE_DECLARE void gaiaFreeVectorLayersList (gaiaVectorLayersListPtr ptr);
+    SPATIALITE_DECLARE void gaiaFreeVectorLayersList (gaiaVectorLayersListPtr
+						      ptr);
 
 /**
  Drops a layer-table, removing any related dependency

@@ -56,14 +56,17 @@ int main (int argc, char *argv[])
     char **results;
     int rows;
     int columns;
+    void *cache = spatialite_alloc_connection();
 
-    spatialite_init (0);
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -1;
     }
+
+    spatialite_init_ex (handle, cache, 0);
+
     ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata(\"NONE\")", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "InitSpatialMetadata(\"NONE\") error: %s\n", err_msg);
@@ -94,15 +97,17 @@ int main (int argc, char *argv[])
 	return -5;
     }
     
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
     
-    spatialite_init (0);
+    cache = spatialite_alloc_connection();
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -6;
     }
+
+    spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_get_table (handle, "SELECT InitSpatialMetadata(34)", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
@@ -126,15 +131,17 @@ int main (int argc, char *argv[])
 	return -10;
     }
     
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
     
-    spatialite_init (0);
+    cache = spatialite_alloc_connection();
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -11;
     }
+
+    spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_get_table (handle, "SELECT InitSpatialMetadata(\"EMPTY\")", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
@@ -190,15 +197,17 @@ int main (int argc, char *argv[])
 	return -21;
     }
     
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
      
-    spatialite_init (0);
+    cache = spatialite_alloc_connection();
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -22;
     }
+
+    spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_get_table (handle, "SELECT InitSpatialMetadata(\"WGS84\")", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
@@ -254,15 +263,17 @@ int main (int argc, char *argv[])
 	return -32;
     }
     
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
         
-    spatialite_init (0);
+    cache = spatialite_alloc_connection();
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (handle));
 	sqlite3_close(handle);
 	return -33;
     }
+
+    spatialite_init_ex (handle, cache, 0);
     
     ret = sqlite3_get_table (handle, "SELECT InitSpatialMetadata(\"WGS84_only\")", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
@@ -286,7 +297,7 @@ int main (int argc, char *argv[])
 	return -32;
     }
     
-    spatialite_cleanup();
+    spatialite_cleanup_ex (cache);
     
     return 0;
 }
