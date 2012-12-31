@@ -110,6 +110,17 @@ extern "C"
 	void *preparedGeosGeom;
     };
 
+    struct splite_xmlSchema_cache_item
+    {
+	time_t timestamp;
+	char *schemaURI;
+	void *schemaDoc;
+	void *parserCtxt;
+	void *schema;
+    };
+
+#define MAX_XMLSCHEMA_CACHE	16
+
     struct splite_internal_cache
     {
 	void *xmlParsingErrors;
@@ -117,6 +128,7 @@ extern "C"
 	void *xmlXPathErrors;
 	struct splite_geos_cache_item cacheItem1;
 	struct splite_geos_cache_item cacheItem2;
+	struct splite_xmlSchema_cache_item xmlSchemaCache[MAX_XMLSCHEMA_CACHE];
     };
 
     struct epsg_defs
@@ -209,6 +221,10 @@ extern "C"
     SPATIALITE_PRIVATE void splite_free_geos_cache_item (struct
 							 splite_geos_cache_item
 							 *p);
+
+    SPATIALITE_PRIVATE void splite_free_xmlSchema_cache_item (struct
+							      splite_xmlSchema_cache_item
+							      *p);
 
     SPATIALITE_PRIVATE void
 	vxpath_free_namespaces (struct vxpath_namespaces *ns_list);

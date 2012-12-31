@@ -21915,6 +21915,30 @@ fnct_XmlBlobGetLastValidateError (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_IsValidXPathExpression (sqlite3_context * context, int argc,
+			     sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsValidXPathExpression(text XPathExpression)
+/
+/ returns TRUE if the current arg is a valid XPathExpression,
+/ FALSE if it's not
+/ or -1 if any error is encountered
+*/
+    int ret;
+    const char *xpath;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    xpath = (const char *) sqlite3_value_text (argv[0]);
+    ret = gaiaIsValidXPathExpression (sqlite3_user_data (context), xpath);
+    sqlite3_result_int (context, ret);
+}
+
+static void
 fnct_XmlBlobGetLastXPathError (sqlite3_context * context, int argc,
 			       sqlite3_value ** argv)
 {
@@ -21940,8 +21964,10 @@ spatialite_alloc_connection ()
 {
 /* allocating and initializing an empty internal cache */
     gaiaOutBufferPtr out;
+    int i;
     struct splite_internal_cache *cache;
     struct splite_geos_cache_item *p;
+    struct splite_xmlSchema_cache_item *p_xmlSchema;
 
     cache = malloc (sizeof (struct splite_internal_cache));
 /* initializing the XML error buffers */
@@ -21967,6 +21993,16 @@ spatialite_alloc_connection ()
     p->crc32 = 0;
     p->geosGeom = NULL;
     p->preparedGeosGeom = NULL;
+    for (i = 0; i < MAX_XMLSCHEMA_CACHE; i++)
+      {
+	  /* initializing the XmlSchema cache */
+	  p_xmlSchema = &(cache->xmlSchemaCache[i]);
+	  p_xmlSchema->timestamp = 0;
+	  p_xmlSchema->schemaURI = NULL;
+	  p_xmlSchema->schemaDoc = NULL;
+	  p_xmlSchema->parserCtxt = NULL;
+	  p_xmlSchema->schema = NULL;
+      }
     return cache;
 }
 
@@ -23320,6 +23356,8 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     cache, fnct_XmlBlobGetLastParseError, 0, 0);
     sqlite3_create_function (db, "XmlBlobGetLastValidateError", 0, SQLITE_ANY,
 			     cache, fnct_XmlBlobGetLastValidateError, 0, 0);
+    sqlite3_create_function (db, "IsValidXPathExpression", 1, SQLITE_ANY, cache,
+			     fnct_IsValidXPathExpression, 0, 0);
     sqlite3_create_function (db, "XmlBlobGetLastXPathError", 0, SQLITE_ANY,
 			     cache, fnct_XmlBlobGetLastXPathError, 0, 0);
 
@@ -23335,7 +23373,7 @@ init_spatialite_virtualtables (void *p_db, void *p_cache)
 
 #ifndef OMIT_ICONV		/* when ICONV is disabled SHP/DBF/TXT cannot be supported */
 /* initializing the VirtualShape  extension */
-	virtualshape_extension_init (db);
+    virtualshape_extension_init (db);
 /* initializing the VirtualDbf  extension */
     virtualdbf_extension_init (db);
 /* initializing the VirtualText extension */
@@ -23474,7 +23512,10 @@ static void
 free_internal_cache (struct splite_internal_cache *cache)
 {
 /* freeing an internal cache */
+    int i;
     struct splite_geos_cache_item *p;
+    struct splite_xmlSchema_cache_item *p_xmlSchema;
+
 /* freeing the XML error buffers */
     gaiaOutBufferReset (cache->xmlParsingErrors);
     gaiaOutBufferReset (cache->xmlSchemaValidationErrors);
@@ -23487,6 +23528,12 @@ free_internal_cache (struct splite_internal_cache *cache)
     splite_free_geos_cache_item (p);
     p = &(cache->cacheItem2);
     splite_free_geos_cache_item (p);
+    for (i = 0; i < MAX_XMLSCHEMA_CACHE; i++)
+      {
+	  /* freeing the XmlSchema cache */
+	  p_xmlSchema = &(cache->xmlSchemaCache[i]);
+	  splite_free_xml_schema_cache_item (p_xmlSchema);
+      }
 /* freeing the cache itself */
     free (cache);
 }

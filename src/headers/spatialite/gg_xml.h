@@ -122,7 +122,7 @@ extern "C"
  gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
- gaiaXmlBlobGetLastXPathError
+ gaiaIsValidXPathExpression, gaiaXmlBlobGetLastXPathError
 
  \note the XmlBLOB buffer corresponds to dynamically allocated memory:
  so you are responsible to free() it [unless SQLite will take care
@@ -149,7 +149,7 @@ extern "C"
  gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
- gaiaXmlBlobGetLastXPathError
+ gaiaIsValidXPathExpression, gaiaXmlBlobGetLastXPathError
 
  \note the returned XMLDocument will always be encoded as UTF-8 (irrespectively
  from the internal encoding declaration), so to allow any further processing as 
@@ -174,7 +174,7 @@ extern "C"
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
- gaiaXmlBlobGetLastXPathError
+ gaiaIsValidXPathExpression, gaiaXmlBlobGetLastXPathError
 
  \note the returned XMLDocument will always respect the internal encoding declaration,
  and may not support any further processing as SQLite TEXT if it's not UTF-8.
@@ -200,7 +200,7 @@ extern "C"
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
- gaiaXmlBlobGetLastXPathError
+ gaiaIsValidXPathExpression, gaiaXmlBlobGetLastXPathError
  */
     GAIAGEO_DECLARE int gaiaIsValidXmlBlob (const unsigned char *blob,
 					    int size);
@@ -217,7 +217,7 @@ extern "C"
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, gaiaXmlBlobCompression, 
  gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
- gaiaXmlBlobGetLastXPathError
+ gaiaIsValidXPathExpression, gaiaXmlBlobGetLastXPathError
  */
     GAIAGEO_DECLARE int gaiaIsCompressedXmlBlob (const unsigned char *blob,
 						 int size);
@@ -236,7 +236,7 @@ extern "C"
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, gaiaIsCompressedXmlBlob, 
  gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
- gaiaXmlBlobGetLastXPathError
+ gaiaIsValidXPathExpression, gaiaXmlBlobGetLastXPathError
 
  \note the XmlBLOB buffer corresponds to dynamically allocated memory:
  so you are responsible to free() it [unless SQLite will take care
@@ -260,7 +260,8 @@ extern "C"
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError,
- gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
  */
     GAIAGEO_DECLARE int gaiaIsSchemaValidatedXmlBlob (const unsigned char *blob,
 						      int size);
@@ -278,7 +279,8 @@ extern "C"
  gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError,
- gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
  */
     GAIAGEO_DECLARE int gaiaXmlBlobHasSchemaURI (const unsigned char *blob,
 						 int size);
@@ -297,7 +299,8 @@ extern "C"
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, 
- gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
  */
     GAIAGEO_DECLARE int gaiaXmlBlobGetDocumentSize (const unsigned char *blob,
 						    int size);
@@ -315,7 +318,8 @@ extern "C"
  gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError,
- gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
 
  \note the returned SchemaURI corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
@@ -336,7 +340,8 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
  gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError,
- gaiaXmlBlobCompression, gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
+ gaiaXmlBlobCompression, gaiaXmlBlobGetLastValidateError, 
+ gaiaIsValidXPathExpression, gaiaXmlBlobGetLastXPathError
 
  \note the returned SchemaURI corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
@@ -358,7 +363,8 @@ extern "C"
  gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobSchemaURI, 
  gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError,
- gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
 
  \note the returned Encoding corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
@@ -379,8 +385,8 @@ extern "C"
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize, 
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobCompression, gaiaXmlBlobGetEncoding,
- gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError,
- splite_alloc_connection
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError, splite_alloc_connection
 
  \note the returned error/warning message corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
@@ -400,13 +406,31 @@ extern "C"
  gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobCompression, gaiaXmlBlobGetEncoding,
- gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastXPathError,
- splite_alloc_connection
+ gaiaXmlBlobGetLastParseError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError, splite_alloc_connection
 
  \note the returned error/warning message corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
     GAIAGEO_DECLARE char *gaiaXmlBlobGetLastValidateError (void *p_cache);
+
+/**
+ Checks if a Text string could be a valid XPathExpression
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param xpath_expr pointer to the XPathExpression to be checked.
+
+ \return TRUE or FALSE if the Text string actually is a valid XPathExpression; 
+  -1 in any other case.
+
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
+ gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
+ gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError,
+ gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
+ */
+    GAIAGEO_DECLARE int gaiaIsValidXPathExpression (void *p_cache,
+						    const char *xpath_expr);
 
 /**
  Return the most recent XPath error/warning (if any)
@@ -422,7 +446,7 @@ extern "C"
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobCompression, gaiaXmlBlobGetEncoding,
  gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
- splite_alloc_connection
+ gaiaIsValidXPathExpression, splite_alloc_connection
 
  \note the returned error/warning message corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.

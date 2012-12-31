@@ -152,6 +152,95 @@ gaiaXmlBlobGetLastXPathError (void *ptr)
     return buf->Buffer;
 }
 
+SPATIALITE_PRIVATE void
+splite_free_xml_schema_cache_item (struct splite_xmlSchema_cache_item *p)
+{
+/* freeing an XmlSchema Cache Item */
+    if (p->schemaURI)
+	free (p->schemaURI);
+    if (p->parserCtxt)
+	xmlSchemaFreeParserCtxt (p->parserCtxt);
+    if (p->schema)
+	xmlSchemaFree (p->schema);
+    if (p->schemaDoc)
+	xmlFreeDoc (p->schemaDoc);
+    p->schemaURI = NULL;
+    p->parserCtxt = NULL;
+    p->schemaDoc = NULL;
+    p->schema = NULL;
+}
+
+static int
+splite_xmlSchemaCacheFind (struct splite_internal_cache *cache,
+			   const char *schemaURI, xmlDocPtr * schema_doc,
+			   xmlSchemaParserCtxtPtr * parser_ctxt,
+			   xmlSchemaPtr * schema)
+{
+/* attempting to retrive some XmlSchema from within the Cache */
+    int i;
+    time_t now;
+    struct splite_xmlSchema_cache_item *p;
+    for (i = 0; i < MAX_XMLSCHEMA_CACHE; i++)
+      {
+	  p = &(cache->xmlSchemaCache[i]);
+	  if (p->schemaURI)
+	    {
+		if (strcmp (schemaURI, p->schemaURI) == 0)
+		  {
+		      /* found a matching cache-item */
+		      *schema_doc = p->schemaDoc;
+		      *parser_ctxt = p->parserCtxt;
+		      *schema = p->schema;
+		      /* updating the timestamp */ time (&now);
+		      p->timestamp = now;
+		      return 1;
+		  }
+	    }
+      }
+    return 0;
+}
+
+static void
+splite_xmlSchemaCacheInsert (struct splite_internal_cache *cache,
+			     const char *schemaURI, xmlDocPtr schema_doc,
+			     xmlSchemaParserCtxtPtr parser_ctxt,
+			     xmlSchemaPtr schema)
+{
+/* inserting a new XmlSchema item into the Cache */
+    int i;
+    int len = strlen (schemaURI);
+    time_t now;
+    time_t oldest;
+    struct splite_xmlSchema_cache_item *pSlot = NULL;
+    struct splite_xmlSchema_cache_item *p;
+    time (&now);
+    oldest = now;
+    for (i = 0; i < MAX_XMLSCHEMA_CACHE; i++)
+      {
+	  p = &(cache->xmlSchemaCache[i]);
+	  if (p->schemaURI == NULL)
+	    {
+		/* found an empty slot */
+		pSlot = p;
+		break;
+	    }
+	  if (p->timestamp < oldest)
+	    {
+		/* saving the oldest slot */
+		pSlot = p;
+		oldest = p->timestamp;
+	    }
+      }
+/* inserting into the Cache Slot */
+    splite_free_xml_schema_cache_item (pSlot);
+    pSlot->timestamp = now;
+    pSlot->schemaURI = malloc (len + 1);
+    strcpy (pSlot->schemaURI, schemaURI);
+    pSlot->schemaDoc = schema_doc;
+    pSlot->parserCtxt = parser_ctxt;
+    pSlot->schema = schema;
+}
+
 GAIAGEO_DECLARE void
 gaiaXmlToBlob (void *p_cache, const char *xml, int xml_len, int compressed,
 	       const char *schemaURI, unsigned char **result, int *size,
@@ -197,37 +286,47 @@ gaiaXmlToBlob (void *p_cache, const char *xml, int xml_len, int compressed,
 
     if (schemaURI != NULL)
       {
-	  /* preparing the Schema */
-	  xmlSetGenericErrorFunc (cache, schemaError);
-	  schema_doc = xmlReadFile ((const char *) schemaURI, NULL, 0);
-	  if (schema_doc == NULL)
+	  if (splite_xmlSchemaCacheFind
+	      (cache, schemaURI, &schema_doc, &parser_ctxt, &schema))
+	      ;
+	  else
 	    {
-		spatialite_e ("unable to load the Schema\n");
-		if (schema_validation_errors)
-		    *schema_validation_errors = schemaValidationBuf->Buffer;
-		xmlSetGenericErrorFunc ((void *) stderr, NULL);
-		return;
-	    }
-	  parser_ctxt = xmlSchemaNewDocParserCtxt (schema_doc);
-	  if (parser_ctxt == NULL)
-	    {
-		spatialite_e ("unable to prepare the Schema Context\n");
-		xmlFreeDoc (schema_doc);
-		if (schema_validation_errors)
-		    *schema_validation_errors = schemaValidationBuf->Buffer;
-		xmlSetGenericErrorFunc ((void *) stderr, NULL);
-		return;
-	    }
-	  schema = xmlSchemaParse (parser_ctxt);
-	  if (schema == NULL)
-	    {
-		spatialite_e ("invalid Schema\n");
-		xmlSchemaFreeParserCtxt (parser_ctxt);
-		xmlFreeDoc (schema_doc);
-		if (schema_validation_errors)
-		    *schema_validation_errors = schemaValidationBuf->Buffer;
-		xmlSetGenericErrorFunc ((void *) stderr, NULL);
-		return;
+		/* preparing the Schema */
+		xmlSetGenericErrorFunc (cache, schemaError);
+		schema_doc = xmlReadFile ((const char *) schemaURI, NULL, 0);
+		if (schema_doc == NULL)
+		  {
+		      spatialite_e ("unable to load the Schema\n");
+		      if (schema_validation_errors)
+			  *schema_validation_errors =
+			      schemaValidationBuf->Buffer;
+		      xmlSetGenericErrorFunc ((void *) stderr, NULL);
+		      return;
+		  }
+		parser_ctxt = xmlSchemaNewDocParserCtxt (schema_doc);
+		if (parser_ctxt == NULL)
+		  {
+		      spatialite_e ("unable to prepare the Schema Context\n");
+		      xmlFreeDoc (schema_doc);
+		      if (schema_validation_errors)
+			  *schema_validation_errors =
+			      schemaValidationBuf->Buffer;
+		      xmlSetGenericErrorFunc ((void *) stderr, NULL);
+		      return;
+		  }
+		schema = xmlSchemaParse (parser_ctxt);
+		if (schema == NULL)
+		  {
+		      spatialite_e ("invalid Schema\n");
+		      xmlFreeDoc (schema_doc);
+		      if (schema_validation_errors)
+			  *schema_validation_errors =
+			      schemaValidationBuf->Buffer;
+		      xmlSetGenericErrorFunc ((void *) stderr, NULL);
+		      return;
+		  }
+		splite_xmlSchemaCacheInsert (cache, schemaURI, schema_doc,
+					     parser_ctxt, schema);
 	    }
       }
 
@@ -255,9 +354,6 @@ gaiaXmlToBlob (void *p_cache, const char *xml, int xml_len, int compressed,
 	  if (valid_ctxt == NULL)
 	    {
 		spatialite_e ("unable to prepare a validation context\n");
-		xmlSchemaFree (schema);
-		xmlSchemaFreeParserCtxt (parser_ctxt);
-		xmlFreeDoc (schema_doc);
 		xmlFreeDoc (xml_doc);
 		if (schema_validation_errors)
 		    *schema_validation_errors = schemaValidationBuf->Buffer;
@@ -268,9 +364,6 @@ gaiaXmlToBlob (void *p_cache, const char *xml, int xml_len, int compressed,
 	    {
 		spatialite_e ("Schema validation failed\n");
 		xmlSchemaFreeValidCtxt (valid_ctxt);
-		xmlSchemaFreeParserCtxt (parser_ctxt);
-		xmlSchemaFree (schema);
-		xmlFreeDoc (schema_doc);
 		xmlFreeDoc (xml_doc);
 		if (schema_validation_errors)
 		    *schema_validation_errors = schemaValidationBuf->Buffer;
@@ -278,9 +371,6 @@ gaiaXmlToBlob (void *p_cache, const char *xml, int xml_len, int compressed,
 		return;
 	    }
 	  xmlSchemaFreeValidCtxt (valid_ctxt);
-	  xmlSchemaFreeParserCtxt (parser_ctxt);
-	  xmlSchemaFree (schema);
-	  xmlFreeDoc (schema_doc);
       }
     xmlFreeDoc (xml_doc);
 

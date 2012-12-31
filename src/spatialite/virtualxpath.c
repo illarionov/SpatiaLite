@@ -284,6 +284,28 @@ vxpathResetXmlErrors (struct splite_internal_cache *cache)
     gaiaOutBufferReset (buf);
 }
 
+GAIAGEO_DECLARE int
+gaiaIsValidXPathExpression (void *p_cache, const char *xpath_expr)
+{
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    xmlXPathCompExprPtr result;
+    xmlGenericErrorFunc xpathError = (xmlGenericErrorFunc) vxpathError;
+
+    vxpathResetXmlErrors (cache);
+    xmlSetGenericErrorFunc (cache, xpathError);
+
+/* testing an XPath expression */
+    result = xmlXPathCompile (xpath_expr);
+    xmlSetGenericErrorFunc ((void *) stderr, NULL);
+    if (result)
+      {
+	  xmlXPathFreeCompExpr (result);
+	  return 1;
+      }
+    return 0;
+}
+
 SPATIALITE_PRIVATE int
 vxpath_eval_expr (void *p_cache, void *x_xml_doc, const char *xpath_expr,
 		  void *x_xpathCtx, void *x_xpathObj)
