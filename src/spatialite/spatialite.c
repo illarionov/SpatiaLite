@@ -13701,10 +13701,11 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 				    {
 					/* Linestrings */
 					l = gaiaGeodesicTotalLength (a, b, rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -13726,12 +13727,9 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -13775,10 +13773,11 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					/* Linestrings */
 					length +=
 					    gaiaGreatCircleTotalLength (a, b,
+									line->DimensionModel,
 									line->
-									DimensionModel,
-									line->Coords,
-									line->Points);
+									Coords,
+									line->
+									Points);
 					line = line->Next;
 				    }
 			      }
@@ -13795,11 +13794,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      length +=
 						  gaiaGreatCircleTotalLength (a,
 									      b,
-									      ring->DimensionModel,
 									      ring->
-									      Coords,
-									      ring->
-									      Points);
+									      DimensionModel,
+									      ring->Coords,
+									      ring->Points);
 					      for (ib = 0;
 						   ib < polyg->NumInteriors;
 						   ib++)
@@ -20936,7 +20934,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -21020,7 +21019,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -21029,7 +21029,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -21955,6 +21956,32 @@ fnct_XmlBlobGetLastXPathError (sqlite3_context * context, int argc,
 	sqlite3_result_null (context);
     else
 	sqlite3_result_text (context, msg, strlen (msg), SQLITE_STATIC);
+}
+
+static void
+fnct_XmlBlobCacheFlush (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
+{
+/* SQL function:
+/ XmlBlobCacheFlush()
+/
+/ resets the Internal XML Schema Cache to its initial empty state
+/ 
+/ returns TRUE on success
+*/
+    int i;
+    struct splite_xmlSchema_cache_item *p_xmlSchema;
+    struct splite_internal_cache *cache = sqlite3_user_data (context);
+
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    for (i = 0; i < MAX_XMLSCHEMA_CACHE; i++)
+      {
+	  /* freeing the XmlSchema cache */
+	  p_xmlSchema = &(cache->xmlSchemaCache[i]);
+	  splite_free_xml_schema_cache_item (p_xmlSchema);
+      }
+    sqlite3_result_int (context, 1);
 }
 
 #endif /* end including LIBXML2 */
@@ -23360,6 +23387,8 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_IsValidXPathExpression, 0, 0);
     sqlite3_create_function (db, "XmlBlobGetLastXPathError", 0, SQLITE_ANY,
 			     cache, fnct_XmlBlobGetLastXPathError, 0, 0);
+    sqlite3_create_function (db, "XmlBlobCacheFlush", 0, SQLITE_ANY,
+			     cache, fnct_XmlBlobCacheFlush, 0, 0);
 
 #endif /* end including LIBXML2 */
 

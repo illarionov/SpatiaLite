@@ -46,6 +46,7 @@
 			<li><a href="#p16fdo">SQL functions implementing FDO/OGR compatibility</a></li>
 			<li><a href="#p17">SQL functions for MbrCache-based queries</a></li>
 			<li><a href="#p18">SQL functions for R*Tree-based queries (Geometry Callbacks)</a></li>
+			<li><a href="#xmlBlob">SQL functions supporting XmlBLOB</a></li>
 		</ul>
 		<table bgcolor="#e2eae2" border="1" cellpadding="2" cellspacing="2" width="100%">
 			<tbody><tr><td colspan="5" align="center" bgcolor="#f0e0c0">
@@ -2296,6 +2297,138 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td
 				<td align="center" bgcolor="#d0d0d0">geocallbacks</td>
 				<td>Retrieves from an R*Tree Spatial Index any entity whose MBR <u><i>intersect</i></u>
 				the square circumscribed on the given circle (<b>x y</b> center, <b>radius)</b></td></tr>
+                        <tr><td colspan="5" align="center" bgcolor="#f0f0c0">
+				<h3><a name="xmlBlob">SQL functions supporting XmlBLOB</a></h3></td></tr>
+			<tr><td><b>XmlToBlob</b></td>
+				<td>XmlToBlob(  xmlPayload <i>Text</i> ) : <i>XmlBLOB</i><hr>
+				XmlToBlob(  xmlPayload <i>Text</i> , compressed <i>Boolean</i> ) : <i>XmlBLOB</i><hr>
+				XmlToBlob(  xmlPayload <i>Text</i> , compressed <i>Boolean</i> ,
+				schemaURI <i>Text</i> ) : <i>XmlBLOB</i><hr>
+				XmlToBlob(  xmlPayload <i>Text</i> , compressed <i>Boolean</i> ,
+				internalSchemaURI <i>Boolean</i> ) : <i>XmlBLOB</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Construct an XmlBLOB object starting from an XmlDocument.<ul>
+				<li>If <b>compressed</b> is set to TRUE the XmlBlob object will be compressed (default setting).</li>
+                                <li>If <b>schemaURI</b> is specified then the XmlDocument will be validated against the given Schema (default setting is skipping any XML validation).</li>
+                                <li>If <b>internalSchemaURI</b> is set (any value), then the XmlDocument will be validated againt the Schema URI internally defined within the XmlDocument itself (if any).</li></ul><hr>
+				<b>NULL</b> will be returned for not well-formed XmlDocuments, or when XML validation is required but XmlDocument fails to pass validation for any reason.</td></tr>
+			<tr><td><b>XmlFromBlob</b></td>
+				<td>XmlFromBlob( xmlObject <i>XmlBLOB</i> [ , format <i>Boolean</i> ] ) : <i>BLOB</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Extracts a generic BLOB from an XmlBLOB object, exactly corresponding to the original XmlDocument and fully preserving the original character encoding.<br>
+				If the optional argument <b>format</b> is set to TRUE then the returned XmlDocument will be nicely formatted and properly indented (default setting is FALSE).<hr>
+				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object).</td></tr>
+			<tr><td><b>XmlTextFromBlob</b></td>
+				<td>XmlTextFromBlob( xmlObject <i>XmlBLOB</i> [ , format <i>Boolean</i> ] ) : <i>String</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Extracts an XmlDocument from an XmlBLOB object; the returned XmlDocument will always be UTF-8 encoded (<b>TEXT</b>), irrespectively from the original internal encoding declaration.<br>
+				If the optional argument <b>format</b> is set to TRUE then the returned XmlDocument will be nicely formatted and properly indented (default setting is FALSE).<hr>
+				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object).</td></tr>
+			<tr><td><b>XmlBlobSchemaValidate</b></td>
+				<td>XmlBlobSchemaValidate(  xmlObject <i>XmlBLOB</i> , schemaURI <i>Text</i> [ , compressed <i>Boolean</i> ] ) : <i>XmlBLOB</i><hr>
+				XmlBlobSchemaValidate(  xmlObject <i>XmlBLOB</i> , internalSchemaURI <i>Boolean</i> [ , compressed <i>Boolean</i> ] ) : <i>XmlBLOB</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Construct an XML validated XmlBLOB object starting from an XmlDocument.<ul>
+				<li>If <b>compressed</b> is set to TRUE the XmlBlob object will be compressed (default setting).</li>
+                                <li>If <b>schemaURI</b> is specified then the XmlDocument will be validated against the given Schema (default setting is skipping any XML validation).</li>
+                                <li>If <b>internalSchemaURI</b> is set (any value), then the XmlDocument will be validated againt the Schema URI internally defined within the XmlDocument itself (if any).</li></ul><hr>
+				<b>NULL</b> will be returned if the input XmlBLOB fails to pass validation for any reason.</td></tr>
+			<tr><td><b>XmlBlobCompress</b></td>
+				<td>XmlBlobCompress( xmlObject <i>XmlBLOB</i> ) : <i>XmlBLOB</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>A new compressed XmlBLOB object will be returned.<br>
+                                If the input XmlBLOB is already compressed this one is a harmless no-op.<hr>
+				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object).</td></tr>
+			<tr><td><b>XmlBlobUncompress</b></td>
+				<td>XmlBlobUncompress( xmlObject <i>XmlBLOB</i> ) : <i>XmlBLOB</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>A new uncompressed XmlBLOB object will be returned.<br>
+                                If the input XmlBLOB is already uncompressed this one is a harmless no-op.<hr>
+				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object).</td></tr>
+			<tr><td><b>IsValidXmlBlob</b></td>
+				<td>IsValidXmlBlob( xmlObject <i>XmlBLOB</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, and &#8211;1 for UNKNOWN
+					corresponding to a function invocation on NULL arguments.</td></tr>
+			<tr><td><b>IsCompressedXmlBlob</b></td>
+				<td>IsCompressedXmlBlob( xmlObject <i>XmlBLOB</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, and &#8211;1 for UNKNOWN
+					corresponding to a function invocation on NULL arguments.</td></tr>
+			<tr><td><b>IsSchemaValidatedXmlBlob</b></td>
+				<td>IsSchemaValidatedXmlBlob( xmlObject <i>XmlBLOB</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, and &#8211;1 for UNKNOWN
+					corresponding to a function invocation on NULL arguments.</td></tr>
+			<tr><td><b>XmlBlobHasSchemaURI</b></td>
+				<td>XmlBlobHasSchemaURI( xmlObject <i>XmlBLOB</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, and &#8211;1 for UNKNOWN
+					corresponding to a function invocation on NULL arguments.</td></tr>
+			<tr><td><b>XmlBlobGetDocumentSize</b></td>
+				<td>XmlBlobGetDocumentSize( xmlObject <i>XmlBLOB</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Will return the size in bytes of the corresponding uncompressed XmlDocument.<hr>
+				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object).</td></tr>
+			<tr><td><b>XmlBlobGetEncoding</b></td>
+				<td>XmlBlobGetEncoding( xmlObject <i>XmlBLOB</i> ) : <i>String</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Will return the character encoding internally declared by the XmlDocument corresponding to the input XmlBLOB.<hr>
+				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object), or when the XmlDocument doesn't explicitly declares any encoding.</td></tr>
+			<tr><td><b>XmlBlobGetSchemaURI</b></td>
+				<td>XmlBlobGetSchemaURI( xmlObject <i>XmlBLOB</i> ) : <i>String</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Will return the Schema URI effectively used to validate an XmlBLOB.<hr>
+				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object), or when the XmlBLOB isn't validated.</td></tr>
+			<tr><td><b>XmlGetInternalSchemaURI</b></td>
+				<td>XmlGetInternalSchemaURI( xmlPayload <i>Text</i> ) : <i>String</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Will return the Schema URI internally declared by the input XmlDocument
+				(<b>xsi:noNamespeceSchemaLocation</b> or <b>xsi:schemaLocation</b>).<hr>
+				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object), or when the XmlDocument doesn't declares any Schema at all.</td></tr>
+			<tr><td><b>XmlBlobGetLastParseError</b></td>
+				<td>XmlBlobGetLastParseError( <i>void</i> ) : <i>String</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Will return the most recent XML parsing error (if any).<hr>
+				<b>NULL</b> will be returned if there is no pending parsing error.</td></tr>
+			<tr><td><b>XmlBlobGetLastValidateError</b></td>
+				<td>XmlBlobGetLastValidateError( <i>void</i> ) : <i>String</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Will return the most recent XML validating error (if any).<hr>
+				<b>NULL</b> will be returned if there is no pending validating error.</td></tr>
+			<tr><td><b>IsValidXPathExpression</b></td>
+				<td>IsValidXPathExpression( xmlObject <i>XmlBLOB</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, and &#8211;1 for UNKNOWN
+					corresponding to a function invocation on NULL arguments.</td></tr>
+			<tr><td><b>XmlBlobGetLastXPathError</b></td>
+				<td>XmlBlobGetLastXPathError( <i>void</i> ) : <i>String</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Will return the most recent XPath error (if any).<hr>
+				<b>NULL</b> will be returned if there is no pending XPath error.</td></tr>
+			<tr><td><b>XmlBlobCacheFlush</b></td>
+				<td>XmlBlobCacheFlush( <i>void</i> ) : <i>Boolean</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Reset the internal XML Schema cache to its initial empty state.</td></tr>
 		</tbody></table>
 		<a href="https://www.gaia-gis.it/fossil/libspatialite">back</a>
 	</body></html>
