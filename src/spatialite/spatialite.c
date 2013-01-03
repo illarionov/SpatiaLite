@@ -23543,6 +23543,7 @@ free_internal_cache (struct splite_internal_cache *cache)
 /* freeing an internal cache */
     int i;
     struct splite_geos_cache_item *p;
+#ifdef ENABLE_LIBXML2
     struct splite_xmlSchema_cache_item *p_xmlSchema;
 
 /* freeing the XML error buffers */
@@ -23552,17 +23553,20 @@ free_internal_cache (struct splite_internal_cache *cache)
     free (cache->xmlParsingErrors);
     free (cache->xmlSchemaValidationErrors);
     free (cache->xmlXPathErrors);
+#endif
 /* freeing the GEOS cache */
     p = &(cache->cacheItem1);
     splite_free_geos_cache_item (p);
     p = &(cache->cacheItem2);
     splite_free_geos_cache_item (p);
+#ifdef ENABLE_LIBXML2
     for (i = 0; i < MAX_XMLSCHEMA_CACHE; i++)
       {
 	  /* freeing the XmlSchema cache */
 	  p_xmlSchema = &(cache->xmlSchemaCache[i]);
 	  splite_free_xml_schema_cache_item (p_xmlSchema);
       }
+#endif
 /* freeing the cache itself */
     free (cache);
 }
