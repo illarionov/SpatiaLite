@@ -23545,7 +23545,7 @@ free_internal_cache (struct splite_internal_cache *cache)
     struct splite_geos_cache_item *p;
 #ifdef ENABLE_LIBXML2
     struct splite_xmlSchema_cache_item *p_xmlSchema;
-
+#endif
 /* freeing the XML error buffers */
     gaiaOutBufferReset (cache->xmlParsingErrors);
     gaiaOutBufferReset (cache->xmlSchemaValidationErrors);
@@ -23553,7 +23553,7 @@ free_internal_cache (struct splite_internal_cache *cache)
     free (cache->xmlParsingErrors);
     free (cache->xmlSchemaValidationErrors);
     free (cache->xmlXPathErrors);
-#endif
+
 /* freeing the GEOS cache */
     p = &(cache->cacheItem1);
     splite_free_geos_cache_item (p);
