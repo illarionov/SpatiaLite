@@ -54,6 +54,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 static int
 load_xml (void *cache, sqlite3 *db_handle, sqlite3_stmt *stmt, const char *path)
 {
+#ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */  
 /* loading an XMLDocument into the DB */
     FILE *fl;
     int sz = 0;
@@ -98,6 +99,9 @@ load_xml (void *cache, sqlite3 *db_handle, sqlite3_stmt *stmt, const char *path)
         return 1;
     fprintf (stderr, "INSERT error: %s\n", sqlite3_errmsg(db_handle));
     return 0;
+#else
+    return -1; /* no support */
+#endif
 }
 
 int main (int argc, char *argv[])
