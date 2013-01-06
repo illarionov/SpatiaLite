@@ -83,6 +83,7 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <spatialite/gaiaaux.h>
 #include <spatialite/gaiageo.h>
 #include <spatialite/gaiaexif.h>
+#include <spatialite/geopackage.h>
 #include <spatialite/spatialite.h>
 #include <spatialite.h>
 #include <spatialite_private.h>
@@ -23391,6 +23392,29 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     cache, fnct_XmlBlobCacheFlush, 0, 0);
 
 #endif /* end including LIBXML2 */
+
+#ifdef ENABLE_GEOPACKAGE
+    /* not yet finalised geopackage raster functions, plus some convenience API */
+    sqlite3_create_function (db, "gpkgCreateBaseTables", 0, SQLITE_ANY, 0,
+			     fnct_gpkgCreateBaseTables, 0, 0);
+    sqlite3_create_function (db, "gpkgCreateTilesTable", 2, SQLITE_ANY, 0,
+			     fnct_gpkgCreateTilesTable, 0, 0);
+    sqlite3_create_function (db, "gpkgCreateTilesZoomLevel", 4, SQLITE_ANY, 0,
+			     fnct_gpkgCreateTilesZoomLevel, 0, 0);
+    sqlite3_create_function (db, "gpkgAddTileTriggers", 1, SQLITE_ANY, 0, 
+			     fnct_gpkgAddTileTriggers, 0, 0);
+    sqlite3_create_function (db, "gpkgAddRtMetadataTriggers", 1, SQLITE_ANY, 0, 
+			     fnct_gpkgAddRtMetadataTriggers, 0, 0);
+    sqlite3_create_function (db, "gpkgGetNormalZoom", 2, SQLITE_ANY, 0,
+			     fnct_gpkgGetNormalZoom, 0, 0);
+    sqlite3_create_function (db, "gpkgGetNormalRow", 3, SQLITE_ANY, 0,
+			     fnct_gpkgGetNormalRow, 0, 0);
+    sqlite3_create_function (db, "gpkgGetImageType", 1, SQLITE_ANY, 0,
+			     fnct_gpkgGetImageType, 0, 0);
+    sqlite3_create_function (db, "gpkgPointToTile", 5, SQLITE_ANY, 0,
+			     fnct_gpkgPointToTile, 0, 0);
+
+#endif /* enabling GeoPackage extensions */
 
     return cache;
 }

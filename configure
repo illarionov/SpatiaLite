@@ -620,6 +620,8 @@ MACOSX_FALSE
 MACOSX_TRUE
 MINGW_FALSE
 MINGW_TRUE
+ENABLE_GEOPACKAGE_FALSE
+ENABLE_GEOPACKAGE_TRUE
 LIBXML2_LIBS
 LIBXML2_CFLAGS
 PKG_CONFIG_LIBDIR
@@ -772,6 +774,7 @@ enable_geosadvanced
 enable_geostrunk
 enable_lwgeom
 enable_libxml2
+enable_geopackage
 enable_gcov
 '
       ac_precious_vars='build_alias
@@ -1433,6 +1436,8 @@ Optional Features:
                           [default=no]
   --enable-lwgeom         enables LWGEOM support [default=no]
   --enable-libxml2        enables libxml2 inclusion [default=no]
+  --enable-geopackage     enables experimental GeoPackage raster function
+                          support [default=no]
   --enable-gcov           turn on code coverage analysis tools
 
 Optional Packages:
@@ -2983,6 +2988,7 @@ $as_echo "#define NDEBUG 1" >>confdefs.h
 
 
 # config depending options
+
 
 
 
@@ -6203,8 +6209,8 @@ esac
 
 
 
-macro_version='2.4'
-macro_revision='1.3293'
+macro_version='2.4.2'
+macro_revision='1.3337'
 
 
 
@@ -17096,7 +17102,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/gaiageo/flex/Makefile src/gaiageo/lemon/Makefile src/gaiageo/lemon/lemon_src/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/srsinit/Makefile src/srsinit/epsg_update/Makefile src/virtualtext/Makefile test/Makefile examples/Makefile Doxyfile spatialite.pc"
+ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/gaiageo/flex/Makefile src/gaiageo/lemon/Makefile src/gaiageo/lemon/lemon_src/Makefile src/geopackage/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/srsinit/Makefile src/srsinit/epsg_update/Makefile src/virtualtext/Makefile test/Makefile examples/Makefile Doxyfile spatialite.pc"
 
 
 #-----------------------------------------------------------------------
@@ -17949,6 +17955,7 @@ fi
 
   fi
 
+
   #-----------------------------------------------------------------------
   #   --enable-lwgeom
   #
@@ -18008,6 +18015,7 @@ else
 fi
 
 if test x"$enable_libxml2" != "xno"; then
+
 
 
 
@@ -18142,6 +18150,7 @@ if test -n "$LIBXML2_CFLAGS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_LIBXML2_CFLAGS=`$PKG_CONFIG --cflags "libxml-2.0" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -18158,6 +18167,7 @@ if test -n "$LIBXML2_LIBS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_LIBXML2_LIBS=`$PKG_CONFIG --libs "libxml-2.0" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -18177,9 +18187,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBXML2_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libxml-2.0" 2>&1`
+	        LIBXML2_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libxml-2.0" 2>&1`
         else
-	        LIBXML2_PKG_ERRORS=`$PKG_CONFIG --print-errors "libxml-2.0" 2>&1`
+	        LIBXML2_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libxml-2.0" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LIBXML2_PKG_ERRORS" >&5
@@ -18201,6 +18211,31 @@ fi
   $as_echo "#define ENABLE_LIBXML2 1" >>confdefs.h
 
 fi
+
+#-----------------------------------------------------------------------
+#   --enable-geopackage
+#
+# Check whether --enable-geopackage was given.
+if test "${enable_geopackage+set}" = set; then :
+  enableval=$enable_geopackage;
+else
+  enable_geopackage=no
+fi
+
+if test x"$enable_geopackage" != "xno"; then
+  $as_echo "#define ENABLE_GEOPACKAGE 1" >>confdefs.h
+
+fi
+ if test x"$enable_geopackage" == "xyes"; then
+  ENABLE_GEOPACKAGE_TRUE=
+  ENABLE_GEOPACKAGE_FALSE='#'
+else
+  ENABLE_GEOPACKAGE_TRUE='#'
+  ENABLE_GEOPACKAGE_FALSE=
+fi
+
+
+#-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
 #    --enable-gcov
@@ -18379,6 +18414,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${ENABLE_GEOPACKAGE_TRUE}" && test -z "${ENABLE_GEOPACKAGE_FALSE}"; then
+  as_fn_error $? "conditional \"ENABLE_GEOPACKAGE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MINGW_TRUE}" && test -z "${MINGW_FALSE}"; then
@@ -19388,6 +19427,7 @@ do
     "src/gaiageo/flex/Makefile") CONFIG_FILES="$CONFIG_FILES src/gaiageo/flex/Makefile" ;;
     "src/gaiageo/lemon/Makefile") CONFIG_FILES="$CONFIG_FILES src/gaiageo/lemon/Makefile" ;;
     "src/gaiageo/lemon/lemon_src/Makefile") CONFIG_FILES="$CONFIG_FILES src/gaiageo/lemon/lemon_src/Makefile" ;;
+    "src/geopackage/Makefile") CONFIG_FILES="$CONFIG_FILES src/geopackage/Makefile" ;;
     "src/spatialite/Makefile") CONFIG_FILES="$CONFIG_FILES src/spatialite/Makefile" ;;
     "src/shapefiles/Makefile") CONFIG_FILES="$CONFIG_FILES src/shapefiles/Makefile" ;;
     "src/srsinit/Makefile") CONFIG_FILES="$CONFIG_FILES src/srsinit/Makefile" ;;

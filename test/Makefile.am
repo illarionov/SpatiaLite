@@ -43,6 +43,38 @@ check_PROGRAMS = check_endian \
 		check_geoscvt_fncts \
 		check_libxml2 \
 		check_virtualxpath
+if ENABLE_GEOPACKAGE
+check_PROGRAMS += \
+		check_createBaseTables \
+		check_add_tile_triggers \
+		check_add_tile_triggers_bad_table_name \
+		check_add_rt_metadata_triggers_bad_table_name \
+		check_add_rt_metadata_triggers_wrong_arg_type \
+		check_add_rt_metadata_triggers \
+		check_get_normal_row \
+		check_get_normal_row_bad_geopackage \
+		check_get_normal_row_bad_geopackage2 \
+		check_get_normal_zoom \
+		check_get_normal_zoom_extension_load \
+		check_get_normal_zoom_bad_geopackage \
+		check_get_normal_zoom_bad_geopackage2 \
+		check_point_to_tile_wrong_arg_type \
+		check_point_to_tile \
+		check_point_to_tile_integer_coordinates \
+		check_point_to_tile_bad_tablename \
+		check_point_to_tile_broken_geopackage \
+		check_point_to_tile_broken_geopackage2 \
+		check_point_to_tile_no_tile \
+		check_point_to_tile_multiresult \
+		check_point_to_tile_different_srid \
+		check_point_to_tile_broken_srid \
+		check_gpkgGetImageFormat \
+		check_gpkgGetImageFormat_nonimage \
+		check_gpkgGetImageFormat_nonblob \
+		check_gpkgGetImageFormat_png \
+		check_gpkgGetImageFormat_tiff \
+		check_gpkgGetImageFormat_webp
+endif
 
 AM_CFLAGS = -I@srcdir@/../src/headers -I@srcdir@
 AM_LDFLAGS = -L../src -lspatialite -lm $(GCOV_FLAGS)

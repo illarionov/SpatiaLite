@@ -49,6 +49,8 @@ AH_TEMPLATE([OMIT_FREEXL],
             [Should be defined in order to disable FREEXL support.])
 AH_TEMPLATE([ENABLE_LIBXML2],
             [Should be defined in order to enable LIBXML2 support.])
+AH_TEMPLATE([ENABLE_GEOPACKAGE],
+            [Should be defined in order to enable GeoPackage support.])
 
 # Checks for header files.
 AC_CHECK_HEADERS(stdlib.h,, [AC_MSG_ERROR([cannot find stdlib.h, bailing out])])
@@ -107,6 +109,7 @@ AC_CONFIG_FILES([Makefile \
 		src/gaiageo/flex/Makefile \
 		src/gaiageo/lemon/Makefile \
 		src/gaiageo/lemon/lemon_src/Makefile \
+		src/geopackage/Makefile \
 		src/spatialite/Makefile \
 		src/shapefiles/Makefile \
 		src/srsinit/Makefile \
@@ -269,6 +272,7 @@ if test x"$enable_geos" != "xno"; then
 	  AC_DEFINE(GEOS_TRUNK)
   fi
 
+
   #-----------------------------------------------------------------------
   #   --enable-lwgeom
   #
@@ -302,6 +306,19 @@ if test x"$enable_libxml2" != "xno"; then
   AC_SUBST(LIBXML2_LIBS)
   AC_DEFINE(ENABLE_LIBXML2)
 fi
+
+#-----------------------------------------------------------------------
+#   --enable-geopackage
+#
+AC_ARG_ENABLE(geopackage, [AS_HELP_STRING(
+  [--enable-geopackage], [enables experimental GeoPackage raster function support [default=no]])],
+  [], [enable_geopackage=no])
+if test x"$enable_geopackage" != "xno"; then
+  AC_DEFINE(ENABLE_GEOPACKAGE)
+fi
+AM_CONDITIONAL([ENABLE_GEOPACKAGE], [test x"$enable_geopackage" == "xyes"])
+
+#-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
 #    --enable-gcov

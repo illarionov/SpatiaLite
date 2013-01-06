@@ -3,6 +3,7 @@ SUBDIRS = headers \
 	gaiaaux \
 	gaiaexif \
 	gaiageo \
+	geopackage \
 	spatialite \
 	shapefiles \
 	srsinit \
@@ -19,6 +20,7 @@ libspatialite_la_SOURCES = versioninfo/version.c
 libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./gaiaexif/libgaiaexif.la \
 	./gaiageo/libgaiageo.la \
+	./geopackage/libgeopackage.la \
 	./spatialite/libsplite.la \
 	./shapefiles/libshapefiles.la \
 	./srsinit/libsrsinit.la \

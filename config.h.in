@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Should be defined in order to enable GeoPackage support. */
+#undef ENABLE_GEOPACKAGE
+
 /* Should be defined in order to enable LIBXML2 support. */
 #undef ENABLE_LIBXML2
 
