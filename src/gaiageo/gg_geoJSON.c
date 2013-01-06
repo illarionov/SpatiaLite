@@ -68,6 +68,82 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #define GEOJSON_DYN_BLOCK 1024
 
+
+
+/*
+** CAVEAT: we must redefine any Lemon/Flex own macro
+*/
+#define YYMINORTYPE		GEO_JSON_MINORTYPE
+#define YY_CHAR			GEO_JSON_YY_CHAR
+#define	input			geoJSON_input
+#define ParseAlloc		geoJSONParseAlloc
+#define ParseFree		geoJSONParseFree
+#define ParseStackPeak		geoJSONParseStackPeak
+#define Parse			geoJSONParse
+#define yyStackEntry		geoJSON_yyStackEntry
+#define yyzerominor		geoJSON_yyzerominor
+#define yy_accept		geoJSON_yy_accept
+#define yy_action		geoJSON_yy_action
+#define yy_base			geoJSON_yy_base
+#define yy_buffer_stack		geoJSON_yy_buffer_stack
+#define yy_buffer_stack_max	geoJSON_yy_buffer_stack_max
+#define yy_buffer_stack_top	geoJSON_yy_buffer_stack_top
+#define yy_c_buf_p		geoJSON_yy_c_buf_p
+#define yy_chk			geoJSON_yy_chk
+#define yy_def			geoJSON_yy_def
+#define yy_default		geoJSON_yy_default
+#define yy_destructor		geoJSON_yy_destructor
+#define yy_ec			geoJSON_yy_ec
+#define yy_fatal_error		geoJSON_yy_fatal_error
+#define yy_find_reduce_action	geoJSON_yy_find_reduce_action
+#define yy_find_shift_action	geoJSON_yy_find_shift_action
+#define yy_get_next_buffer	geoJSON_yy_get_next_buffer
+#define yy_get_previous_state	geoJSON_yy_get_previous_state
+#define yy_init			geoJSON_yy_init
+#define yy_init_globals		geoJSON_yy_init_globals
+#define yy_lookahead		geoJSON_yy_lookahead
+#define yy_meta			geoJSON_yy_meta
+#define yy_nxt			geoJSON_yy_nxt
+#define yy_parse_failed		geoJSON_yy_parse_failed
+#define yy_pop_parser_stack	geoJSON_yy_pop_parser_stack
+#define yy_reduce		geoJSON_yy_reduce
+#define yy_reduce_ofst		geoJSON_yy_reduce_ofst
+#define yy_shift		geoJSON_yy_shift
+#define yy_shift_ofst		geoJSON_yy_shift_ofst
+#define yy_start		geoJSON_yy_start
+#define yy_state_type		geoJSON_yy_state_type
+#define yy_syntax_error		geoJSON_yy_syntax_error
+#define yy_trans_info		geoJSON_yy_trans_info
+#define yy_try_NUL_trans	geoJSON_yy_try_NUL_trans
+#define yyParser		geoJSON_yyParser
+#define yyStackEntry		geoJSON_yyStackEntry
+#define yyStackOverflow		geoJSON_yyStackOverflow
+#define yyRuleInfo		geoJSON_yyRuleInfo
+#define yyunput			geoJSON_yyunput
+#define yyzerominor		geoJSON_yyzerominor
+#define yyTraceFILE		geoJSON_yyTraceFILE
+#define yyTracePrompt		geoJSON_yyTracePrompt
+#define yyTokenName		geoJSON_yyTokenName
+#define yyRuleName		geoJSON_yyRuleName
+#define ParseTrace		geoJSON_ParseTrace
+
+#define yylex			geoJSON_yylex
+#define YY_DECL int yylex (yyscan_t yyscanner)
+
+
+/* including LEMON generated header */
+#include "geoJSON.h"
+
+
+typedef union
+{
+    double dval;
+    int ival;
+    struct symtab *symp;
+} geoJSON_yystype;
+#define YYSTYPE geoJSON_yystype
+
+
 struct geoJson_dyn_block
 {
 /* a struct taking trace of dynamic allocations */
@@ -86,6 +162,7 @@ struct geoJson_data
     struct geoJson_dyn_block *geoJson_first_dyn_block;
     struct geoJson_dyn_block *geoJson_last_dyn_block;
     gaiaGeomCollPtr result;
+    YYSTYPE GeoJsonLval;
 };
 
 static struct geoJson_dyn_block *
@@ -124,8 +201,8 @@ geoJsonMapDynAlloc (struct geoJson_data *p_data, int type, void *ptr)
 	  p_data->geoJson_last_dyn_block->next = p;
 	  p_data->geoJson_last_dyn_block = p;
       }
-    p_data->geoJson_last_dyn_block->type[p_data->geoJson_last_dyn_block->
-					 index] = type;
+    p_data->geoJson_last_dyn_block->type[p_data->
+					 geoJson_last_dyn_block->index] = type;
     p_data->geoJson_last_dyn_block->ptr[p_data->geoJson_last_dyn_block->index] =
 	ptr;
     p_data->geoJson_last_dyn_block->index++;
@@ -1153,86 +1230,6 @@ geoJSON_geomColl_xyz (struct geoJson_data *p_data, gaiaGeomCollPtr first)
 }
 
 
-
-/*
-** CAVEAT: we must redefine any Lemon/Flex own macro
-*/
-#define YYMINORTYPE		GEO_JSON_MINORTYPE
-#define YY_CHAR			GEO_JSON_YY_CHAR
-#define	input			geoJSON_input
-#define ParseAlloc		geoJSONParseAlloc
-#define ParseFree		geoJSONParseFree
-#define ParseStackPeak		geoJSONParseStackPeak
-#define Parse			geoJSONParse
-#define yyStackEntry		geoJSON_yyStackEntry
-#define yyzerominor		geoJSON_yyzerominor
-#define yy_accept		geoJSON_yy_accept
-#define yy_action		geoJSON_yy_action
-#define yy_base			geoJSON_yy_base
-#define yy_buffer_stack		geoJSON_yy_buffer_stack
-#define yy_buffer_stack_max	geoJSON_yy_buffer_stack_max
-#define yy_buffer_stack_top	geoJSON_yy_buffer_stack_top
-#define yy_c_buf_p		geoJSON_yy_c_buf_p
-#define yy_chk			geoJSON_yy_chk
-#define yy_def			geoJSON_yy_def
-#define yy_default		geoJSON_yy_default
-#define yy_destructor		geoJSON_yy_destructor
-#define yy_ec			geoJSON_yy_ec
-#define yy_fatal_error		geoJSON_yy_fatal_error
-#define yy_find_reduce_action	geoJSON_yy_find_reduce_action
-#define yy_find_shift_action	geoJSON_yy_find_shift_action
-#define yy_get_next_buffer	geoJSON_yy_get_next_buffer
-#define yy_get_previous_state	geoJSON_yy_get_previous_state
-#define yy_init			geoJSON_yy_init
-#define yy_init_globals		geoJSON_yy_init_globals
-#define yy_lookahead		geoJSON_yy_lookahead
-#define yy_meta			geoJSON_yy_meta
-#define yy_nxt			geoJSON_yy_nxt
-#define yy_parse_failed		geoJSON_yy_parse_failed
-#define yy_pop_parser_stack	geoJSON_yy_pop_parser_stack
-#define yy_reduce		geoJSON_yy_reduce
-#define yy_reduce_ofst		geoJSON_yy_reduce_ofst
-#define yy_shift		geoJSON_yy_shift
-#define yy_shift_ofst		geoJSON_yy_shift_ofst
-#define yy_start		geoJSON_yy_start
-#define yy_state_type		geoJSON_yy_state_type
-#define yy_syntax_error		geoJSON_yy_syntax_error
-#define yy_trans_info		geoJSON_yy_trans_info
-#define yy_try_NUL_trans	geoJSON_yy_try_NUL_trans
-#define yyParser		geoJSON_yyParser
-#define yyStackEntry		geoJSON_yyStackEntry
-#define yyStackOverflow		geoJSON_yyStackOverflow
-#define yyRuleInfo		geoJSON_yyRuleInfo
-#define yyunput			geoJSON_yyunput
-#define yyzerominor		geoJSON_yyzerominor
-#define yyTraceFILE		geoJSON_yyTraceFILE
-#define yyTracePrompt		geoJSON_yyTracePrompt
-#define yyTokenName		geoJSON_yyTokenName
-#define yyRuleName		geoJSON_yyRuleName
-#define ParseTrace		geoJSON_ParseTrace
-
-#define yylex			geoJSON_yylex
-#define YY_DECL int yylex (yyscan_t yyscanner)
-
-
-/* including LEMON generated header */
-#include "geoJSON.h"
-
-
-typedef union
-{
-    double dval;
-    int ival;
-    struct symtab *symp;
-} geoJSON_yystype;
-#define YYSTYPE geoJSON_yystype
-
-
-/* extern YYSTYPE yylval; */
-YYSTYPE GeoJsonLval;
-
-
-
 /* including LEMON generated code */
 #include "geoJSON.c"
 
@@ -1324,11 +1321,7 @@ gaiaParseGeoJSON (const unsigned char *dirty_buffer)
 	    }
 	  tokens->Next = malloc (sizeof (geoJsonFlexToken));
 	  tokens->Next->Next = NULL;
-	  /*
-	     /GeoJsonLval is a global variable from FLEX.
-	     /GeoJsonLval is defined in geoJsonLexglobal.h
-	   */
-	  tokens->Next->value = GeoJsonLval.dval;
+	  tokens->Next->value = str_data.GeoJsonLval.dval;
 	  /* Pass the token to the wkt parser created from lemon */
 	  Parse (pParser, yv, &(tokens->Next->value), &str_data);
 	  tokens = tokens->Next;

@@ -53,6 +53,7 @@ typedef int flex_int32_t;
 typedef unsigned char flex_uint8_t; 
 typedef unsigned short int flex_uint16_t;
 typedef unsigned int flex_uint32_t;
+#endif /* ! C99 */
 
 /* Limits of integral types. */
 #ifndef INT8_MIN
@@ -82,8 +83,6 @@ typedef unsigned int flex_uint32_t;
 #ifndef UINT32_MAX
 #define UINT32_MAX             (4294967295U)
 #endif
-
-#endif /* ! C99 */
 
 #endif /* ! FLEXINT_H */
 
@@ -158,15 +157,7 @@ typedef void* yyscan_t;
 
 /* Size of default input buffer. */
 #ifndef YY_BUF_SIZE
-#ifdef __ia64__
-/* On IA-64, the buffer size is 16k, not 8k.
- * Moreover, YY_BUF_SIZE is 2*YY_READ_BUF_SIZE in the general case.
- * Ditto for the __ia64__ case accordingly.
- */
-#define YY_BUF_SIZE 32768
-#else
 #define YY_BUF_SIZE 16384
-#endif /* __ia64__ */
 #endif
 
 /* The state buf must be large enough to hold one state per character in the main buffer.
@@ -578,6 +569,10 @@ int Kmlget_lineno (yyscan_t yyscanner );
 
 void Kmlset_lineno (int line_number ,yyscan_t yyscanner );
 
+int Kmlget_column  (yyscan_t yyscanner );
+
+void Kmlset_column (int column_no ,yyscan_t yyscanner );
+
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
  */
@@ -610,12 +605,7 @@ static int input (yyscan_t yyscanner );
 
 /* Amount of stuff to slurp up with each read. */
 #ifndef YY_READ_BUF_SIZE
-#ifdef __ia64__
-/* On IA-64, the buffer size is 16k, not 8k */
-#define YY_READ_BUF_SIZE 16384
-#else
 #define YY_READ_BUF_SIZE 8192
-#endif /* __ia64__ */
 #endif
 
 /* Copy whatever the last rule matched to the standard output. */
@@ -634,7 +624,7 @@ static int input (yyscan_t yyscanner );
 	if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) \
 		{ \
 		int c = '*'; \
-		size_t n; \
+		unsigned n; \
 		for ( n = 0; n < max_size && \
 			     (c = getc( yyin )) != EOF && c != '\n'; ++n ) \
 			buf[n] = (char) c; \
@@ -800,45 +790,45 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-{ kml_freeString(&(KmlLval.pval)); return KML_END; }
+{ kml_freeString(&(Kmlget_extra(yyscanner)->KmlLval.pval)); return KML_END; }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-{ kml_freeString(&(KmlLval.pval)); return KML_EQ; }
+{ kml_freeString(&(Kmlget_extra(yyscanner)->KmlLval.pval)); return KML_EQ; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-{ kml_freeString(&(KmlLval.pval)); return KML_OPEN; }
+{ kml_freeString(&(Kmlget_extra(yyscanner)->KmlLval.pval)); return KML_OPEN; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-{ kml_freeString(&(KmlLval.pval)); return KML_CLOSE; }
+{ kml_freeString(&(Kmlget_extra(yyscanner)->KmlLval.pval)); return KML_CLOSE; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-{ kml_saveString(&(KmlLval.pval), yytext); return KML_COORD; }
+{ kml_saveString(&(Kmlget_extra(yyscanner)->KmlLval.pval), yytext); return KML_COORD; }
 	YY_BREAK
 case 6:
 /* rule 6 can match eol */
 YY_RULE_SETUP
-{ kml_saveString(&(KmlLval.pval), yytext); return KML_VALUE; }
+{ kml_saveString(&(Kmlget_extra(yyscanner)->KmlLval.pval), yytext); return KML_VALUE; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-{ kml_saveString(&(KmlLval.pval), yytext); return KML_KEYWORD; }
+{ kml_saveString(&(Kmlget_extra(yyscanner)->KmlLval.pval), yytext); return KML_KEYWORD; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-{ kml_freeString(&(KmlLval.pval)); Kmlget_extra(yyscanner)->kml_col += (int) strlen(yytext); }               /* ignore but count white space */
+{ kml_freeString(&(Kmlget_extra(yyscanner)->KmlLval.pval)); Kmlget_extra(yyscanner)->kml_col += (int) strlen(yytext); }               /* ignore but count white space */
 	YY_BREAK
 case 9:
 /* rule 9 can match eol */
 YY_RULE_SETUP
-{ kml_freeString(&(KmlLval.pval)); Kmlget_extra(yyscanner)->kml_col = 0; Kmlget_extra(yyscanner)->kml_line++; }
+{ kml_freeString(&(Kmlget_extra(yyscanner)->KmlLval.pval)); Kmlget_extra(yyscanner)->kml_col = 0; Kmlget_extra(yyscanner)->kml_line++; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-{ kml_freeString(&(KmlLval.pval)); Kmlget_extra(yyscanner)->kml_col += (int) strlen(yytext); return -1; }
+{ kml_freeString(&(Kmlget_extra(yyscanner)->KmlLval.pval)); Kmlget_extra(yyscanner)->kml_col += (int) strlen(yytext); return -1; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
@@ -1577,8 +1567,8 @@ YY_BUFFER_STATE Kml_scan_string (yyconst char * yystr , yyscan_t yyscanner)
 
 /** Setup the input buffer state to scan the given bytes. The next call to Kmllex() will
  * scan from a @e copy of @a bytes.
- * @param yybytes the byte buffer to scan
- * @param _yybytes_len the number of bytes in the buffer pointed to by @a bytes.
+ * @param bytes the byte buffer to scan
+ * @param len the number of bytes in the buffer pointed to by @a bytes.
  * @param yyscanner The scanner object.
  * @return the newly allocated buffer state object.
  */
@@ -1618,7 +1608,7 @@ YY_BUFFER_STATE Kml_scan_bytes  (yyconst char * yybytes, int  _yybytes_len , yys
 
 static void yy_fatal_error (yyconst char* msg , yyscan_t yyscanner)
 {
-    	(void) spatialite_e( "%s\n", msg );
+    	(void) fprintf( stderr, "%s\n", msg );
 	exit( YY_EXIT_FAILURE );
 }
 
