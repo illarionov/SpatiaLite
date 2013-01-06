@@ -61,9 +61,16 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     char *err_msg = NULL;
     void *cache = spatialite_alloc_connection();
     char *old_SPATIALITE_SECURITY_ENV = NULL;
+#ifdef _WIN32
+	char *env;
+#endif /* not WIN32 */
 
     old_SPATIALITE_SECURITY_ENV = getenv("SPATIALITE_SECURITY");
+#ifdef _WIN32
+	putenv("SPATIALITE_SECURITY=relaxed");
+#else /* not WIN32 */
     setenv("SPATIALITE_SECURITY", "relaxed", 1);
+#endif
 
     ret = sqlite3_open_v2 (":memory:", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     // For debugging / testing if required
@@ -71,11 +78,21 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     spatialite_init_ex(db_handle, cache, 0);
     if (old_SPATIALITE_SECURITY_ENV)
     {
+#ifdef _WIN32 
+	  env = sqlite3_mprintf("SPATIALITE_SECURITY=%s", old_SPATIALITE_SECURITY_ENV);
+	  putenv(env);
+	  sqlite3_free(env);
+#else /* not WIN32 */
       setenv("SPATIALITE_SECURITY", old_SPATIALITE_SECURITY_ENV, 1);
+#endif
     }
     else
     {
+#ifdef _WIN32
+	  putenv("SPATIALITE_SECURITY=");
+#else /* not WIN32 */
       unsetenv("SPATIALITE_SECURITY");
+#endif
     }
     if (ret != SQLITE_OK) {
       fprintf (stderr, "cannot open in-memory db: %s\n", sqlite3_errmsg (db_handle));

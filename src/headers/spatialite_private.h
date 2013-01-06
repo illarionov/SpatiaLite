@@ -222,9 +222,9 @@ extern "C"
 							 splite_geos_cache_item
 							 *p);
 
-    SPATIALITE_PRIVATE void splite_free_xmlSchema_cache_item (struct
-							      splite_xmlSchema_cache_item
-							      *p);
+    SPATIALITE_PRIVATE void splite_free_xml_schema_cache_item (struct
+							       splite_xmlSchema_cache_item
+							       *p);
 
     SPATIALITE_PRIVATE void
 	vxpath_free_namespaces (struct vxpath_namespaces *ns_list);

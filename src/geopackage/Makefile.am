@@ -19,3 +19,5 @@ libgeopackage_la_SOURCES = \
 libgeopackage_la_CFLAGS = -fvisibility=hidden
 
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
+
+EXTRA_DIST = geopackage_internal.h

@@ -14,4 +14,5 @@ nobase_include_HEADERS = spatialite.h \
 	spatialite/gg_xml.h \
 	spatialite/spatialite.h \
 	spatialite/sqlite.h \
-	spatialite/debug.h
+	spatialite/debug.h \
+	spatialite/geopackage.h

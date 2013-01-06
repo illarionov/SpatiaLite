@@ -87,6 +87,7 @@ EXTRA_DIST = asprintf4win.h \
 	fnmatch_impl4win.h \
 	fnmatch4win.h \
 	scandir4win.h \
+	test_helpers.h \
 	shapetest1.dbf \
 	shapetest1.prj \
 	shapetest1.qpj \

@@ -142,7 +142,7 @@ fnct_gpkgPointToTile (sqlite3_context * context, int argc UNUSED,
     
     if (srid != target_srid)
     {
-	// project input coordinates 
+	/* project input coordinates */
 	sql_stmt = sqlite3_mprintf("SELECT ST_X(projected),ST_Y(projected) FROM (SELECT Transform(MakePoint(%f, %f, %i), %i) AS projected)",
 				   x_coord, y_coord, srid, target_srid);
 

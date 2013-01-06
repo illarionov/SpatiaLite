@@ -296,7 +296,7 @@ gaiaIsValidXPathExpression (void *p_cache, const char *xpath_expr)
     xmlSetGenericErrorFunc (cache, xpathError);
 
 /* testing an XPath expression */
-    result = xmlXPathCompile (xpath_expr);
+    result = xmlXPathCompile ((const xmlChar *)xpath_expr);
     xmlSetGenericErrorFunc ((void *) stderr, NULL);
     if (result)
       {

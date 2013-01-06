@@ -113,7 +113,7 @@ fnct_gpkgGetNormalRow (sqlite3_context * context, int argc UNUSED,
     matrix_height = strtol(results[1 * columns + 0], &endptr, 10);
     if ((endptr == results[1 * columns + 0]) 
 	|| (matrix_height < 0)
-	|| (errno == ERANGE && matrix_height == LONG_MAX)
+	|| (errno == ERANGE && matrix_height == INT_MAX)
 	|| (errno != 0 && matrix_height == 0))
     {
 	sqlite3_free_table (results);
