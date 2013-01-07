@@ -2847,9 +2847,16 @@ fnct_RecoverGeometryColumn (sqlite3_context * context, int argc,
 		p_dims = "XYZM";
 		break;
 	    };
+/* Sandro 2013-01-07
+/ fixing an issue reported by Peter Aronson [ESRI] <paronson@esri.com>
 	  sql_statement = sqlite3_mprintf ("INSERT INTO geometry_columns "
 					   "(f_table_name, f_geometry_column, type, coord_dimension, srid, "
 					   "spatial_index_enabled) VALUES (Lower(?), Lower(?), %Q, %Q, ?, 0)",
+					   p_type, p_dims);
+*/
+	  sql_statement = sqlite3_mprintf ("INSERT INTO geometry_columns "
+					   "(f_table_name, f_geometry_column, type, coord_dimension, srid, "
+					   "spatial_index_enabled) VALUES (?, ?, %Q, %Q, ?, 0)",
 					   p_type, p_dims);
       }
     else
