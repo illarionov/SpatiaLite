@@ -114,7 +114,7 @@ fnct_gpkgCreateTilesTable (sqlite3_context * context, int argc __attribute__ ((u
 
     sqlite = sqlite3_context_db_handle (context);
 
-    sql_stmt = sqlite3_mprintf("INSERT INTO raster_columns VALUES (%Q, 'tile_data', %i)", table, srid);
+    sql_stmt = sqlite3_mprintf("INSERT INTO raster_columns (r_table_name, r_raster_column, georectification, srid) VALUES (%Q, 'tile_data', 1, %i)", table, srid);
     ret = sqlite3_exec (sqlite, sql_stmt, NULL, NULL, &errMsg);
     sqlite3_free(sql_stmt);
     if (ret != SQLITE_OK)
