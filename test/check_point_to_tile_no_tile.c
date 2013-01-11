@@ -184,7 +184,7 @@ int main (int argc UNUSED, char *argv[] UNUSED)
       sqlite3_free (err_msg);
       return -19;
     }
-    ret = sqlite3_exec (db_handle, "INSERT INTO raster_columns VALUES (\"test1_tiles\", \"tile_data\", 4326)",  NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "INSERT INTO raster_columns VALUES (\"test1_tiles\", \"tile_data\", 100, 0, 4326)",  NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
       fprintf (stderr, "INSERT raster_columns row error: %s\n", err_msg);
       sqlite3_free (err_msg);

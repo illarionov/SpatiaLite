@@ -86,7 +86,7 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     }
 
     /* check raster_columns table is OK */
-    ret = sqlite3_exec (db_handle, "INSERT INTO raster_columns VALUES (\"sample_matrix_tiles\", \"tile_data\", 4326)", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "INSERT INTO raster_columns VALUES (\"sample_matrix_tiles\", \"tile_data\", 100, 0, 4326)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "Unexpected INSERT INTO raster_columns result: %i, (%s)\n", ret, err_msg);
 	sqlite3_free (err_msg);

@@ -62,22 +62,26 @@ fnct_gpkgCreateBaseTables (sqlite3_context * context, int argc __attribute__ ((u
     int i = 0;
     
     const char* tableSchemas[] = {
+	/* GeoPackage specification Table 2 */
 	"CREATE TABLE geopackage_contents (\n"
 	"table_name TEXT NOT NULL PRIMARY KEY,\n"
 	"data_type TEXT NOT NULL,\n"
 	"identifier TEXT NOT NULL DEFAULT '',\n"
 	"description TEXT NOT NULL DEFAULT '',\n"
-	"min_x DOUBLE NOT NULL DEFAULT -20037508.3427892,\n"
-	"max_x DOUBLE NOT NULL DEFAULT 20037508.3427892,\n"
-	"min_y DOUBLE NOT NULL DEFAULT -20037471.2051371,\n"
-	"max_y DOUBLE NOT NULL DEFAULT 20037471.2051371,\n"
-	"srid INTEGER NOT NULL DEFAULT 3857,\n"
-	"last_change TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ',CURRENT_TIMESTAMP)));",
+	"last_change TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ',CURRENT_TIMESTAMP)),\n"
+	"min_x DOUBLE NOT NULL DEFAULT -180.0,\n"
+	"min_y DOUBLE NOT NULL DEFAULT -90.0,\n"
+	"max_x DOUBLE NOT NULL DEFAULT 180.0,\n"
+	"max_y DOUBLE NOT NULL DEFAULT 90.0,\n"
+	"srid INTEGER NOT NULL DEFAULT 0,\n"
+	"CONSTRAINT fk_gc_r_srid FOREIGN KEY (srid) REFERENCES spatial_ref_sys(srid));",
 	
-	/* GeoPackage specification Table 19/20 */
+	/* GeoPackage specification Table 23/24 */
 	"CREATE TABLE raster_columns (\n"
 	"r_table_name TEXT NOT NULL,\n"
 	"r_raster_column TEXT NOT NULL,\n"
+	"compr_qual_factor INTEGER NOT NULL DEFAULT 100,\n"
+	"georectification INTEGER NOT NULL DEFAULT 0,\n"
 	"srid INTEGER NOT NULL DEFAULT 0,\n"
 	"CONSTRAINT pk_rc PRIMARY KEY (r_table_name, r_raster_column) ON CONFLICT ROLLBACK,\n"
 	"CONSTRAINT fk_rc_r_srid FOREIGN KEY (srid) REFERENCES spatial_ref_sys(srid),"
