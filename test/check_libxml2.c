@@ -53,6 +53,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
 
+#define ISO_METADATA	1
+#define SLD_SE_STYLE	2
+#define SVG		3
+
 static int
 check_bad_xml (void *cache)
 {
@@ -188,10 +192,6 @@ check_validate (void *cache, const char *path)
         fprintf (stderr, "validation failed: \"%s\"\n", path);
         return 0;
     }
-    if (!gaiaXmlBlobHasSchemaURI (p_result, len)) {
-        fprintf (stderr, "%s: has no ValidationSchemaURI\n", path);
-        return 0;
-    }
     schema_uri2 = gaiaXmlBlobGetSchemaURI (p_result, len);
     if (schema_uri2 == NULL) {
         fprintf (stderr, "unable to retrieve the ValidationSchemaURI for \"%s\"\n", path);
@@ -206,6 +206,181 @@ check_validate (void *cache, const char *path)
     free (schema_uri2);
     free(p_result);
     free(xml);
+
+    return 1;
+}
+
+static int
+check_extended (void *cache, const char *path, int mode)
+{
+/* validating an XML Sample */
+    FILE *fl;
+    int sz = 0;
+    int rd;
+    char *xml = NULL;
+    int iso;
+    int style;
+    int svg;
+    unsigned char *p_result = NULL;
+    int len;
+    char *file_id = NULL;
+    char *parent_id = NULL;
+    char *title = NULL;
+    char *abstract = NULL;
+    unsigned char *geom_blob;
+    int geom_size;
+    gaiaGeomCollPtr geom;
+
+/* loading the XMLDocument */
+    fl = fopen(path, "rb");
+    if (!fl) {
+	fprintf (stderr, "cannot open \"%s\"\n", path);
+	return 0;
+    }
+    if (fseek(fl, 0, SEEK_END) == 0)
+        sz = ftell(fl);
+    xml = (char *) malloc(sz);
+    rewind(fl);
+    rd = fread(xml, 1, sz, fl);
+    if (rd != sz) {
+	fprintf (stderr, "read error \"%s\"\n", path);
+	return 0;
+    }
+    fclose(fl);
+
+/* simple parsing without validation */
+    gaiaXmlToBlob (cache, xml, rd, 1, NULL, &p_result, &len, NULL, NULL);
+    if (p_result == NULL) {
+        fprintf (stderr, "unable to parse \"%s\"\n", path);
+        return 0;
+    }
+
+/* checking the payload type */
+    iso = gaiaIsIsoMetadataXmlBlob (p_result, len);
+    style = gaiaIsSldSeStyleXmlBlob (p_result, len);
+    svg = gaiaIsSvgXmlBlob (p_result, len);
+    if (mode == ISO_METADATA && iso && !style && !svg)
+        ;
+    else if (mode == SLD_SE_STYLE && !iso && style && !svg)
+        ;
+    else if (mode == SVG && !iso && !style && svg)
+        ;
+    else {
+        fprintf (stderr, "mismatching type: \"%s\" iso=%d style=%d svg=%d\n", path, iso, style, svg);
+        return 0;
+    }
+
+/* testing ISO Metadata attributes */
+    file_id = gaiaXmlBlobGetFileId (p_result, len);
+    parent_id = gaiaXmlBlobGetParentId (p_result, len);
+    title = gaiaXmlBlobGetTitle (p_result, len);
+    abstract = gaiaXmlBlobGetAbstract (p_result, len);
+    gaiaXmlBlobGetGeometry (p_result, len, &geom_blob, &geom_size);
+    if (mode == ISO_METADATA) {
+    /* verifying ISO Metadata attributes */
+        if (file_id == NULL) {
+            fprintf (stderr, "unexpected NULL FileIdentifier in \"%s\"\n", path);
+            return 0;
+        }
+        if (strcmp(file_id, "029097fd-2ef2-487c-a5ca-6ec7a3dbac53") != 0) {
+            fprintf (stderr, "unexpected FileIdentifier in \"%s\" [%s]\n", path, file_id);
+            return 0;
+        }
+        if (parent_id == NULL) {
+            fprintf (stderr, "unexpected NULL ParentIdentifier in \"%s\"\n", path);
+            return 0;
+        }
+        if (strcmp(parent_id, "024027fd-3ef2-487c-a8ca-6ec8a3dfac57") != 0) {
+            fprintf (stderr, "unexpected ParentIdentifier in \"%s\" [%s]\n", path, parent_id);
+            return 0;
+        }
+        if (title == NULL) {
+            fprintf (stderr, "unexpected NULL Title in \"%s\"\n", path);
+            return 0;
+        }
+        if (strcmp(title, "Image2000 Product 1 (nl2) Multispectral") != 0) {
+            fprintf (stderr, "unexpected Title in \"%s\" [%s]\n", path, title);
+            return 0;
+        }
+        if (abstract == NULL) {
+            fprintf (stderr, "unexpected NULL Abstract in \"%s\"\n", path);
+            return 0;
+        }
+        if (strcmp(abstract, "IMAGE2000 product 1 individual orthorectified scenes.") != 0) {
+            fprintf (stderr, "unexpected Abstract in \"%s\" [%s]\n", path, abstract);
+            return 0;
+        }
+        if (geom_blob == NULL) {
+            fprintf (stderr, "unexpected NULL Geometry in \"%s\"\n", path);
+            return 0;
+        }
+        geom = gaiaFromSpatiaLiteBlobWkb (geom_blob, geom_size);
+        if (geom == NULL) {
+            fprintf (stderr, "unexpected invalid Geometry in \"%s\"\n", path);
+            return 0;
+        }
+        if (geom->Srid != 4326) {
+            fprintf (stderr, "unexpected Geometry SRID in \"%s\" [%d]\n", path, geom->Srid);
+            return 0;
+        }
+        if (geom->DeclaredType != GAIA_MULTIPOLYGON) {
+            fprintf (stderr, "unexpected Geometry Type in \"%s\" [%d]\n", path, geom->DeclaredType);
+            return 0;
+        }
+        if (geom->MinX != 3.93000000) {
+            fprintf (stderr, "unexpected Geometry MinX in \"%s\" [%1.8f]\n", path, geom->MinX);
+            return 0;
+        }
+        if (geom->MinY != 52.10000000) {
+            fprintf (stderr, "unexpected Geometry MinY in \"%s\" [%1.8f]\n", path, geom->MinY);
+            return 0;
+        }
+        if (geom->MaxX != 7.57000000) {
+            fprintf (stderr, "unexpected Geometry MaxX in \"%s\" [%1.8f]\n", path, geom->MaxX);
+            return 0;
+        }
+        if (geom->MaxY != 54.10000000) {
+            fprintf (stderr, "unexpected Geometry MaxY in \"%s\" [%1.8f]\n", path, geom->MaxY);
+            return 0;
+        }
+        gaiaFreeGeomColl(geom);
+    }
+    else {
+    /* not ISO Metadata */
+        if (file_id != NULL) {
+            fprintf (stderr, "unexpected FileIdentifier in \"%s\"\n", path);
+            return 0;
+        }
+        if (parent_id != NULL) {
+            fprintf (stderr, "unexpected ParentIdentifier in \"%s\"\n", path);
+            return 0;
+        }
+        if (title != NULL) {
+            fprintf (stderr, "unexpected Title in \"%s\"\n", path);
+            return 0;
+        }
+        if (abstract != NULL) {
+            fprintf (stderr, "unexpected Abstract in \"%s\"\n", path);
+            return 0;
+        }
+        if (geom_blob != NULL) {
+            fprintf (stderr, "unexpected Geometry in \"%s\"\n", path);
+            return 0;
+        }
+    }
+
+    free(p_result);
+    free(xml);
+    if (file_id)
+        free(file_id);
+    if (parent_id)
+        free(parent_id);
+    if (title)
+        free(title);
+    if (abstract)
+        free(abstract);
+    if (geom_blob)
+        free(geom_blob);
 
     return 1;
 }
@@ -275,12 +450,12 @@ check_parse (void *cache, const char *path)
     free(p_result);
     
     if (strcmp(path, "books.xml") == 0) {
-        if (compressed_sz != 414) {
-            fprintf (stderr, "books.xml: unexpected compressed size %d (expected 414)\n", compressed_sz);
+        if (compressed_sz != 429) {
+            fprintf (stderr, "books.xml: unexpected compressed size %d (expected 328)\n", compressed_sz);
             return 0; 
         }
-        if (uncompressed_sz != 762) {
-            fprintf (stderr, "books.xml: unexpected compressed size %d (expected 762)\n", uncompressed_sz);
+        if (uncompressed_sz != 777) {
+            fprintf (stderr, "books.xml: unexpected compressed size %d (expected 777)\n", uncompressed_sz);
             return 0; 
         }
         if (doc_sz != 741) {
@@ -297,12 +472,12 @@ check_parse (void *cache, const char *path)
         }
     }
     if (strcmp(path, "opera.xml") == 0) {
-        if (compressed_sz != 407) {
-            fprintf (stderr, "opera.xml: unexpected compressed size %d (expected 407)\n", compressed_sz);
+        if (compressed_sz != 422) {
+            fprintf (stderr, "opera.xml: unexpected compressed size %d (expected 422)\n", compressed_sz);
             return 0; 
         }
-        if (uncompressed_sz != 933) {
-            fprintf (stderr, "opera.xml: unexpected compressed size %d (expected 933)\n", uncompressed_sz);
+        if (uncompressed_sz != 948) {
+            fprintf (stderr, "opera.xml: unexpected compressed size %d (expected 948)\n", uncompressed_sz);
             return 0; 
         }
         if (doc_sz != 912) {
@@ -319,12 +494,12 @@ check_parse (void *cache, const char *path)
         }
     }
     if (strcmp(path, "movies.xml") == 0) {
-        if (compressed_sz != 559) {
-            fprintf (stderr, "movies.xml: unexpected compressed size %d (expected 559)\n", compressed_sz);
+        if (compressed_sz != 574) {
+            fprintf (stderr, "movies.xml: unexpected compressed size %d (expected 574)\n", compressed_sz);
             return 0; 
         }
-        if (uncompressed_sz != 1791) {
-            fprintf (stderr, "movies.xml: unexpected compressed size %d (expected 1791)\n", uncompressed_sz);
+        if (uncompressed_sz != 1806) {
+            fprintf (stderr, "movies.xml: unexpected compressed size %d (expected 1806)\n", uncompressed_sz);
             return 0; 
         }
         if (doc_sz != 1770) {
@@ -389,6 +564,18 @@ int main (int argc, char *argv[])
         fprintf (stderr, "unable to validate \"movies.xml\"\n");
         return -7;
     }
+    if (!check_extended(cache, "inspire-data-example.xml", ISO_METADATA)) {
+        fprintf (stderr, "unable to parse \"inspire-data-example.xml\"\n");
+        return -7;
+    }
+    if (!check_extended(cache, "stazioni_se.xml", SLD_SE_STYLE)) {
+        fprintf (stderr, "unable to parse \"stazioni_se.xml\"\n");
+        return -7;
+    }
+    if (!check_extended(cache, "thunderstorm_mild.svg", SVG)) {
+        fprintf (stderr, "unable to parse \"thunderstorm_mild.svg\"\n");
+        return -7;
+    }
 
     if (!check_bad_xml(cache)) {
         fprintf (stderr, "unable to test not well-formed XML\n");
@@ -399,8 +586,6 @@ int main (int argc, char *argv[])
         return -9;
     }
 
-    xmlCleanupParser();
-
 #endif
     
     ret = sqlite3_close (handle);
@@ -410,6 +595,10 @@ int main (int argc, char *argv[])
     }
         
     spatialite_cleanup_ex (cache);
+
+#ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
+    xmlCleanupParser();
+#endif
     
     return 0;
 }

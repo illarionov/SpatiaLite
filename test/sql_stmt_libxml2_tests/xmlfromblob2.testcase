@@ -1,8 +1,8 @@
-XmlFromBlob - INTEGER XmlBLOB
+XB_GetPayload - INTEGER XmlBLOB
 :memory: #use in-memory database
-SELECT XmlFromBlob(1);
+SELECT XB_GetPayload(1);
 1 # rows (not including the header row)
 1 # columns
-XmlFromBlob(1)
+XB_GetPayload(1)
 (NULL)
 

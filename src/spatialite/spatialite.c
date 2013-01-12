@@ -21336,13 +21336,13 @@ fnct_cvtFromIndCh (sqlite3_context * context, int argc, sqlite3_value ** argv)
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 
 static void
-fnct_XmlToBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
+fnct_XB_Create (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlToBlob(text XMLdocument)
-/ XmlToBlob(text XMLdocument, bool compressed)
-/ XmlToBlob(text XMLdocument, bool compressed, text SchemaURI)
-/ XmlToBlob(text XMLdocument, bool compressed, int InternalSchemaURI)
+/ XB_Create(text XMLdocument)
+/ XB_Create(text XMLdocument, bool compressed)
+/ XB_Create(text XMLdocument, bool compressed, text SchemaURI)
+/ XB_Create(text XMLdocument, bool compressed, int InternalSchemaURI)
 /
 / returns the current XmlBlob by parsing an XMLdocument 
 / or NULL if any error is encountered
@@ -21428,11 +21428,11 @@ fnct_XmlToBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
-fnct_XmlFromBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
+fnct_XB_GetPayload (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlFromBlob(XmlBLOB)
-/ XmlFromBlob(XmlBLOB, int format)
+/ XB_GetPayload(XmlBLOB)
+/ XB_GetPayload(XmlBLOB, int format)
 /
 / returns the current XMLDocument (as BLOB) by parsing an XmlBLOB 
 / or NULL if any error is encountered
@@ -21472,12 +21472,11 @@ fnct_XmlFromBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
-fnct_XmlTextFromBlob (sqlite3_context * context, int argc,
-		      sqlite3_value ** argv)
+fnct_XB_GetDocument (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlTextFromBlob(XmlBLOB)
-/ XmlTextFromBlob(XmlBLOB, int format)
+/ XB_GetDocument(XmlBLOB)
+/ XB_GetDocument(XmlBLOB, int format)
 /
 / returns the current XMLDocument (as UTF-8 TEXT) by parsing an XmlBLOB 
 / or NULL if any error is encountered
@@ -21518,14 +21517,14 @@ fnct_XmlTextFromBlob (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_XmlBlobSchemaValidate (sqlite3_context * context, int argc,
-			    sqlite3_value ** argv)
+fnct_XB_SchemaValidate (sqlite3_context * context, int argc,
+			sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlBlobSchemaValidate(XmlBLOB, text SchemaURI)
-/ XmlBlobSchemaValidate(XmlBLOB, text SchemaURI, bool compressed)
-/ XmlBlobSchemaValidate(XmlBLOB, int InternalSchemaURI)
-/ XmlBlobSchemaValidate(XmlBLOB, int InternalSchemaURI, bool compressed)
+/ XB_SchemaValidate(XmlBLOB, text SchemaURI)
+/ XB_SchemaValidate(XmlBLOB, text SchemaURI, bool compressed)
+/ XB_SchemaValidate(XmlBLOB, int InternalSchemaURI)
+/ XB_SchemaValidate(XmlBLOB, int InternalSchemaURI, bool compressed)
 /
 / returns a validated XmlBLOB object if the SchemaValidation was succesfull
 / or NULL if any error is encountered
@@ -21606,11 +21605,10 @@ fnct_XmlBlobSchemaValidate (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_XmlBlobCompress (sqlite3_context * context, int argc,
-		      sqlite3_value ** argv)
+fnct_XB_Compress (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlBlobCompress(XmlBLOB)
+/ XB_Compress(XmlBLOB)
 /
 / returns a compressed XmlBLOB object 
 / or NULL if any error is encountered
@@ -21637,11 +21635,10 @@ fnct_XmlBlobCompress (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_XmlBlobUncompress (sqlite3_context * context, int argc,
-			sqlite3_value ** argv)
+fnct_XB_Uncompress (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlBlobUncompress(XmlBLOB)
+/ XB_Uncompress(XmlBLOB)
 /
 / returns an uncompressed XmlBLOB object 
 / or NULL if any error is encountered
@@ -21668,10 +21665,10 @@ fnct_XmlBlobUncompress (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_IsValidXmlBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
+fnct_XB_IsValid (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ IsValidXmlBlob(XmlBLOB)
+/ XB_IsValid(XmlBLOB)
 /
 / returns TRUE if the current BLOB is an XmlBLOB, FALSE if not 
 / or -1 if any error is encountered
@@ -21692,11 +21689,11 @@ fnct_IsValidXmlBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
-fnct_IsCompressedXmlBlob (sqlite3_context * context, int argc,
-			  sqlite3_value ** argv)
+fnct_XB_IsCompressed (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
 {
 /* SQL function:
-/ IsCompressedXmlBlob(XmlBLOB)
+/ XB_IsCompressed(XmlBLOB)
 /
 / returns TRUE if the current BLOB is a compressed XmlBLOB,
 / FALSE if it's a valid uncompressed XmlBLOB 
@@ -21718,11 +21715,11 @@ fnct_IsCompressedXmlBlob (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_IsSchemaValidatedXmlBlob (sqlite3_context * context, int argc,
-			       sqlite3_value ** argv)
+fnct_XB_IsSchemaValidated (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
 {
 /* SQL function:
-/ IsSchemaValidatedXmlBlob(XmlBLOB)
+/ XB_IsSchemaValidated(XmlBLOB)
 /
 / returns TRUE if the current BLOB is a Schema validated XmlBLOB,
 / FALSE if it's a valid but not validated XmlBLOB 
@@ -21744,14 +21741,14 @@ fnct_IsSchemaValidatedXmlBlob (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_XmlBlobHasSchemaURI (sqlite3_context * context, int argc,
-			  sqlite3_value ** argv)
+fnct_XB_IsIsoMetadata (sqlite3_context * context, int argc,
+		       sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlBlobHasSchemaURI(XmlBLOB)
+/ XB_IsIsoMetadata(XmlBLOB)
 /
-/ returns TRUE if the current BLOB is a valid XmlBLOB having a SchemaURI,
-/ FALSE if it's a valid XmlBLOB not having a SchemaURI 
+/ returns TRUE if the current BLOB is an ISO Metadata XmlBLOB,
+/ FALSE if it's a valid XmlBLOB but not an ISO Metadata
 / or -1 if any error is encountered
 */
     unsigned char *p_blob;
@@ -21765,16 +21762,67 @@ fnct_XmlBlobHasSchemaURI (sqlite3_context * context, int argc,
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
-    ret = gaiaXmlBlobHasSchemaURI (p_blob, n_bytes);
+    ret = gaiaIsIsoMetadataXmlBlob (p_blob, n_bytes);
     sqlite3_result_int (context, ret);
 }
 
 static void
-fnct_XmlBlobGetDocumentSize (sqlite3_context * context, int argc,
-			     sqlite3_value ** argv)
+fnct_XB_IsSldSeStyle (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlBlobGetDocumentSize(XmlBLOB)
+/ XB_IsSldSeStyle(XmlBLOB)
+/
+/ returns TRUE if the current BLOB is an SLD/SE Style XmlBLOB,
+/ FALSE if it's a valid XmlBLOB but not an SLD/SE Style
+/ or -1 if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int ret;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    ret = gaiaIsSldSeStyleXmlBlob (p_blob, n_bytes);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_XB_IsSvg (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_IsSvg(XmlBLOB)
+/
+/ returns TRUE if the current BLOB is an SLD/SE Style XmlBLOB,
+/ FALSE if it's a valid XmlBLOB but not an SLD/SE Style
+/ or -1 if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int ret;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    ret = gaiaIsSvgXmlBlob (p_blob, n_bytes);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_XB_GetDocumentSize (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_GetDocumentSize(XmlBLOB)
 /
 / if the BLOB is a valid XmlBLOB will return the XMLDocument size (in bytes)
 / or NULL if any error is encountered
@@ -21798,11 +21846,11 @@ fnct_XmlBlobGetDocumentSize (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_XmlBlobGetSchemaURI (sqlite3_context * context, int argc,
-			  sqlite3_value ** argv)
+fnct_XB_GetSchemaURI (sqlite3_context * context, int argc,
+		      sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlBlobGetSchemaURI(XmlBLOB)
+/ XB_GetSchemaURI(XmlBLOB)
 /
 / if the BLOB is a valid XmlBLOB containing a SchemaURI then
 / the SchemaURI will be returned
@@ -21827,11 +21875,153 @@ fnct_XmlBlobGetSchemaURI (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_XmlBlobGetEncoding (sqlite3_context * context, int argc,
-			 sqlite3_value ** argv)
+fnct_XB_GetFileId (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlBlobGetEncoding(XmlBLOB)
+/ XB_GetFileId(XmlBLOB)
+/
+/ if the BLOB is a valid XmlBLOB containing a FileIdentifier then
+/ the FileIdentifier will be returned
+/ return NULL on any other case
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    char *file_identifier;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    file_identifier = gaiaXmlBlobGetFileId (p_blob, n_bytes);
+    if (file_identifier == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, file_identifier, strlen (file_identifier),
+			     free);
+}
+
+static void
+fnct_XB_GetParentId (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_GetParentId(XmlBLOB)
+/
+/ if the BLOB is a valid XmlBLOB containing a ParentIdentifier then
+/ the ParentIdentifier will be returned
+/ return NULL on any other case
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    char *parent_identifier;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    parent_identifier = gaiaXmlBlobGetParentId (p_blob, n_bytes);
+    if (parent_identifier == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, parent_identifier,
+			     strlen (parent_identifier), free);
+}
+
+static void
+fnct_XB_GetTitle (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_GetTitle(XmlBLOB)
+/
+/ if the BLOB is a valid XmlBLOB containing a Title then
+/ the Title will be returned
+/ return NULL on any other case
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    char *title;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    title = gaiaXmlBlobGetTitle (p_blob, n_bytes);
+    if (title == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, title, strlen (title), free);
+}
+
+static void
+fnct_XB_GetAbstract (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_GetAbstract(XmlBLOB)
+/
+/ if the BLOB is a valid XmlBLOB containing an Abstract then
+/ the Abstract will be returned
+/ return NULL on any other case
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    char *abstract;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    abstract = gaiaXmlBlobGetAbstract (p_blob, n_bytes);
+    if (abstract == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, abstract, strlen (abstract), free);
+}
+
+static void
+fnct_XB_GetGeometry (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_GetGeometry(XmlBLOB)
+/
+/ if the BLOB is a valid XmlBLOB containing a Geometry then
+/ the Geometry will be returned
+/ return NULL on any other case
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    int blob_len;
+    unsigned char *blob;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    gaiaXmlBlobGetGeometry (p_blob, n_bytes, &blob, &blob_len);
+    if (blob == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, blob, blob_len, free);
+}
+
+static void
+fnct_XB_GetEncoding (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_GetEncoding(XmlBLOB)
 /
 / if the BLOB is a valid XmlBLOB explicitly defining an encoding then
 / the charset name will be returned
@@ -21856,11 +22046,11 @@ fnct_XmlBlobGetEncoding (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_XmlGetInternalSchemaURI (sqlite3_context * context, int argc,
+fnct_XB_GetInternalSchemaURI (sqlite3_context * context, int argc,
 			      sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlGetInternalSchemaURI(XmlDocument)
+/ XB_GetInternalSchemaURI(XmlDocument)
 /
 / if the XMLDocument is valid and it contains an internally
 / defined SchemaURI then this SchemaURI will be returned
@@ -21886,11 +22076,11 @@ fnct_XmlGetInternalSchemaURI (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_XmlBlobGetLastParseError (sqlite3_context * context, int argc,
-			       sqlite3_value ** argv)
+fnct_XB_GetLastParseError (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlBlobGetLastParseError()
+/ XB_GetLastParseError()
 /
 / return the most recent XML Parse error/warning (if any)
 / return NULL on any other case
@@ -21905,11 +22095,11 @@ fnct_XmlBlobGetLastParseError (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_XmlBlobGetLastValidateError (sqlite3_context * context, int argc,
-				  sqlite3_value ** argv)
+fnct_XB_GetLastValidateError (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlBlobGetLastValidateError()
+/ XB_GetLastValidateError()
 /
 / return the most recent XML Validate error/warning (if any)
 / return NULL on any other case
@@ -21924,11 +22114,11 @@ fnct_XmlBlobGetLastValidateError (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_IsValidXPathExpression (sqlite3_context * context, int argc,
-			     sqlite3_value ** argv)
+fnct_XB_IsValidXPathExpression (sqlite3_context * context, int argc,
+				sqlite3_value ** argv)
 {
 /* SQL function:
-/ IsValidXPathExpression(text XPathExpression)
+/ XB_IsValidXPathExpression(text XPathExpression)
 /
 / returns TRUE if the current arg is a valid XPathExpression,
 / FALSE if it's not
@@ -21948,11 +22138,11 @@ fnct_IsValidXPathExpression (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_XmlBlobGetLastXPathError (sqlite3_context * context, int argc,
-			       sqlite3_value ** argv)
+fnct_XB_GetLastXPathError (sqlite3_context * context, int argc,
+			   sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlBlobGetLastXPathError()
+/ XB_GetLastXPathError()
 /
 / return the most recent XML Validate error/warning (if any)
 / return NULL on any other case
@@ -21967,11 +22157,10 @@ fnct_XmlBlobGetLastXPathError (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_XmlBlobCacheFlush (sqlite3_context * context, int argc,
-			sqlite3_value ** argv)
+fnct_XB_CacheFlush (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ XmlBlobCacheFlush()
+/ XB_CacheFlush()
 /
 / resets the Internal XML Schema Cache to its initial empty state
 / 
@@ -23349,54 +23538,68 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 
-    sqlite3_create_function (db, "XmlToBlob", 1, SQLITE_ANY, cache,
-			     fnct_XmlToBlob, 0, 0);
-    sqlite3_create_function (db, "XmlToBlob", 2, SQLITE_ANY, cache,
-			     fnct_XmlToBlob, 0, 0);
-    sqlite3_create_function (db, "XmlToBlob", 3, SQLITE_ANY, cache,
-			     fnct_XmlToBlob, 0, 0);
-    sqlite3_create_function (db, "XmlToBlob", 4, SQLITE_ANY, cache,
-			     fnct_XmlToBlob, 0, 0);
-    sqlite3_create_function (db, "XmlFromBlob", 1, SQLITE_ANY, 0,
-			     fnct_XmlFromBlob, 0, 0);
-    sqlite3_create_function (db, "XmlFromBlob", 2, SQLITE_ANY, 0,
-			     fnct_XmlFromBlob, 0, 0);
-    sqlite3_create_function (db, "XmlTextFromBlob", 1, SQLITE_ANY, 0,
-			     fnct_XmlTextFromBlob, 0, 0);
-    sqlite3_create_function (db, "XmlTextFromBlob", 2, SQLITE_ANY, 0,
-			     fnct_XmlTextFromBlob, 0, 0);
-    sqlite3_create_function (db, "XmlBlobSchemaValidate", 2, SQLITE_ANY, cache,
-			     fnct_XmlBlobSchemaValidate, 0, 0);
-    sqlite3_create_function (db, "XmlBlobCompress", 1, SQLITE_ANY, 0,
-			     fnct_XmlBlobCompress, 0, 0);
-    sqlite3_create_function (db, "XmlBlobUncompress", 1, SQLITE_ANY, 0,
-			     fnct_XmlBlobUncompress, 0, 0);
-    sqlite3_create_function (db, "IsValidXmlBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsValidXmlBlob, 0, 0);
-    sqlite3_create_function (db, "IsSchemaValidatedXmlBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsSchemaValidatedXmlBlob, 0, 0);
-    sqlite3_create_function (db, "IsCompressedXmlBlob", 1, SQLITE_ANY, 0,
-			     fnct_IsCompressedXmlBlob, 0, 0);
-    sqlite3_create_function (db, "XmlBlobHasSchemaURI", 1, SQLITE_ANY, 0,
-			     fnct_XmlBlobHasSchemaURI, 0, 0);
-    sqlite3_create_function (db, "XmlBlobGetSchemaURI", 1, SQLITE_ANY, 0,
-			     fnct_XmlBlobGetSchemaURI, 0, 0);
-    sqlite3_create_function (db, "XmlGetInternalSchemaURI", 1, SQLITE_ANY,
-			     cache, fnct_XmlGetInternalSchemaURI, 0, 0);
-    sqlite3_create_function (db, "XmlBlobGetDocumentSize", 1, SQLITE_ANY, 0,
-			     fnct_XmlBlobGetDocumentSize, 0, 0);
-    sqlite3_create_function (db, "XmlBlobGetEncoding", 1, SQLITE_ANY, 0,
-			     fnct_XmlBlobGetEncoding, 0, 0);
-    sqlite3_create_function (db, "XmlBlobGetLastParseError", 0, SQLITE_ANY,
-			     cache, fnct_XmlBlobGetLastParseError, 0, 0);
-    sqlite3_create_function (db, "XmlBlobGetLastValidateError", 0, SQLITE_ANY,
-			     cache, fnct_XmlBlobGetLastValidateError, 0, 0);
-    sqlite3_create_function (db, "IsValidXPathExpression", 1, SQLITE_ANY, cache,
-			     fnct_IsValidXPathExpression, 0, 0);
-    sqlite3_create_function (db, "XmlBlobGetLastXPathError", 0, SQLITE_ANY,
-			     cache, fnct_XmlBlobGetLastXPathError, 0, 0);
-    sqlite3_create_function (db, "XmlBlobCacheFlush", 0, SQLITE_ANY,
-			     cache, fnct_XmlBlobCacheFlush, 0, 0);
+    sqlite3_create_function (db, "XB_Create", 1, SQLITE_ANY, cache,
+			     fnct_XB_Create, 0, 0);
+    sqlite3_create_function (db, "XB_Create", 2, SQLITE_ANY, cache,
+			     fnct_XB_Create, 0, 0);
+    sqlite3_create_function (db, "XB_Create", 3, SQLITE_ANY, cache,
+			     fnct_XB_Create, 0, 0);
+    sqlite3_create_function (db, "XB_Create", 4, SQLITE_ANY, cache,
+			     fnct_XB_Create, 0, 0);
+    sqlite3_create_function (db, "XB_GetPayload", 1, SQLITE_ANY, 0,
+			     fnct_XB_GetPayload, 0, 0);
+    sqlite3_create_function (db, "XB_GetPayload", 2, SQLITE_ANY, 0,
+			     fnct_XB_GetPayload, 0, 0);
+    sqlite3_create_function (db, "XB_GetDocument", 1, SQLITE_ANY, 0,
+			     fnct_XB_GetDocument, 0, 0);
+    sqlite3_create_function (db, "XB_GetDocument", 2, SQLITE_ANY, 0,
+			     fnct_XB_GetDocument, 0, 0);
+    sqlite3_create_function (db, "XB_SchemaValidate", 2, SQLITE_ANY, cache,
+			     fnct_XB_SchemaValidate, 0, 0);
+    sqlite3_create_function (db, "XB_Compress", 1, SQLITE_ANY, 0,
+			     fnct_XB_Compress, 0, 0);
+    sqlite3_create_function (db, "XB_Uncompress", 1, SQLITE_ANY, 0,
+			     fnct_XB_Uncompress, 0, 0);
+    sqlite3_create_function (db, "XB_IsValid", 1, SQLITE_ANY, 0,
+			     fnct_XB_IsValid, 0, 0);
+    sqlite3_create_function (db, "XB_IsSchemaValidated", 1, SQLITE_ANY, 0,
+			     fnct_XB_IsSchemaValidated, 0, 0);
+    sqlite3_create_function (db, "XB_IsCompressed", 1, SQLITE_ANY, 0,
+			     fnct_XB_IsCompressed, 0, 0);
+    sqlite3_create_function (db, "XB_IsIsoMetadata", 1, SQLITE_ANY, 0,
+			     fnct_XB_IsIsoMetadata, 0, 0);
+    sqlite3_create_function (db, "XB_IsSldSeStyle", 1, SQLITE_ANY, 0,
+			     fnct_XB_IsSldSeStyle, 0, 0);
+    sqlite3_create_function (db, "XB_IsSvg", 1, SQLITE_ANY, 0,
+			     fnct_XB_IsSvg, 0, 0);
+    sqlite3_create_function (db, "XB_GetSchemaURI", 1, SQLITE_ANY, 0,
+			     fnct_XB_GetSchemaURI, 0, 0);
+    sqlite3_create_function (db, "XB_GetInternalSchemaURI", 1, SQLITE_ANY,
+			     cache, fnct_XB_GetInternalSchemaURI, 0, 0);
+    sqlite3_create_function (db, "XB_GetFileId", 1, SQLITE_ANY, 0,
+			     fnct_XB_GetFileId, 0, 0);
+    sqlite3_create_function (db, "XB_GetParentId", 1, SQLITE_ANY, 0,
+			     fnct_XB_GetParentId, 0, 0);
+    sqlite3_create_function (db, "XB_GetTitle", 1, SQLITE_ANY, 0,
+			     fnct_XB_GetTitle, 0, 0);
+    sqlite3_create_function (db, "XB_GetAbstract", 1, SQLITE_ANY, 0,
+			     fnct_XB_GetAbstract, 0, 0);
+    sqlite3_create_function (db, "XB_GetGeometry", 1, SQLITE_ANY, 0,
+			     fnct_XB_GetGeometry, 0, 0);
+    sqlite3_create_function (db, "XB_GetDocumentSize", 1, SQLITE_ANY, 0,
+			     fnct_XB_GetDocumentSize, 0, 0);
+    sqlite3_create_function (db, "XB_GetEncoding", 1, SQLITE_ANY, 0,
+			     fnct_XB_GetEncoding, 0, 0);
+    sqlite3_create_function (db, "XB_GetLastParseError", 0, SQLITE_ANY,
+			     cache, fnct_XB_GetLastParseError, 0, 0);
+    sqlite3_create_function (db, "XB_GetLastValidateError", 0, SQLITE_ANY,
+			     cache, fnct_XB_GetLastValidateError, 0, 0);
+    sqlite3_create_function (db, "XB_IsValidXPathExpression", 1, SQLITE_ANY,
+			     cache, fnct_XB_IsValidXPathExpression, 0, 0);
+    sqlite3_create_function (db, "XB_GetLastXPathError", 0, SQLITE_ANY, cache,
+			     fnct_XB_GetLastXPathError, 0, 0);
+    sqlite3_create_function (db, "XB_CacheFlush", 0, SQLITE_ANY, cache,
+			     fnct_XB_CacheFlush, 0, 0);
 
 #endif /* end including LIBXML2 */
 
@@ -23408,9 +23611,9 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_gpkgCreateTilesTable, 0, 0);
     sqlite3_create_function (db, "gpkgCreateTilesZoomLevel", 4, SQLITE_ANY, 0,
 			     fnct_gpkgCreateTilesZoomLevel, 0, 0);
-    sqlite3_create_function (db, "gpkgAddTileTriggers", 1, SQLITE_ANY, 0, 
+    sqlite3_create_function (db, "gpkgAddTileTriggers", 1, SQLITE_ANY, 0,
 			     fnct_gpkgAddTileTriggers, 0, 0);
-    sqlite3_create_function (db, "gpkgAddRtMetadataTriggers", 1, SQLITE_ANY, 0, 
+    sqlite3_create_function (db, "gpkgAddRtMetadataTriggers", 1, SQLITE_ANY, 0,
 			     fnct_gpkgAddRtMetadataTriggers, 0, 0);
     sqlite3_create_function (db, "gpkgGetNormalZoom", 2, SQLITE_ANY, 0,
 			     fnct_gpkgGetNormalZoom, 0, 0);

@@ -1,8 +1,8 @@
-IsSchemaValidatedXmlBlob - DOUBLE XmlBLOB
+XB_IsSchemaValidated - DOUBLE XmlBLOB
 :memory: #use in-memory database
-SELECT IsSchemaValidatedXmlBlob(1.1);
+SELECT XB_IsSchemaValidated(1.1);
 1 # rows (not including the header row)
 1 # columns
-IsSchemaValidatedXmlBlob(1.1)
+XB_IsSchemaValidated(1.1)
 -1
 

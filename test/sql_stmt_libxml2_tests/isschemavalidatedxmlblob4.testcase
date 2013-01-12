@@ -1,8 +1,8 @@
-IsSchemaValidatedXmlBlob - TEXT XmlBLOB
+XB_IsSchemaValidated - TEXT XmlBLOB
 :memory: #use in-memory database
-SELECT IsSchemaValidatedXmlBlob('alpha');
+SELECT XB_IsSchemaValidated('alpha');
 1 # rows (not including the header row)
 1 # columns
-IsSchemaValidatedXmlBlob('alpha')
+XB_IsSchemaValidated('alpha')
 -1
 

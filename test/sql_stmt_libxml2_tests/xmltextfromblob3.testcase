@@ -1,8 +1,8 @@
-XmlTextFromBlob - DOUBLE XmlBLOB
+XB_GetDocument - DOUBLE XmlBLOB
 :memory: #use in-memory database
-SELECT XmlTextFromBlob(1.1);
+SELECT XB_GetDocument(1.1);
 1 # rows (not including the header row)
 1 # columns
-XmlTextFromBlob(1.1)
+XB_GetDocument(1.1)
 (NULL)
 

@@ -1,8 +1,8 @@
-XmlBlobGetDocumentSize - INTEGER XmlBLOB
+XB_GetDocumentSize - INTEGER XmlBLOB
 :memory: #use in-memory database
-SELECT XmlBlobGetDocumentSize(1);
+SELECT XB_GetDocumentSize(1);
 1 # rows (not including the header row)
 1 # columns
-XmlBlobGetDocumentSize(1)
+XB_GetDocumentSize(1)
 (NULL)
 

@@ -1,8 +1,8 @@
-XmlBlobGetSchemaURI - NULL XmlDocument
+XB_GetSchemaURI - NULL XmlDocument
 :memory: #use in-memory database
-SELECT XmlBlobGetSchemaURI(NULL);
+SELECT XB_GetSchemaURI(NULL);
 1 # rows (not including the header row)
 1 # columns
-XmlBlobGetSchemaURI(NULL)
+XB_GetSchemaURI(NULL)
 (NULL)
 

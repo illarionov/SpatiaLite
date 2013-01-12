@@ -1,8 +1,8 @@
-IsCompressedXmlBlob - TEXT XmlBLOB
+XB_IsCompressed - TEXT XmlBLOB
 :memory: #use in-memory database
-SELECT IsCompressedXmlBlob('alpha');
+SELECT XB_IsCompressed('alpha');
 1 # rows (not including the header row)
 1 # columns
-IsCompressedXmlBlob('alpha')
+XB_IsCompressed('alpha')
 -1
 

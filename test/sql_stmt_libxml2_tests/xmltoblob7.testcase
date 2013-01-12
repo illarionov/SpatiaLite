@@ -1,8 +1,8 @@
-XmlToBlob - valid XMLDocument, NULL compression
+XB_Create - valid XMLDocument, NULL compression
 :memory: #use in-memory database
-SELECT XmlToBlob('<a><b>text</b></a>', NULL);
+SELECT XB_Create('<a><b>text</b></a>', NULL);
 1 # rows (not including the header row)
 1 # columns
-XmlToBlob('<a><b>text</b></a>', NULL)
+XB_Create('<a><b>text</b></a>', NULL)
 (NULL)
 

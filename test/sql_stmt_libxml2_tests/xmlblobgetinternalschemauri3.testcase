@@ -1,8 +1,8 @@
-XmlGetInternalSchemaURI - DOUBLE XmlBLOB
+XB_GetInternalSchemaURI - DOUBLE XmlBLOB
 :memory: #use in-memory database
-SELECT XmlGetInternalSchemaURI(1.1);
+SELECT XB_GetInternalSchemaURI(1.1);
 1 # rows (not including the header row)
 1 # columns
-XmlGetInternalSchemaURI(1.1)
+XB_GetInternalSchemaURI(1.1)
 (NULL)
 

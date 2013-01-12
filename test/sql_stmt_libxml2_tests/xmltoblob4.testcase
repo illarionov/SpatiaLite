@@ -1,8 +1,8 @@
-XmlToBlob - BLOB XMLDocument
+XB_Create - BLOB XMLDocument
 :memory: #use in-memory database
-SELECT XmlToBlob(zeroblob(4));
+SELECT XB_Create(zeroblob(4));
 1 # rows (not including the header row)
 1 # columns
-XmlToBlob(zeroblob(4))
+XB_Create(zeroblob(4))
 (NULL)
 

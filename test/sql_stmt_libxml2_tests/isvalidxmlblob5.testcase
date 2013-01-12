@@ -1,8 +1,8 @@
-IsValidXmlBlob - invalid XmlBLOB
+XB_IsValid - invalid XmlBLOB
 :memory: #use in-memory database
-SELECT IsValidXmlBlob(zeroblob(100));
+SELECT XB_IsValid(zeroblob(100));
 1 # rows (not including the header row)
 1 # columns
-IsValidXmlBlob(zeroblob(100))
+XB_IsValid(zeroblob(100))
 0
 

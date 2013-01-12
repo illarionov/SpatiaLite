@@ -1,8 +1,0 @@
-XmlBlobHasSchemaURI - INTEGER XmlBLOB
-:memory: #use in-memory database
-SELECT XmlBlobHasSchemaURI(1);
-1 # rows (not including the header row)
-1 # columns
-XmlBlobHasSchemaURI(1)
--1
-

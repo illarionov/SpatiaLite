@@ -69,6 +69,16 @@ extern "C"
 #define GAIA_XML_HEADER		0xAB
 /** XmlBLOB internal marker: SCHEMA */
 #define GAIA_XML_SCHEMA		0xBA
+/** XmlBLOB internal marker: FILEID */
+#define GAIA_XML_FILEID		0xCA
+/** XmlBLOB internal marker: PARENTID */
+#define GAIA_XML_PARENTID	0xDA
+/** XmlBLOB internal marker: TITLE */
+#define GAIA_XML_TITLE		0xDB
+/** XmlBLOB internal marker: ABSTRACT */
+#define GAIA_XML_ABSTRACT	0xDC
+/** XmlBLOB internal marker: GEOMETRY */
+#define GAIA_XML_GEOMETRY	0xDD
 /** XmlBLOB internal marker: CRC32 */
 #define GAIA_XML_CRC32		0xBC
 /** XmlBLOB internal marker: PAYLOAD */
@@ -82,6 +92,12 @@ extern "C"
 #define GAIA_XML_COMPRESSED	0x02
 /** XmlBLOB FLAG - VALIDATED bitmask */
 #define GAIA_XML_VALIDATED	0x04
+/** XmlBLOB FLAG - ISO METADATA bitmask */
+#define GAIA_XML_ISO_METADATA	0x80
+/** XmlBLOB FLAG - SLDSE STYLE bitmask */
+#define GAIA_XML_SLD_SE_STYLE	0x40
+/** XmlBLOB FLAG - SVG bitmask */
+#define GAIA_XML_SVG		0x20
 
 
 /* function prototypes */
@@ -118,11 +134,17 @@ extern "C"
  \param schema_validation_errors on completion this variable will contain all error/warning
  messages emitted during the XML Schema Validation step. Can be set to NULL so to ignore any message.
 
- \sa gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
- gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
- gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
- gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
- gaiaIsValidXPathExpression, gaiaXmlBlobGetLastXPathError
+ \sa gaiaXmlFromBlob, gaiaXmlTextFromBlob, gaiaXmlBlobCompression, 
+ gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob, 
+ gaiaIsSchemaValidatedXmlBlob, gaiaIsIsoMetadataXmlBlob,
+ gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
 
  \note the XmlBLOB buffer corresponds to dynamically allocated memory:
  so you are responsible to free() it [unless SQLite will take care
@@ -145,11 +167,17 @@ extern "C"
 
  \return the pointer to the newly created XMLDocument buffer: NULL on failure
 
- \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
- gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
- gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
- gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
- gaiaIsValidXPathExpression, gaiaXmlBlobGetLastXPathError
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlBlobCompression, 
+ gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob, 
+ gaiaIsSchemaValidatedXmlBlob, gaiaIsIsoMetadataXmlBlob,
+ gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
 
  \note the returned XMLDocument will always be encoded as UTF-8 (irrespectively
  from the internal encoding declaration), so to allow any further processing as 
@@ -169,12 +197,17 @@ extern "C"
  \param indent if TRUE the XMLDocument will be properly indented,
   otherwise it will be extracted exactly as it was when loaded.
 
- \sa gaiaXmlToBlob, gaiaXmlTextFromBlob, gaiaIsValidXmlBlob, 
- gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI,
+ \sa gaiaXmlToBlob, gaiaXmlTextFromBlob, gaiaXmlBlobCompression, 
+ gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob, 
+ gaiaIsSchemaValidatedXmlBlob, gaiaIsIsoMetadataXmlBlob,
+ gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
- gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
- gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
- gaiaIsValidXPathExpression, gaiaXmlBlobGetLastXPathError
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
 
  \note the returned XMLDocument will always respect the internal encoding declaration,
  and may not support any further processing as SQLite TEXT if it's not UTF-8.
@@ -195,12 +228,17 @@ extern "C"
 
  \return TRUE or FALSE
 
- \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsCompressedXmlBlob,
- gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI,
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob, 
+ gaiaXmlBlobCompression, gaiaIsCompressedXmlBlob, 
+ gaiaIsSchemaValidatedXmlBlob, gaiaIsIsoMetadataXmlBlob,
+ gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
- gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
- gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
- gaiaIsValidXPathExpression, gaiaXmlBlobGetLastXPathError
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
  */
     GAIAGEO_DECLARE int gaiaIsValidXmlBlob (const unsigned char *blob,
 					    int size);
@@ -211,16 +249,90 @@ extern "C"
  \param blob pointer to the XmlBLOB buffer.
  \param size XmlBLOB's size (in bytes).
 
- \return TRUE or FALSE if the BLOB actually is a valid uncompressed XmlBLOB; -1 in any other case.
+ \return TRUE or FALSE if the BLOB actually is a valid XmlBLOB; -1 in any other case.
 
- \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
- gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, gaiaXmlBlobCompression, 
- gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
- gaiaIsValidXPathExpression, gaiaXmlBlobGetLastXPathError
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob, gaiaXmlBlobCompression, 
+ gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob, 
+ gaiaIsSchemaValidatedXmlBlob, gaiaIsIsoMetadataXmlBlob,
+ gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
  */
     GAIAGEO_DECLARE int gaiaIsCompressedXmlBlob (const unsigned char *blob,
 						 int size);
+
+/**
+ Checks if a valid XmlBLOB buffer does contain an ISO Metadata or not
+
+ \param blob pointer to the XmlBLOB buffer.
+ \param size XmlBLOB's size (in bytes).
+
+ \return TRUE or FALSE if the BLOB actually is a valid XmlBLOB; -1 in any other case.
+
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
+ gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
+ gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
+ */
+    GAIAGEO_DECLARE int gaiaIsIsoMetadataXmlBlob (const unsigned char *blob,
+						  int size);
+
+/**
+ Checks if a valid XmlBLOB buffer does contain an SLD/SE Style or not
+
+ \param blob pointer to the XmlBLOB buffer.
+ \param size XmlBLOB's size (in bytes).
+
+ \return TRUE or FALSE if the BLOB actually is a valid XmlBLOB; -1 in any other case.
+
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
+ gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
+ */
+    GAIAGEO_DECLARE int gaiaIsSldSeStyleXmlBlob (const unsigned char *blob,
+						 int size);
+
+/**
+ Checks if a valid XmlBLOB buffer does contain an SVG Symbol or not
+
+ \param blob pointer to the XmlBLOB buffer.
+ \param size XmlBLOB's size (in bytes).
+
+ \return TRUE or FALSE if the BLOB actually is a valid XmlBLOB; -1 in any other case.
+
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
+ gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
+ */
+    GAIAGEO_DECLARE int gaiaIsSvgXmlBlob (const unsigned char *blob, int size);
 
 /**
  Return another XmlBLOB buffer compressed / uncompressed
@@ -232,11 +344,17 @@ extern "C"
  NULL on failure.
  \param out_size on completion this variable will contain the output XmlBLOB's size (in bytes)
 
- \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
- gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, gaiaIsCompressedXmlBlob, 
- gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
- gaiaIsValidXPathExpression, gaiaXmlBlobGetLastXPathError
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob, 
+ gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob, 
+ gaiaIsSchemaValidatedXmlBlob, gaiaIsIsoMetadataXmlBlob,
+ gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
 
  \note the XmlBLOB buffer corresponds to dynamically allocated memory:
  so you are responsible to free() it [unless SQLite will take care
@@ -256,34 +374,20 @@ extern "C"
  \return TRUE or FALSE if the BLOB actually is a valid XmlBLOB but not schema-validated; 
   -1 in any other case.
 
- \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
- gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
- gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
- gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError,
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
+ gaiaIsCompressedXmlBlob, gaiaIsIsoMetadataXmlBlob,
+ gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
  gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
  gaiaXmlBlobGetLastXPathError
  */
     GAIAGEO_DECLARE int gaiaIsSchemaValidatedXmlBlob (const unsigned char *blob,
 						      int size);
-
-/**
- Checks if a valid XmlBLOB buffer has a SchemaURI or not
-
- \param blob pointer to the XmlBLOB buffer.
- \param size XmlBLOB's size (in bytes).
-
- \return TRUE or FALSE if the BLOB actually is a valid XmlBLOB but not having any SchemaURI; 
-  -1 in any other case.
-
- \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
- gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
- gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
- gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError,
- gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
- gaiaXmlBlobGetLastXPathError
- */
-    GAIAGEO_DECLARE int gaiaXmlBlobHasSchemaURI (const unsigned char *blob,
-						 int size);
 
 /**
  Return the XMLDocument size (in bytes) from a valid XmlBLOB buffer
@@ -294,11 +398,15 @@ extern "C"
  \return the XMLDocument size (in bytes) for any valid XmlBLOB; 
   -1 if the BLOB isn't a valid XmlBLOB.
 
- \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob,
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetSchemaURI,
- gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding,
- gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError, 
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsSvgXmlBlob, gaiaXmlBlobGetSchemaURI,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
  gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
  gaiaXmlBlobGetLastXPathError
  */
@@ -314,10 +422,15 @@ extern "C"
  \return the SchemaURI for any valid XmlBLOB containing a SchemaURI; 
   NULL in any other case.
 
- \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
- gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
- gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
- gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError,
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
+ gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
  gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
  gaiaXmlBlobGetLastXPathError
 
@@ -337,11 +450,17 @@ extern "C"
  \return the SchemaURI eventually defined within a valid XMLDocument; 
   NULL if the XMLDocument is invalid, or if it doesn't contain any SchemaURI.
 
- \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
- gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
- gaiaXmlBlobGetSchemaURI, gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError,
- gaiaXmlBlobCompression, gaiaXmlBlobGetLastValidateError, 
- gaiaIsValidXPathExpression, gaiaXmlBlobGetLastXPathError
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
+ gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
+ gaiaXmlBlobGetSchemaURI, gaiaXmlBlobGetFileId, 
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
 
  \note the returned SchemaURI corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
@@ -349,6 +468,145 @@ extern "C"
     GAIAGEO_DECLARE char *gaiaXmlGetInternalSchemaURI (void *p_cache,
 						       const char *xml,
 						       int xml_len);
+
+/**
+ Return the FileIdentifier from a valid XmlBLOB buffer
+
+ \param blob pointer to the XmlBLOB buffer.
+ \param size XmlBLOB's size (in bytes).
+
+ \return the FileIdentifier for any valid XmlBLOB containing a FileIdentifier; 
+  NULL in any other case.
+
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
+ gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
+ gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
+
+ \note the returned FileIdentifier corresponds to dynamically allocated memory:
+ so you are responsible to free() it before or after.
+ */
+    GAIAGEO_DECLARE char *gaiaXmlBlobGetFileId (const unsigned char
+						*blob, int size);
+
+/**
+ Return the ParentIdentifier from a valid XmlBLOB buffer
+
+ \param blob pointer to the XmlBLOB buffer.
+ \param size XmlBLOB's size (in bytes).
+
+ \return the ParentIdentifier for any valid XmlBLOB containing a ParentIdentifier; 
+  NULL in any other case.
+
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
+ gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
+ gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
+ gaiaXmlBlobGetFileId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
+
+ \note the returned ParentIdentifier corresponds to dynamically allocated memory:
+ so you are responsible to free() it before or after.
+ */
+    GAIAGEO_DECLARE char *gaiaXmlBlobGetParentId (const unsigned char
+						  *blob, int size);
+
+/**
+ Return the Title from a valid XmlBLOB buffer
+
+ \param blob pointer to the XmlBLOB buffer.
+ \param size XmlBLOB's size (in bytes).
+
+ \return the Title for any valid XmlBLOB containing a Title; 
+  NULL in any other case.
+
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
+ gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
+ gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
+ gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
+
+ \note the returned Title corresponds to dynamically allocated memory:
+ so you are responsible to free() it before or after.
+ */
+    GAIAGEO_DECLARE char *gaiaXmlBlobGetTitle (const unsigned char
+					       *blob, int size);
+
+/**
+ Return the Abstract from a valid XmlBLOB buffer
+
+ \param blob pointer to the XmlBLOB buffer.
+ \param size XmlBLOB's size (in bytes).
+
+ \return the Abstract for any valid XmlBLOB containing an Abstract; 
+  NULL in any other case.
+
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
+ gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
+ gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
+ gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId,
+ gaiaXmlBlobGetTitle, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
+
+ \note the returned Abstract corresponds to dynamically allocated memory:
+ so you are responsible to free() it before or after.
+ */
+    GAIAGEO_DECLARE char *gaiaXmlBlobGetAbstract (const unsigned char
+						  *blob, int size);
+
+/**
+ Return the Geometry Buffer from a valid XmlBLOB buffer
+
+ \param blob pointer to the XmlBLOB buffer.
+ \param size XmlBLOB's size (in bytes).
+ \param blob_geom on completion this variable will contain
+ a pointer to the returned Geometry Buffer (NULL if no Geometry
+ was defined within the XmlBLOB)
+ \param blob_size on completion this variable will contain
+ the size (in bytes) of the returned Geometry Buffer
+
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
+ gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
+ gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
+ gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId,
+ gaiaXmlBlobGetTitle, gaiaXmlBlobGetAbstract,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
+
+ \note the returned Geometry Buffer corresponds to dynamically allocated memory:
+ so you are responsible to free() it before or after.
+ */
+    GAIAGEO_DECLARE void gaiaXmlBlobGetGeometry (const unsigned char
+						 *blob, int size,
+						 unsigned char **blob_geom,
+						 int *blob_size);
 
 /**
  Return the Charset Encoding from a valid XmlBLOB buffer
@@ -359,13 +617,17 @@ extern "C"
  \return the Charset Encoding for any valid XmlBLOB explicitly defining an Encoding; 
   NULL in any other case.
 
- \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
- gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
- gaiaXmlGetInternalSchemaURI, gaiaXmlBlobSchemaURI, 
- gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError,
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
+ gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
+ gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
+ gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId, 
+ gaiaXmlBlobGetTitle, gaiaXmlBlobGetAbstract,
+ gaiaXmlBlobGetGeometry, gaiaXmlBlobGetLastParseError, 
  gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
  gaiaXmlBlobGetLastXPathError
-
  \note the returned Encoding corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
@@ -380,13 +642,17 @@ extern "C"
  \return the most recent XML Parse error/warning message (if any); 
   NULL in any other case.
 
- \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, 
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize, 
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
- gaiaXmlBlobCompression, gaiaXmlBlobGetEncoding,
+ gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId,
+ gaiaXmlBlobGetTitle, gaiaXmlBlobGetAbstract,
+ gaiaXmlBlobGetGeometry, gaiaXmlBlobGetEncoding, 
  gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
- gaiaXmlBlobGetLastXPathError, splite_alloc_connection
+ gaiaXmlBlobGetLastXPathError
 
  \note the returned error/warning message corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
@@ -401,13 +667,17 @@ extern "C"
  \return the most recent XML Validate error/warning message (if any); 
   NULL in any other case.
 
- \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob,
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
- gaiaXmlBlobCompression, gaiaXmlBlobGetEncoding,
+ gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId,
+ gaiaXmlBlobGetTitle, gaiaXmlBlobGetAbstract,
+ gaiaXmlBlobGetGeometry, gaiaXmlBlobGetEncoding,
  gaiaXmlBlobGetLastParseError, gaiaIsValidXPathExpression, 
- gaiaXmlBlobGetLastXPathError, splite_alloc_connection
+ gaiaXmlBlobGetLastXPathError
 
  \note the returned error/warning message corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
@@ -423,11 +693,17 @@ extern "C"
  \return TRUE or FALSE if the Text string actually is a valid XPathExpression; 
   -1 in any other case.
 
- \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob,
- gaiaIsSchemaValidatedXmlBlob, gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
- gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetEncoding, 
- gaiaXmlBlobCompression, gaiaXmlBlobGetLastParseError,
- gaiaXmlBlobGetLastValidateError, gaiaXmlBlobGetLastXPathError
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
+ gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
+ gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
+ gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId,
+ gaiaXmlBlobGetTitle, gaiaXmlBlobGetAbstract,
+ gaiaXmlBlobGetGeometry, gaiaXmlBlobGetEncoding,
+ gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
+ gaiaXmlBlobGetLastXPathError
  */
     GAIAGEO_DECLARE int gaiaIsValidXPathExpression (void *p_cache,
 						    const char *xpath_expr);
@@ -440,13 +716,17 @@ extern "C"
  \return the most recent XPath error/warning message (if any); 
   NULL in any other case.
 
- \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaIsValidXmlBlob,
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaXmlBlobHasSchemaURI, gaiaXmlBlobGetDocumentSize,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
- gaiaXmlBlobCompression, gaiaXmlBlobGetEncoding,
+ gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId,
+ gaiaXmlBlobGetTitle, gaiaXmlBlobGetAbstract,
+ gaiaXmlBlobGetGeometry, gaiaXmlBlobGetEncoding,
  gaiaXmlBlobGetLastParseError, gaiaXmlBlobGetLastValidateError,
- gaiaIsValidXPathExpression, splite_alloc_connection
+ gaiaIsValidXPathExpression
 
  \note the returned error/warning message corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.

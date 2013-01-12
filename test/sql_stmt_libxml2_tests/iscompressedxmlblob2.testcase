@@ -1,8 +1,8 @@
-IsCompressedXmlBlob - INTEGER XmlBLOB
+XB_IsCompressed - INTEGER XmlBLOB
 :memory: #use in-memory database
-SELECT IsCompressedXmlBlob(1);
+SELECT XB_IsCompressed(1);
 1 # rows (not including the header row)
 1 # columns
-IsCompressedXmlBlob(1)
+XB_IsCompressed(1)
 -1
 

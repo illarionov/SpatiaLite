@@ -1,8 +1,8 @@
-XmlBlobGetEncoding - invalid XmlBLOB
+XB_GetEncoding - invalid XmlBLOB
 :memory: #use in-memory database
-SELECT XmlBlobGetEncoding(zeroblob(100));
+SELECT XB_GetEncoding(zeroblob(100));
 1 # rows (not including the header row)
 1 # columns
-XmlBlobGetEncoding(zeroblob(100))
+XB_GetEncoding(zeroblob(100))
 (NULL)
 

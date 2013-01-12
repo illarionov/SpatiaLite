@@ -156,52 +156,143 @@ int main (int argc, char *argv[])
         fprintf (stderr, "Unable to load \"movies.xml\"");
         return -6;
     }
+    if (!load_xml(cache, db_handle, stmt, "books.xml")) {
+        fprintf (stderr, "Unable to re-load yet again \"books.xml\"");
+        return -7;
+    }
+    if (!load_xml(cache, db_handle, stmt, "inspire-data-example.xml")) {
+        fprintf (stderr, "Unable to load \"books-bad.xml\"");
+        return -8;
+    }
     ret = sqlite3_finalize (stmt);
 
-/* validating the XMLDocuments */
-    sql_statement = "UPDATE test SET xml = XmlBlobSchemaValidate(xml, "
-                    "XmlGetInternalSchemaURI(XmlTextFromBlob(xml))) "
-                    "WHERE XmlGetInternalSchemaURI(XmlTextFromBlob(xml)) IS NOT NULL";
-    ret = sqlite3_exec (db_handle, sql_statement, NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf (stderr, "SchemaValidation error: %s\n", err_msg);
-	sqlite3_free (err_msg);
-	return -7;
-    }
-
-/* check #1: validity */
-    sql_statement = "SELECT Count(*) FROM test WHERE IsValidXmlBlob(xml) = 1";
+/* checking for parse errors */
+    sql_statement = "SELECT XB_GetLastParseError()";
     ret = sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -8;
+	return -9;
     }
     if ((rows != 1) || (columns != 1)) {
 	fprintf (stderr, "Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
-	return  -9;
-    }
-    if (strcmp(results[1], "3") != 0) {
-	fprintf (stderr, "Unexpected error: IsValidXmlBlob() bad result: %s.\n", results[1]);
 	return  -10;
     }
     sqlite3_free_table (results);
 
-/* check #2: validated */
-    sql_statement = "SELECT Count(*) FROM test WHERE IsSchemaValidatedXmlBlob(xml) = 1";
+/* validating the XMLDocuments */
+    sql_statement = "UPDATE test SET xml = XB_SchemaValidate(xml, "
+                    "XB_GetInternalSchemaURI(XB_GetDocument(xml))) "
+                    "WHERE XB_GetInternalSchemaURI(XB_GetDocument(xml)) IS NOT NULL "
+                    "AND name <> 'inspire-data-example.xml'";
+    ret = sqlite3_exec (db_handle, sql_statement, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "SchemaValidation error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -11;
+    }
+
+/* checking for validation errors */
+    sql_statement = "SELECT XB_GetLastValidateError()";
     ret = sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -11;
+	return -12;
     }
     if ((rows != 1) || (columns != 1)) {
 	fprintf (stderr, "Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
-	return  -12;
-    }
-    if (strcmp(results[1], "2") != 0) {
-	fprintf (stderr, "Unexpected error: IsValidXmlBlob() bad result: %s.\n", results[1]);
 	return  -13;
+    }
+    sqlite3_free_table (results);
+
+/* check #1: validity */
+    sql_statement = "SELECT Count(*) FROM test WHERE XB_IsValid(xml) = 1";
+    ret = sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -14;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
+	return  -15;
+    }
+    if (strcmp(results[1], "5") != 0) {
+	fprintf (stderr, "Unexpected error: XB_IsValid() bad result: %s.\n", results[1]);
+	return  -16;
+    }
+    sqlite3_free_table (results);
+
+/* check #2: validated */
+    sql_statement = "SELECT Count(*) FROM test WHERE XB_IsSchemaValidated(xml) = 1";
+    ret = sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -17;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
+	return  -18;
+    }
+    if (strcmp(results[1], "3") != 0) {
+	fprintf (stderr, "Unexpected error: XB_IsSchemaValidated() bad result: %s.\n", results[1]);
+	return  -19;
+    }
+    sqlite3_free_table (results);
+
+/* freeing the Schema cache */
+    sql_statement = "SELECT XB_CacheFlush()";
+    ret = sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -20;
+    }
+    if ((rows != 1) || (columns != 1)) {
+	fprintf (stderr, "Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
+	return  -21;
+    }
+    if (strcmp(results[1], "1") != 0) {
+	fprintf (stderr, "Unexpected error: XB_CacheFlush() bad result: %s.\n", results[1]);
+	return  -22;
+    }
+    sqlite3_free_table (results);
+
+/* check #3: validated */
+    sql_statement = "SELECT XB_GetFileId(xml), XB_GetParentId(xml), XB_GetTitle(xml), "
+                    "XB_GetAbstract(xml), ST_Srid(XB_GetGeometry(xml)) "
+                    "FROM test WHERE XB_IsIsoMetadata(xml) = 1";
+    ret = sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "Error: %s\n", err_msg);
+	sqlite3_free (err_msg);
+	return -23;
+    }
+    if ((rows != 1) || (columns != 5)) {
+	fprintf (stderr, "Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
+	return  -24;
+    }
+    if (strcmp(results[5], "029097fd-2ef2-487c-a5ca-6ec7a3dbac53") != 0) {
+	fprintf (stderr, "Unexpected error: XB_GetFileId() bad result: %s.\n", results[5]);
+	return  -25;
+    }
+    if (strcmp(results[6], "024027fd-3ef2-487c-a8ca-6ec8a3dfac57") != 0) {
+	fprintf (stderr, "Unexpected error: XB_GetParentId() bad result: %s.\n", results[6]);
+	return  -26;
+    }
+    if (strcmp(results[7], "Image2000 Product 1 (nl2) Multispectral") != 0) {
+	fprintf (stderr, "Unexpected error: XB_GetTitle() bad result: %s.\n", results[7]);
+	return  -27;
+    }
+    if (strcmp(results[8], "IMAGE2000 product 1 individual orthorectified scenes.") != 0) {
+	fprintf (stderr, "Unexpected error: XB_GetAbstract() bad result: %s.\n", results[8]);
+	return  -28;
+    }
+    if (strcmp(results[9], "4326") != 0) {
+	fprintf (stderr, "Unexpected error: ST_Srid(XB_Geometry()) bad result: %s.\n", results[9]);
+	return  -29;
     }
     sqlite3_free_table (results);
 
@@ -211,7 +302,7 @@ int main (int argc, char *argv[])
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "CreateTable error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -14;
+	return -30;
     }
 
 /* test XPAth expression #1 */
@@ -220,55 +311,55 @@ int main (int argc, char *argv[])
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -15;
+	return -31;
     }
     if ((rows != 1) || (columns != 1)) {
 	fprintf (stderr, "Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
-	return  -16;
+	return  -32;
     }
-    if (strcmp(results[1], "3") != 0) {
+    if (strcmp(results[1], "5") != 0) {
 	fprintf (stderr, "Unexpected error: XPath #1 bad result: %s.\n", results[1]);
-	return  -17;
+	return  -33;
     }
     sqlite3_free_table (results);
 
 /* test XPAth expression #2 */
-    sql_statement = "SELECT a.value, b.name FROM test_xp AS a "
+    sql_statement = "SELECT DISTINCT a.value, b.name FROM test_xp AS a "
                     "JOIN test AS b ON (b.id = a.pkid) "
                     "WHERE a.xpath_expr = '//author[@lastName=\"Conrad\"]/title/text()'";
     ret = sqlite3_get_table (db_handle, sql_statement, &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -18;
+	return -34;
     }
     if ((rows != 3) || (columns != 2)) {
 	fprintf (stderr, "Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
-	return  -19;
+	return  -35;
     }
     if (strcmp(results[0], "value") != 0) {
 	fprintf (stderr, "Unexpected error: XPath #2 bad result: %s.\n", results[0]);
-	return  -20;
+	return  -36;
     }
     if (strcmp(results[1], "name") != 0) {
 	fprintf (stderr, "Unexpected error: XPath #2 bad result: %s.\n", results[1]);
-	return  -21;
+	return  -37;
     }
     if (strcmp(results[2], "Lord Jim") != 0) {
 	fprintf (stderr, "Unexpected error: XPath #2 bad result: %s.\n", results[2]);
-	return  -22;
+	return  -38;
     }
     if (strcmp(results[3], "books.xml") != 0) {
 	fprintf (stderr, "Unexpected error: XPath #2 bad result: %s.\n", results[3]);
-	return  -23;
+	return  -39;
     }
     if (strcmp(results[4], "The Secret Agent") != 0) {
 	fprintf (stderr, "Unexpected error: XPath #2 bad result: %s.\n", results[4]);
-	return  -24;
+	return  -40;
     }
     if (strcmp(results[6], "Heart of Darkness") != 0) {
 	fprintf (stderr, "Unexpected error: XPath #2 bad result: %s.\n", results[6]);
-	return  -25;
+	return  -41;
     }
     sqlite3_free_table (results);
 
@@ -279,15 +370,15 @@ int main (int argc, char *argv[])
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -26;
+	return -42;
     }
     if ((rows != 1) || (columns != 1)) {
 	fprintf (stderr, "Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
-	return  -27;
+	return  -43;
     }
     if (strcmp(results[1], "Tarantino") != 0) {
 	fprintf (stderr, "Unexpected error: XPath #3 bad result: %s.\n", results[1]);
-	return  -28;
+	return  -44;
     }
     sqlite3_free_table (results);
 
@@ -297,15 +388,15 @@ int main (int argc, char *argv[])
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -29;
+	return -45;
     }
     if ((rows != 1) || (columns != 1)) {
 	fprintf (stderr, "Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
-	return  -30;
+	return  -46;
     }
     if (strcmp(results[1], "op:Opera") != 0) {
 	fprintf (stderr, "Unexpected error: XPath #4 bad result: %s.\n", results[1]);
-	return  -31;
+	return  -47;
     }
     sqlite3_free_table (results);
 
@@ -316,31 +407,31 @@ int main (int argc, char *argv[])
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -32;
+	return -48;
     }
     if ((rows != 1) || (columns != 5)) {
 	fprintf (stderr, "Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
-	return  -33;
+	return  -49;
     }
     if (strcmp(results[5], "2") != 0) {
 	fprintf (stderr, "Unexpected error: XPath #5 bad result: %s.\n", results[5]);
-	return  -34;
+	return  -50;
     }
     if (strcmp(results[6], "2") != 0) {
 	fprintf (stderr, "Unexpected error: XPath #5 bad result: %s.\n", results[6]);
-	return  -35;
+	return  -51;
     }
     if (strcmp(results[7], "0") != 0) {
 	fprintf (stderr, "Unexpected error: XPath #5 bad result: %s.\n", results[7]);
-	return  -36;
+	return  -52;
     }
     if (results[8] != NULL) {
 	fprintf (stderr, "Unexpected error: XPath #5 bad result: %s.\n", results[8]);
-	return  -37;
+	return  -53;
     }
     if (results[9] != NULL) {
 	fprintf (stderr, "Unexpected error: XPath #5 bad result: %s.\n", results[9]);
-	return  -38;
+	return  -54;
     }
     sqlite3_free_table (results);
 
@@ -352,19 +443,19 @@ int main (int argc, char *argv[])
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -33;
+	return -55;
     }
     if ((rows != 1) || (columns != 2)) {
 	fprintf (stderr, "Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
-	return  -34;
+	return  -56;
     }
     if (strcmp(results[2], "op:Opera") != 0) {
 	fprintf (stderr, "Unexpected error: XPath #6 bad result: %s.\n", results[2]);
-	return  -35;
+	return  -57;
     }
     if (strcmp(results[3], "firstName") != 0) {
 	fprintf (stderr, "Unexpected error: XPath #6 bad result: %s.\n", results[3]);
-	return  -36;
+	return  -58;
     }
     sqlite3_free_table (results);
 
@@ -374,7 +465,7 @@ int main (int argc, char *argv[])
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Drop VirtualXPath Table error: %s\n", err_msg);
 	sqlite3_free (err_msg);
-	return -37;
+	return -59;
     }
 
     sqlite3_close (db_handle);

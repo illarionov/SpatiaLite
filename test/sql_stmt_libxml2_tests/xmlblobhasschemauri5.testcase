@@ -1,8 +1,0 @@
-XmlBlobHasSchemaURI - invalid XmlBLOB
-:memory: #use in-memory database
-SELECT XmlBlobHasSchemaURI(zeroblob(100));
-1 # rows (not including the header row)
-1 # columns
-XmlBlobHasSchemaURI(zeroblob(100))
--1
-

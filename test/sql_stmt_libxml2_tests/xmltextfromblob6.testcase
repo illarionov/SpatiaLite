@@ -1,8 +1,8 @@
-XmlTextFromBlob - invalid BLOB XmlBLOB
+XB_GetDocument - invalid BLOB XmlBLOB
 :memory: #use in-memory database
-SELECT XmlTextFromBlob(zeroblob(100));
+SELECT XB_GetDocument(zeroblob(100));
 1 # rows (not including the header row)
 1 # columns
-XmlTextFromBlob(zeroblob(100))
+XB_GetDocument(zeroblob(100))
 (NULL)
 

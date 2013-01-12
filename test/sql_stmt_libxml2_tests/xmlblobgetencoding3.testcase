@@ -1,8 +1,8 @@
-XmlBlobGetEncoding - DOUBLE XmlBLOB
+XB_GetEncoding - DOUBLE XmlBLOB
 :memory: #use in-memory database
-SELECT XmlBlobGetEncoding(1.1);
+SELECT XB_GetEncoding(1.1);
 1 # rows (not including the header row)
 1 # columns
-XmlBlobGetEncoding(1.1)
+XB_GetEncoding(1.1)
 (NULL)
 

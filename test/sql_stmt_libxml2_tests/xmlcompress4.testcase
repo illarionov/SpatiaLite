@@ -1,7 +1,7 @@
-XmlBlobCompress - DOUBLE XmlBLOB
+XB_Compress - DOUBLE XmlBLOB
 :memory: #use in-memory database
-SELECT XmlBlobCompress(1.1);
+SELECT XB_Compress(1.1);
 1 # rows (not including the header row)
 1 # columns
-XmlBlobCompress(1.1)
+XB_Compress(1.1)
 (NULL)

@@ -1,8 +1,8 @@
-XmlBlobGetSchemaURI - invalid XmlBLOB
+XB_GetSchemaURI - invalid XmlBLOB
 :memory: #use in-memory database
-SELECT XmlBlobGetSchemaURI(zeroblob(100));
+SELECT XB_GetSchemaURI(zeroblob(100));
 1 # rows (not including the header row)
 1 # columns
-XmlBlobGetSchemaURI(zeroblob(100))
+XB_GetSchemaURI(zeroblob(100))
 (NULL)
 

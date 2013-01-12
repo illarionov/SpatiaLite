@@ -1,8 +1,8 @@
-XmlFromBlob - TEXT XmlBLOB
+XB_GetPayload - TEXT XmlBLOB
 :memory: #use in-memory database
-SELECT XmlFromBlob('alpha');
+SELECT XB_GetPayload('alpha');
 1 # rows (not including the header row)
 1 # columns
-XmlFromBlob('alpha')
+XB_GetPayload('alpha')
 (NULL)
 

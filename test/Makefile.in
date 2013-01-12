@@ -3391,6 +3391,27 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_libxml2_tests/isvalidxmlblob4.testcase \
 	sql_stmt_libxml2_tests/isvalidxmlblob5.testcase \
 	sql_stmt_libxml2_tests/isvalidxmlblob6.testcase \
+	sql_stmt_libxml2_tests/isisometadata1.testcase \
+	sql_stmt_libxml2_tests/isisometadata2.testcase \
+	sql_stmt_libxml2_tests/isisometadata3.testcase \
+	sql_stmt_libxml2_tests/isisometadata4.testcase \
+	sql_stmt_libxml2_tests/isisometadata5.testcase \
+	sql_stmt_libxml2_tests/isisometadata6.testcase \
+	sql_stmt_libxml2_tests/isisometadata7.testcase \
+	sql_stmt_libxml2_tests/issldsestyle1.testcase \
+	sql_stmt_libxml2_tests/issldsestyle2.testcase \
+	sql_stmt_libxml2_tests/issldsestyle3.testcase \
+	sql_stmt_libxml2_tests/issldsestyle4.testcase \
+	sql_stmt_libxml2_tests/issldsestyle5.testcase \
+	sql_stmt_libxml2_tests/issldsestyle6.testcase \
+	sql_stmt_libxml2_tests/issldsestyle7.testcase \
+	sql_stmt_libxml2_tests/issvg1.testcase \
+	sql_stmt_libxml2_tests/issvg2.testcase \
+	sql_stmt_libxml2_tests/issvg3.testcase \
+	sql_stmt_libxml2_tests/issvg4.testcase \
+	sql_stmt_libxml2_tests/issvg5.testcase \
+	sql_stmt_libxml2_tests/issvg6.testcase \
+	sql_stmt_libxml2_tests/issvg7.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize1.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize2.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize3.testcase \
@@ -3415,12 +3436,36 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_libxml2_tests/xmlblobgetschemauri4.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetschemauri5.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetschemauri6.testcase \
-	sql_stmt_libxml2_tests/xmlblobhasschemauri1.testcase \
-	sql_stmt_libxml2_tests/xmlblobhasschemauri2.testcase \
-	sql_stmt_libxml2_tests/xmlblobhasschemauri3.testcase \
-	sql_stmt_libxml2_tests/xmlblobhasschemauri4.testcase \
-	sql_stmt_libxml2_tests/xmlblobhasschemauri5.testcase \
-	sql_stmt_libxml2_tests/xmlblobhasschemauri6.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetfileid1.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetfileid2.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetfileid3.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetfileid4.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetfileid5.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetfileid6.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetparentid1.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetparentid2.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetparentid3.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetparentid4.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetparentid5.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetparentid6.testcase \
+	sql_stmt_libxml2_tests/xmlblobgettitle1.testcase \
+	sql_stmt_libxml2_tests/xmlblobgettitle2.testcase \
+	sql_stmt_libxml2_tests/xmlblobgettitle3.testcase \
+	sql_stmt_libxml2_tests/xmlblobgettitle4.testcase \
+	sql_stmt_libxml2_tests/xmlblobgettitle5.testcase \
+	sql_stmt_libxml2_tests/xmlblobgettitle6.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetabstract1.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetabstract2.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetabstract3.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetabstract4.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetabstract5.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetabstract6.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetgeometry1.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetgeometry2.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetgeometry3.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetgeometry4.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetgeometry5.testcase \
+	sql_stmt_libxml2_tests/xmlblobgetgeometry6.testcase \
 	sql_stmt_libxml2_tests/xmlcompress1.testcase \
 	sql_stmt_libxml2_tests/xmlcompress2.testcase \
 	sql_stmt_libxml2_tests/xmlcompress3.testcase \
@@ -3480,7 +3525,9 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_libxml2_tests/xmluncompress6.testcase \
 	sql_stmt_libxml2_tests/xmluncompress7.testcase \
 	books.xml books.xsd opera.xml opera.xsd \
-	movies.xml movies.xsd books-bad.xml books-bad.xsd
+	movies.xml movies.xsd books-bad.xml books-bad.xsd \
+	inspire-data-example.xml stazioni_se.xml \
+	thunderstorm_mild.svg
 
 all: all-am
 

@@ -1,8 +1,8 @@
-IsSchemaValidatedXmlBlob - invalid XmlBLOB
+XB_IsSchemaValidated - invalid XmlBLOB
 :memory: #use in-memory database
-SELECT IsSchemaValidatedXmlBlob(zeroblob(100));
+SELECT XB_IsSchemaValidated(zeroblob(100));
 1 # rows (not including the header row)
 1 # columns
-IsSchemaValidatedXmlBlob(zeroblob(100))
+XB_IsSchemaValidated(zeroblob(100))
 -1
 

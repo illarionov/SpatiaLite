@@ -1,7 +1,7 @@
-XmlBlobCompress - invalid XmlBLOB
+XB_Compress - invalid XmlBLOB
 :memory: #use in-memory database
-SELECT XmlBlobCompress(zeroblob(100));
+SELECT XB_Compress(zeroblob(100));
 1 # rows (not including the header row)
 1 # columns
-XmlBlobCompress(zeroblob(100))
+XB_Compress(zeroblob(100))
 (NULL)

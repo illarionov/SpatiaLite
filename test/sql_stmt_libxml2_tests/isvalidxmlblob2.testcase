@@ -1,8 +1,8 @@
-IsValidXmlBlob - INTEGER XmlBLOB
+XB_IsValid - INTEGER XmlBLOB
 :memory: #use in-memory database
-SELECT IsValidXmlBlob(1);
+SELECT XB_IsValid(1);
 1 # rows (not including the header row)
 1 # columns
-IsValidXmlBlob(1)
+XB_IsValid(1)
 -1
 

@@ -1,8 +1,8 @@
-XmlBlobGetDocumentSize - invalid XmlBLOB
+XB_GetDocumentSize - invalid XmlBLOB
 :memory: #use in-memory database
-SELECT XmlBlobGetDocumentSize(zeroblob(100));
+SELECT XB_GetDocumentSize(zeroblob(100));
 1 # rows (not including the header row)
 1 # columns
-XmlBlobGetDocumentSize(zeroblob(100))
+XB_GetDocumentSize(zeroblob(100))
 (NULL)
 

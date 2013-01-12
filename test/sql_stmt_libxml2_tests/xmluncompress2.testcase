@@ -1,7 +1,7 @@
-XmlBlobUncompress - TEXT XmlBLOB
+XB_Uncompress - TEXT XmlBLOB
 :memory: #use in-memory database
-SELECT XmlBlobUncompress('alpha');
+SELECT XB_Uncompress('alpha');
 1 # rows (not including the header row)
 1 # columns
-XmlBlobUncompress('alpha')
+XB_Uncompress('alpha')
 (NULL)

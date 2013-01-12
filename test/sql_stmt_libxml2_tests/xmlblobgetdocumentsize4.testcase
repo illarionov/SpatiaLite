@@ -1,8 +1,8 @@
-XmlBlobGetDocumentSize - TEXT XmlBLOB
+XB_GetDocumentSize - TEXT XmlBLOB
 :memory: #use in-memory database
-SELECT XmlBlobGetDocumentSize('alpha');
+SELECT XB_GetDocumentSize('alpha');
 1 # rows (not including the header row)
 1 # columns
-XmlBlobGetDocumentSize('alpha')
+XB_GetDocumentSize('alpha')
 (NULL)
 
