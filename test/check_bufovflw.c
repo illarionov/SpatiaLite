@@ -543,6 +543,27 @@ test7:
     }
     sqlite3_free_table (results);
 
+/* retieving the LayerExtent for table "B" */
+    sql = sqlite3_mprintf("SELECT ST_AsText(GetLayerExtent(%Q, %Q))", table_b, geom);
+    ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
+    sqlite3_free(sql);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "GetLayerExtent TABLE-B error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -140;
+    }
+    if (rows != 1 || columns != 1) {
+        fprintf (stderr, "Unexpected rows/columns (GetLayerExtent TABLE-B): r=%d c=%d\n", rows, columns);
+        return -141;
+    }
+    value = results[1];
+    if (strcmp ("POLYGON((-3 -30, 5 -30, 5 50, -3 50, -3 -30))", value) != 0) {
+        fprintf (stderr, "Unexpected result (GetLayerExtent TABLE-B): %s\n", results[1]);
+        return -142;
+    }
+    sqlite3_free_table (results);
+
 /* updating layer statistics ALL */
     ret = sqlite3_get_table (handle, "SELECT UpdateLayerStatistics()", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {

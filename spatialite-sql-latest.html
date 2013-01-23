@@ -2136,6 +2136,18 @@ NULL will be returned if the requested RTree doesn't exists</td></tr>
 						corresponding to the given table</li>
 					</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td></tr>
+		<tr><td><b>GetLayerExtent</b></td>
+				<td>GetLayerExtent( table <i>String</i> [ , column <i>String</i> [ , mode <i>Boolean</i>] ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Return the Envelope corresponding to the Total Extent (<i>bounding box</i>] of some Layer;
+                                    if the Table/Layer only contains a single Geometry column passing the column name isn't strictly required.<br>
+                                    The returned extent will be retrieved from the Statistics tables:<ul>
+					<li>if the third argument <b>mode</b> is set to TRUEa <b>PESSIMISTIC</b>
+                                            strategy will be applied, i.e. an attempt will be made in order to update the Statistics tables before returning the Envelope.</li>
+					<li>otherwise the returned Envelope will simply reflect the current values stored into the Statics tables as they are (<b>OPTIMISTIC</b> strategy, adopted by default).</li>
+					</ul><hr>
+                                        NULL will be returned if any error occurs or if the required table isn't a Layer.</td></tr>
 		<tr><td><b>CreateTopologyTables</b></td>
 				<td>CreateTopologyTables( SRID <i>Integer</i> , dims : <i>String</i> ) : <i>Integer</i><hr>
 					CreateTopologyTables( prefix <i>String</i> , SRID <i>Integer</i> , dims : <i>String</i> ) : <i>Integer</i></td>

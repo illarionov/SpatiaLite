@@ -1411,7 +1411,6 @@ genuine_layer_statistics_v4 (sqlite3 * sqlite, const char *table,
     return 1;
 }
 
-
 static int
 genuine_layer_statistics (sqlite3 * sqlite, const char *table,
 			  const char *column)

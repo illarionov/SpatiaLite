@@ -5400,6 +5400,73 @@ fnct_UpdateLayerStatistics (sqlite3_context * context, int argc,
     return;
 }
 
+static void
+fnct_GetLayerExtent (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ GetLayerExtent(table)
+/ GetLayerExtent(table, column )
+/ GetLayerExtent(table, column, pessimistic )
+/
+/ Return a Geometry (Envelope) corresponding to the full layer
+/ extent [eventually updating the supporting statistics
+/ NULL on failure
+*/
+    const char *sql;
+    const char *table = NULL;
+    const char *column = NULL;
+    int pessimistic = 0;
+    int len;
+    unsigned char *p_result = NULL;
+    gaiaGeomCollPtr geom;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (argc >= 1)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	    {
+		spatialite_e
+		    ("GetLayerExtent() error: argument 1 [table_name] is not of the String type\n");
+		sqlite3_result_null (context);
+		return;
+	    }
+	  table = (const char *) sqlite3_value_text (argv[0]);
+      }
+    if (argc >= 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+	    {
+		spatialite_e
+		    ("GetLayerExtent() error: argument 2 [column_name] is not of the String type\n");
+		sqlite3_result_null (context);
+		return;
+	    }
+	  column = (const char *) sqlite3_value_text (argv[1]);
+      }
+    if (argc >= 3)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		spatialite_e
+		    ("GetLayerExtent() error: argument 3 [OPTIMISTIC/PESSIMISTIC] is not of the Integer type\n");
+		sqlite3_result_null (context);
+		return;
+	    }
+	  pessimistic = sqlite3_value_int (argv[2]);
+      }
+    geom = gaiaGetLayerExtent (sqlite, table, column, pessimistic);
+    if (!geom)
+	goto error;
+/* builds the BLOB geometry to be returned */
+    gaiaToSpatiaLiteBlobWkb (geom, &p_result, &len);
+    sqlite3_result_blob (context, p_result, len, free);
+    gaiaFreeGeomColl (geom);
+    return;
+  error:
+    sqlite3_result_null (context);
+    return;
+}
+
 static gaiaPointPtr
 simplePoint (gaiaGeomCollPtr geo)
 {
@@ -13709,11 +13776,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 				    {
 					/* Linestrings */
 					l = gaiaGeodesicTotalLength (a, b, rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -13735,9 +13801,12 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -13781,11 +13850,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					/* Linestrings */
 					length +=
 					    gaiaGreatCircleTotalLength (a, b,
-									line->DimensionModel,
 									line->
-									Coords,
-									line->
-									Points);
+									DimensionModel,
+									line->Coords,
+									line->Points);
 					line = line->Next;
 				    }
 			      }
@@ -13802,10 +13870,11 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      length +=
 						  gaiaGreatCircleTotalLength (a,
 									      b,
+									      ring->DimensionModel,
 									      ring->
-									      DimensionModel,
-									      ring->Coords,
-									      ring->Points);
+									      Coords,
+									      ring->
+									      Points);
 					      for (ib = 0;
 						   ib < polyg->NumInteriors;
 						   ib++)
@@ -20942,8 +21011,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -21027,8 +21095,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -21037,8 +21104,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -22342,6 +22408,12 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_UpdateLayerStatistics, 0, 0);
     sqlite3_create_function (db, "UpdateLayerStatistics", 2, SQLITE_ANY, 0,
 			     fnct_UpdateLayerStatistics, 0, 0);
+    sqlite3_create_function (db, "GetLayerExtent", 1, SQLITE_ANY, 0,
+			     fnct_GetLayerExtent, 0, 0);
+    sqlite3_create_function (db, "GetLayerExtent", 2, SQLITE_ANY, 0,
+			     fnct_GetLayerExtent, 0, 0);
+    sqlite3_create_function (db, "GetLayerExtent", 3, SQLITE_ANY, 0,
+			     fnct_GetLayerExtent, 0, 0);
     sqlite3_create_function (db, "AsText", 1, SQLITE_ANY, 0, fnct_AsText, 0, 0);
     sqlite3_create_function (db, "ST_AsText", 1, SQLITE_ANY, 0, fnct_AsText,
 			     0, 0);

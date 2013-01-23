@@ -49,6 +49,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <float.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"
@@ -5919,4 +5920,61 @@ gaiaGetVectorLayersList (sqlite3 * handle, const char *table,
   error:
     gaiaFreeVectorLayersList (list);
     return NULL;
+}
+
+SPATIALITE_DECLARE gaiaGeomCollPtr
+gaiaGetLayerExtent (sqlite3 * handle, const char *table,
+		    const char *geometry, int mode)
+{
+/* attempting to get a Layer Full Extent (Envelope) */
+    gaiaVectorLayersListPtr list;
+    gaiaVectorLayerPtr lyr;
+    int metadata_version;
+    double minx = -DBL_MAX;
+    double miny = -DBL_MAX;
+    double maxx = DBL_MAX;
+    double maxy = DBL_MAX;
+    int srid;
+    gaiaGeomCollPtr bbox;
+    gaiaPolygonPtr polyg;
+    gaiaRingPtr rect;
+    int md = GAIA_VECTORS_LIST_OPTIMISTIC;
+
+    if (table == NULL)
+	return NULL;
+    if (mode)
+	md = GAIA_VECTORS_LIST_PESSIMISTIC;
+
+    list = gaiaGetVectorLayersList (handle, table, geometry, md);
+    if (list == NULL)
+	return NULL;
+    lyr = list->First;
+    if (lyr == list->Last && lyr != NULL)
+      {
+	  srid = lyr->Srid;
+	  if (lyr->ExtentInfos)
+	    {
+		minx = lyr->ExtentInfos->MinX;
+		miny = lyr->ExtentInfos->MinY;
+		maxx = lyr->ExtentInfos->MaxX;
+		maxy = lyr->ExtentInfos->MaxY;
+	    }
+      }
+    gaiaFreeVectorLayersList (list);
+
+    if (minx == -DBL_MIN || miny == -DBL_MAX || maxx == DBL_MAX
+	|| maxy == DBL_MAX)
+	return NULL;
+
+/* building the Envelope */
+    bbox = gaiaAllocGeomColl ();
+    bbox->Srid = srid;
+    polyg = gaiaAddPolygonToGeomColl (bbox, 5, 0);
+    rect = polyg->Exterior;
+    gaiaSetPoint (rect->Coords, 0, minx, miny);	/* vertex # 1 */
+    gaiaSetPoint (rect->Coords, 1, maxx, miny);	/* vertex # 2 */
+    gaiaSetPoint (rect->Coords, 2, maxx, maxy);	/* vertex # 3 */
+    gaiaSetPoint (rect->Coords, 3, minx, maxy);	/* vertex # 4 */
+    gaiaSetPoint (rect->Coords, 4, minx, miny);	/* vertex # 5 [same as vertex # 1 to close the polygon] */
+    return bbox;
 }

@@ -519,6 +519,33 @@ extern "C"
 						    const char *column);
 
 /**
+ Queries the Metadata tables returning the Layer Full Extent
+
+ \param handle SQLite handle to current DB connection.
+ \param table VectorLayer Table (or View, or VirtualShape).
+ \param geometry Geometry Column name.
+ \param mode if TRUE a PESSIMISTIC statistics update will be implied,
+  otherwise OPTIMISTIC.
+ 
+ \return the pointer to the newly created Geometry (Envelope): NULL on failure
+
+ \note you are responsible to destroy (before or after) any allocated
+ Geometry returned by gaiaGetLayerExtent().
+ \n The geometry arg is optional when the table simply has a single Geometry Column,
+  and can be NULL in this case.
+ \n When the mode arg is set to FALSE (default) then the returned infos
+  will be simply retrieved from the staticized statistic tables (faster, but could be inaccurate).
+ \n If the mode arg is set to TRUE a preliminary attempt to update the
+  statistic tables will be always performed (probably slower, but surely accurate).
+ \n If the named Layer doesn't exist, or if it's completely empty (not containing
+ any valid Geometry) NULL will be returned.
+ */
+    SPATIALITE_DECLARE gaiaGeomCollPtr gaiaGetLayerExtent (sqlite3 * handle,
+							   const char *table,
+							   const char *geometry,
+							   int mode);
+
+/**
  Queries the Metadata tables supporting Vector Layers
 
  \param handle SQLite handle to current DB connection.
@@ -540,10 +567,17 @@ extern "C"
  \n If the mode arg is set to GAIA_VECTORS_LIST_PRECISE a preliminary attempt to update the
   statistic tables will be always performed (probably slower, but surely accurate).
  */
-    SPATIALITE_DECLARE gaiaVectorLayersListPtr gaiaGetVectorLayersList (sqlite3	*handle,
-									const char *table,
-									const char *geometry,
-									int mode);
+    SPATIALITE_DECLARE gaiaVectorLayersListPtr gaiaGetVectorLayersList (sqlite3
+									*
+									handle,
+									const
+									char
+									*table,
+									const
+									char
+									*geometry,
+									int
+									mode);
 
 /**
  Destroys a VectorLayersList object
