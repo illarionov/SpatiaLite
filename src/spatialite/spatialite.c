@@ -5414,7 +5414,6 @@ fnct_GetLayerExtent (sqlite3_context * context, int argc, sqlite3_value ** argv)
 / extent [eventually updating the supporting statistics
 / NULL on failure
 */
-    const char *sql;
     const char *table = NULL;
     const char *column = NULL;
     int pessimistic = 0;
@@ -11150,6 +11149,561 @@ fnct_NRings (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_int (context, cnt);
       }
     gaiaFreeGeomColl (geo);
+}
+
+static int
+is_single_point (gaiaGeomCollPtr geom)
+{
+/* check if this geometry is a simple Point */
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  lns++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts == 1 && lns == 0 && pgs == 0)
+	return 1;
+    return 0;
+}
+
+static int
+is_single_linestring (gaiaGeomCollPtr geom)
+{
+/* check if this geometry is a simple Linestring */
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  pts++;
+	  pt = pt->Next;
+      }
+    ln = geom->FirstLinestring;
+    while (ln)
+      {
+	  lns++;
+	  ln = ln->Next;
+      }
+    pg = geom->FirstPolygon;
+    while (pg)
+      {
+	  pgs++;
+	  pg = pg->Next;
+      }
+    if (pts == 0 && lns == 1 && pgs == 0)
+	return 1;
+    return 0;
+}
+
+static void
+fnct_AddPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL functions:
+/ ST_AddPoint(BLOB encoded LINESTRING line, BLOB encoded POINT point)
+/ ST_AddPoint(BLOB encoded LINESTRING line, BLOB encoded POINT point, INTEGER position)
+/
+/ returns a new Linestring by adding a new Point before "position" (zero-based index)
+/ a negative "position" (default) means appending to the end 
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaLinestringPtr ln;
+    gaiaLinestringPtr out_ln;
+    gaiaPointPtr pt;
+    int position = -1;
+    gaiaGeomCollPtr line = NULL;
+    gaiaGeomCollPtr point = NULL;
+    gaiaGeomCollPtr out;
+    int len;
+    unsigned char *p_result = NULL;
+    int iv;
+    int out_iv;
+    double x;
+    double y;
+    double m;
+    double z;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    line = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!line)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  gaiaFreeGeomColl (line);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[1]);
+    n_bytes = sqlite3_value_bytes (argv[1]);
+    point = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!point)
+      {
+	  gaiaFreeGeomColl (line);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc == 3)
+      {
+	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		goto stop;
+	    }
+	  position = sqlite3_value_int (argv[2]);
+      }
+    if (is_single_linestring (line) && is_single_point (point))
+	;
+    else
+      {
+	  sqlite3_result_null (context);
+	  goto stop;
+      }
+    ln = line->FirstLinestring;
+    pt = point->FirstPoint;
+    if (position >= 0 && position >= ln->Points)
+      {
+	  sqlite3_result_null (context);
+	  goto stop;
+      }
+/* creating the output Geometry */
+    if (line->DimensionModel == GAIA_XY_Z)
+	out = gaiaAllocGeomCollXYZ ();
+    else if (line->DimensionModel == GAIA_XY_M)
+	out = gaiaAllocGeomCollXYM ();
+    else if (line->DimensionModel == GAIA_XY_Z_M)
+	out = gaiaAllocGeomCollXYZM ();
+    else
+	out = gaiaAllocGeomColl ();
+    out->Srid = line->Srid;
+    out->DeclaredType = line->DeclaredType;
+    out_ln = gaiaAddLinestringToGeomColl (out, ln->Points + 1);
+    if (position < 0)
+      {
+	  /* appending the new Point */
+	  for (iv = 0; iv < ln->Points; iv++)
+	    {
+		if (line->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+		      gaiaSetPointXYZ (out_ln->Coords, iv, x, y, z);
+		  }
+		else if (line->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+		      gaiaSetPointXYM (out_ln->Coords, iv, x, y, m);
+		  }
+		else if (line->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+		      gaiaSetPointXYZM (out_ln->Coords, iv, x, y, z, m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (ln->Coords, iv, &x, &y);
+		      gaiaSetPoint (out_ln->Coords, iv, x, y);
+		  }
+	    }
+	  /* appending the new Point */
+	  x = pt->X;
+	  y = pt->Y;
+	  z = pt->Z;
+	  m = pt->M;
+	  out_iv = ln->Points;
+	  if (line->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaSetPointXYZ (out_ln->Coords, out_iv, x, y, z);
+	    }
+	  else if (line->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaSetPointXYM (out_ln->Coords, out_iv, x, y, m);
+	    }
+	  else if (line->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZM (out_ln->Coords, out_iv, x, y, z, m);
+	    }
+	  else
+	    {
+		gaiaSetPoint (out_ln->Coords, out_iv, x, y);
+	    }
+      }
+    else
+      {
+	  /* inserting the new Point before "position" */
+	  out_iv = 0;
+	  for (iv = 0; iv < position; iv++)
+	    {
+		/* copying all Points before "position" */
+		if (line->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+		      gaiaSetPointXYZ (out_ln->Coords, out_iv, x, y, z);
+		  }
+		else if (line->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+		      gaiaSetPointXYM (out_ln->Coords, out_iv, x, y, m);
+		  }
+		else if (line->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+		      gaiaSetPointXYZM (out_ln->Coords, out_iv, x, y, z, m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (ln->Coords, iv, &x, &y);
+		      gaiaSetPoint (out_ln->Coords, out_iv, x, y);
+		  }
+		out_iv++;
+	    }
+	  /* inserting the new Point */
+	  x = pt->X;
+	  y = pt->Y;
+	  z = pt->Z;
+	  m = pt->M;
+	  if (line->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaSetPointXYZ (out_ln->Coords, out_iv, x, y, z);
+	    }
+	  else if (line->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaSetPointXYM (out_ln->Coords, out_iv, x, y, m);
+	    }
+	  else if (line->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZM (out_ln->Coords, out_iv, x, y, z, m);
+	    }
+	  else
+	    {
+		gaiaSetPoint (out_ln->Coords, out_iv, x, y);
+	    }
+	  out_iv++;
+	  for (iv = position; iv < ln->Points; iv++)
+	    {
+		/* copying all Points after "position" */
+		if (line->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+		      gaiaSetPointXYZ (out_ln->Coords, out_iv, x, y, z);
+		  }
+		else if (line->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+		      gaiaSetPointXYM (out_ln->Coords, out_iv, x, y, m);
+		  }
+		else if (line->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+		      gaiaSetPointXYZM (out_ln->Coords, out_iv, x, y, z, m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (ln->Coords, iv, &x, &y);
+		      gaiaSetPoint (out_ln->Coords, out_iv, x, y);
+		  }
+		out_iv++;
+	    }
+      }
+    gaiaToSpatiaLiteBlobWkb (out, &p_result, &len);
+    gaiaFreeGeomColl (out);
+    sqlite3_result_blob (context, p_result, len, free);
+  stop:
+    gaiaFreeGeomColl (line);
+    gaiaFreeGeomColl (point);
+}
+
+static void
+fnct_SetPoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL functions:
+/ ST_SetPoint(BLOB encoded LINESTRING line, INTEGER position, BLOB encoded POINT point)
+/
+/ returns a new Linestring by replacing the Point at "position" (zero-based index)
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaLinestringPtr ln;
+    gaiaLinestringPtr out_ln;
+    gaiaPointPtr pt;
+    int position;
+    gaiaGeomCollPtr line = NULL;
+    gaiaGeomCollPtr point = NULL;
+    gaiaGeomCollPtr out;
+    int len;
+    unsigned char *p_result = NULL;
+    int iv;
+    double x;
+    double y;
+    double m;
+    double z;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    line = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!line)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+      {
+	  gaiaFreeGeomColl (line);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    position = sqlite3_value_int (argv[1]);
+    if (sqlite3_value_type (argv[2]) != SQLITE_BLOB)
+      {
+	  gaiaFreeGeomColl (line);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[2]);
+    n_bytes = sqlite3_value_bytes (argv[2]);
+    point = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!point)
+      {
+	  gaiaFreeGeomColl (line);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (is_single_linestring (line) && is_single_point (point))
+	;
+    else
+      {
+	  sqlite3_result_null (context);
+	  goto stop;
+      }
+    ln = line->FirstLinestring;
+    pt = point->FirstPoint;
+    if (position < 0 || position >= ln->Points)
+      {
+	  sqlite3_result_null (context);
+	  goto stop;
+      }
+/* creating the output Geometry */
+    if (line->DimensionModel == GAIA_XY_Z)
+	out = gaiaAllocGeomCollXYZ ();
+    else if (line->DimensionModel == GAIA_XY_M)
+	out = gaiaAllocGeomCollXYM ();
+    else if (line->DimensionModel == GAIA_XY_Z_M)
+	out = gaiaAllocGeomCollXYZM ();
+    else
+	out = gaiaAllocGeomColl ();
+    out->Srid = line->Srid;
+    out->DeclaredType = line->DeclaredType;
+    out_ln = gaiaAddLinestringToGeomColl (out, ln->Points);
+    for (iv = 0; iv < ln->Points; iv++)
+      {
+	  if (line->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+	    }
+	  else if (line->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+	    }
+	  else if (line->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln->Coords, iv, &x, &y);
+	    }
+	  if (iv == position)
+	    {
+		/* replacing the new Point */
+		x = pt->X;
+		y = pt->Y;
+		z = pt->Z;
+		m = pt->M;
+	    }
+	  if (line->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaSetPointXYZ (out_ln->Coords, iv, x, y, z);
+	    }
+	  else if (line->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaSetPointXYM (out_ln->Coords, iv, x, y, m);
+	    }
+	  else if (line->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaSetPointXYZM (out_ln->Coords, iv, x, y, z, m);
+	    }
+	  else
+	    {
+		gaiaSetPoint (out_ln->Coords, iv, x, y);
+	    }
+      }
+    gaiaToSpatiaLiteBlobWkb (out, &p_result, &len);
+    gaiaFreeGeomColl (out);
+    sqlite3_result_blob (context, p_result, len, free);
+  stop:
+    gaiaFreeGeomColl (line);
+    gaiaFreeGeomColl (point);
+}
+
+static void
+fnct_RemovePoint (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL functions:
+/ ST_RemovePoint(BLOB encoded LINESTRING line, INTEGER position)
+/
+/ returns a new Linestring by removing the Point at "position" (zero-based index)
+/ or NULL if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaLinestringPtr ln;
+    gaiaLinestringPtr out_ln;
+    int position;
+    gaiaGeomCollPtr line = NULL;
+    gaiaGeomCollPtr out;
+    int len;
+    unsigned char *p_result = NULL;
+    int iv;
+    int out_iv;
+    double x;
+    double y;
+    double m;
+    double z;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    line = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (!line)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+      {
+	  sqlite3_result_null (context);
+	  goto stop;
+      }
+    position = sqlite3_value_int (argv[1]);
+    if (!is_single_linestring (line))
+      {
+	  sqlite3_result_null (context);
+	  goto stop;
+      }
+    ln = line->FirstLinestring;
+    if (position < 0 || position >= ln->Points)
+      {
+	  sqlite3_result_null (context);
+	  goto stop;
+      }
+/* creating the output Geometry */
+    if (line->DimensionModel == GAIA_XY_Z)
+	out = gaiaAllocGeomCollXYZ ();
+    else if (line->DimensionModel == GAIA_XY_M)
+	out = gaiaAllocGeomCollXYM ();
+    else if (line->DimensionModel == GAIA_XY_Z_M)
+	out = gaiaAllocGeomCollXYZM ();
+    else
+	out = gaiaAllocGeomColl ();
+    out->Srid = line->Srid;
+    out->DeclaredType = line->DeclaredType;
+    out_ln = gaiaAddLinestringToGeomColl (out, ln->Points - 1);
+    out_iv = 0;
+    for (iv = 0; iv < position; iv++)
+      {
+	  /* copying all Points before "position" */
+	  if (line->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+		gaiaSetPointXYZ (out_ln->Coords, out_iv, x, y, z);
+	    }
+	  else if (line->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+		gaiaSetPointXYM (out_ln->Coords, out_iv, x, y, m);
+	    }
+	  else if (line->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+		gaiaSetPointXYZM (out_ln->Coords, out_iv, x, y, z, m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln->Coords, iv, &x, &y);
+		gaiaSetPoint (out_ln->Coords, out_iv, x, y);
+	    }
+	  out_iv++;
+      }
+    for (iv = position + 1; iv < ln->Points; iv++)
+      {
+	  /* copying all Points after "position" */
+	  if (line->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (ln->Coords, iv, &x, &y, &z);
+		gaiaSetPointXYZ (out_ln->Coords, out_iv, x, y, z);
+	    }
+	  else if (line->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (ln->Coords, iv, &x, &y, &m);
+		gaiaSetPointXYM (out_ln->Coords, out_iv, x, y, m);
+	    }
+	  else if (line->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (ln->Coords, iv, &x, &y, &z, &m);
+		gaiaSetPointXYZM (out_ln->Coords, out_iv, x, y, z, m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (ln->Coords, iv, &x, &y);
+		gaiaSetPoint (out_ln->Coords, out_iv, x, y);
+	    }
+	  out_iv++;
+      }
+    gaiaToSpatiaLiteBlobWkb (out, &p_result, &len);
+    gaiaFreeGeomColl (out);
+    sqlite3_result_blob (context, p_result, len, free);
+  stop:
+    gaiaFreeGeomColl (line);
 }
 
 static int
@@ -22978,6 +23532,22 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_SnapToGrid, 0, 0);
     sqlite3_create_function (db, "ST_SnapToGrid", 6, SQLITE_ANY, 0,
 			     fnct_SnapToGrid, 0, 0);
+    sqlite3_create_function (db, "AddPoint", 2, SQLITE_ANY, 0, fnct_AddPoint,
+			     0, 0);
+    sqlite3_create_function (db, "ST_AddPoint", 2, SQLITE_ANY, 0, fnct_AddPoint,
+			     0, 0);
+    sqlite3_create_function (db, "AddPoint", 3, SQLITE_ANY, 0, fnct_AddPoint,
+			     0, 0);
+    sqlite3_create_function (db, "ST_AddPoint", 3, SQLITE_ANY, 0, fnct_AddPoint,
+			     0, 0);
+    sqlite3_create_function (db, "RemovePoint", 2, SQLITE_ANY, 0,
+			     fnct_RemovePoint, 0, 0);
+    sqlite3_create_function (db, "ST_RemovePoint", 2, SQLITE_ANY, 0,
+			     fnct_RemovePoint, 0, 0);
+    sqlite3_create_function (db, "SetPoint", 3, SQLITE_ANY, 0, fnct_SetPoint,
+			     0, 0);
+    sqlite3_create_function (db, "ST_SetPoint", 3, SQLITE_ANY, 0, fnct_SetPoint,
+			     0, 0);
 
 #ifndef OMIT_GEOS		/* including GEOS */
     sqlite3_create_function (db, "BuildArea", 1, SQLITE_ANY, 0, fnct_BuildArea,

@@ -5929,7 +5929,6 @@ gaiaGetLayerExtent (sqlite3 * handle, const char *table,
 /* attempting to get a Layer Full Extent (Envelope) */
     gaiaVectorLayersListPtr list;
     gaiaVectorLayerPtr lyr;
-    int metadata_version;
     double minx = -DBL_MAX;
     double miny = -DBL_MAX;
     double maxx = DBL_MAX;

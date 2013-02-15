@@ -255,7 +255,8 @@ sniff_payload (xmlDocPtr xml_doc, int *is_iso_metadata, int *is_sld_se_style,
       {
 	  if (strcmp (root->name, "MD_Metadata") == 0)
 	      *is_iso_metadata = 1;
-	  if (strcmp (root->name, "StyledLayerDescriptor") == 0)
+	  if (strcmp (root->name, "StyledLayerDescriptor") == 0
+	      || strcmp (root->name, "FeatureTypeStyle") == 0)
 	      *is_sld_se_style = 1;
 	  if (strcmp (root->name, "svg") == 0)
 	      *is_svg = 1;
@@ -1957,8 +1958,8 @@ gaiaXmlGetInternalSchemaURI (void *p_cache, const char *xml, int xml_len)
 						    node->children->content);
 					uri = malloc (len + 1);
 					strcpy (uri,
-						(const char *) node->children->
-						content);
+						(const char *) node->
+						children->content);
 				    }
 			      }
 			}

@@ -1221,6 +1221,28 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>return a Point containing Point n of line</td></tr>
+			<tr><td><b>AddPoint</b></td>
+				<td>AddPoint( line <i>LineString</i> , point <i>Point</i> [ , position <i>Integer</i> ] ) : <i>Linestring</i><hr>
+					ST_AddPoint( line <i>LineString</i> , point <i>Point</i> [ , position <i>Integer</i> ] ) : <i>Linestring</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>returns a new Linestring by adding a new Point into the input Linestring immediately before <b>position</b> (zero-based index).<br>
+                                A negative <b>position</b> (default) means appending the new Point to the end of the input Linestring.<br>
+                                <b>NULL</b> will be returned if any error is encountered.</td></tr>
+			<tr><td><b>SetPoint</b></td>
+				<td>SetPoint( line <i>LineString</i> , position <i>Integer</i> , point <i>Point</i> ) : <i>Linestring</i><hr>
+					ST_SetPoint( line <i>LineString</i> , position <i>Integer</i> , point <i>Point</i> ) : <i>Linestring</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>returns a new Linestring by replacing the Point at <b>position</b> (zero-based index).<br>
+                                <b>NULL</b> will be returned if any error is encountered.</td></tr>
+			<tr><td><b>RemovePoint</b></td>
+				<td>RemovePoint( line <i>LineString</i> , position <i>Integer</i> ) : <i>Linestring</i><hr>
+					ST_RemovePoint( line <i>LineString</i> , position <i>Integer</i> ) : <i>Linestring</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>returns a new Linestring by removing the Point at <b>position</b> (zero-based index).<br>
+                                <b>NULL</b> will be returned if any error is encountered.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p8">SQL functions on type Surface [Polygon or Ring]</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>

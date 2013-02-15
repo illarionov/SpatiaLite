@@ -948,8 +948,7 @@ vfdo_insert_row (VirtualFDOPtr p_vt, sqlite3_int64 * rowid, int argc,
 					  {
 					      sqlite3_bind_text (stmt, i - 1,
 								 out_buf.Buffer,
-								 out_buf.
-								 WriteOffset,
+								 out_buf.WriteOffset,
 								 free);
 					      out_buf.Buffer = NULL;
 					      gaiaOutBufferReset (&out_buf);
@@ -1188,8 +1187,7 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
 					  {
 					      sqlite3_bind_text (stmt, i - 1,
 								 out_buf.Buffer,
-								 out_buf.
-								 WriteOffset,
+								 out_buf.WriteOffset,
 								 free);
 					      out_buf.Buffer = NULL;
 					      gaiaOutBufferReset (&out_buf);
@@ -1461,8 +1459,6 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
 /* trying to read a row from FDO-OGR real-table */
     sqlite3_stmt *stmt;
     int ret;
-    char *sql;
-    char buf[256];
     int ic;
     int ig;
     unsigned char *wkt;
@@ -1473,9 +1469,8 @@ vfdo_read_row (VirtualFDOCursorPtr cursor)
     sqlite3_int64 pk;
     int geom_done;
     gaiaGeomCollPtr geom;
-    char *xname;
-stmt = cursor->stmt;
-sqlite3_bind_int64(stmt, 1, cursor->current_row);
+    stmt = cursor->stmt;
+    sqlite3_bind_int64 (stmt, 1, cursor->current_row);
     ret = sqlite3_step (stmt);
     if (ret == SQLITE_ROW)
       {
@@ -1511,8 +1506,10 @@ sqlite3_bind_int64(stmt, 1, cursor->current_row);
 					      if (wkt == NULL)
 						{
 						    value_set_null (*
-								    (cursor->pVtab->Value
-								     + ic));
+								    (cursor->
+								     pVtab->
+								     Value +
+								     ic));
 						    continue;
 						}
 					      delete_wkt = 1;
@@ -1522,9 +1519,8 @@ sqlite3_bind_int64(stmt, 1, cursor->current_row);
 					    free ((void *) wkt);
 					if (!geom)
 					    value_set_null (*
-							    (cursor->
-							     pVtab->Value +
-							     ic));
+							    (cursor->pVtab->
+							     Value + ic));
 					else
 					  {
 					      geom->Srid =
@@ -1535,16 +1531,18 @@ sqlite3_bind_int64(stmt, 1, cursor->current_row);
 					      if (xblob)
 						{
 						    value_set_blob (*
-								    (cursor->pVtab->Value
-								     + ic),
-								    xblob,
+								    (cursor->
+								     pVtab->
+								     Value +
+								     ic), xblob,
 								    size);
 						    free (xblob);
 						}
 					      else
 						  value_set_null (*
-								  (cursor->pVtab->Value
-								   + ic));
+								  (cursor->
+								   pVtab->
+								   Value + ic));
 					      gaiaFreeGeomColl (geom);
 					  }
 				    }
@@ -1565,9 +1563,8 @@ sqlite3_bind_int64(stmt, 1, cursor->current_row);
 					geom = gaiaFromWkb (blob, size);
 					if (!geom)
 					    value_set_null (*
-							    (cursor->
-							     pVtab->Value +
-							     ic));
+							    (cursor->pVtab->
+							     Value + ic));
 					else
 					  {
 					      geom->Srid =
@@ -1578,16 +1575,18 @@ sqlite3_bind_int64(stmt, 1, cursor->current_row);
 					      if (xblob)
 						{
 						    value_set_blob (*
-								    (cursor->pVtab->Value
-								     + ic),
-								    xblob,
+								    (cursor->
+								     pVtab->
+								     Value +
+								     ic), xblob,
 								    size);
 						    free (xblob);
 						}
 					      else
 						  value_set_null (*
-								  (cursor->pVtab->Value
-								   + ic));
+								  (cursor->
+								   pVtab->
+								   Value + ic));
 					      gaiaFreeGeomColl (geom);
 					  }
 				    }
@@ -1608,9 +1607,8 @@ sqlite3_bind_int64(stmt, 1, cursor->current_row);
 					geom = gaiaFromFgf (blob, size);
 					if (!geom)
 					    value_set_null (*
-							    (cursor->
-							     pVtab->Value +
-							     ic));
+							    (cursor->pVtab->
+							     Value + ic));
 					else
 					  {
 					      geom->Srid =
@@ -1621,16 +1619,18 @@ sqlite3_bind_int64(stmt, 1, cursor->current_row);
 					      if (xblob)
 						{
 						    value_set_blob (*
-								    (cursor->pVtab->Value
-								     + ic),
-								    xblob,
+								    (cursor->
+								     pVtab->
+								     Value +
+								     ic), xblob,
 								    size);
 						    free (xblob);
 						}
 					      else
 						  value_set_null (*
-								  (cursor->pVtab->Value
-								   + ic));
+								  (cursor->
+								   pVtab->
+								   Value + ic));
 					      gaiaFreeGeomColl (geom);
 					  }
 				    }
@@ -1956,12 +1956,12 @@ static int
 vfdo_open (sqlite3_vtab * pVTab, sqlite3_vtab_cursor ** ppCursor)
 {
 /* opening a new cursor */
-sqlite3_stmt *stmt;
+    sqlite3_stmt *stmt;
     gaiaOutBuffer sql_statement;
     int ret;
     char *sql;
     int ic;
-char *xname;
+    char *xname;
     VirtualFDOCursorPtr cursor =
 	(VirtualFDOCursorPtr) sqlite3_malloc (sizeof (VirtualFDOCursor));
     if (cursor == NULL)
