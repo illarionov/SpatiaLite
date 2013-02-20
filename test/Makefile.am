@@ -2842,6 +2842,13 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_libxml2_tests/isisometadata5.testcase \
 	sql_stmt_libxml2_tests/isisometadata6.testcase \
 	sql_stmt_libxml2_tests/isisometadata7.testcase \
+	sql_stmt_libxml2_tests/issldserststyle1.testcase \
+	sql_stmt_libxml2_tests/issldserststyle2.testcase \
+	sql_stmt_libxml2_tests/issldserststyle3.testcase \
+	sql_stmt_libxml2_tests/issldsetststyle4.testcase \
+	sql_stmt_libxml2_tests/issldserststyle5.testcase \
+	sql_stmt_libxml2_tests/issldserststyle6.testcase \
+	sql_stmt_libxml2_tests/issldserststyle7.testcase \
 	sql_stmt_libxml2_tests/issldsestyle1.testcase \
 	sql_stmt_libxml2_tests/issldsestyle2.testcase \
 	sql_stmt_libxml2_tests/issldsestyle3.testcase \
@@ -2856,6 +2863,93 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_libxml2_tests/issvg5.testcase \
 	sql_stmt_libxml2_tests/issvg6.testcase \
 	sql_stmt_libxml2_tests/issvg7.testcase \
+	sql_stmt_libxml2_tests/createstyling1.testcase \
+	sql_stmt_libxml2_tests/createstyling2.testcase \
+	sql_stmt_libxml2_tests/createstyling3.testcase \
+	sql_stmt_libxml2_tests/createstyling4.testcase \
+	sql_stmt_libxml2_tests/createstyling5.testcase \
+	sql_stmt_libxml2_tests/createstyling6.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic1.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic2.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic3.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic4.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic5.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic6.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic7.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic8.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic9.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic10.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic11.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic12.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic13.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic14.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic15.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic16.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic17.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic18.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic19.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic20.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic21.testcase \
+	sql_stmt_libxml2_tests/ragisterGraphic22.testcase \
+	sql_stmt_libxml2_tests/ragisterVector1.testcase \
+	sql_stmt_libxml2_tests/ragisterVector2.testcase \
+	sql_stmt_libxml2_tests/ragisterVector3.testcase \
+	sql_stmt_libxml2_tests/ragisterVector4.testcase \
+	sql_stmt_libxml2_tests/ragisterVector5.testcase \
+	sql_stmt_libxml2_tests/ragisterVector6.testcase \
+	sql_stmt_libxml2_tests/ragisterVector7.testcase \
+	sql_stmt_libxml2_tests/ragisterVector8.testcase \
+	sql_stmt_libxml2_tests/ragisterVector9.testcase \
+	sql_stmt_libxml2_tests/ragisterVector10.testcase \
+	sql_stmt_libxml2_tests/ragisterVector11.testcase \
+	sql_stmt_libxml2_tests/ragisterVector12.testcase \
+	sql_stmt_libxml2_tests/ragisterVector13.testcase \
+	sql_stmt_libxml2_tests/ragisterVector14.testcase \
+	sql_stmt_libxml2_tests/ragisterVector15.testcase \
+	sql_stmt_libxml2_tests/ragisterVector16.testcase \
+	sql_stmt_libxml2_tests/ragisterVector17.testcase \
+	sql_stmt_libxml2_tests/ragisterVector18.testcase \
+	sql_stmt_libxml2_tests/ragisterRaster1.testcase \
+	sql_stmt_libxml2_tests/ragisterRaster2.testcase \
+	sql_stmt_libxml2_tests/ragisterRaster3.testcase \
+	sql_stmt_libxml2_tests/ragisterRaster4.testcase \
+	sql_stmt_libxml2_tests/ragisterRaster5.testcase \
+	sql_stmt_libxml2_tests/ragisterRaster6.testcase \
+	sql_stmt_libxml2_tests/ragisterRaster7.testcase \
+	sql_stmt_libxml2_tests/ragisterRaster8.testcase \
+	sql_stmt_libxml2_tests/ragisterRaster9.testcase \
+	sql_stmt_libxml2_tests/ragisterRaster10.testcase \
+	sql_stmt_libxml2_tests/ragisterRaster11.testcase \
+	sql_stmt_libxml2_tests/ragisterRaster12.testcase \
+	sql_stmt_libxml2_tests/ragisterRaster13.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup1.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup2.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup3.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup4.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup5.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup6.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup7.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup8.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup9.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup10.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup11.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup12.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup13.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup14.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup15.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup16.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup17.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup18.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup19.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup20.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup21.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup22.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup23.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup25.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup26.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup27.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup28.testcase \
+	sql_stmt_libxml2_tests/ragisterGroup29.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize1.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize2.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize3.testcase \
@@ -3035,6 +3129,11 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/setpoint21.testcase \
 	sql_stmt_tests/setpoint22.testcase \
 	sql_stmt_tests/setpoint23.testcase \
+	sql_stmt_tests/getmimetype1.testcase \
+	sql_stmt_tests/getmimetype2.testcase \
+	sql_stmt_tests/getmimetype3.testcase \
+	sql_stmt_tests/getmimetype4.testcase \
+	sql_stmt_tests/getmimetype5.testcase \
 	books.xml books.xsd opera.xml opera.xsd \
 	movies.xml movies.xsd books-bad.xml books-bad.xsd \
 	inspire-data-example.xml stazioni_se.xml \

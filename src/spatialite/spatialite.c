@@ -23033,7 +23033,8 @@ fnct_RegisterStyledGroup (sqlite3_context * context, int argc,
 	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
 	      && sqlite3_value_type (argv[1]) == SQLITE_TEXT
 	      && sqlite3_value_type (argv[2]) == SQLITE_TEXT
-	      && sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	      && sqlite3_value_type (argv[3]) == SQLITE_INTEGER 
+	      && sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
 	    {
 		group_name = (const char *) sqlite3_value_text (argv[0]);
 		f_table_name = (const char *) sqlite3_value_text (argv[1]);
