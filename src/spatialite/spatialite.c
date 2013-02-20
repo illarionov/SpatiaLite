@@ -14332,11 +14332,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 				    {
 					/* Linestrings */
 					l = gaiaGeodesicTotalLength (a, b, rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -14358,9 +14357,12 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      ring = polyg->Exterior;
 					      l = gaiaGeodesicTotalLength (a, b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -14404,11 +14406,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					/* Linestrings */
 					length +=
 					    gaiaGreatCircleTotalLength (a, b,
-									line->DimensionModel,
 									line->
-									Coords,
-									line->
-									Points);
+									DimensionModel,
+									line->Coords,
+									line->Points);
 					line = line->Next;
 				    }
 			      }
@@ -14425,10 +14426,11 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      length +=
 						  gaiaGreatCircleTotalLength (a,
 									      b,
+									      ring->DimensionModel,
 									      ring->
-									      DimensionModel,
-									      ring->Coords,
-									      ring->Points);
+									      Coords,
+									      ring->
+									      Points);
 					      for (ib = 0;
 						   ib < polyg->NumInteriors;
 						   ib++)
@@ -21015,7 +21017,7 @@ fnct_math_round (sqlite3_context * context, int argc, sqlite3_value ** argv)
 /* SQL function:
 / round(double X)
 /
-/ Returns the the nearest integer, but round halfway cases away from zero
+/ Returns the nearest integer, but round halfway cases away from zero
 / or NULL if any error is encountered
 */
     int int_value;
@@ -21198,6 +21200,82 @@ fnct_GeomFromExifGpsBlob (sqlite3_context * context, int argc,
       }
     else
 	sqlite3_result_null (context);
+}
+
+static char *
+guess_mime_type (const unsigned char *p_blob, int n_bytes)
+{
+/* guessing the mime-type corresponding to some BLOB */
+    int blob_type;
+    const char *mime = NULL;
+    int len;
+    char *string = NULL;
+    blob_type = gaiaGuessBlobType (p_blob, n_bytes);
+    switch (blob_type)
+      {
+      case GAIA_ZIP_BLOB:
+	  mime = "application/zip";
+	  break;
+      case GAIA_PDF_BLOB:
+	  mime = "application/pdf";
+	  break;
+      case GAIA_TIFF_BLOB:
+	  mime = "image/tiff";
+	  break;
+      case GAIA_GIF_BLOB:
+	  mime = "image/gif";
+	  break;
+      case GAIA_PNG_BLOB:
+	  mime = "image/png";
+	  break;
+      case GAIA_JPEG_BLOB:
+      case GAIA_EXIF_BLOB:
+      case GAIA_EXIF_GPS_BLOB:
+	  mime = "image/jpeg";
+	  break;
+#ifdef ENABLE_LIBXML2		/* including LIBXML2 */
+      case GAIA_XML_BLOB:
+	  mime = "application/xml";
+	  if (gaiaIsSvgXmlBlob (p_blob, n_bytes))
+	      mime = "image/svg+xml";
+	  break;
+#endif /* end including LIBXML2 */
+      };
+    if (mime != NULL)
+      {
+	  len = strlen (mime);
+	  string = malloc (len + 1);
+	  strcpy (string, mime);
+      }
+    return string;
+}
+
+static void
+fnct_GetMimeType (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ GetMimeType(BLOB)
+/
+/ returns:
+/ the Mime-Type corresponding to the BLOB
+/ or NULL if any error is encountered or no valid mime is defined
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    char *mime = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    mime = guess_mime_type (p_blob, n_bytes);
+    if (mime == NULL)
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_text (context, mime, strlen (mime), free);
 }
 
 static void
@@ -21565,8 +21643,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -21650,8 +21727,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -21660,8 +21736,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -21957,6 +22032,1029 @@ fnct_cvtFromIndCh (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
+
+static void
+fnct_CreateStylingTables (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ CreateStylingTables()
+/  or
+/ CreateStylingTables(bool relaxed)
+/
+/ creates any SLD/SE related table 
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int relaxed = 0;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (argc == 1)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
+	    {
+		spatialite_e
+		    ("CreateStylingTables() error: argument 1 [relaxed] is not of the Integer type\n");
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  relaxed = sqlite3_value_int (argv[0]);
+      }
+
+    if (!createStylingTables (sqlite, relaxed))
+	goto error;
+    updateSpatiaLiteHistory (sqlite, "*** SE Styling ***", NULL,
+			     "Styling tables successfully created");
+    sqlite3_result_int (context, 1);
+    return;
+
+  error:
+    sqlite3_result_int (context, 0);
+    return;
+}
+
+static int
+register_external_graphic (sqlite3 * sqlite, const char *xlink_href,
+			   const unsigned char *p_blob, int n_bytes,
+			   const char *title, const char *abstract,
+			   const char *file_name)
+{
+/* auxiliary function: inserts or updates an ExternalGraphic Resource */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int exists = 0;
+    int extras = 0;
+    int retval = 0;
+
+/* checking if already exists */
+    sql = "SELECT xlink_href FROM SE_external_graphics WHERE xlink_href = ?";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("registerExternalGraphic: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, xlink_href, strlen (xlink_href), SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	      exists = 1;
+      }
+    sqlite3_finalize (stmt);
+
+    if (title != NULL && abstract != NULL && file_name != NULL)
+	extras = 1;
+    if (exists)
+      {
+	  /* update */
+	  if (extras)
+	    {
+		/* full infos */
+		sql = "UPDATE SE_external_graphics "
+		    "SET resource = ?, title = ?, abstract = ?, file_name = ? "
+		    "WHERE xlink_href = ?";
+	    }
+	  else
+	    {
+		/* limited basic infos */
+		sql = "UPDATE SE_external_graphics "
+		    "SET resource = ? WHERE xlink_href = ?";
+	    }
+      }
+    else
+      {
+	  /* insert */
+	  if (extras)
+	    {
+		/* full infos */
+		sql = "INSERT INTO SE_external_graphics "
+		    "(xlink_href, resource, title, abstract, file_name) "
+		    "VALUES (?, ?, ?, ?, ?)";
+	    }
+	  else
+	    {
+		/* limited basic infos */
+		sql = "INSERT INTO SE_external_graphics "
+		    "(xlink_href, resource) VALUES (?, ?)";
+	    }
+      }
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("registerExternalGraphic: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    if (exists)
+      {
+	  /* update */
+	  if (extras)
+	    {
+		/* full infos */
+		sqlite3_bind_blob (stmt, 1, p_blob, n_bytes, SQLITE_STATIC);
+		sqlite3_bind_text (stmt, 2, title, strlen (title),
+				   SQLITE_STATIC);
+		sqlite3_bind_text (stmt, 3, abstract, strlen (abstract),
+				   SQLITE_STATIC);
+		sqlite3_bind_text (stmt, 4, file_name, strlen (file_name),
+				   SQLITE_STATIC);
+		sqlite3_bind_text (stmt, 5, xlink_href, strlen (xlink_href),
+				   SQLITE_STATIC);
+	    }
+	  else
+	    {
+		/* limited basic infos */
+		sqlite3_bind_blob (stmt, 1, p_blob, n_bytes, SQLITE_STATIC);
+		sqlite3_bind_text (stmt, 2, xlink_href, strlen (xlink_href),
+				   SQLITE_STATIC);
+	    }
+      }
+    else
+      {
+	  /* insert */
+	  if (extras)
+	    {
+		/* full infos */
+		sqlite3_bind_text (stmt, 1, xlink_href, strlen (xlink_href),
+				   SQLITE_STATIC);
+		sqlite3_bind_blob (stmt, 2, p_blob, n_bytes, SQLITE_STATIC);
+		sqlite3_bind_text (stmt, 3, title, strlen (title),
+				   SQLITE_STATIC);
+		sqlite3_bind_text (stmt, 4, abstract, strlen (abstract),
+				   SQLITE_STATIC);
+		sqlite3_bind_text (stmt, 5, file_name, strlen (file_name),
+				   SQLITE_STATIC);
+	    }
+	  else
+	    {
+		/* limited basic infos */
+		sqlite3_bind_text (stmt, 1, xlink_href, strlen (xlink_href),
+				   SQLITE_STATIC);
+		sqlite3_bind_blob (stmt, 2, p_blob, n_bytes, SQLITE_STATIC);
+	    }
+      }
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	retval = 1;
+    else
+	spatialite_e ("registerExternalGraphic() error: \"%s\"\n",
+		      sqlite3_errmsg (sqlite));
+    sqlite3_finalize (stmt);
+    return retval;
+  stop:
+    return 0;
+}
+
+static void
+fnct_RegisterExternalGraphic (sqlite3_context * context, int argc,
+			      sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterExternalGraphic(String xlink_href, BLOB resource)
+/  or
+/ RegisterExternalGraphic(String xlink_href, BLOB resource, String file_name)
+/
+/ insert or updates an External Graphic 
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *xlink_href;
+    const char *title = NULL;
+    const char *abstract = NULL;
+    const char *file_name = NULL;
+    const unsigned char *p_blob;
+    int n_bytes;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("RegisterExternalGraphic() error: argument 1 [xlink_href] is not of the Text type\n");
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+      {
+	  spatialite_e
+	      ("RegisterExternalGraphic() error: argument 2 [resource] is not of the BLOB type\n");
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (argc == 5)
+      {
+	  /* optional extra args */
+	  if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+	    {
+		spatialite_e
+		    ("RegisterExternalGraphic() error: argument 3 [title] is not of the Text type\n");
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
+	    {
+		spatialite_e
+		    ("RegisterExternalGraphic() error: argument 4 [abstract] is not of the Text type\n");
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[4]) != SQLITE_TEXT)
+	    {
+		spatialite_e
+		    ("RegisterExternalGraphic() error: argument 5 [file_name] is not of the Text type\n");
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    xlink_href = (const char *) sqlite3_value_text (argv[0]);
+    p_blob = sqlite3_value_blob (argv[1]);
+    n_bytes = sqlite3_value_bytes (argv[1]);
+    if (argc == 5)
+      {
+	  title = (const char *) sqlite3_value_text (argv[2]);
+	  abstract = (const char *) sqlite3_value_text (argv[3]);
+	  file_name = (const char *) sqlite3_value_text (argv[4]);
+      }
+    ret =
+	register_external_graphic (sqlite, xlink_href, p_blob, n_bytes, title,
+				   abstract, file_name);
+    sqlite3_result_int (context, ret);
+}
+
+static int
+register_vector_styled_layer (sqlite3 * sqlite, const char *f_table_name,
+			      const char *f_geometry_column, int style_id,
+			      const unsigned char *p_blob, int n_bytes)
+{
+/* auxiliary function: inserts or updates a Vector Styled Layer */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int exists = 0;
+    int retval = 0;
+
+    if (style_id >= 0)
+      {
+	  /* checking if already exists */
+	  sql = "SELECT style_id FROM SE_vector_styled_layers "
+	      "WHERE f_table_name = Lower(?) AND f_geometry_column = Lower(?) "
+	      "AND style_id = ?";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerVectorStyledLayer: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto stop;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, f_table_name, strlen (f_table_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, f_geometry_column,
+			     strlen (f_geometry_column), SQLITE_STATIC);
+	  sqlite3_bind_int (stmt, 3, style_id);
+	  while (1)
+	    {
+		/* scrolling the result set rows */
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE)
+		    break;	/* end of result set */
+		if (ret == SQLITE_ROW)
+		    exists = 1;
+	    }
+	  sqlite3_finalize (stmt);
+      }
+    else
+      {
+	  /* assigning the next style_id value */
+	  style_id = 0;
+	  sql = "SELECT Max(style_id) FROM SE_vector_styled_layers "
+	      "WHERE f_table_name = Lower(?) AND f_geometry_column = Lower(?) ";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerVectorStyledLayer: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto stop;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, f_table_name, strlen (f_table_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, f_geometry_column,
+			     strlen (f_geometry_column), SQLITE_STATIC);
+	  while (1)
+	    {
+		/* scrolling the result set rows */
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE)
+		    break;	/* end of result set */
+		if (ret == SQLITE_ROW)
+		  {
+		      if (sqlite3_column_type (stmt, 0) == SQLITE_INTEGER)
+			  style_id = sqlite3_column_int (stmt, 0) + 1;
+		  }
+	    }
+	  sqlite3_finalize (stmt);
+      }
+
+    if (exists)
+      {
+	  /* update */
+	  sql = "UPDATE SE_vector_styled_layers SET style = ? "
+	      "WHERE f_table_name = Lower(?) AND f_geometry_column = Lower(?) "
+	      "AND style_id = ?";
+      }
+    else
+      {
+	  /* insert */
+	  sql = "INSERT INTO SE_vector_styled_layers "
+	      "(f_table_name, f_geometry_column, style_id, style) VALUES "
+	      "(?, ?, ?, ?)";
+      }
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("registerVectorStyledLayer: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    if (exists)
+      {
+	  /* update */
+	  sqlite3_bind_blob (stmt, 1, p_blob, n_bytes, SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, f_table_name, strlen (f_table_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, f_geometry_column,
+			     strlen (f_geometry_column), SQLITE_STATIC);
+	  sqlite3_bind_int (stmt, 4, style_id);
+      }
+    else
+      {
+	  /* insert */
+	  sqlite3_bind_text (stmt, 1, f_table_name, strlen (f_table_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, f_geometry_column,
+			     strlen (f_geometry_column), SQLITE_STATIC);
+	  sqlite3_bind_int (stmt, 3, style_id);
+	  sqlite3_bind_blob (stmt, 4, p_blob, n_bytes, SQLITE_STATIC);
+      }
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	retval = 1;
+    else
+	spatialite_e ("registerVectorStyledLayer() error: \"%s\"\n",
+		      sqlite3_errmsg (sqlite));
+    sqlite3_finalize (stmt);
+    return retval;
+  stop:
+    return 0;
+}
+
+static void
+fnct_RegisterVectorStyledLayer (sqlite3_context * context, int argc,
+				sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterVectorStyledLayer(String f_table_name, String f_geometry_column, 
+/			BLOB style)
+/  or
+/ RegisterVectorStyledLayer(String f_table_name, String f_geometry_column, 
+/			Integer style_id, BLOB style)
+/
+/ insert or updates a Vector Styled Layer 
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *f_geometry_column;
+    const char *f_table_name;
+    int style_id = -1;
+    const unsigned char *p_blob;
+    int n_bytes;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("RegisterVectorStyledLayer() error: argument 1 [f_table_name] is not of the Text type\n");
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("RegisterVectorStyledLayer() error: argument 2 [f_geometry_column] is not of the Text type\n");
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (argc == 4)
+      {
+	  /* optional extra args */
+	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+	    {
+		spatialite_e
+		    ("RegisterVectorStyledLayer() error: argument 3 [style_id] is not of the Integer type\n");
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[3]) != SQLITE_BLOB)
+	    {
+		spatialite_e
+		    ("RegisterVectorStyledLayer() error: argument 4 [style] is not of the BLOB type\n");
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    else
+      {
+	  /* no extra-args */
+	  if (sqlite3_value_type (argv[2]) != SQLITE_BLOB)
+	    {
+		spatialite_e
+		    ("RegisterVectorStyledLayer() error: argument 3 [style] is not of the BLOB type\n");
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    f_table_name = (const char *) sqlite3_value_text (argv[0]);
+    f_geometry_column = (const char *) sqlite3_value_text (argv[1]);
+    if (argc == 4)
+      {
+	  style_id = sqlite3_value_int (argv[2]);
+	  p_blob = sqlite3_value_blob (argv[3]);
+	  n_bytes = sqlite3_value_bytes (argv[3]);
+      }
+    else
+      {
+	  p_blob = sqlite3_value_blob (argv[2]);
+	  n_bytes = sqlite3_value_bytes (argv[2]);
+      }
+    ret =
+	register_vector_styled_layer (sqlite, f_table_name, f_geometry_column,
+				      style_id, p_blob, n_bytes);
+    sqlite3_result_int (context, ret);
+}
+
+static int
+register_raster_styled_layer (sqlite3 * sqlite, const char *coverage_name,
+			      int style_id, const unsigned char *p_blob,
+			      int n_bytes)
+{
+/* auxiliary function: inserts or updates a Raster Styled Layer */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int exists = 0;
+    int retval = 0;
+
+    if (style_id >= 0)
+      {
+	  /* checking if already exists */
+	  sql = "SELECT style_id FROM SE_raster_styled_layers "
+	      "WHERE coverage_name = Lower(?) AND style_id = ?";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerRasterStyledLayer: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto stop;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_int (stmt, 2, style_id);
+	  while (1)
+	    {
+		/* scrolling the result set rows */
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE)
+		    break;	/* end of result set */
+		if (ret == SQLITE_ROW)
+		    exists = 1;
+	    }
+	  sqlite3_finalize (stmt);
+      }
+    else
+      {
+	  /* assigning the next style_id value */
+	  style_id = 0;
+	  sql = "SELECT Max(style_id) FROM SE_raster_styled_layers "
+	      "WHERE coverage_name = Lower(?) ";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerVectorStyledLayer: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto stop;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  while (1)
+	    {
+		/* scrolling the result set rows */
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE)
+		    break;	/* end of result set */
+		if (ret == SQLITE_ROW)
+		  {
+		      if (sqlite3_column_type (stmt, 0) == SQLITE_INTEGER)
+			  style_id = sqlite3_column_int (stmt, 0) + 1;
+		  }
+	    }
+	  sqlite3_finalize (stmt);
+      }
+
+    if (exists)
+      {
+	  /* update */
+	  sql = "UPDATE SE_raster_styled_layers SET style = ? "
+	      "WHERE coverage_name = Lower(?) AND style_id = ?";
+      }
+    else
+      {
+	  /* insert */
+	  sql = "INSERT INTO SE_raster_styled_layers "
+	      "(coverage_name, style_id, style) VALUES (?, ?, ?)";
+      }
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("registerRasterStyledLayer: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    if (exists)
+      {
+	  /* update */
+	  sqlite3_bind_blob (stmt, 1, p_blob, n_bytes, SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_int (stmt, 3, style_id);
+      }
+    else
+      {
+	  /* insert */
+	  sqlite3_bind_text (stmt, 1, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_int (stmt, 2, style_id);
+	  sqlite3_bind_blob (stmt, 3, p_blob, n_bytes, SQLITE_STATIC);
+      }
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	retval = 1;
+    else
+	spatialite_e ("registerRasterStyledLayer() error: \"%s\"\n",
+		      sqlite3_errmsg (sqlite));
+    sqlite3_finalize (stmt);
+    return retval;
+  stop:
+    return 0;
+}
+
+static void
+fnct_RegisterRasterStyledLayer (sqlite3_context * context, int argc,
+				sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterRasterStyledLayer(String coverage_name, BLOB style)
+/  or
+/ RegisterRasterStyledLayer(String coverage_name, Integer style_id,
+/			BLOB style)
+/
+/ insert or updates a Raster Styled Layer 
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *coverage_name;
+    int style_id = -1;
+    const unsigned char *p_blob;
+    int n_bytes;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  spatialite_e
+	      ("RegisterRasterStyledLayer() error: argument 1 [coverage_name] is not of the Text type\n");
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (argc == 3)
+      {
+	  /* optional extra args */
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		spatialite_e
+		    ("RegisterRasterStyledLayer() error: argument 2 [style_id] is not of the Integer type\n");
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[2]) != SQLITE_BLOB)
+	    {
+		spatialite_e
+		    ("RegisterRasterStyledLayer() error: argument 3 [style] is not of the BLOB type\n");
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    else
+      {
+	  /* no extra-args */
+	  if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
+	    {
+		spatialite_e
+		    ("RegisterRasterStyledLayer() error: argument 2 [style] is not of the BLOB type\n");
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    coverage_name = (const char *) sqlite3_value_text (argv[0]);
+    if (argc == 3)
+      {
+	  style_id = sqlite3_value_int (argv[1]);
+	  p_blob = sqlite3_value_blob (argv[2]);
+	  n_bytes = sqlite3_value_bytes (argv[2]);
+      }
+    else
+      {
+	  p_blob = sqlite3_value_blob (argv[1]);
+	  n_bytes = sqlite3_value_bytes (argv[1]);
+      }
+    ret =
+	register_raster_styled_layer (sqlite, coverage_name, style_id, p_blob,
+				      n_bytes);
+    sqlite3_result_int (context, ret);
+}
+
+static int
+register_styled_group (sqlite3 * sqlite, const char *group_name,
+		       const char *f_table_name, const char *f_geometry_column,
+		       const char *coverage_name, int style_id, int paint_order)
+{
+/* auxiliary function: inserts or updates a Styled Group Item */
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int exists_group = 0;
+    int exists = 0;
+    int retval = 0;
+    sqlite3_int64 id;
+
+    if (style_id >= 0)
+      {
+	  /* checking if the Group already exists */
+	  sql = "SELECT group_name FROM SE_styled_groups "
+	      "WHERE group_name = Lower(?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerStyledGroupsRefs: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto stop;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, group_name, strlen (group_name),
+			     SQLITE_STATIC);
+	  while (1)
+	    {
+		/* scrolling the result set rows */
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE)
+		    break;	/* end of result set */
+		if (ret == SQLITE_ROW)
+		    exists_group = 1;
+	    }
+	  sqlite3_finalize (stmt);
+      }
+
+    if (!exists_group)
+      {
+	  /* insert group */
+	  sql = "INSERT INTO SE_styled_groups (group_name) VALUES (?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerStyledGroupsRefs: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto stop;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, group_name, strlen (group_name),
+			     SQLITE_STATIC);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      retval = 1;
+	  else
+	      spatialite_e ("registerStyledGroupsRefs() error: \"%s\"\n",
+			    sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+	  if (retval == 0)
+	      goto stop;
+	  retval = 0;
+      }
+
+    if (coverage_name != NULL)
+      {
+	  /* checking if the Raster group-item already exists */
+	  sql = "SELECT id FROM SE_styled_group_refs "
+	      "WHERE group_name = Lower(?) AND coverage_name = Lower(?) "
+	      "AND raster_style_id = ?";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerStyledGroupsRefs: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto stop;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, group_name, strlen (group_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, coverage_name, strlen (coverage_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_int (stmt, 3, style_id);
+	  while (1)
+	    {
+		/* scrolling the result set rows */
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE)
+		    break;	/* end of result set */
+		if (ret == SQLITE_ROW)
+		  {
+		      id = sqlite3_column_int64 (stmt, 0);
+		      exists = 1;
+		  }
+	    }
+	  sqlite3_finalize (stmt);
+      }
+    else
+      {
+	  /* checking if the Vector group-item already exists */
+	  sql = "SELECT id FROM SE_styled_group_refs "
+	      "WHERE group_name = Lower(?) AND f_table_name = Lower(?) "
+	      "AND f_geometry_column = Lower(?) AND vector_style_id = ?";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerStyledGroupsRefs: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto stop;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, group_name, strlen (group_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, f_table_name, strlen (f_table_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, f_geometry_column,
+			     strlen (f_geometry_column), SQLITE_STATIC);
+	  sqlite3_bind_int (stmt, 4, style_id);
+	  while (1)
+	    {
+		/* scrolling the result set rows */
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE)
+		    break;	/* end of result set */
+		if (ret == SQLITE_ROW)
+		  {
+		      id = sqlite3_column_int64 (stmt, 0);
+		      exists = 1;
+		  }
+	    }
+	  sqlite3_finalize (stmt);
+      }
+
+    if (paint_order < 0)
+      {
+	  /* assigning the next paint_order value */
+	  paint_order = 0;
+	  sql = "SELECT Max(paint_order) FROM SE_styled_group_refs "
+	      "WHERE group_name = Lower(?) ";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("registerStyledGroupsRefs: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto stop;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, group_name, strlen (group_name),
+			     SQLITE_STATIC);
+	  while (1)
+	    {
+		/* scrolling the result set rows */
+		ret = sqlite3_step (stmt);
+		if (ret == SQLITE_DONE)
+		    break;	/* end of result set */
+		if (ret == SQLITE_ROW)
+		  {
+		      if (sqlite3_column_type (stmt, 0) == SQLITE_INTEGER)
+			  paint_order = sqlite3_column_int (stmt, 0) + 1;
+		  }
+	    }
+	  sqlite3_finalize (stmt);
+      }
+
+    if (exists)
+      {
+	  /* update */
+	  sql = "UPDATE SE_styled_group_refs SET paint_order = ? "
+	      "WHERE id = ?";
+      }
+    else
+      {
+	  /* insert */
+	  if (coverage_name == NULL)
+	    {
+		/* vector styled layer */
+		sql = "INSERT INTO SE_styled_group_refs "
+		    "(id, group_name, f_table_name, f_geometry_column, vector_style_id, paint_order) "
+		    "VALUES (NULL, ?, ?, ?, ?, ?)";
+	    }
+	  else
+	    {
+		/* raster styled layer */
+		sql = "INSERT INTO SE_styled_group_refs "
+		    "(id, group_name, coverage_name, raster_style_id, paint_order) "
+		    "VALUES (NULL, ?, ?, ?, ?)";
+	    }
+      }
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("registerStyledGroupsRefs: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    if (exists)
+      {
+	  /* update */
+	  sqlite3_bind_int (stmt, 1, paint_order);
+	  sqlite3_bind_int64 (stmt, 2, id);
+      }
+    else
+      {
+	  /* insert */
+	  sqlite3_bind_text (stmt, 1, group_name, strlen (group_name),
+			     SQLITE_STATIC);
+	  if (coverage_name == NULL)
+	    {
+		/* vector styled layer */
+		sqlite3_bind_text (stmt, 2, f_table_name, strlen (f_table_name),
+				   SQLITE_STATIC);
+		sqlite3_bind_text (stmt, 3, f_geometry_column,
+				   strlen (f_geometry_column), SQLITE_STATIC);
+		sqlite3_bind_int (stmt, 4, style_id);
+		sqlite3_bind_int (stmt, 5, paint_order);
+	    }
+	  else
+	    {
+		/* raster styled layer */
+		sqlite3_bind_text (stmt, 2, coverage_name,
+				   strlen (coverage_name), SQLITE_STATIC);
+		sqlite3_bind_int (stmt, 3, style_id);
+		sqlite3_bind_int (stmt, 4, paint_order);
+	    }
+      }
+    ret = sqlite3_step (stmt);
+    if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	retval = 1;
+    else
+	spatialite_e ("registerStyledGroupsRefs() error: \"%s\"\n",
+		      sqlite3_errmsg (sqlite));
+    sqlite3_finalize (stmt);
+    return retval;
+  stop:
+    return 0;
+}
+
+static void
+fnct_RegisterStyledGroup (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ RegisterStyledGroup(String group_name, String coverage_name, 
+/		      Integer style_id [, Integer paint_order)
+/  or
+/ RegisterStyledGroup(String group_name, String f_table_name,
+/		      String f_geometry_column, Integer style_id
+/		      [, Integer paint_order)
+/
+/ insert or updates a Raster Styled Layer 
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *group_name;
+    const char *f_table_name = NULL;
+    const char *f_geometry_column = NULL;
+    const char *coverage_name = NULL;
+    int style_id;
+    int paint_order = -1;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (argc == 3)
+      {
+	  /* raster layer - default */
+	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
+	      && sqlite3_value_type (argv[1]) == SQLITE_TEXT
+	      && sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+	    {
+		group_name = (const char *) sqlite3_value_text (argv[0]);
+		coverage_name = (const char *) sqlite3_value_text (argv[1]);
+		style_id = sqlite3_value_int (argv[2]);
+	    }
+	  else
+	    {
+		spatialite_e
+		    ("RegisterStyledGroup() invalid arguments: expected TEXT, TEXT, INTEGER\n");
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    else if (argc == 4)
+      {
+	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
+	      && sqlite3_value_type (argv[1]) == SQLITE_TEXT
+	      && sqlite3_value_type (argv[2]) == SQLITE_INTEGER
+	      && sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	    {
+		/* raster layer - paint_order */
+		group_name = (const char *) sqlite3_value_text (argv[0]);
+		coverage_name = (const char *) sqlite3_value_text (argv[1]);
+		style_id = sqlite3_value_int (argv[2]);
+		paint_order = sqlite3_value_int (argv[3]);
+	    }
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
+		   && sqlite3_value_type (argv[1]) == SQLITE_TEXT
+		   && sqlite3_value_type (argv[2]) == SQLITE_TEXT
+		   && sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	    {
+		/* vector layer - default */
+		group_name = (const char *) sqlite3_value_text (argv[0]);
+		f_table_name = (const char *) sqlite3_value_text (argv[1]);
+		f_geometry_column = (const char *) sqlite3_value_text (argv[2]);
+		style_id = sqlite3_value_int (argv[3]);
+	    }
+	  else
+	    {
+		spatialite_e
+		    ("RegisterStyledGroup() invalid arguments: expected TEXT, TEXT, TEXT, INTEGER\n");
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    else if (argc == 5)
+      {
+	  /* vector layer - paint_order */
+	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT
+	      && sqlite3_value_type (argv[1]) == SQLITE_TEXT
+	      && sqlite3_value_type (argv[2]) == SQLITE_TEXT
+	      && sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+	    {
+		group_name = (const char *) sqlite3_value_text (argv[0]);
+		f_table_name = (const char *) sqlite3_value_text (argv[1]);
+		f_geometry_column = (const char *) sqlite3_value_text (argv[2]);
+		style_id = sqlite3_value_int (argv[3]);
+		paint_order = sqlite3_value_int (argv[4]);
+	    }
+	  else
+	    {
+		spatialite_e
+		    ("RegisterStyledGroup() invalid arguments: expected TEXT, TEXT, TEXT, INTEGER, INTEGER\n");
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    ret =
+	register_styled_group (sqlite, group_name, f_table_name,
+			       f_geometry_column, coverage_name, style_id,
+			       paint_order);
+    sqlite3_result_int (context, ret);
+}
 
 static void
 fnct_XB_Create (sqlite3_context * context, int argc, sqlite3_value ** argv)
@@ -22390,13 +23488,13 @@ fnct_XB_IsIsoMetadata (sqlite3_context * context, int argc,
 }
 
 static void
-fnct_XB_IsSldSeStyle (sqlite3_context * context, int argc,
-		      sqlite3_value ** argv)
+fnct_XB_IsSldSeVectorStyle (sqlite3_context * context, int argc,
+			    sqlite3_value ** argv)
 {
 /* SQL function:
-/ XB_IsSldSeStyle(XmlBLOB)
+/ XB_IsSldSeVectorStyle(XmlBLOB)
 /
-/ returns TRUE if the current BLOB is an SLD/SE Style XmlBLOB,
+/ returns TRUE if the current BLOB is an SLD/SE Vector Style XmlBLOB,
 / FALSE if it's a valid XmlBLOB but not an SLD/SE Style
 / or -1 if any error is encountered
 */
@@ -22411,7 +23509,33 @@ fnct_XB_IsSldSeStyle (sqlite3_context * context, int argc,
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
-    ret = gaiaIsSldSeStyleXmlBlob (p_blob, n_bytes);
+    ret = gaiaIsSldSeVectorStyleXmlBlob (p_blob, n_bytes);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_XB_IsSldSeRasterStyle (sqlite3_context * context, int argc,
+			    sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_IsSldSeRasterStyle(XmlBLOB)
+/
+/ returns TRUE if the current BLOB is an SLD/SE Raster Style XmlBLOB,
+/ FALSE if it's a valid XmlBLOB but not an SLD/SE Style
+/ or -1 if any error is encountered
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    int ret;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    ret = gaiaIsSldSeRasterStyleXmlBlob (p_blob, n_bytes);
     sqlite3_result_int (context, ret);
 }
 
@@ -23614,6 +24738,8 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_IsWebPBlob, 0, 0);
     sqlite3_create_function (db, "GeomFromExifGpsBlob", 1, SQLITE_ANY, 0,
 			     fnct_GeomFromExifGpsBlob, 0, 0);
+    sqlite3_create_function (db, "GetMimeType", 1, SQLITE_ANY, 0,
+			     fnct_GetMimeType, 0, 0);
 
 /*
 // enabling BlobFromFile and BlobToFile
@@ -24183,6 +25309,28 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 
+    sqlite3_create_function (db, "CreateStylingTables", 0, SQLITE_ANY, 0,
+			     fnct_CreateStylingTables, 0, 0);
+    sqlite3_create_function (db, "CreateStylingTables", 1, SQLITE_ANY, 0,
+			     fnct_CreateStylingTables, 0, 0);
+    sqlite3_create_function (db, "RegisterExternalGraphic", 2, SQLITE_ANY, 0,
+			     fnct_RegisterExternalGraphic, 0, 0);
+    sqlite3_create_function (db, "RegisterExternalGraphic", 5, SQLITE_ANY, 0,
+			     fnct_RegisterExternalGraphic, 0, 0);
+    sqlite3_create_function (db, "RegisterVectorStyledLayer", 3, SQLITE_ANY, 0,
+			     fnct_RegisterVectorStyledLayer, 0, 0);
+    sqlite3_create_function (db, "RegisterVectorStyledLayer", 4, SQLITE_ANY, 0,
+			     fnct_RegisterVectorStyledLayer, 0, 0);
+    sqlite3_create_function (db, "RegisterRasterStyledLayer", 2, SQLITE_ANY, 0,
+			     fnct_RegisterRasterStyledLayer, 0, 0);
+    sqlite3_create_function (db, "RegisterRasterStyledLayer", 3, SQLITE_ANY, 0,
+			     fnct_RegisterRasterStyledLayer, 0, 0);
+    sqlite3_create_function (db, "RegisterStyledGroup", 3, SQLITE_ANY, 0,
+			     fnct_RegisterStyledGroup, 0, 0);
+    sqlite3_create_function (db, "RegisterStyledGroup", 4, SQLITE_ANY, 0,
+			     fnct_RegisterStyledGroup, 0, 0);
+    sqlite3_create_function (db, "RegisterStyledGroup", 5, SQLITE_ANY, 0,
+			     fnct_RegisterStyledGroup, 0, 0);
     sqlite3_create_function (db, "XB_Create", 1, SQLITE_ANY, cache,
 			     fnct_XB_Create, 0, 0);
     sqlite3_create_function (db, "XB_Create", 2, SQLITE_ANY, cache,
@@ -24213,10 +25361,12 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_XB_IsCompressed, 0, 0);
     sqlite3_create_function (db, "XB_IsIsoMetadata", 1, SQLITE_ANY, 0,
 			     fnct_XB_IsIsoMetadata, 0, 0);
-    sqlite3_create_function (db, "XB_IsSldSeStyle", 1, SQLITE_ANY, 0,
-			     fnct_XB_IsSldSeStyle, 0, 0);
-    sqlite3_create_function (db, "XB_IsSvg", 1, SQLITE_ANY, 0,
-			     fnct_XB_IsSvg, 0, 0);
+    sqlite3_create_function (db, "XB_IsSldSeVectorStyle", 1, SQLITE_ANY, 0,
+			     fnct_XB_IsSldSeVectorStyle, 0, 0);
+    sqlite3_create_function (db, "XB_IsSldSeRasterStyle", 1, SQLITE_ANY, 0,
+			     fnct_XB_IsSldSeRasterStyle, 0, 0);
+    sqlite3_create_function (db, "XB_IsSvg", 1, SQLITE_ANY, 0, fnct_XB_IsSvg, 0,
+			     0);
     sqlite3_create_function (db, "XB_GetSchemaURI", 1, SQLITE_ANY, 0,
 			     fnct_XB_GetSchemaURI, 0, 0);
     sqlite3_create_function (db, "XB_GetInternalSchemaURI", 1, SQLITE_ANY,
@@ -24235,8 +25385,8 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_XB_GetDocumentSize, 0, 0);
     sqlite3_create_function (db, "XB_GetEncoding", 1, SQLITE_ANY, 0,
 			     fnct_XB_GetEncoding, 0, 0);
-    sqlite3_create_function (db, "XB_GetLastParseError", 0, SQLITE_ANY,
-			     cache, fnct_XB_GetLastParseError, 0, 0);
+    sqlite3_create_function (db, "XB_GetLastParseError", 0, SQLITE_ANY, cache,
+			     fnct_XB_GetLastParseError, 0, 0);
     sqlite3_create_function (db, "XB_GetLastValidateError", 0, SQLITE_ANY,
 			     cache, fnct_XB_GetLastValidateError, 0, 0);
     sqlite3_create_function (db, "XB_IsValidXPathExpression", 1, SQLITE_ANY,

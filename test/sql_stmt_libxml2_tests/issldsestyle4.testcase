@@ -1,8 +1,8 @@
-XB_IsSldSeStyle - TEXT XmlBLOB
+XB_IsSldSeVectorStyle - TEXT XmlBLOB
 :memory: #use in-memory database
-SELECT XB_IsSldSeStyle('alpha');
+SELECT XB_IsSldSeVectorStyle('alpha');
 1 # rows (not including the header row)
 1 # columns
-XB_IsSldSeStyle('alpha')
+XB_IsSldSeVectorStyle('alpha')
 -1
 

@@ -1,8 +1,8 @@
-XB_IsSldSeStyle - invalid XmlBLOB
+XB_IsSldSeVectorStyle - invalid XmlBLOB
 :memory: #use in-memory database
-SELECT XB_IsSldSeStyle(zeroblob(100));
+SELECT XB_IsSldSeVectorStyle(zeroblob(100));
 1 # rows (not including the header row)
 1 # columns
-XB_IsSldSeStyle(zeroblob(100))
+XB_IsSldSeVectorStyle(zeroblob(100))
 -1
 

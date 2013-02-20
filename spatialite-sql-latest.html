@@ -43,6 +43,7 @@
 			<li><a href="#p14d">SQL functions that implement spatial operators [LWGEOM features]</a></li>
 			<li><a href="#p15">SQL functions for coordinate transformations</a></li>
 			<li><a href="#p16">SQL functions for Spatial-MetaData and Spatial-Index handling</a></li>
+			<li><a href="#p16style">SQL functions implementing SLDE/SE Styled Layers</a></li>
 			<li><a href="#p16fdo">SQL functions implementing FDO/OGR compatibility</a></li>
 			<li><a href="#p17">SQL functions for MbrCache-based queries</a></li>
 			<li><a href="#p18">SQL functions for R*Tree-based queries (Geometry Callbacks)</a></li>
@@ -333,6 +334,12 @@
 				<td colspan="3">The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, and &#8211;1 for UNKNOWN
 					corresponding to a function invocation on NULL or not-BLOB argument.<hr>
 					TRUE if this BLOB object corresponds to a valid WebP image</td></tr>
+			<tr><td><b>GetMimeType</b></td>
+				<td>GetMimeType( payload <i>BLOB</i> ) : <i>String</i></td>
+				<td colspan="3">The return type is Text, and could be one of: <b>image/gif</b>, <b>image/png</b>,
+					<b>image/jpeg</b>, <b>image/tiff</b>, <b>image/svg+xml</b>, <b>application/xml</b>,
+					<b>application/zip</b>,	<b>application/pdf</b>.<br>
+					NULL could be returned for an invalid argument or if no valid mime-type is detected.</td></tr>
 			<tr><td><b>BlobFromFile</b></td>
 				<td>BlobFromFile( filepath <i>String</i> ) : <i>BLOB</i></td>
 				<td colspan="3">If <i>filepath</i> corresponds to some valid pathname, and the corresponding file
@@ -2185,6 +2192,87 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure)</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
+				<h3><a name="p16style">SQL functions implementing SLD/SE Styled Layers</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th bgcolor="#d0d0d0">OGC<br>defined</th>
+				<th bgcolor="#d0d0d0">required<br>module</th>
+				<th bgcolor="#d0d0d0">Summary</th></tr>
+		<tr><td><b>CreateStylingTables</b></td>
+				<td>CreateStylingTables() : <i>Integer</i><hr>
+					CreateStylingTables( relaxed <i>Integer</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Creates a set of tables supporting <b>SLD/SE Styled Layers</b>.
+				<ul>
+					<li>if the <i>optional</i> argument <b>relaxed</b> is specified (any value), then
+					a <i>relaxed</i> version of the validating Triggers will be installed.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid argumentes.</td></tr>
+		<tr><td><b>RegisterExternalGraphic</b></td>
+				<td>RegisterExternalGraphic( xlink_href <i>String</i> , resource <i>BLOB</i> ) : <i>Integer</i><hr>
+					RegisterExternalGraphic( xlink_href <i>String</i> , resource <i>BLOB</i> , title <i>String</i> , abstract <i>String</i> , file_name <i>String</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Inserts (or updates) an <b>External Graphic Resource</b>.
+				<ul>
+					<li><b>xlink_href</b> uniquely identifies each Resource (<i>Primary Key</i>).</li>
+					<li><b>resource</b> is expected to be a BLOB containing an <i>image/gif</i>, <i>image/png</i>, <i>image/jpeg</i> or <i>image/svg+xml</i> payload.</li>
+					<li>the optional arguments <b>title</b>, <b>abstract</b> and <b>file_name</b> could be eventually specified for better human readability.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid argumentes.</td></tr>
+		<tr><td><b>RegisterVectorStyledLayer</b></td>
+				<td>RegisterVectorStyledLayer( f_table_name <i>String</i> , f_geometry_column <i>String</i> , style <i>BLOB</i> ) : <i>Integer</i><hr>
+					RegisterVectorStyledLayer( f_table_name <i>String</i> , f_geometry_column <i>String</i> , style_id <i>Integer</i>  , style <i>BLOB</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Inserts (or updates) a <b>Vector Styled Layer</b> definition.
+				<ul>
+					<li><b>f_table_name</b> and <b>f_geometry_column</b> must identify an existing Vector Layer.</li>
+					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD/SE Style of the Vector type.<br>
+					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have succesfully passed a formal XML Schema Validation.</li>
+					<li>The same Vector Layer could eventually support more than a single Style; in this case 
+					the optional argument <b>style_id</b> can be explicitly set in order to identify an individual Style.<br>
+					If no <b>style_id</b> argument is specified then a new Styled Layer will be created, and the <b>style_id</b> value will be automatically set so to ensure univocity.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid argumentes.</td></tr>
+		<tr><td><b>RegisterRasterStyledLayer</b></td>
+				<td>RegisterRasterStyledLayer( coverage_name <i>String</i> , style <i>BLOB</i> ) : <i>Integer</i><hr>
+					RegisterRasterStyledLayer( coverage_name <i>String</i> , style_id <i>Integer</i>  , style <i>BLOB</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Inserts (or updates) a <b>Raster Styled Layer</b> definition.
+				<ul>
+					<li><b>coverage_name</b> must identify an existing Raster Layer.</li>
+					<li><b>style</b> is expected to be an XmlBLOB containing a valid SLD/SE Style of the Raster type.<br>
+					If <b>CreatedStylingTables()</b> was invoked without specifying the <i>relaxed</i> option this XmlBLOB is expected to have succesfully passed a formal XML Schema Validation.</li>
+					<li>The same Raster Layer could eventually support more than a single Style; in this case 
+					the optional argument <b>style_id</b> can be explicitly set in order to identify an individual Style.<br>
+					If no <b>style_id</b> argument is specified then a new Styled Layer will be created, and the <b>style_id</b> value will be automatically set so to ensure univocity.</li>
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid argumentes.</td></tr>
+		<tr><td><b>RegisterStyledGroup</b></td>
+				<td>RegisterStyledGroup( group_name <i>String</i> , f_table_name <i>String</i> , f_geometry_column <i>String</i> , style_id <i>Integer</i> [ , paint_order <i>Integer</i> ] ) : <i>Integer</i><hr>
+					RegisterStyledGroup( group_name <i>String</i> , coverage_name <i>String</i> , style_id <i>Integer</i>  [ , paint_order <i>Integer</i> ] ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>Inserts (or updates) a <b>Styled Group</b> definition.
+				<ul>
+					<li><b>group_name</b> must identify a Styled Group: if the Styled Group doesn't yet exists it will be implicitly created.</li>
+					<li><b>f_table_name</b>, <b>f_geometry_column</b> and <b>style_id</b> must identify an existing Vectore Styled Layer.</li>
+					<li>or alternatively: <b>coverage_name</b> and <b>style_id</b> must identify an existing Raster Styled Layer.</li>
+					<li>the optional <b>paint_order</b> argument could be used to explicitly a paint-order position: 
+					if <b>paint_order</b> is not specified or if a <i>negative</i> value is passed 
+					then the next available order position will be automatically assigned.<br>
+					<u>Please note</u>: the painting order will follow the <b>Painter rule</b>, i.e. a lower paint-order value will always be painted before painting any higer value.
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid argumentes.</td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p16fdo">SQL functions implementing FDO/OGR compatibility</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
 				<th bgcolor="#d0d0d0">Syntax</th>
@@ -2409,8 +2497,14 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, and &#8211;1 for UNKNOWN
 					corresponding to a function invocation on NULL arguments.</td></tr>
-			<tr><td><b>XB_IsSldSeStyle</b></td>
-				<td>XB_IsSldSeStyle( xmlObject <i>XmlBLOB</i> ) : <i>Integer</i></td>
+			<tr><td><b>XB_IsSldSeVectorStyle</b></td>
+				<td>XB_IsSldSVectorStyle( xmlObject <i>XmlBLOB</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, and &#8211;1 for UNKNOWN
+					corresponding to a function invocation on NULL arguments.</td></tr>
+			<tr><td><b>XB_IsSldSeRasterStyle</b></td>
+				<td>XB_IsSldSRasterStyle( xmlObject <i>XmlBLOB</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>The return type is Integer, with a return value of 1 for TRUE, 0 for FALSE, and &#8211;1 for UNKNOWN
@@ -2463,13 +2557,13 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Will return the Title defined within the XmlBLOB (if any).<hr>
-				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object), or when no Title is defined.<hr>Supported only on ISO Metadata XML Documents.</td></tr>
+				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object), or when no Title is defined.<hr>Supported only on ISO Metadata and SLD/SE Styles.</td></tr>
 			<tr><td><b>XB_GetAbstract</b></td>
 				<td>XB_GetAbstract( xmlObject <i>XmlBLOB</i> ) : <i>String</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Will return the Abstract defined within the XmlBLOB (if any).<hr>
-				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object), or when no Abstract is defined.<hr>Supported only on ISO Metadata XML Documents.</td></tr>
+				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object), or when no Abstract is defined.<hr>Supported only on ISO Metadata and SLD/SE Styles.</td></tr>
 			<tr><td><b>XB_GetGeometry</b></td>
 				<td>XB_GetGeometry( xmlObject <i>XmlBLOB</i> ) : <i>Geometry</i></td>
 				<td></td>

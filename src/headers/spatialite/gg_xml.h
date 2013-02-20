@@ -87,17 +87,19 @@ extern "C"
 /* bitmasks for XmlBLOB-FLAG */
 
 /** XmlBLOB FLAG - LITTLE_ENDIAN bitmask */
-#define GAIA_XML_LITTLE_ENDIAN	0x01
+#define GAIA_XML_LITTLE_ENDIAN		0x01
 /** XmlBLOB FLAG - COMPRESSED bitmask */
-#define GAIA_XML_COMPRESSED	0x02
+#define GAIA_XML_COMPRESSED		0x02
 /** XmlBLOB FLAG - VALIDATED bitmask */
-#define GAIA_XML_VALIDATED	0x04
+#define GAIA_XML_VALIDATED		0x04
 /** XmlBLOB FLAG - ISO METADATA bitmask */
-#define GAIA_XML_ISO_METADATA	0x80
-/** XmlBLOB FLAG - SLDSE STYLE bitmask */
-#define GAIA_XML_SLD_SE_STYLE	0x40
+#define GAIA_XML_ISO_METADATA		0x80
+/** XmlBLOB FLAG - SLDSE VECTOR STYLE bitmask */
+#define GAIA_XML_SLD_SE_RASTER_STYLE	0x10
+/** XmlBLOB FLAG - SLDSE VECTOR STYLE bitmask */
+#define GAIA_XML_SLD_SE_VECTOR_STYLE	0x40
 /** XmlBLOB FLAG - SVG bitmask */
-#define GAIA_XML_SVG		0x20
+#define GAIA_XML_SVG			0x20
 
 
 /* function prototypes */
@@ -137,7 +139,7 @@ extern "C"
  \sa gaiaXmlFromBlob, gaiaXmlTextFromBlob, gaiaXmlBlobCompression, 
  gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob, 
  gaiaIsSchemaValidatedXmlBlob, gaiaIsIsoMetadataXmlBlob,
- gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSvgXmlBlob, 
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
  gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
@@ -170,7 +172,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlBlobCompression, 
  gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob, 
  gaiaIsSchemaValidatedXmlBlob, gaiaIsIsoMetadataXmlBlob,
- gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSvgXmlBlob, 
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
  gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
@@ -200,7 +202,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlTextFromBlob, gaiaXmlBlobCompression, 
  gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob, 
  gaiaIsSchemaValidatedXmlBlob, gaiaIsIsoMetadataXmlBlob,
- gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSvgXmlBlob, 
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
  gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
@@ -231,7 +233,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob, 
  gaiaXmlBlobCompression, gaiaIsCompressedXmlBlob, 
  gaiaIsSchemaValidatedXmlBlob, gaiaIsIsoMetadataXmlBlob,
- gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSvgXmlBlob, 
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
  gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
@@ -254,7 +256,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob, gaiaXmlBlobCompression, 
  gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob, 
  gaiaIsSchemaValidatedXmlBlob, gaiaIsIsoMetadataXmlBlob,
- gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSvgXmlBlob, 
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
  gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
@@ -275,9 +277,9 @@ extern "C"
  \return TRUE or FALSE if the BLOB actually is a valid XmlBLOB; -1 in any other case.
 
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
- gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob, gaiaIsSldRasterrStyleXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob, 
- gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSvgXmlBlob, 
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
  gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
@@ -309,8 +311,31 @@ extern "C"
  gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
  gaiaXmlBlobGetLastXPathError
  */
-    GAIAGEO_DECLARE int gaiaIsSldSeStyleXmlBlob (const unsigned char *blob,
-						 int size);
+    GAIAGEO_DECLARE int gaiaIsSldSeVectorStyleXmlBlob (const unsigned char
+						       *blob, int size);
+
+/**
+ Checks if a valid XmlBLOB buffer does contain an SLD/SE Style or not
+
+ \param blob pointer to the XmlBLOB buffer.
+ \param size XmlBLOB's size (in bytes).
+
+ \return TRUE or FALSE if the BLOB actually is a valid XmlBLOB; -1 in any other case.
+
+ \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
+ gaiaXmlBlobCompression, gaiaIsValidXmlBlob, gaiaIsSldVectorStyleXmlBlob,
+ gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
+ gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
+ gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
+ gaiaXmlBlobGetAbstract, gaiaXmlBlobGetGeometry,
+ gaiaXmlBlobGetEncoding, gaiaXmlBlobGetLastParseError, 
+ gaiaXmlBlobGetLastValidateError, gaiaIsValidXPathExpression, 
+ gaiaXmlBlobGetLastXPathError
+ */
+    GAIAGEO_DECLARE int gaiaIsSldSeRasterStyleXmlBlob (const unsigned char
+						       *blob, int size);
 
 /**
  Checks if a valid XmlBLOB buffer does contain an SVG Symbol or not
@@ -323,7 +348,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, 
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
  gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
@@ -347,7 +372,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob, 
  gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob, 
  gaiaIsSchemaValidatedXmlBlob, gaiaIsIsoMetadataXmlBlob,
- gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSvgXmlBlob, 
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
  gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
@@ -377,7 +402,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsIsoMetadataXmlBlob,
- gaiaIsSldSeStyleXmlBlob, gaiaIsSvgXmlBlob, 
+ gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, gaiaIsSvgXmlBlob, 
  gaiaXmlBlobGetDocumentSize, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
  gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
@@ -401,7 +426,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, 
  gaiaIsSvgXmlBlob, gaiaXmlBlobGetSchemaURI,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
  gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
@@ -425,7 +450,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, 
  gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlGetInternalSchemaURI, gaiaXmlBlobGetFileId, 
  gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
@@ -453,7 +478,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, 
  gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlBlobGetFileId, 
  gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
@@ -481,7 +506,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, 
  gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobGetParentId, gaiaXmlBlobGetTitle,
@@ -508,7 +533,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, 
  gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobGetFileId, gaiaXmlBlobGetTitle,
@@ -535,7 +560,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, 
  gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId,
@@ -562,7 +587,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, 
  gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId,
@@ -591,7 +616,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, 
  gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId,
@@ -620,7 +645,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, 
  gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId, 
@@ -645,7 +670,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, 
  gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId,
@@ -670,7 +695,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, 
  gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId,
@@ -696,7 +721,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, 
  gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId,
@@ -719,7 +744,7 @@ extern "C"
  \sa gaiaXmlToBlob, gaiaXmlFromBlob, gaiaXmlTextFromBlob,
  gaiaXmlBlobCompression, gaiaIsValidXmlBlob,
  gaiaIsCompressedXmlBlob, gaiaIsSchemaValidatedXmlBlob,
- gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeStyleXmlBlob,
+ gaiaIsIsoMetadataXmlBlob, gaiaIsSldSeVectorStyleXmlBlob, gaiaIsSldSeRasterStyleXmlBlob, 
  gaiaIsSvgXmlBlob, gaiaXmlBlobGetDocumentSize,
  gaiaXmlBlobGetSchemaURI, gaiaXmlGetInternalSchemaURI,
  gaiaXmlBlobGetFileId, gaiaXmlBlobGetParentId,

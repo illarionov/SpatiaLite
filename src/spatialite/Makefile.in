@@ -69,8 +69,9 @@ libsplite_la_LIBADD =
 am_libsplite_la_OBJECTS = libsplite_la-mbrcache.lo \
 	libsplite_la-spatialite.lo libsplite_la-spatialite_init.lo \
 	libsplite_la-metatables.lo libsplite_la-statistics.lo \
-	libsplite_la-virtualdbf.lo libsplite_la-virtualXL.lo \
-	libsplite_la-virtualfdo.lo libsplite_la-virtualspatialindex.lo \
+	libsplite_la-extra_tables.lo libsplite_la-virtualdbf.lo \
+	libsplite_la-virtualXL.lo libsplite_la-virtualfdo.lo \
+	libsplite_la-virtualspatialindex.lo \
 	libsplite_la-virtualnetwork.lo libsplite_la-virtualshape.lo \
 	libsplite_la-virtualxpath.lo
 libsplite_la_OBJECTS = $(am_libsplite_la_OBJECTS)
@@ -236,6 +237,7 @@ libsplite_la_SOURCES = mbrcache.c \
 	spatialite_init.c \
 	metatables.c \
 	statistics.c \
+	extra_tables.c \
 	virtualdbf.c \
 	virtualXL.c \
 	virtualfdo.c \
@@ -298,6 +300,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-extra_tables.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-mbrcache.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-metatables.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-spatialite.Plo@am__quote@
@@ -366,6 +369,13 @@ libsplite_la-statistics.lo: statistics.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='statistics.c' object='libsplite_la-statistics.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-statistics.lo `test -f 'statistics.c' || echo '$(srcdir)/'`statistics.c
+
+libsplite_la-extra_tables.lo: extra_tables.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -MT libsplite_la-extra_tables.lo -MD -MP -MF $(DEPDIR)/libsplite_la-extra_tables.Tpo -c -o libsplite_la-extra_tables.lo `test -f 'extra_tables.c' || echo '$(srcdir)/'`extra_tables.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libsplite_la-extra_tables.Tpo $(DEPDIR)/libsplite_la-extra_tables.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='extra_tables.c' object='libsplite_la-extra_tables.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-extra_tables.lo `test -f 'extra_tables.c' || echo '$(srcdir)/'`extra_tables.c
 
 libsplite_la-virtualdbf.lo: virtualdbf.c
 @am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -MT libsplite_la-virtualdbf.lo -MD -MP -MF $(DEPDIR)/libsplite_la-virtualdbf.Tpo -c -o libsplite_la-virtualdbf.lo `test -f 'virtualdbf.c' || echo '$(srcdir)/'`virtualdbf.c

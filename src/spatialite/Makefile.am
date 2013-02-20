@@ -9,6 +9,7 @@ libsplite_la_SOURCES = mbrcache.c \
 	spatialite_init.c \
 	metatables.c \
 	statistics.c \
+	extra_tables.c \
 	virtualdbf.c \
 	virtualXL.c \
 	virtualfdo.c \

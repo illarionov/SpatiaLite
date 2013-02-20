@@ -216,6 +216,8 @@ extern "C"
 	getEllipsoidParams (void *p_sqlite, int srid, double *a, double *b,
 			    double *rf);
 
+    SPATIALITE_PRIVATE int createStylingTables (void *p_sqlite, int relaxed);
+
     SPATIALITE_PRIVATE const char *splite_lwgeom_version (void);
 
     SPATIALITE_PRIVATE void splite_free_geos_cache_item (struct
@@ -248,6 +250,7 @@ extern "C"
     SPATIALITE_PRIVATE void geos_error (const char *fmt, ...);
 
     SPATIALITE_PRIVATE void geos_warning (const char *fmt, ...);
+
 
 #ifdef __cplusplus
 }

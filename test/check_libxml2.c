@@ -257,7 +257,8 @@ check_extended (void *cache, const char *path, int mode)
 
 /* checking the payload type */
     iso = gaiaIsIsoMetadataXmlBlob (p_result, len);
-    style = gaiaIsSldSeStyleXmlBlob (p_result, len);
+    style = gaiaIsSldSeRasterStyleXmlBlob (p_result, len);
+    style = gaiaIsSldSeVectorStyleXmlBlob (p_result, len);
     svg = gaiaIsSvgXmlBlob (p_result, len);
     if (mode == ISO_METADATA && iso && !style && !svg)
         ;
