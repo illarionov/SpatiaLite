@@ -22053,8 +22053,6 @@ fnct_CreateStylingTables (sqlite3_context * context, int argc,
       {
 	  if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
 	    {
-		spatialite_e
-		    ("CreateStylingTables() error: argument 1 [relaxed] is not of the Integer type\n");
 		sqlite3_result_int (context, -1);
 		return;
 	    }
@@ -22239,15 +22237,11 @@ fnct_RegisterExternalGraphic (sqlite3_context * context, int argc,
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  spatialite_e
-	      ("RegisterExternalGraphic() error: argument 1 [xlink_href] is not of the Text type\n");
 	  sqlite3_result_int (context, -1);
 	  return;
       }
     if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
       {
-	  spatialite_e
-	      ("RegisterExternalGraphic() error: argument 2 [resource] is not of the BLOB type\n");
 	  sqlite3_result_int (context, -1);
 	  return;
       }
@@ -22256,22 +22250,16 @@ fnct_RegisterExternalGraphic (sqlite3_context * context, int argc,
 	  /* optional extra args */
 	  if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
 	    {
-		spatialite_e
-		    ("RegisterExternalGraphic() error: argument 3 [title] is not of the Text type\n");
 		sqlite3_result_int (context, -1);
 		return;
 	    }
 	  if (sqlite3_value_type (argv[3]) != SQLITE_TEXT)
 	    {
-		spatialite_e
-		    ("RegisterExternalGraphic() error: argument 4 [abstract] is not of the Text type\n");
 		sqlite3_result_int (context, -1);
 		return;
 	    }
 	  if (sqlite3_value_type (argv[4]) != SQLITE_TEXT)
 	    {
-		spatialite_e
-		    ("RegisterExternalGraphic() error: argument 5 [file_name] is not of the Text type\n");
 		sqlite3_result_int (context, -1);
 		return;
 	    }
@@ -22448,15 +22436,11 @@ fnct_RegisterVectorStyledLayer (sqlite3_context * context, int argc,
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  spatialite_e
-	      ("RegisterVectorStyledLayer() error: argument 1 [f_table_name] is not of the Text type\n");
 	  sqlite3_result_int (context, -1);
 	  return;
       }
     if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
       {
-	  spatialite_e
-	      ("RegisterVectorStyledLayer() error: argument 2 [f_geometry_column] is not of the Text type\n");
 	  sqlite3_result_int (context, -1);
 	  return;
       }
@@ -22465,15 +22449,11 @@ fnct_RegisterVectorStyledLayer (sqlite3_context * context, int argc,
 	  /* optional extra args */
 	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
 	    {
-		spatialite_e
-		    ("RegisterVectorStyledLayer() error: argument 3 [style_id] is not of the Integer type\n");
 		sqlite3_result_int (context, -1);
 		return;
 	    }
 	  if (sqlite3_value_type (argv[3]) != SQLITE_BLOB)
 	    {
-		spatialite_e
-		    ("RegisterVectorStyledLayer() error: argument 4 [style] is not of the BLOB type\n");
 		sqlite3_result_int (context, -1);
 		return;
 	    }
@@ -22483,8 +22463,6 @@ fnct_RegisterVectorStyledLayer (sqlite3_context * context, int argc,
 	  /* no extra-args */
 	  if (sqlite3_value_type (argv[2]) != SQLITE_BLOB)
 	    {
-		spatialite_e
-		    ("RegisterVectorStyledLayer() error: argument 3 [style] is not of the BLOB type\n");
 		sqlite3_result_int (context, -1);
 		return;
 	    }
@@ -22652,8 +22630,6 @@ fnct_RegisterRasterStyledLayer (sqlite3_context * context, int argc,
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  spatialite_e
-	      ("RegisterRasterStyledLayer() error: argument 1 [coverage_name] is not of the Text type\n");
 	  sqlite3_result_int (context, -1);
 	  return;
       }
@@ -22662,15 +22638,11 @@ fnct_RegisterRasterStyledLayer (sqlite3_context * context, int argc,
 	  /* optional extra args */
 	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
 	    {
-		spatialite_e
-		    ("RegisterRasterStyledLayer() error: argument 2 [style_id] is not of the Integer type\n");
 		sqlite3_result_int (context, -1);
 		return;
 	    }
 	  if (sqlite3_value_type (argv[2]) != SQLITE_BLOB)
 	    {
-		spatialite_e
-		    ("RegisterRasterStyledLayer() error: argument 3 [style] is not of the BLOB type\n");
 		sqlite3_result_int (context, -1);
 		return;
 	    }
@@ -22680,8 +22652,6 @@ fnct_RegisterRasterStyledLayer (sqlite3_context * context, int argc,
 	  /* no extra-args */
 	  if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
 	    {
-		spatialite_e
-		    ("RegisterRasterStyledLayer() error: argument 2 [style] is not of the BLOB type\n");
 		sqlite3_result_int (context, -1);
 		return;
 	    }
@@ -22989,8 +22959,6 @@ fnct_RegisterStyledGroup (sqlite3_context * context, int argc,
 	    }
 	  else
 	    {
-		spatialite_e
-		    ("RegisterStyledGroup() invalid arguments: expected TEXT, TEXT, INTEGER\n");
 		sqlite3_result_int (context, -1);
 		return;
 	    }
@@ -23021,8 +22989,6 @@ fnct_RegisterStyledGroup (sqlite3_context * context, int argc,
 	    }
 	  else
 	    {
-		spatialite_e
-		    ("RegisterStyledGroup() invalid arguments: expected TEXT, TEXT, TEXT, INTEGER\n");
 		sqlite3_result_int (context, -1);
 		return;
 	    }
@@ -23044,8 +23010,6 @@ fnct_RegisterStyledGroup (sqlite3_context * context, int argc,
 	    }
 	  else
 	    {
-		spatialite_e
-		    ("RegisterStyledGroup() invalid arguments: expected TEXT, TEXT, TEXT, INTEGER, INTEGER\n");
 		sqlite3_result_int (context, -1);
 		return;
 	    }

@@ -71,7 +71,8 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_exif$(EXEEXT) check_relations_fncts$(EXEEXT) \
 	check_extra_relations_fncts$(EXEEXT) \
 	check_geoscvt_fncts$(EXEEXT) check_libxml2$(EXEEXT) \
-	check_virtualxpath$(EXEEXT) $(am__EXEEXT_1)
+	check_styling$(EXEEXT) check_virtualxpath$(EXEEXT) \
+	$(am__EXEEXT_1)
 @ENABLE_GEOPACKAGE_TRUE@am__append_1 = \
 @ENABLE_GEOPACKAGE_TRUE@		check_createBaseTables \
 @ENABLE_GEOPACKAGE_TRUE@		check_add_tile_triggers \
@@ -359,6 +360,9 @@ check_spatialindex_LDADD = $(LDADD)
 check_sql_stmt_SOURCES = check_sql_stmt.c
 check_sql_stmt_OBJECTS = check_sql_stmt.$(OBJEXT)
 check_sql_stmt_LDADD = $(LDADD)
+check_styling_SOURCES = check_styling.c
+check_styling_OBJECTS = check_styling.$(OBJEXT)
+check_styling_LDADD = $(LDADD)
 check_version_SOURCES = check_version.c
 check_version_OBJECTS = check_version.$(OBJEXT)
 check_version_LDADD = $(LDADD)
@@ -451,8 +455,8 @@ SOURCES = check_add_rt_metadata_triggers.c \
 	check_point_to_tile_no_tile.c \
 	check_point_to_tile_wrong_arg_type.c check_recover_geom.c \
 	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
-	check_spatialindex.c check_sql_stmt.c check_version.c \
-	check_virtual_ovflw.c check_virtualtable1.c \
+	check_spatialindex.c check_sql_stmt.c check_styling.c \
+	check_version.c check_virtual_ovflw.c check_virtualtable1.c \
 	check_virtualtable2.c check_virtualtable3.c \
 	check_virtualtable4.c check_virtualtable5.c \
 	check_virtualtable6.c check_virtualxpath.c check_xls_load.c \
@@ -489,8 +493,8 @@ DIST_SOURCES = check_add_rt_metadata_triggers.c \
 	check_point_to_tile_no_tile.c \
 	check_point_to_tile_wrong_arg_type.c check_recover_geom.c \
 	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
-	check_spatialindex.c check_sql_stmt.c check_version.c \
-	check_virtual_ovflw.c check_virtualtable1.c \
+	check_spatialindex.c check_sql_stmt.c check_styling.c \
+	check_version.c check_virtual_ovflw.c check_virtualtable1.c \
 	check_virtualtable2.c check_virtualtable3.c \
 	check_virtualtable4.c check_virtualtable5.c \
 	check_virtualtable6.c check_virtualxpath.c check_xls_load.c \
@@ -3398,6 +3402,13 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_libxml2_tests/isisometadata5.testcase \
 	sql_stmt_libxml2_tests/isisometadata6.testcase \
 	sql_stmt_libxml2_tests/isisometadata7.testcase \
+	sql_stmt_libxml2_tests/issldserststyle1.testcase \
+	sql_stmt_libxml2_tests/issldserststyle2.testcase \
+	sql_stmt_libxml2_tests/issldserststyle3.testcase \
+	sql_stmt_libxml2_tests/issldserststyle4.testcase \
+	sql_stmt_libxml2_tests/issldserststyle5.testcase \
+	sql_stmt_libxml2_tests/issldserststyle6.testcase \
+	sql_stmt_libxml2_tests/issldserststyle7.testcase \
 	sql_stmt_libxml2_tests/issldsestyle1.testcase \
 	sql_stmt_libxml2_tests/issldsestyle2.testcase \
 	sql_stmt_libxml2_tests/issldsestyle3.testcase \
@@ -3412,6 +3423,101 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_libxml2_tests/issvg5.testcase \
 	sql_stmt_libxml2_tests/issvg6.testcase \
 	sql_stmt_libxml2_tests/issvg7.testcase \
+	sql_stmt_libxml2_tests/createstyling1.testcase \
+	sql_stmt_libxml2_tests/createstyling2.testcase \
+	sql_stmt_libxml2_tests/createstyling3.testcase \
+	sql_stmt_libxml2_tests/createstyling4.testcase \
+	sql_stmt_libxml2_tests/createstyling5.testcase \
+	sql_stmt_libxml2_tests/createstyling6.testcase \
+	sql_stmt_libxml2_tests/registerGraphic1.testcase \
+	sql_stmt_libxml2_tests/registerGraphic2.testcase \
+	sql_stmt_libxml2_tests/registerGraphic3.testcase \
+	sql_stmt_libxml2_tests/registerGraphic4.testcase \
+	sql_stmt_libxml2_tests/registerGraphic5.testcase \
+	sql_stmt_libxml2_tests/registerGraphic6.testcase \
+	sql_stmt_libxml2_tests/registerGraphic7.testcase \
+	sql_stmt_libxml2_tests/registerGraphic8.testcase \
+	sql_stmt_libxml2_tests/registerGraphic9.testcase \
+	sql_stmt_libxml2_tests/registerGraphic10.testcase \
+	sql_stmt_libxml2_tests/registerGraphic11.testcase \
+	sql_stmt_libxml2_tests/registerGraphic12.testcase \
+	sql_stmt_libxml2_tests/registerGraphic13.testcase \
+	sql_stmt_libxml2_tests/registerGraphic14.testcase \
+	sql_stmt_libxml2_tests/registerGraphic15.testcase \
+	sql_stmt_libxml2_tests/registerGraphic16.testcase \
+	sql_stmt_libxml2_tests/registerGraphic17.testcase \
+	sql_stmt_libxml2_tests/registerGraphic18.testcase \
+	sql_stmt_libxml2_tests/registerGraphic19.testcase \
+	sql_stmt_libxml2_tests/registerGraphic20.testcase \
+	sql_stmt_libxml2_tests/registerGraphic21.testcase \
+	sql_stmt_libxml2_tests/registerGraphic22.testcase \
+	sql_stmt_libxml2_tests/registerVector1.testcase \
+	sql_stmt_libxml2_tests/registerVector2.testcase \
+	sql_stmt_libxml2_tests/registerVector3.testcase \
+	sql_stmt_libxml2_tests/registerVector4.testcase \
+	sql_stmt_libxml2_tests/registerVector5.testcase \
+	sql_stmt_libxml2_tests/registerVector6.testcase \
+	sql_stmt_libxml2_tests/registerVector7.testcase \
+	sql_stmt_libxml2_tests/registerVector8.testcase \
+	sql_stmt_libxml2_tests/registerVector9.testcase \
+	sql_stmt_libxml2_tests/registerVector10.testcase \
+	sql_stmt_libxml2_tests/registerVector11.testcase \
+	sql_stmt_libxml2_tests/registerVector12.testcase \
+	sql_stmt_libxml2_tests/registerVector13.testcase \
+	sql_stmt_libxml2_tests/registerVector14.testcase \
+	sql_stmt_libxml2_tests/registerVector15.testcase \
+	sql_stmt_libxml2_tests/registerVector16.testcase \
+	sql_stmt_libxml2_tests/registerVector17.testcase \
+	sql_stmt_libxml2_tests/registerVector18.testcase \
+	sql_stmt_libxml2_tests/registerVector19.testcase \
+	sql_stmt_libxml2_tests/registerVector20.testcase \
+	sql_stmt_libxml2_tests/registerVector21.testcase \
+	sql_stmt_libxml2_tests/registerVector22.testcase \
+	sql_stmt_libxml2_tests/registerRaster1.testcase \
+	sql_stmt_libxml2_tests/registerRaster2.testcase \
+	sql_stmt_libxml2_tests/registerRaster3.testcase \
+	sql_stmt_libxml2_tests/registerRaster4.testcase \
+	sql_stmt_libxml2_tests/registerRaster5.testcase \
+	sql_stmt_libxml2_tests/registerRaster6.testcase \
+	sql_stmt_libxml2_tests/registerRaster7.testcase \
+	sql_stmt_libxml2_tests/registerRaster8.testcase \
+	sql_stmt_libxml2_tests/registerRaster9.testcase \
+	sql_stmt_libxml2_tests/registerRaster10.testcase \
+	sql_stmt_libxml2_tests/registerRaster11.testcase \
+	sql_stmt_libxml2_tests/registerRaster12.testcase \
+	sql_stmt_libxml2_tests/registerRaster13.testcase \
+	sql_stmt_libxml2_tests/registerRaster14.testcase \
+	sql_stmt_libxml2_tests/registerRaster15.testcase \
+	sql_stmt_libxml2_tests/registerRaster16.testcase \
+	sql_stmt_libxml2_tests/registerRaster17.testcase \
+	sql_stmt_libxml2_tests/registerGroup1.testcase \
+	sql_stmt_libxml2_tests/registerGroup2.testcase \
+	sql_stmt_libxml2_tests/registerGroup3.testcase \
+	sql_stmt_libxml2_tests/registerGroup4.testcase \
+	sql_stmt_libxml2_tests/registerGroup5.testcase \
+	sql_stmt_libxml2_tests/registerGroup6.testcase \
+	sql_stmt_libxml2_tests/registerGroup7.testcase \
+	sql_stmt_libxml2_tests/registerGroup8.testcase \
+	sql_stmt_libxml2_tests/registerGroup9.testcase \
+	sql_stmt_libxml2_tests/registerGroup10.testcase \
+	sql_stmt_libxml2_tests/registerGroup11.testcase \
+	sql_stmt_libxml2_tests/registerGroup12.testcase \
+	sql_stmt_libxml2_tests/registerGroup13.testcase \
+	sql_stmt_libxml2_tests/registerGroup14.testcase \
+	sql_stmt_libxml2_tests/registerGroup15.testcase \
+	sql_stmt_libxml2_tests/registerGroup16.testcase \
+	sql_stmt_libxml2_tests/registerGroup17.testcase \
+	sql_stmt_libxml2_tests/registerGroup18.testcase \
+	sql_stmt_libxml2_tests/registerGroup19.testcase \
+	sql_stmt_libxml2_tests/registerGroup20.testcase \
+	sql_stmt_libxml2_tests/registerGroup21.testcase \
+	sql_stmt_libxml2_tests/registerGroup22.testcase \
+	sql_stmt_libxml2_tests/registerGroup23.testcase \
+	sql_stmt_libxml2_tests/registerGroup25.testcase \
+	sql_stmt_libxml2_tests/registerGroup26.testcase \
+	sql_stmt_libxml2_tests/registerGroup27.testcase \
+	sql_stmt_libxml2_tests/registerGroup28.testcase \
+	sql_stmt_libxml2_tests/registerGroup29.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize1.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize2.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize3.testcase \
@@ -3591,10 +3697,18 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/setpoint21.testcase \
 	sql_stmt_tests/setpoint22.testcase \
 	sql_stmt_tests/setpoint23.testcase \
+	sql_stmt_tests/getmimetype1.testcase \
+	sql_stmt_tests/getmimetype2.testcase \
+	sql_stmt_tests/getmimetype3.testcase \
+	sql_stmt_tests/getmimetype4.testcase \
+	sql_stmt_tests/getmimetype5.testcase \
 	books.xml books.xsd opera.xml opera.xsd \
 	movies.xml movies.xsd books-bad.xml books-bad.xsd \
 	inspire-data-example.xml stazioni_se.xml \
-	thunderstorm_mild.svg
+	raster_se.xml thunderstorm_mild.svg \
+	tile000.jpeg  tile101.jpeg  tile111.jpeg \
+	test.webp tile100.jpeg  tile110.jpeg \
+	empty.png  empty.tif	
 
 all: all-am
 
@@ -3807,6 +3921,9 @@ check_spatialindex$(EXEEXT): $(check_spatialindex_OBJECTS) $(check_spatialindex_
 check_sql_stmt$(EXEEXT): $(check_sql_stmt_OBJECTS) $(check_sql_stmt_DEPENDENCIES) $(EXTRA_check_sql_stmt_DEPENDENCIES) 
 	@rm -f check_sql_stmt$(EXEEXT)
 	$(LINK) $(check_sql_stmt_OBJECTS) $(check_sql_stmt_LDADD) $(LIBS)
+check_styling$(EXEEXT): $(check_styling_OBJECTS) $(check_styling_DEPENDENCIES) $(EXTRA_check_styling_DEPENDENCIES) 
+	@rm -f check_styling$(EXEEXT)
+	$(LINK) $(check_styling_OBJECTS) $(check_styling_LDADD) $(LIBS)
 check_version$(EXEEXT): $(check_version_OBJECTS) $(check_version_DEPENDENCIES) $(EXTRA_check_version_DEPENDENCIES) 
 	@rm -f check_version$(EXEEXT)
 	$(LINK) $(check_version_OBJECTS) $(check_version_LDADD) $(LIBS)
@@ -3918,6 +4035,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_shp_load_3d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_spatialindex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_sql_stmt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_styling.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtual_ovflw.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable1.Po@am__quote@

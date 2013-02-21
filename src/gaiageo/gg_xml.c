@@ -285,13 +285,14 @@ sniff_payload (xmlDocPtr xml_doc, int *is_iso_metadata,
     *is_svg = 0;
     if (root->name != NULL)
       {
-	  if (strcmp (root->name, "MD_Metadata") == 0)
+const char *name = (const char *)(root->name);
+	  if (strcmp (name, "MD_Metadata") == 0)
 	      *is_iso_metadata = 1;
-	  if (strcmp (root->name, "FeatureTypeStyle") == 0)
+	  if (strcmp (name, "FeatureTypeStyle") == 0)
 	      *is_sld_se_vector_style = 1;
-	  if (strcmp (root->name, "CoverageStyle") == 0)
+	  if (strcmp (name, "CoverageStyle") == 0)
 	      *is_sld_se_raster_style = 1;
-	  if (strcmp (root->name, "StyledLayerDescriptor") == 0)
+	  if (strcmp (name, "StyledLayerDescriptor") == 0)
 	    {
 		/* sniffing an SLD (1.0.0 ??) payload */
 		int layers = 0;
@@ -315,7 +316,7 @@ sniff_payload (xmlDocPtr xml_doc, int *is_iso_metadata,
 		      *is_sld_se_vector_style = 1;
 		  }
 	    }
-	  if (strcmp (root->name, "svg") == 0)
+	  if (strcmp (name, "svg") == 0)
 	      *is_svg = 1;
       }
 }
@@ -333,22 +334,23 @@ find_iso_ids (xmlNodePtr node, const char *name, char **string, int *open_tag,
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
+const char * xname = (const char *)(cur_node->name);
 		if (*open_tag == 1)
 		  {
-		      if (strcmp (cur_node->name, "CharacterString") == 0)
+		      if (strcmp (xname, "CharacterString") == 0)
 			{
 			    cs = 1;
 			    *char_string = 1;
 			}
 		  }
-		if (strcmp (cur_node->name, name) == 0)
+		if (strcmp (xname, name) == 0)
 		  {
 		      if (cur_node->parent != NULL)
 			{
 			    if (cur_node->parent->type == XML_ELEMENT_NODE)
 			      {
 				  if (strcmp
-				      (cur_node->parent->name,
+				      ((const char *)(cur_node->parent->name),
 				       "MD_Metadata") == 0)
 				    {
 					/* 
@@ -404,45 +406,45 @@ find_iso_title (xmlNodePtr node, char **string, int *open_tag, int *char_string,
 	    {
 		if (*open_tag == 1)
 		  {
-		      if (strcmp (cur_node->name, "CharacterString") == 0)
+		      if (strcmp ((const char *)(cur_node->name), "CharacterString") == 0)
 			{
 			    cs = 1;
 			    *char_string = 1;
 			}
 		  }
-		if (strcmp (cur_node->name, "title") == 0)
+		if (strcmp ((const char *)(cur_node->name), "title") == 0)
 		  {
 		      ok_parent = 0;
 		      parent = cur_node->parent;
 		      if (parent)
 			{
-			    if (strcmp (parent->name, "CI_Citation") == 0)
+			    if (strcmp ((const char *)(parent->name), "CI_Citation") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 1)
 			{
 			    parent = parent->parent;
-			    if (strcmp (parent->name, "citation") == 0)
+			    if (strcmp ((const char *)(parent->name), "citation") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 2)
 			{
 			    parent = parent->parent;
-			    if (strcmp (parent->name, "MD_DataIdentification")
+			    if (strcmp ((const char *)(parent->name), "MD_DataIdentification")
 				== 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 3)
 			{
 			    parent = parent->parent;
-			    if (strcmp (parent->name, "identificationInfo") ==
+			    if (strcmp ((const char *)(parent->name), "identificationInfo") ==
 				0)
 				ok_parent++;
 			}
 		      if (ok_parent == 4)
 			{
 			    parent = parent->parent;
-			    if (strcmp (parent->name, "MD_Metadata") == 0)
+			    if (strcmp ((const char *)(parent->name), "MD_Metadata") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 5)
@@ -501,33 +503,33 @@ find_iso_abstract (xmlNodePtr node, char **string, int *open_tag,
 	    {
 		if (*open_tag == 1)
 		  {
-		      if (strcmp (cur_node->name, "CharacterString") == 0)
+		      if (strcmp ((const char *)(cur_node->name), "CharacterString") == 0)
 			{
 			    cs = 1;
 			    *char_string = 1;
 			}
 		  }
-		if (strcmp (cur_node->name, "abstract") == 0)
+		if (strcmp ((const char *)(cur_node->name), "abstract") == 0)
 		  {
 		      ok_parent = 0;
 		      parent = cur_node->parent;
 		      if (parent)
 			{
-			    if (strcmp (parent->name, "MD_DataIdentification")
+			    if (strcmp ((const char *)(parent->name), "MD_DataIdentification")
 				== 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 1)
 			{
 			    parent = parent->parent;
-			    if (strcmp (parent->name, "identificationInfo") ==
+			    if (strcmp ((const char *)(parent->name), "identificationInfo") ==
 				0)
 				ok_parent++;
 			}
 		      if (ok_parent == 2)
 			{
 			    parent = parent->parent;
-			    if (strcmp (parent->name, "MD_Metadata") == 0)
+			    if (strcmp ((const char *)(parent->name), "MD_Metadata") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 3)
@@ -581,13 +583,13 @@ find_bbox_coord (xmlNodePtr node, const char *name, double *coord,
 	    {
 		if (*open_tag == 1)
 		  {
-		      if (strcmp (cur_node->name, "Decimal") == 0)
+		      if (strcmp ((const char *)(cur_node->name), "Decimal") == 0)
 			{
 			    dec = 1;
 			    *decimal = 1;
 			}
 		  }
-		if (strcmp (cur_node->name, name) == 0)
+		if (strcmp ((const char *)(cur_node->name), name) == 0)
 		  {
 		      open = 1;
 		      *open_tag = 1;
@@ -696,45 +698,45 @@ find_iso_geometry (xmlNodePtr node, gaiaGeomCollPtr * geom)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp (cur_node->name, "EX_GeographicBoundingBox") == 0)
+		if (strcmp ((const char *)(cur_node->name), "EX_GeographicBoundingBox") == 0)
 		  {
 		      ok_parent = 0;
 		      parent = cur_node->parent;
 		      if (parent)
 			{
-			    if (strcmp (parent->name, "geographicElement") == 0)
+			    if (strcmp ((const char *)(parent->name), "geographicElement") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 1)
 			{
 			    parent = parent->parent;
-			    if (strcmp (parent->name, "EX_Extent") == 0)
+			    if (strcmp ((const char *)(parent->name), "EX_Extent") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 2)
 			{
 			    parent = parent->parent;
-			    if (strcmp (parent->name, "extent") == 0)
+			    if (strcmp ((const char *)(parent->name), "extent") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 3)
 			{
 			    parent = parent->parent;
-			    if (strcmp (parent->name, "MD_DataIdentification")
+			    if (strcmp ((const char *)(parent->name), "MD_DataIdentification")
 				== 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 4)
 			{
 			    parent = parent->parent;
-			    if (strcmp (parent->name, "identificationInfo") ==
+			    if (strcmp ((const char *)(parent->name), "identificationInfo") ==
 				0)
 				ok_parent++;
 			}
 		      if (ok_parent == 5)
 			{
 			    parent = parent->parent;
-			    if (strcmp (parent->name, "MD_Metadata") == 0)
+			    if (strcmp ((const char *)(parent->name), "MD_Metadata") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 6)
@@ -780,8 +782,7 @@ find_iso_geometry (xmlNodePtr node, gaiaGeomCollPtr * geom)
 }
 
 static void
-retrieve_iso_identifiers (struct splite_internal_cache *cache,
-			  xmlDocPtr xml_doc, char **fileIdentifier,
+retrieve_iso_identifiers (xmlDocPtr xml_doc, char **fileIdentifier,
 			  char **parentIdentifier, char **title,
 			  char **abstract, unsigned char **geometry,
 			  short *geometry_len)
@@ -889,18 +890,19 @@ find_sld_se_title (xmlNodePtr node, char **string, int *style, int *rule)
       {
 	  if (node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp (node->name, "FeatureTypeStyle") == 0
-		    || strcmp (node->name, "CoverageStyle") == 0)
+const char * name = (const char *)(node->name);
+		if (strcmp (name, "FeatureTypeStyle") == 0
+		    || strcmp (name, "CoverageStyle") == 0)
 		  {
 		      is_style = 1;
 		      *style = 1;
 		  }
-		if (strcmp (node->name, "Rule") == 0)
+		if (strcmp (name, "Rule") == 0)
 		  {
 		      is_rule = 1;
 		      *rule = 1;
 		  }
-		if (strcmp (node->name, "Title") == 0)
+		if (strcmp (name, "Title") == 0)
 		  {
 		      if (*style == 1 && *rule == 0)
 			{
@@ -942,18 +944,19 @@ find_sld_se_abstract (xmlNodePtr node, char **string, int *style, int *rule)
       {
 	  if (node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp (node->name, "FeatureTypeStyle") == 0
-		    || strcmp (node->name, "CoverageStyle") == 0)
+const char *name = (const char *)(node->name);
+		if (strcmp (name, "FeatureTypeStyle") == 0
+		    || strcmp (name, "CoverageStyle") == 0)
 		  {
 		      is_style = 1;
 		      *style = 1;
 		  }
-		if (strcmp (node->name, "Rule") == 0)
+		if (strcmp (name, "Rule") == 0)
 		  {
 		      is_rule = 1;
 		      *rule = 1;
 		  }
-		if (strcmp (node->name, "Abstract") == 0)
+		if (strcmp (name, "Abstract") == 0)
 		  {
 		      if (*style == 1 && *rule == 0)
 			{
@@ -986,8 +989,7 @@ find_sld_se_abstract (xmlNodePtr node, char **string, int *style, int *rule)
 }
 
 static void
-retrieve_sld_se_identifiers (struct splite_internal_cache *cache,
-			     xmlDocPtr xml_doc, char **title, char **abstract)
+retrieve_sld_se_identifiers (xmlDocPtr xml_doc, char **title, char **abstract)
 {
 /*
 / attempting to retrieve the Title and Abstract items 
@@ -1168,11 +1170,11 @@ gaiaXmlToBlob (void *p_cache, const char *xml, int xml_len, int compressed,
     sniff_payload (xml_doc, &is_iso_metadata, &is_sld_se_vector_style,
 		   &is_sld_se_raster_style, &is_svg);
     if (is_iso_metadata)
-	retrieve_iso_identifiers (cache, xml_doc, &fileIdentifier,
+	retrieve_iso_identifiers (xml_doc, &fileIdentifier,
 				  &parentIdentifier, &title, &abstract,
 				  &geometry, &geometry_len);
     if (is_sld_se_vector_style || is_sld_se_raster_style)
-	retrieve_sld_se_identifiers (cache, xml_doc, &title, &abstract);
+	retrieve_sld_se_identifiers (xml_doc, &title, &abstract);
     xmlFreeDoc (xml_doc);
 
     if (compressed)
@@ -2357,7 +2359,7 @@ gaiaXmlBlobGetGeometry (const unsigned char *blob, int blob_size,
     short title_len;
     short abstract_len;
     short geometry_len;
-    char *geometry;
+    unsigned char *geometry;
     int endian_arch = gaiaEndianArch ();
 
     *blob_geom = NULL;

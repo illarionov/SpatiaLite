@@ -42,6 +42,7 @@ check_PROGRAMS = check_endian \
 		check_extra_relations_fncts \
 		check_geoscvt_fncts \
 		check_libxml2 \
+		check_styling \
 		check_virtualxpath
 if ENABLE_GEOPACKAGE
 check_PROGRAMS += \
@@ -2845,7 +2846,7 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_libxml2_tests/issldserststyle1.testcase \
 	sql_stmt_libxml2_tests/issldserststyle2.testcase \
 	sql_stmt_libxml2_tests/issldserststyle3.testcase \
-	sql_stmt_libxml2_tests/issldsetststyle4.testcase \
+	sql_stmt_libxml2_tests/issldserststyle4.testcase \
 	sql_stmt_libxml2_tests/issldserststyle5.testcase \
 	sql_stmt_libxml2_tests/issldserststyle6.testcase \
 	sql_stmt_libxml2_tests/issldserststyle7.testcase \
@@ -2869,87 +2870,95 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_libxml2_tests/createstyling4.testcase \
 	sql_stmt_libxml2_tests/createstyling5.testcase \
 	sql_stmt_libxml2_tests/createstyling6.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic1.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic2.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic3.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic4.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic5.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic6.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic7.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic8.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic9.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic10.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic11.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic12.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic13.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic14.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic15.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic16.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic17.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic18.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic19.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic20.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic21.testcase \
-	sql_stmt_libxml2_tests/ragisterGraphic22.testcase \
-	sql_stmt_libxml2_tests/ragisterVector1.testcase \
-	sql_stmt_libxml2_tests/ragisterVector2.testcase \
-	sql_stmt_libxml2_tests/ragisterVector3.testcase \
-	sql_stmt_libxml2_tests/ragisterVector4.testcase \
-	sql_stmt_libxml2_tests/ragisterVector5.testcase \
-	sql_stmt_libxml2_tests/ragisterVector6.testcase \
-	sql_stmt_libxml2_tests/ragisterVector7.testcase \
-	sql_stmt_libxml2_tests/ragisterVector8.testcase \
-	sql_stmt_libxml2_tests/ragisterVector9.testcase \
-	sql_stmt_libxml2_tests/ragisterVector10.testcase \
-	sql_stmt_libxml2_tests/ragisterVector11.testcase \
-	sql_stmt_libxml2_tests/ragisterVector12.testcase \
-	sql_stmt_libxml2_tests/ragisterVector13.testcase \
-	sql_stmt_libxml2_tests/ragisterVector14.testcase \
-	sql_stmt_libxml2_tests/ragisterVector15.testcase \
-	sql_stmt_libxml2_tests/ragisterVector16.testcase \
-	sql_stmt_libxml2_tests/ragisterVector17.testcase \
-	sql_stmt_libxml2_tests/ragisterVector18.testcase \
-	sql_stmt_libxml2_tests/ragisterRaster1.testcase \
-	sql_stmt_libxml2_tests/ragisterRaster2.testcase \
-	sql_stmt_libxml2_tests/ragisterRaster3.testcase \
-	sql_stmt_libxml2_tests/ragisterRaster4.testcase \
-	sql_stmt_libxml2_tests/ragisterRaster5.testcase \
-	sql_stmt_libxml2_tests/ragisterRaster6.testcase \
-	sql_stmt_libxml2_tests/ragisterRaster7.testcase \
-	sql_stmt_libxml2_tests/ragisterRaster8.testcase \
-	sql_stmt_libxml2_tests/ragisterRaster9.testcase \
-	sql_stmt_libxml2_tests/ragisterRaster10.testcase \
-	sql_stmt_libxml2_tests/ragisterRaster11.testcase \
-	sql_stmt_libxml2_tests/ragisterRaster12.testcase \
-	sql_stmt_libxml2_tests/ragisterRaster13.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup1.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup2.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup3.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup4.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup5.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup6.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup7.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup8.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup9.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup10.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup11.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup12.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup13.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup14.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup15.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup16.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup17.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup18.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup19.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup20.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup21.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup22.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup23.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup25.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup26.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup27.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup28.testcase \
-	sql_stmt_libxml2_tests/ragisterGroup29.testcase \
+	sql_stmt_libxml2_tests/registerGraphic1.testcase \
+	sql_stmt_libxml2_tests/registerGraphic2.testcase \
+	sql_stmt_libxml2_tests/registerGraphic3.testcase \
+	sql_stmt_libxml2_tests/registerGraphic4.testcase \
+	sql_stmt_libxml2_tests/registerGraphic5.testcase \
+	sql_stmt_libxml2_tests/registerGraphic6.testcase \
+	sql_stmt_libxml2_tests/registerGraphic7.testcase \
+	sql_stmt_libxml2_tests/registerGraphic8.testcase \
+	sql_stmt_libxml2_tests/registerGraphic9.testcase \
+	sql_stmt_libxml2_tests/registerGraphic10.testcase \
+	sql_stmt_libxml2_tests/registerGraphic11.testcase \
+	sql_stmt_libxml2_tests/registerGraphic12.testcase \
+	sql_stmt_libxml2_tests/registerGraphic13.testcase \
+	sql_stmt_libxml2_tests/registerGraphic14.testcase \
+	sql_stmt_libxml2_tests/registerGraphic15.testcase \
+	sql_stmt_libxml2_tests/registerGraphic16.testcase \
+	sql_stmt_libxml2_tests/registerGraphic17.testcase \
+	sql_stmt_libxml2_tests/registerGraphic18.testcase \
+	sql_stmt_libxml2_tests/registerGraphic19.testcase \
+	sql_stmt_libxml2_tests/registerGraphic20.testcase \
+	sql_stmt_libxml2_tests/registerGraphic21.testcase \
+	sql_stmt_libxml2_tests/registerGraphic22.testcase \
+	sql_stmt_libxml2_tests/registerVector1.testcase \
+	sql_stmt_libxml2_tests/registerVector2.testcase \
+	sql_stmt_libxml2_tests/registerVector3.testcase \
+	sql_stmt_libxml2_tests/registerVector4.testcase \
+	sql_stmt_libxml2_tests/registerVector5.testcase \
+	sql_stmt_libxml2_tests/registerVector6.testcase \
+	sql_stmt_libxml2_tests/registerVector7.testcase \
+	sql_stmt_libxml2_tests/registerVector8.testcase \
+	sql_stmt_libxml2_tests/registerVector9.testcase \
+	sql_stmt_libxml2_tests/registerVector10.testcase \
+	sql_stmt_libxml2_tests/registerVector11.testcase \
+	sql_stmt_libxml2_tests/registerVector12.testcase \
+	sql_stmt_libxml2_tests/registerVector13.testcase \
+	sql_stmt_libxml2_tests/registerVector14.testcase \
+	sql_stmt_libxml2_tests/registerVector15.testcase \
+	sql_stmt_libxml2_tests/registerVector16.testcase \
+	sql_stmt_libxml2_tests/registerVector17.testcase \
+	sql_stmt_libxml2_tests/registerVector18.testcase \
+	sql_stmt_libxml2_tests/registerVector19.testcase \
+	sql_stmt_libxml2_tests/registerVector20.testcase \
+	sql_stmt_libxml2_tests/registerVector21.testcase \
+	sql_stmt_libxml2_tests/registerVector22.testcase \
+	sql_stmt_libxml2_tests/registerRaster1.testcase \
+	sql_stmt_libxml2_tests/registerRaster2.testcase \
+	sql_stmt_libxml2_tests/registerRaster3.testcase \
+	sql_stmt_libxml2_tests/registerRaster4.testcase \
+	sql_stmt_libxml2_tests/registerRaster5.testcase \
+	sql_stmt_libxml2_tests/registerRaster6.testcase \
+	sql_stmt_libxml2_tests/registerRaster7.testcase \
+	sql_stmt_libxml2_tests/registerRaster8.testcase \
+	sql_stmt_libxml2_tests/registerRaster9.testcase \
+	sql_stmt_libxml2_tests/registerRaster10.testcase \
+	sql_stmt_libxml2_tests/registerRaster11.testcase \
+	sql_stmt_libxml2_tests/registerRaster12.testcase \
+	sql_stmt_libxml2_tests/registerRaster13.testcase \
+	sql_stmt_libxml2_tests/registerRaster14.testcase \
+	sql_stmt_libxml2_tests/registerRaster15.testcase \
+	sql_stmt_libxml2_tests/registerRaster16.testcase \
+	sql_stmt_libxml2_tests/registerRaster17.testcase \
+	sql_stmt_libxml2_tests/registerGroup1.testcase \
+	sql_stmt_libxml2_tests/registerGroup2.testcase \
+	sql_stmt_libxml2_tests/registerGroup3.testcase \
+	sql_stmt_libxml2_tests/registerGroup4.testcase \
+	sql_stmt_libxml2_tests/registerGroup5.testcase \
+	sql_stmt_libxml2_tests/registerGroup6.testcase \
+	sql_stmt_libxml2_tests/registerGroup7.testcase \
+	sql_stmt_libxml2_tests/registerGroup8.testcase \
+	sql_stmt_libxml2_tests/registerGroup9.testcase \
+	sql_stmt_libxml2_tests/registerGroup10.testcase \
+	sql_stmt_libxml2_tests/registerGroup11.testcase \
+	sql_stmt_libxml2_tests/registerGroup12.testcase \
+	sql_stmt_libxml2_tests/registerGroup13.testcase \
+	sql_stmt_libxml2_tests/registerGroup14.testcase \
+	sql_stmt_libxml2_tests/registerGroup15.testcase \
+	sql_stmt_libxml2_tests/registerGroup16.testcase \
+	sql_stmt_libxml2_tests/registerGroup17.testcase \
+	sql_stmt_libxml2_tests/registerGroup18.testcase \
+	sql_stmt_libxml2_tests/registerGroup19.testcase \
+	sql_stmt_libxml2_tests/registerGroup20.testcase \
+	sql_stmt_libxml2_tests/registerGroup21.testcase \
+	sql_stmt_libxml2_tests/registerGroup22.testcase \
+	sql_stmt_libxml2_tests/registerGroup23.testcase \
+	sql_stmt_libxml2_tests/registerGroup25.testcase \
+	sql_stmt_libxml2_tests/registerGroup26.testcase \
+	sql_stmt_libxml2_tests/registerGroup27.testcase \
+	sql_stmt_libxml2_tests/registerGroup28.testcase \
+	sql_stmt_libxml2_tests/registerGroup29.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize1.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize2.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize3.testcase \
@@ -3137,5 +3146,8 @@ EXTRA_DIST = asprintf4win.h \
 	books.xml books.xsd opera.xml opera.xsd \
 	movies.xml movies.xsd books-bad.xml books-bad.xsd \
 	inspire-data-example.xml stazioni_se.xml \
-	thunderstorm_mild.svg
+	raster_se.xml thunderstorm_mild.svg \
+	tile000.jpeg  tile101.jpeg  tile111.jpeg \
+	test.webp tile100.jpeg  tile110.jpeg \
+	empty.png  empty.tif	
 
