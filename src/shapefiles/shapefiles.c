@@ -3563,15 +3563,16 @@ check_elementary (sqlite3 * sqlite, const char *inTable, const char *geom,
       {
 	  /* current metadata style >= v.4.0.0 */
 	  sql = sqlite3_mprintf ("SELECT geometry_type, srid "
-				 "FROM geometry_columns WHERE Lower(f_table_name) = Lower(%Q)",
-				 inTable);
+				 "FROM geometry_columns WHERE Lower(f_table_name) = Lower(%Q) "
+				 "AND Lower(f_geometry_column) = Lower(%Q)",
+				 inTable, geom);
       }
     else
       {
 	  /* legacy metadata style <= v.3.1.0 */
 	  sql = sqlite3_mprintf ("SELECT type, coord_dimension, srid "
-				 "FROM geometry_columns WHERE Lower(f_table_name) = Lower(%Q)"
-				 "') AND Lower(f_geometry_column) = Lower(%Q)",
+				 "FROM geometry_columns WHERE Lower(f_table_name) = Lower(%Q) "
+				 "AND Lower(f_geometry_column) = Lower(%Q)",
 				 inTable, geom);
       }
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, &errMsg);

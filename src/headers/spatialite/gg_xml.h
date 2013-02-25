@@ -164,8 +164,10 @@ extern "C"
 
  \param blob pointer to the XmlBLOB buffer.
  \param size XmlBLOB's size (in bytes).
- \param indent if TRUE the XMLDocument will be properly indented,
-  otherwise it will be extracted exactly as it was when loaded.
+ \param indent if a negative value is passed the XMLDocument will 
+ be extracted exactly as it was when loaded. Otherwise it will be 
+ properly formatted using the required intenting (max. 8); ZERO
+ means that the whole XML Document will consist of a single line.
 
  \return the pointer to the newly created XMLDocument buffer: NULL on failure
 
@@ -196,8 +198,14 @@ extern "C"
 
  \param blob pointer to the XmlBLOB buffer.
  \param size XmlBLOB's size (in bytes).
- \param indent if TRUE the XMLDocument will be properly indented,
-  otherwise it will be extracted exactly as it was when loaded.
+ \param indent if a negative value is passed the XMLDocument will 
+ be extracted exactly as it was when loaded. Otherwise it will be 
+ properly formatted using the required intenting (max. 8); ZERO
+ means that the whole XML Document will consist of a single line.
+ \param result pointer to the memory buffer containing the XML Document
+ \param res_size dimension (in bytes) of the XML Document memory buffer
+ (both values will be passed back after succesful completion).
+
 
  \sa gaiaXmlToBlob, gaiaXmlTextFromBlob, gaiaXmlBlobCompression, 
  gaiaIsValidXmlBlob, gaiaIsCompressedXmlBlob, 

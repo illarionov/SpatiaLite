@@ -68,6 +68,134 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/gaiageo.h>
 #include <spatialite/gaiaaux.h>
 
+
+struct gaiaxml_namespace
+{
+/* a Namespace declaration */
+    int type;
+    xmlChar *prefix;
+    xmlChar *href;
+    struct gaiaxml_namespace *next;
+};
+
+struct gaiaxml_ns_list
+{
+/* a Namespaces list */
+    struct gaiaxml_namespace *first;
+    struct gaiaxml_namespace *last;
+};
+
+static struct gaiaxml_namespace *
+splite_create_namespace (int type, const xmlChar *prefix, const xmlChar *href)
+{
+/* allocating and initializing a Namespace declaration */
+    int len;
+    struct gaiaxml_namespace *ptr = malloc (sizeof (struct gaiaxml_namespace));
+    ptr->type = type;
+    if (prefix == NULL)
+	ptr->prefix = NULL;
+    else
+      {
+	  len = strlen ((const char *)prefix);
+	  ptr->prefix = malloc (len + 1);
+	  memcpy (ptr->prefix, prefix, len + 1);
+      }
+    if (href == NULL)
+	ptr->href = NULL;
+    else
+      {
+	  len = strlen ((const char *)href);
+	  ptr->href = malloc (len + 1);
+	  memcpy (ptr->href, href, len + 1);
+      }
+    ptr->next = NULL;
+    return ptr;
+}
+
+static void
+splite_free_namespace (struct gaiaxml_namespace *ptr)
+{
+/* memory cleanup - destroying a Namespace declaration */
+    if (ptr == NULL)
+	return;
+    if (ptr->prefix != NULL)
+	free (ptr->prefix);
+    if (ptr->href != NULL)
+	free (ptr->href);
+}
+
+static struct gaiaxml_ns_list *
+splite_create_ns_list (void)
+{
+/* allocating and initializing a Namespaces list */
+    struct gaiaxml_ns_list *ptr = malloc (sizeof (struct gaiaxml_ns_list));
+    ptr->first = NULL;
+    ptr->last = NULL;
+return ptr;
+}
+
+static void
+splite_free_ns_list (struct gaiaxml_ns_list *ptr)
+{
+/* memory cleanup - destroying a Namespaces list */
+    struct gaiaxml_namespace *p;
+    struct gaiaxml_namespace *p_n;
+    if (ptr == NULL)
+	return;
+    p = ptr->first;
+    while (p != NULL)
+      {
+	  p_n = p->next;
+	  splite_free_namespace (p);
+	  p = p_n;
+      }
+    free (ptr);
+}
+
+static void
+splite_add_namespace (struct gaiaxml_ns_list *list, int type,
+		      const xmlChar *prefix, const xmlChar *href)
+{
+/* inserting a new Namespace into the list */
+    struct gaiaxml_namespace *ns;
+    if (list == NULL)
+	return;
+    ns = list->first;
+    while (ns != NULL)
+      {
+	  /* checking if already defined */
+	  int ok_type = 0;
+	  int ok_prefix = 0;
+	  int ok_href = 0;
+	  if (ns->type == type)
+	      ok_type = 1;
+	  if (ns->prefix == NULL && prefix == NULL)
+	      ok_prefix = 1;
+	  if (ns->prefix != NULL && prefix != NULL)
+	    {
+		if (strcmp ((const char *)(ns->prefix), (const char *)prefix) == 0)
+		    ok_prefix = 1;
+	    }
+	  if (ns->href == NULL && href == NULL)
+	      ok_href = 1;
+	  if (ns->href != NULL && href != NULL)
+	    {
+		if (strcmp ((const char *)(ns->href), (const char *)href) == 0)
+		    ok_href = 1;
+	    }
+	  if (ok_type && ok_prefix && ok_href)
+	      return;
+	  ns = ns->next;
+      }
+/* inserting a new Namespace */
+    ns = splite_create_namespace (type, prefix, href);
+    if (list->first == NULL)
+	list->first = ns;
+    if (list->last != NULL)
+	list->last->next = ns;
+    list->last = ns;
+}
+
 static void
 spliteSilentError (void *ctx, const char *msg, ...)
 {
@@ -285,7 +413,7 @@ sniff_payload (xmlDocPtr xml_doc, int *is_iso_metadata,
     *is_svg = 0;
     if (root->name != NULL)
       {
-const char *name = (const char *)(root->name);
+	  const char *name = (const char *) (root->name);
 	  if (strcmp (name, "MD_Metadata") == 0)
 	      *is_iso_metadata = 1;
 	  if (strcmp (name, "FeatureTypeStyle") == 0)
@@ -334,7 +462,7 @@ find_iso_ids (xmlNodePtr node, const char *name, char **string, int *open_tag,
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-const char * xname = (const char *)(cur_node->name);
+		const char *xname = (const char *) (cur_node->name);
 		if (*open_tag == 1)
 		  {
 		      if (strcmp (xname, "CharacterString") == 0)
@@ -350,7 +478,7 @@ const char * xname = (const char *)(cur_node->name);
 			    if (cur_node->parent->type == XML_ELEMENT_NODE)
 			      {
 				  if (strcmp
-				      ((const char *)(cur_node->parent->name),
+				      ((const char *) (cur_node->parent->name),
 				       "MD_Metadata") == 0)
 				    {
 					/* 
@@ -406,45 +534,55 @@ find_iso_title (xmlNodePtr node, char **string, int *open_tag, int *char_string,
 	    {
 		if (*open_tag == 1)
 		  {
-		      if (strcmp ((const char *)(cur_node->name), "CharacterString") == 0)
+		      if (strcmp
+			  ((const char *) (cur_node->name),
+			   "CharacterString") == 0)
 			{
 			    cs = 1;
 			    *char_string = 1;
 			}
 		  }
-		if (strcmp ((const char *)(cur_node->name), "title") == 0)
+		if (strcmp ((const char *) (cur_node->name), "title") == 0)
 		  {
 		      ok_parent = 0;
 		      parent = cur_node->parent;
 		      if (parent)
 			{
-			    if (strcmp ((const char *)(parent->name), "CI_Citation") == 0)
+			    if (strcmp
+				((const char *) (parent->name),
+				 "CI_Citation") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 1)
 			{
 			    parent = parent->parent;
-			    if (strcmp ((const char *)(parent->name), "citation") == 0)
+			    if (strcmp
+				((const char *) (parent->name),
+				 "citation") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 2)
 			{
 			    parent = parent->parent;
-			    if (strcmp ((const char *)(parent->name), "MD_DataIdentification")
-				== 0)
+			    if (strcmp
+				((const char *) (parent->name),
+				 "MD_DataIdentification") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 3)
 			{
 			    parent = parent->parent;
-			    if (strcmp ((const char *)(parent->name), "identificationInfo") ==
-				0)
+			    if (strcmp
+				((const char *) (parent->name),
+				 "identificationInfo") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 4)
 			{
 			    parent = parent->parent;
-			    if (strcmp ((const char *)(parent->name), "MD_Metadata") == 0)
+			    if (strcmp
+				((const char *) (parent->name),
+				 "MD_Metadata") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 5)
@@ -503,33 +641,39 @@ find_iso_abstract (xmlNodePtr node, char **string, int *open_tag,
 	    {
 		if (*open_tag == 1)
 		  {
-		      if (strcmp ((const char *)(cur_node->name), "CharacterString") == 0)
+		      if (strcmp
+			  ((const char *) (cur_node->name),
+			   "CharacterString") == 0)
 			{
 			    cs = 1;
 			    *char_string = 1;
 			}
 		  }
-		if (strcmp ((const char *)(cur_node->name), "abstract") == 0)
+		if (strcmp ((const char *) (cur_node->name), "abstract") == 0)
 		  {
 		      ok_parent = 0;
 		      parent = cur_node->parent;
 		      if (parent)
 			{
-			    if (strcmp ((const char *)(parent->name), "MD_DataIdentification")
-				== 0)
+			    if (strcmp
+				((const char *) (parent->name),
+				 "MD_DataIdentification") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 1)
 			{
 			    parent = parent->parent;
-			    if (strcmp ((const char *)(parent->name), "identificationInfo") ==
-				0)
+			    if (strcmp
+				((const char *) (parent->name),
+				 "identificationInfo") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 2)
 			{
 			    parent = parent->parent;
-			    if (strcmp ((const char *)(parent->name), "MD_Metadata") == 0)
+			    if (strcmp
+				((const char *) (parent->name),
+				 "MD_Metadata") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 3)
@@ -583,13 +727,14 @@ find_bbox_coord (xmlNodePtr node, const char *name, double *coord,
 	    {
 		if (*open_tag == 1)
 		  {
-		      if (strcmp ((const char *)(cur_node->name), "Decimal") == 0)
+		      if (strcmp ((const char *) (cur_node->name), "Decimal") ==
+			  0)
 			{
 			    dec = 1;
 			    *decimal = 1;
 			}
 		  }
-		if (strcmp ((const char *)(cur_node->name), name) == 0)
+		if (strcmp ((const char *) (cur_node->name), name) == 0)
 		  {
 		      open = 1;
 		      *open_tag = 1;
@@ -698,45 +843,56 @@ find_iso_geometry (xmlNodePtr node, gaiaGeomCollPtr * geom)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp ((const char *)(cur_node->name), "EX_GeographicBoundingBox") == 0)
+		if (strcmp
+		    ((const char *) (cur_node->name),
+		     "EX_GeographicBoundingBox") == 0)
 		  {
 		      ok_parent = 0;
 		      parent = cur_node->parent;
 		      if (parent)
 			{
-			    if (strcmp ((const char *)(parent->name), "geographicElement") == 0)
+			    if (strcmp
+				((const char *) (parent->name),
+				 "geographicElement") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 1)
 			{
 			    parent = parent->parent;
-			    if (strcmp ((const char *)(parent->name), "EX_Extent") == 0)
+			    if (strcmp
+				((const char *) (parent->name),
+				 "EX_Extent") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 2)
 			{
 			    parent = parent->parent;
-			    if (strcmp ((const char *)(parent->name), "extent") == 0)
+			    if (strcmp ((const char *) (parent->name), "extent")
+				== 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 3)
 			{
 			    parent = parent->parent;
-			    if (strcmp ((const char *)(parent->name), "MD_DataIdentification")
-				== 0)
+			    if (strcmp
+				((const char *) (parent->name),
+				 "MD_DataIdentification") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 4)
 			{
 			    parent = parent->parent;
-			    if (strcmp ((const char *)(parent->name), "identificationInfo") ==
-				0)
+			    if (strcmp
+				((const char *) (parent->name),
+				 "identificationInfo") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 5)
 			{
 			    parent = parent->parent;
-			    if (strcmp ((const char *)(parent->name), "MD_Metadata") == 0)
+			    if (strcmp
+				((const char *) (parent->name),
+				 "MD_Metadata") == 0)
 				ok_parent++;
 			}
 		      if (ok_parent == 6)
@@ -890,7 +1046,7 @@ find_sld_se_title (xmlNodePtr node, char **string, int *style, int *rule)
       {
 	  if (node->type == XML_ELEMENT_NODE)
 	    {
-const char * name = (const char *)(node->name);
+		const char *name = (const char *) (node->name);
 		if (strcmp (name, "FeatureTypeStyle") == 0
 		    || strcmp (name, "CoverageStyle") == 0)
 		  {
@@ -944,7 +1100,7 @@ find_sld_se_abstract (xmlNodePtr node, char **string, int *style, int *rule)
       {
 	  if (node->type == XML_ELEMENT_NODE)
 	    {
-const char *name = (const char *)(node->name);
+		const char *name = (const char *) (node->name);
 		if (strcmp (name, "FeatureTypeStyle") == 0
 		    || strcmp (name, "CoverageStyle") == 0)
 		  {
@@ -1707,6 +1863,284 @@ gaiaIsValidXmlBlob (const unsigned char *blob, int blob_size)
     return 1;
 }
 
+static void
+find_xml_namespaces (xmlNode * node, struct gaiaxml_ns_list *list)
+{
+/* recursively identifying all XML Namespaces from DOM-nodes */
+    struct _xmlAttr *attr;
+    while (node)
+      {
+	  xmlNs *ns = node->ns;
+	  if (ns != NULL)
+	      splite_add_namespace (list, ns->type, ns->prefix, ns->href);
+	  attr = node->properties;
+	  while (attr != NULL)
+	    {
+		ns = attr->ns;
+		if (ns != NULL)
+		    splite_add_namespace (list, ns->type, ns->prefix, ns->href);
+		attr = attr->next;
+	    }
+	  find_xml_namespaces (node->children, list);
+	  node = node->next;
+      }
+}
+
+static void
+xml_out (gaiaOutBufferPtr buf, const xmlChar *str)
+{
+/* clean XML output */
+    const xmlChar *p = str;
+    while (*p != '\0')
+      {
+	  if (*p == '>')
+	      gaiaAppendToOutBuffer (buf, "&gt;");
+	  else if (*p == '<')
+	      gaiaAppendToOutBuffer (buf, "&lt;");
+	  else if (*p == '&')
+	      gaiaAppendToOutBuffer (buf, "&amp;");
+	  else if (*p == '"')
+	      gaiaAppendToOutBuffer (buf, "&quot;");
+	  else if (*p == '\'')
+	      gaiaAppendToOutBuffer (buf, "&apos;");
+	  else
+	    {
+		char xx[2];
+		xx[0] = *p;
+		xx[1] = '\0';
+		gaiaAppendToOutBuffer (buf, xx);
+	    }
+	  p++;
+      }
+}
+
+static void
+format_xml (xmlNode * root, xmlNode * node, struct gaiaxml_ns_list *list,
+	    gaiaOutBufferPtr buf, int indent, int *level)
+{
+/* recursively printing the XML-DOM nodes */
+    struct _xmlAttr *attr;
+    xmlNode *child;
+    xmlNs *ns;
+    const xmlChar *namespace;
+    char *indenting = NULL;
+    const char no = '\0';
+    const char *pre;
+    int tab;
+    int width;
+    int has_children;
+    int has_text;
+    if (!indent)
+	pre = &no;
+    else
+      {
+	  if (indent <= 8)
+	      tab = indent;
+	  else
+	      tab = 8;
+	  width = tab * *level;
+	  indenting = malloc (width + 2);
+	  *indenting = '\n';
+	  memset (indenting + 1, ' ', width);
+	  *(indenting + width + 1) = '\0';
+	  pre = indenting;
+      }
+
+    while (node)
+      {
+	  if (node->type == XML_COMMENT_NODE)
+	    {
+		/* comment node */
+		if (*pre != '\0')
+		    gaiaAppendToOutBuffer (buf, "<!--");
+		else
+		    gaiaAppendToOutBuffer (buf, "\n<!--");
+		xml_out (buf, node->content);
+		gaiaAppendToOutBuffer (buf, "-->");
+	    }
+	  if (node->type == XML_ELEMENT_NODE)
+	    {
+		if (*pre != '\0')
+		    gaiaAppendToOutBuffer (buf, pre);
+		gaiaAppendToOutBuffer (buf, "<");
+		ns = node->ns;
+		namespace = NULL;
+		if (ns != NULL)
+		    namespace = ns->prefix;
+		if (namespace)
+		  {
+		      xml_out (buf, namespace);
+		      gaiaAppendToOutBuffer (buf, ":");
+		  }
+		xml_out (buf, node->name);
+		if (node == root)
+		  {
+		      /* Namespaces */
+		      struct gaiaxml_namespace *p_ns = list->first;
+		      while (p_ns != NULL)
+			{
+			    if (p_ns->prefix == NULL)
+				gaiaAppendToOutBuffer (buf, " xmlns=\"");
+			    else
+			      {
+				  gaiaAppendToOutBuffer (buf, " xmlns:");
+				  xml_out (buf, p_ns->prefix);
+				  gaiaAppendToOutBuffer (buf, "=\"");
+			      }
+			    xml_out (buf, p_ns->href);
+			    gaiaAppendToOutBuffer (buf, "\"");
+			    p_ns = p_ns->next;
+			}
+		  }
+		attr = node->properties;
+		while (attr != NULL)
+		  {
+		      /* attributes */
+		      if (attr->type == XML_ATTRIBUTE_NODE)
+			{
+			    xmlNode *text = attr->children;
+			    gaiaAppendToOutBuffer (buf, " ");
+			    ns = attr->ns;
+			    namespace = NULL;
+			    if (ns != NULL)
+				namespace = ns->prefix;
+			    if (namespace)
+			      {
+				  xml_out (buf, namespace);
+				  gaiaAppendToOutBuffer (buf, ":");
+			      }
+			    xml_out (buf, attr->name);
+			    gaiaAppendToOutBuffer (buf, "=\"");
+			    if (text != NULL)
+			      {
+				  if (text->type == XML_TEXT_NODE)
+				      xml_out (buf, text->content);
+			      }
+			    gaiaAppendToOutBuffer (buf, "\"");
+			}
+		      attr = attr->next;
+		  }
+		has_children = 0;
+		has_text = 0;
+		child = node->children;
+		while (child)
+		  {
+		      if (child->type == XML_ELEMENT_NODE
+			  || child->type == XML_COMMENT_NODE)
+			  has_children = 1;
+		      if (child->type == XML_TEXT_NODE)
+			  has_text++;
+		      child = child->next;
+		  }
+		if (has_children)
+		    has_text = 0;
+
+		if (!has_text && !has_children)
+		    gaiaAppendToOutBuffer (buf, " />");
+
+		if (has_text)
+		  {
+		      child = node->children;
+		      if (child->type == XML_TEXT_NODE)
+			{
+			    /* text node */
+			    gaiaAppendToOutBuffer (buf, ">");
+			    xml_out (buf, child->content);
+			    gaiaAppendToOutBuffer (buf, "</");
+			    ns = node->ns;
+			    namespace = NULL;
+			    if (ns != NULL)
+				namespace = ns->prefix;
+			    if (namespace)
+			      {
+				  xml_out (buf, namespace);
+				  gaiaAppendToOutBuffer (buf, ":");
+			      }
+			    xml_out (buf, node->name);
+			    gaiaAppendToOutBuffer (buf, ">");
+			}
+		  }
+		if (has_children)
+		  {
+		      /* recursively expanding all children */
+		      gaiaAppendToOutBuffer (buf, ">");
+		      *level += 1;
+		      format_xml (root, node->children, list, buf, indent,
+				  level);
+		      *level -= 1;
+		      if (*pre != '\0')
+			  gaiaAppendToOutBuffer (buf, pre);
+		      gaiaAppendToOutBuffer (buf, "</");
+		      ns = node->ns;
+		      namespace = NULL;
+		      if (ns != NULL)
+			  namespace = ns->prefix;
+		      if (namespace)
+			{
+			    xml_out (buf, namespace);
+			    gaiaAppendToOutBuffer (buf, ":");
+			}
+		      xml_out (buf, node->name);
+		      gaiaAppendToOutBuffer (buf, ">");
+		  }
+	    }
+	  node = node->next;
+      }
+    if (indenting)
+	free (indenting);
+}
+
+static int
+gaiaXmlFormat (xmlDocPtr xml_doc, xmlChar ** out, int *out_len,
+	       const xmlChar *encoding, int indent)
+{
+/* reformatting an XML Document - properly indenting */
+    int level = 0;
+    int ret;
+    gaiaOutBuffer buf;
+    const xmlChar *version = xml_doc->version;
+    xmlNode *root = xmlDocGetRootElement (xml_doc);
+    struct gaiaxml_ns_list *list = splite_create_ns_list ();
+
+    gaiaOutBufferInitialize (&buf);
+    if (encoding != NULL)
+      {
+	  gaiaAppendToOutBuffer (&buf, "<?xml version=\"");
+	  gaiaAppendToOutBuffer (&buf, (const char *)version);
+	  gaiaAppendToOutBuffer (&buf, "\" encoding=\"");
+	  gaiaAppendToOutBuffer (&buf, (const char *)encoding);
+	  gaiaAppendToOutBuffer (&buf, "\"?>");
+      }
+    else
+      {
+	  gaiaAppendToOutBuffer (&buf, "<?xml version=\"");
+	  gaiaAppendToOutBuffer (&buf, (const char *)version);
+	  gaiaAppendToOutBuffer (&buf, "\"?>");
+      }
+
+    find_xml_namespaces (root, list);
+    format_xml (root, root, list, &buf, indent, &level);
+    splite_free_ns_list (list);
+
+    if (buf.Error == 0 && buf.Buffer != NULL)
+      {
+	  gaiaAppendToOutBuffer (&buf, "\n");
+	  *out = malloc (buf.WriteOffset + 1);
+	  memcpy (*out, buf.Buffer, buf.WriteOffset);
+	  *(*out + buf.WriteOffset) = '\0';
+	  *out_len = buf.WriteOffset + 1;
+	  ret = 1;
+      }
+    else
+      {
+	  *out = NULL;
+	  *out_len = 0;
+	  ret = 0;
+      }
+    gaiaOutBufferReset (&buf);
+    return ret;
+}
+
 GAIAGEO_DECLARE char *
 gaiaXmlTextFromBlob (const unsigned char *blob, int blob_size, int indent)
 {
@@ -1727,7 +2161,7 @@ gaiaXmlTextFromBlob (const unsigned char *blob, int blob_size, int indent)
     xmlDocPtr xml_doc;
     xmlChar *out;
     int out_len;
-    char *encoding = NULL;
+    xmlChar *encoding = NULL;
     void *cvt;
     char *utf8;
     int err;
@@ -1796,20 +2230,20 @@ gaiaXmlTextFromBlob (const unsigned char *blob, int blob_size, int indent)
 	  /* using the internal character enconding */
 	  int enclen = (int) strlen ((const char *) xml_doc->encoding);
 	  encoding = malloc (enclen + 1);
-	  strcpy (encoding, (const char *) (xml_doc->encoding));
+	  strcpy ((char *)encoding, (const char *) (xml_doc->encoding));
       }
     else
       {
 	  /* no declared encoding: defaulting to UTF-8 */
 	  encoding = malloc (6);
-	  strcpy (encoding, "UTF-8");
+	  strcpy ((char *)encoding, "UTF-8");
       }
 
-    if (!indent)
+    if (indent < 0)
       {
 	  /* just returning the XMLDocument "as is" */
 	  xmlFreeDoc (xml_doc);
-	  cvt = gaiaCreateUTF8Converter (encoding);
+	  cvt = gaiaCreateUTF8Converter ((const char *)encoding);
 	  free (encoding);
 	  if (cvt == NULL)
 	    {
@@ -1831,10 +2265,10 @@ gaiaXmlTextFromBlob (const unsigned char *blob, int blob_size, int indent)
       }
 
 /* properly indenting the XMLDocument */
-    xmlDocDumpFormatMemory (xml_doc, &out, &out_len, 1);
+    gaiaXmlFormat (xml_doc, &out, &out_len, encoding, indent);
     free (xml);
     xmlFreeDoc (xml_doc);
-    cvt = gaiaCreateUTF8Converter (encoding);
+    cvt = gaiaCreateUTF8Converter ((const char *)encoding);
     free (encoding);
     if (cvt == NULL)
       {
@@ -1928,7 +2362,7 @@ gaiaXmlFromBlob (const unsigned char *blob, int blob_size, int indent,
 	  memcpy (xml, ptr, xml_len);
 	  *(xml + xml_len) = '\0';
       }
-    if (!indent)
+    if (indent < 0)
       {
 	  /* just returning the XMLDocument "as is" */
 	  *result = xml;
@@ -1948,7 +2382,7 @@ gaiaXmlFromBlob (const unsigned char *blob, int blob_size, int indent,
 	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
 	  return;
       }
-    xmlDocDumpFormatMemory (xml_doc, &out, &out_len, 1);
+    gaiaXmlFormat (xml_doc, &out, &out_len, xml_doc->encoding, indent);
     free (xml);
     xmlFreeDoc (xml_doc);
     *result = out;
@@ -2183,8 +2617,8 @@ gaiaXmlGetInternalSchemaURI (void *p_cache, const char *xml, int xml_len)
 						    node->children->content);
 					uri = malloc (len + 1);
 					strcpy (uri,
-						(const char *) node->
-						children->content);
+						(const char *) node->children->
+						content);
 				    }
 			      }
 			}

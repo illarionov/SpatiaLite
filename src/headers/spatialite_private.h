@@ -218,6 +218,50 @@ extern "C"
 
     SPATIALITE_PRIVATE int createStylingTables (void *p_sqlite, int relaxed);
 
+    SPATIALITE_PRIVATE int register_external_graphic (void *p_sqlite,
+						      const char *xlink_href,
+						      const unsigned char
+						      *p_blob, int n_bytes,
+						      const char *title,
+						      const char *abstract,
+						      const char *file_name);
+
+    SPATIALITE_PRIVATE int register_vector_styled_layer (void *p_sqlite,
+							 const char
+							 *f_table_name,
+							 const char
+							 *f_geometry_column,
+							 int style_id,
+							 const unsigned char
+							 *p_blob, int n_bytes);
+    SPATIALITE_PRIVATE int register_raster_styled_layer (void *p_sqlite,
+							 const char
+							 *coverage_name,
+							 int style_id,
+							 const unsigned char
+							 *p_blob, int n_bytes);
+
+    SPATIALITE_PRIVATE int register_styled_group (void *p_sqlite,
+						  const char *group_name,
+						  const char *f_table_name,
+						  const char *f_geometry_column,
+						  const char *coverage_name,
+						  int style_id,
+						  int paint_order);
+
+    SPATIALITE_PRIVATE int createIsoMetadataTables (void *p_sqlite,
+						    int relaxed);
+
+    SPATIALITE_PRIVATE int get_iso_metadata_id (void *p_sqlite,
+						const char *fileIdentifier,
+						void *p_id);
+
+    SPATIALITE_PRIVATE int register_iso_metadata (void *p_sqlite,
+						  const char *scope,
+						  const unsigned char *p_blob,
+						  int n_bytes, void *p_id,
+						  const char *fileIdentifier);
+
     SPATIALITE_PRIVATE const char *splite_lwgeom_version (void);
 
     SPATIALITE_PRIVATE void splite_free_geos_cache_item (struct
@@ -250,7 +294,6 @@ extern "C"
     SPATIALITE_PRIVATE void geos_error (const char *fmt, ...);
 
     SPATIALITE_PRIVATE void geos_warning (const char *fmt, ...);
-
 
 #ifdef __cplusplus
 }

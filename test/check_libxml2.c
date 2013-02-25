@@ -427,7 +427,7 @@ check_parse (void *cache, const char *path)
         return 0;
     }
     doc_sz = gaiaXmlBlobGetDocumentSize (p_result, compressed_sz);
-    gaiaXmlFromBlob (p_result, compressed_sz, 1, &out, &formatted_sz);
+    gaiaXmlFromBlob (p_result, compressed_sz, 4, &out, &formatted_sz);
     if (out == NULL) {
         fprintf (stderr, "unable to format(1) \"%s\"\n", path);
         return 0;
@@ -463,12 +463,12 @@ check_parse (void *cache, const char *path)
             fprintf (stderr, "books.xml: unexpected document size %d (expected 741)\n", doc_sz);
             return 0; 
         }
-        if (formatted_sz != 730) {
-            fprintf (stderr, "books.xml: unexpected formatted size %d (expected 730)\n", formatted_sz);
+        if (formatted_sz != 863) {
+            fprintf (stderr, "books.xml: unexpected formatted size %d (expected 863)\n", formatted_sz);
             return 0; 
         }
-        if (formatted_txt_sz != 730) {
-            fprintf (stderr, "books.xml: unexpected formatted-text size %d (expected 730)\n", formatted_txt_sz);
+        if (formatted_txt_sz != 772) {
+            fprintf (stderr, "books.xml: unexpected formatted-text size %d (expected 772)\n", formatted_txt_sz);
             return 0; 
         }
     }
@@ -485,12 +485,12 @@ check_parse (void *cache, const char *path)
             fprintf (stderr, "opera.xml: unexpected document size %d (expected 912)\n", doc_sz);
             return 0; 
         }
-        if (formatted_sz != 879) {
-            fprintf (stderr, "opera.xml: unexpected formatted size %d (expected 879)\n", formatted_sz);
+        if (formatted_sz != 969) {
+            fprintf (stderr, "opera.xml: unexpected formatted size %d (expected 869)\n", formatted_sz);
             return 0; 
         }
-        if (formatted_txt_sz != 879) {
-            fprintf (stderr, "opera.xml: unexpected formatted-text size %d (expected 879)\n", formatted_txt_sz);
+        if (formatted_txt_sz != 878) {
+            fprintf (stderr, "opera.xml: unexpected formatted-text size %d (expected 878)\n", formatted_txt_sz);
             return 0; 
         }
     }
@@ -507,12 +507,12 @@ check_parse (void *cache, const char *path)
             fprintf (stderr, "movies.xml: unexpected document size %d (expected 1770)\n", doc_sz);
             return 0; 
         }
-        if (formatted_sz != 1710) {
-            fprintf (stderr, "movies.xml: unexpected formatted size %d (expected 1710)\n", formatted_sz);
+        if (formatted_sz != 944) {
+            fprintf (stderr, "movies.xml: unexpected formatted size %d (expected 944)\n", formatted_sz);
             return 0; 
         }
-        if (formatted_txt_sz != 854) {
-            fprintf (stderr, "movies.xml: unexpected formatted-text size %d (expected 854)\n", formatted_txt_sz);
+        if (formatted_txt_sz != 1279) {
+            fprintf (stderr, "movies.xml: unexpected formatted-text size %d (expected 1279)\n", formatted_txt_sz);
             return 0; 
         }
     }

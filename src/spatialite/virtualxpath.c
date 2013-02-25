@@ -455,7 +455,7 @@ vxpath_read_row (VirtualXPathCursorPtr cursor)
 		      unsigned char *xml;
 		      const unsigned char *blob = sqlite3_column_blob (stmt, 1);
 		      int size = sqlite3_column_bytes (stmt, 1);
-		      gaiaXmlFromBlob (blob, size, 0, &xml, &xml_len);
+		      gaiaXmlFromBlob (blob, size, -1, &xml, &xml_len);
 		      if (!xml)
 			  continue;
 		      xml_doc =
