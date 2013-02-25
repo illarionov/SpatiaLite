@@ -86,7 +86,7 @@ struct gaiaxml_ns_list
 };
 
 static struct gaiaxml_namespace *
-splite_create_namespace (int type, const xmlChar *prefix, const xmlChar *href)
+splite_create_namespace (int type, const xmlChar * prefix, const xmlChar * href)
 {
 /* allocating and initializing a Namespace declaration */
     int len;
@@ -96,7 +96,7 @@ splite_create_namespace (int type, const xmlChar *prefix, const xmlChar *href)
 	ptr->prefix = NULL;
     else
       {
-	  len = strlen ((const char *)prefix);
+	  len = strlen ((const char *) prefix);
 	  ptr->prefix = malloc (len + 1);
 	  memcpy (ptr->prefix, prefix, len + 1);
       }
@@ -104,7 +104,7 @@ splite_create_namespace (int type, const xmlChar *prefix, const xmlChar *href)
 	ptr->href = NULL;
     else
       {
-	  len = strlen ((const char *)href);
+	  len = strlen ((const char *) href);
 	  ptr->href = malloc (len + 1);
 	  memcpy (ptr->href, href, len + 1);
       }
@@ -122,6 +122,7 @@ splite_free_namespace (struct gaiaxml_namespace *ptr)
 	free (ptr->prefix);
     if (ptr->href != NULL)
 	free (ptr->href);
+    free (ptr);
 }
 
 static struct gaiaxml_ns_list *
@@ -131,7 +132,7 @@ splite_create_ns_list (void)
     struct gaiaxml_ns_list *ptr = malloc (sizeof (struct gaiaxml_ns_list));
     ptr->first = NULL;
     ptr->last = NULL;
-return ptr;
+    return ptr;
 }
 
 static void
@@ -154,7 +155,7 @@ splite_free_ns_list (struct gaiaxml_ns_list *ptr)
 
 static void
 splite_add_namespace (struct gaiaxml_ns_list *list, int type,
-		      const xmlChar *prefix, const xmlChar *href)
+		      const xmlChar * prefix, const xmlChar * href)
 {
 /* inserting a new Namespace into the list */
     struct gaiaxml_namespace *ns;
@@ -173,14 +174,16 @@ splite_add_namespace (struct gaiaxml_ns_list *list, int type,
 	      ok_prefix = 1;
 	  if (ns->prefix != NULL && prefix != NULL)
 	    {
-		if (strcmp ((const char *)(ns->prefix), (const char *)prefix) == 0)
+		if (strcmp ((const char *) (ns->prefix), (const char *) prefix)
+		    == 0)
 		    ok_prefix = 1;
 	    }
 	  if (ns->href == NULL && href == NULL)
 	      ok_href = 1;
 	  if (ns->href != NULL && href != NULL)
 	    {
-		if (strcmp ((const char *)(ns->href), (const char *)href) == 0)
+		if (strcmp ((const char *) (ns->href), (const char *) href) ==
+		    0)
 		    ok_href = 1;
 	    }
 	  if (ok_type && ok_prefix && ok_href)
@@ -1887,7 +1890,7 @@ find_xml_namespaces (xmlNode * node, struct gaiaxml_ns_list *list)
 }
 
 static void
-xml_out (gaiaOutBufferPtr buf, const xmlChar *str)
+xml_out (gaiaOutBufferPtr buf, const xmlChar * str)
 {
 /* clean XML output */
     const xmlChar *p = str;
@@ -2092,7 +2095,7 @@ format_xml (xmlNode * root, xmlNode * node, struct gaiaxml_ns_list *list,
 
 static int
 gaiaXmlFormat (xmlDocPtr xml_doc, xmlChar ** out, int *out_len,
-	       const xmlChar *encoding, int indent)
+	       const xmlChar * encoding, int indent)
 {
 /* reformatting an XML Document - properly indenting */
     int level = 0;
@@ -2106,15 +2109,15 @@ gaiaXmlFormat (xmlDocPtr xml_doc, xmlChar ** out, int *out_len,
     if (encoding != NULL)
       {
 	  gaiaAppendToOutBuffer (&buf, "<?xml version=\"");
-	  gaiaAppendToOutBuffer (&buf, (const char *)version);
+	  gaiaAppendToOutBuffer (&buf, (const char *) version);
 	  gaiaAppendToOutBuffer (&buf, "\" encoding=\"");
-	  gaiaAppendToOutBuffer (&buf, (const char *)encoding);
+	  gaiaAppendToOutBuffer (&buf, (const char *) encoding);
 	  gaiaAppendToOutBuffer (&buf, "\"?>");
       }
     else
       {
 	  gaiaAppendToOutBuffer (&buf, "<?xml version=\"");
-	  gaiaAppendToOutBuffer (&buf, (const char *)version);
+	  gaiaAppendToOutBuffer (&buf, (const char *) version);
 	  gaiaAppendToOutBuffer (&buf, "\"?>");
       }
 
@@ -2230,20 +2233,20 @@ gaiaXmlTextFromBlob (const unsigned char *blob, int blob_size, int indent)
 	  /* using the internal character enconding */
 	  int enclen = (int) strlen ((const char *) xml_doc->encoding);
 	  encoding = malloc (enclen + 1);
-	  strcpy ((char *)encoding, (const char *) (xml_doc->encoding));
+	  strcpy ((char *) encoding, (const char *) (xml_doc->encoding));
       }
     else
       {
 	  /* no declared encoding: defaulting to UTF-8 */
 	  encoding = malloc (6);
-	  strcpy ((char *)encoding, "UTF-8");
+	  strcpy ((char *) encoding, "UTF-8");
       }
 
     if (indent < 0)
       {
 	  /* just returning the XMLDocument "as is" */
 	  xmlFreeDoc (xml_doc);
-	  cvt = gaiaCreateUTF8Converter ((const char *)encoding);
+	  cvt = gaiaCreateUTF8Converter ((const char *) encoding);
 	  free (encoding);
 	  if (cvt == NULL)
 	    {
@@ -2268,23 +2271,12 @@ gaiaXmlTextFromBlob (const unsigned char *blob, int blob_size, int indent)
     gaiaXmlFormat (xml_doc, &out, &out_len, encoding, indent);
     free (xml);
     xmlFreeDoc (xml_doc);
-    cvt = gaiaCreateUTF8Converter ((const char *)encoding);
     free (encoding);
-    if (cvt == NULL)
+    if (out)
       {
 	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
-	  return NULL;
+	  return out;
       }
-    utf8 = gaiaConvertToUTF8 (cvt, (const char *) out, out_len, &err);
-    gaiaFreeUTF8Converter (cvt);
-    free (out);
-    if (utf8 && !err)
-      {
-	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
-	  return utf8;
-      }
-    if (utf8)
-	free (utf8);
     xmlSetGenericErrorFunc ((void *) stderr, NULL);
     return NULL;
 }
@@ -2617,8 +2609,8 @@ gaiaXmlGetInternalSchemaURI (void *p_cache, const char *xml, int xml_len)
 						    node->children->content);
 					uri = malloc (len + 1);
 					strcpy (uri,
-						(const char *) node->children->
-						content);
+						(const char *) node->
+						children->content);
 				    }
 			      }
 			}

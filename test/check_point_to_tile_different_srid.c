@@ -105,7 +105,7 @@ int main (int argc UNUSED, char *argv[] UNUSED)
     }
 
     /* Create the base tables */
-    ret = sqlite3_exec (db_handle, "SELECT InitSpatialMetadata()", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "SELECT InitSpatialMetadata(1)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "Unexpected InitSpatialMetadata result: %i, (%s)\n", ret, err_msg);
 	sqlite3_free (err_msg);

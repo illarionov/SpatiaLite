@@ -1100,7 +1100,7 @@ create_iso_metadata (sqlite3 * sqlite, int relaxed)
 	      "BEFORE UPDATE ON 'ISO_metadata'\nFOR EACH ROW BEGIN\n"
 	      "SELECT RAISE(ABORT,'update on ISO_metadata violates constraint: "
 	      "not a valid ISO Metadata XML')\n"
-	      "WHERE XB_IsIsoMetadata(NEW.metatada) <> 1;\n"
+	      "WHERE XB_IsIsoMetadata(NEW.metadata) <> 1 AND NEW.id <> 0;\n"
 	      "SELECT RAISE(ABORT,'update on ISO_metadata violates constraint: "
 	      "not an XML Schema Validated ISO Metadata')\n"
 	      "WHERE XB_IsSchemaValidated(NEW.metadata) <> 1 AND NEW.id <> 0;\nEND";
@@ -1390,7 +1390,7 @@ createIsoMetadataTables (void *p_sqlite, int relaxed)
     if (ret != SQLITE_OK)
       {
 	  spatialite_e
-	      ("Insert default 'undef' ISO_metadata row - error: %s\n",
+	      ("Insert default 'undefined' ISO_metadata row - error: %s\n",
 	       err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;

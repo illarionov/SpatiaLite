@@ -2028,15 +2028,18 @@ Negative angle = counterclockwise rotation.</td></tr>
 				<th bgcolor="#d0d0d0">Summary</th></tr>
 			<tr><td><b>InitSpatialMetaData</b></td>
 				<td>InitSpatialMetaData( void ) : <i>Integer</i><hr>
-					InitSpatialMetaData( mode <i>String</i> ) : <i>Integer</i></td>
+					InitSpatialMetaData( transaction <i>Integer</i> ) : <i>Integer</i><hr>
+					InitSpatialMetaData( mode <i>String</i> ) : <i>Integer</i><hr>
+					InitSpatialMetaData( transaction <i>Integer</i> , mode <i>String</i> ) : <i>Integer</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>Creates the <b>geometry_columns</b> and <b>spatial_ref_sys</b> metadata tables<br>
 the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE
 <ul>
-	<li>the first form (no args) will automatically populate <b>spatial_ref_sys</b> inserting any possible ESPG SRID definition</li>
-	<li>if the arg <b>'WGS84'</b> (alias <b>'WGS84_ONLY'</b>) is specified, then only WGS84-related EPSG SRIDs will be inserted</li>
-	<li>if the arg <b>'NONE'</b> (alias <b>'EMPTY'</b>) is specified, no EPSG SRID will be inserted at all</li>
+	<li>if the <i>optional</i> argument <b>transaction</b> is set to <b>TRUE</b> the whole operation will be handled as a single <i>Transaction</i> (faster): the default setting is <b>transaction=FALSE</b> (slower, but safer).</li>
+	<li>if the <i>optional</i> argument <b>mode</b> is not specified then any possible ESPG SRID definition will be inserted into the <b>spatial_ref_sys</b> table.</li>
+	<li>if the <b>mode</b> arg <b>'WGS84'</b> (alias <b>'WGS84_ONLY'</b>) is specified, then only WGS84-related EPSG SRIDs will be inserted</li>
+	<li>if the <b>mode</b> arg <b>'NONE'</b> (alias <b>'EMPTY'</b>) is specified, no EPSG SRID will be inserted at all</li>
 </ul></td></tr>
 			<tr><td><b>InsertEpsgSrid</b></td>
 				<td>InsertEpsgSrid( srid <i>Integer</i> ) : <i>Integer</i></td>

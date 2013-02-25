@@ -218,15 +218,6 @@ populate_spatial_ref_sys (sqlite3 * handle, int mode)
 /* initializing the EPSG defs list */
     initialize_epsg (mode, &first, &last);
 
-/* starting a transaction */
-    ret = sqlite3_exec (handle, "BEGIN", NULL, 0, &errMsg);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("%s\n", errMsg);
-	  sqlite3_free (errMsg);
-	  goto error;
-      }
-
 /* preparing the SQL parameterized statement */
     strcpy (sql, "INSERT INTO spatial_ref_sys ");
     strcat (sql,
@@ -271,27 +262,11 @@ populate_spatial_ref_sys (sqlite3 * handle, int mode)
       }
     sqlite3_finalize (stmt);
 
-/* confirming the transaction */
-    ret = sqlite3_exec (handle, "COMMIT", NULL, 0, &errMsg);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("%s\n", errMsg);
-	  sqlite3_free (errMsg);
-	  goto error;
-      }
-
 /* freeing the EPSG defs list */
     free_epsg (first);
 
     return 1;
   error:
-/* trying to perform a ROLLBACK anyway */
-    ret = sqlite3_exec (handle, "ROLLBACK", NULL, 0, &errMsg);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("%s\n", errMsg);
-	  sqlite3_free (errMsg);
-      }
 
 /* freeing the EPSG defs list */
     free_epsg (first);

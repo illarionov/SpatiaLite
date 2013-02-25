@@ -2959,6 +2959,31 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_libxml2_tests/registerGroup27.testcase \
 	sql_stmt_libxml2_tests/registerGroup28.testcase \
 	sql_stmt_libxml2_tests/registerGroup29.testcase \
+	sql_stmt_libxml2_tests/createisometa1.testcase \
+	sql_stmt_libxml2_tests/createisometa2.testcase \
+	sql_stmt_libxml2_tests/createisometa3.testcase \
+	sql_stmt_libxml2_tests/createisometa4.testcase \
+	sql_stmt_libxml2_tests/createisometa5.testcase \
+	sql_stmt_libxml2_tests/createisometa6.testcase \
+	sql_stmt_libxml2_tests/registerIsoMeta1.testcase \
+	sql_stmt_libxml2_tests/registerIsoMeta2.testcase \
+	sql_stmt_libxml2_tests/registerIsoMeta3.testcase \
+	sql_stmt_libxml2_tests/registerIsoMeta4.testcase \
+	sql_stmt_libxml2_tests/registerIsoMeta5.testcase \
+	sql_stmt_libxml2_tests/registerIsoMeta6.testcase \
+	sql_stmt_libxml2_tests/registerIsoMeta7.testcase \
+	sql_stmt_libxml2_tests/registerIsoMeta8.testcase \
+	sql_stmt_libxml2_tests/registerIsoMeta9.testcase \
+	sql_stmt_libxml2_tests/registerIsoMeta10.testcase \
+	sql_stmt_libxml2_tests/registerIsoMeta11.testcase \
+	sql_stmt_libxml2_tests/registerIsoMeta12.testcase \
+	sql_stmt_libxml2_tests/registerIsoMeta13.testcase \
+	sql_stmt_libxml2_tests/registerIsoMeta14.testcase \
+	sql_stmt_libxml2_tests/getIsoMetaId1.testcase \
+	sql_stmt_libxml2_tests/getIsoMetaId2.testcase \
+	sql_stmt_libxml2_tests/getIsoMetaId3.testcase \
+	sql_stmt_libxml2_tests/getIsoMetaId4.testcase \
+	sql_stmt_libxml2_tests/getIsoMetaId5.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize1.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize2.testcase \
 	sql_stmt_libxml2_tests/xmlblobgetdocumentsize3.testcase \

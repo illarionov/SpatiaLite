@@ -106,7 +106,7 @@ int do_one_case (const struct test_data *data)
 
     spatialite_init_ex (db_handle, cache, 0);
     
-    ret = sqlite3_exec (db_handle, "SELECT InitSpatialMetadata()", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (db_handle, "SELECT InitSpatialMetadata(1)", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "InitSpatialMetadata() error: %s\n", err_msg);
 	sqlite3_free(err_msg);

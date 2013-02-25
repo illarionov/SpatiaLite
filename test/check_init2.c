@@ -109,7 +109,7 @@ int main (int argc, char *argv[])
 
     spatialite_init_ex (handle, cache, 0);
     
-    ret = sqlite3_get_table (handle, "SELECT InitSpatialMetadata(34)", &results, &rows, &columns, &err_msg);
+    ret = sqlite3_get_table (handle, "SELECT InitSpatialMetadata(3.4)", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
       fprintf (stderr, "Error: %s\n", err_msg);
       sqlite3_free (err_msg);

@@ -1304,7 +1304,13 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 			  sqlite3_value ** argv)
 {
 /* SQL function:
-/ InitSpatialMetaData([text mode])
+/ InitSpatialMetaData()
+/     or
+/ InitSpatialMetaData(text mode)
+/     or
+/ InitSpatialMetaData(integer transaction)
+/     or
+/ InitSpatialMetaData(integer transaction, text mode)
 /
 / creates the SPATIAL_REF_SYS and GEOMETRY_COLUMNS tables
 / returns 1 on success
@@ -1313,20 +1319,51 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
     char sql[8192];
     char *errMsg = NULL;
     int ret;
+    int transaction = 0;
     const char *xmode;
     int mode = GAIA_EPSG_ANY;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (argc == 1)
       {
-	  if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+	  if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+	    {
+		xmode = (const char *) sqlite3_value_text (argv[0]);
+		if (strcasecmp (xmode, "NONE") == 0
+		    || strcasecmp (xmode, "EMPTY") == 0)
+		    mode = GAIA_EPSG_NONE;
+		if (strcasecmp (xmode, "WGS84") == 0
+		    || strcasecmp (xmode, "WGS84_ONLY") == 0)
+		    mode = GAIA_EPSG_WGS84_ONLY;
+	    }
+	  else if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+	      transaction = sqlite3_value_int (argv[0]);
+	  else
 	    {
 		spatialite_e
-		    ("InitSpatialMetaData() error: argument 1 [mode] is not of the String type\n");
+		    ("InitSpatialMetaData() error: argument 1 is not of the String or Integer type\n");
 		sqlite3_result_int (context, 0);
 		return;
 	    }
-	  xmode = (const char *) sqlite3_value_text (argv[0]);
+      }
+    if (argc == 2)
+      {
+	  if (sqlite3_value_type (argv[0]) != SQLITE_INTEGER)
+	    {
+		spatialite_e
+		    ("InitSpatialMetaData() error: argument 1 is not of the Integer type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+	    {
+		spatialite_e
+		    ("InitSpatialMetaData() error: argument 2 is not of the String type\n");
+		sqlite3_result_int (context, 0);
+		return;
+	    }
+	  transaction = sqlite3_value_int (argv[0]);
+	  xmode = (const char *) sqlite3_value_text (argv[1]);
 	  if (strcasecmp (xmode, "NONE") == 0
 	      || strcasecmp (xmode, "EMPTY") == 0)
 	      mode = GAIA_EPSG_NONE;
@@ -1334,6 +1371,15 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 	      || strcasecmp (xmode, "WGS84_ONLY") == 0)
 	      mode = GAIA_EPSG_WGS84_ONLY;
       }
+
+    if (transaction)
+      {
+	  /* starting a Transaction */
+	  ret = sqlite3_exec (sqlite, "BEGIN", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+
 /* creating the SPATIAL_REF_SYS table */
     strcpy (sql, "CREATE TABLE spatial_ref_sys (\n");
     strcat (sql, "srid INTEGER NOT NULL PRIMARY KEY,\n");
@@ -1386,11 +1432,30 @@ fnct_InitSpatialMetaData (sqlite3_context * context, int argc,
 	      updateSpatiaLiteHistory (sqlite, "spatial_ref_sys", NULL,
 				       "table successfully populated");
       }
+
+    if (transaction)
+      {
+	  /* confirming the still pending Transaction */
+	  ret = sqlite3_exec (sqlite, "COMMIT", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	      goto error;
+      }
+
     sqlite3_result_int (context, 1);
     return;
   error:
     spatialite_e (" InitSpatiaMetaData() error:\"%s\"\n", errMsg);
     sqlite3_free (errMsg);
+    if (transaction)
+      {
+	  /* performing a Rollback */
+	  ret = sqlite3_exec (sqlite, "ROLLBACK", NULL, NULL, &errMsg);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e (" InitSpatiaMetaData() error:\"%s\"\n", errMsg);
+		sqlite3_free (errMsg);
+	    }
+      }
     sqlite3_result_int (context, 0);
     return;
 }
@@ -22427,7 +22492,7 @@ fnct_GetIsoMetadataId (sqlite3_context * context, int argc,
 / GetIsoMetadataId(String fileIdentifier)
 /
 / return the ID of the row corresponding to "fileIdentifier"
-/ 0 on failure
+/ 0 on failure / -1 on invalid argument
 */
     const char *fileIdentifier;
     sqlite3_int64 id;
@@ -22435,7 +22500,7 @@ fnct_GetIsoMetadataId (sqlite3_context * context, int argc,
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
       {
-	  sqlite3_result_int (context, 0);
+	  sqlite3_result_int (context, -1);
 	  return;
       }
     fileIdentifier = (const char *) sqlite3_value_text (argv[0]);
@@ -23496,6 +23561,8 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
     sqlite3_create_function (db, "InitSpatialMetaData", 0, SQLITE_ANY, 0,
 			     fnct_InitSpatialMetaData, 0, 0);
     sqlite3_create_function (db, "InitSpatialMetaData", 1, SQLITE_ANY, 0,
+			     fnct_InitSpatialMetaData, 0, 0);
+    sqlite3_create_function (db, "InitSpatialMetaData", 2, SQLITE_ANY, 0,
 			     fnct_InitSpatialMetaData, 0, 0);
     sqlite3_create_function (db, "InsertEpsgSrid", 1, SQLITE_ANY, 0,
 			     fnct_InsertEpsgSrid, 0, 0);

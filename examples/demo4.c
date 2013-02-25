@@ -87,7 +87,7 @@ trying to connect the test DB:
 we are supposing this one is an empty database,
 so we have to create the Spatial Metadata
 */
-    strcpy (sql, "SELECT InitSpatialMetadata()");
+    strcpy (sql, "SELECT InitSpatialMetadata(1)");
     ret = sqlite3_exec (handle, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {

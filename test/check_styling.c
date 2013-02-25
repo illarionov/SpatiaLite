@@ -146,7 +146,7 @@ int main (int argc, char *argv[])
 
     spatialite_init_ex (handle, cache, 0);
 
-    ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata('WGS84')", NULL, NULL, &err_msg);
+    ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata(1, 'WGS84')", NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "Unexpected InitSpatialMetadata result: %i, (%s)\n", ret, err_msg);
 	sqlite3_free (err_msg);
