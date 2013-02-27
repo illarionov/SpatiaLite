@@ -1385,7 +1385,8 @@ createIsoMetadataTables (void *p_sqlite, int relaxed)
 	goto error;
 /* inserting the default "undef" row into ISO_metadata */
     ret =
-	sqlite3_exec (sqlite, "INSERT INTO ISO_metadata (id, md_scope) VALUES (0, 'undefined')",
+	sqlite3_exec (sqlite,
+		      "INSERT INTO ISO_metadata (id, md_scope) VALUES (0, 'undefined')",
 		      NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {

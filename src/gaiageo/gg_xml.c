@@ -1180,9 +1180,10 @@ retrieve_sld_se_identifiers (xmlDocPtr xml_doc, char **title, char **abstract)
 }
 
 GAIAGEO_DECLARE void
-gaiaXmlToBlob (void *p_cache, const char *xml, int xml_len, int compressed,
-	       const char *schemaURI, unsigned char **result, int *size,
-	       char **parsing_errors, char **schema_validation_errors)
+gaiaXmlToBlob (void *p_cache, const unsigned char *xml, int xml_len,
+	       int compressed, const char *schemaURI, unsigned char **result,
+	       int *size, char **parsing_errors,
+	       char **schema_validation_errors)
 {
 /* attempting to build an XmlBLOB buffer */
     xmlDocPtr xml_doc;
@@ -2128,10 +2129,9 @@ gaiaXmlFormat (xmlDocPtr xml_doc, xmlChar ** out, int *out_len,
     if (buf.Error == 0 && buf.Buffer != NULL)
       {
 	  gaiaAppendToOutBuffer (&buf, "\n");
-	  *out = malloc (buf.WriteOffset + 1);
-	  memcpy (*out, buf.Buffer, buf.WriteOffset);
-	  *(*out + buf.WriteOffset) = '\0';
-	  *out_len = buf.WriteOffset + 1;
+	  *out = malloc (buf.WriteOffset - 1);
+	  memcpy (*out, buf.Buffer, buf.WriteOffset - 1);
+	  *out_len = buf.WriteOffset - 1;
 	  ret = 1;
       }
     else
@@ -2275,7 +2275,7 @@ gaiaXmlTextFromBlob (const unsigned char *blob, int blob_size, int indent)
     if (out)
       {
 	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
-	  return out;
+	  return (char *) out;
       }
     xmlSetGenericErrorFunc ((void *) stderr, NULL);
     return NULL;
@@ -2380,6 +2380,86 @@ gaiaXmlFromBlob (const unsigned char *blob, int blob_size, int indent,
     *result = out;
     *res_size = out_len;
     xmlSetGenericErrorFunc ((void *) stderr, NULL);
+}
+
+GAIAGEO_DECLARE int
+gaiaXmlLoad (void *p_cache, const char *path_or_url, unsigned char **result,
+	     int *size, char **parsing_errors)
+{
+/* attempting to load an external XML Document into a BLOB buffer */
+    unsigned char *out;
+    int len;
+    xmlDocPtr xml_doc;
+    struct splite_internal_cache *cache =
+	(struct splite_internal_cache *) p_cache;
+    gaiaOutBufferPtr parsingBuf = (gaiaOutBufferPtr) (cache->xmlParsingErrors);
+    xmlGenericErrorFunc parsingError = (xmlGenericErrorFunc) spliteParsingError;
+
+    spliteResetXmlErrors (cache);
+
+    *result = NULL;
+    *size = 0;
+    if (parsing_errors)
+	*parsing_errors = NULL;
+    if (path_or_url == NULL)
+	return 0;
+
+/* testing if the XMLDocument is well-formed */
+    xmlSetGenericErrorFunc (cache, parsingError);
+    xml_doc = xmlReadFile (path_or_url, NULL, 0);
+    if (xml_doc == NULL)
+      {
+	  /* parsing error; not a well-formed XML */
+	  spatialite_e ("XML parsing error\n");
+	  if (parsing_errors)
+	      *parsing_errors = parsingBuf->Buffer;
+	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
+	  return 0;
+      }
+    if (parsing_errors)
+	*parsing_errors = parsingBuf->Buffer;
+
+/* exporting the XML Document into a BLOB */
+    xmlDocDumpFormatMemory (xml_doc, &out, &len, 0);
+    xmlFreeDoc (xml_doc);
+    *result = out;
+    *size = len;
+    xmlSetGenericErrorFunc ((void *) stderr, NULL);
+    if (out == NULL)
+	return 0;
+    return 1;
+}
+
+GAIAGEO_DECLARE int
+gaiaXmlStore (const unsigned char *blob, int size, const char *path, int indent)
+{
+/* attempting to store an XmlBLOB Document into an external file */
+    FILE *fl;
+    int wr;
+    unsigned char *result = NULL;
+    int res_size;
+    gaiaXmlFromBlob (blob, size, indent, &result, &res_size);
+    if (result == NULL)
+	return 0;
+
+/* exporting the XML Document into an external file */
+    fl = fopen (path, "wb");
+    if (fl == NULL)
+      {
+	  spatialite_e ("Unable to open \"%s\"\n", path);
+	  return 0;
+      }
+    wr = fwrite (result, 1, res_size, fl);
+    if (wr != res_size)
+      {
+	  spatialite_e
+	      ("I/O error: written %d bytes into \"%s\", expected %d\n", wr,
+	       path, res_size);
+	  fclose (fl);
+	  return 0;
+      }
+    fclose (fl);
+    return 1;
 }
 
 GAIAGEO_DECLARE int
@@ -2524,7 +2604,8 @@ gaiaXmlBlobGetSchemaURI (const unsigned char *blob, int blob_size)
 }
 
 GAIAGEO_DECLARE char *
-gaiaXmlGetInternalSchemaURI (void *p_cache, const char *xml, int xml_len)
+gaiaXmlGetInternalSchemaURI (void *p_cache, const unsigned char *xml,
+			     int xml_len)
 {
 /* Return the internally defined SchemaURI from a valid XmlDocument */
     xmlDocPtr xml_doc;
@@ -2609,8 +2690,8 @@ gaiaXmlGetInternalSchemaURI (void *p_cache, const char *xml, int xml_len)
 						    node->children->content);
 					uri = malloc (len + 1);
 					strcpy (uri,
-						(const char *) node->
-						children->content);
+						(const char *) node->children->
+						content);
 				    }
 			      }
 			}

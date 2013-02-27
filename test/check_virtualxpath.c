@@ -59,7 +59,7 @@ load_xml (void *cache, sqlite3 *db_handle, sqlite3_stmt *stmt, const char *path)
     FILE *fl;
     int sz = 0;
     int rd;
-    char *xml = NULL;
+    unsigned char *xml = NULL;
     unsigned char *p_result = NULL;
     int len;
     int ret;
@@ -72,7 +72,7 @@ load_xml (void *cache, sqlite3 *db_handle, sqlite3_stmt *stmt, const char *path)
     }
     if (fseek(fl, 0, SEEK_END) == 0)
         sz = ftell(fl);
-    xml = (unsigned char *) malloc(sz);
+    xml = malloc(sz);
     rewind(fl);
     rd = fread(xml, 1, sz, fl);
     if (rd != sz) {
@@ -182,8 +182,8 @@ int main (int argc, char *argv[])
 
 /* validating the XMLDocuments */
     sql_statement = "UPDATE test SET xml = XB_SchemaValidate(xml, "
-                    "XB_GetInternalSchemaURI(XB_GetDocument(xml))) "
-                    "WHERE XB_GetInternalSchemaURI(XB_GetDocument(xml)) IS NOT NULL "
+                    "XB_GetInternalSchemaURI(XB_GetPayload(xml))) "
+                    "WHERE XB_GetInternalSchemaURI(XB_GetPayload(xml)) IS NOT NULL "
                     "AND name <> 'inspire-data-example.xml'";
     ret = sqlite3_exec (db_handle, sql_statement, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK) {
@@ -236,7 +236,7 @@ int main (int argc, char *argv[])
 	fprintf (stderr, "Unexpected error: select columns bad result: %i/%i.\n", rows, columns);
 	return  -18;
     }
-    if (strcmp(results[1], "3") != 0) {
+    if (strcmp(results[1], "4") != 0) {
 	fprintf (stderr, "Unexpected error: XB_IsSchemaValidated() bad result: %s.\n", results[1]);
 	return  -19;
     }

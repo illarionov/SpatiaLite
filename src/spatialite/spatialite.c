@@ -21633,6 +21633,49 @@ fnct_BlobToFile (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_CountUnsafeTriggers (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ CountUnsafeTriggers()
+/
+/ returns:
+/ the total count of *unsafe* triggers found
+/ 0 if no dubious trigger has been identifiedfailure
+*/
+    int ret;
+    int i;
+    char **results;
+    int rows;
+    int columns;
+    const char *sql;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    int count = 0;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+/* checking all Triggers */
+    sql = "SELECT Count(*) FROM sqlite_master WHERE "
+	"type = 'trigger' AND (sql LIKE '%BlobFromFile%' "
+	"OR sql LIKE '%BlobToFile%' OR sql LIKE '%XB_LoadXML%' "
+	"OR sql LIKE '%XB_StoreXML%')";
+    ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+    if (ret != SQLITE_OK)
+	goto unknown;
+    if (rows < 1)
+	;
+    else
+      {
+	  for (i = 1; i <= rows; i++)
+	    {
+		count = atoi (results[(i * columns) + 0]);
+	    }
+      }
+    sqlite3_free_table (results);
+  unknown:
+    sqlite3_result_int (context, count);
+}
+
+static void
 fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -22577,10 +22620,10 @@ static void
 fnct_XB_Create (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ XB_Create(text XMLdocument)
-/ XB_Create(text XMLdocument, bool compressed)
-/ XB_Create(text XMLdocument, bool compressed, text SchemaURI)
-/ XB_Create(text XMLdocument, bool compressed, int InternalSchemaURI)
+/ XB_Create(BLOB XMLdocument)
+/ XB_Create(BLOB XMLdocument, bool compressed)
+/ XB_Create(BLOB XMLdocument, bool compressed, text SchemaURI)
+/ XB_Create(BLOB XMLdocument, bool compressed, int InternalSchemaURI)
 /
 / returns the current XmlBlob by parsing an XMLdocument 
 / or NULL if any error is encountered
@@ -22597,13 +22640,13 @@ fnct_XB_Create (sqlite3_context * context, int argc, sqlite3_value ** argv)
 */
     int len;
     unsigned char *p_result = NULL;
-    const char *xml;
+    const unsigned char *xml;
     int xml_len;
     int compressed = 1;
     int use_internal_schema_uri = 0;
     const char *schemaURI = NULL;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
 	  sqlite3_result_null (context);
 	  return;
@@ -22626,7 +22669,7 @@ fnct_XB_Create (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		return;
 	    }
       }
-    xml = (const char *) sqlite3_value_text (argv[0]);
+    xml = (const unsigned char *) sqlite3_value_blob (argv[0]);
     xml_len = sqlite3_value_bytes (argv[0]);
     if (argc >= 2)
 	compressed = sqlite3_value_int (argv[1]);
@@ -22663,6 +22706,40 @@ fnct_XB_Create (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     sqlite3_result_blob (context, p_result, len, free);
+}
+
+static void
+fnct_XB_LoadXML (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_LoadXML(text path-or-URL)
+/
+/ returns a generic Text by parsing an XML Document 
+/ or NULL if any error is encountered
+/
+*/
+    const char *path_or_url;
+    unsigned char *xml;
+    int xml_len;
+    int ret;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    path_or_url = (const char *) sqlite3_value_text (argv[0]);
+
+/* acquiring the XML Document as a Blob */
+    ret = gaiaXmlLoad
+	(sqlite3_user_data (context), path_or_url, &xml, &xml_len, NULL);
+    if (!ret || xml == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+    sqlite3_result_blob (context, xml, xml_len, free);
 }
 
 static void
@@ -22707,6 +22784,53 @@ fnct_XB_GetPayload (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     sqlite3_result_blob (context, out, out_len, free);
+}
+
+static void
+fnct_XB_StoreXML (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_StoreXML(XmlBLOB, text path)
+/ XB_StoreXML(XmlBLOB, taxt path, int format)
+/
+/ exports the current XMLDocument into an external file by parsing an XmlBLOB 
+/ return 1 on success, 0 on failure, -1 on invalid args
+/
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    const char *path;
+    int indent = -1;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (argc == 3)
+      {
+	  if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_int (context, -1);
+		return;
+	    }
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    path = (const char *) sqlite3_value_text (argv[1]);
+    if (argc == 3)
+	indent = sqlite3_value_int (argv[2]);
+    if (!gaiaXmlStore (p_blob, n_bytes, path, indent))
+      {
+	  sqlite3_result_int (context, 0);
+	  return;
+      }
+    sqlite3_result_int (context, 1);
 }
 
 static void
@@ -22771,7 +22895,7 @@ fnct_XB_SchemaValidate (sqlite3_context * context, int argc,
     unsigned char *p_result = NULL;
     const unsigned char *p_blob;
     int n_bytes;
-    char *xml;
+    unsigned char *xml;
     int xml_len;
     int compressed = 1;
     const char *schemaURI = NULL;
@@ -22801,7 +22925,7 @@ fnct_XB_SchemaValidate (sqlite3_context * context, int argc,
     n_bytes = sqlite3_value_bytes (argv[0]);
     if (argc == 3)
 	compressed = sqlite3_value_int (argv[2]);
-    gaiaXmlFromBlob (p_blob, n_bytes, -1, (unsigned char **) (&xml), &xml_len);
+    gaiaXmlFromBlob (p_blob, n_bytes, -1, &xml, &xml_len);
     if (xml == NULL)
       {
 	  sqlite3_result_null (context);
@@ -23320,16 +23444,16 @@ fnct_XB_GetInternalSchemaURI (sqlite3_context * context, int argc,
 / defined SchemaURI then this SchemaURI will be returned
 / return NULL on any other case
 */
-    const char *xml;
+    const unsigned char *xml;
     int xml_len;
     char *schema_uri;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
-    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
 	  sqlite3_result_null (context);
 	  return;
       }
-    xml = (const char *) sqlite3_value_text (argv[0]);
+    xml = sqlite3_value_blob (argv[0]);
     xml_len = sqlite3_value_bytes (argv[0]);
     schema_uri =
 	gaiaXmlGetInternalSchemaURI (sqlite3_user_data (context), xml, xml_len);
@@ -24259,21 +24383,24 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_GeomFromExifGpsBlob, 0, 0);
     sqlite3_create_function (db, "GetMimeType", 1, SQLITE_ANY, 0,
 			     fnct_GetMimeType, 0, 0);
+    sqlite3_create_function (db, "CountUnsafeTriggers", 0, SQLITE_ANY, 0,
+			     fnct_CountUnsafeTriggers, 0, 0);
 
 /*
-// enabling BlobFromFile and BlobToFile
+// enabling BlobFromFile, BlobToFile and XB_LoadXML, XB_StoreXML
 //
-// this two functions could potentially introduce serious security issues,
+// these functions could potentially introduce serious security issues,
 // most notably when invoked from within some Trigger
 // - BlobToFile: some arbitrary code, possibly harmfull (e.g. virus or 
 //   trojan) could be installed on the local file-system, the user being
 //   completely unaware of this
 // - BlobFromFile: some file could be maliciously "stolen" from the local
 //   file system and then inseted into the DB
+// - the same is for XB_LoadXML and XB_StoreXML
 //
-// so by default both functions are disabled.
-// if for any good/legitimate reason the user really wants to enable both
-// them the following environment variable has to be explicitly declared:
+// so by default such functions are disabled.
+// if for any good/legitimate reason the user really wants to enable them
+// the following environment variable has to be explicitly declared:
 //
 // SPATIALITE_SECURITY=relaxed
 //
@@ -24287,6 +24414,18 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 				   fnct_BlobFromFile, 0, 0);
 	  sqlite3_create_function (db, "BlobToFile", 2, SQLITE_ANY, 0,
 				   fnct_BlobToFile, 0, 0);
+
+#ifdef ENABLE_LIBXML2		/* including LIBXML2 */
+
+	  sqlite3_create_function (db, "XB_LoadXML", 1, SQLITE_ANY, cache,
+				   fnct_XB_LoadXML, 0, 0);
+	  sqlite3_create_function (db, "XB_StoreXML", 2, SQLITE_ANY, 0,
+				   fnct_XB_StoreXML, 0, 0);
+	  sqlite3_create_function (db, "XB_StoreXML", 3, SQLITE_ANY, 0,
+				   fnct_XB_StoreXML, 0, 0);
+
+#endif /* end including LIBXML2 */
+
       }
 
 /* some Geodesic functions */

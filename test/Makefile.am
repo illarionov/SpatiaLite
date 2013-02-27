@@ -362,13 +362,39 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_security_tests/blobfromfile1.testcase \
 	sql_stmt_security_tests/blobfromfile2.testcase \
 	sql_stmt_security_tests/blobfromfile3.testcase \
-	sql_stmt_security_tests/blobfromfile4.testcase \
+	sql_stmt_security_tests/blobtofile4.testcase \
+	sql_stmt_security_tests/blobtofile1.testcase \
+	sql_stmt_security_tests/blobtofile2.testcase \
+	sql_stmt_security_tests/blobtofile3.testcase \
+	sql_stmt_security_tests/blobtofile4.testcase \
 	sql_stmt_security_tests/isXblob1.testcase \
 	sql_stmt_security_tests/isXblob2.testcase \
 	sql_stmt_security_tests/isXblob3.testcase \
 	sql_stmt_security_tests/isXblob4.testcase \
 	sql_stmt_security_tests/isXblob8.testcase \
 	sql_stmt_security_tests/isXblob9.testcase \
+	sql_stmt_xmlsec_tests/loadxml1.testcase \
+	sql_stmt_xmlsec_tests/loadxml2.testcase \
+	sql_stmt_xmlsec_tests/loadxml3.testcase \
+	sql_stmt_xmlsec_tests/loadxml4.testcase \
+	sql_stmt_xmlsec_tests/loadxml5.testcase \
+	sql_stmt_xmlsec_tests/loadxml6.testcase \
+	sql_stmt_xmlsec_tests/storexml1.testcase \
+	sql_stmt_xmlsec_tests/storexml2.testcase \
+	sql_stmt_xmlsec_tests/storexml3.testcase \
+	sql_stmt_xmlsec_tests/storexml4.testcase \
+	sql_stmt_xmlsec_tests/storexml5.testcase \
+	sql_stmt_xmlsec_tests/storexml6.testcase \
+	sql_stmt_xmlsec_tests/storexml7.testcase \
+	sql_stmt_xmlsec_tests/storexml8.testcase \
+	sql_stmt_xmlsec_tests/storexml9.testcase \
+	sql_stmt_xmlsec_tests/storexml10.testcase \
+	sql_stmt_xmlsec_tests/storexml11.testcase \
+	sql_stmt_xmlsec_tests/storexml12.testcase \
+	sql_stmt_xmlsec_tests/storexml13.testcase \
+	sql_stmt_xmlsec_tests/storexml14.testcase \
+	sql_stmt_xmlsec_tests/storexml15.testcase \
+	sql_stmt_xmlsec_tests/storexml16.testcase \
 	sql_stmt_geos_tests/boundary1.testcase \
 	sql_stmt_geos_tests/boundary2.testcase \
 	sql_stmt_geos_tests/boundary3.testcase \
@@ -3168,6 +3194,7 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/getmimetype3.testcase \
 	sql_stmt_tests/getmimetype4.testcase \
 	sql_stmt_tests/getmimetype5.testcase \
+	sql_stmt_tests/unsafeTriggers1.testcase \
 	books.xml books.xsd opera.xml opera.xsd \
 	movies.xml movies.xsd books-bad.xml books-bad.xsd \
 	inspire-data-example.xml stazioni_se.xml \

@@ -11,7 +11,7 @@
 			i {color:navy;}
 		</style>
 	</head><body bgcolor="#fffff0">
-		<h2>SpatiaLite 4.0.1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SQL functions reference list</h2>
+		<h2>SpatiaLite 4.1.0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SQL functions reference list</h2>
 		<a href="https://www.gaia-gis.it/fossil/libspatialite">back</a>
 		<ul>
 			<li><a href="#version">SQL Version Info [and build options testing] functions</a></li>
@@ -347,13 +347,22 @@
 					can be actually accessed in read mode, then the whole file content will be returned as a
 					BLOB value.<br>
 					Otherwise NULL will be returned.<br>
-					<u>Please note:</u> SQLite doesn't support BLOB values bigger than SQLITE_MAX_LENGTH (usually, 1 GB)</td></tr>
+					<u>Please note:</u> SQLite doesn't support BLOB values bigger than SQLITE_MAX_LENGTH (usually, 1 GB).<hr>
+                                        <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                                        Explicitly setting the environmente variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
 			<tr><td><b>BlobToFile</b></td>
 				<td>BlobToFile( payload <i>BLOB</i> , filepath <i>String</i> ) : <i>Integer</i></td>
 				<td colspan="3">If <i>payload</i> is of the BLOB-type, and if <i>filepath</i> corresponds to some valid pathname 
 					(accessible in write/create mode), then the corresponding file will be created/overwritten so to
 					contain the <i>payload</i>.<br>
-					The return type is Integer, with a return value of 1 for success, 0 for failure</td></tr>
+					The return type is Integer, with a return value of 1 for success, 0 for failure.<hr>
+                                        <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                                        Explicitly setting the environmente variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>
+			<tr><td><b>CountUnsafeTriggers</b></td>
+				<td>CountUnsafeTriggers( ) : <i>Integer</i></td>
+				<td colspan="3">This SQL function checks if the currently connected DB does contain any potentially malicious Trigger;
+					carefully checking this conditions is a minimal precaution expected to be always verified before eventually activating the <b>SPATIALITE_SECURITY=relaxed</b> mode.<hr>
+					The return type is Integer (total count of suspected Triggers); 0 means that the currently connected DB should be considered absolutely safe.</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p0">SQL utility functions [<i>non-standard</i>] for geometric objects</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
@@ -2468,11 +2477,11 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td
                         <tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="xmlBlob">SQL functions supporting XmlBLOB</a></h3></td></tr>
 			<tr><td><b>XB_Create</b></td>
-				<td>XB_Create(  xmlPayload <i>Text</i> ) : <i>XmlBLOB</i><hr>
-				XB_Create(  xmlPayload <i>Text</i> , compressed <i>Boolean</i> ) : <i>XmlBLOB</i><hr>
-				XB_Create(  xmlPayload <i>Text</i> , compressed <i>Boolean</i> ,
+				<td>XB_Create(  xmlPayload <i>BLOB</i> ) : <i>XmlBLOB</i><hr>
+				XB_Create(  xmlPayload <i>BLOB</i> , compressed <i>Boolean</i> ) : <i>XmlBLOB</i><hr>
+				XB_Create(  xmlPayload <i>BLOB</i> , compressed <i>Boolean</i> ,
 				schemaURI <i>Text</i> ) : <i>XmlBLOB</i><hr>
-				XB_Create(  xmlPayload <i>Text</i> , compressed <i>Boolean</i> ,
+				XB_Create(  xmlPayload <i>BLOB</i> , compressed <i>Boolean</i> ,
 				internalSchemaURI <i>Boolean</i> ) : <i>XmlBLOB</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
@@ -2584,7 +2593,7 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td
 				<td>Will return the Schema URI effectively used to validate an XmlBLOB.<hr>
 				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object), or when the XmlBLOB isn't validated.</td></tr>
 			<tr><td><b>XB_GetInternalSchemaURI</b></td>
-				<td>XB_GetInternalSchemaURI( xmlPayload <i>Text</i> ) : <i>String</i></td>
+				<td>XB_GetInternalSchemaURI( xmlPayload <i>BLOB</i> ) : <i>String</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Will return the Schema URI internally declared by the input XmlDocument
@@ -2649,6 +2658,34 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Reset the internal XML Schema cache to its initial empty state.</td></tr>
+			<tr><td><b>XB_LoadXML</b></td>
+				<td>XB_LoadXML( filepath-or-URL <i>String</i> ) : <i>BLOB</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>If <i>filepath-or-URL</i> corresponds to some valid local pathname, and the corresponding file (expected to contain a well-formed XML Document)
+					can be actually accessed in read mode, then the whole file content will be returned as a
+					BLOB value.<br>
+					This function is even able to acces a remote XML Document identified by an <b>URL</b>.<br>
+					Otherwise NULL will be returned.<br>
+					<u>Please note:</u> SQLite doesn't support BLOB values bigger than SQLITE_MAX_LENGTH (usually, 1 GB).<hr>
+                                        <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                                        Explicitly setting the environmente variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.<br>
+					Please see: <b>CountUnsafeTriggers()</b></td></tr>
+			<tr><td><b>XB_StoreXML</b></td>
+				<td>XB_StoreXML( XmlObject <i>XmlBLOB</i> , filepath <i>String</i> ) : <i>Integer</i><hr>
+				XB_StoreXML( XmlObject <i>XmlBLOB</i> , filepath <i>String</i> , indent <i>Integer</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>If <i>XmlObject</i> is of the XmlBLOB-type, and if <i>filepath</i> corresponds to some valid pathname 
+					(accessible in write/create mode), then the corresponding file will be created/overwritten so to
+					contain the corresponding XML Document (fully preserving the original character encoding).<br>
+				If the optional argument <b>indent</b> is set to some <i>positive</i> value then the returned XmlDocument
+                                will be nicely formatted and properly indented by the required factor; <i>ZERO</i> will cause the whole 
+                                XmlDocument to be returned as a single line. (default setting is <i>negative</i> indenting, i.e. not reformatting at all).<hr>
+					The return type is Integer, with a return value of 1 for success, 0 for failure and -1 for invalid arguments.<hr>
+                                        <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                                        Explicitly setting the environmente variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.<br>
+					Please see: <b>CountUnsafeTriggers()</b></td></tr>
 		</tbody></table>
 		<a href="https://www.gaia-gis.it/fossil/libspatialite">back</a>
 	</body></html>
