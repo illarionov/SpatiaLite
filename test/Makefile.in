@@ -1005,6 +1005,31 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/buildmbr7.testcase \
 	sql_stmt_tests/buildmbr8.testcase \
 	sql_stmt_tests/buildmbr9.testcase \
+	sql_stmt_tests/casttoint1.testcase \
+	sql_stmt_tests/casttoint2.testcase \
+	sql_stmt_tests/casttoint3.testcase \
+	sql_stmt_tests/casttoint4.testcase \
+	sql_stmt_tests/casttoint5.testcase \
+	sql_stmt_tests/casttoint6.testcase \
+	sql_stmt_tests/casttoint7.testcase \
+	sql_stmt_tests/casttodouble1.testcase \
+	sql_stmt_tests/casttodouble2.testcase \
+	sql_stmt_tests/casttodouble3.testcase \
+	sql_stmt_tests/casttodouble4.testcase \
+	sql_stmt_tests/casttodouble5.testcase \
+	sql_stmt_tests/casttodouble6.testcase \
+	sql_stmt_tests/casttodouble7.testcase \
+	sql_stmt_tests/casttotext1.testcase \
+	sql_stmt_tests/casttotext2.testcase \
+	sql_stmt_tests/casttotext3.testcase \
+	sql_stmt_tests/casttotext4.testcase \
+	sql_stmt_tests/casttotext5.testcase \
+	sql_stmt_tests/casttoblob1.testcase \
+	sql_stmt_tests/casttoblob2.testcase \
+	sql_stmt_tests/casttoblob3.testcase \
+	sql_stmt_tests/casttoblob4.testcase \
+	sql_stmt_tests/casttoblob5.testcase \
+	sql_stmt_tests/createuuid1.testcase \
 	sql_stmt_tests/casttogeometrycollection2.testcase \
 	sql_stmt_tests/casttogeometrycollection3.testcase \
 	sql_stmt_tests/casttogeometrycollection4.testcase \

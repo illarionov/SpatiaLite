@@ -15,6 +15,7 @@
 		<a href="https://www.gaia-gis.it/fossil/libspatialite">back</a>
 		<ul>
 			<li><a href="#version">SQL Version Info [and build options testing] functions</a></li>
+			<li><a href="#generic">Generic SQL utility functions</a></li>
 			<li><a href="#math">SQL math functions</a></li>
 			<li><a href="#length_cvt">SQL length/distance unit-conversion functions</a></li>
 			<li><a href="#blob">SQL utility functions for BLOB objects</a></li>
@@ -71,6 +72,10 @@
 				<td>lwgeom_version( void ) : <i>String</i></td>
 				<td colspan="3">returns the current <b>LWGEOM</b> version as a text string<br>
 					or NULL if LWGEOM is currently unsupported</td></tr>
+			<tr><td><b>libxml2_version</b></td>
+				<td>libxml2_version( void ) : <i>String</i></td>
+				<td colspan="3">returns the current <b>LibXML2</b> version as a text string<br>
+					or NULL if LibXML2 is currently unsupported</td></tr>
 			<tr><td><b>HasIconv</b></td>
 				<td>HasIconv( void ) : <i>Boolean</i></td>
 				<td colspan="3">TRUE if the underlaying library was built enabling <b>ICONV</b></td></tr>
@@ -95,12 +100,35 @@
 			<tr><td><b>HasLwGeom</b></td>
 				<td>HasLwGeom( void ) : <i>Boolean</i></td>
 				<td colspan="3">TRUE if the underlaying library was built enabling <b>LWGEOM</b></td></tr>
+			<tr><td><b>HasLibXML2</b></td>
+				<td>HasLibXML2( void ) : <i>Boolean</i></td>
+				<td colspan="3">TRUE if the underlaying library was built enabling <b>LibXML2</b></td></tr>
 			<tr><td><b>HasEpsg</b></td>
 				<td>HasEpsg( void ) : <i>Boolean</i></td>
 				<td colspan="3">TRUE if the underlaying library was built enabling <b>EPSG</b></td></tr>
 			<tr><td><b>HasFreeXL</b></td>
 				<td>HasFreeXL( void ) : <i>Boolean</i></td>
 				<td colspan="3">TRUE if the underlaying library was built enabling <b>FREEXL</b></td></tr>
+			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
+				<h3><a name="generic">Generic SQL functions</a></h3></td></tr>
+			<tr><th bgcolor="#d0d0d0">Function</th>
+				<th bgcolor="#d0d0d0">Syntax</th>
+				<th colspan="3" bgcolor="#d0d0d0">Summary</th></tr>
+			<tr><td><b>CastToInteger</b></td>
+				<td>CastToInteger( value <i>Generic</i> ) : <i>Integer</i></td>
+				<td colspan="3">returns the intput value possibly casted to the Integer data-type: NULL if no conversion is possible.</td></tr>
+			<tr><td><b>CastToDouble</b></td>
+				<td>CastToDouble( value <i>Generic</i> ) : <i>Double precision</i></td>
+				<td colspan="3">returns the intput value possibly casted to the Double data-type: NULL if no conversion is possible.</td></tr>
+			<tr><td><b>CastToText</b></td>
+				<td>CastToText( value <i>Generic</i> ) : <i>Text</i></td>
+				<td colspan="3">returns the intput value possibly casted to the Text data-type: NULL if no conversion is possible.</td></tr>
+			<tr><td><b>CastToBlob</b></td>
+				<td>CastToBlob( value <i>Generic</i> ) : <i>Blob</i></td>
+				<td colspan="3">returns the intput value possibly casted to the BLOB data-type: NULL if no conversion is possible.</td></tr>
+			<tr><td><b>CreateUUID</b></td>
+				<td>CreateUUID( void ) : <i>Text</i></td>
+				<td colspan="3">returns a Version 4 (random) UUID (<a href="http://en.wikipedia.org/wiki/Universally_unique_identifier">Universally unique identifier</a>).</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
 				<h3><a name="math">SQL math functions</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>

@@ -20415,6 +20415,248 @@ fnct_3DMaxDistance (sqlite3_context * context, int argc, sqlite3_value ** argv)
 
 #endif /* end including GEOS */
 
+static int
+text2double (const unsigned char *str, double *val)
+{
+/* checks for a valid number, eventually returning a DOUBLE */
+    int err = 0;
+    int sign = 0;
+    int decimal = 0;
+    int exp = 0;
+    int expsign = 0;
+    const unsigned char *p = str;
+    while (*p != '\0')
+      {
+	  switch (*p)
+	    {
+	    case '0':
+	    case '1':
+	    case '2':
+	    case '3':
+	    case '4':
+	    case '5':
+	    case '6':
+	    case '7':
+	    case '8':
+	    case '9':
+		break;
+	    case '-':
+	    case '+':
+		if (!exp)
+		    sign++;
+		else
+		    expsign++;
+	    case '.':
+		decimal++;
+		break;
+	    case 'e':
+	    case 'E':
+		exp++;
+		break;
+	    default:
+		err = 1;
+		break;
+	    };
+	  p++;
+      }
+    if (sign > 1 || expsign > 1 || decimal > 1 || (exp == 0 && expsign > 0))
+	err = 1;
+    if (err)
+	return 0;
+    *val = atof (str);
+    return 1;
+}
+
+static void
+fnct_CastToInteger (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ CastToInteger(generic value)
+/
+/ returns an INTEGER value [if conversion is possible] 
+/ or NULL in any other case
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  sqlite3_int64 val = sqlite3_value_int64 (argv[0]);
+	  sqlite3_result_int64 (context, val);
+	  return;
+      }
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+      {
+	  sqlite3_int64 val;
+double dval = sqlite3_value_double (argv[0]);
+double diff = dval - floor(dval);
+val = (sqlite3_int64) sqlite3_value_double (argv[0]);
+if (diff >= 0.5)
+	  val++;
+	  sqlite3_result_int64 (context, val);
+	  return;
+      }
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+      {
+	  const unsigned char *txt = sqlite3_value_text (argv[0]);
+	  double dval;
+	  if (text2double (txt, &dval))
+	    {
+	  sqlite3_int64 val;
+double dval = sqlite3_value_double (argv[0]);
+double diff = dval - floor(dval);
+val = (sqlite3_int64) sqlite3_value_double (argv[0]);
+if (diff >= 0.5)
+	  val++;
+		sqlite3_result_int64 (context, val);
+		return;
+	    }
+      }
+    sqlite3_result_null (context);
+}
+
+static void
+fnct_CastToDouble (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ CastToDouble(generic value)
+/
+/ returns a DOUBLE value [if conversion is possible] 
+/ or NULL in any other case
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  double val = (double) sqlite3_value_int64 (argv[0]);
+	  sqlite3_result_double (context, val);
+	  return;
+      }
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+      {
+	  double val = sqlite3_value_double (argv[0]);
+	  sqlite3_result_double (context, val);
+	  return;
+      }
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+      {
+	  const unsigned char *txt = sqlite3_value_text (argv[0]);
+	  double val;
+	  if (text2double (txt, &val))
+	    {
+		sqlite3_result_double (context, val);
+		return;
+	    }
+      }
+    sqlite3_result_null (context);
+}
+
+static void
+fnct_CastToText (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ CastToText(generic value)
+/
+/ returns a TEXT value [if conversion is possible] 
+/ or NULL in any other case
+*/
+    char *txt;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  sqlite3_int64 val = sqlite3_value_int64 (argv[0]);
+	  txt = sqlite3_mprintf ("%lld", val);
+	  sqlite3_result_text (context, txt, strlen (txt), sqlite3_free);
+	  return;
+      }
+    if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+      {
+	  int i;
+	  int len;
+	  double val = sqlite3_value_double (argv[0]);
+	  txt = sqlite3_mprintf ("%1.18f", val);
+	  len = strlen (txt);
+	  for (i = len - 1; i > 0; i--)
+	    {
+		/* suppressing meaningless trailing zeroes */
+		if (txt[i] >= '1' && txt[i] <= '9')
+		    break;
+		if (txt[i] == '.')
+		  {
+		      txt[i + 1] = '0';
+		      break;
+		  }
+		if (txt[i] == '0')
+		    txt[i] = '\0';
+	    }
+	  sqlite3_result_text (context, txt, strlen (txt), sqlite3_free);
+	  return;
+      }
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+      {
+	  int n_bytes;
+	  txt = (char *) sqlite3_value_text (argv[0]);
+	  n_bytes = sqlite3_value_bytes (argv[0]);
+	  sqlite3_result_text (context, txt, n_bytes, SQLITE_TRANSIENT);
+	  return;
+      }
+    sqlite3_result_null (context);
+}
+
+static void
+fnct_CastToBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ CastToText(generic value)
+/
+/ returns a BLOB value [if conversion is possible] 
+/ or NULL in any other case
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_BLOB)
+      {
+	  p_blob = (const unsigned char *) sqlite3_value_blob (argv[0]);
+	  n_bytes = sqlite3_value_bytes (argv[0]);
+	  sqlite3_result_blob (context, p_blob, n_bytes, SQLITE_TRANSIENT);
+	  return;
+      }
+    if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
+      {
+	  p_blob = (const unsigned char *) sqlite3_value_text (argv[0]);
+	  n_bytes = sqlite3_value_bytes (argv[0]);
+	  sqlite3_result_blob (context, p_blob, n_bytes, SQLITE_TRANSIENT);
+	  return;
+      }
+    sqlite3_result_null (context);
+}
+
+static void
+fnct_CreateUUID (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ CreateUUID()
+/
+/ returns a TEXT value containing an UUID
+/ [xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxxxxxx]
+*/
+    unsigned char rnd[16];
+    char uuid[64];
+    char *p = uuid;
+    int i;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    sqlite3_randomness (16, rnd);
+    for (i = 0; i < 16; i++)
+      {
+	  if (i == 4 || i == 6 || i == 8 || i == 10)
+	      *p++ = '-';
+	  sprintf (p, "%02x", rnd[i]);
+	  p += 2;
+      }
+    *p = '\0';
+    uuid[14] = '4';
+    uuid[19] = '8';
+    sqlite3_result_text (context, uuid, strlen (uuid), SQLITE_TRANSIENT);
+}
+
 #ifndef OMIT_MATHSQL		/* supporting SQL math functions */
 
 static int
@@ -24034,6 +24276,16 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_UncompressGeometry, 0, 0);
     sqlite3_create_function (db, "SanitizeGeometry", 1, SQLITE_ANY, 0,
 			     fnct_SanitizeGeometry, 0, 0);
+    sqlite3_create_function (db, "CastToInteger", 1, SQLITE_ANY, 0,
+			     fnct_CastToInteger, 0, 0);
+    sqlite3_create_function (db, "CastToDouble", 1, SQLITE_ANY, 0,
+			     fnct_CastToDouble, 0, 0);
+    sqlite3_create_function (db, "CastToText", 1, SQLITE_ANY, 0,
+			     fnct_CastToText, 0, 0);
+    sqlite3_create_function (db, "CastToBlob", 1, SQLITE_ANY, 0,
+			     fnct_CastToBlob, 0, 0);
+    sqlite3_create_function (db, "CreateUUID", 0, SQLITE_ANY, 0,
+			     fnct_CreateUUID, 0, 0);
     sqlite3_create_function (db, "CastToPoint", 1, SQLITE_ANY, 0,
 			     fnct_CastToPoint, 0, 0);
     sqlite3_create_function (db, "CastToLinestring", 1, SQLITE_ANY, 0,
