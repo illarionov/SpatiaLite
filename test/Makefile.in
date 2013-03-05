@@ -1024,11 +1024,49 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/casttotext3.testcase \
 	sql_stmt_tests/casttotext4.testcase \
 	sql_stmt_tests/casttotext5.testcase \
+	sql_stmt_tests/casttotext6.testcase \
+	sql_stmt_tests/casttotext7.testcase \
+	sql_stmt_tests/casttotext8.testcase \
+	sql_stmt_tests/casttotext9.testcase \
+	sql_stmt_tests/casttotext10.testcase \
+	sql_stmt_tests/casttotext11.testcase \
+	sql_stmt_tests/casttotext12.testcase \
+	sql_stmt_tests/casttotext13.testcase \
+	sql_stmt_tests/casttotext14.testcase \
+	sql_stmt_tests/casttotext15.testcase \
 	sql_stmt_tests/casttoblob1.testcase \
 	sql_stmt_tests/casttoblob2.testcase \
 	sql_stmt_tests/casttoblob3.testcase \
 	sql_stmt_tests/casttoblob4.testcase \
 	sql_stmt_tests/casttoblob5.testcase \
+	sql_stmt_tests/forcenull1.testcase \
+	sql_stmt_tests/forcenull2.testcase \
+	sql_stmt_tests/forcenull3.testcase \
+	sql_stmt_tests/forcenull4.testcase \
+	sql_stmt_tests/forcenull5.testcase \
+	sql_stmt_tests/forcenull6.testcase \
+	sql_stmt_tests/forcenull7.testcase \
+	sql_stmt_tests/forcenull8.testcase \
+	sql_stmt_tests/forcenull9.testcase \
+	sql_stmt_tests/forcenull10.testcase \
+	sql_stmt_tests/forcenull11.testcase \
+	sql_stmt_tests/forcenull12.testcase \
+	sql_stmt_tests/forcenull13.testcase \
+	sql_stmt_tests/forcenull14.testcase \
+	sql_stmt_tests/forcenull15.testcase \
+	sql_stmt_tests/forcenull16.testcase \
+	sql_stmt_tests/forcenull17.testcase \
+	sql_stmt_tests/forcenull18.testcase \
+	sql_stmt_tests/forcenull19.testcase \
+	sql_stmt_tests/forcenull20.testcase \
+	sql_stmt_tests/forcenull21.testcase \
+	sql_stmt_tests/forcenull22.testcase \
+	sql_stmt_tests/forcenull23.testcase \
+	sql_stmt_tests/forcenull24.testcase \
+	sql_stmt_tests/forcenull25.testcase \
+	sql_stmt_tests/forcenull26.testcase \
+	sql_stmt_tests/forcenull27.testcase \
+	sql_stmt_tests/forcenull28.testcase \
 	sql_stmt_tests/createuuid1.testcase \
 	sql_stmt_tests/casttogeometrycollection2.testcase \
 	sql_stmt_tests/casttogeometrycollection3.testcase \

@@ -2128,10 +2128,15 @@ gaiaXmlFormat (xmlDocPtr xml_doc, xmlChar ** out, int *out_len,
 
     if (buf.Error == 0 && buf.Buffer != NULL)
       {
+	  char *output;
+	  /* terminating the last line */
 	  gaiaAppendToOutBuffer (&buf, "\n");
-	  *out = malloc (buf.WriteOffset - 1);
-	  memcpy (*out, buf.Buffer, buf.WriteOffset - 1);
-	  *out_len = buf.WriteOffset - 1;
+	  output = malloc (buf.WriteOffset + 1);
+	  memcpy (output, buf.Buffer, buf.WriteOffset);
+	  /* NULL-terminated string */
+	  *(output + buf.WriteOffset) = '\0';
+	  *out = output;
+	  *out_len = buf.WriteOffset + 1;
 	  ret = 1;
       }
     else
@@ -2690,8 +2695,8 @@ gaiaXmlGetInternalSchemaURI (void *p_cache, const unsigned char *xml,
 						    node->children->content);
 					uri = malloc (len + 1);
 					strcpy (uri,
-						(const char *) node->children->
-						content);
+						(const char *) node->
+						children->content);
 				    }
 			      }
 			}

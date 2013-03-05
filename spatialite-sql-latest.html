@@ -121,11 +121,17 @@
 				<td>CastToDouble( value <i>Generic</i> ) : <i>Double precision</i></td>
 				<td colspan="3">returns the intput value possibly casted to the Double data-type: NULL if no conversion is possible.</td></tr>
 			<tr><td><b>CastToText</b></td>
-				<td>CastToText( value <i>Generic</i> ) : <i>Text</i></td>
-				<td colspan="3">returns the intput value possibly casted to the Text data-type: NULL if no conversion is possible.</td></tr>
+				<td>CastToText( value <i>Generic</i> ) : <i>Text</i><hr>
+				CastToText( value <i>Generic</i> , zero_pad <i>Integer</i> ) : <i>Text</i></td>
+				<td colspan="3">returns the intput value possibly casted to the Text data-type: NULL if no conversion is possible.<br>
+				If an optional argument <b>zero_pad</b> is passed and the input value is of the Integer or Double type, then the returned string will be padded using as much trailing ZEROs so to ensure the required length.</td></tr>
 			<tr><td><b>CastToBlob</b></td>
 				<td>CastToBlob( value <i>Generic</i> ) : <i>Blob</i></td>
 				<td colspan="3">returns the intput value possibly casted to the BLOB data-type: NULL if no conversion is possible.</td></tr>
+			<tr><td><b>ForceAsNull</b></td>
+				<td>ForceAsNull( val1 <i>Generic</i> , val2 <i>Generic</i>) : <i>Generic</i></td>
+				<td colspan="3">if <b>val1</b> and <b>val2</b> are equal (and exactly of the same data-type) NULL will be returned; 
+				otherwise <b>val1</b> will be returned absolutely untouched and still preserving its originale data-type.</td></tr>
 			<tr><td><b>CreateUUID</b></td>
 				<td>CreateUUID( void ) : <i>Text</i></td>
 				<td colspan="3">returns a Version 4 (random) UUID (<a href="http://en.wikipedia.org/wiki/Universally_unique_identifier">Universally unique identifier</a>).</td></tr>

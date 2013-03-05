@@ -14399,11 +14399,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 				    {
 					/* Linestrings */
 					l = gaiaGeodesicTotalLength (a, b, rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -14426,9 +14425,12 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      l = gaiaGeodesicTotalLength (a,
 									   b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -14472,11 +14474,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					/* Linestrings */
 					length +=
 					    gaiaGreatCircleTotalLength (a, b,
-									line->DimensionModel,
 									line->
-									Coords,
-									line->
-									Points);
+									DimensionModel,
+									line->Coords,
+									line->Points);
 					line = line->Next;
 				    }
 			      }
@@ -20486,11 +20487,11 @@ fnct_CastToInteger (sqlite3_context * context, int argc, sqlite3_value ** argv)
     if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
       {
 	  sqlite3_int64 val;
-double dval = sqlite3_value_double (argv[0]);
-double diff = dval - floor(dval);
-val = (sqlite3_int64) sqlite3_value_double (argv[0]);
-if (diff >= 0.5)
-	  val++;
+	  double dval = sqlite3_value_double (argv[0]);
+	  double diff = dval - floor (dval);
+	  val = (sqlite3_int64) sqlite3_value_double (argv[0]);
+	  if (diff >= 0.5)
+	      val++;
 	  sqlite3_result_int64 (context, val);
 	  return;
       }
@@ -20500,12 +20501,12 @@ if (diff >= 0.5)
 	  double dval;
 	  if (text2double (txt, &dval))
 	    {
-	  sqlite3_int64 val;
-double dval = sqlite3_value_double (argv[0]);
-double diff = dval - floor(dval);
-val = (sqlite3_int64) sqlite3_value_double (argv[0]);
-if (diff >= 0.5)
-	  val++;
+		sqlite3_int64 val;
+		double dval = sqlite3_value_double (argv[0]);
+		double diff = dval - floor (dval);
+		val = (sqlite3_int64) sqlite3_value_double (argv[0]);
+		if (diff >= 0.5)
+		    val++;
 		sqlite3_result_int64 (context, val);
 		return;
 	    }
@@ -20553,6 +20554,7 @@ fnct_CastToText (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / CastToText(generic value)
+/ CastToText(generic value, Integer left-aligned-length)
 /
 / returns a TEXT value [if conversion is possible] 
 / or NULL in any other case
@@ -20561,8 +20563,25 @@ fnct_CastToText (sqlite3_context * context, int argc, sqlite3_value ** argv)
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
       {
+	  char format[32];
+	  const char *fmt = "%lld";
+	  if (argc == 2)
+	    {
+		int length;
+		if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+		  {
+		      sqlite3_result_null (context);
+		      return;
+		  }
+		length = sqlite3_value_int (argv[1]);
+		if (length > 0)
+		  {
+		      sprintf (format, "%%0%dlld", length);
+		      fmt = format;
+		  }
+	    }
 	  sqlite3_int64 val = sqlite3_value_int64 (argv[0]);
-	  txt = sqlite3_mprintf ("%lld", val);
+	  txt = sqlite3_mprintf (fmt, val);
 	  sqlite3_result_text (context, txt, strlen (txt), sqlite3_free);
 	  return;
       }
@@ -20571,7 +20590,24 @@ fnct_CastToText (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  int i;
 	  int len;
 	  double val = sqlite3_value_double (argv[0]);
-	  txt = sqlite3_mprintf ("%1.18f", val);
+	  char format[32];
+	  const char *fmt = "%1.18f";
+	  if (argc == 2)
+	    {
+		int length;
+		if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+		  {
+		      sqlite3_result_null (context);
+		      return;
+		  }
+		length = sqlite3_value_int (argv[1]);
+		if (length > 0)
+		  {
+		      sprintf (format, "%%0%d.18f", length + 19);
+		      fmt = format;
+		  }
+	    }
+	  txt = sqlite3_mprintf (fmt, val);
 	  len = strlen (txt);
 	  for (i = len - 1; i > 0; i--)
 	    {
@@ -20604,7 +20640,7 @@ static void
 fnct_CastToBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
-/ CastToText(generic value)
+/ CastToBlob(generic value)
 /
 / returns a BLOB value [if conversion is possible] 
 / or NULL in any other case
@@ -20614,19 +20650,117 @@ fnct_CastToBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) == SQLITE_BLOB)
       {
-	  p_blob = (const unsigned char *) sqlite3_value_blob (argv[0]);
+	  p_blob = sqlite3_value_blob (argv[0]);
 	  n_bytes = sqlite3_value_bytes (argv[0]);
 	  sqlite3_result_blob (context, p_blob, n_bytes, SQLITE_TRANSIENT);
 	  return;
       }
     if (sqlite3_value_type (argv[0]) == SQLITE_TEXT)
       {
-	  p_blob = (const unsigned char *) sqlite3_value_text (argv[0]);
+	  p_blob = sqlite3_value_text (argv[0]);
 	  n_bytes = sqlite3_value_bytes (argv[0]);
 	  sqlite3_result_blob (context, p_blob, n_bytes, SQLITE_TRANSIENT);
 	  return;
       }
     sqlite3_result_null (context);
+}
+
+static void
+fnct_ForceAsNull (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ ForceAsNull(generic val1, generic val2)
+/
+/ returns a NULL value if val1 and val2 are equal 
+/ (and exactly of the same type)
+/ return val1 in any other case
+*/
+    int type1;
+    int type2;
+    const unsigned char *p_blob;
+    int n_bytes;
+    const unsigned char *p_blob2;
+    int n_bytes2;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    type1 = sqlite3_value_type (argv[0]);
+    type2 = sqlite3_value_type (argv[1]);
+    if (type1 == type2)
+      {
+	  switch (type1)
+	    {
+	    case SQLITE_INTEGER:
+		if (sqlite3_value_int64 (argv[0]) ==
+		    sqlite3_value_int64 (argv[1]))
+		  {
+		      sqlite3_result_null (context);
+		      return;
+		  }
+		break;
+	    case SQLITE_FLOAT:
+		if (sqlite3_value_double (argv[0]) ==
+		    sqlite3_value_double (argv[1]))
+		  {
+		      sqlite3_result_null (context);
+		      return;
+		  }
+		break;
+	    case SQLITE_TEXT:
+		p_blob = (char *) sqlite3_value_text (argv[0]);
+		n_bytes = sqlite3_value_bytes (argv[0]);
+		p_blob2 = (char *) sqlite3_value_text (argv[1]);
+		n_bytes2 = sqlite3_value_bytes (argv[1]);
+		if (n_bytes == n_bytes2)
+		  {
+		      if (sqlite3_stricmp
+			  ((const char *) p_blob, (const char *) p_blob2) == 0)
+			{
+			    sqlite3_result_null (context);
+			    return;
+			}
+		  }
+		break;
+	    case SQLITE_BLOB:
+		p_blob = (char *) sqlite3_value_blob (argv[0]);
+		n_bytes = sqlite3_value_bytes (argv[0]);
+		p_blob2 = (char *) sqlite3_value_blob (argv[1]);
+		n_bytes2 = sqlite3_value_bytes (argv[1]);
+		if (n_bytes == n_bytes2)
+		  {
+		      if (memcmp (p_blob, p_blob2, n_bytes) == 0)
+			{
+			    sqlite3_result_null (context);
+			    return;
+			}
+		  }
+		break;
+	    case SQLITE_NULL:
+		sqlite3_result_null (context);
+		return;
+	    };
+      }
+/* returning the first argument */
+    switch (type1)
+      {
+      case SQLITE_INTEGER:
+	  sqlite3_result_int64 (context, sqlite3_value_int64 (argv[0]));
+	  break;
+      case SQLITE_FLOAT:
+	  sqlite3_result_double (context, sqlite3_value_double (argv[0]));
+	  break;
+      case SQLITE_TEXT:
+	  p_blob = (char *) sqlite3_value_text (argv[0]);
+	  n_bytes = sqlite3_value_bytes (argv[0]);
+	  sqlite3_result_text (context, p_blob, n_bytes, SQLITE_TRANSIENT);
+	  break;
+      case SQLITE_BLOB:
+	  p_blob = (char *) sqlite3_value_blob (argv[0]);
+	  n_bytes = sqlite3_value_bytes (argv[0]);
+	  sqlite3_result_blob (context, p_blob, n_bytes, SQLITE_TRANSIENT);
+	  break;
+      default:
+	  sqlite3_result_null (context);
+	  break;
+      };
 }
 
 static void
@@ -21992,8 +22126,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -22077,8 +22210,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -22087,8 +22219,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -24282,8 +24413,12 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_CastToDouble, 0, 0);
     sqlite3_create_function (db, "CastToText", 1, SQLITE_ANY, 0,
 			     fnct_CastToText, 0, 0);
+    sqlite3_create_function (db, "CastToText", 2, SQLITE_ANY, 0,
+			     fnct_CastToText, 0, 0);
     sqlite3_create_function (db, "CastToBlob", 1, SQLITE_ANY, 0,
 			     fnct_CastToBlob, 0, 0);
+    sqlite3_create_function (db, "ForceAsNull", 2, SQLITE_ANY, 0,
+			     fnct_ForceAsNull, 0, 0);
     sqlite3_create_function (db, "CreateUUID", 0, SQLITE_ANY, 0,
 			     fnct_CreateUUID, 0, 0);
     sqlite3_create_function (db, "CastToPoint", 1, SQLITE_ANY, 0,
@@ -25256,8 +25391,6 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
     sqlite3_create_function (db, "XB_Create", 2, SQLITE_ANY, cache,
 			     fnct_XB_Create, 0, 0);
     sqlite3_create_function (db, "XB_Create", 3, SQLITE_ANY, cache,
-			     fnct_XB_Create, 0, 0);
-    sqlite3_create_function (db, "XB_Create", 4, SQLITE_ANY, cache,
 			     fnct_XB_Create, 0, 0);
     sqlite3_create_function (db, "XB_GetPayload", 1, SQLITE_ANY, 0,
 			     fnct_XB_GetPayload, 0, 0);
