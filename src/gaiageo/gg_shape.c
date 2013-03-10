@@ -88,6 +88,13 @@ extern const char *locale_charset (void);
 #define atoll	_atoi64
 #endif /* not WIN32 */
 
+/* 64 bit integer: portable format for printf() */
+#if defined(_WIN32) || defined(__MINGW32__)
+#define FRMT64 "%I64d"
+#else
+#define FRMT64 "%lld"
+#endif
+
 #define SHAPEFILE_NO_DATA 1e-38
 
 GAIAGEO_DECLARE void
@@ -2523,12 +2530,7 @@ gaiaWriteShpEntity (gaiaShapefilePtr shp, gaiaDbfListPtr entity)
 		  {
 		      if (fld->Value->Type == GAIA_INT_VALUE)
 			{
-#if defined(_WIN32) || defined(__MINGW32__)
-/* CAVEAT - M$ runtime doesn't supports %lld for 64 bits */
-			    sprintf (dummy, "%I64d", fld->Value->IntValue);
-#else
-			    sprintf (dummy, "%lld", fld->Value->IntValue);
-#endif
+			    sprintf (dummy, FRMT64, fld->Value->IntValue);
 			    if (strlen (dummy) <= fld->Length)
 				memcpy (shp->BufDbf + fld->Offset + 1,
 					dummy, strlen (dummy));
@@ -4780,12 +4782,7 @@ gaiaWriteDbfEntity (gaiaDbfPtr dbf, gaiaDbfListPtr entity)
 		  {
 		      if (fld->Value->Type == GAIA_INT_VALUE)
 			{
-#if defined(_WIN32) || defined(__MINGW32__)
-/* CAVEAT - M$ runtime doesn't supports %lld for 64 bits */
-			    sprintf (dummy, "%I64d", fld->Value->IntValue);
-#else
-			    sprintf (dummy, "%lld", fld->Value->IntValue);
-#endif
+			    sprintf (dummy, FRMT64, fld->Value->IntValue);
 			    if (strlen (dummy) <= fld->Length)
 				memcpy (dbf->BufDbf + fld->Offset + 1,
 					dummy, strlen (dummy));

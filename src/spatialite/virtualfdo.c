@@ -73,6 +73,13 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define strncasecmp	_strnicmp
 #endif /* not WIN32 */
 
+/* 64 bit integer: portable format for printf() */
+#if defined(_WIN32) || defined(__MINGW32__)
+#define FRMT64 "%I64d"
+#else
+#define FRMT64 "%lld"
+#endif
+
 #if defined(_WIN32) && !defined(__MINGW32__)
 #define LONG64_MAX	_I64_MAX
 #define LONG64_MIN	_I64_MIN
@@ -1127,12 +1134,7 @@ vfdo_update_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid, int argc,
 	  gaiaAppendToOutBuffer (&sql_statement, sql);
 	  sqlite3_free (sql);
       }
-#if defined(_WIN32) || defined(__MINGW32__)
-/* CAVEAT: M$ rutime doesn't supports %lld for 64 bits */
-    sprintf (buf, " WHERE ROWID = %I64d", rowid);
-#else
-    sprintf (buf, " WHERE ROWID = %lld", rowid);
-#endif
+    sprintf (buf, " WHERE ROWID = " FRMT64, rowid);
     gaiaAppendToOutBuffer (&sql_statement, buf);
     if (sql_statement.Error == 0 && sql_statement.Buffer != NULL)
 	ret =
@@ -1324,12 +1326,7 @@ vfdo_delete_row (VirtualFDOPtr p_vt, sqlite3_int64 rowid)
     int ret;
     char *xname;
     xname = gaiaDoubleQuotedSql (p_vt->table);
-#if defined(_WIN32) || defined(__MINGW32__)
-/* CAVEAT: M$ runtime doesn't supports %lld for 64 bits */
-    sprintf (dummy, "%I64d", rowid);
-#else
-    sprintf (dummy, "%lld", rowid);
-#endif
+    sprintf (dummy, FRMT64, rowid);
     sql_statement =
 	sqlite3_mprintf ("DELETE FROM \"%s\" WHERE ROWID = %s", xname, dummy);
     free (xname);

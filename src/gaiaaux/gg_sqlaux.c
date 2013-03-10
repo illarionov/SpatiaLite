@@ -63,6 +63,13 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define strcasecmp	_stricmp
 #endif /* not WIN32 */
 
+/* 64 bit integer: portable format for printf() */
+#if defined(_WIN32) || defined(__MINGW32__)
+#define FRMT64 "%I64d"
+#else
+#define FRMT64 "%lld"
+#endif
+
 GAIAAUX_DECLARE int
 gaiaIllegalSqlName (const char *name)
 {
@@ -775,12 +782,7 @@ gaiaUpdateSqlLog (sqlite3 * sqlite, sqlite3_int64 sqllog_pk, int success,
 /* CURRENT db-schema (>= 4.0.0) required */
 	  return;
       }
-#if defined(_WIN32) || defined(__MINGW32__)
-    /* CAVEAT - M$ runtime doesn't supports %lld for 64 bits */
-    sprintf (dummy, "%I64d", sqllog_pk);
-#else
-    sprintf (dummy, "%lld", sqllog_pk);
-#endif
+    sprintf (dummy, FRMT64, sqllog_pk);
     if (success)
       {
 	  sql_statement = sqlite3_mprintf ("UPDATE sql_statements_log SET "

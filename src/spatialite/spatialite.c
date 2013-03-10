@@ -100,6 +100,15 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #define strcasecmp	_stricmp
 #endif /* not WIN32 */
 
+/* 64 bit integer: portable format for printf() */
+#if defined(_WIN32) || defined(__MINGW32__)
+#define FRMT64 "%I64d"
+#define FRMT64_WO_PCT "I64d"
+#else
+#define FRMT64 "%lld"
+#define FRMT64_WO_PCT "lld"
+#endif
+
 #define GAIA_UNUSED() if (argc || argv) argc = argc;
 
 struct gaia_geom_chain_item
@@ -914,12 +923,7 @@ fnct_RTreeAlign (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	    }
 	  else
 	      table_name = gaiaDoubleQuotedSql (rtree_table);
-#if defined(_WIN32) || defined(__MINGW32__)
-/* CAVEAT: M$ runtime doesn't supports %lld for 64 bits */
-	  sprintf (pkv, "%I64d", pkid);
-#else
-	  sprintf (pkv, "%lld", pkid);
-#endif
+	  sprintf (pkv, FRMT64, pkid);
 	  sql_statement =
 	      sqlite3_mprintf
 	      ("INSERT INTO \"%s\" (pkid, xmin, ymin, xmax, ymax) "
@@ -5987,12 +5991,7 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  break;
       case SQLITE_INTEGER:
 	  int_value = sqlite3_value_int64 (argv[0]);
-#if defined(_WIN32) || defined(__MINGW32__)
-/* CAVEAT: M$ runtime doesn't supports %lld for 64 bits */
-	  sprintf (dummy, "%I64d", int_value);
-#else
-	  sprintf (dummy, "%lld", int_value);
-#endif
+	  sprintf (dummy, FRMT64, int_value);
 	  len = strlen (dummy);
 	  name_malloc = malloc (len + 1);
 	  strcpy (name_malloc, dummy);
@@ -6025,12 +6024,7 @@ fnct_AsKml3 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  break;
       case SQLITE_INTEGER:
 	  int_value = sqlite3_value_int64 (argv[1]);
-#if defined(_WIN32) || defined(__MINGW32__)
-/* CAVEAT: M$ runtime doesn't supports %lld for 64 bits */
-	  sprintf (dummy, "%I64d", int_value);
-#else
-	  sprintf (dummy, "%lld", int_value);
-#endif
+	  sprintf (dummy, FRMT64, int_value);
 	  len = strlen (dummy);
 	  desc_malloc = malloc (len + 1);
 	  strcpy (desc_malloc, dummy);
@@ -14399,11 +14393,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 				    {
 					/* Linestrings */
 					l = gaiaGeodesicTotalLength (a, b, rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -14426,9 +14419,12 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      l = gaiaGeodesicTotalLength (a,
 									   b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -14472,11 +14468,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					/* Linestrings */
 					length +=
 					    gaiaGreatCircleTotalLength (a, b,
-									line->DimensionModel,
 									line->
-									Coords,
-									line->
-									Points);
+									DimensionModel,
+									line->Coords,
+									line->Points);
 					line = line->Next;
 				    }
 			      }
@@ -20563,7 +20558,7 @@ fnct_CastToText (sqlite3_context * context, int argc, sqlite3_value ** argv)
     if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
       {
 	  char format[32];
-	  const char *fmt = "%lld";
+	  const char *fmt = FRMT64;
 	  sqlite3_int64 val;
 	  if (argc == 2)
 	    {
@@ -20576,7 +20571,7 @@ fnct_CastToText (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		length = sqlite3_value_int (argv[1]);
 		if (length > 0)
 		  {
-		      sprintf (format, "%%0%dlld", length);
+		      sprintf (format, "%%0%d" FRMT64_WO_PCT, length);
 		      fmt = format;
 		  }
 	    }
@@ -20711,7 +20706,7 @@ fnct_ForceAsNull (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		n_bytes2 = sqlite3_value_bytes (argv[1]);
 		if (n_bytes == n_bytes2)
 		  {
-		      if (sqlite3_stricmp
+		      if (strcasecmp
 			  ((const char *) p_blob, (const char *) p_blob2) == 0)
 			{
 			    sqlite3_result_null (context);
@@ -22127,8 +22122,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -22212,8 +22206,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -22222,8 +22215,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }

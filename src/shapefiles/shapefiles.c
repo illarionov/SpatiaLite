@@ -76,6 +76,13 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define strncasecmp	_strnicmp
 #endif
 
+/* 64 bit integer: portable format for printf() */
+#if defined(_WIN32) || defined(__MINGW32__)
+#define FRMT64 "%I64d"
+#else
+#define FRMT64 "%lld"
+#endif
+
 struct dupl_column
 {
 /* a column value in a duplicated row */
@@ -1892,16 +1899,9 @@ dump_shapefile (sqlite3 * sqlite, char *table, char *column, char *shp_path,
 				  else if (sqlite3_column_type (stmt, i) ==
 					   SQLITE_INTEGER)
 				    {
-#if defined(_WIN32) || defined(__MINGW32__)
-					/* CAVEAT - M$ runtime doesn't supports %lld for 64 bits */
-					sprintf (buf, "%I64d",
+					sprintf (buf, FRMT64,
 						 sqlite3_column_int64 (stmt,
 								       i));
-#else
-					sprintf (buf, "%lld",
-						 sqlite3_column_int64 (stmt,
-								       i));
-#endif
 					gaiaSetStrValue (dbf_field, buf);
 				    }
 				  else if (sqlite3_column_type (stmt, i) ==
@@ -2707,16 +2707,9 @@ dump_dbf (sqlite3 * sqlite, char *table, char *dbf_path, char *charset,
 				  else if (sqlite3_column_type (stmt, i) ==
 					   SQLITE_INTEGER)
 				    {
-#if defined(_WIN32) || defined(__MINGW32__)
-					/* CAVEAT - M$ runtime doesn't supports %lld for 64 bits */
-					sprintf (buf, "%I64d",
+					sprintf (buf, FRMT64,
 						 sqlite3_column_int64 (stmt,
 								       i));
-#else
-					sprintf (buf, "%lld",
-						 sqlite3_column_int64 (stmt,
-								       i));
-#endif
 					gaiaSetStrValue (dbf_field, buf);
 				    }
 				  else if (sqlite3_column_type (stmt, i) ==
