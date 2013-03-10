@@ -101,7 +101,7 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #endif /* not WIN32 */
 
 /* 64 bit integer: portable format for printf() */
-#if defined(_WIN32) || defined(__MINGW32__)
+#if defined(_WIN32) && !defined(__MINGW32__)
 #define FRMT64 "%I64d"
 #define FRMT64_WO_PCT "I64d"
 #else
