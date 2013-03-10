@@ -211,7 +211,6 @@ populate_spatial_ref_sys (sqlite3 * handle, int mode)
     struct epsg_defs *last = NULL;
     struct epsg_defs *p;
     char sql[1024];
-    char *errMsg = NULL;
     int ret;
     sqlite3_stmt *stmt;
 

@@ -419,9 +419,14 @@ sniff_payload (xmlDocPtr xml_doc, int *is_iso_metadata,
 	  const char *name = (const char *) (root->name);
 	  if (strcmp (name, "MD_Metadata") == 0)
 	      *is_iso_metadata = 1;
-	  if (strcmp (name, "FeatureTypeStyle") == 0)
+	  if (strcmp (name, "FeatureTypeStyle") == 0
+	      || strcmp (name, "PointSymbolizer") == 0
+	      || strcmp (name, "LineSymbolizer") == 0
+	      || strcmp (name, "PolygonSymbolizer") == 0
+	      || strcmp (name, "TextSymbolizer") == 0)
 	      *is_sld_se_vector_style = 1;
-	  if (strcmp (name, "CoverageStyle") == 0)
+	  if (strcmp (name, "RasterSymbolizer") == 0
+	      || strcmp (name, "CoverageStyle") == 0)
 	      *is_sld_se_raster_style = 1;
 	  if (strcmp (name, "StyledLayerDescriptor") == 0)
 	    {
@@ -443,7 +448,7 @@ sniff_payload (xmlDocPtr xml_doc, int *is_iso_metadata,
 		if (layers == 1 && (point > 0 || line > 0 || polygon > 0)
 		    && raster == 0)
 		  {
-		      /* vectorr style */
+		      /* vector style */
 		      *is_sld_se_vector_style = 1;
 		  }
 	    }
@@ -1051,7 +1056,8 @@ find_sld_se_title (xmlNodePtr node, char **string, int *style, int *rule)
 	    {
 		const char *name = (const char *) (node->name);
 		if (strcmp (name, "FeatureTypeStyle") == 0
-		    || strcmp (name, "CoverageStyle") == 0)
+		    || strcmp (name, "CoverageStyle") == 0
+		    || strcmp (name, "StyledLayerDescriptor") == 0)
 		  {
 		      is_style = 1;
 		      *style = 1;
@@ -1105,7 +1111,8 @@ find_sld_se_abstract (xmlNodePtr node, char **string, int *style, int *rule)
 	    {
 		const char *name = (const char *) (node->name);
 		if (strcmp (name, "FeatureTypeStyle") == 0
-		    || strcmp (name, "CoverageStyle") == 0)
+		    || strcmp (name, "CoverageStyle") == 0
+		    || strcmp (name, "StyledLayerDescriptor") == 0)
 		  {
 		      is_style = 1;
 		      *style = 1;
@@ -1158,6 +1165,7 @@ retrieve_sld_se_identifiers (xmlDocPtr xml_doc, char **title, char **abstract)
     int style;
     int rule;
     char *string;
+    const char *name = (const char *) (root->name);
 
     *title = NULL;
     *abstract = NULL;
@@ -1166,6 +1174,15 @@ retrieve_sld_se_identifiers (xmlDocPtr xml_doc, char **title, char **abstract)
     style = 0;
     rule = 0;
     string = NULL;
+    if (name != NULL)
+      {
+	  if (strcmp (name, "PointSymbolizer") == 0
+	      || strcmp (name, "LineSymbolizer") == 0
+	      || strcmp (name, "PolygonSymbolizer") == 0
+	      || strcmp (name, "TextSymbolizer") == 0
+	      || strcmp (name, "RasterSymbolizer") == 0)
+	      style = 1;
+      }
     find_sld_se_title (root, &string, &style, &rule);
     if (string)
 	*title = string;
@@ -1174,6 +1191,15 @@ retrieve_sld_se_identifiers (xmlDocPtr xml_doc, char **title, char **abstract)
     style = 0;
     rule = 0;
     string = NULL;
+    if (name != NULL)
+      {
+	  if (strcmp (name, "PointSymbolizer") == 0
+	      || strcmp (name, "LineSymbolizer") == 0
+	      || strcmp (name, "PolygonSymbolizer") == 0
+	      || strcmp (name, "TextSymbolizer") == 0
+	      || strcmp (name, "RasterSymbolizer") == 0)
+	      style = 1;
+      }
     find_sld_se_abstract (root, &string, &style, &rule);
     if (string)
 	*abstract = string;
@@ -2128,7 +2154,7 @@ gaiaXmlFormat (xmlDocPtr xml_doc, xmlChar ** out, int *out_len,
 
     if (buf.Error == 0 && buf.Buffer != NULL)
       {
-	  char *output;
+	  xmlChar *output;
 	  /* terminating the last line */
 	  gaiaAppendToOutBuffer (&buf, "\n");
 	  output = malloc (buf.WriteOffset + 1);

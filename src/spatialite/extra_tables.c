@@ -980,7 +980,7 @@ create_iso_metadata (sqlite3 * sqlite, int relaxed)
     if (ret != SQLITE_OK)
       {
 	  spatialite_e
-	      (" AddGeometryColumn 'ISO_metadata'.'geometry' error:%s \ n ",
+	      (" AddGeometryColumn 'ISO_metadata'.'geometry' error:%s\n",
 	       err_msg);
 	  sqlite3_free (err_msg);
 	  return 0;

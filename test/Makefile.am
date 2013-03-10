@@ -3258,6 +3258,7 @@ EXTRA_DIST = asprintf4win.h \
 	sql_stmt_tests/getmimetype4.testcase \
 	sql_stmt_tests/getmimetype5.testcase \
 	sql_stmt_tests/unsafeTriggers1.testcase \
+	sql_stmt_tests/seconds.wav \
 	books.xml books.xsd opera.xml opera.xsd \
 	movies.xml movies.xsd books-bad.xml books-bad.xsd \
 	inspire-data-example.xml stazioni_se.xml \

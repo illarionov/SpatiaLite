@@ -348,25 +348,27 @@ check_extended (void *cache, const char *path, int mode)
     }
     else {
     /* not ISO Metadata */
-        if (file_id != NULL) {
-            fprintf (stderr, "unexpected FileIdentifier in \"%s\"\n", path);
-            return 0;
+        if (strcmp(path, "stazioni_se.xml") == 0)
+        {
+            if (strcmp(title, "SE test - Point [Railway Stations]") != 0) {
+                fprintf (stderr, "unexpected Title in \"%s\"\n", path);
+                return 0;
+            }
+            if (strcmp(abstract, "a complex variable style [depending on actual scale]") != 0) {
+                fprintf (stderr, "unexpected Abstract in \"%s\"\n", path);
+                return 0;
+            }
         }
-        if (parent_id != NULL) {
-            fprintf (stderr, "unexpected ParentIdentifier in \"%s\"\n", path);
-            return 0;
-        }
-        if (title != NULL) {
-            fprintf (stderr, "unexpected Title in \"%s\"\n", path);
-            return 0;
-        }
-        if (abstract != NULL) {
-            fprintf (stderr, "unexpected Abstract in \"%s\"\n", path);
-            return 0;
-        }
-        if (geom_blob != NULL) {
-            fprintf (stderr, "unexpected Geometry in \"%s\"\n", path);
-            return 0;
+        else
+        {
+            if (title != NULL) {
+                fprintf (stderr, "unexpected Title in \"%s\"\n", path);
+                return 0;
+            }
+            if (abstract != NULL) {
+                fprintf (stderr, "unexpected Abstract in \"%s\"\n", path);
+                return 0;
+            }
         }
     }
 

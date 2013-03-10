@@ -14399,10 +14399,11 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 				    {
 					/* Linestrings */
 					l = gaiaGeodesicTotalLength (a, b, rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -14425,12 +14426,9 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      l = gaiaGeodesicTotalLength (a,
 									   b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -14474,10 +14472,11 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					/* Linestrings */
 					length +=
 					    gaiaGreatCircleTotalLength (a, b,
+									line->DimensionModel,
 									line->
-									DimensionModel,
-									line->Coords,
-									line->Points);
+									Coords,
+									line->
+									Points);
 					line = line->Next;
 				    }
 			      }
@@ -20464,7 +20463,7 @@ text2double (const unsigned char *str, double *val)
 	err = 1;
     if (err)
 	return 0;
-    *val = atof (str);
+    *val = atof ((const char *) str);
     return 1;
 }
 
@@ -20565,6 +20564,7 @@ fnct_CastToText (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  char format[32];
 	  const char *fmt = "%lld";
+	  sqlite3_int64 val;
 	  if (argc == 2)
 	    {
 		int length;
@@ -20580,7 +20580,7 @@ fnct_CastToText (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		      fmt = format;
 		  }
 	    }
-	  sqlite3_int64 val = sqlite3_value_int64 (argv[0]);
+	  val = sqlite3_value_int64 (argv[0]);
 	  txt = sqlite3_mprintf (fmt, val);
 	  sqlite3_result_text (context, txt, strlen (txt), sqlite3_free);
 	  return;
@@ -20705,9 +20705,9 @@ fnct_ForceAsNull (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		  }
 		break;
 	    case SQLITE_TEXT:
-		p_blob = (char *) sqlite3_value_text (argv[0]);
+		p_blob = sqlite3_value_text (argv[0]);
 		n_bytes = sqlite3_value_bytes (argv[0]);
-		p_blob2 = (char *) sqlite3_value_text (argv[1]);
+		p_blob2 = sqlite3_value_text (argv[1]);
 		n_bytes2 = sqlite3_value_bytes (argv[1]);
 		if (n_bytes == n_bytes2)
 		  {
@@ -20720,9 +20720,9 @@ fnct_ForceAsNull (sqlite3_context * context, int argc, sqlite3_value ** argv)
 		  }
 		break;
 	    case SQLITE_BLOB:
-		p_blob = (char *) sqlite3_value_blob (argv[0]);
+		p_blob = sqlite3_value_blob (argv[0]);
 		n_bytes = sqlite3_value_bytes (argv[0]);
-		p_blob2 = (char *) sqlite3_value_blob (argv[1]);
+		p_blob2 = sqlite3_value_blob (argv[1]);
 		n_bytes2 = sqlite3_value_bytes (argv[1]);
 		if (n_bytes == n_bytes2)
 		  {
@@ -20748,12 +20748,13 @@ fnct_ForceAsNull (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_double (context, sqlite3_value_double (argv[0]));
 	  break;
       case SQLITE_TEXT:
-	  p_blob = (char *) sqlite3_value_text (argv[0]);
+	  p_blob = sqlite3_value_text (argv[0]);
 	  n_bytes = sqlite3_value_bytes (argv[0]);
-	  sqlite3_result_text (context, p_blob, n_bytes, SQLITE_TRANSIENT);
+	  sqlite3_result_text (context, (const char *) p_blob, n_bytes,
+			       SQLITE_TRANSIENT);
 	  break;
       case SQLITE_BLOB:
-	  p_blob = (char *) sqlite3_value_blob (argv[0]);
+	  p_blob = sqlite3_value_blob (argv[0]);
 	  n_bytes = sqlite3_value_bytes (argv[0]);
 	  sqlite3_result_blob (context, p_blob, n_bytes, SQLITE_TRANSIENT);
 	  break;
@@ -22031,7 +22032,7 @@ fnct_CountUnsafeTriggers (sqlite3_context * context, int argc,
 
 /* checking all Triggers */
     sql = "SELECT Count(*) FROM sqlite_master WHERE "
-	"type = 'trigger' AND (sql LIKE '%BlobFromFile%' "
+	"type IN ('trigger', 'view') AND (sql LIKE '%BlobFromFile%' "
 	"OR sql LIKE '%BlobToFile%' OR sql LIKE '%XB_LoadXML%' "
 	"OR sql LIKE '%XB_StoreXML%')";
     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
@@ -22126,7 +22127,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -22210,7 +22212,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -22219,7 +22222,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
