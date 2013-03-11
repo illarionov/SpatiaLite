@@ -20631,22 +20631,206 @@ fnct_CastToText (sqlite3_context * context, int argc, sqlite3_value ** argv)
     sqlite3_result_null (context);
 }
 
+static int
+parseHexByte (unsigned char hi, unsigned char lo, unsigned char *val)
+{
+/* converting a byte for its Hex representation */
+    unsigned char x;
+    switch (hi)
+      {
+      case '0':
+	  x = 0;
+	  break;
+      case '1':
+	  x = 16;
+	  break;
+      case '2':
+	  x = 16 * 2;
+	  break;
+      case '3':
+	  x = 16 * 3;
+	  break;
+      case '4':
+	  x = 16 * 4;
+	  break;
+      case '5':
+	  x = 16 * 5;
+	  break;
+      case '6':
+	  x = 16 * 6;
+	  break;
+      case '7':
+	  x = 16 * 7;
+	  break;
+      case '8':
+	  x = 16 * 8;
+	  break;
+      case '9':
+	  x = 16 * 9;
+	  break;
+      case 'a':
+      case 'A':
+	  x = 16 * 10;
+	  break;
+      case 'b':
+      case 'B':
+	  x = 16 * 11;
+	  break;
+      case 'c':
+      case 'C':
+	  x = 16 * 12;
+	  break;
+      case 'd':
+      case 'D':
+	  x = 16 * 13;
+	  break;
+      case 'e':
+      case 'E':
+	  x = 16 * 14;
+	  break;
+      case 'f':
+      case 'F':
+	  x = 16 * 15;
+	  break;
+      default:
+	  return 0;
+      };
+    switch (lo)
+      {
+      case '0':
+	  x += 0;
+	  break;
+      case '1':
+	  x += 1;
+	  break;
+      case '2':
+	  x += 2;
+	  break;
+      case '3':
+	  x += 3;
+	  break;
+      case '4':
+	  x += 4;
+	  break;
+      case '5':
+	  x += 5;
+	  break;
+      case '6':
+	  x += 6;
+	  break;
+      case '7':
+	  x += 7;
+	  break;
+      case '8':
+	  x += 8;
+	  break;
+      case '9':
+	  x += 9;
+	  break;
+      case 'a':
+      case 'A':
+	  x += 10;
+	  break;
+      case 'b':
+      case 'B':
+	  x += 11;
+	  break;
+      case 'c':
+      case 'C':
+	  x += 12;
+	  break;
+      case 'd':
+      case 'D':
+	  x += 13;
+	  break;
+      case 'e':
+      case 'E':
+	  x += 14;
+	  break;
+      case 'f':
+      case 'F':
+	  x += 15;
+	  break;
+      };
+    *val = x;
+    return 1;
+}
+
+static int
+parseHexString (const unsigned char *in, int in_len, unsigned char **out,
+		int *out_len)
+{
+/* parsing an Hexadecimal string */
+    unsigned char *buf;
+    unsigned char *p_out;
+    unsigned char byteval;
+    int len;
+    int error = 0;
+    int i;
+    *out = NULL;
+    *out_len = 0;
+    if (in == NULL)
+	return 0;
+    len = in_len / 2;
+    if (len * 2 != in_len)	/* # digits is an odd number */
+	return 0;
+    buf = malloc (len);
+    p_out = buf;
+    for (i = 0; i < in_len; i += 2)
+      {
+	  if (!parseHexByte (in[i], in[i + 1], &byteval))
+	      goto error;
+	  *p_out++ = byteval;
+      }
+    *out = buf;
+    *out_len = len;
+    return 1;
+  error:
+    free (buf);
+    return 0;
+}
+
 static void
 fnct_CastToBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / CastToBlob(generic value)
+/   or
+/ CastToBlob(generic value, boolen hex_input)
 /
 / returns a BLOB value [if conversion is possible] 
 / or NULL in any other case
 */
     const unsigned char *p_blob;
     int n_bytes;
+    int is_hex = 0;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (argc == 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  is_hex = sqlite3_value_int (argv[1]);
+      }
     if (sqlite3_value_type (argv[0]) == SQLITE_BLOB)
       {
 	  p_blob = sqlite3_value_blob (argv[0]);
 	  n_bytes = sqlite3_value_bytes (argv[0]);
+	  if (is_hex)
+	    {
+		/* attempting to convert Hexadecimal input */
+		unsigned char *blob;
+		int bytes;
+		if (!parseHexString (p_blob, n_bytes, &blob, &bytes))
+		  {
+		      sqlite3_result_null (context);
+		      return;
+		  }
+		sqlite3_result_blob (context, blob, bytes, free);
+		return;
+	    }
 	  sqlite3_result_blob (context, p_blob, n_bytes, SQLITE_TRANSIENT);
 	  return;
       }
@@ -20654,6 +20838,19 @@ fnct_CastToBlob (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  p_blob = sqlite3_value_text (argv[0]);
 	  n_bytes = sqlite3_value_bytes (argv[0]);
+	  if (is_hex)
+	    {
+		/* attempting to convert Hexadecimal input */
+		unsigned char *blob;
+		int bytes;
+		if (!parseHexString (p_blob, n_bytes, &blob, &bytes))
+		  {
+		      sqlite3_result_null (context);
+		      return;
+		  }
+		sqlite3_result_blob (context, blob, bytes, free);
+		return;
+	    }
 	  sqlite3_result_blob (context, p_blob, n_bytes, SQLITE_TRANSIENT);
 	  return;
       }
@@ -22627,7 +22824,7 @@ fnct_RegisterVectorStyledLayer (sqlite3_context * context, int argc,
 / RegisterVectorStyledLayer(String f_table_name, String f_geometry_column, 
 /			Integer style_id, BLOB style)
 /
-/ insert or updates a Vector Styled Layer 
+/ inserts or updates a Vector Styled Layer 
 / returns 1 on success
 / 0 on failure, -1 on invalid arguments
 */
@@ -22701,7 +22898,7 @@ fnct_RegisterRasterStyledLayer (sqlite3_context * context, int argc,
 / RegisterRasterStyledLayer(String coverage_name, Integer style_id,
 /			BLOB style)
 /
-/ insert or updates a Raster Styled Layer 
+/ inserts or updates a Raster Styled Layer 
 / returns 1 on success
 / 0 on failure, -1 on invalid arguments
 */
@@ -22770,7 +22967,7 @@ fnct_RegisterStyledGroup (sqlite3_context * context, int argc,
 /		      String f_geometry_column, Integer style_id
 /		      [, Integer paint_order)
 /
-/ insert or updates a Raster Styled Layer 
+/ inserts or updates a Styled Group item 
 / returns 1 on success
 / 0 on failure, -1 on invalid arguments
 */
@@ -22855,6 +23052,46 @@ fnct_RegisterStyledGroup (sqlite3_context * context, int argc,
 	register_styled_group (sqlite, group_name, f_table_name,
 			       f_geometry_column, coverage_name, style_id,
 			       paint_order);
+    sqlite3_result_int (context, ret);
+}
+
+static void
+fnct_SetStyledGroupInfos (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ SetStyledGroupInfos(String group_name, String title, 
+/		      String abstract)
+/
+/ inserts or updates the descriptive infos supporting a Styled Group 
+/ returns 1 on success
+/ 0 on failure, -1 on invalid arguments
+*/
+    int ret;
+    const char *group_name;
+    const char *title = NULL;
+    const char *abstract = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    group_name = (const char *) sqlite3_value_text (argv[0]);
+    title = (const char *) sqlite3_value_text (argv[1]);
+    abstract = (const char *) sqlite3_value_text (argv[2]);
+    ret = styled_group_set_infos (sqlite, group_name, title, abstract);
     sqlite3_result_int (context, ret);
 }
 
@@ -24413,6 +24650,8 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_CastToText, 0, 0);
     sqlite3_create_function (db, "CastToBlob", 1, SQLITE_ANY, 0,
 			     fnct_CastToBlob, 0, 0);
+    sqlite3_create_function (db, "CastToBlob", 2, SQLITE_ANY, 0,
+			     fnct_CastToBlob, 0, 0);
     sqlite3_create_function (db, "ForceAsNull", 2, SQLITE_ANY, 0,
 			     fnct_ForceAsNull, 0, 0);
     sqlite3_create_function (db, "CreateUUID", 0, SQLITE_ANY, 0,
@@ -25372,6 +25611,8 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_RegisterStyledGroup, 0, 0);
     sqlite3_create_function (db, "RegisterStyledGroup", 5, SQLITE_ANY, 0,
 			     fnct_RegisterStyledGroup, 0, 0);
+    sqlite3_create_function (db, "SetStyledGroupInfos", 3, SQLITE_ANY, 0,
+			     fnct_SetStyledGroupInfos, 0, 0);
     sqlite3_create_function (db, "CreateIsoMetadataTables", 0, SQLITE_ANY, 0,
 			     fnct_CreateIsoMetadataTables, 0, 0);
     sqlite3_create_function (db, "CreateIsoMetadataTables", 1, SQLITE_ANY, 0,

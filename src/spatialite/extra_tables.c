@@ -1816,33 +1816,29 @@ register_styled_group (void *p_sqlite, const char *group_name,
     int retval = 0;
     sqlite3_int64 id;
 
-    if (style_id >= 0)
+    /* checking if the Group already exists */
+    sql = "SELECT group_name FROM SE_styled_groups "
+	"WHERE group_name = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
       {
-	  /* checking if the Group already exists */
-	  sql = "SELECT group_name FROM SE_styled_groups "
-	      "WHERE group_name = Lower(?)";
-	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
-	  if (ret != SQLITE_OK)
-	    {
-		spatialite_e ("registerStyledGroupsRefs: \"%s\"\n",
-			      sqlite3_errmsg (sqlite));
-		goto stop;
-	    }
-	  sqlite3_reset (stmt);
-	  sqlite3_clear_bindings (stmt);
-	  sqlite3_bind_text (stmt, 1, group_name, strlen (group_name),
-			     SQLITE_STATIC);
-	  while (1)
-	    {
-		/* scrolling the result set rows */
-		ret = sqlite3_step (stmt);
-		if (ret == SQLITE_DONE)
-		    break;	/* end of result set */
-		if (ret == SQLITE_ROW)
-		    exists_group = 1;
-	    }
-	  sqlite3_finalize (stmt);
+	  spatialite_e ("registerStyledGroupsRefs: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
       }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, group_name, strlen (group_name), SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	      exists_group = 1;
+      }
+    sqlite3_finalize (stmt);
 
     if (!exists_group)
       {
@@ -1871,12 +1867,11 @@ register_styled_group (void *p_sqlite, const char *group_name,
 	  retval = 0;
       }
 
-    if (coverage_name != NULL)
+    if (paint_order >= 0)
       {
-	  /* checking if the Raster group-item already exists */
+	  /* checking if the group-item already exists */
 	  sql = "SELECT id FROM SE_styled_group_refs "
-	      "WHERE group_name = Lower(?) AND coverage_name = Lower(?) "
-	      "AND raster_style_id = ?";
+	      "WHERE group_name = Lower(?) AND paint_order = ?";
 	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
 	  if (ret != SQLITE_OK)
 	    {
@@ -1888,9 +1883,7 @@ register_styled_group (void *p_sqlite, const char *group_name,
 	  sqlite3_clear_bindings (stmt);
 	  sqlite3_bind_text (stmt, 1, group_name, strlen (group_name),
 			     SQLITE_STATIC);
-	  sqlite3_bind_text (stmt, 2, coverage_name, strlen (coverage_name),
-			     SQLITE_STATIC);
-	  sqlite3_bind_int (stmt, 3, style_id);
+	  sqlite3_bind_int (stmt, 2, paint_order);
 	  while (1)
 	    {
 		/* scrolling the result set rows */
@@ -1900,46 +1893,12 @@ register_styled_group (void *p_sqlite, const char *group_name,
 		if (ret == SQLITE_ROW)
 		  {
 		      id = sqlite3_column_int64 (stmt, 0);
-		      exists = 1;
+		      exists++;
 		  }
 	    }
 	  sqlite3_finalize (stmt);
-      }
-    else
-      {
-	  /* checking if the Vector group-item already exists */
-	  sql = "SELECT id FROM SE_styled_group_refs "
-	      "WHERE group_name = Lower(?) AND f_table_name = Lower(?) "
-	      "AND f_geometry_column = Lower(?) AND vector_style_id = ?";
-	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
-	  if (ret != SQLITE_OK)
-	    {
-		spatialite_e ("registerStyledGroupsRefs: \"%s\"\n",
-			      sqlite3_errmsg (sqlite));
-		goto stop;
-	    }
-	  sqlite3_reset (stmt);
-	  sqlite3_clear_bindings (stmt);
-	  sqlite3_bind_text (stmt, 1, group_name, strlen (group_name),
-			     SQLITE_STATIC);
-	  sqlite3_bind_text (stmt, 2, f_table_name, strlen (f_table_name),
-			     SQLITE_STATIC);
-	  sqlite3_bind_text (stmt, 3, f_geometry_column,
-			     strlen (f_geometry_column), SQLITE_STATIC);
-	  sqlite3_bind_int (stmt, 4, style_id);
-	  while (1)
-	    {
-		/* scrolling the result set rows */
-		ret = sqlite3_step (stmt);
-		if (ret == SQLITE_DONE)
-		    break;	/* end of result set */
-		if (ret == SQLITE_ROW)
-		  {
-		      id = sqlite3_column_int64 (stmt, 0);
-		      exists = 1;
-		  }
-	    }
-	  sqlite3_finalize (stmt);
+	  if (exists != 1)
+	      goto stop;
       }
 
     if (paint_order < 0)
@@ -2044,6 +2003,101 @@ register_styled_group (void *p_sqlite, const char *group_name,
 	spatialite_e ("registerStyledGroupsRefs() error: \"%s\"\n",
 		      sqlite3_errmsg (sqlite));
     sqlite3_finalize (stmt);
+    return retval;
+  stop:
+    return 0;
+}
+
+SPATIALITE_PRIVATE int
+styled_group_set_infos (void *p_sqlite, const char *group_name,
+			const char *title, const char *abstract)
+{
+/* auxiliary function: inserts or updates the Styled Group descriptive infos */
+    sqlite3 *sqlite = (sqlite3 *) p_sqlite;
+    int ret;
+    const char *sql;
+    sqlite3_stmt *stmt;
+    int exists = 0;
+    int retval = 0;
+
+    /* checking if the Group already exists */
+    sql = "SELECT group_name FROM SE_styled_groups "
+	"WHERE group_name = Lower(?)";
+    ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("styledGroupSetInfos: \"%s\"\n",
+			sqlite3_errmsg (sqlite));
+	  goto stop;
+      }
+    sqlite3_reset (stmt);
+    sqlite3_clear_bindings (stmt);
+    sqlite3_bind_text (stmt, 1, group_name, strlen (group_name), SQLITE_STATIC);
+    while (1)
+      {
+	  /* scrolling the result set rows */
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE)
+	      break;		/* end of result set */
+	  if (ret == SQLITE_ROW)
+	      exists = 1;
+      }
+    sqlite3_finalize (stmt);
+
+    if (!exists)
+      {
+	  /* insert group */
+	  sql =
+	      "INSERT INTO SE_styled_groups (group_name, title, abstract) VALUES (?, ?, ?)";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("styledGroupSetInfos: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto stop;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, group_name, strlen (group_name),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, title, strlen (title), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, abstract, strlen (abstract),
+			     SQLITE_STATIC);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      retval = 1;
+	  else
+	      spatialite_e ("styledGroupSetInfos() error: \"%s\"\n",
+			    sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+      }
+    else
+      {
+	  /* update group */
+	  sql =
+	      "UPDATE SE_styled_groups SET title = ?, abstract = ? WHERE group_name = ?";
+	  ret = sqlite3_prepare_v2 (sqlite, sql, strlen (sql), &stmt, NULL);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("styledGroupSetInfos: \"%s\"\n",
+			      sqlite3_errmsg (sqlite));
+		goto stop;
+	    }
+	  sqlite3_reset (stmt);
+	  sqlite3_clear_bindings (stmt);
+	  sqlite3_bind_text (stmt, 1, title, strlen (title), SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 2, abstract, strlen (abstract),
+			     SQLITE_STATIC);
+	  sqlite3_bind_text (stmt, 3, group_name, strlen (group_name),
+			     SQLITE_STATIC);
+	  ret = sqlite3_step (stmt);
+	  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+	      retval = 1;
+	  else
+	      spatialite_e ("styledGroupSetInfos() error: \"%s\"\n",
+			    sqlite3_errmsg (sqlite));
+	  sqlite3_finalize (stmt);
+      }
     return retval;
   stop:
     return 0;

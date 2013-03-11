@@ -126,8 +126,11 @@
 				<td colspan="3">returns the intput value possibly casted to the Text data-type: NULL if no conversion is possible.<br>
 				If an optional argument <b>zero_pad</b> is passed and the input value is of the Integer or Double type, then the returned string will be padded using as much trailing ZEROs so to ensure the required length.</td></tr>
 			<tr><td><b>CastToBlob</b></td>
-				<td>CastToBlob( value <i>Generic</i> ) : <i>Blob</i></td>
-				<td colspan="3">returns the intput value possibly casted to the BLOB data-type: NULL if no conversion is possible.</td></tr>
+				<td>CastToBlob( value <i>Generic</i> ) : <i>Blob</i><hr>
+                                CastToBlob( value <i>Generic</i> , hex_input <i>Boolean</i> ) : <i>Blob</i></td>
+				<td colspan="3">returns the intput value possibly casted to the BLOB data-type:
+                                if the optional argument <b>hex_input</b> is set to <b>TRUE</b> the input value will be expected to correspond to an HexaDecimal string, e.g. <b>01ab89EF</b>; if this assumption fails then NULL will be returned.<hr>
+                                NULL if no conversion is possible.</td></tr>
 			<tr><td><b>ForceAsNull</b></td>
 				<td>ForceAsNull( val1 <i>Generic</i> , val2 <i>Generic</i>) : <i>Generic</i></td>
 				<td colspan="3">if <b>val1</b> and <b>val2</b> are equal (and exactly of the same data-type) NULL will be returned; 
@@ -2312,10 +2315,21 @@ the return type is Integer, with a return value of 1 for TRUE (success) or 0 for
 					<li><b>group_name</b> must identify a Styled Group: if the Styled Group doesn't yet exists it will be implicitly created.</li>
 					<li><b>f_table_name</b>, <b>f_geometry_column</b> and <b>style_id</b> must identify an existing Vectore Styled Layer.</li>
 					<li>or alternatively: <b>coverage_name</b> and <b>style_id</b> must identify an existing Raster Styled Layer.</li>
-					<li>the optional <b>paint_order</b> argument could be used to explicitly a paint-order position: 
-					if <b>paint_order</b> is not specified or if a <i>negative</i> value is passed 
-					then the next available order position will be automatically assigned.<br>
-					<u>Please note</u>: the painting order will follow the <b>Painter rule</b>, i.e. a lower paint-order value will always be painted before painting any higer value.
+					<li>the optional <b>paint_order</b> argument could be used to explicitly reference an already defined group item (this implying <u>updating</u> the previous registration)<br>
+					If <b>paint_order</b> is not specified or if a <i>negative</i> value is passed 
+					then the next available order position will be automatically assigned (this always implying <u>inserting</u> a new registration).<br>
+					<u>Please note</u>: the painting order will follow the <b>Painter rule</b>, i.e. a lower paint-order value will always be painted before painting any higher value.
+				</ul><hr>
+the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
+				returned on invalid argumentes.</td></tr>
+		<tr><td><b>SetStyledGroupInfos</b></td>
+				<td>SetStyledGroupInfos( group_name <i>String</i> , title <i>String</i> , abstract <i>String</i> ) : <i>Integer</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Inserts (or updates) the descriptive infos associated to a <b>Styled Group</b>.
+				<ul>
+					<li><b>group_name</b> must identify a Styled Group: if the Styled Group doesn't yet exists it will be implicitly created.</li>
+					<li><b>title</b> and <b>abstract</b> represent the descriptive infos to be set.</li>
 				</ul><hr>
 the return type is Integer, with a return value of 1 for TRUE (success) or 0 for FALSE (failure): -1 will be
 				returned on invalid argumentes.</td></tr>

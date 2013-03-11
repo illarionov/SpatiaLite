@@ -116,6 +116,16 @@ AC_CONFIG_FILES([Makefile \
 		src/srsinit/epsg_update/Makefile \
 		src/virtualtext/Makefile \
 		test/Makefile \
+		test/sql_stmt_tests/Makefile \
+		test/sql_stmt_geos_tests/Makefile \
+		test/sql_stmt_geosadvanced_tests/Makefile \
+		test/sql_stmt_geostrunk_tests/Makefile \
+		test/sql_stmt_proj_tests/Makefile \
+		test/sql_stmt_mathsql_tests/Makefile \
+		test/sql_stmt_lwgeom_tests/Makefile \
+		test/sql_stmt_libxml2_tests/Makefile \
+		test/sql_stmt_security_tests/Makefile \
+		test/sql_stmt_xmlsec_tests/Makefile \
 		examples/Makefile \
 		Doxyfile \
 		spatialite.pc])

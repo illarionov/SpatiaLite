@@ -249,6 +249,11 @@ extern "C"
 						  int style_id,
 						  int paint_order);
 
+    SPATIALITE_PRIVATE int styled_group_set_infos (void *p_sqlite,
+						   const char *group_name,
+						   const char *title,
+						   const char *abstract);
+
     SPATIALITE_PRIVATE int createIsoMetadataTables (void *p_sqlite,
 						    int relaxed);
 

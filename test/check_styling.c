@@ -169,7 +169,7 @@ int main (int argc, char *argv[])
     }
     if (strcmp(results[1 * columns + 0], "1") != 0)
     {
-	fprintf (stderr, "Unexpected id result (got %s, expected 1)", results[1 * columns + 0]);
+	fprintf (stderr, "Unexpected #0 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -5;
     }
@@ -198,7 +198,7 @@ int main (int argc, char *argv[])
     }
     if (strcmp(results[1 * columns + 0], "1") != 0)
     {
-	fprintf (stderr, "Unexpected id result (got %s, expected 1)", results[1 * columns + 0]);
+	fprintf (stderr, "Unexpected #1 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -10;
     }
@@ -221,7 +221,7 @@ int main (int argc, char *argv[])
     }
     if (strcmp(results[1 * columns + 0], "1") != 0)
     {
-	fprintf (stderr, "Unexpected id result (got %s, expected 1)", results[1 * columns + 0]);
+	fprintf (stderr, "Unexpected #2 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -13;
     }
@@ -244,7 +244,7 @@ int main (int argc, char *argv[])
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     sqlite3_free(sql);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "Error RegisterExternalGraphic #1: %s\n", err_msg);
+      fprintf (stderr, "Error RegisterExternalGraphic #3: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -17;
     }
@@ -256,7 +256,7 @@ int main (int argc, char *argv[])
     }
     if (strcmp(results[1 * columns + 0], "1") != 0)
     {
-	fprintf (stderr, "Unexpected id result (got %s, expected 1)", results[1 * columns + 0]);
+	fprintf (stderr, "Unexpected #3 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -19;
     }
@@ -279,7 +279,7 @@ int main (int argc, char *argv[])
     }
     if (strcmp(results[1 * columns + 0], "1") != 0)
     {
-	fprintf (stderr, "Unexpected id result (got %s, expected 1)", results[1 * columns + 0]);
+	fprintf (stderr, "Unexpected #4 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -22;
     }
@@ -305,7 +305,7 @@ int main (int argc, char *argv[])
     }
     if (strcmp(results[1 * columns + 0], "1") != 0)
     {
-	fprintf (stderr, "Unexpected id result (got %s, expected 1)", results[1 * columns + 0]);
+	fprintf (stderr, "Unexpected #5 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -26;
     }
@@ -328,7 +328,7 @@ int main (int argc, char *argv[])
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     sqlite3_free(sql);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "Error RegisterVectorStyledLayer #1: %s\n", err_msg);
+      fprintf (stderr, "Error RegisterVectorStyledLayer #6: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -30;
     }
@@ -340,7 +340,7 @@ int main (int argc, char *argv[])
     }
     if (strcmp(results[1 * columns + 0], "1") != 0)
     {
-	fprintf (stderr, "Unexpected id result (got %s, expected 1)", results[1 * columns + 0]);
+	fprintf (stderr, "Unexpected #6 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -32;
     }
@@ -351,7 +351,7 @@ int main (int argc, char *argv[])
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     sqlite3_free(sql);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "Error RegisterVectorStyledLayer #2: %s\n", err_msg);
+      fprintf (stderr, "Error RegisterVectorStyledLayer #7: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -33;
     }
@@ -363,7 +363,7 @@ int main (int argc, char *argv[])
     }
     if (strcmp(results[1 * columns + 0], "1") != 0)
     {
-	fprintf (stderr, "Unexpected id result (got %s, expected 1)", results[1 * columns + 0]);
+	fprintf (stderr, "Unexpected #7 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -35;
     }
@@ -386,7 +386,7 @@ int main (int argc, char *argv[])
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     sqlite3_free(sql);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "Error RegisterRasterStyledLayer #1: %s\n", err_msg);
+      fprintf (stderr, "Error RegisterRasterStyledLayer #8: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -39;
     }
@@ -398,7 +398,7 @@ int main (int argc, char *argv[])
     }
     if (strcmp(results[1 * columns + 0], "1") != 0)
     {
-	fprintf (stderr, "Unexpected id result (got %s, expected 1)", results[1 * columns + 0]);
+	fprintf (stderr, "Unexpected #8 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -41;
     }
@@ -409,7 +409,7 @@ int main (int argc, char *argv[])
     ret = sqlite3_get_table (handle, sql, &results, &rows, &columns, &err_msg);
     sqlite3_free(sql);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "Error RegisterRasterStyledLayer #2: %s\n", err_msg);
+      fprintf (stderr, "Error RegisterRasterStyledLayer #9: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -42;
     }
@@ -421,7 +421,7 @@ int main (int argc, char *argv[])
     }
     if (strcmp(results[1 * columns + 0], "1") != 0)
     {
-	fprintf (stderr, "Unexpected id result (got %s, expected 1)", results[1 * columns + 0]);
+	fprintf (stderr, "Unexpected #9 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -44;
     }
@@ -429,7 +429,7 @@ int main (int argc, char *argv[])
     
     ret = sqlite3_get_table (handle, "SELECT RegisterStyledGroup('group', 'srtm', 0)", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "Error RegisterStyledGroup #1: %s\n", err_msg);
+      fprintf (stderr, "Error RegisterStyledGroup #10: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -45;
     }
@@ -441,7 +441,7 @@ int main (int argc, char *argv[])
     }
     if (strcmp(results[1 * columns + 0], "1") != 0)
     {
-	fprintf (stderr, "Unexpected id result (got %s, expected 1)", results[1 * columns + 0]);
+	fprintf (stderr, "Unexpected #10 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -47;
     }
@@ -449,7 +449,7 @@ int main (int argc, char *argv[])
     
     ret = sqlite3_get_table (handle, "SELECT RegisterStyledGroup('group', 'table1', 'geom', 0)", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "Error RegisterStyledGroup #2: %s\n", err_msg);
+      fprintf (stderr, "Error RegisterStyledGroup #11: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -48;
     }
@@ -461,7 +461,7 @@ int main (int argc, char *argv[])
     }
     if (strcmp(results[1 * columns + 0], "1") != 0)
     {
-	fprintf (stderr, "Unexpected id result (got %s, expected 1)", results[1 * columns + 0]);
+	fprintf (stderr, "Unexpected #12 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -50;
     }
@@ -469,7 +469,7 @@ int main (int argc, char *argv[])
     
     ret = sqlite3_get_table (handle, "SELECT RegisterStyledGroup('group', 'srtm', 0, 4)", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "Error RegisterStyledGroup #3: %s\n", err_msg);
+      fprintf (stderr, "Error RegisterStyledGroup #13: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -51;
     }
@@ -479,17 +479,17 @@ int main (int argc, char *argv[])
 	fprintf (stderr, "Unexpected row / column count: %i x %i\n", rows, columns);
 	return -52;
     }
-    if (strcmp(results[1 * columns + 0], "1") != 0)
+    if (strcmp(results[1 * columns + 0], "0") != 0)
     {
-	fprintf (stderr, "Unexpected id result (got %s, expected 1)", results[1 * columns + 0]);
+	fprintf (stderr, "Unexpected #13 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -53;
     }
     sqlite3_free_table(results);
     
-    ret = sqlite3_get_table (handle, "SELECT RegisterStyledGroup('group', 'table1', 'geom', 0, 14)", &results, &rows, &columns, &err_msg);
+    ret = sqlite3_get_table (handle, "SELECT RegisterStyledGroup('group', 'table1', 'geom', 0, 1)", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
-      fprintf (stderr, "Error RegisterStyledGroup #4: %s\n", err_msg);
+      fprintf (stderr, "Error RegisterStyledGroup #14: %s\n", err_msg);
       sqlite3_free (err_msg);
       return -54;
     }
@@ -501,11 +501,52 @@ int main (int argc, char *argv[])
     }
     if (strcmp(results[1 * columns + 0], "1") != 0)
     {
-	fprintf (stderr, "Unexpected id result (got %s, expected 1)", results[1 * columns + 0]);
+	fprintf (stderr, "Unexpected #14 result (got %s, expected 1)", results[1 * columns + 0]);
 	sqlite3_free_table(results);
 	return -56;
     }
     sqlite3_free_table(results);
+    
+    ret = sqlite3_get_table (handle, "SELECT SetStyledGroupInfos('group', 'title', 'abstract')", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+      fprintf (stderr, "Error RegisterStyledGroup #15: %s\n", err_msg);
+      sqlite3_free (err_msg);
+      return -57;
+    }
+    if ((rows != 1) || (columns != 1))
+    {
+	sqlite3_free_table(results);
+	fprintf (stderr, "Unexpected row / column count: %i x %i\n", rows, columns);
+	return -58;
+    }
+    if (strcmp(results[1 * columns + 0], "1") != 0)
+    {
+	fprintf (stderr, "Unexpected #15 result (got %s, expected 1)", results[1 * columns + 0]);
+	sqlite3_free_table(results);
+	return -59;
+    }
+    sqlite3_free_table(results);
+    
+    ret = sqlite3_get_table (handle, "SELECT SetStyledGroupInfos('group-bis', 'title', 'abstract')", &results, &rows, &columns, &err_msg);
+    if (ret != SQLITE_OK) {
+      fprintf (stderr, "Error RegisterStyledGroup #16: %s\n", err_msg);
+      sqlite3_free (err_msg);
+      return 60;
+    }
+    if ((rows != 1) || (columns != 1))
+    {
+	sqlite3_free_table(results);
+	fprintf (stderr, "Unexpected row / column count: %i x %i\n", rows, columns);
+	return -61;
+    }
+    if (strcmp(results[1 * columns + 0], "1") != 0)
+    {
+	fprintf (stderr, "Unexpected #16 result (got %s, expected 1)", results[1 * columns + 0]);
+	sqlite3_free_table(results);
+	return -62;
+    }
+    sqlite3_free_table(results);
+
 
 #endif
     
