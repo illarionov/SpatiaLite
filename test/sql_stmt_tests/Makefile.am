@@ -174,26 +174,18 @@ EXTRA_DIST = addpoint10.testcase \
 	buildmbr8.testcase \
 	buildmbr9.testcase \
 	casttoblob10.testcase \
-	casttoblob10.testcase~ \
 	casttoblob12.testcase \
-	casttoblob12.testcase~ \
 	casttoblob13.testcase \
-	casttoblob13.testcase~ \
 	casttoblob14.testcase \
-	casttoblob14.testcase~ \
 	casttoblob1.testcase \
 	casttoblob2.testcase \
 	casttoblob3.testcase \
 	casttoblob4.testcase \
 	casttoblob5.testcase \
 	casttoblob6.testcase \
-	casttoblob6.testcase~ \
 	casttoblob7.testcase \
-	casttoblob7.testcase~ \
 	casttoblob8.testcase \
-	casttoblob8.testcase~ \
 	casttoblob9.testcase \
-	casttoblob9.testcase~ \
 	casttodouble1.testcase \
 	casttodouble2.testcase \
 	casttodouble3.testcase \

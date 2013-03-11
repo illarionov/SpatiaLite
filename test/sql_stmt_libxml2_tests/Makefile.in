@@ -367,31 +367,18 @@ EXTRA_DIST = createisometa1.testcase \
 	registerVector8.testcase \
 	registerVector9.testcase \
 	setGroupInfos10.testcase \
-	setGroupInfos10.testcase~ \
 	setGroupInfos11.testcase \
-	setGroupInfos11.testcase~ \
 	setGroupInfos12.testcase \
-	setGroupInfos12.testcase~ \
 	setGroupInfos13.testcase \
-	setGroupInfos13.testcase~ \
 	setGroupInfos1.testcase \
-	setGroupInfos1.testcase~ \
 	setGroupInfos2.testcase \
-	setGroupInfos2.testcase~ \
 	setGroupInfos3.testcase \
-	setGroupInfos3.testcase~ \
 	setGroupInfos4.testcase \
-	setGroupInfos4.testcase~ \
 	setGroupInfos5.testcase \
-	setGroupInfos5.testcase~ \
 	setGroupInfos6.testcase \
-	setGroupInfos6.testcase~ \
 	setGroupInfos7.testcase \
-	setGroupInfos7.testcase~ \
 	setGroupInfos8.testcase \
-	setGroupInfos8.testcase~ \
 	setGroupInfos9.testcase \
-	setGroupInfos9.testcase~ \
 	xmlblobgetabstract1.testcase \
 	xmlblobgetabstract2.testcase \
 	xmlblobgetabstract3.testcase \
