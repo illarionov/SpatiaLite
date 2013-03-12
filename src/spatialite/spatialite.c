@@ -20751,6 +20751,8 @@ parseHexByte (unsigned char hi, unsigned char lo, unsigned char *val)
       case 'F':
 	  x += 15;
 	  break;
+      default:
+	  return 0;
       };
     *val = x;
     return 1;
