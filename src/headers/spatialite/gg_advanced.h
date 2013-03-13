@@ -404,11 +404,31 @@ extern "C"
 
  \return 0 on failure: any other value on success
 
- \sa gaiaGeomCollLength, gaiaMeasureArea
+ \sa gaiaGeomCollLength, gaiaMeasureArea, gaiaGeodesicArea
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE int gaiaGeomCollArea (gaiaGeomCollPtr geom, double *area);
+
+/**
+ Measures the total Area for a Geometry object (geodesic)
+
+ \param geom pointer to Geometry object
+ \param a major axis of the reference spheroid.
+ \param b minor axis of the reference spheroid.
+ \param use_ellipsoid if TRUE will measure the Area on the Ellipsoid,
+  otherwise on the Sphere
+ \param area on completion this variable will contain the measured area
+
+ \return 0 on failure: any other value on success
+
+ \sa gaiaGeomCollLength, gaiaMeasureArea, gaiaGeomCollArea
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE int gaiaGeodesicArea (gaiaGeomCollPtr geom, double a,
+					  double b, int use_ellipsoid,
+					  double *area);
 
 
 /**
@@ -1596,7 +1616,7 @@ extern "C"
 /**
  Utility function: Azimuth
 
- \param xa the X ccordinate of PointA.
+ \param xa the X coordinate of PointA.
  \param ya the Y coordinate of PointA.
  \param xb the X ccordinate of PointB.
  \param yb the Y coordinate of PointB.
@@ -1606,10 +1626,59 @@ extern "C"
 
  \return 0 on failure: any other value on success
 
+ \sa gaiaProjectedPoint
+
  \remark \b LWGEOM support required.
  */
     GAIAGEO_DECLARE int gaiaAzimuth (double xa, double ya, double xb,
 				     double yb, double *azimuth);
+
+/**
+ Utility function: EllipsoidAzimuth
+
+ \param xa the X coordinate of PointA.
+ \param ya the Y coordinate of PointA.
+ \param xb the X ccordinate of PointB.
+ \param yb the Y coordinate of PointB.
+ \param a major axis of the reference spheroid.
+ \param b minor axis of the reference spheroid.
+ \param azimuth on completion this variable will contain the angle in radians from 
+  the horizontal of the vector defined by pointA and pointB. 
+ \n Angle is computed clockwise from down-to-up: on the clock: 12=0; 3=PI/2; 6=PI; 9=3PI/2.
+
+ \return 0 on failure: any other value on success
+
+ \sa gaiaAzimuth
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE int gaiaEllipsoidAzimuth (double xa, double ya, double xb,
+					      double yb, double a, double b,
+					      double *azimuth);
+
+/**
+ Utility function: ProjectedPoint
+
+ \param x1 the X coordinate of the Start Point.
+ \param y1 the Y coordinate of the Start Point.
+ \param a major axis of the reference spheroid.
+ \param b minor axis of the reference spheroid.
+ \param distance a distance expressed in Meters
+ \param azimuth (aka bearing aka heading) expressed in radians;
+ on the clock: 12=0; 3=PI/2; 6=PI; 9=3PI/2.
+ \param x2 on completion this variable will contain the the X coordinate 
+ of the Projected Point.
+ \param y2 on completion this variable will contain the the Y coordinate 
+ of the Projected Point.
+
+ \return 0 on failure: any other value on success
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE int gaiaProjectedPoint (double x1, double y1, double a,
+					    double b, double distance,
+					    double azimuth, double *x2,
+					    double *y2);
 
 /**
  Utility function: GeoHash

@@ -1310,12 +1310,20 @@ algorithm with given <i>tolerance</i> and respecting topology</td></tr>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
 				<td>return the centroid of s, which may lie outside s</td></tr>
-			<tr><td><b>Area</b></td>
+			<tr><td rowspan="2"><b>Area</b></td>
 				<td>Area( s <i>Surface</i> ) : <i>Double precision</i><hr>
 					ST_Area( s <i>Surface</i> ) : <i>Double precision</i></td>
 				<td align="center" bgcolor="#d0f0d0">X</td>
 				<td align="center" bgcolor="#f0d0d0">GEOS</td>
 				<td>return the area of s</td></tr>
+			<tr><td>Area( s <i>Surface</i> , use_ellipsoid <i>Boolean</i> ) : <i>Double precision</i><hr>
+					ST_Area( s <i>Surface</i> , use_ellipsoid <i>Boolean</i> ) : <i>Double precision</i>
+				</td>
+				<td align="center" bgcolor="#d0f0d0">X</td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>return the area of s (measured in meters).<br>
+If the <b>use_ellipsoid</b> argument is set to <b>TRUE</b> the precise (but slower) area will be computed on the Ellipsoid, otherwise will be computed on the Sphere (approximative, but faster).<hr>
+This function only supports Long/Lat coordinates, and will return NULL for any planar CRS</td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p9">SQL functions on type Polygon</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>
@@ -1937,8 +1945,18 @@ This function only supports Long/Lat coordinates, and will return NULL for any p
 				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
 				<td>return the angle (in radians) from the horizontal of the vector defined by <b>pt1</b> and <b>pt2</b>.<br>
                                         Both <b>pt1</b> and <b>pt2</b> are expected to be simple Points.<br>
+					Starting since <u>4.1.0</u> if both points supports <u>long/lat</u> coords the returned Azimuth will be precisely computed on the ellipsoid.<br>
 					NULL is returned on failure.<hr>
                                         On the clock: 12=0; 3=PI/2; 6=PI; 9=3PI/2</td></tr>
+			<tr><td><b>Project</b></td>
+				<td>Project( start_point <i>Geometry</i>, distance <i>Double precision</i>, azimuth <i>Double precision</i>  ) : <i>Geometry</i><hr>
+					ST_Project( start_point <i>Geometry</i>, distance <i>Double precision</i>, azimuth <i>Double precision</i>  ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#f0d0f0">LWGEOM</td>
+				<td>return a new Point projected from a start point using a bearing and distance.<br>
+                                        <b>start_point</b> is expected to be simple <u>long/lat</u> Point.<br>
+					<b>distance</b> is expected to be measured in <u>meters</u>; <b>azimuth</b> (aka <u>bearing</u> or <u>heading</u>) has the same identical meaning as in <b>ST_Azimuth()</b>.<br>
+					NULL is returned on failure or on invalid arguments.</td></tr>
 			<tr><td><b>SnapToGrid</b></td>
 				<td>SnapToGrid( geom <i>Geometry</i> , size <i>Double precision</i>  ) : <i>Geometry</i><br>
 				        SnapToGrid( geom <i>Geometry</i> , size_x <i>Double precision</i> , size_y <i>Double precision</i> ) : <i>Geometry</i><br>

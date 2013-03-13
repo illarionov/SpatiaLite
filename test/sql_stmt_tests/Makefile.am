@@ -711,6 +711,9 @@ EXTRA_DIST = addpoint10.testcase \
 	fromWkb21.testcase \
 	fromWkb22.testcase \
 	fromWkb23.testcase \
+	fromWkb24.testcase \
+	fromWkb25.testcase \
+	fromWkb26.testcase \
 	fromWkb2.testcase \
 	fromWkb3.testcase \
 	fromWkb4.testcase \

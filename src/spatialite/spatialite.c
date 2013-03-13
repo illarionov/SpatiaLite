@@ -14577,12 +14577,28 @@ fnct_Area (sqlite3_context * context, int argc, sqlite3_value ** argv)
     int n_bytes;
     double area = 0.0;
     int ret;
+    int use_ellipsoid = -1;
+    double a;
+    double b;
+    double rf;
     gaiaGeomCollPtr geo = NULL;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
 	  sqlite3_result_null (context);
 	  return;
+      }
+    if (argc == 2)
+      {
+	  if (sqlite3_value_type (argv[1]) != SQLITE_INTEGER)
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+	  use_ellipsoid = sqlite3_value_int (argv[1]);
+	  if (use_ellipsoid != 0)
+	      use_ellipsoid = 1;
       }
     p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
     n_bytes = sqlite3_value_bytes (argv[0]);
@@ -14591,7 +14607,16 @@ fnct_Area (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	sqlite3_result_null (context);
     else
       {
-	  ret = gaiaGeomCollArea (geo, &area);
+	  if (use_ellipsoid >= 0)
+	    {
+		/* attempting to identify the corresponding ellipsoid */
+		if (getEllipsoidParams (sqlite, geo->Srid, &a, &b, &rf))
+		      ret = gaiaGeodesicArea (geo, a, b, use_ellipsoid, &area);
+		else
+		    ret = 0;
+	    }
+	  else
+	      ret = gaiaGeomCollArea (geo, &area);
 	  if (!ret)
 	      sqlite3_result_null (context);
 	  else
@@ -20040,7 +20065,12 @@ fnct_Azimuth (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double y1;
     double x2;
     double y2;
+    double a;
+    double b;
+    double rf;
     double azimuth;
+    int srid;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
@@ -20068,6 +20098,7 @@ fnct_Azimuth (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  sqlite3_result_null (context);
 	  return;
       }
+    srid = geom->Srid;
     gaiaFreeGeomColl (geom);
 
 /* retrieving and validating the second point */
@@ -20087,8 +20118,122 @@ fnct_Azimuth (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
     gaiaFreeGeomColl (geom);
 
+    if (getEllipsoidParams (sqlite, srid, &a, &b, &rf))
+      {
+	  if (gaiaEllipsoidAzimuth (x1, y1, x2, y2, a, b, &azimuth))
+	      sqlite3_result_double (context, azimuth);
+	  else
+	      sqlite3_result_null (context);
+	  return;
+      }
+
     if (gaiaAzimuth (x1, y1, x2, y2, &azimuth))
 	sqlite3_result_double (context, azimuth);
+    else
+	sqlite3_result_null (context);
+}
+
+static void
+fnct_Project (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ Project(BLOBencoded point, distance Double, bearing Double)
+/
+/ Returns a new Point projected from a start point given a
+/ distance and a bearing. 
+/ - Point is expected to be Long/Lat
+/ - Distance is in meters
+/ - Bearing is in radians; on the clock: 
+/   12=0; 3=PI/2; 6=PI; 9=3PI/2.
+/ NULL is returned for invalid arguments
+*/
+    unsigned char *p_blob;
+    int n_bytes;
+    gaiaGeomCollPtr geom;
+    double x1;
+    double y1;
+    double x2;
+    double y2;
+    int ival;
+    double distance;
+    double azimuth;
+    double a;
+    double b;
+    double rf;
+    int srid;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	distance = sqlite3_value_double (argv[1]);
+    else if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[1]);
+	  distance = ival;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	azimuth = sqlite3_value_double (argv[2]);
+    else if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[2]);
+	  azimuth = ival;
+      }
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+
+/* retrieving and validating the start point */
+    p_blob = (unsigned char *) sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
+    if (geom == NULL)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (!getXYSinglePoint (geom, &x1, &y1))
+      {
+	  gaiaFreeGeomColl (geom);
+	  sqlite3_result_null (context);
+	  return;
+      }
+    srid = geom->Srid;
+    if (!getEllipsoidParams (sqlite, srid, &a, &b, &rf))
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    gaiaFreeGeomColl (geom);
+    if (distance == 0.0)
+      {
+	  /* returning the Start Point */
+	  gaiaMakePoint (x1, y1, srid, &p_blob, &n_bytes);
+	  if (!p_blob)
+	      sqlite3_result_null (context);
+	  else
+	      sqlite3_result_blob (context, p_blob, n_bytes, free);
+	  return;
+      }
+
+    if (gaiaProjectedPoint (x1, y1, a, b, distance, azimuth, &x2, &y2))
+      {
+	  gaiaMakePoint (x2, y2, srid, &p_blob, &n_bytes);
+	  if (!p_blob)
+	      sqlite3_result_null (context);
+	  else
+	      sqlite3_result_blob (context, p_blob, n_bytes, free);
+      }
     else
 	sqlite3_result_null (context);
 }
@@ -25242,8 +25387,6 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_Perimeter, 0, 0);
     sqlite3_create_function (db, "Area", 1, SQLITE_ANY, 0, fnct_Area, 0, 0);
     sqlite3_create_function (db, "ST_Area", 1, SQLITE_ANY, 0, fnct_Area, 0, 0);
-    sqlite3_create_function (db, "Centroid", 1, SQLITE_ANY, 0, fnct_Centroid,
-			     0, 0);
     sqlite3_create_function (db, "ST_Centroid", 1, SQLITE_ANY, 0,
 			     fnct_Centroid, 0, 0);
     sqlite3_create_function (db, "PointOnSurface", 1, SQLITE_ANY, 0,
@@ -25544,6 +25687,14 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
     sqlite3_create_function (db, "Azimuth", 2, SQLITE_ANY, 0, fnct_Azimuth, 0,
 			     0);
     sqlite3_create_function (db, "ST_Azimuth", 2, SQLITE_ANY, 0, fnct_Azimuth,
+			     0, 0);
+    sqlite3_create_function (db, "Project", 3, SQLITE_ANY, 0, fnct_Project, 0,
+			     0);
+    sqlite3_create_function (db, "ST_Project", 3, SQLITE_ANY, 0, fnct_Project,
+			     0, 0);
+    sqlite3_create_function (db, "Area", 2, SQLITE_ANY, 0, fnct_Area, 0, 0);
+    sqlite3_create_function (db, "ST_Area", 2, SQLITE_ANY, 0, fnct_Area, 0, 0);
+    sqlite3_create_function (db, "Centroid", 1, SQLITE_ANY, 0, fnct_Centroid,
 			     0, 0);
     sqlite3_create_function (db, "GeoHash", 1, SQLITE_ANY, 0, fnct_GeoHash, 0,
 			     0);

@@ -59,7 +59,15 @@ EXTRA_DIST = 3ddistance10.testcase \
 	st_asx3d7.testcase \
 	st_asx3d8.testcase \
 	st_asx3d9.testcase \
-	st_azimuth10.testcase \
+	st_area10.testcase \
+	st_area11.testcase \
+	st_area12.testcase \
+	st_area13.testcase \
+	st_area14.testcase \
+	st_area15.testcase \
+	st_area16.testcase \
+	st_area17.testcase \
+	st_area18.testcase \
 	st_azimuth11.testcase \
 	st_azimuth12.testcase \
 	st_azimuth13.testcase \
@@ -102,6 +110,20 @@ EXTRA_DIST = 3ddistance10.testcase \
 	st_makevaliddiscarded6.testcase \
 	st_makevaliddiscarded7.testcase \
 	st_makevaliddiscarded8.testcase \
+	st_project1.testcase \
+	st_project2.testcase \
+	st_project3.testcase \
+	st_project4.testcase \
+	st_project5.testcase \
+	st_project6.testcase \
+	st_project7.testcase \
+	st_project8.testcase \
+	st_project9.testcase \
+	st_project10.testcase \
+	st_project11.testcase \
+	st_project12.testcase \
+	st_project13.testcase \
+	st_project14.testcase \
 	st_segmentize10.testcase \
 	st_segmentize11.testcase \
 	st_segmentize12.testcase \

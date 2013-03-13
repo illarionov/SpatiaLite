@@ -972,7 +972,7 @@ ParseCompressedWkbPolygonZM (gaiaGeomCollPtr geo)
 }
 
 static void
-ParseWkbGeometry (gaiaGeomCollPtr geo)
+ParseWkbGeometry (gaiaGeomCollPtr geo, int isWKB)
 {
 /* decodes a MULTIxx or GEOMETRYCOLLECTION from SpatiaLite BLOB */
     int entities;
@@ -987,6 +987,14 @@ ParseWkbGeometry (gaiaGeomCollPtr geo)
       {
 	  if (geo->size < geo->offset + 5)
 	      return;
+	  if (isWKB)
+	    {
+		/* vanilla WKB could be encoded as mixed big-/little-endian sub-items */
+		if (*(geo->blob + geo->offset) == 0x01)
+		    geo->endian = GAIA_LITTLE_ENDIAN;
+		else
+		    geo->endian = GAIA_BIG_ENDIAN;
+	    }
 	  type =
 	      gaiaImport32 (geo->blob + geo->offset + 1, geo->endian,
 			    geo->endian_arch);
@@ -1211,7 +1219,7 @@ gaiaFromSpatiaLiteBlobWkb (const unsigned char *blob, unsigned int size)
       case GAIA_GEOMETRYCOLLECTIONZ:
       case GAIA_GEOMETRYCOLLECTIONM:
       case GAIA_GEOMETRYCOLLECTIONZM:
-	  ParseWkbGeometry (geo);
+	  ParseWkbGeometry (geo, 0);
 	  break;
       default:
 	  break;
@@ -3532,7 +3540,7 @@ gaiaFromWkb (const unsigned char *blob, unsigned int size)
       case GAIA_MULTILINESTRINGZM:
       case GAIA_MULTIPOLYGONZM:
       case GAIA_GEOMETRYCOLLECTIONZM:
-	  ParseWkbGeometry (geo);
+	  ParseWkbGeometry (geo, 1);
 	  break;
       default:
 	  break;

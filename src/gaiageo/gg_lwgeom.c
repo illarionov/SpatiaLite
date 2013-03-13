@@ -1643,6 +1643,70 @@ gaiaAzimuth (double xa, double ya, double xb, double yb, double *azimuth)
     return 1;
 }
 
+GAIAGEO_DECLARE int
+gaiaEllipsoidAzimuth (double xa, double ya, double xb, double yb, double a,
+		      double b, double *azimuth)
+{
+/* wrapping LWGEOM AzimuthSpheroid */
+    LWPOINT *pt1 = lwpoint_make2d (0, xa, ya);
+    LWPOINT *pt2 = lwpoint_make2d (0, xb, yb);
+    SPHEROID ellips;
+    spheroid_init (&ellips, a, b);
+    *azimuth = lwgeom_azumith_spheroid (pt1, pt2, &ellips);
+    lwpoint_free (pt1);
+    lwpoint_free (pt2);
+    return 1;
+}
+
+GAIAGEO_DECLARE int
+gaiaProjectedPoint (double x1, double y1, double a, double b, double distance,
+		    double azimuth, double *x2, double *y2)
+{
+/* wrapping LWGEOM Project */
+    LWPOINT *pt1 = lwpoint_make2d (0, x1, y1);
+    LWPOINT *pt2;
+    SPHEROID ellips;
+    spheroid_init (&ellips, a, b);
+    pt2 = lwgeom_project_spheroid (pt1, &ellips, distance, azimuth);
+    lwpoint_free (pt1);
+    if (pt2 != NULL)
+      {
+	  *x2 = lwpoint_get_x (pt2);
+	  *y2 = lwpoint_get_y (pt2);
+	  lwpoint_free (pt2);
+	  return 1;
+      }
+    return 0;
+}
+
+GAIAGEO_DECLARE int
+gaiaGeodesicArea (gaiaGeomCollPtr geom, double a, double b, int use_ellipsoid,
+		  double *area)
+{
+/* wrapping LWGEOM AreaSphere and AreaSpheroid */
+    LWGEOM *g = toLWGeom (geom);
+    SPHEROID ellips;
+    GBOX gbox;
+    double tolerance = 1e-12;
+    spheroid_init (&ellips, a, b);
+    if (g == NULL)
+	return 0;
+    lwgeom_calculate_gbox_geodetic (g, &gbox);
+    if (use_ellipsoid)
+      {
+	  /* testing for "forbidden" calculations on the ellipsoid */
+	  if ((gbox.zmax + tolerance) >= 1.0 || (gbox.zmin - tolerance) <= -1.0)
+	      use_ellipsoid = 0;	/* can't circle the poles */
+	  if (gbox.zmax > 0.0 && gbox.zmin < 0.0)
+	      use_ellipsoid = 0;	/* can't cross the equator */
+      }
+    if (use_ellipsoid)
+	*area = lwgeom_area_spheroid (g, &ellips);
+    else
+	*area = lwgeom_area_sphere (g, &ellips);
+    lwgeom_free (g);
+}
+
 GAIAGEO_DECLARE char *
 gaiaGeoHash (gaiaGeomCollPtr geom, int precision)
 {
