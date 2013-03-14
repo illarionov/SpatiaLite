@@ -414,6 +414,12 @@
 				<td>a POINT Geometry will be returned representing the GPS long/lat contained within EXIF-GPS <i>metadata</i>
 				for the BLOB image<hr>
 				NULL will be returned if for any reason it's not possible to build such a POINT</td></tr>
+			<tr><td><b>ST_Point</b></td>
+				<td>ST_Point( x <i>Double precision</i> , y <i>Double precision</i>  ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>simply an alias-name for <b>MakePoint()</b><br>
+				<u>Please note</u>: the <u>SRID</u> argument is never supported by <u>ST_Point()</u></td></tr>
 			<tr><td><b>MakePoint</b></td>
 				<td>MakePoint( x <i>Double precision</i> , y <i>Double precision</i> ,
 				[ , SRID <i>Integer</i>] ) : <i>Geometry</i></td>
@@ -450,6 +456,13 @@
 				<td align="center" bgcolor="#d0f0d0">base</td>
 				<td>a Linestring Geometry will be returned connecting all the input Points (accordingly to input sequence)<br>
 				<b><u>aggregate function</u></b><hr>
+				NULL will be returned if any error is encountered</td></tr>
+			<tr><td><b>MakeLine</b></td>
+				<td>MakeLine( geom <i>MultiPointGeometry</i> , direction <i>Boolean</i> ) : <i>LinestringGeometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>a Linestring Geometry will be returned connecting all the input Points (accordingly to input sequence); <b>direction=FALSE</b> implies <u>reverse order</u>.<br>
+				<u>Please note</u>: similar to the previuous one, but this one is an ordinary (not aggregate) function; a MultiPoint input is always expected.</b><hr>
 				NULL will be returned if any error is encountered</td></tr>
 			<tr><td><b>SquareGrid</b></td>
 				<td>SquareGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i><hr>

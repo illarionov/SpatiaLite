@@ -1271,8 +1271,16 @@ EXTRA_DIST = addpoint10.testcase \
 	makeline22.testcase \
 	makeline23.testcase \
 	makeline24.testcase \
+	makeline25.testcase \
+	makeline26.testcase \
+	makeline27.testcase \
+	makeline28.testcase \
+	makeline29.testcase \
 	makeline2.testcase \
 	makeline3.testcase \
+	makeline30.testcase \
+	makeline31.testcase \
+	makeline32.testcase \
 	makeline4.testcase \
 	makeline5.testcase \
 	makeline6.testcase \

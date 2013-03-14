@@ -6440,6 +6440,8 @@ fnct_MakePoint1 (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / MakePoint(double X, double Y)
+/    alias
+/ ST_Point(double X, double Y)
 /
 / builds a POINT 
 / or NULL if any error is encountered
@@ -7192,13 +7194,125 @@ fnct_MakeLine_final (sqlite3_context * context)
 }
 
 static void
+buildLineFromMultiPoint (sqlite3_context * context, gaiaGeomCollPtr geom,
+			 int direction)
+{
+/* internal: building a Linestring from a MultiPolygon */
+    gaiaGeomCollPtr result;
+    gaiaDynamicLinePtr dyn;
+    int n_pts = 0;
+    int n_lns = 0;
+    int n_pgs = 0;
+    gaiaPointPtr pt;
+    gaiaLinestringPtr ln;
+    gaiaPolygonPtr pg;
+    if (geom)
+      {
+	  pt = geom->FirstPoint;
+	  while (pt)
+	    {
+		n_pts++;
+		pt = pt->Next;
+	    }
+	  ln = geom->FirstLinestring;
+	  while (ln)
+	    {
+		n_lns++;
+		ln = ln->Next;
+	    }
+	  pg = geom->FirstPolygon;
+	  while (pg)
+	    {
+		n_pgs++;
+		pg = pg->Next;
+	    }
+      }
+    /* checking if really is a MultiPoint */
+    if (n_pts >= 2 && n_lns == 0 && n_pgs == 0)
+	;
+    else
+      {
+	  sqlite3_result_null (context);
+	  goto end;
+      }
+    dyn = gaiaAllocDynamicLine ();
+    dyn->Srid = geom->Srid;
+    pt = geom->FirstPoint;
+    while (pt)
+      {
+	  /* inserting all Points accordingly to required direction */
+	  if (direction)
+	    {
+		/* conformant direction */
+		switch (pt->DimensionModel)
+		  {
+		  case GAIA_XY_Z_M:
+		      gaiaAppendPointZMToDynamicLine (dyn, pt->X, pt->Y, pt->Z,
+						      pt->M);
+		      break;
+		  case GAIA_XY_Z:
+		      gaiaAppendPointZToDynamicLine (dyn, pt->X, pt->Y, pt->Z);
+		      break;
+		  case GAIA_XY_M:
+		      gaiaAppendPointMToDynamicLine (dyn, pt->X, pt->Y, pt->M);
+		      break;
+		  default:
+		      gaiaAppendPointToDynamicLine (dyn, pt->X, pt->Y);
+		      break;
+		  }
+	    }
+	  else
+	    {
+		/* reverse direction */
+		switch (pt->DimensionModel)
+		  {
+		  case GAIA_XY_Z_M:
+		      gaiaPrependPointZMToDynamicLine (dyn, pt->X, pt->Y, pt->Z,
+						       pt->M);
+		      break;
+		  case GAIA_XY_Z:
+		      gaiaPrependPointZToDynamicLine (dyn, pt->X, pt->Y, pt->Z);
+		      break;
+		  case GAIA_XY_M:
+		      gaiaPrependPointMToDynamicLine (dyn, pt->X, pt->Y, pt->M);
+		      break;
+		  default:
+		      gaiaPrependPointToDynamicLine (dyn, pt->X, pt->Y);
+		      break;
+		  }
+	    }
+	  pt = pt->Next;
+      }
+    result = geomFromDynamicLine (dyn);
+    gaiaFreeDynamicLine (dyn);
+    if (!result)
+	sqlite3_result_null (context);
+    else
+      {
+	  /* builds the BLOB geometry to be returned */
+	  int len;
+	  unsigned char *p_result = NULL;
+	  gaiaToSpatiaLiteBlobWkb (result, &p_result, &len);
+	  sqlite3_result_blob (context, p_result, len, free);
+	  gaiaFreeGeomColl (result);
+      }
+  end:
+    gaiaFreeGeomColl (geom);
+}
+
+static void
 fnct_MakeLine (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / MakeLine(point-geometry geom1, point-geometry geom2)
+/     or
+/ MakeLine(multipoint geom, boolean direction)
 /
-/ builds a SEGMENT joining two POINTs 
-/ or NULL if any error is encountered
+/ - builds a SEGMENT joining two POINTs 
+/ - the MultiPoint version works exactely as the corresponding aggregate
+/   function, but not requiring aggregation; direction=TRUE direct order,
+/   direction=FALSE reverse order
+/ - or NULL if any error is encountered
 */
     int len;
     unsigned char *p_blob;
@@ -7219,6 +7333,12 @@ fnct_MakeLine (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  sqlite3_result_null (context);
 	  goto stop;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  /* expecting a single MultiPoint input */
+	  int direction = sqlite3_value_int (argv[1]);
+	  return buildLineFromMultiPoint (context, geo1, direction);
       }
     if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
       {
@@ -14611,7 +14731,7 @@ fnct_Area (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	    {
 		/* attempting to identify the corresponding ellipsoid */
 		if (getEllipsoidParams (sqlite, geo->Srid, &a, &b, &rf))
-		      ret = gaiaGeodesicArea (geo, a, b, use_ellipsoid, &area);
+		    ret = gaiaGeodesicArea (geo, a, b, use_ellipsoid, &area);
 		else
 		    ret = 0;
 	    }
@@ -25001,6 +25121,8 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     0);
     sqlite3_create_function (db, "MbrMaxY", 1, SQLITE_ANY, 0, fnct_MbrMaxY, 0,
 			     0);
+    sqlite3_create_function (db, "ST_Point", 2, SQLITE_ANY, 0,
+			     fnct_MakePoint1, 0, 0);
     sqlite3_create_function (db, "MakePoint", 2, SQLITE_ANY, 0,
 			     fnct_MakePoint1, 0, 0);
     sqlite3_create_function (db, "MakePoint", 3, SQLITE_ANY, 0,
