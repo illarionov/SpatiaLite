@@ -1,5 +1,19 @@
 
-EXTRA_DIST = createisometa1.testcase \
+EXTRA_DIST = addfileid1.testcase \
+	addfileid2.testcase \
+	addfileid3.testcase \
+	addfileid4.testcase \
+	addfileid5.testcase \
+	addfileid6.testcase \
+	addfileid7.testcase \
+	addparentid1.testcase \
+	addparentid2.testcase \
+	addparentid3.testcase \
+	addparentid4.testcase \
+	addparentid5.testcase \
+	addparentid6.testcase \
+	addparentid7.testcase \
+	createisometa1.testcase \
 	createisometa2.testcase \
 	createisometa3.testcase \
 	createisometa4.testcase \
@@ -166,6 +180,11 @@ EXTRA_DIST = createisometa1.testcase \
 	registerVector7.testcase \
 	registerVector8.testcase \
 	registerVector9.testcase \
+	setfileid1.testcase \
+	setfileid2.testcase \
+	setfileid3.testcase \
+	setfileid4.testcase \
+	setfileid5.testcase \
 	setGroupInfos10.testcase \
 	setGroupInfos11.testcase \
 	setGroupInfos12.testcase \
@@ -179,6 +198,11 @@ EXTRA_DIST = createisometa1.testcase \
 	setGroupInfos7.testcase \
 	setGroupInfos8.testcase \
 	setGroupInfos9.testcase \
+	setparentid1.testcase \
+	setparentid2.testcase \
+	setparentid3.testcase \
+	setparentid4.testcase \
+	setparentid5.testcase \
 	xmlblobgetabstract1.testcase \
 	xmlblobgetabstract2.testcase \
 	xmlblobgetabstract3.testcase \

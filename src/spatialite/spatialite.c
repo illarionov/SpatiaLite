@@ -7338,7 +7338,8 @@ fnct_MakeLine (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  /* expecting a single MultiPoint input */
 	  int direction = sqlite3_value_int (argv[1]);
-	  return buildLineFromMultiPoint (context, geo1, direction);
+	  buildLineFromMultiPoint (context, geo1, direction);
+	  return;
       }
     if (sqlite3_value_type (argv[1]) != SQLITE_BLOB)
       {
@@ -10291,6 +10292,7 @@ fnct_Extent_step (sqlite3_context * context, int argc, sqlite3_value ** argv)
     gaiaGeomCollPtr geom;
     double **p;
     double *max_min;
+    int *srid_check;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
@@ -10307,11 +10309,14 @@ fnct_Extent_step (sqlite3_context * context, int argc, sqlite3_value ** argv)
     if (!(*p))
       {
 	  /* this is the first row */
-	  max_min = malloc (sizeof (double) * 4);
+	  max_min = malloc ((sizeof (double) * 5));
 	  *(max_min + 0) = geom->MinX;
 	  *(max_min + 1) = geom->MinY;
 	  *(max_min + 2) = geom->MaxX;
 	  *(max_min + 3) = geom->MaxY;
+	  srid_check = (int *) (max_min + 4);
+	  *(srid_check + 0) = geom->Srid;
+	  *(srid_check + 1) = geom->Srid;
 	  *p = max_min;
       }
     else
@@ -10326,6 +10331,9 @@ fnct_Extent_step (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	      *(max_min + 2) = geom->MaxX;
 	  if (geom->MaxY > *(max_min + 3))
 	      *(max_min + 3) = geom->MaxY;
+	  srid_check = (int *) (max_min + 4);
+	  if (*(srid_check + 1) != geom->Srid)
+	      *(srid_check + 1) = geom->Srid;
       }
     gaiaFreeGeomColl (geom);
 }
@@ -10347,6 +10355,7 @@ fnct_Extent_final (sqlite3_context * context)
     double miny;
     double maxx;
     double maxy;
+    int *srid_check;
     double **p = sqlite3_aggregate_context (context, 0);
     if (!p)
       {
@@ -10359,6 +10368,12 @@ fnct_Extent_final (sqlite3_context * context)
 	  sqlite3_result_null (context);
 	  return;
       }
+    srid_check = (int *) (max_min + 4);
+    if (*(srid_check + 0) != *(srid_check + 1))
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
     result = gaiaAllocGeomColl ();
     if (!result)
 	sqlite3_result_null (context);
@@ -10367,6 +10382,7 @@ fnct_Extent_final (sqlite3_context * context)
 	  /* builds the BLOB geometry to be returned */
 	  int len;
 	  unsigned char *p_result = NULL;
+	  result->Srid = *(srid_check + 0);
 	  polyg = gaiaAddPolygonToGeomColl (result, 5, 0);
 	  rect = polyg->Exterior;
 	  minx = *(max_min + 0);
@@ -21031,9 +21047,8 @@ parseHexString (const unsigned char *in, int in_len, unsigned char **out,
     unsigned char *buf;
     unsigned char *p_out;
     unsigned char byteval;
-    int len;
-    int error = 0;
     int i;
+    int len;
     *out = NULL;
     *out_len = 0;
     if (in == NULL)
@@ -24194,6 +24209,246 @@ fnct_XB_GetParentId (sqlite3_context * context, int argc, sqlite3_value ** argv)
 }
 
 static void
+fnct_XB_SetFileId (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_SetFileId(XmlBLOB, Text value)
+/
+/ if the BLOB is a valid XmlBLOB of the ISO-Metadata type
+/ already containing a FileID then this function will 
+/ return a new XmlBLOB containing the new FileID
+/ return NULL on any other case
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    unsigned char *new_blob;
+    int new_bytes;
+    const char *identifier;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    identifier = (const char *) sqlite3_value_text (argv[1]);
+    if (!gaiaXmlBlobSetFileId
+	(sqlite3_user_data (context), p_blob, n_bytes, identifier, &new_blob,
+	 &new_bytes))
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, new_blob, new_bytes, free);
+}
+
+static void
+fnct_XB_SetParentId (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_SetParentId(XmlBLOB, Text value)
+/
+/ if the BLOB is a valid XmlBLOB of the ISO-Metadata type
+/ already containing a ParentID then this function will 
+/ return a new XmlBLOB containing the new ParentID
+/ return NULL on any other case
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    unsigned char *new_blob;
+    int new_bytes;
+    const char *identifier;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    identifier = (const char *) sqlite3_value_text (argv[1]);
+    if (!gaiaXmlBlobSetParentId
+	(sqlite3_user_data (context), p_blob, n_bytes, identifier, &new_blob,
+	 &new_bytes))
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, new_blob, new_bytes, free);
+}
+
+static void
+fnct_XB_AddFileId (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_AddFileId(XmlBLOB, Text value, Text ns_id, Text uri_id, Text ns_charstr, Text uri_charstr)
+/
+/ if the BLOB is a valid XmlBLOB of the ISO-Metadata type
+/ not containing a FileID then this function will 
+/ return a new XmlBLOB containing the new FileID
+/ return NULL on any other case
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    unsigned char *new_blob;
+    int new_bytes;
+    const char *identifier;
+    const char *ns_id = NULL;
+    const char *uri_id = NULL;
+    const char *ns_charstr = NULL;
+    const char *uri_charstr = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_TEXT
+	|| sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	;
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[3]) == SQLITE_TEXT
+	|| sqlite3_value_type (argv[3]) == SQLITE_NULL)
+	;
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[4]) == SQLITE_TEXT
+	|| sqlite3_value_type (argv[4]) == SQLITE_NULL)
+	;
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[5]) == SQLITE_TEXT
+	|| sqlite3_value_type (argv[5]) == SQLITE_NULL)
+	;
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    identifier = (const char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	ns_id = (const char *) sqlite3_value_text (argv[2]);
+    if (sqlite3_value_type (argv[3]) == SQLITE_TEXT)
+	uri_id = (const char *) sqlite3_value_text (argv[3]);
+    if (sqlite3_value_type (argv[4]) == SQLITE_TEXT)
+	ns_charstr = (const char *) sqlite3_value_text (argv[4]);
+    if (sqlite3_value_type (argv[5]) == SQLITE_TEXT)
+	uri_charstr = (const char *) sqlite3_value_text (argv[5]);
+    if (!gaiaXmlBlobAddFileId
+	(sqlite3_user_data (context), p_blob, n_bytes, identifier, ns_id,
+	 uri_id, ns_charstr, uri_charstr, &new_blob, &new_bytes))
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, new_blob, new_bytes, free);
+}
+
+static void
+fnct_XB_AddParentId (sqlite3_context * context, int argc, sqlite3_value ** argv)
+{
+/* SQL function:
+/ XB_AddParentId(XmlBLOB, Text value, Text ns_id, Text uri_id, Text ns_charstr, Text url_charstr)
+/
+/ if the BLOB is a valid XmlBLOB of the ISO-Metadata type
+/ not containing a ParentID then this function will 
+/ return a new XmlBLOB containing the new ParentID
+/ return NULL on any other case
+*/
+    const unsigned char *p_blob;
+    int n_bytes;
+    unsigned char *new_blob;
+    int new_bytes;
+    const char *identifier;
+    const char *ns_id = NULL;
+    const char *uri_id = NULL;
+    const char *ns_charstr = NULL;
+    const char *uri_charstr = NULL;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_TEXT
+	|| sqlite3_value_type (argv[2]) == SQLITE_NULL)
+	;
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[3]) == SQLITE_TEXT
+	|| sqlite3_value_type (argv[3]) == SQLITE_NULL)
+	;
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[4]) == SQLITE_TEXT
+	|| sqlite3_value_type (argv[4]) == SQLITE_NULL)
+	;
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[5]) == SQLITE_TEXT
+	|| sqlite3_value_type (argv[5]) == SQLITE_NULL)
+	;
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    p_blob = sqlite3_value_blob (argv[0]);
+    n_bytes = sqlite3_value_bytes (argv[0]);
+    identifier = (const char *) sqlite3_value_text (argv[1]);
+    if (sqlite3_value_type (argv[2]) == SQLITE_TEXT)
+	ns_id = (const char *) sqlite3_value_text (argv[2]);
+    if (sqlite3_value_type (argv[3]) == SQLITE_TEXT)
+	uri_id = (const char *) sqlite3_value_text (argv[3]);
+    if (sqlite3_value_type (argv[4]) == SQLITE_TEXT)
+	ns_charstr = (const char *) sqlite3_value_text (argv[4]);
+    if (sqlite3_value_type (argv[5]) == SQLITE_TEXT)
+	uri_charstr = (const char *) sqlite3_value_text (argv[5]);
+    if (!gaiaXmlBlobAddParentId
+	(sqlite3_user_data (context), p_blob, n_bytes, identifier, ns_id,
+	 uri_id, ns_charstr, uri_charstr, &new_blob, &new_bytes))
+	sqlite3_result_null (context);
+    else
+	sqlite3_result_blob (context, new_blob, new_bytes, free);
+}
+
+static void
 fnct_XB_GetTitle (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -25940,6 +26195,14 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_XB_GetFileId, 0, 0);
     sqlite3_create_function (db, "XB_GetParentId", 1, SQLITE_ANY, 0,
 			     fnct_XB_GetParentId, 0, 0);
+    sqlite3_create_function (db, "XB_SetFileId", 2, SQLITE_ANY, cache,
+			     fnct_XB_SetFileId, 0, 0);
+    sqlite3_create_function (db, "XB_SetParentId", 2, SQLITE_ANY, cache,
+			     fnct_XB_SetParentId, 0, 0);
+    sqlite3_create_function (db, "XB_AddFileId", 6, SQLITE_ANY, cache,
+			     fnct_XB_AddFileId, 0, 0);
+    sqlite3_create_function (db, "XB_AddParentId", 6, SQLITE_ANY, cache,
+			     fnct_XB_AddParentId, 0, 0);
     sqlite3_create_function (db, "XB_GetTitle", 1, SQLITE_ANY, 0,
 			     fnct_XB_GetTitle, 0, 0);
     sqlite3_create_function (db, "XB_GetAbstract", 1, SQLITE_ANY, 0,

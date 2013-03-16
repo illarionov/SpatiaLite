@@ -145,7 +145,7 @@ extern "C"
  */
     GAIAGEO_DECLARE void gaiaXmlToBlob (void *p_cache, const unsigned char *xml,
 					int xml_len, int compressed,
-					const char *schamaURI,
+					const char *schemaURI,
 					unsigned char **result, int *size,
 					char **parsing_errors,
 					char **schema_validation_errors);
@@ -384,7 +384,7 @@ extern "C"
  \return the FileIdentifier for any valid XmlBLOB containing a FileIdentifier; 
   NULL in any other case.
 
- \sa gaiaIsIsoMetadataXmlBlob
+ \sa gaiaIsIsoMetadataXmlBlob, gaiaXmlBlobSetFileId, gaiaXmlBlobAddFileId
 
  \note the returned FileIdentifier corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
@@ -401,13 +401,123 @@ extern "C"
  \return the ParentIdentifier for any valid XmlBLOB containing a ParentIdentifier; 
   NULL in any other case.
 
- \sa gaiaIsIsoMetadataXmlBlob
+ \sa gaiaIsIsoMetadataXmlBlob, gaiaXmlBlobSetParentId, gaiaXmlBlobAddParentId
 
  \note the returned ParentIdentifier corresponds to dynamically allocated memory:
  so you are responsible to free() it before or after.
  */
     GAIAGEO_DECLARE char *gaiaXmlBlobGetParentId (const unsigned char
 						  *blob, int size);
+
+/**
+ Return a new XmlBLOB (ISO Metadata) by replacing the FileId value
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param blob pointer to the input XmlBLOB buffer.
+ \param size input XmlBLOB's size (in bytes).
+ \param identifier the new FileId value to be set.
+ \param new_blob on completion will contain a pointer to the output XmlBLOB buffer.
+ \param new_size on completion will containg the output XmlBlob's size (in bytes).
+
+ \return TRUE for success; FALSE for any failure cause.
+
+ \sa gaiaIsIsoMetadataXmlBlob, gaiaXmlBlobGetFileId, gaiaXmlBlobAddFileId
+
+ \note the output XmlBLOB corresponds to dynamically allocated memory:
+ so you are responsible to free() it before or after.
+ */
+    GAIAGEO_DECLARE int gaiaXmlBlobSetFileId (void *p_cache, const unsigned char
+					      *blob, int size,
+					      const char *identifier,
+					      unsigned char **new_blob,
+					      int *new_size);
+
+/**
+ Return a new XmlBLOB (ISO Metadata) by replacing the ParentId value
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param blob pointer to the inputXmlBLOB buffer.
+ \param size input XmlBLOB's size (in bytes).
+ \param identifier the new ParentId value to be set.
+ \param new_blob on completion will contain a pointer to the output XmlBLOB buffer.
+ \param new_size on completion will containg the output XmlBlob's size (in bytes).
+
+ \return TRUE for success; FALSE for any failure cause.
+
+ \sa gaiaIsIsoMetadataXmlBlob, gaiaXmlBlobGetParentId, gaiaXmlBlobAddParentId
+
+ \note the returned XmlBLOB corresponds to dynamically allocated memory:
+ so you are responsible to free() it before or after.
+ */
+    GAIAGEO_DECLARE int gaiaXmlBlobSetParentId (void *p_cache,
+						const unsigned char *blob,
+						int size,
+						const char *identifier,
+						unsigned char **new_blob,
+						int *new_size);
+
+/**
+ Return a new XmlBLOB (ISO Metadata) by inserting a FileId value
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param blob pointer to the input XmlBLOB buffer.
+ \param size input XmlBLOB's size (in bytes).
+ \param identifier the new FileId value to be inserted.
+ \param ns_id prefix corresponding to FileIdentifier NameSpace (may be NULL)
+ \param uri_id URI corresponding to the FileIdentifier NameSpace (may be NULL)
+ \param ns_charstr prefix corresponding to CharacterString NameSpace (may be NULL)
+ \param uri_charstr URI corresponding to CharacterString NameSpace (may be NULL)
+ \param new_blob on completion will contain a pointer to the output XmlBLOB buffer.
+ \param new_size on completion will containg the output XmlBlob's size (in bytes).
+
+ \return TRUE for success; FALSE for any failure cause.
+
+ \sa gaiaIsIsoMetadataXmlBlob, gaiaXmlBlobGetFileId, gaiaXmlBlobSetFileId
+
+ \note the output XmlBLOB corresponds to dynamically allocated memory:
+ so you are responsible to free() it before or after.
+ */
+    GAIAGEO_DECLARE int gaiaXmlBlobAddFileId (void *p_cache, const unsigned char
+					      *blob, int size,
+					      const char *identifier,
+					      const char *ns_id,
+					      const char *uri_id,
+					      const char *ns_charstr,
+					      const char *uri_charstr,
+					      unsigned char **new_blob,
+					      int *new_size);
+
+/**
+ Return a new XmlBLOB (ISO Metadata) by inserting a ParentId value
+
+ \param p_cache a memory pointer returned by spatialite_alloc_connection()
+ \param blob pointer to the inputXmlBLOB buffer.
+ \param size input XmlBLOB's size (in bytes).
+ \param identifier the new ParentId value to be inserted.
+ \param ns_id prefix corresponding to FileIdentifier NameSpace (may be NULL)
+ \param uri_id URI corresponding to the FileIdentifier NameSpace (may be NULL)
+ \param ns_charstr prefix corresponding to CharacterString NameSpace (may be NULL)
+ \param uri_charstr URI corresponding to CharacterString NameSpace (may be NULL)
+ \param new_blob on completion will contain a pointer to the output XmlBLOB buffer.
+ \param new_size on completion will containg the output XmlBlob's size (in bytes).
+
+ \return TRUE for success; FALSE for any failure cause.
+
+ \sa gaiaIsIsoMetadataXmlBlob, gaiaXmlBlobGetParentId, gaiaXmlBlobSetParentId
+
+ \note the returned XmlBLOB corresponds to dynamically allocated memory:
+ so you are responsible to free() it before or after.
+ */
+    GAIAGEO_DECLARE int gaiaXmlBlobAddParentId (void *p_cache,
+						const unsigned char *blob,
+						int size,
+						const char *identifier,
+						const char *ns_id,
+						const char *uri_id,
+						const char *ns_charstr,
+						const char *uri_charstr,
+						unsigned char **new_blob,
+						int *new_size);
 
 /**
  Return the Title from a valid XmlBLOB buffer

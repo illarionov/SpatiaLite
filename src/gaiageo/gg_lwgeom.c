@@ -1705,6 +1705,7 @@ gaiaGeodesicArea (gaiaGeomCollPtr geom, double a, double b, int use_ellipsoid,
     else
 	*area = lwgeom_area_sphere (g, &ellips);
     lwgeom_free (g);
+    return 1;
 }
 
 GAIAGEO_DECLARE char *

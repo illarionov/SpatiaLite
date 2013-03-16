@@ -2684,12 +2684,44 @@ the return type is Integer, with a return value of 1 for TRUE or 0 for FALSE</td
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Will return the FileIdentifier defined within the XmlBLOB (if any).<hr>
 				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object), or when no FileIdentifier is defined.<hr>Supported only on ISO Metadata XML Documents.</td></tr>
+			<tr><td><b>XB_SetFileId</b></td>
+				<td>XB_SetFileId( xmlObject <i>XmlBLOB</i> , fileId <i>String</i> ) : <i>XmlBLOB</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Will return a new XmlBLOB by replacing the FileIdentifier value.<br>
+				The input XmlBLOB is expected to be of the <u>ISO Metadata</u> type and must containt an already defined <u>FileIdentifier</u>.<hr>
+				<b>NULL</b> will be returned for any invalid input.</td></tr>
+			<tr><td><b>XB_AddFileId</b></td>
+				<td>XB_AddFileId( xmlObject <i>XmlBLOB</i> , fileId <i>String</i> , IdNameSpacePrefix <i>String</i> , IdNameSpaceURI <i>String</i> , CsNameSpacePrefix <i>String</i> , CsNameSpaceURI <i>String</i> ) : <i>XmlBLOB</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Will return a new XmlBLOB by inserting a FileIdentifier value.<br>
+				The input XmlBLOB is expected to be of the <u>ISO Metadata</u> type and must not containt an already defined <u>FileIdentifier</u>.<hr>
+				<b>IdNameSpacePrefix</b> and <b>IdNameSpaceURI</b> are expected to represent the <u>namespace</u> (if any) corresponding to the <b>&lt;fileIdentifier&gt;</b> tag (could be eventually <b>NULL</b>).<br>
+				<b>CsNameSpacePrefix</b> and <b>CsNameSpaceURI</b> are expected to represent the <u>namespace</u> (if any) corresponding to the <b>&lt;CharacterString&gt;</b> tag (could be eventually <b>NULL</b>).<hr>
+				<b>NULL</b> will be returned for any invalid input.</td></tr>
 			<tr><td><b>XB_GetParentId</b></td>
 				<td>XB_GetParentId( xmlObject <i>XmlBLOB</i> ) : <i>String</i></td>
 				<td></td>
 				<td align="center" bgcolor="#99d099">libxml2</td>
 				<td>Will return the ParentIdentifier defined within the XmlBLOB (if any).<hr>
 				<b>NULL</b> will be returned for any invalid input (not a valid XmlBLOB object), or when no ParentIdentifier is defined.<hr>Supported only on ISO Metadata XML Documents.</td></tr>
+			<tr><td><b>XB_SetParentId</b></td>
+				<td>XB_SetParentId( xmlObject <i>XmlBLOB</i> , parentId <i>String</i> ) : <i>XmlBLOB</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Will return a new XmlBLOB by replacing the ParentIdentifier value.<br>
+				The input XmlBLOB is expected to be of the <u>ISO Metadata</u> type and must containt an already defined <u>ParentIdentifier</u>.<hr>
+				<b>NULL</b> will be returned for any invalid input.</td></tr>
+			<tr><td><b>XB_AddParentId</b></td>
+				<td>XB_AddParentId( xmlObject <i>XmlBLOB</i> , parentId <i>String</i> , IdNameSpacePrefix <i>String</i> , IdNameSpaceURI <i>String</i> , CsNameSpacePrefix <i>String</i> , CsNameSpaceURI <i>String</i> ) : <i>XmlBLOB</i></td>
+				<td></td>
+				<td align="center" bgcolor="#99d099">libxml2</td>
+				<td>Will return a new XmlBLOB by inserting a ParentIdentifier value.<br>
+				The input XmlBLOB is expected to be of the <u>ISO Metadata</u> type and must not containt an already defined <u>ParentIdentifier</u>.<hr>
+				<b>IdNameSpacePrefix</b> and <b>IdNameSpaceURI</b> are expected to represent the <u>namespace</u> (if any) corresponding to the <b>&lt;parentIdentifier&gt;</b> tag (could be eventually <b>NULL</b>).<br>
+				<b>CsNameSpacePrefix</b> and <b>CsNameSpaceURI</b> are expected to represent the <u>namespace</u> (if any) corresponding to the <b>&lt;CharacterString&gt;</b> tag (could be eventually <b>NULL</b>).<hr>
+				<b>NULL</b> will be returned for any invalid input.</td></tr>
 			<tr><td><b>XB_GetTitle</b></td>
 				<td>XB_GetTitle( xmlObject <i>XmlBLOB</i> ) : <i>String</i></td>
 				<td></td>
