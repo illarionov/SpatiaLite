@@ -5,7 +5,11 @@ AUTOMAKE_OPTIONS = dist-zip
 EXTRA_DIST = makefile.vc nmake.opt Android.mk mainpage.doxy README.coverage \
 	spatialite-sql-latest.html config-msvc.h
 
-SUBDIRS = src test examples
+if ENABLE_EXAMPLES
+EXAMPLES = examples
+endif
+
+SUBDIRS = src test $(EXAMPLES)
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = spatialite.pc

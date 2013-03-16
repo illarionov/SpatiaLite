@@ -341,6 +341,15 @@ if test "x$enable_gcov" = "xyes"; then
 fi
 #-----------------------------------------------------------------------
 
+#-----------------------------------------------------------------------
+#   --enable-examples
+#
+AC_ARG_ENABLE(examples, [AS_HELP_STRING(
+       [--enable-examples], [enables building examples [default=yes]])],
+       [], [enable_examples=yes])
+AM_CONDITIONAL(ENABLE_EXAMPLES, [test x"$enable_examples" != "xno"])
+#-----------------------------------------------------------------------
+
 # Checking for MinGW
 AM_CONDITIONAL([MINGW], [test "$target_alias" = "mingw32"])
 # Checking for Mac OsX

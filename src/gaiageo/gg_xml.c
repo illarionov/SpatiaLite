@@ -2721,8 +2721,8 @@ gaiaXmlGetInternalSchemaURI (void *p_cache, const unsigned char *xml,
 						    node->children->content);
 					uri = malloc (len + 1);
 					strcpy (uri,
-						(const char *) node->children->
-						content);
+						(const char *) node->
+						children->content);
 				    }
 			      }
 			}
@@ -2972,7 +2972,12 @@ gaiaXmlBlobSetFileId (void *p_cache, const unsigned char *blob, int blob_size,
       {
 	  gaiaXmlToBlob (cache, out_blob, out_len, compressed, schemaURI,
 			 new_blob, new_size, NULL, NULL);
+#ifdef __MINGW__
+/* MinGW is unable to statically link libxml2 if xmlFree() is declared */
+	  free (out_blob);
+#else
 	  xmlFree (out_blob);
+#endif
 	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
 	  return 1;
       }
@@ -3085,7 +3090,12 @@ gaiaXmlBlobSetParentId (void *p_cache, const unsigned char *blob, int blob_size,
       {
 	  gaiaXmlToBlob (cache, out_blob, out_len, compressed, schemaURI,
 			 new_blob, new_size, NULL, NULL);
+#ifdef __MINGW__
+/* MinGW is unable to statically link libxml2 if xmlFree() is declared */
+	  free (out_blob);
+#else
 	  xmlFree (out_blob);
+#endif
 	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
 	  return 1;
       }
@@ -3173,8 +3183,7 @@ addIsoId (xmlDocPtr xml_doc, const char *node_name, const char *identifier,
     if (ns_charstr_ptr == NULL && ns_charstr != NULL && uri_charstr != NULL)
       {
 	  ns_charstr_ptr =
-	      xmlNewNs (root, (xmlChar *) uri_charstr,
-			(xmlChar *) ns_charstr);
+	      xmlNewNs (root, (xmlChar *) uri_charstr, (xmlChar *) ns_charstr);
 	  xmlSetNs (charstr_node, ns_charstr_ptr);
       }
     text = xmlNewText ((xmlChar *) identifier);
@@ -3295,7 +3304,12 @@ gaiaXmlBlobAddFileId (void *p_cache, const unsigned char *blob, int blob_size,
       {
 	  gaiaXmlToBlob (cache, out_blob, out_len, compressed, schemaURI,
 			 new_blob, new_size, NULL, NULL);
+#ifdef __MINGW__
+/* MinGW is unable to statically link libxml2 if xmlFree() is declared */
+	  free (out_blob);
+#else
 	  xmlFree (out_blob);
+#endif
 	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
 	  return 1;
       }
@@ -3411,7 +3425,12 @@ gaiaXmlBlobAddParentId (void *p_cache, const unsigned char *blob, int blob_size,
       {
 	  gaiaXmlToBlob (cache, out_blob, out_len, compressed, schemaURI,
 			 new_blob, new_size, NULL, NULL);
+#ifdef __MINGW__
+/* MinGW is unable to statically link libxml2 if xmlFree() is declared */
+	  free (out_blob);
+#else
 	  xmlFree (out_blob);
+#endif
 	  xmlSetGenericErrorFunc ((void *) stderr, NULL);
 	  return 1;
       }
