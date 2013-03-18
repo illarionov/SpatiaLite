@@ -126,7 +126,7 @@ spatialite_cleanup ()
     sqlite3_reset_auto_extension ();
 }
 
-#if !(defined _WIN32) || defined(__MINGW__)
+#if !(defined _WIN32) || defined(__MINGW32__)
 /* MSVC is unable to understand this declaration */
 __attribute__ ((visibility ("default")))
 #endif

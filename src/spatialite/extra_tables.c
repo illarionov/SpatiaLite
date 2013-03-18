@@ -1327,7 +1327,7 @@ create_iso_metadata_view (sqlite3 * sqlite)
 	"XB_GetAbstract(metadata) AS abstract, geometry AS geometry, "
 	"fileId AS fileIdentifier, parentId AS parentIdentifier, metadata AS metadata, "
 	"XB_IsSchemaValidated(metadata) AS schema_validated, "
-	"XB_GetInternalSchemaURI(metadata) AS metadata_schema_URI\n"
+	"XB_GetSchemaURI(metadata) AS metadata_schema_URI\n"
 	"FROM ISO_metadata";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)

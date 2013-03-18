@@ -2972,7 +2972,7 @@ gaiaXmlBlobSetFileId (void *p_cache, const unsigned char *blob, int blob_size,
       {
 	  gaiaXmlToBlob (cache, out_blob, out_len, compressed, schemaURI,
 			 new_blob, new_size, NULL, NULL);
-#ifdef __MINGW__
+#ifdef __MINGW32__
 /* MinGW is unable to statically link libxml2 if xmlFree() is declared */
 	  free (out_blob);
 #else
@@ -3090,7 +3090,7 @@ gaiaXmlBlobSetParentId (void *p_cache, const unsigned char *blob, int blob_size,
       {
 	  gaiaXmlToBlob (cache, out_blob, out_len, compressed, schemaURI,
 			 new_blob, new_size, NULL, NULL);
-#ifdef __MINGW__
+#ifdef __MINGW32__
 /* MinGW is unable to statically link libxml2 if xmlFree() is declared */
 	  free (out_blob);
 #else
@@ -3304,7 +3304,7 @@ gaiaXmlBlobAddFileId (void *p_cache, const unsigned char *blob, int blob_size,
       {
 	  gaiaXmlToBlob (cache, out_blob, out_len, compressed, schemaURI,
 			 new_blob, new_size, NULL, NULL);
-#ifdef __MINGW__
+#ifdef __MINGW32__
 /* MinGW is unable to statically link libxml2 if xmlFree() is declared */
 	  free (out_blob);
 #else
@@ -3425,7 +3425,7 @@ gaiaXmlBlobAddParentId (void *p_cache, const unsigned char *blob, int blob_size,
       {
 	  gaiaXmlToBlob (cache, out_blob, out_len, compressed, schemaURI,
 			 new_blob, new_size, NULL, NULL);
-#ifdef __MINGW__
+#ifdef __MINGW32__
 /* MinGW is unable to statically link libxml2 if xmlFree() is declared */
 	  free (out_blob);
 #else

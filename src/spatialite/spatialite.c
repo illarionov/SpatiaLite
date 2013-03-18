@@ -26441,7 +26441,7 @@ spatialite_cleanup_ex (void *ptr)
 #endif /* not built as loadable-extension only */
 
 #ifdef LOADABLE_EXTENSION	/* loadable-extension only */
-#if !(defined _WIN32) || defined(__MINGW__)
+#if !(defined _WIN32) || defined(__MINGW32__)
 /* MSVC is unable to understand this declaration */
 __attribute__ ((visibility ("default")))
 #endif

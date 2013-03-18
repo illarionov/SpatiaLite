@@ -83,6 +83,30 @@ splite_lwgeom_version (void)
     return splitelwgeomversion;
 }
 
+static void
+lwgaia_errorreporter(const char *fmt, va_list ap)
+{
+/* 
+/ overriding the PostGIS own implementation is an absolute must,
+/ because this one directly calls exit() thus immediately terminating 
+/ the process !!!!!
+*/
+	char *msg;
+
+	/*
+	 * This is a GNU extension.
+	 * Dunno how to handle errors here.
+	 */
+	if (!lw_vasprintf (&msg, fmt, ap))
+	{
+		va_end (ap);
+		return;
+	}
+	fprintf(stderr, "%s\n", msg);
+	free(msg);
+	/* exit(1); */
+}
+
 void
 lwgeom_init_allocators (void)
 {
@@ -92,7 +116,7 @@ lwgeom_init_allocators (void)
     lwrealloc_var = default_reallocator;
     lwfree_var = default_freeor;
     lwnotice_var = default_noticereporter;
-    lwerror_var = default_errorreporter;
+    lwerror_var = lwgaia_errorreporter;
 }
 
 static LWGEOM *
