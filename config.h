@@ -194,6 +194,9 @@
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "4.1.0-beta"
 
+/* Should be defined when linking liblwgeom from PostGIS 2.1 (or later). */
+/* #undef POSTGIS_2_1 */
+
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 

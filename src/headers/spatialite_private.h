@@ -269,6 +269,8 @@ extern "C"
 
     SPATIALITE_PRIVATE const char *splite_lwgeom_version (void);
 
+    SPATIALITE_PRIVATE void splite_lwgeom_init (void);
+
     SPATIALITE_PRIVATE void splite_free_geos_cache_item (struct
 							 splite_geos_cache_item
 							 *p);

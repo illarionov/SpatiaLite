@@ -51,6 +51,8 @@ AH_TEMPLATE([ENABLE_LIBXML2],
             [Should be defined in order to enable LIBXML2 support.])
 AH_TEMPLATE([ENABLE_GEOPACKAGE],
             [Should be defined in order to enable GeoPackage support.])
+AH_TEMPLATE([POSTGIS_2_1],
+            [Should be defined when linking liblwgeom from PostGIS 2.1 (or later).])
 
 # Checks for header files.
 AC_CHECK_HEADERS(stdlib.h,, [AC_MSG_ERROR([cannot find stdlib.h, bailing out])])
@@ -299,6 +301,10 @@ if test x"$enable_geos" != "xno"; then
             [AC_MSG_ERROR(['liblwgeom' doesn't seem to be installed on this system; unsupported lwgeom_make_valid().])])
 	  LIBS="$_save_libs"
 	  LIBS=$LIBS' -llwgeom -lgeos_c'
+	#
+	# testing for PostGIS 2.1 - lwgeom_set_handlers
+	#
+	  AC_SEARCH_LIBS(lwgeom_set_handlers,geos_c,AC_DEFINE(POSTGIS_2_1))
   fi
 else
   AC_DEFINE(OMIT_GEOS)
