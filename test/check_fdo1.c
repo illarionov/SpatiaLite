@@ -312,9 +312,9 @@ int main (int argc, char *argv[])
       }
       if (strcmp(results[i], "0") == 0) {
         const char *geos_msg = gaiaGetGeosErrorMsg();
-        if (strlen(geos_msg) == 0)
+        if (geos_msg == NULL)
           geos_msg = gaiaGetGeosWarningMsg();
-        if (strlen(geos_msg) == 0) {
+        if (geos_msg == NULL) {
           fprintf (stderr, "Unexpected error: invalid result\n");
           return -41;
         }
@@ -342,9 +342,9 @@ int main (int argc, char *argv[])
       }
       if (strcmp(results[i], "0") == 0) {
         const char *geos_msg = gaiaGetGeosErrorMsg();
-        if (strlen(geos_msg) == 0)
+        if (geos_msg == NULL)
           geos_msg = gaiaGetGeosWarningMsg();
-        if (strlen(geos_msg) == 0) {
+        if (geos_msg == NULL) {
           fprintf (stderr, "Unexpected error: invalid result\n");
           return -45;
         }
@@ -372,9 +372,9 @@ int main (int argc, char *argv[])
       }
       if (strcmp(results[i], "0") == 0) {
         const char *geos_msg = gaiaGetGeosErrorMsg();
-        if (strlen(geos_msg) == 0)
+        if (geos_msg == NULL)
           geos_msg = gaiaGetGeosWarningMsg();
-        if (strlen(geos_msg) == 0) {
+        if (geos_msg == NULL) {
           fprintf (stderr, "Unexpected error: invalid result\n");
           return -49;
         }

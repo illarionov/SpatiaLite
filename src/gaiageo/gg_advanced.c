@@ -1213,7 +1213,8 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
 	  /* checking LINESTRINGs */
 	  if (gaiaIsToxicLinestring (line))
 	    {
-		gaiaSetGeosErrorMsg ("gaiaIsToxic detected a toxic Linestring");
+		gaiaSetGeosAuxErrorMsg
+		    ("gaiaIsToxic detected a toxic Linestring: < 2 pts");
 		return 1;
 	    }
 	  line = line->Next;
@@ -1225,7 +1226,8 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
 	  ring = polyg->Exterior;
 	  if (gaiaIsToxicRing (ring))
 	    {
-		gaiaSetGeosErrorMsg ("gaiaIsToxic detected a toxic Ring");
+		gaiaSetGeosAuxErrorMsg
+		    ("gaiaIsToxic detected a toxic Ring: < 4 pts");
 		return 1;
 	    }
 	  for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -1233,7 +1235,8 @@ gaiaIsToxic (gaiaGeomCollPtr geom)
 		ring = polyg->Interiors + ib;
 		if (gaiaIsToxicRing (ring))
 		  {
-		      gaiaSetGeosErrorMsg ("gaiaIsToxic detected a toxic Ring");
+		      gaiaSetGeosAuxErrorMsg
+			  ("gaiaIsToxic detected a toxic Ring: < 4 pts");
 		      return 1;
 		  }
 	    }
@@ -1259,7 +1262,10 @@ gaiaIsNotClosedRing (gaiaRingPtr ring)
     if (x0 == x1 && y0 == y1 && z0 == z1 && m0 == m1)
 	return 0;
     else
-	return 1;
+      {
+	  gaiaSetGeosAuxErrorMsg ("gaia detected a not-closed Ring");
+	  return 1;
+      }
 }
 
 GAIAGEO_DECLARE int

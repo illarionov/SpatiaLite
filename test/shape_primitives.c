@@ -665,6 +665,46 @@ int main (int argc, char *argv[])
         return -1;
     }
 	
+/* testing invalid geometries [check/repair] */
+    cache = spatialite_alloc_connection();
+    ret = system("cp test-invalid.sqlite copy-invalid.sqlite");
+    if (ret != 0)
+    {
+        fprintf(stderr, "cannot copy invalid-geoms database\n");
+        return -1;
+    }
+    ret = sqlite3_open_v2 ("copy-invalid.sqlite", &handle, SQLITE_OPEN_READWRITE, NULL);
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "cannot open invalid-geoms database: %s\n", sqlite3_errmsg (handle));
+	sqlite3_close(handle);
+	return -1;
+    }
+
+    spatialite_init_ex (handle, cache, 0);
+    
+    ret = check_all_geometry_columns (handle, "./report", NULL, NULL);
+    if (!ret) {
+        fprintf (stderr, "check_all_geometry_columns() error\n");
+	sqlite3_close(handle);
+	return -61;
+    }
+
+    ret = sanitize_all_geometry_columns (handle, "tmp_", "./report", NULL, NULL); 
+    if (!ret) {
+        fprintf (stderr, "sanitize_all_geometry_columns() error\n");
+	sqlite3_close(handle);
+	return -62;
+    }
+
+    spatialite_cleanup_ex (cache);
+    sqlite3_close(handle);
+    ret = unlink("copy-invalid.sqlite");
+    if (ret != 0)
+    {
+        fprintf(stderr, "cannot remove invalid-geoms database\n");
+        return -1;
+    }
+	
 /* testing legacy style metadata layout (v.2.3.1) */
     cache = spatialite_alloc_connection();
     ret = system("cp test-legacy-2.3.1.sqlite copy-legacy-2.3.1.sqlite");

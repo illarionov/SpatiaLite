@@ -84,11 +84,39 @@ int main (int argc, char *argv[])
 	sqlite3_close(handle);
 	return -3;
     }
+
+    ret = check_geometry_column (handle, "test1", "geometry", "./report.html", NULL, NULL, NULL);
+    if (ret) {
+        fprintf (stderr, "check_geometry_column() error\n");
+	sqlite3_close(handle);
+	return -4;
+    }
+
+    ret = sanitize_geometry_column (handle, "test1", "geometry", "tmp_test1", "./report.html", NULL, NULL, NULL, NULL, NULL); 
+    if (ret) {
+        fprintf (stderr, "sanitize_geometry_column() error\n");
+	sqlite3_close(handle);
+	return -5;
+    }
+
+    ret = check_geometry_column (handle, "test1", "col1", "./report.html", NULL, NULL, NULL);
+    if (!ret) {
+        fprintf (stderr, "check_geometry_column() error\n");
+	sqlite3_close(handle);
+	return -6;
+    }
+
+    ret = sanitize_geometry_column (handle, "test1", "col1", "tmp_test1", "./report.html", NULL, NULL, NULL, NULL, NULL); 
+    if (!ret) {
+        fprintf (stderr, "sanitize_geometry_column() error\n");
+	sqlite3_close(handle);
+	return -7;
+    }
     
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -4;
+	return -8;
     }
     
     spatialite_cleanup_ex (cache);

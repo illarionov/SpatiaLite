@@ -604,6 +604,126 @@ extern "C"
  */
     SPATIALITE_DECLARE int gaiaDropTable (sqlite3 * sqlite, const char *table);
 
+/**
+ Checks a Geometry Column for validity
+
+ \param sqlite handle to current DB connection
+ \param table name of the table 
+ \param geometry name of the column to be checked
+ \param report_path pathname of the report-file
+ \param n_rows if this variable is not NULL on successful completion will
+ contain the total number of rows found into the checkeck table
+ \param n_invalids if this variable is not NULL on successful completion will
+ contain the total number of invalid Geometries found into the checkeck table
+ \param err_msg if this variable is not NULL and the return status is ZERO
+ (failure), an appropriate error message will be returned
+
+ \note this function will check a Geometry Column (layer) for validity;
+ a HTML report will be produced.
+ \n an eventual error message returned via err_msg requires to be deallocated
+ by invoking free()
+
+ \return 0 on failure, any other value on success
+ */
+    SPATIALITE_DECLARE int check_geometry_column (sqlite3 * sqlite,
+						  const char *table,
+						  const char *geom,
+						  const char *report_path,
+						  int *n_rows, int *n_invalids,
+						  char **err_msg);
+
+/**
+ Checks all Geometry Columns for validity
+
+ \param sqlite handle to current DB connection
+ \param output_dir pathname of the directory to be created for report-files
+ \param n_invalids if this variable is not NULL on successful completion will
+ contain the total number of invalid Geometries found
+ \param err_msg if this variable is not NULL and the return status is ZERO
+ (failure), an appropriate error message will be returned
+
+ \note this function will check all Geometry Columns (vector layers) for validity;
+ a HTML report will be produced.
+ \n an eventual error message returned via err_msg requires to be deallocated
+ by invoking free()
+
+ \return 0 on failure, any other value on success
+ */
+    SPATIALITE_DECLARE int check_all_geometry_columns (sqlite3 * sqlite,
+						       const char *output_dir,
+						       int *n_invalids,
+						       char **err_msg);
+
+/**
+ Sanitizes a Geometry Column making all invalid geometries to be valid
+
+ \param sqlite handle to current DB connection
+ \param table name of the table 
+ \param geometry name of the column to be checked
+ \param tmp_table name of the temporary table
+ \param report_path pathname of the report-file
+ \param n_invalids if this variable is not NULL on successful completion will
+ contain the total number of invalid Geometries found into the sanitize table
+ \param n_repaired if this variable is not NULL on successful completion will
+ contain the total number of repaired Geometries
+ \param n_discarded if this variable is not NULL on successful completion will
+ contain the total number of repaired Geometries (by discarding fragments)
+ \param n_failures if this variable is not NULL on successful completion will
+ contain the total number of repair failures (i.e. Geometries beyond possible repair)
+ \param err_msg if this variable is not NULL and the return status is ZERO
+ (failure), an appropriate error message will be returned
+
+ \note this function will attempt to make valid all invalid geometries
+ found within a Geometry Column (layer); a temporary table is required.
+ \n if the process has full success the temprary table will be deleted;
+ otherwise it will be preserved for further inspection.
+ a HTML report will be produced as well.
+ \n an eventual error message returned via err_msg requires to be deallocated
+ by invoking free()
+
+ \return 0 on failure, any other value on success
+ */
+    SPATIALITE_DECLARE int sanitize_geometry_column (sqlite3 * sqlite,
+						     const char *table,
+						     const char *geom,
+						     const char *tmp_table,
+						     const char *report_path,
+						     int *n_invalids,
+						     int *n_repaired,
+						     int *n_discarded,
+						     int *n_failures,
+						     char **err_msg);
+
+/**
+ Sanitizes all Geometry Columns making all invalid geometries to be valid
+
+ \param sqlite handle to current DB connection
+ \param tmp_prefix name-prefix for temporary tables
+ \param output_dir pathname of the directory to be created for report-files
+ \param not_repaired if this variable is not NULL on successful completion will
+ contain the total count of repair failures (i.e. Geometries beyond possible repair)
+ \param err_msg if this variable is not NULL and the return status is ZERO
+ (failure), an appropriate error message will be returned
+
+ \note this function will attempt to make valid all invalid geometries
+ found within all Geometry Columns (vector layers); a temporary table is 
+ required so to support each input table.
+ \n if the process has full success the temprary table will be deleted;
+ otherwise it will be preserved for further inspection.
+ a HTML report will be produced as well.
+ \n an eventual error message returned via err_msg requires to be deallocated
+ by invoking free()
+
+ \return 0 on failure, any other value on success
+ */
+    SPATIALITE_DECLARE int sanitize_all_geometry_columns (sqlite3 * sqlite,
+							  const char
+							  *tmp_prefix,
+							  const char
+							  *output_dir,
+							  int *not_repaired,
+							  char **err_msg);
+
 #ifdef __cplusplus
 }
 #endif

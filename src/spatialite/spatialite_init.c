@@ -77,9 +77,7 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 #include <geos_c.h>
 #endif
 
-SQLITE_EXTENSION_INIT1 
-
-static int
+SQLITE_EXTENSION_INIT1 static int
 init_spatialite_extension (sqlite3 * db, char **pzErrMsg,
 			   const sqlite3_api_routines * pApi)
 {
@@ -123,6 +121,11 @@ spatialite_cleanup ()
 #ifndef OMIT_GEOS
     finishGEOS ();
 #endif
+
+#ifdef ENABLE_LWGEOM
+    gaiaResetLwGeomMsg ();
+#endif
+
     sqlite3_reset_auto_extension ();
 }
 
@@ -130,9 +133,9 @@ spatialite_cleanup ()
 /* MSVC is unable to understand this declaration */
 __attribute__ ((visibility ("default")))
 #endif
-SPATIALITE_DECLARE int
-sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
- 		        const sqlite3_api_routines * pApi)
+     SPATIALITE_DECLARE int
+	 sqlite3_extension_init (sqlite3 * db, char **pzErrMsg,
+				 const sqlite3_api_routines * pApi)
 {
 /* SQLite invokes this routine once when it dynamically loads the extension. */
 

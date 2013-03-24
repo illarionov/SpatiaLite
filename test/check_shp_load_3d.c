@@ -486,6 +486,20 @@ int main (int argc, char *argv[])
 /* checking gaiaGetVectorLayersList() - ALL */
     list = gaiaGetVectorLayersList(handle, NULL, NULL, GAIA_VECTORS_LIST_FAST);
     gaiaFreeVectorLayersList(list);
+
+    ret = check_all_geometry_columns (handle, "./report", NULL, NULL);
+    if (!ret) {
+        fprintf (stderr, "check_all_geometry_columns() error\n");
+	sqlite3_close(handle);
+	return -61;
+    }
+
+    ret = sanitize_all_geometry_columns (handle, "tmp_", "./report", NULL, NULL); 
+    if (!ret) {
+        fprintf (stderr, "sanitize_all_geometry_columns() error\n");
+	sqlite3_close(handle);
+	return -62;
+    }
     
 /* checking gaiaGetVectorLayersList() - Table */
     list = gaiaGetVectorLayersList(handle, "elem_points_xyz", NULL, GAIA_VECTORS_LIST_FAST);

@@ -138,8 +138,8 @@ extern "C"
 /**
  Resets the GEOS error and warning messages to an empty state
 
- \sa gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg, gaiaSetGeosErrorMsg,
- gaiaSetGeosWarningMsg
+ \sa gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg, gaiaGeosAuxErrorMsg,
+ gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
 
  \remark \b GEOS support required.
  */
@@ -151,8 +151,8 @@ extern "C"
  \return the latest GEOS error message: an empty string if no error was
  previoysly found.
 
- \sa gaiaResetGeosMsg, gaiaGetGeosWarningMsg, gaiaSetGeosErrorMsg,
- gaiaSetGeosWarningMsg
+ \sa gaiaResetGeosMsg, gaiaGetGeosWarningMsg, gaiaGetGeosAuxErrorMsg,
+ gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
 
  \remark \b GEOS support required.
  */
@@ -164,12 +164,25 @@ extern "C"
  \return the latest GEOS warning message: an empty string if no warning was 
  previoysly found.
 
- \sa gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaSetGeosErrorMsg,
- gaiaSetGeosWarningMsg
+ \sa gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosAuxErrorMsg,
+ gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE const char *gaiaGetGeosWarningMsg (void);
+
+/**
+ Return the latest GEOS (auxiliary) error message (if any)
+
+ \return the latest GEOS (auxiliary) error message: an empty string if no 
+ error was previoysly found.
+
+ \sa gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg, 
+ gaiaSetGeosErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE const char *gaiaGetGeosAuxErrorMsg (void);
 
 /**
  Set the current GEOS error message
@@ -177,7 +190,7 @@ extern "C"
  \param msg the error message to be set.
 
  \sa gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg,
- gaiaSetGeosWarningMsg
+ gaiaGetGeosAuxErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosAuxErrorMsg
 
  \remark \b GEOS support required.
  */
@@ -189,11 +202,23 @@ extern "C"
  \param msg the warning message to be set.
 
  \sa gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg,
- gaiaSetGeosErrorMsg
+ gaiaGetGeosAuxErrorMsg, gaiaSetGeosErrorMsg, gaiaSetGeosAuxErrorMsg
 
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE void gaiaSetGeosWarningMsg (const char *msg);
+
+/**
+ Set the current GEOS (auxiliary) error message
+
+ \param msg the error message to be set.
+
+ \sa gaiaResetGeosMsg, gaiaGetGeosErrorMsg, gaiaGetGeosWarningMsg,
+ gaiaGetGeosAuxErrorMsg, gaiaSetGeosWarningMsg, gaiaSetGeosErrorMsg
+
+ \remark \b GEOS support required.
+ */
+    GAIAGEO_DECLARE void gaiaSetGeosAuxErrorMsg (const char *msg);
 
 /**
  Converts a Geometry object into a GEOS Geometry
@@ -409,27 +434,6 @@ extern "C"
  \remark \b GEOS support required.
  */
     GAIAGEO_DECLARE int gaiaGeomCollArea (gaiaGeomCollPtr geom, double *area);
-
-/**
- Measures the total Area for a Geometry object (geodesic)
-
- \param geom pointer to Geometry object
- \param a major axis of the reference spheroid.
- \param b minor axis of the reference spheroid.
- \param use_ellipsoid if TRUE will measure the Area on the Ellipsoid,
-  otherwise on the Sphere
- \param area on completion this variable will contain the measured area
-
- \return 0 on failure: any other value on success
-
- \sa gaiaGeomCollLength, gaiaMeasureArea, gaiaGeomCollArea
-
- \remark \b LWGEOM support required.
- */
-    GAIAGEO_DECLARE int gaiaGeodesicArea (gaiaGeomCollPtr geom, double a,
-					  double b, int use_ellipsoid,
-					  double *area);
-
 
 /**
  Attempts to rearrange a generic Geometry object into a Polygon or MultiPolygon
@@ -1550,6 +1554,66 @@ extern "C"
 #endif
 
 /**
+ Resets the LWGEOM error and warning messages to an empty state
+
+ \sa gaiaGetLwGeomErrorMsg, gaiaGetLwGeomWarningMsg, gaiaSetLwGeomErrorMsg,
+ gaiaSetLwGeomWarningMsg
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE void gaiaResetLwGeomMsg (void);
+
+/**
+ Return the latest LWGEOM error message (if any)
+
+ \return the latest LWGEOM error message: an empty string if no error was
+ previoysly found.
+
+ \sa gaiaResetLwGeomMsg, gaiaGetLwGeomWarningMsg, gaiaSetLwGeomErrorMsg,
+ gaiaSetLwGeomWarningMsg
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE const char *gaiaGetLwGeomErrorMsg (void);
+
+/**
+ Return the latest LWGEOM warning message (if any)
+
+ \return the latest LWGEOM warning message: an empty string if no warning was 
+ previoysly found.
+
+ \sa gaiaResetLwGeomMsg, gaiaGetLwGeomErrorMsg, gaiaSetLwGeomErrorMsg,
+ gaiaSetLwGeomWarningMsg
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE const char *gaiaGetLwGeomWarningMsg (void);
+
+/**
+ Set the current LWGEOM error message
+
+ \param msg the error message to be set.
+
+ \sa gaiaResetLwGeomMsg, gaiaGetLwGeomErrorMsg, gaiaGetLwGeomWarningMsg,
+ gaiaSetLwGeomWarningMsg
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE void gaiaSetLwGeomErrorMsg (const char *msg);
+
+/**
+ Set the current LWGEOM warning message
+
+ \param msg the warning message to be set.
+
+ \sa gaiaResetLwGeomMsg, gaiaGetLwGeomErrorMsg, gaiaGetLwGeomWarningMsg,
+ gaiaSetLwGeomErrorMsg
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE void gaiaSetLwGeomWarningMsg (const char *msg);
+
+/**
  Utility function: MakeValid
 
  \param geom the input Geometry object.
@@ -1834,6 +1898,25 @@ extern "C"
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaSplitRight (gaiaGeomCollPtr input,
 						    gaiaGeomCollPtr blade);
 
+/**
+ Measures the total Area for a Geometry object (geodesic)
+
+ \param geom pointer to Geometry object
+ \param a major axis of the reference spheroid.
+ \param b minor axis of the reference spheroid.
+ \param use_ellipsoid if TRUE will measure the Area on the Ellipsoid,
+  otherwise on the Sphere
+ \param area on completion this variable will contain the measured area
+
+ \return 0 on failure: any other value on success
+
+ \sa gaiaGeomCollLength, gaiaMeasureArea, gaiaGeomCollArea
+
+ \remark \b LWGEOM support required.
+ */
+    GAIAGEO_DECLARE int gaiaGeodesicArea (gaiaGeomCollPtr geom, double a,
+					  double b, int use_ellipsoid,
+					  double *area);
 
 #endif				/* end LWGEOM support */
 

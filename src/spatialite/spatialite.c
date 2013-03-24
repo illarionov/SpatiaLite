@@ -16290,12 +16290,18 @@ geos_error (const char *fmt, ...)
 {
 /* reporting some GEOS error */
     va_list ap;
-    char msg[2048];
+    char *msg;
     va_start (ap, fmt);
-    vsprintf (msg, fmt, ap);
+    msg = sqlite3_vmprintf (fmt, ap);
     va_end (ap);
-    spatialite_e ("GEOS error: %s\n", msg);
-    gaiaSetGeosErrorMsg (msg);
+    if (msg)
+      {
+	  spatialite_e ("GEOS error: %s\n", msg);
+	  gaiaSetGeosErrorMsg (msg);
+	  sqlite3_free (msg);
+      }
+    else
+	gaiaSetGeosErrorMsg (NULL);
 }
 
 
@@ -16304,12 +16310,18 @@ geos_warning (const char *fmt, ...)
 {
 /* reporting some GEOS warning */
     va_list ap;
-    char msg[2048];
+    char *msg;
     va_start (ap, fmt);
-    vsprintf (msg, fmt, ap);
+    msg = sqlite3_vmprintf (fmt, ap);
     va_end (ap);
-    spatialite_e ("GEOS warning: %s\n", msg);
-    gaiaSetGeosWarningMsg (msg);
+    if (msg)
+      {
+	  spatialite_e ("GEOS warning: %s\n", msg);
+	  gaiaSetGeosWarningMsg (msg);
+	  sqlite3_free (msg);
+      }
+    else
+	gaiaSetGeosWarningMsg (NULL);
 }
 
 static void
@@ -19869,7 +19881,20 @@ fnct_MakeValid (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  result = gaiaMakeValid (geo);
 	  if (result == NULL)
-	      sqlite3_result_null (context);
+	    {
+		char *msg;
+		const char *lw_err = gaiaGetLwGeomErrorMsg ();
+		if (lw_err)
+		    msg =
+			sqlite3_mprintf
+			("MakeValid error - LWGEOM reports: %s\n", lw_err);
+		else
+		    msg =
+			sqlite3_mprintf
+			("MakeValid error - LWGEOM reports: Unknown Reason\n");
+		sqlite3_result_error (context, msg, strlen (msg));
+		sqlite3_free (msg);
+	    }
 	  else
 	    {
 		/* builds the BLOB geometry to be returned */
@@ -26438,9 +26463,16 @@ SPATIALITE_DECLARE void
 spatialite_cleanup_ex (void *ptr)
 {
     struct splite_internal_cache *cache = (struct splite_internal_cache *) ptr;
+
 #ifndef OMIT_GEOS
     finishGEOS ();
+    gaiaResetGeosMsg ();
 #endif
+
+#ifdef ENABLE_LWGEOM
+    gaiaResetLwGeomMsg ();
+#endif
+
     free_internal_cache (cache);
     sqlite3_reset_auto_extension ();
 }

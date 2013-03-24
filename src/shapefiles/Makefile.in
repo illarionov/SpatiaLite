@@ -66,7 +66,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libshapefiles_la_LIBADD =
-am_libshapefiles_la_OBJECTS = shapefiles.lo
+am_libshapefiles_la_OBJECTS = shapefiles.lo validator.lo
 libshapefiles_la_OBJECTS = $(am_libshapefiles_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -221,7 +221,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 INCLUDES = @CFLAGS@ -I$(top_srcdir)/src/headers
 noinst_LTLIBRARIES = libshapefiles.la
-libshapefiles_la_SOURCES = shapefiles.c
+libshapefiles_la_SOURCES = shapefiles.c validator.c
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-am
 
@@ -276,6 +276,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shapefiles.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/validator.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

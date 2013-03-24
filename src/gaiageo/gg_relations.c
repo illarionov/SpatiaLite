@@ -65,8 +65,9 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite/gaiageo.h>
 
 /* GLOBAL variables */
-char gaia_geos_error_msg[2048];
-char gaia_geos_warning_msg[2048];
+char *gaia_geos_error_msg = NULL;
+char *gaia_geos_warning_msg = NULL;
+char *gaia_geosaux_error_msg = NULL;
 
 SPATIALITE_PRIVATE void
 splite_free_geos_cache_item (struct splite_geos_cache_item *p)
@@ -85,8 +86,15 @@ GAIAGEO_DECLARE void
 gaiaResetGeosMsg ()
 {
 /* resets the GEOS error and warning messages */
-    *gaia_geos_error_msg = '\0';
-    *gaia_geos_warning_msg = '\0';
+    if (gaia_geos_error_msg != NULL)
+	free (gaia_geos_error_msg);
+    if (gaia_geos_warning_msg != NULL)
+	free (gaia_geos_warning_msg);
+    if (gaia_geosaux_error_msg != NULL)
+	free (gaia_geosaux_error_msg);
+    gaia_geos_error_msg = NULL;
+    gaia_geos_warning_msg = NULL;
+    gaia_geosaux_error_msg = NULL;
 }
 
 GAIAGEO_DECLARE const char *
@@ -103,10 +111,25 @@ gaiaGetGeosWarningMsg ()
     return gaia_geos_warning_msg;
 }
 
+GAIAGEO_DECLARE const char *
+gaiaGetGeosAuxErrorMsg ()
+{
+/* return the latest GEOS (auxialiary) error message */
+    return gaia_geosaux_error_msg;
+}
+
 GAIAGEO_DECLARE void
 gaiaSetGeosErrorMsg (const char *msg)
 {
 /* return the latest GEOS error message */
+    int len;
+    if (gaia_geos_error_msg != NULL)
+	free (gaia_geos_error_msg);
+    gaia_geos_error_msg = NULL;
+    if (msg == NULL)
+	return;
+    len = strlen (msg);
+    gaia_geos_error_msg = malloc (len + 1);
     strcpy (gaia_geos_error_msg, msg);
 }
 
@@ -114,7 +137,30 @@ GAIAGEO_DECLARE void
 gaiaSetGeosWarningMsg (const char *msg)
 {
 /* return the latest GEOS error message */
+    int len;
+    if (gaia_geos_warning_msg != NULL)
+	free (gaia_geos_warning_msg);
+    gaia_geos_warning_msg = NULL;
+    if (msg == NULL)
+	return;
+    len = strlen (msg);
+    gaia_geos_warning_msg = malloc (len + 1);
     strcpy (gaia_geos_warning_msg, msg);
+}
+
+GAIAGEO_DECLARE void
+gaiaSetGeosAuxErrorMsg (const char *msg)
+{
+/* return the latest GEOS (auxiliary) error message */
+    int len;
+    if (gaia_geosaux_error_msg != NULL)
+	free (gaia_geosaux_error_msg);
+    gaia_geosaux_error_msg = NULL;
+    if (msg == NULL)
+	return;
+    len = strlen (msg);
+    gaia_geosaux_error_msg = malloc (len + 1);
+    strcpy (gaia_geosaux_error_msg, msg);
 }
 
 static int
