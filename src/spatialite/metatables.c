@@ -3903,17 +3903,20 @@ getRealSQLnames (void *p_sqlite, const char *table, const char *column,
     return 1;
 }
 
-static void
-addLayerAttributeField (gaiaVectorLayersListPtr list, const char *table_name,
+SPATIALITE_PRIVATE void
+addLayerAttributeField (void *x_list, const char *table_name,
 			const char *geometry_column, int ordinal,
 			const char *column_name, int null_values,
 			int integer_values, int double_values, int text_values,
 			int blob_values, int null_max_size, int max_size,
-			int null_int_range, sqlite3_int64 integer_min,
-			sqlite3_int64 integer_max, int null_double_range,
+			int null_int_range, void *x_integer_min,
+			void *x_integer_max, int null_double_range,
 			double double_min, double double_max)
 {
 /* adding some AttributeFiled to a VectorLayer */
+    gaiaVectorLayersListPtr list = (gaiaVectorLayersListPtr) x_list;
+    sqlite3_int64 integer_min = *((sqlite3_int64 *) x_integer_min);
+    sqlite3_int64 integer_max = *((sqlite3_int64 *) x_integer_max);
     gaiaLayerAttributeFieldPtr fld;
     int len;
     gaiaVectorLayerPtr lyr = list->Current;
@@ -3977,12 +3980,13 @@ addLayerAttributeField (gaiaVectorLayersListPtr list, const char *table_name,
     lyr->Last = fld;
 }
 
-static void
-addVectorLayer (gaiaVectorLayersListPtr list, const char *layer_type,
+SPATIALITE_PRIVATE void
+addVectorLayer (void *x_list, const char *layer_type,
 		const char *table_name, const char *geometry_column,
 		int geometry_type, int srid, int spatial_index)
 {
 /* adding a Layer to a VectorLayersList */
+    gaiaVectorLayersListPtr list = (gaiaVectorLayersListPtr) x_list;
     int len;
     gaiaVectorLayerPtr lyr = malloc (sizeof (gaiaVectorLayer));
     lyr->LayerType = GAIA_VECTOR_UNKNOWN;
@@ -4162,12 +4166,13 @@ addVectorLayer (gaiaVectorLayersListPtr list, const char *layer_type,
     list->Last = lyr;
 }
 
-static void
-addVectorLayerExtent (gaiaVectorLayersListPtr list, const char *table_name,
+SPATIALITE_PRIVATE void
+addVectorLayerExtent (void *x_list, const char *table_name,
 		      const char *geometry_column, int count, double min_x,
 		      double min_y, double max_x, double max_y)
 {
 /* appending a LayerExtent object to the corresponding VectorLayer */
+    gaiaVectorLayersListPtr list = (gaiaVectorLayersListPtr) x_list;
     gaiaVectorLayerPtr lyr = list->First;
     while (lyr)
       {
@@ -4563,8 +4568,8 @@ gaiaGetVectorLayersList_v4 (sqlite3 * handle, const char *table,
 					ordinal, column_name, null_values,
 					integer_values, double_values,
 					text_values, blob_values, null_max_size,
-					max_size, null_int_range, integer_min,
-					integer_max, null_double_range,
+					max_size, null_int_range, &integer_min,
+					&integer_max, null_double_range,
 					double_min, double_max);
 	    }
       }

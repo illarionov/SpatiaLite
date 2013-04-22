@@ -216,6 +216,38 @@ extern "C"
 	getEllipsoidParams (void *p_sqlite, int srid, double *a, double *b,
 			    double *rf);
 
+    SPATIALITE_PRIVATE void addVectorLayer (void *list, const char *layer_type,
+					    const char *table_name,
+					    const char *geometry_column,
+					    int geometry_type, int srid,
+					    int spatial_index);
+
+    SPATIALITE_PRIVATE void addVectorLayerExtent (void *list,
+						  const char *table_name,
+						  const char *geometry_column,
+						  int count, double min_x,
+						  double min_y, double max_x,
+						  double max_y);
+
+    SPATIALITE_PRIVATE void addLayerAttributeField (void *list,
+						    const char *table_name,
+						    const char *geometry_column,
+						    int ordinal,
+						    const char *column_name,
+						    int null_values,
+						    int integer_values,
+						    int double_values,
+						    int text_values,
+						    int blob_values,
+						    int null_max_size,
+						    int max_size,
+						    int null_int_range,
+						    void *integer_min,
+						    void *integer_max,
+						    int null_double_range,
+						    double double_min,
+						    double double_max);
+
     SPATIALITE_PRIVATE int createStylingTables (void *p_sqlite, int relaxed);
 
     SPATIALITE_PRIVATE int register_external_graphic (void *p_sqlite,
