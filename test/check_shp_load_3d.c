@@ -487,6 +487,8 @@ int main (int argc, char *argv[])
     list = gaiaGetVectorLayersList(handle, NULL, NULL, GAIA_VECTORS_LIST_FAST);
     gaiaFreeVectorLayersList(list);
 
+#ifdef ENABLE_LWGEOM		/* only if LWGEOM is supported */
+
     ret = check_all_geometry_columns (handle, "./report", NULL, NULL);
     if (!ret) {
         fprintf (stderr, "check_all_geometry_columns() error\n");
@@ -500,6 +502,8 @@ int main (int argc, char *argv[])
 	sqlite3_close(handle);
 	return -62;
     }
+
+#endif /* end LWGEOM conditionals */
     
 /* checking gaiaGetVectorLayersList() - Table */
     list = gaiaGetVectorLayersList(handle, "elem_points_xyz", NULL, GAIA_VECTORS_LIST_FAST);

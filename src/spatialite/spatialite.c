@@ -14529,11 +14529,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 				    {
 					/* Linestrings */
 					l = gaiaGeodesicTotalLength (a, b, rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -14556,9 +14555,12 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      l = gaiaGeodesicTotalLength (a,
 									   b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -14602,11 +14604,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					/* Linestrings */
 					length +=
 					    gaiaGreatCircleTotalLength (a, b,
-									line->DimensionModel,
 									line->
-									Coords,
-									line->
-									Points);
+									DimensionModel,
+									line->Coords,
+									line->Points);
 					line = line->Next;
 				    }
 			      }
@@ -14744,11 +14745,15 @@ fnct_Area (sqlite3_context * context, int argc, sqlite3_value ** argv)
       {
 	  if (use_ellipsoid >= 0)
 	    {
+#ifdef ENABLE_LWGEOM		/* only if LWGEOM is enabled */
 		/* attempting to identify the corresponding ellipsoid */
 		if (getEllipsoidParams (sqlite, geo->Srid, &a, &b, &rf))
 		    ret = gaiaGeodesicArea (geo, a, b, use_ellipsoid, &area);
 		else
 		    ret = 0;
+#else
+		ret = 0;
+#endif	/* end LWGEOM conditional */
 	    }
 	  else
 	      ret = gaiaGeomCollArea (geo, &area);
@@ -22625,8 +22630,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -22710,8 +22714,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -22720,8 +22723,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -25793,6 +25795,8 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
     sqlite3_create_function (db, "ST_Area", 1, SQLITE_ANY, 0, fnct_Area, 0, 0);
     sqlite3_create_function (db, "ST_Centroid", 1, SQLITE_ANY, 0,
 			     fnct_Centroid, 0, 0);
+    sqlite3_create_function (db, "Centroid", 1, SQLITE_ANY, 0, fnct_Centroid,
+			     0, 0);
     sqlite3_create_function (db, "PointOnSurface", 1, SQLITE_ANY, 0,
 			     fnct_PointOnSurface, 0, 0);
     sqlite3_create_function (db, "ST_PointOnSurface", 1, SQLITE_ANY, 0,
@@ -26084,6 +26088,8 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_MakeValidDiscarded, 0, 0);
     sqlite3_create_function (db, "ST_MakeValidDiscarded", 1, SQLITE_ANY, 0,
 			     fnct_MakeValidDiscarded, 0, 0);
+    sqlite3_create_function (db, "Area", 2, SQLITE_ANY, 0, fnct_Area, 0, 0);
+    sqlite3_create_function (db, "ST_Area", 2, SQLITE_ANY, 0, fnct_Area, 0, 0);
     sqlite3_create_function (db, "Segmentize", 2, SQLITE_ANY, 0,
 			     fnct_Segmentize, 0, 0);
     sqlite3_create_function (db, "ST_Segmentize", 2, SQLITE_ANY, 0,
@@ -26095,10 +26101,6 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
     sqlite3_create_function (db, "Project", 3, SQLITE_ANY, 0, fnct_Project, 0,
 			     0);
     sqlite3_create_function (db, "ST_Project", 3, SQLITE_ANY, 0, fnct_Project,
-			     0, 0);
-    sqlite3_create_function (db, "Area", 2, SQLITE_ANY, 0, fnct_Area, 0, 0);
-    sqlite3_create_function (db, "ST_Area", 2, SQLITE_ANY, 0, fnct_Area, 0, 0);
-    sqlite3_create_function (db, "Centroid", 1, SQLITE_ANY, 0, fnct_Centroid,
 			     0, 0);
     sqlite3_create_function (db, "GeoHash", 1, SQLITE_ANY, 0, fnct_GeoHash, 0,
 			     0);

@@ -601,6 +601,7 @@ int do_test(sqlite3 *handle)
 int main (int argc, char *argv[])
 {
 #ifndef OMIT_ICONV	/* only if ICONV is supported */
+#ifdef ENABLE_LWGEOM		/* only if LWGEOM is supported */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
@@ -737,6 +738,7 @@ int main (int argc, char *argv[])
         return -1;
     }
     
+#endif /* end LWGEOM conditionals */
 #endif	/* end ICONV conditional */
 
     return 0;

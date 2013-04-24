@@ -1,8 +1,8 @@
 /*
 
- check_shp_load.c -- SpatiaLite Test Case
+ check_wfsin.c -- SpatiaLite Test Case
 
- Author: Brad Hards <bradh@frogmouth.net>
+ Author: Sandro Furieri <a.furieri@lqt.it>
 
  ------------------------------------------------------------------------------
  
@@ -22,12 +22,10 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2011
+Portions created by the Initial Developer are Copyright (C) 2013
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
-Brad Hards <bradh@frogmouth.net>
-Ahmadou Dicko <dicko.ahmadou@gmail.com>
 
 Alternatively, the contents of this file may be used under the terms of
 either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -42,6 +40,7 @@ the provisions above, a recipient may use your version of this file under
 the terms of any one of the MPL, the GPL or the LGPL.
  
 */
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -53,7 +52,6 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 int main (int argc, char *argv[])
 {
-#ifndef OMIT_ICONV	/* only if ICONV is supported */
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
@@ -76,55 +74,45 @@ int main (int argc, char *argv[])
 	sqlite3_close(handle);
 	return -2;
     }
-
-    ret = load_shapefile (handle, "./shapetest1", "test1", "UTF-8", 4326, 
-			  "col1", 1, 0, 1, 0, &row_count, err_msg);
+    
+#ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
+    ret = load_from_wfs (handle, "./test.wfs", "test_wfs1", "objectid", 1, &row_count, &err_msg);
     if (!ret) {
-        fprintf (stderr, "load_shapefile() error: %s\n", err_msg);
+        fprintf (stderr, "load_from_wfs() error for test.wfs (1): %s\n", err_msg);
+	free(err_msg);
 	sqlite3_close(handle);
 	return -3;
     }
-
-#ifdef ENABLE_LWGEOM		/* only if LWGEOM is supported */
-
-    ret = check_geometry_column (handle, "test1", "geometry", "./report.html", NULL, NULL, NULL);
-    if (ret) {
-        fprintf (stderr, "check_geometry_column() error\n");
+    if (row_count != 3) {
+	fprintf (stderr, "unexpected row count for test_wfs: %i\n", row_count);
 	sqlite3_close(handle);
 	return -4;
     }
 
-    ret = sanitize_geometry_column (handle, "test1", "geometry", "tmp_test1", "./report.html", NULL, NULL, NULL, NULL, NULL); 
-    if (ret) {
-        fprintf (stderr, "sanitize_geometry_column() error\n");
+    ret = load_from_wfs (handle, "./test.wfs", "test_wfs2", NULL, 0, &row_count, &err_msg);
+    if (!ret) {
+        fprintf (stderr, "load_from_wfs() error for test.wfs (2): %s\n", err_msg);
+	free(err_msg);
 	sqlite3_close(handle);
 	return -5;
     }
-
-    ret = check_geometry_column (handle, "test1", "col1", "./report.html", NULL, NULL, NULL);
-    if (!ret) {
-        fprintf (stderr, "check_geometry_column() error\n");
+    if (row_count != 3) {
+	fprintf (stderr, "unexpected row count for test_wfs: %i\n", row_count);
 	sqlite3_close(handle);
 	return -6;
     }
 
-    ret = sanitize_geometry_column (handle, "test1", "col1", "tmp_test1", "./report.html", NULL, NULL, NULL, NULL, NULL); 
-    if (!ret) {
-        fprintf (stderr, "sanitize_geometry_column() error\n");
-	sqlite3_close(handle);
-	return -7;
-    }
+    xmlCleanupParser();
 
-#endif /* end LWGEOM conditionals */
-    
+#endif	/* end LIBXML2 conditional */
+
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -8;
+	return -7;
     }
     
     spatialite_cleanup_ex (cache);
-#endif	/* end ICONV conditional */
 
     return 0;
 }

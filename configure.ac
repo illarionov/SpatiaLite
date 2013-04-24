@@ -117,6 +117,7 @@ AC_CONFIG_FILES([Makefile \
 		src/srsinit/Makefile \
 		src/srsinit/epsg_update/Makefile \
 		src/virtualtext/Makefile \
+		src/wfs/Makefile \
 		test/Makefile \
 		test/sql_stmt_tests/Makefile \
 		test/sql_stmt_geos_tests/Makefile \

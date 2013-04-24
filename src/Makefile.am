@@ -7,7 +7,8 @@ SUBDIRS = headers \
 	spatialite \
 	shapefiles \
 	srsinit \
-	virtualtext
+	virtualtext \
+	wfs
 
 INCLUDES = @CFLAGS@
 INCLUDES += -I$(top_srcdir)/src/headers
@@ -24,10 +25,11 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./spatialite/libsplite.la \
 	./shapefiles/libshapefiles.la \
 	./srsinit/libsrsinit.la \
-	./virtualtext/libvirtualtext.la @LIBXML2_LIBS@
+	./virtualtext/libvirtualtext.la \
+	./wfs/libwfs.la @LIBXML2_LIBS@
 
 if MINGW
-libspatialite_la_LDFLAGS = -version-info 4:0:0 -no-undefined
+libspatialite_la_LDFLAGS = -version-info 4:1:0 -no-undefined
 else 
 if ANDROID
 libspatialite_la_LDFLAGS = -version-info 5:1:0

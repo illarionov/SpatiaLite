@@ -67,6 +67,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <spatialite.h>
 #include <spatialite_private.h>
 
+#ifdef ENABLE_LWGEOM		/* only if LWGEOM is supported */
+
 /* 64 bit integer: portable format for printf() */
 #if defined(_WIN32) && !defined(__MINGW32__)
 #define FRMT64 "%I64d"
@@ -3268,3 +3270,52 @@ sanitize_all_geometry_columns (sqlite3 * sqlite,
   stop:
     return 0;
 }
+
+#else /* LIBXML2 isn't enabled */
+
+SPATIALITE_DECLARE int
+sanitize_all_geometry_columns (sqlite3 * sqlite,
+			       const char *tmp_prefix,
+			       const char *output_dir, int *x_not_repaired,
+			       char **err_msg)
+{
+/* LWGEOM isn't enabled: always returning an error */
+    int len;
+    const char *msg = "Sorry ... libspatialite was built disabling LWGEOM\n"
+	"and is thus unable to support MakeValid";
+
+/* silencing stupid compiler warnings */
+    if (sqlite == NULL || tmp_prefix == NULL || output_dir == NULL
+	|| x_not_repaired == NULL)
+	tmp_prefix = NULL;
+
+    len = strlen (msg);
+    *err_msg = malloc (len + 1);
+    strcpy (*err_msg, msg);
+    return 0;
+}
+
+SPATIALITE_DECLARE int
+sanitize_geometry_column (sqlite3 * sqlite, const char *table, const char *geom,
+			  const char *tmp_table, const char *report_path,
+			  int *n_invalids, int *n_repaired, int *n_discarded,
+			  int *n_failures, char **err_msg)
+{
+/* LWGEOM isn't enabled: always returning an error */
+    int len;
+    const char *msg = "Sorry ... libspatialite was built disabling LWGEOM\n"
+	"and is thus unable to support MakeValid";
+
+/* silencing stupid compiler warnings */
+    if (sqlite == NULL || table == NULL || geom == NULL || tmp_table == NULL
+	|| report_path == NULL || n_invalids == NULL || n_repaired == NULL
+	|| n_discarded == NULL || n_failures == NULL)
+	table = NULL;
+
+    len = strlen (msg);
+    *err_msg = malloc (len + 1);
+    strcpy (*err_msg, msg);
+    return 0;
+}
+
+#endif /* end LWGEOM conditionals */

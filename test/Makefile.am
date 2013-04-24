@@ -43,7 +43,8 @@ check_PROGRAMS = check_endian \
 		check_geoscvt_fncts \
 		check_libxml2 \
 		check_styling \
-		check_virtualxpath
+		check_virtualxpath \
+		check_wfsin
 if ENABLE_GEOPACKAGE
 check_PROGRAMS += \
 		check_createBaseTables \
@@ -158,7 +159,8 @@ EXTRA_DIST = asprintf4win.h \
 	raster_se.xml thunderstorm_mild.svg \
 	tile000.jpeg  tile101.jpeg  tile111.jpeg \
 	test.webp tile100.jpeg  tile110.jpeg \
-	empty.png  empty.tif	
+	empty.png  empty.tif \
+	test.wfs testDescribeFeatureType.wfs	
 
 SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_geostrunk_tests sql_stmt_libxml2_tests \

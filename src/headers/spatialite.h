@@ -724,6 +724,28 @@ extern "C"
 							  int *not_repaired,
 							  char **err_msg);
 
+/**
+ Loads data from some WFS source 
+
+ \param sqlite handle to current DB connection
+ \param path_or_url pointer to some WFS-generated XML Document (could be a pathname or an URL). 
+ \param table the name of the table to be created
+ \param pk_column name of the Primary Key column; if NULL or mismatching
+ then "PK_UID" will be assumed by default.
+ \param spatial_index if TRUE an R*Tree Spatial Index will be created
+ \param rows on completion will contain the total number of actually imported rows
+ \param err_msg on completion will contain an error message (if any)
+
+ \return 0 on failure, any other value on success
+ 
+ \note an eventual error message returned via err_msg requires to be deallocated
+ by invoking free()
+ */
+    SPATIALITE_DECLARE int load_from_wfs (sqlite3 * sqlite, char *path_or_url,
+					  char *table, char *pk_column_name,
+					  int spatial_index, int *rows,
+					  char **err_msg);
+
 #ifdef __cplusplus
 }
 #endif
