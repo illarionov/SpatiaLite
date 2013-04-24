@@ -399,6 +399,11 @@ parse_attribute_type (xmlNodePtr node, int *is_geom)
 	    {
 		const char *clean =
 		    clean_xml_prefix ((const char *) (node->content));
+		if (strstr (clean, "Geometry") != NULL)
+		  {
+		      *is_geom = 1;
+		      return GAIA_GEOMETRYCOLLECTION;
+		  }
 		if (strstr (clean, "MultiPoint") != NULL)
 		  {
 		      *is_geom = 1;
