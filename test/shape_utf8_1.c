@@ -285,6 +285,9 @@ int main (int argc, char *argv[])
     char *err_msg = NULL;
     void *cache = spatialite_alloc_connection();
 
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
+
 /* testing current style metadata layout >= v.4.0.0 */
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {

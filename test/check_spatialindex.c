@@ -42,6 +42,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -673,6 +674,9 @@ int main (int argc, char *argv[])
     sqlite3 *handle;
     char *err_msg = NULL;
     void *cache = spatialite_alloc_connection();
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
 
 /* testing current style metadata layout >= v.4.0.0 */
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);

@@ -74,6 +74,9 @@ int main (int argc, char *argv[])
     gaiaGeomCollPtr validGeometry = gaiaAllocGeomColl();
     double dummyResultArg = 0.0;
     double dummyResultArg2 = 0.0;
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
     
     /* Tests start here */
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);

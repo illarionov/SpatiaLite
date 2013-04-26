@@ -56,6 +56,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 
+#ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
+#include <libxml/parser.h>
+#endif
+
 #ifndef OMIT_GEOS		/* including GEOS */
 #include <geos_c.h>
 #endif

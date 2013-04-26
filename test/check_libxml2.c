@@ -53,6 +53,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
 
+#include <libxml/parser.h>
+
 #define ISO_METADATA	1
 #define SLD_SE_STYLE	2
 #define SVG		3
@@ -64,7 +66,7 @@ check_bad_xml (void *cache)
     FILE *fl;
     int sz = 0;
     int rd;
-    char *xml = NULL;
+    unsigned char *xml = NULL;
     unsigned char *p_result = NULL;
     int len;
     char *err1;
@@ -85,7 +87,7 @@ check_bad_xml (void *cache)
     }
     if (fseek(fl, 0, SEEK_END) == 0)
         sz = ftell(fl);
-    xml = (char *) malloc(sz);
+    xml = malloc(sz);
     rewind(fl);
     rd = fread(xml, 1, sz, fl);
     if (rd != sz) {
@@ -112,7 +114,7 @@ check_bad_schema (void *cache)
     FILE *fl;
     int sz = 0;
     int rd;
-    char *xml = NULL;
+    unsigned char *xml = NULL;
     unsigned char *p_result = NULL;
     int len;
     char *err1;
@@ -126,7 +128,7 @@ check_bad_schema (void *cache)
     }
     if (fseek(fl, 0, SEEK_END) == 0)
         sz = ftell(fl);
-    xml = (char *) malloc(sz);
+    xml = malloc(sz);
     rewind(fl);
     rd = fread(xml, 1, sz, fl);
     if (rd != sz) {
@@ -153,7 +155,7 @@ check_validate (void *cache, const char *path)
     FILE *fl;
     int sz = 0;
     int rd;
-    char *xml = NULL;
+    unsigned char *xml = NULL;
     char *schema_uri = NULL;
     char *schema_uri2 = NULL;
     unsigned char *p_result = NULL;
@@ -167,7 +169,7 @@ check_validate (void *cache, const char *path)
     }
     if (fseek(fl, 0, SEEK_END) == 0)
         sz = ftell(fl);
-    xml = (char *) malloc(sz);
+    xml = malloc(sz);
     rewind(fl);
     rd = fread(xml, 1, sz, fl);
     if (rd != sz) {
@@ -217,7 +219,7 @@ check_extended (void *cache, const char *path, int mode)
     FILE *fl;
     int sz = 0;
     int rd;
-    char *xml = NULL;
+    unsigned char *xml = NULL;
     int iso;
     int style;
     int svg;
@@ -239,7 +241,7 @@ check_extended (void *cache, const char *path, int mode)
     }
     if (fseek(fl, 0, SEEK_END) == 0)
         sz = ftell(fl);
-    xml = (char *) malloc(sz);
+    xml = malloc(sz);
     rewind(fl);
     rd = fread(xml, 1, sz, fl);
     if (rd != sz) {
@@ -395,7 +397,7 @@ check_parse (void *cache, const char *path)
     FILE *fl;
     int sz = 0;
     int rd;
-    char *xml = NULL;
+    unsigned char *xml = NULL;
     int compressed_sz;
     int uncompressed_sz;
     int doc_sz;
@@ -413,7 +415,7 @@ check_parse (void *cache, const char *path)
     }
     if (fseek(fl, 0, SEEK_END) == 0)
         sz = ftell(fl);
-    xml = (char *) malloc(sz);
+    xml = malloc(sz);
     rewind(fl);
     rd = fread(xml, 1, sz, fl);
     if (rd != sz) {
@@ -530,6 +532,9 @@ int main (int argc, char *argv[])
     int ret;
     sqlite3 *handle;
     void *cache = spatialite_alloc_connection();
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
 
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {

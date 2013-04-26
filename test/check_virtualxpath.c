@@ -51,6 +51,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 
+#ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
+#include <libxml/parser.h>
+#endif
+
 static int
 load_xml (void *cache, sqlite3 *db_handle, sqlite3_stmt *stmt, const char *path)
 {
@@ -116,6 +120,9 @@ int main (int argc, char *argv[])
     int rows;
     int columns;
     void *cache = spatialite_alloc_connection();
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
 
     ret = sqlite3_open_v2 (":memory:", &db_handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {

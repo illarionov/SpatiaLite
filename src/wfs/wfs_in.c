@@ -432,7 +432,7 @@ set_wfs_catalog_url (struct wfs_catalog *ptr, const char *url)
     len = strlen (url);
     ptr->base_url = malloc (len + 1);
     strcpy (ptr->base_url, url);
-    for (i = 0; i < (int)strlen (ptr->base_url); i++)
+    for (i = 0; i < (int) strlen (ptr->base_url); i++)
       {
 	  if (*(ptr->base_url + i) == '?')
 	      *(ptr->base_url + i) = '\0';
@@ -1711,7 +1711,7 @@ parse_keyword (xmlNodePtr node, struct wfs_catalog *catalog)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp ((const char *)cur_node->name, "Keyword") == 0)
+		if (strcmp ((const char *) cur_node->name, "Keyword") == 0)
 		  {
 		      xmlNodePtr child_node = cur_node->children;
 		      if (child_node != NULL)
@@ -1719,7 +1719,10 @@ parse_keyword (xmlNodePtr node, struct wfs_catalog *catalog)
 			    if (child_node->type == XML_TEXT_NODE)
 			      {
 				  struct wfs_layer_def *lyr = catalog->last;
-				  add_wfs_keyword_to_layer (lyr, (const char *)(child_node->content));
+				  add_wfs_keyword_to_layer (lyr,
+							    (const char
+							     *) (child_node->
+								 content));
 			      }
 			}
 		  }
@@ -1790,31 +1793,31 @@ parse_wfs_layer (xmlNodePtr node, struct wfs_catalog *catalog)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp ((const char *)(cur_node->name), "Name") == 0)
+		if (strcmp ((const char *) (cur_node->name), "Name") == 0)
 		  {
 		      child_node = cur_node->children;
 		      if (child_node != NULL)
 			{
 			    if (child_node->type == XML_TEXT_NODE)
-				name = (const char *)(child_node->content);
+				name = (const char *) (child_node->content);
 			}
 		  }
-		if (strcmp ((const char *)(cur_node->name), "Title") == 0)
+		if (strcmp ((const char *) (cur_node->name), "Title") == 0)
 		  {
 		      child_node = cur_node->children;
 		      if (child_node != NULL)
 			{
 			    if (child_node->type == XML_TEXT_NODE)
-				title = (const char *)(child_node->content);
+				title = (const char *) (child_node->content);
 			}
 		  }
-		if (strcmp ((const char *)(cur_node->name), "Abstract") == 0)
+		if (strcmp ((const char *) (cur_node->name), "Abstract") == 0)
 		  {
 		      child_node = cur_node->children;
 		      if (child_node != NULL)
 			{
 			    if (child_node->type == XML_TEXT_NODE)
-				abstract = (const char *)(child_node->content);
+				abstract = (const char *) (child_node->content);
 			}
 		  }
 	    }
@@ -1827,9 +1830,11 @@ parse_wfs_layer (xmlNodePtr node, struct wfs_catalog *catalog)
 	    {
 		if (cur_node->type == XML_ELEMENT_NODE)
 		  {
-		      if (strcmp ((const char *)(cur_node->name), "SRS") == 0
-			  || strcmp ((const char *)(cur_node->name), "DefaultSRS") == 0
-			  || strcmp ((const char *)(cur_node->name), "OtherSRS") == 0)
+		      if (strcmp ((const char *) (cur_node->name), "SRS") == 0
+			  || strcmp ((const char *) (cur_node->name),
+				     "DefaultSRS") == 0
+			  || strcmp ((const char *) (cur_node->name),
+				     "OtherSRS") == 0)
 			{
 			    int srid = parse_srsname (cur_node->children);
 			    if (srid > 0)
@@ -1838,7 +1843,8 @@ parse_wfs_layer (xmlNodePtr node, struct wfs_catalog *catalog)
 				  add_wfs_srid_to_layer (lyr, srid);
 			      }
 			}
-		      if (strcmp ((const char *)(cur_node->name), "Keywords") == 0)
+		      if (strcmp ((const char *) (cur_node->name), "Keywords")
+			  == 0)
 			  parse_keywords (cur_node->children, catalog);
 		  }
 	    }
@@ -1860,7 +1866,9 @@ parse_wfs_get_100 (xmlNodePtr node, struct wfs_catalog *catalog)
 		      if (text != NULL)
 			{
 			    if (text->type == XML_TEXT_NODE)
-				set_wfs_catalog_url (catalog, (const char *)(text->content));
+				set_wfs_catalog_url (catalog,
+						     (const char *) (text->
+								     content));
 			}
 		  }
 	    }
@@ -1878,7 +1886,7 @@ parse_wfs_http_100 (xmlNodePtr node, struct wfs_catalog *catalog)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp ((const char *)(cur_node->name), "Get") == 0)
+		if (strcmp ((const char *) (cur_node->name), "Get") == 0)
 		    parse_wfs_get_100 (node, catalog);
 	    }
       }
@@ -1894,7 +1902,7 @@ parse_wfs_dcptype_100 (xmlNodePtr node, struct wfs_catalog *catalog)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp ((const char *)(cur_node->name), "HTTP") == 0)
+		if (strcmp ((const char *) (cur_node->name), "HTTP") == 0)
 		    parse_wfs_http_100 (node->children, catalog);
 	    }
       }
@@ -1910,7 +1918,7 @@ parse_wfs_getfeature_100 (xmlNodePtr node, struct wfs_catalog *catalog)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp ((const char *)(cur_node->name), "DCPType") == 0)
+		if (strcmp ((const char *) (cur_node->name), "DCPType") == 0)
 		    parse_wfs_dcptype_100 (node->children, catalog);
 	    }
       }
@@ -1926,7 +1934,7 @@ parse_wfs_request_100 (xmlNodePtr node, struct wfs_catalog *catalog)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp ((const char *)(cur_node->name), "GetFeature") == 0)
+		if (strcmp ((const char *) (cur_node->name), "GetFeature") == 0)
 		    parse_wfs_getfeature_100 (node->children, catalog);
 	    }
       }
@@ -1942,7 +1950,7 @@ parse_wfs_base_url_100 (xmlNodePtr node, struct wfs_catalog *catalog)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp ((const char *)(cur_node->name), "Request") == 0)
+		if (strcmp ((const char *) (cur_node->name), "Request") == 0)
 		    parse_wfs_request_100 (node->children, catalog);
 	    }
       }
@@ -1963,7 +1971,9 @@ parse_wfs_get_110 (xmlNodePtr node, struct wfs_catalog *catalog)
 		      if (text != NULL)
 			{
 			    if (text->type == XML_TEXT_NODE)
-				set_wfs_catalog_url (catalog, (const char *)(text->content));
+				set_wfs_catalog_url (catalog,
+						     (const char *) (text->
+								     content));
 			}
 		  }
 	    }
@@ -1981,7 +1991,7 @@ parse_wfs_http_110 (xmlNodePtr node, struct wfs_catalog *catalog)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp ((const char *)(cur_node->name), "Get") == 0)
+		if (strcmp ((const char *) (cur_node->name), "Get") == 0)
 		    parse_wfs_get_110 (node, catalog);
 	    }
       }
@@ -1997,7 +2007,7 @@ parse_wfs_dcp_110 (xmlNodePtr node, struct wfs_catalog *catalog)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp ((const char *)(cur_node->name), "HTTP") == 0)
+		if (strcmp ((const char *) (cur_node->name), "HTTP") == 0)
 		    parse_wfs_http_110 (cur_node->children, catalog);
 	    }
       }
@@ -2013,7 +2023,7 @@ parse_wfs_getfeature_110 (xmlNodePtr node, struct wfs_catalog *catalog)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp ((const char *)(cur_node->name), "DCP") == 0)
+		if (strcmp ((const char *) (cur_node->name), "DCP") == 0)
 		    parse_wfs_dcp_110 (cur_node->children, catalog);
 	    }
       }
@@ -2036,7 +2046,9 @@ parse_wfs_operation_110 (xmlNodePtr node, struct wfs_catalog *catalog)
 			{
 			    if (text->type == XML_TEXT_NODE)
 			      {
-				  if (strcmp ((const char *)(text->content), "GetFeature") == 0)
+				  if (strcmp
+				      ((const char *) (text->content),
+				       "GetFeature") == 0)
 				      parse_wfs_getfeature_110 (node->children,
 								catalog);
 			      }
@@ -2057,7 +2069,7 @@ parse_wfs_base_url_110 (xmlNodePtr node, struct wfs_catalog *catalog)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp ((const char *)(cur_node->name), "Operation") == 0)
+		if (strcmp ((const char *) (cur_node->name), "Operation") == 0)
 		    parse_wfs_operation_110 (cur_node, catalog);
 	    }
       }
@@ -2074,26 +2086,34 @@ parse_wfs_catalog (xmlNodePtr node, struct wfs_catalog *catalog,
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp ((const char *)(cur_node->name), "WFS_Capabilities") == 0)
+		if (strcmp ((const char *) (cur_node->name), "WFS_Capabilities")
+		    == 0)
 		    *capabilities = 1;
 		if (*capabilities != 0
-		    && strcmp ((const char *)(cur_node->name), "FeatureTypeList") == 0)
+		    && strcmp ((const char *) (cur_node->name),
+			       "FeatureTypeList") == 0)
 		    *list = 1;
 		if (*capabilities != 0 && *list == 0
-		    && strcmp ((const char *)(cur_node->name), "Capability") == 0)
+		    && strcmp ((const char *) (cur_node->name),
+			       "Capability") == 0)
 		    parse_wfs_base_url_100 (cur_node->children, catalog);
 		if (*capabilities != 0 && *list == 0
-		    && strcmp ((const char *)(cur_node->name), "OperationsMetadata") == 0)
+		    && strcmp ((const char *) (cur_node->name),
+			       "OperationsMetadata") == 0)
 		    parse_wfs_base_url_110 (cur_node->children, catalog);
-		if (*list != 0 && strcmp ((const char *)(cur_node->name), "FeatureType") == 0)
+		if (*list != 0
+		    && strcmp ((const char *) (cur_node->name),
+			       "FeatureType") == 0)
 		    parse_wfs_layer (cur_node->children, catalog);
 		else
 		    parse_wfs_catalog (cur_node->children, catalog,
 				       capabilities, list);
 		if (*capabilities != 0
-		    && strcmp ((const char *)(cur_node->name), "FeatureTypeList") == 0)
+		    && strcmp ((const char *) (cur_node->name),
+			       "FeatureTypeList") == 0)
 		    *list = 0;
-		if (strcmp ((const char *)(cur_node->name), "WFS_Capabilities") == 0)
+		if (strcmp ((const char *) (cur_node->name), "WFS_Capabilities")
+		    == 0)
 		    *capabilities = 0;
 	    }
       }
@@ -2167,7 +2187,7 @@ get_wfs_base_url (gaiaWFScatalogPtr handle)
     struct wfs_catalog *ptr = (struct wfs_catalog *) handle;
     if (ptr == NULL)
 	return NULL;
-return ptr->base_url;
+    return ptr->base_url;
 }
 
 SPATIALITE_DECLARE int

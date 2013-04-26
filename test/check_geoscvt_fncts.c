@@ -62,8 +62,10 @@ int main (int argc, char *argv[])
     int returnValue = 0;
     
     /* Common setup */
-    
     gaiaGeomCollPtr emptyGeometry = gaiaAllocGeomColl();
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
     
     /* Tests start here */
     

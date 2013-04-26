@@ -51,6 +51,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 
+#ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
+#include <libxml/parser.h>
+#endif
+
 static unsigned char *
 load_blob(const char *path, int *blob_len)
 {
@@ -77,11 +81,11 @@ load_blob(const char *path, int *blob_len)
     return blob;
 }
 
-static char *
+static unsigned char *
 load_xml(const char *path, int *len)
 {
 /* loading an external XML */
-    char *xml;
+    unsigned char *xml;
     int sz = 0;
     int rd;
     FILE *fl = fopen(path, "rb");
@@ -91,7 +95,7 @@ load_xml(const char *path, int *len)
     }
     if (fseek(fl, 0, SEEK_END) == 0)
         sz = ftell(fl);
-    xml = (char *) malloc(sz + 1);
+    xml = malloc(sz + 1);
     *len = sz;
     rewind(fl);
     rd = fread(xml, 1, sz, fl);
@@ -132,10 +136,13 @@ int main (int argc, char *argv[])
     unsigned char *blob;
     int blob_len;
     char *hexBlob;
-    char *xml;
+    unsigned char *xml;
     int len;
     char *sql;
     void *cache = spatialite_alloc_connection();
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
 
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {

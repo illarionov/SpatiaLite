@@ -63,6 +63,9 @@ int main (int argc, char *argv[])
     int row_count;
     void *cache = spatialite_alloc_connection();
 
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
+
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
 	fprintf(stderr, "cannot open in-memory database: %s\n", sqlite3_errmsg (handle));

@@ -50,6 +50,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include "sqlite3.h"
 #include "spatialite.h"
 
+#ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
+#include <libxml/parser.h>
+#endif
+
 int main (int argc, char *argv[])
 {
     int ret;
@@ -62,6 +66,9 @@ int main (int argc, char *argv[])
     gaiaWFSitemPtr lyr;
     const char *str;
     void *cache = spatialite_alloc_connection();
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
 
     ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
     if (ret != SQLITE_OK) {
@@ -360,7 +367,7 @@ int main (int argc, char *argv[])
 
     str = get_wfs_keyword (NULL, 1);
     if (str != NULL) {
-	fprintf(stderr, "get_wfs_keyword() 1.1.0 error: expected NULL\n", NULL);
+	fprintf(stderr, "get_wfs_keyword() 1.1.0 error: expected NULL\n");
 	sqlite3_close(handle);
 	return -44;
     }

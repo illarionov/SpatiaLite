@@ -54,6 +54,9 @@ int main (int argc, char *argv[])
 {
     double result;
     sqlite3_int64 result64;
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
     
     result = math_round(3.4);
     if (abs(result - 3) > double_eps) {

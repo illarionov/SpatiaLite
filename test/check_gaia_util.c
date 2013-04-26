@@ -59,6 +59,9 @@ int main (int argc, char *argv[])
     int result;
     char *test_str1;
     char *quoted_str;
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
     
     result = gaiaIsReservedSqliteName ("AUTOINCREMENT");
     if (!result) {

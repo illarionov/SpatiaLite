@@ -65,6 +65,9 @@ int main (int argc, char *argv[])
     gaiaLinestringPtr linestr2 = gaiaAllocLinestring(0);
     gaiaPolygonPtr poly1 = gaiaAllocPolygon(0, 0);
     gaiaPolygonPtr poly2 = gaiaAllocPolygon(0, 0);
+
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
     
     /* Tests start here */
     

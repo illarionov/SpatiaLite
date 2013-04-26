@@ -63,6 +63,9 @@ int main (int argc, char *argv[])
     char *test_str1;
     int err;
 
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
+
     asprintf(&test_str1, "Hello World");
     gaiaConvertCharset(&test_str1, "ASCII", "UTF-8");
     if (strcmp(test_str1, "Hello World") != 0) {

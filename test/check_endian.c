@@ -63,6 +63,9 @@ int main (int argc, char *argv[])
     float flt_val;
     double dbl_val;
 
+    if (argc > 1 || argv[0] == NULL)
+	argc = 1;		/* silencing stupid compiler warnings */
+
 /* testing short values [16 bit] */
     buf_in[0] = 0xdf;
     buf_in[1] = 0xfd;
