@@ -72,6 +72,12 @@ extern "C"
 
 #include <spatialite/gaiageo.h>
 
+    typedef struct gaia_wfs_catalog gaiaWFScatalog;
+    typedef gaiaWFScatalog *gaiaWFScatalogPtr;
+
+    typedef struct gaia_wfs_item gaiaWFSitem;
+    typedef gaiaWFSitem *gaiaWFSitemPtr;
+
 /**
  Return the current library version.
  */
@@ -728,13 +734,15 @@ extern "C"
  Loads data from some WFS source 
 
  \param sqlite handle to current DB connection
- \param path_or_url pointer to some WFS-generated XML Document (could be a pathname or an URL). 
+ \param path_or_url pointer to some WFS-GetFeature XML Document (could be a pathname or an URL). 
  \param table the name of the table to be created
  \param pk_column name of the Primary Key column; if NULL or mismatching
  then "PK_UID" will be assumed by default.
  \param spatial_index if TRUE an R*Tree Spatial Index will be created
  \param rows on completion will contain the total number of actually imported rows
  \param err_msg on completion will contain an error message (if any)
+ 
+ \sa create_wfs_catalog
 
  \return 0 on failure, any other value on success
  
@@ -745,6 +753,176 @@ extern "C"
 					  char *table, char *pk_column_name,
 					  int spatial_index, int *rows,
 					  char **err_msg);
+
+/**
+ Creates a Catalog for some WFS service 
+
+ \param path_or_url pointer to some WFS-GetCapabilities XML Document (could be a pathname or an URL). 
+ \param err_msg on completion will contain an error message (if any)
+
+ \return the pointer to the corresponding WFS-Catalog object: NULL on failure
+ 
+ \sa destroy_wfs_catalog, get_wfs_catalog, get_wfs_catalog_item, load_from_wfs
+ 
+ \note an eventual error message returned via err_msg requires to be deallocated
+ by invoking free().\n
+ you are responsible to destroy (before or after) any WFS-Catalog returned by create_wfs_catalog().
+ */
+    SPATIALITE_DECLARE gaiaWFScatalogPtr create_wfs_catalog (char *path_or_url,
+							     char **err_msg);
+
+/**
+ Destroys a WFS-Catalog object freeing any allocated resource 
+
+ \param handle the pointer to a valid WFS-Catalog returned by a previous call
+ to create_wfs_catalog()
+ 
+ \sa create_wfs_catalog
+ */
+    SPATIALITE_DECLARE void destroy_wfs_catalog (gaiaWFScatalogPtr handle);
+
+/**
+ Return the base URL for any WFS-GetFeature call
+
+ \param handle the pointer to a valid WFS-Item returned by a previous call
+ to get_wfs_catalog_item().
+
+ \return the base URL for any WFS-GetFeature call: NULL is undefined
+ 
+ \sa get_wfs_catalog
+ */
+    SPATIALITE_DECLARE const char *get_wfs_base_url (gaiaWFScatalogPtr handle);
+
+/**
+ Return the total count of items (aka Layers) defined within a WFS-Catalog object
+
+ \param handle the pointer to a valid WFS-Catalog returned by a previous call
+ to create_wfs_catalog()
+
+ \return the total count of items (aka Layers) defined within a WFS-Catalog object: 
+ a negative number if the WFS-Catalog isn't valid
+ 
+ \sa create_wfs_catalog, get_wfs_catalog_item
+ */
+    SPATIALITE_DECLARE int get_wfs_catalog_count (gaiaWFScatalogPtr handle);
+
+/**
+ Return the pointer to some specific Layer defined within a WFS-Catalog object
+
+ \param handle the pointer to a valid WFS-Catalog returned by a previous call
+ to create_wfs_catalog()
+ \param index the relative index identifying the required WFS-Layer (the first 
+ Item in the WFS-Catalaog object has index ZERO).
+
+ \return the pointer to the required WFS-Layer object: NULL if the passed index
+ isn't valid
+ 
+ \sa create_wfs_catalog, get_wfs_catalog_count, get_wfs_layer_name, get_wfs_layer_title, 
+ get_wfs_layer_abstract, get_wfs_layer_srid_count, get_wfs_layer_srid, 
+ get_wfs_layer_keyword_count, get_wfs_layer_keyword
+ */
+    SPATIALITE_DECLARE gaiaWFSitemPtr get_wfs_catalog_item (gaiaWFScatalogPtr
+							    handle, int index);
+
+/**
+ Return the name corresponding to some WFS-Item (aka Layer) object
+
+ \param handle the pointer to a valid WFS-Item returned by a previous call
+ to get_wfs_catalog_item().
+
+ \return the name corresponding to the WFS-Layer object
+ 
+ \sa get_wfs_layer_title, get_wfs_layer_abstract, get_wfs_layer_srid_count, get_wfs_layer_srid, 
+ get_wfs_layer_keyword_count, get_wfs_layer_keyword
+ */
+    SPATIALITE_DECLARE const char *get_wfs_item_name (gaiaWFSitemPtr handle);
+
+/**
+ Return the title corresponding to some WFS-Item (aka Layer) object
+
+ \param handle the pointer to a valid WFS-Item returned by a previous call
+ to get_wfs_catalog_item().
+
+ \return the title corresponding to the WFS-Layer object
+ 
+ \sa get_wfs_layer_name, get_wfs_layer_abstract, get_wfs_layer_srid_count, get_wfs_layer_srid, 
+ get_wfs_layer_keyword_count, get_wfs_layer_keyword
+ */
+    SPATIALITE_DECLARE const char *get_wfs_item_title (gaiaWFSitemPtr handle);
+
+/**
+ Return the abstract corresponding to some WFS-Item (aka Layer) object
+
+ \param handle the pointer to a valid WFS-Item returned by a previous call
+ to get_wfs_catalog_item().
+
+ \return the abstract corresponding to the WFS-Layer object
+ 
+ \sa get_wfs_layer_name, get_wfs_layer_title, get_wfs_layer_srid_count, get_wfs_layer_srid, 
+ get_wfs_layer_keyword_count, get_wfs_layer_keyword
+ */
+    SPATIALITE_DECLARE const char *get_wfs_item_abstract (gaiaWFSitemPtr
+							  handle);
+
+/**
+ Return the total count of SRIDs supported by a WFS-Item object
+
+ \param handle the pointer to a valid WFS-Item returned by a previous call
+ to get_wfs_catalog_item().
+
+ \return the total count of SRIDs supported by a WFS-Item object: 
+ a negative number if the WFS-Item isn't valid
+ 
+ \sa get_wfs_layer_name, get_wfs_layer_title, get_wfs_layer_abstract, 
+ get_wfs_layer_srid, get_wfs_layer_keyword_count, get_wfs_layer_keyword
+ */
+    SPATIALITE_DECLARE int get_wfs_layer_srid_count (gaiaWFSitemPtr handle);
+
+/**
+ Return one of the SRIDs supported by a WFS-Item object
+
+ \param handle the pointer to a valid WFS-Item returned by a previous call
+ to get_wfs_catalog_item().
+ \param index the relative index identifying the required SRID (the first 
+ SRID value supported by a WFS-Item object has index ZERO).
+
+ \return the SRID-value: a negative number if the required SRID-value isn't defined.
+ 
+ \sa get_wfs_layer_name, get_wfs_layer_title, get_wfs_layer_abstract, 
+ get_wfs_layer_srid_count, get_wfs_layer_keyword_count, get_wfs_layer_keyword
+ */
+    SPATIALITE_DECLARE int get_wfs_layer_srid (gaiaWFSitemPtr handle,
+					       int index);
+
+/**
+ Return the total count of Keywords associated to a WFS-Item object
+
+ \param handle the pointer to a valid WFS-Item returned by a previous call
+ to get_wfs_catalog_item().
+
+ \return the total count of Keyword associated to a WFS-Item object: 
+ a negative number if the WFS-Item isn't valid
+ 
+ \sa get_wfs_layer_name, get_wfs_layer_title, get_wfs_layer_abstract, 
+ get_wfs_layer_srid_count, get_wfs_layer_srid, get_wfs_layer_keyword
+ */
+    SPATIALITE_DECLARE int get_wfs_keyword_count (gaiaWFSitemPtr handle);
+
+/**
+ Return one of the Keywords supported by a WFS-Item object
+
+ \param handle the pointer to a valid WFS-Item returned by a previous call
+ to get_wfs_catalog_item().
+ \param index the relative index identifying the required Keyword (the first 
+ Keyword associated to a WFS-Item object has index ZERO).
+
+ \return the Keyword value: NULL if the required Keyword isn't defined.
+ 
+ \sa get_wfs_layer_name, get_wfs_layer_title, get_wfs_layer_abstract, 
+ get_wfs_layer_srid_count, get_wfs_layer_srid, get_wfs_layer_keyword
+ */
+    SPATIALITE_DECLARE const char *get_wfs_keyword (gaiaWFSitemPtr handle,
+						    int index);
 
 #ifdef __cplusplus
 }
