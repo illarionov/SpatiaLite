@@ -1936,7 +1936,9 @@ gml_parse_multi_point (struct gml_data *p_data, gaiaGeomCollPtr geom,
 		    return 0;
 	    }
 	  if (strcmp (n->Tag, "gml:pointMember") == 0
-	      || strcmp (n->Tag, "pointMember") == 0)
+	      || strcmp (n->Tag, "pointMember") == 0
+	      || strcmp (n->Tag, "gml:pointMembers") == 0
+	      || strcmp (n->Tag, "pointMembers") == 0)
 	      ;
 	  else
 	      return 0;
@@ -1958,7 +1960,9 @@ gml_parse_multi_point (struct gml_data *p_data, gaiaGeomCollPtr geom,
 	  if (n == NULL)
 	      return 0;
 	  if (strcmp (n->Tag, "gml:pointMember") == 0
-	      || strcmp (n->Tag, "pointMember") == 0)
+	      || strcmp (n->Tag, "pointMember") == 0
+	      || strcmp (n->Tag, "gml:pointMembers") == 0
+	      || strcmp (n->Tag, "pointMembers") == 0)
 	      ;
 	  else
 	      return 0;
@@ -1988,7 +1992,9 @@ gml_parse_multi_linestring (struct gml_data *p_data, gaiaGeomCollPtr geom,
 		    return 0;
 	    }
 	  if (strcmp (n->Tag, "gml:lineStringMember") == 0
-	      || strcmp (n->Tag, "lineStringMember") == 0)
+	      || strcmp (n->Tag, "lineStringMember") == 0
+	      || strcmp (n->Tag, "gml:lineStringMembers") == 0
+	      || strcmp (n->Tag, "lineStringMembers") == 0)
 	      ;
 	  else
 	      return 0;
@@ -2010,7 +2016,9 @@ gml_parse_multi_linestring (struct gml_data *p_data, gaiaGeomCollPtr geom,
 	  if (n == NULL)
 	      return 0;
 	  if (strcmp (n->Tag, "gml:lineStringMember") == 0
-	      || strcmp (n->Tag, "lineStringMember") == 0)
+	      || strcmp (n->Tag, "lineStringMember") == 0
+	      || strcmp (n->Tag, "gml:lineStringMembers") == 0
+	      || strcmp (n->Tag, "lineStringMembers") == 0)
 	      ;
 	  else
 	      return 0;
@@ -2040,7 +2048,9 @@ gml_parse_multi_curve (struct gml_data *p_data, gaiaGeomCollPtr geom,
 		    return 0;
 	    }
 	  if (strcmp (n->Tag, "gml:curveMember") == 0
-	      || strcmp (n->Tag, "curveMember") == 0)
+	      || strcmp (n->Tag, "curveMember") == 0
+	      || strcmp (n->Tag, "gml:curveMembers") == 0
+	      || strcmp (n->Tag, "curveMembers") == 0)
 	      ;
 	  else
 	      return 0;
@@ -2062,7 +2072,9 @@ gml_parse_multi_curve (struct gml_data *p_data, gaiaGeomCollPtr geom,
 	  if (n == NULL)
 	      return 0;
 	  if (strcmp (n->Tag, "gml:curveMember") == 0
-	      || strcmp (n->Tag, "curveMember") == 0)
+	      || strcmp (n->Tag, "curveMember") == 0
+	      || strcmp (n->Tag, "gml:curveMembers") == 0
+	      || strcmp (n->Tag, "curveMembers") == 0)
 	      ;
 	  else
 	      return 0;
@@ -2092,7 +2104,9 @@ gml_parse_multi_polygon (struct gml_data *p_data, gaiaGeomCollPtr geom,
 		    return 0;
 	    }
 	  if (strcmp (n->Tag, "gml:polygonMember") == 0
-	      || strcmp (n->Tag, "polygonMember") == 0)
+	      || strcmp (n->Tag, "polygonMember") == 0
+	      || strcmp (n->Tag, "gml:polygonMembers") == 0
+	      || strcmp (n->Tag, "polygonMembers") == 0)
 	      ;
 	  else
 	      return 0;
@@ -2114,7 +2128,9 @@ gml_parse_multi_polygon (struct gml_data *p_data, gaiaGeomCollPtr geom,
 	  if (n == NULL)
 	      return 0;
 	  if (strcmp (n->Tag, "gml:polygonMember") == 0
-	      || strcmp (n->Tag, "polygonMember") == 0)
+	      || strcmp (n->Tag, "polygonMember") == 0
+	      || strcmp (n->Tag, "gml:polygonMembers") == 0
+	      || strcmp (n->Tag, "polygonMembers") == 0)
 	      ;
 	  else
 	      return 0;
@@ -2129,6 +2145,8 @@ gml_parse_multi_surface (struct gml_data *p_data, gaiaGeomCollPtr geom,
 {
 /* parsing a <gml:MultiSurface> */
     int srid;
+int pgs;
+gmlNodePtr n2;
     gmlNodePtr next;
     gmlNodePtr n = node;
     while (n)
@@ -2144,29 +2162,42 @@ gml_parse_multi_surface (struct gml_data *p_data, gaiaGeomCollPtr geom,
 		    return 0;
 	    }
 	  if (strcmp (n->Tag, "gml:surfaceMember") == 0
-	      || strcmp (n->Tag, "surfaceMember") == 0)
+	      || strcmp (n->Tag, "surfaceMember") == 0
+	      || strcmp (n->Tag, "gml:surfaceMembers") == 0
+	      || strcmp (n->Tag, "surfaceMembers") == 0)
 	      ;
 	  else
 	      return 0;
-	  n = n->Next;
-	  if (n == NULL)
-	      return 0;
-	  if (strcmp (n->Tag, "gml:Polygon") == 0
-	      || strcmp (n->Tag, "Polygon") == 0)
+	  n2 = n->Next;
+pgs = 0;
+while (n2)
+{
+	/* looping on Polygon(s) */
+	  if (strcmp (n2->Tag, "gml:Polygon") == 0
+	      || strcmp (n2->Tag, "Polygon") == 0)
 	      ;
 	  else
+{
+n = n2;
+break;
+}
+	  srid = guessGmlSrid (n2);
+	  n2 = n2->Next;
+	  if (n2 == NULL)
 	      return 0;
-	  srid = guessGmlSrid (n);
-	  n = n->Next;
-	  if (n == NULL)
+	  if (!gml_parse_polygon (p_data, geom, n2, srid, &next))
 	      return 0;
-	  if (!gml_parse_polygon (p_data, geom, n, srid, &next))
+	  n2 = next;
+	  if (n2 == NULL)
 	      return 0;
-	  n = next;
-	  if (n == NULL)
-	      return 0;
+pgs++;
+}
+if (!pgs)
+return 0;
 	  if (strcmp (n->Tag, "gml:surfaceMember") == 0
-	      || strcmp (n->Tag, "surfaceMember") == 0)
+	      || strcmp (n->Tag, "surfaceMember") == 0
+	      || strcmp (n->Tag, "gml:surfaceMembers") == 0
+	      || strcmp (n->Tag, "surfaceMembers") == 0)
 	      ;
 	  else
 	      return 0;
@@ -2196,7 +2227,9 @@ gml_parse_multi_geometry (struct gml_data *p_data, gaiaGeomCollPtr geom,
 		    return 0;
 	    }
 	  if (strcmp (n->Tag, "gml:geometryMember") == 0
-	      || strcmp (n->Tag, "geometryMember") == 0)
+	      || strcmp (n->Tag, "geometryMember") == 0
+	      || strcmp (n->Tag, "gml:geometryMembers") == 0
+	      || strcmp (n->Tag, "geometryMembers") == 0)
 	      ;
 	  else
 	      return 0;
@@ -2252,7 +2285,9 @@ gml_parse_multi_geometry (struct gml_data *p_data, gaiaGeomCollPtr geom,
 	  if (n == NULL)
 	      return 0;
 	  if (strcmp (n->Tag, "gml:geometryMember") == 0
-	      || strcmp (n->Tag, "geometryMember") == 0)
+	      || strcmp (n->Tag, "geometryMember") == 0
+	      || strcmp (n->Tag, "gml:geometryMembers") == 0
+	      || strcmp (n->Tag, "geometryMembers") == 0)
 	      ;
 	  else
 	      return 0;

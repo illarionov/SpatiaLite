@@ -735,24 +735,68 @@ extern "C"
 
  \param sqlite handle to current DB connection
  \param path_or_url pointer to some WFS-GetFeature XML Document (could be a pathname or an URL). 
+ \param swap_axes if TRUE the X and Y axes will be swapped 
  \param table the name of the table to be created
  \param pk_column name of the Primary Key column; if NULL or mismatching
  then "PK_UID" will be assumed by default.
  \param spatial_index if TRUE an R*Tree Spatial Index will be created
  \param rows on completion will contain the total number of actually imported rows
  \param err_msg on completion will contain an error message (if any)
+ \param progress_callback pointer to a callback function to be invoked immediately
+ after processing each WFS page (could be NULL)
  
- \sa create_wfs_catalog
+ \sa create_wfs_catalog, load_from_wfs_paged
 
  \return 0 on failure, any other value on success
  
  \note an eventual error message returned via err_msg requires to be deallocated
  by invoking free()
+ \n please note: this one simply is a convenience method, and exactly corresponds
+ to load_from_wfs_paged() setting a negative page size. 
  */
     SPATIALITE_DECLARE int load_from_wfs (sqlite3 * sqlite, char *path_or_url,
-					  char *table, char *pk_column_name,
+					  int swap_axes, char *table,
+					  char *pk_column_name,
 					  int spatial_index, int *rows,
-					  char **err_msg);
+					  char **err_msg,
+					  void (*progress_callback) (int));
+
+/**
+ Loads data from some WFS source (using WFS paging)
+
+ \param sqlite handle to current DB connection
+ \param path_or_url pointer to some WFS-GetFeature XML Document (could be a pathname or an URL).
+ \param swap_axes if TRUE the X and Y axes will be swapped 
+ \param table the name of the table to be created
+ \param pk_column name of the Primary Key column; if NULL or mismatching
+ then "PK_UID" will be assumed by default.
+ \param spatial_index if TRUE an R*Tree Spatial Index will be created
+ \param page_size max number of features for each single WFS call; if zero or
+ negative a single monolithic page is assumed (i.e. paging will not be applied).
+ \param rows on completion will contain the total number of actually imported rows
+ \param err_msg on completion will contain an error message (if any)
+ \param progress_callback pointer to a callback function to be invoked immediately
+ after processing each WFS page (could be NULL)
+ 
+ \sa create_wfs_catalog, load_from_wfs
+
+ \return 0 on failure, any other value on success
+ 
+ \note an eventual error message returned via err_msg requires to be deallocated
+ by invoking free()
+
+ \note the progress_callback function must have this signature: \b void \b myfunct(\b int \b count);
+ \n and will cyclically report how many features have been processed since the initial call start.
+ */
+    SPATIALITE_DECLARE int load_from_wfs_paged (sqlite3 * sqlite,
+						char *path_or_url,
+						int swap_axes, char *table,
+						char *pk_column_name,
+						int spatial_index,
+						int page_size, int *rows,
+						char **err_msg,
+						void (*progress_callback)
+						(int));
 
 /**
  Creates a Catalog for some WFS service 
@@ -789,9 +833,34 @@ extern "C"
 
  \return the base URL for any WFS-GetFeature call: NULL is undefined
  
- \sa get_wfs_catalog
+ \sa get_wfs_catalog, get_wfs_request_url
  */
     SPATIALITE_DECLARE const char *get_wfs_base_url (gaiaWFScatalogPtr handle);
+
+/**
+ Return a GetFeature URL (GET)
+
+ \param handle the pointer to a valid WFS-Item returned by a previous call
+ to get_wfs_catalog_item().
+ \param name the NAME uniquely identifying the required WFS layer.
+ \param version could be "1.0.0" or "1.1.0"; if NULL or invalid "1.1.0"
+ will be assumed.
+ \param srid the preferred SRS to be used for WFS geometries; if negative
+ or mismatching will be simply ignored.
+ \param max_features the WFS MAXFEATURES argument; any negative or zero
+ value will be ignored.
+
+ \return the GetFeature URL: NULL if any error is found.
+ 
+ \sa get_wfs_base_url
+
+ \note you are responsible to destroy (before or after) any allocated
+ memory returned by get_wfs_request_url().
+ */
+    SPATIALITE_DECLARE char *get_wfs_request_url (gaiaWFScatalogPtr handle,
+						  const char *name,
+						  const char *version,
+						  int srid, int max_features);
 
 /**
  Return the total count of items (aka Layers) defined within a WFS-Catalog object

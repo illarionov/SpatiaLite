@@ -78,6 +78,7 @@ struct wfs_srid_def
 {
 /* a WFS supported SRID */
     int srid;
+    char *srs_name;
     struct wfs_srid_def *next;
 };
 
@@ -123,6 +124,7 @@ struct wfs_layer_schema
 {
 /* a WFS table / layer schema */
     int error;
+    int swap_axes;
     struct wfs_column_def *first;
     struct wfs_column_def *last;
     char *geometry_name;
@@ -133,6 +135,22 @@ struct wfs_layer_schema
     char *geometry_value;
     sqlite3_stmt *stmt;
     sqlite3 *sqlite;
+};
+
+struct wfs_attribute
+{
+/* a WFS attribute value */
+    struct wfs_column_def *column;
+    char *value;
+    struct wfs_attribute *next;
+};
+
+struct wfs_feature
+{
+/* a WFS feature */
+    struct wfs_attribute *first;
+    struct wfs_attribute *last;
+    char *geometry_value;
 };
 
 static struct wfs_column_def *
@@ -170,6 +188,7 @@ alloc_wfs_layer_schema ()
 /* allocating an empty WFS schema descriptor */
     struct wfs_layer_schema *ptr = malloc (sizeof (struct wfs_layer_schema));
     ptr->error = 0;
+    ptr->swap_axes = 0;
     ptr->first = NULL;
     ptr->last = NULL;
     ptr->geometry_name = NULL;
@@ -208,7 +227,7 @@ free_wfs_layer_schema (struct wfs_layer_schema *ptr)
 static void
 reset_wfs_values (struct wfs_layer_schema *ptr)
 {
-/* memory cleanup: destroying a WFS schema */
+/* memory cleanup: resetting attribute values */
     struct wfs_column_def *col;
     if (ptr == NULL)
 	return;
@@ -283,11 +302,15 @@ set_wfs_geometry (struct wfs_layer_schema *ptr, const char *name, int type,
 }
 
 static struct wfs_srid_def *
-alloc_wfs_srid (int srid)
+alloc_wfs_srid (int srid, const char *srs_name)
 {
 /* allocating a WFS SRID definition */
+    int len;
     struct wfs_srid_def *ptr = malloc (sizeof (struct wfs_srid_def));
     ptr->srid = srid;
+    len = strlen (srs_name);
+    ptr->srs_name = malloc (len + 1);
+    strcpy (ptr->srs_name, srs_name);
     ptr->next = NULL;
     return ptr;
 }
@@ -358,6 +381,8 @@ free_wfs_layer (struct wfs_layer_def *lyr)
     while (srid != NULL)
       {
 	  n_srid = srid->next;
+	  if (srid->srs_name != NULL)
+	      free (srid->srs_name);
 	  free (srid);
 	  srid = n_srid;
       }
@@ -419,34 +444,168 @@ add_wfs_layer_to_catalog (struct wfs_catalog *ptr, const char *name,
     ptr->last = lyr;
 }
 
+static struct wfs_feature *
+create_feature (struct wfs_layer_schema *schema)
+{
+/* creating an empty WFS feature object */
+    struct wfs_column_def *col;
+    struct wfs_feature *feature = malloc (sizeof (struct wfs_feature));
+    feature->first = NULL;
+    feature->last = NULL;
+    feature->geometry_value = NULL;
+    col = schema->first;
+    while (col != NULL)
+      {
+	  struct wfs_attribute *attr = malloc (sizeof (struct wfs_attribute));
+	  attr->column = col;
+	  attr->value = NULL;
+	  attr->next = NULL;
+	  if (feature->first == NULL)
+	      feature->first = attr;
+	  if (feature->last != NULL)
+	      feature->last->next = attr;
+	  feature->last = attr;
+	  col = col->next;
+      }
+    return feature;
+}
+
+static void
+reset_feature (struct wfs_feature *feature)
+{
+/* resetting a WFS feature object to its initial empty state */
+    struct wfs_attribute *attr = feature->first;
+    while (attr != NULL)
+      {
+	  if (attr->value != NULL)
+	      free (attr->value);
+	  attr->value = NULL;
+	  attr = attr->next;
+      }
+    if (feature->geometry_value != NULL)
+	free (feature->geometry_value);
+    feature->geometry_value = NULL;
+}
+
+static void
+free_feature (struct wfs_feature *feature)
+{
+/* memory cleanup - freeing a WFS feature object */
+    struct wfs_attribute *attr;
+    struct wfs_attribute *n_attr;
+    reset_feature (feature);
+    attr = feature->first;
+    while (attr != NULL)
+      {
+	  n_attr = attr->next;
+	  free (attr);
+	  attr = n_attr;
+      }
+    free (feature);
+}
+
+static int
+compare_features (struct wfs_feature *f1, struct wfs_feature *f2)
+{
+/* testing if two WFS features are identical */
+    struct wfs_attribute *attr1;
+    struct wfs_attribute *attr2;
+    int cnt1 = 0;
+    int cnt2 = 0;
+/* counting how many attributes for each feature */
+    attr1 = f1->first;
+    while (attr1 != NULL)
+      {
+	  cnt1++;
+	  attr1 = attr1->next;
+      }
+    attr2 = f2->first;
+    while (attr2 != NULL)
+      {
+	  cnt2++;
+	  attr2 = attr2->next;
+      }
+    if (cnt1 != cnt2)
+      {
+	  /* surely different - mismatching attributes count */
+	  return 0;
+      }
+    if (f1->geometry_value == NULL && f2->geometry_value == NULL)
+	;
+    else if (f1->geometry_value != NULL && f2->geometry_value != NULL)
+      {
+	  if (strcmp (f1->geometry_value, f2->geometry_value) != 0)
+	    {
+		/* surely different - mismatching geometry values */
+		return 0;
+	    }
+      }
+    else
+      {
+	  /* surely different - mismatching geometries */
+	  return 0;
+      }
+    attr1 = f1->first;
+    attr2 = f2->first;
+    while (attr1 != NULL && attr2 != NULL)
+      {
+	  if (strcmp (attr1->column->name, attr1->column->name) != 0)
+	    {
+		/* mismatching attribute name */
+		return 0;
+	    }
+	  if (attr1->value == NULL && attr2->value == NULL)
+	      ;
+	  else if (attr1->value != NULL && attr2->value != NULL)
+	    {
+		if (strcmp (attr1->value, attr2->value) != 0)
+		  {
+		      /* mismatching values */
+		      return 0;
+		  }
+	    }
+	  else
+	    {
+		/* mismatching values */
+	    }
+	  attr1 = attr1->next;
+	  attr2 = attr2->next;
+      }
+    return 1;
+}
+
 static void
 set_wfs_catalog_url (struct wfs_catalog *ptr, const char *url)
 {
 /* setting the base-URL for a WFS catalog */
     int len;
     int i;
+    int force_marker = 1;
     if (ptr == NULL)
 	return;
     if (ptr->base_url != NULL)
 	free (ptr->base_url);
     len = strlen (url);
-    ptr->base_url = malloc (len + 1);
+    ptr->base_url = malloc (len + 2);
     strcpy (ptr->base_url, url);
     for (i = 0; i < (int) strlen (ptr->base_url); i++)
       {
 	  if (*(ptr->base_url + i) == '?')
-	      *(ptr->base_url + i) = '\0';
+	      force_marker = 0;
       }
+    if (force_marker)
+	strcat (ptr->base_url, "?");
 }
 
 static void
-add_wfs_srid_to_layer (struct wfs_layer_def *ptr, int srid)
+add_wfs_srid_to_layer (struct wfs_layer_def *ptr, int srid,
+		       const char *srs_name)
 {
 /* adding a SRID supported by a WFS Layer */
     struct wfs_srid_def *p_srid;
     if (ptr == NULL)
 	return;
-    p_srid = alloc_wfs_srid (srid);
+    p_srid = alloc_wfs_srid (srid, srs_name);
     if (ptr->first_srid == NULL)
 	ptr->first_srid = p_srid;
     if (ptr->last_srid != NULL)
@@ -785,7 +944,7 @@ parse_wfs_schema (xmlNodePtr node, struct wfs_layer_schema *schema,
 }
 
 static struct wfs_layer_schema *
-load_wfs_schema (const char *path_or_url, char **err_msg)
+load_wfs_schema (const char *path_or_url, int swap_axes, char **err_msg)
 {
 /* attempting to retrieve the WFS layer schema */
     xmlDocPtr xml_doc = NULL;
@@ -812,6 +971,7 @@ load_wfs_schema (const char *path_or_url, char **err_msg)
       }
 
     schema = alloc_wfs_layer_schema ();
+    schema->swap_axes = swap_axes;
     root = xmlDocGetRootElement (xml_doc);
     parse_wfs_schema (root, schema, &sequence);
     if (schema->first == NULL && schema->geometry_name == NULL)
@@ -1105,6 +1265,8 @@ do_insert (struct wfs_layer_schema *schema)
 		      unsigned char *blob;
 		      int blob_size;
 		      geom->Srid = schema->srid;
+		      if (schema->swap_axes != 0)
+			  gaiaSwapCoords (geom);
 		      gaiaToSpatiaLiteBlobWkb (geom, &blob, &blob_size);
 		      sqlite3_bind_blob (stmt, ind, blob, blob_size, free);
 		      gaiaFreeGeomColl (geom);
@@ -1122,6 +1284,63 @@ do_insert (struct wfs_layer_schema *schema)
 		  sqlite3_errmsg (schema->sqlite));
     schema->error = 1;
     return 0;
+}
+
+static void
+save_attribute (struct wfs_feature *feature, struct wfs_column_def *col)
+{
+/* saving an attribute value */
+    struct wfs_attribute *attr = feature->first;
+    while (attr != NULL)
+      {
+	  if (attr->column == col)
+	    {
+		if (attr->value != NULL)
+		    free (attr->value);
+		attr->value = NULL;
+		if (col->value != NULL)
+		  {
+		      int len = strlen (col->value);
+		      attr->value = malloc (len + 1);
+		      strcpy (attr->value, col->value);
+		  }
+		return;
+	    }
+	  attr = attr->next;
+      }
+}
+
+static int
+do_save_feature (struct wfs_layer_schema *schema, struct wfs_feature *feature)
+{
+/* saving the current feature data */
+    int ret;
+    struct wfs_column_def *col;
+
+    if (schema->error)
+      {
+	  schema->error = 1;
+	  return 0;
+      }
+
+    reset_feature (feature);
+    col = schema->first;
+    while (col != NULL)
+      {
+	  save_attribute (feature, col);
+	  col = col->next;
+      }
+    if (schema->geometry_name != NULL)
+      {
+	  /* we have a Geometry column */
+	  if (schema->geometry_value != NULL)
+	    {
+		int len = strlen (schema->geometry_value);
+		feature->geometry_value = malloc (len + 1);
+		strcpy (feature->geometry_value, schema->geometry_value);
+	    }
+      }
+    return 1;
 }
 
 static void
@@ -1145,6 +1364,33 @@ parse_wfs_features (xmlNodePtr node, struct wfs_layer_schema *schema, int *rows)
 		  }
 		else
 		    parse_wfs_features (cur_node->children, schema, rows);
+	    }
+      }
+}
+
+static void
+parse_wfs_last_feature (xmlNodePtr node, struct wfs_layer_schema *schema,
+			struct wfs_feature *feature, int *rows)
+{
+/* recursively parsing the GML payload */
+    xmlNodePtr cur_node = NULL;
+
+    for (cur_node = node; cur_node; cur_node = cur_node->next)
+      {
+	  if (cur_node->type == XML_ELEMENT_NODE)
+	    {
+		if (parse_wfs_single_feature (cur_node, schema))
+		  {
+		      if (schema->error == 0)
+			{
+			    if (do_save_feature (schema, feature))
+				*rows += 1;
+			}
+		      return;
+		  }
+		else
+		    parse_wfs_last_feature (cur_node->children, schema, feature,
+					    rows);
 	    }
       }
 }
@@ -1216,22 +1462,31 @@ static void
 sniff_gml_geometry (xmlNodePtr node, struct wfs_layer_schema *schema)
 {
 /* attempting to identify the Srid and dimension from a GML geometry */
-    struct _xmlAttr *attr;
+    xmlNodePtr cur_node = NULL;
     if (node == NULL)
 	return;
-    attr = node->properties;
-    while (attr != NULL)
+    for (cur_node = node; cur_node; cur_node = cur_node->next)
       {
-	  if (attr->name != NULL)
+	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (strcmp ((const char *) (attr->name), "srsName") == 0)
-		    schema->srid = parse_srsname (attr->children);
-		if (strcmp ((const char *) (attr->name), "dimension") == 0)
-		    schema->dims = parse_dimension (attr->children);
+		struct _xmlAttr *attr;
+		attr = cur_node->properties;
+		while (attr != NULL)
+		  {
+		      if (attr->name != NULL)
+			{
+			    if (strcmp ((const char *) (attr->name), "srsName")
+				== 0)
+				schema->srid = parse_srsname (attr->children);
+			    if (strcmp
+				((const char *) (attr->name), "dimension") == 0)
+				schema->dims = parse_dimension (attr->children);
+			}
+		      attr = attr->next;
+		  }
+		sniff_gml_geometry (cur_node->children, schema);
 	    }
-	  attr = attr->next;
       }
-    sniff_gml_geometry (node->children, schema);
 }
 
 static int
@@ -1584,6 +1839,24 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
 }
 
 static void
+restart_transaction (sqlite3 * sqlite)
+{
+/* confirming the still pendenting SQL transaction */
+    char *errMsg = NULL;
+    if (sqlite3_exec (sqlite, "COMMIT", NULL, NULL, &errMsg) != SQLITE_OK)
+      {
+	  spatialite_e ("loadwfs: COMMIT error:\"%s\"\n", errMsg);
+	  sqlite3_free (errMsg);
+      }
+/* restarting a further transaction */
+    if (sqlite3_exec (sqlite, "BEGIN", NULL, NULL, &errMsg) != SQLITE_OK)
+      {
+	  spatialite_e ("loadwfs: BEGIN error:\"%s\"\n", errMsg);
+	  sqlite3_free (errMsg);
+      }
+}
+
+static void
 do_commit (sqlite3 * sqlite, struct wfs_layer_schema *schema)
 {
 /* confirming the still pendenting SQL transaction */
@@ -1601,7 +1874,7 @@ do_commit (sqlite3 * sqlite, struct wfs_layer_schema *schema)
 static void
 do_rollback (sqlite3 * sqlite, struct wfs_layer_schema *schema)
 {
-/* invalidating the still pendenting SQL transaction */
+/* invalidating the still pending SQL transaction */
     char *errMsg = NULL;
     sqlite3_finalize (schema->stmt);
     schema->stmt = NULL;
@@ -1614,11 +1887,89 @@ do_rollback (sqlite3 * sqlite, struct wfs_layer_schema *schema)
 }
 
 SPATIALITE_DECLARE int
-load_from_wfs (sqlite3 * sqlite, char *path_or_url,
+load_from_wfs (sqlite3 * sqlite, char *path_or_url, int swap_axes,
 	       char *table, char *pk_column_name, int spatial_index, int *rows,
-	       char **err_msg)
+	       char **err_msg, void (*progress_callback) (int))
 {
-/* attempting to load data from some WFS source */
+/* attempting to load data from some WFS source [not-paged] */
+    return load_from_wfs_paged (sqlite, path_or_url, swap_axes, table,
+				pk_column_name, spatial_index, -1, rows,
+				err_msg, progress_callback);
+}
+
+static int
+test_wfs_paging (char *path_or_url, int page_size, xmlNodePtr node,
+		 struct wfs_layer_schema *schema, int *shift_index)
+{
+/* testing if the server does actually supports STARTINDEX */
+    xmlDocPtr xml_doc = NULL;
+    xmlNodePtr root;
+    char *page_url;
+    int nRows = 0;
+    struct wfs_feature *feature_1 = create_feature (schema);
+    struct wfs_feature *feature_2 = create_feature (schema);
+    *shift_index = 0;
+    parse_wfs_last_feature (node, schema, feature_1, &nRows);
+
+/* loading the feature to be tested */
+    page_url = sqlite3_mprintf ("%s&maxFeatures=1&startIndex=%d",
+				path_or_url, page_size - 1);
+    xml_doc = xmlReadFile (page_url, NULL, 0);
+    sqlite3_free (page_url);
+    if (xml_doc == NULL)
+	goto error;
+    /* parsing the WFS payload */
+    root = xmlDocGetRootElement (xml_doc);
+    nRows = 0;
+    parse_wfs_last_feature (root, schema, feature_2, &nRows);
+    if (!compare_features (feature_1, feature_2))
+      {
+	  reset_feature (feature_2);
+	  if (xml_doc != NULL)
+	      xmlFreeDoc (xml_doc);
+	  goto second_chance;
+      }
+    free_feature (feature_1);
+    free_feature (feature_2);
+    if (xml_doc != NULL)
+	xmlFreeDoc (xml_doc);
+    return 1;
+
+/* for some MapServer version the first Index is 1, not 0 */
+  second_chance:
+    page_url = sqlite3_mprintf ("%s&maxFeatures=1&startIndex=%d",
+				path_or_url, page_size);
+    xml_doc = xmlReadFile (page_url, NULL, 0);
+    sqlite3_free (page_url);
+    if (xml_doc == NULL)
+	goto error;
+    /* parsing the WFS payload */
+    root = xmlDocGetRootElement (xml_doc);
+    nRows = 0;
+    parse_wfs_last_feature (root, schema, feature_2, &nRows);
+    if (!compare_features (feature_1, feature_2))
+	goto error;
+    free_feature (feature_1);
+    free_feature (feature_2);
+    if (xml_doc != NULL)
+	xmlFreeDoc (xml_doc);
+    *shift_index = 1;
+    return 1;
+  error:
+    free_feature (feature_1);
+    free_feature (feature_2);
+    if (xml_doc != NULL)
+	xmlFreeDoc (xml_doc);
+    return 0;
+}
+
+SPATIALITE_DECLARE int
+load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, int swap_axes,
+		     char *table, char *pk_column_name, int spatial_index,
+		     int page_size, int *rows, char **err_msg,
+		     void (*progress_callback) (int))
+{
+/* attempting to load data from some WFS source [paged]*/
     xmlDocPtr xml_doc = NULL;
     xmlNodePtr root;
     struct wfs_layer_schema *schema = NULL;
@@ -1627,65 +1978,130 @@ load_from_wfs (sqlite3 * sqlite, char *path_or_url,
     gaiaOutBuffer errBuf;
     int ok = 0;
     int sniffed = 0;
+    int pageNo = 0;
+    int startIdx = 0;
+    int nRows;
+    char *page_url;
+    int shift_index;
     xmlGenericErrorFunc parsingError = (xmlGenericErrorFunc) wfsParsingError;
     *rows = 0;
     *err_msg = NULL;
     if (path_or_url == NULL)
 	return 0;
 
-/* loading the WFS payload from URL (or file) */
-    gaiaOutBufferInitialize (&errBuf);
-    xmlSetGenericErrorFunc (&errBuf, parsingError);
-    xml_doc = xmlReadFile (path_or_url, NULL, 0);
-    if (xml_doc == NULL)
+    while (1)
       {
-	  /* parsing error; not a well-formed XML */
-	  if (errBuf.Buffer != NULL)
+	  if (page_size <= 0)
+	      page_url = path_or_url;
+	  else
+	      page_url =
+		  sqlite3_mprintf ("%s&maxFeatures=%d&startIndex=%d",
+				   path_or_url, page_size, startIdx);
+
+	  /* loading the WFS payload from URL (or file) */
+	  gaiaOutBufferInitialize (&errBuf);
+	  xmlSetGenericErrorFunc (&errBuf, parsingError);
+	  xml_doc = xmlReadFile (page_url, NULL, 0);
+	  if (page_size > 0)
+	      sqlite3_free (page_url);
+	  if (xml_doc == NULL)
 	    {
-		len = strlen (errBuf.Buffer);
-		*err_msg = malloc (len + 1);
-		strcpy (*err_msg, errBuf.Buffer);
+		/* parsing error; not a well-formed XML */
+		if (errBuf.Buffer != NULL)
+		  {
+		      len = strlen (errBuf.Buffer);
+		      *err_msg = malloc (len + 1);
+		      strcpy (*err_msg, errBuf.Buffer);
+		  }
+		goto end;
 	    }
-	  goto end;
-      }
 
-/* extracting the WFS schema URL (or path) */
-    if (get_DescribeFeatureType_uri (xml_doc, &describe_uri) == 0)
-      {
-	  const char *msg = "Unable to retrieve the DescribeFeatureType URI";
-	  len = strlen (msg);
-	  *err_msg = malloc (len + 1);
-	  strcpy (*err_msg, msg);
-	  goto end;
-      }
+	  if (pageNo == 0)
+	    {
+		/* extracting the WFS schema URL (or path) */
+		if (get_DescribeFeatureType_uri (xml_doc, &describe_uri) == 0)
+		  {
+		      const char *msg =
+			  "Unable to retrieve the DescribeFeatureType URI";
+		      len = strlen (msg);
+		      *err_msg = malloc (len + 1);
+		      strcpy (*err_msg, msg);
+		      goto end;
+		  }
 
-/* loading and parsing the WFS schema */
-    schema = load_wfs_schema (describe_uri, err_msg);
-    if (schema == NULL)
-	goto end;
+		/* loading and parsing the WFS schema */
+		schema = load_wfs_schema (describe_uri, swap_axes, err_msg);
+		if (schema == NULL)
+		    goto end;
 
-/* creating the output table */
-    root = xmlDocGetRootElement (xml_doc);
-    sniffed = 0;
-    sniff_geometries (root, schema, &sniffed);
-    if (!prepare_sql
-	(sqlite, schema, table, pk_column_name, spatial_index, err_msg))
-	goto end;
+		/* creating the output table */
+		root = xmlDocGetRootElement (xml_doc);
+		sniffed = 0;
+		sniff_geometries (root, schema, &sniffed);
 
-/* parsing the WFS payload */
-    root = xmlDocGetRootElement (xml_doc);
-    parse_wfs_features (root, schema, rows);
-    if (schema->error)
-      {
-	  *rows = 0;
-	  do_rollback (sqlite, schema);
-      }
-    else
-	do_commit (sqlite, schema);
-    if (schema->error)
-      {
-	  *rows = 0;
-	  goto end;
+		if (page_size > 0)
+		  {
+		      /* testing if the server does actually support STARTINDEX */
+		      root = xmlDocGetRootElement (xml_doc);
+		      if (!test_wfs_paging
+			  (path_or_url, page_size, root, schema, &shift_index))
+			{
+			    const char *err =
+				"loawfs: the WFS server doesn't seem to support STARTINDEX\n"
+				"and consequently WFS paging is not available";
+			    len = strlen (err);
+			    *err_msg = malloc (len + 1);
+			    strcpy (*err_msg, err);
+			    goto end;
+			}
+		      startIdx += shift_index;
+		  }
+
+		if (!prepare_sql
+		    (sqlite, schema, table, pk_column_name, spatial_index,
+		     err_msg))
+		    goto end;
+	    }
+
+	  /* parsing the WFS payload */
+	  root = xmlDocGetRootElement (xml_doc);
+	  nRows = 0;
+	  parse_wfs_features (root, schema, &nRows);
+	  *rows += nRows;
+	  if (progress_callback != NULL)
+	    {
+		/* invoking the progress callback */
+		int ext_rows = *rows;
+		progress_callback (ext_rows);
+	    }
+
+	  if (schema->error)
+	    {
+		*rows = 0;
+		do_rollback (sqlite, schema);
+	    }
+	  else
+	    {
+		if (page_size > 0 && nRows >= page_size)
+		    restart_transaction (sqlite);
+		else
+		    do_commit (sqlite, schema);
+	    }
+	  if (schema->error)
+	    {
+		*rows = 0;
+		goto end;
+	    }
+	  if (page_size <= 0)
+	      break;
+	  if (nRows < page_size)
+	      break;
+
+	  if (xml_doc != NULL)
+	      xmlFreeDoc (xml_doc);
+	  xml_doc = NULL;
+	  pageNo++;
+	  startIdx += nRows;
       }
 
     ok = 1;
@@ -1721,8 +2137,9 @@ parse_keyword (xmlNodePtr node, struct wfs_catalog *catalog)
 				  struct wfs_layer_def *lyr = catalog->last;
 				  add_wfs_keyword_to_layer (lyr,
 							    (const char
-							     *) (child_node->
-								 content));
+							     *)
+							    (child_node->
+							     content));
 			      }
 			}
 		  }
@@ -1840,7 +2257,9 @@ parse_wfs_layer (xmlNodePtr node, struct wfs_catalog *catalog)
 			    if (srid > 0)
 			      {
 				  struct wfs_layer_def *lyr = catalog->last;
-				  add_wfs_srid_to_layer (lyr, srid);
+				  add_wfs_srid_to_layer (lyr, srid,
+							 cur_node->
+							 children->content);
 			      }
 			}
 		      if (strcmp ((const char *) (cur_node->name), "Keywords")
@@ -1867,8 +2286,8 @@ parse_wfs_get_100 (xmlNodePtr node, struct wfs_catalog *catalog)
 			{
 			    if (text->type == XML_TEXT_NODE)
 				set_wfs_catalog_url (catalog,
-						     (const char *) (text->
-								     content));
+						     (const char
+						      *) (text->content));
 			}
 		  }
 	    }
@@ -1972,8 +2391,8 @@ parse_wfs_get_110 (xmlNodePtr node, struct wfs_catalog *catalog)
 			{
 			    if (text->type == XML_TEXT_NODE)
 				set_wfs_catalog_url (catalog,
-						     (const char *) (text->
-								     content));
+						     (const char
+						      *) (text->content));
 			}
 		  }
 	    }
@@ -1986,13 +2405,12 @@ parse_wfs_http_110 (xmlNodePtr node, struct wfs_catalog *catalog)
 {
 /* attempting to find the GetFeature base-URL (WFS 1.1.0) <HTTP> */
     xmlNodePtr cur_node = NULL;
-
     for (cur_node = node; cur_node; cur_node = cur_node->next)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
 		if (strcmp ((const char *) (cur_node->name), "Get") == 0)
-		    parse_wfs_get_110 (node, catalog);
+		    parse_wfs_get_110 (cur_node, catalog);
 	    }
       }
 }
@@ -2002,7 +2420,6 @@ parse_wfs_dcp_110 (xmlNodePtr node, struct wfs_catalog *catalog)
 {
 /* attempting to find the GetFeature base-URL (WFS 1.1.0) <DCP> */
     xmlNodePtr cur_node = NULL;
-
     for (cur_node = node; cur_node; cur_node = cur_node->next)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
@@ -2018,7 +2435,6 @@ parse_wfs_getfeature_110 (xmlNodePtr node, struct wfs_catalog *catalog)
 {
 /* attempting to find the GetFeature base-URL (WFS 1.1.0) <Operation name="GetFeature"> */
     xmlNodePtr cur_node = NULL;
-
     for (cur_node = node; cur_node; cur_node = cur_node->next)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
@@ -2034,7 +2450,6 @@ parse_wfs_operation_110 (xmlNodePtr node, struct wfs_catalog *catalog)
 {
 /* attempting to find the GetFeature base-URL (WFS 1.1.0) <Operation name="GetFeature"> */
     struct _xmlAttr *attr = node->properties;
-
     while (attr != NULL)
       {
 	  if (attr->name != NULL)
@@ -2064,7 +2479,6 @@ parse_wfs_base_url_110 (xmlNodePtr node, struct wfs_catalog *catalog)
 {
 /* attempting to find the GetFeature base-URL (WFS 1.1.0) <OperationsMetadata> */
     xmlNodePtr cur_node = NULL;
-
     for (cur_node = node; cur_node; cur_node = cur_node->next)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
@@ -2340,12 +2754,108 @@ get_wfs_keyword (gaiaWFSitemPtr handle, int index)
     return NULL;
 }
 
+static char *
+build_url (struct wfs_catalog *ptr, struct wfs_layer_def *lyr,
+	   const char *version, int srid, int max_features)
+{
+/* creating the request URL */
+    char *url;
+    char *url2;
+    const char *srs_name = NULL;
+    int len;
+    const char *ver = "1.1.0";
+    if (ptr->base_url == NULL)
+	return NULL;
+    if (version != NULL)
+      {
+	  if (strcmp (version, "1.0.0") == 0)
+	      ver = "1.0.0";
+      }
+    if (srid > 0)
+      {
+	  struct wfs_srid_def *srs = lyr->first_srid;
+	  while (srs != NULL)
+	    {
+		if (srs->srid == srid)
+		  {
+		      /* found the required SRS definition */
+		      srs_name = srs->srs_name;
+		      break;
+		  }
+		srs = srs->next;
+	    }
+      }
+    if (max_features <= 0)
+      {
+	  if (srs_name == NULL)
+	      url =
+		  sqlite3_mprintf
+		  ("%sservice=WFS&version=%s&request=GetFeature&typeName=%s",
+		   ptr->base_url, ver, lyr->name);
+	  else
+	      url =
+		  sqlite3_mprintf
+		  ("%sservice=WFS&version=%s&request=GetFeature&typeName=%s&srsName=%s",
+		   ptr->base_url, ver, lyr->name, srs_name);
+      }
+    else
+      {
+	  if (srs_name == NULL)
+	      url =
+		  sqlite3_mprintf
+		  ("%sservice=WFS&version=%s&request=GetFeature&typeName=%s&maxFeatures=%d",
+		   ptr->base_url, ver, lyr->name, max_features);
+	  else
+	      url =
+		  sqlite3_mprintf
+		  ("%sservice=WFS&version=%s&request=GetFeature&typeName=%s&srsName=%s&maxFeatures=%d",
+		   ptr->base_url, ver, lyr->name, srs_name, max_features);
+      }
+    len = strlen (url);
+    url2 = malloc (len + 1);
+    strcpy (url2, url);
+    sqlite3_free (url);
+    return url2;
+}
+
+SPATIALITE_DECLARE char *
+get_wfs_request_url (gaiaWFScatalogPtr handle, const char *name,
+		     const char *version, int srid, int max_features)
+{
+/* attempting to format a GetFeature (GET) URL */
+    struct wfs_layer_def *lyr;
+    struct wfs_catalog *ptr = (struct wfs_catalog *) handle;
+    if (ptr == NULL)
+	return NULL;
+
+    lyr = ptr->first;
+    while (lyr != NULL)
+      {
+	  if (strcmp (lyr->name, name) == 0)
+	      return build_url (ptr, lyr, version, srid, max_features);
+	  lyr = lyr->next;
+      }
+    return NULL;
+}
+
 #else /* LIBXML2 isn't enabled */
 
 SPATIALITE_DECLARE int
-load_from_wfs (sqlite3 * sqlite, char *path_or_url,
+load_from_wfs (sqlite3 * sqlite, char *path_or_url, int swap_axes,
 	       char *table, char *pk_column_name, int spatial_index, int *rows,
-	       char **err_msg)
+	       char **err_msg, void (*progress_callback) (int))
+{
+/* LIBXML2 isn't enabled: always returning an error */
+    return load_from_wfs_page (sqlite, path_or_url, swap_axes, table,
+			       pk_column_name, spatial_index, -1, rows,
+			       err_msg, progress_callback);
+}
+
+SPATIALITE_DECLARE int
+load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, int swap_axes,
+		     char *table, char *pk_column_name, int spatial_index,
+		     int page_size, int *rows, char **err_msg,
+		     void (*progress_callback) (int))
 {
 /* LIBXML2 isn't enabled: always returning an error */
     int len;
@@ -2353,8 +2863,9 @@ load_from_wfs (sqlite3 * sqlite, char *path_or_url,
 	"and is thus unable to support LOADWFS";
 
 /* silencing stupid compiler warnings */
-    if (sqlite == NULL || path_or_url == NULL || table == NULL
-	|| pk_column_name == NULL || spatial_index == NULL || rows == NULL)
+    if (sqlite == NULL || path_or_url == NULL || swap_axes == 0 || table == NULL
+	|| pk_column_name == NULL || spatial_index == NULL || ||page_size <= 0
+	|| rows == NULL || progress_callback == NULL)
 	path_or_url = NULL;
 
     len = strlen (msg);
@@ -2385,6 +2896,10 @@ SPATIALITE_DECLARE void
 destroy_wfs_catalog (gaiaWFScatalogPtr handle)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL)
+	handle = NULL;
     return;
 }
 
@@ -2392,6 +2907,10 @@ SPATIALITE_DECLARE const char *
 get_wfs_base_url (gaiaWFScatalogPtr handle)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL)
+	handle = NULL;
     return NULL;
 }
 
@@ -2399,6 +2918,10 @@ SPATIALITE_DECLARE int
 get_wfs_catalog_count (gaiaWFScatalogPtr handle)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL)
+	handle = NULL;
     return -1;
 }
 
@@ -2406,6 +2929,10 @@ SPATIALITE_DECLARE gaiaWFSitemPtr
 get_wfs_catalog_item (gaiaWFScatalogPtr handle, int index)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL || index < 0)
+	handle = NULL;
     return NULL;
 }
 
@@ -2413,6 +2940,10 @@ SPATIALITE_DECLARE const char *
 get_wfs_item_name (gaiaWFSitemPtr handle)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL)
+	handle = NULL;
     return NULL;
 }
 
@@ -2420,6 +2951,10 @@ SPATIALITE_DECLARE const char *
 get_wfs_item_title (gaiaWFSitemPtr handle)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL)
+	handle = NULL;
     return NULL;
 }
 
@@ -2427,6 +2962,10 @@ SPATIALITE_DECLARE const char *
 get_wfs_item_abstract (gaiaWFSitemPtr handle)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL)
+	handle = NULL;
     return NULL;
 }
 
@@ -2434,6 +2973,10 @@ SPATIALITE_DECLARE int
 get_wfs_layer_srid_count (gaiaWFSitemPtr handle)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL)
+	handle = NULL;
     return -1;
 }
 
@@ -2441,6 +2984,10 @@ SPATIALITE_DECLARE int
 get_wfs_layer_srid (gaiaWFSitemPtr handle, int index)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL || index < 0)
+	handle = NULL;
     return -1;
 }
 
@@ -2448,6 +2995,10 @@ SPATIALITE_DECLARE int
 get_wfs_keyword_count (gaiaWFSitemPtr handle)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL)
+	handle = NULL;
     return -1;
 }
 
@@ -2455,6 +3006,22 @@ SPATIALITE_DECLARE const char *
 get_wfs_keyword (gaiaWFSitemPtr handle, int index)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL || index < 0)
+	handle = NULL;
+    return NULL;
+}
+
+SPATIALITE_DECLARE const char *
+get_wfs_request_url (gaiaWFScatalogPtr handle, const char *name,
+		     const char *version, int srid)
+{
+/* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL || name == NULL || version == NULL || srid < 0)
+	handle = NULL;
     return NULL;
 }
 
