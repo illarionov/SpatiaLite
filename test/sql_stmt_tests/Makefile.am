@@ -690,7 +690,19 @@ EXTRA_DIST = addpoint10.testcase \
 	fromgml40.testcase \
 	fromgml41.testcase \
 	fromgml43.testcase \
+	fromgml44.testcase \
+	fromgml45.testcase \
+	fromgml46.testcase \
+	fromgml47.testcase \
+	fromgml48.testcase \
+	fromgml49.testcase \
 	fromgml4.testcase \
+	fromgml50.testcase \
+	fromgml51.testcase \
+	fromgml52.testcase \
+	fromgml53.testcase \
+	fromgml54.testcase \
+	fromgml55.testcase \
 	fromgml5.testcase \
 	fromgml6.testcase \
 	fromgml7.testcase \

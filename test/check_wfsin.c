@@ -88,7 +88,7 @@ int main (int argc, char *argv[])
     }
     
 #ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
-    ret = load_from_wfs (handle, "./test.wfs", "test_wfs1", "objectid", 1, &row_count, &err_msg);
+    ret = load_from_wfs (handle, "./test.wfs", 0, "test_wfs1", "objectid", 1, &row_count, &err_msg, NULL);
     if (!ret) {
         fprintf (stderr, "load_from_wfs() error for test.wfs (1): %s\n", err_msg);
 	free(err_msg);
@@ -101,7 +101,7 @@ int main (int argc, char *argv[])
 	return -4; 
     }
 
-    ret = load_from_wfs (handle, "./test.wfs", "test_wfs2", NULL, 0, &row_count, &err_msg);
+    ret = load_from_wfs (handle, "./test.wfs", 0, "test_wfs2", NULL, 0, &row_count, &err_msg, NULL);
     if (!ret) {
         fprintf (stderr, "load_from_wfs() error for test.wfs (2): %s\n", err_msg);
 	free(err_msg);
@@ -201,8 +201,8 @@ int main (int argc, char *argv[])
     }
 
     str = get_wfs_base_url (catalog);
-    if (strcmp(str, "http://www.gaia-gis.it:8080/geoserver/wfs") != 0) {
-	fprintf(stderr, "get_wfs_base_url() 1.0.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs\"\n", str);
+    if (strcmp(str, "http://www.gaia-gis.it:8080/geoserver/wfs?request=GetFeature") != 0) {
+	fprintf(stderr, "get_wfs_base_url() 1.0.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs?request=GetFeature\"\n", str);
 	sqlite3_close(handle);
 	return -20;
     }
@@ -309,8 +309,8 @@ int main (int argc, char *argv[])
     }
 
     str = get_wfs_base_url (catalog);
-    if (strcmp(str, "http://www.gaia-gis.it:8080/geoserver/wfs") != 0) {
-	fprintf(stderr, "get_wfs_base_url() 1.1.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs\"\n", str);
+    if (strcmp(str, "http://www.gaia-gis.it:8080/geoserver/wfs?") != 0) {
+	fprintf(stderr, "get_wfs_base_url() 1.1.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs?\"\n", str);
 	sqlite3_close(handle);
 	return -36;
     }

@@ -1921,6 +1921,8 @@ gml_parse_multi_point (struct gml_data *p_data, gaiaGeomCollPtr geom,
 {
 /* parsing a <gml:MultiPoint> */
     int srid;
+    int pts;
+    gmlNodePtr n2;
     gmlNodePtr next;
     gmlNodePtr n = node;
     while (n)
@@ -1942,22 +1944,31 @@ gml_parse_multi_point (struct gml_data *p_data, gaiaGeomCollPtr geom,
 	      ;
 	  else
 	      return 0;
-	  n = n->Next;
-	  if (n == NULL)
-	      return 0;
-	  if (strcmp (n->Tag, "gml:Point") == 0
-	      || strcmp (n->Tag, "Point") == 0)
-	      ;
-	  else
-	      return 0;
-	  srid = guessGmlSrid (n);
-	  n = n->Next;
-	  if (n == NULL)
-	      return 0;
-	  if (!gml_parse_point (p_data, geom, n, srid, &next))
-	      return 0;
-	  n = next;
-	  if (n == NULL)
+	  n2 = n->Next;
+	  pts = 0;
+	  while (n2)
+	    {
+		/* looping on Point(s) */
+		if (strcmp (n2->Tag, "gml:Point") == 0
+		    || strcmp (n2->Tag, "Point") == 0)
+		    ;
+		else
+		  {
+		      n = n2;
+		      break;
+		  }
+		srid = guessGmlSrid (n2);
+		n2 = n2->Next;
+		if (n2 == NULL)
+		    return 0;
+		if (!gml_parse_point (p_data, geom, n2, srid, &next))
+		    return 0;
+		n2 = next;
+		if (n2 == NULL)
+		    return 0;
+		pts++;
+	    }
+	  if (!pts)
 	      return 0;
 	  if (strcmp (n->Tag, "gml:pointMember") == 0
 	      || strcmp (n->Tag, "pointMember") == 0
@@ -1977,6 +1988,8 @@ gml_parse_multi_linestring (struct gml_data *p_data, gaiaGeomCollPtr geom,
 {
 /* parsing a <gml:MultiLineString> */
     int srid;
+    int lns;
+    gmlNodePtr n2;
     gmlNodePtr next;
     gmlNodePtr n = node;
     while (n)
@@ -1998,22 +2011,31 @@ gml_parse_multi_linestring (struct gml_data *p_data, gaiaGeomCollPtr geom,
 	      ;
 	  else
 	      return 0;
-	  n = n->Next;
-	  if (n == NULL)
-	      return 0;
-	  if (strcmp (n->Tag, "gml:LineString") == 0
-	      || strcmp (n->Tag, "LineString") == 0)
-	      ;
-	  else
-	      return 0;
-	  srid = guessGmlSrid (n);
-	  n = n->Next;
-	  if (n == NULL)
-	      return 0;
-	  if (!gml_parse_linestring (p_data, geom, n, srid, &next))
-	      return 0;
-	  n = next;
-	  if (n == NULL)
+	  n2 = n->Next;
+	  lns = 0;
+	  while (n2)
+	    {
+		/* looping on Linestring(s) */
+		if (strcmp (n2->Tag, "gml:LineString") == 0
+		    || strcmp (n2->Tag, "LineString") == 0)
+		    ;
+		else
+		  {
+		      n = n2;
+		      break;
+		  }
+		srid = guessGmlSrid (n2);
+		n2 = n2->Next;
+		if (n2 == NULL)
+		    return 0;
+		if (!gml_parse_linestring (p_data, geom, n2, srid, &next))
+		    return 0;
+		n2 = next;
+		if (n2 == NULL)
+		    return 0;
+		lns++;
+	    }
+	  if (!lns)
 	      return 0;
 	  if (strcmp (n->Tag, "gml:lineStringMember") == 0
 	      || strcmp (n->Tag, "lineStringMember") == 0
@@ -2033,6 +2055,8 @@ gml_parse_multi_curve (struct gml_data *p_data, gaiaGeomCollPtr geom,
 {
 /* parsing a <gml:MultiCurve> */
     int srid;
+    int lns;
+    gmlNodePtr n2;
     gmlNodePtr next;
     gmlNodePtr n = node;
     while (n)
@@ -2054,22 +2078,31 @@ gml_parse_multi_curve (struct gml_data *p_data, gaiaGeomCollPtr geom,
 	      ;
 	  else
 	      return 0;
-	  n = n->Next;
-	  if (n == NULL)
-	      return 0;
-	  if (strcmp (n->Tag, "gml:Curve") == 0
-	      || strcmp (n->Tag, "Curve") == 0)
-	      ;
-	  else
-	      return 0;
-	  srid = guessGmlSrid (n);
-	  n = n->Next;
-	  if (n == NULL)
-	      return 0;
-	  if (!gml_parse_curve (p_data, geom, n, srid, &next))
-	      return 0;
-	  n = next;
-	  if (n == NULL)
+	  n2 = n->Next;
+	  lns = 0;
+	  while (n2)
+	    {
+		/* looping on Curve(s) */
+		if (strcmp (n2->Tag, "gml:Curve") == 0
+		    || strcmp (n2->Tag, "Curve") == 0)
+		    ;
+		else
+		  {
+		      n = n2;
+		      break;
+		  }
+		srid = guessGmlSrid (n2);
+		n2 = n2->Next;
+		if (n2 == NULL)
+		    return 0;
+		if (!gml_parse_curve (p_data, geom, n2, srid, &next))
+		    return 0;
+		n2 = next;
+		if (n2 == NULL)
+		    return 0;
+		lns++;
+	    }
+	  if (!lns)
 	      return 0;
 	  if (strcmp (n->Tag, "gml:curveMember") == 0
 	      || strcmp (n->Tag, "curveMember") == 0
@@ -2089,6 +2122,8 @@ gml_parse_multi_polygon (struct gml_data *p_data, gaiaGeomCollPtr geom,
 {
 /* parsing a <gml:MultiPolygon> */
     int srid;
+    int pgs;
+    gmlNodePtr n2;
     gmlNodePtr next;
     gmlNodePtr n = node;
     while (n)
@@ -2110,22 +2145,31 @@ gml_parse_multi_polygon (struct gml_data *p_data, gaiaGeomCollPtr geom,
 	      ;
 	  else
 	      return 0;
-	  n = n->Next;
-	  if (n == NULL)
-	      return 0;
-	  if (strcmp (n->Tag, "gml:Polygon") == 0
-	      || strcmp (n->Tag, "Polygon") == 0)
-	      ;
-	  else
-	      return 0;
-	  srid = guessGmlSrid (n);
-	  n = n->Next;
-	  if (n == NULL)
-	      return 0;
-	  if (!gml_parse_polygon (p_data, geom, n, srid, &next))
-	      return 0;
-	  n = next;
-	  if (n == NULL)
+	  n2 = n->Next;
+	  pgs = 0;
+	  while (n2)
+	    {
+		/* looping on Polygon(s) */
+		if (strcmp (n2->Tag, "gml:Polygon") == 0
+		    || strcmp (n2->Tag, "Polygon") == 0)
+		    ;
+		else
+		  {
+		      n = n2;
+		      break;
+		  }
+		srid = guessGmlSrid (n2);
+		n2 = n2->Next;
+		if (n2 == NULL)
+		    return 0;
+		if (!gml_parse_polygon (p_data, geom, n2, srid, &next))
+		    return 0;
+		n2 = next;
+		if (n2 == NULL)
+		    return 0;
+		pgs++;
+	    }
+	  if (!pgs)
 	      return 0;
 	  if (strcmp (n->Tag, "gml:polygonMember") == 0
 	      || strcmp (n->Tag, "polygonMember") == 0
@@ -2145,8 +2189,8 @@ gml_parse_multi_surface (struct gml_data *p_data, gaiaGeomCollPtr geom,
 {
 /* parsing a <gml:MultiSurface> */
     int srid;
-int pgs;
-gmlNodePtr n2;
+    int pgs;
+    gmlNodePtr n2;
     gmlNodePtr next;
     gmlNodePtr n = node;
     while (n)
@@ -2169,31 +2213,31 @@ gmlNodePtr n2;
 	  else
 	      return 0;
 	  n2 = n->Next;
-pgs = 0;
-while (n2)
-{
-	/* looping on Polygon(s) */
-	  if (strcmp (n2->Tag, "gml:Polygon") == 0
-	      || strcmp (n2->Tag, "Polygon") == 0)
-	      ;
-	  else
-{
-n = n2;
-break;
-}
-	  srid = guessGmlSrid (n2);
-	  n2 = n2->Next;
-	  if (n2 == NULL)
+	  pgs = 0;
+	  while (n2)
+	    {
+		/* looping on Polygon(s) */
+		if (strcmp (n2->Tag, "gml:Polygon") == 0
+		    || strcmp (n2->Tag, "Polygon") == 0)
+		    ;
+		else
+		  {
+		      n = n2;
+		      break;
+		  }
+		srid = guessGmlSrid (n2);
+		n2 = n2->Next;
+		if (n2 == NULL)
+		    return 0;
+		if (!gml_parse_polygon (p_data, geom, n2, srid, &next))
+		    return 0;
+		n2 = next;
+		if (n2 == NULL)
+		    return 0;
+		pgs++;
+	    }
+	  if (!pgs)
 	      return 0;
-	  if (!gml_parse_polygon (p_data, geom, n2, srid, &next))
-	      return 0;
-	  n2 = next;
-	  if (n2 == NULL)
-	      return 0;
-pgs++;
-}
-if (!pgs)
-return 0;
 	  if (strcmp (n->Tag, "gml:surfaceMember") == 0
 	      || strcmp (n->Tag, "surfaceMember") == 0
 	      || strcmp (n->Tag, "gml:surfaceMembers") == 0
@@ -2212,6 +2256,8 @@ gml_parse_multi_geometry (struct gml_data *p_data, gaiaGeomCollPtr geom,
 {
 /* parsing a <gml:MultiGeometry> */
     int srid;
+    int elems;
+    gmlNodePtr n2;
     gmlNodePtr next;
     gmlNodePtr n = node;
     while (n)
@@ -2233,56 +2279,63 @@ gml_parse_multi_geometry (struct gml_data *p_data, gaiaGeomCollPtr geom,
 	      ;
 	  else
 	      return 0;
-	  n = n->Next;
-	  if (n == NULL)
-	      return 0;
-	  if (strcmp (n->Tag, "gml:Point") == 0
-	      || strcmp (n->Tag, "Point") == 0)
+	  n2 = n->Next;
+	  elems = 0;
+	  while (n2)
 	    {
-		srid = guessGmlSrid (n);
-		n = n->Next;
-		if (n == NULL)
-		    return 0;
-		if (!gml_parse_point (p_data, geom, n, srid, &next))
-		    return 0;
-		n = next;
+		/* looping on elements */
+		if (strcmp (n2->Tag, "gml:Point") == 0
+		    || strcmp (n2->Tag, "Point") == 0)
+		  {
+		      srid = guessGmlSrid (n2);
+		      n2 = n2->Next;
+		      if (n2 == NULL)
+			  return 0;
+		      if (!gml_parse_point (p_data, geom, n2, srid, &next))
+			  return 0;
+		      n2 = next;
+		  }
+		else if (strcmp (n2->Tag, "gml:LineString") == 0
+			 || strcmp (n2->Tag, "LineString") == 0)
+		  {
+		      srid = guessGmlSrid (n2);
+		      n2 = n2->Next;
+		      if (n2 == NULL)
+			  return 0;
+		      if (!gml_parse_linestring (p_data, geom, n2, srid, &next))
+			  return 0;
+		      n2 = next;
+		  }
+		else if (strcmp (n2->Tag, "gml:Curve") == 0
+			 || strcmp (n2->Tag, "Curve") == 0)
+		  {
+		      srid = guessGmlSrid (n2);
+		      n2 = n2->Next;
+		      if (n2 == NULL)
+			  return 0;
+		      if (!gml_parse_curve (p_data, geom, n2, srid, &next))
+			  return 0;
+		      n2 = next;
+		  }
+		else if (strcmp (n2->Tag, "gml:Polygon") == 0
+			 || strcmp (n2->Tag, "Polygon") == 0)
+		  {
+		      srid = guessGmlSrid (n2);
+		      n2 = n2->Next;
+		      if (n2 == NULL)
+			  return 0;
+		      if (!gml_parse_polygon (p_data, geom, n2, srid, &next))
+			  return 0;
+		      n2 = next;
+		  }
+		else
+		  {
+		      n = n2;
+		      break;
+		  }
+		elems++;
 	    }
-	  else if (strcmp (n->Tag, "gml:LineString") == 0
-		   || strcmp (n->Tag, "LineString") == 0)
-	    {
-		srid = guessGmlSrid (n);
-		n = n->Next;
-		if (n == NULL)
-		    return 0;
-		if (!gml_parse_linestring (p_data, geom, n, srid, &next))
-		    return 0;
-		n = next;
-	    }
-	  else if (strcmp (n->Tag, "gml:Curve") == 0
-		   || strcmp (n->Tag, "Curve") == 0)
-	    {
-		srid = guessGmlSrid (n);
-		n = n->Next;
-		if (n == NULL)
-		    return 0;
-		if (!gml_parse_curve (p_data, geom, n, srid, &next))
-		    return 0;
-		n = next;
-	    }
-	  else if (strcmp (n->Tag, "gml:Polygon") == 0
-		   || strcmp (n->Tag, "Polygon") == 0)
-	    {
-		srid = guessGmlSrid (n);
-		n = n->Next;
-		if (n == NULL)
-		    return 0;
-		if (!gml_parse_polygon (p_data, geom, n, srid, &next))
-		    return 0;
-		n = next;
-	    }
-	  else
-	      return 0;
-	  if (n == NULL)
+	  if (!elems)
 	      return 0;
 	  if (strcmp (n->Tag, "gml:geometryMember") == 0
 	      || strcmp (n->Tag, "geometryMember") == 0

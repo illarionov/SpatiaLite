@@ -2306,7 +2306,7 @@ parse_wfs_http_100 (xmlNodePtr node, struct wfs_catalog *catalog)
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
 		if (strcmp ((const char *) (cur_node->name), "Get") == 0)
-		    parse_wfs_get_100 (node, catalog);
+		    parse_wfs_get_100 (cur_node, catalog);
 	    }
       }
 }
@@ -2322,7 +2322,7 @@ parse_wfs_dcptype_100 (xmlNodePtr node, struct wfs_catalog *catalog)
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
 		if (strcmp ((const char *) (cur_node->name), "HTTP") == 0)
-		    parse_wfs_http_100 (node->children, catalog);
+		    parse_wfs_http_100 (cur_node->children, catalog);
 	    }
       }
 }
@@ -2338,7 +2338,7 @@ parse_wfs_getfeature_100 (xmlNodePtr node, struct wfs_catalog *catalog)
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
 		if (strcmp ((const char *) (cur_node->name), "DCPType") == 0)
-		    parse_wfs_dcptype_100 (node->children, catalog);
+		    parse_wfs_dcptype_100 (cur_node->children, catalog);
 	    }
       }
 }
@@ -2354,7 +2354,7 @@ parse_wfs_request_100 (xmlNodePtr node, struct wfs_catalog *catalog)
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
 		if (strcmp ((const char *) (cur_node->name), "GetFeature") == 0)
-		    parse_wfs_getfeature_100 (node->children, catalog);
+		    parse_wfs_getfeature_100 (cur_node->children, catalog);
 	    }
       }
 }
@@ -2370,7 +2370,7 @@ parse_wfs_base_url_100 (xmlNodePtr node, struct wfs_catalog *catalog)
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
 		if (strcmp ((const char *) (cur_node->name), "Request") == 0)
-		    parse_wfs_request_100 (node->children, catalog);
+		    parse_wfs_request_100 (cur_node->children, catalog);
 	    }
       }
 }
