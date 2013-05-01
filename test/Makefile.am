@@ -162,7 +162,8 @@ EXTRA_DIST = asprintf4win.h \
 	empty.png  empty.tif \
 	test.wfs testDescribeFeatureType.wfs \
 	getcapabilities-1.0.0.wfs \
-	getcapabilities-1.1.0.wfs	
+	getcapabilities-1.1.0.wfs \
+	describefeaturetype.wfs	
 
 SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_geostrunk_tests sql_stmt_libxml2_tests \

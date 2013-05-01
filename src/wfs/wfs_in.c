@@ -105,7 +105,8 @@ struct wfs_layer_def
 struct wfs_catalog
 {
 /* a list of WFS layers */
-    char *base_url;
+    char *request_url;
+    char *describe_url;
     struct wfs_layer_def *first;
     struct wfs_layer_def *last;
 };
@@ -404,7 +405,8 @@ alloc_wfs_catalog ()
     struct wfs_catalog *ptr = malloc (sizeof (struct wfs_catalog));
     ptr->first = NULL;
     ptr->last = NULL;
-    ptr->base_url = NULL;
+    ptr->request_url = NULL;
+    ptr->describe_url = NULL;
     return ptr;
 }
 
@@ -423,8 +425,10 @@ free_wfs_catalog (struct wfs_catalog *ptr)
 	  free_wfs_layer (lyr);
 	  lyr = n_lyr;
       }
-    if (ptr->base_url != NULL)
-	free (ptr->base_url);
+    if (ptr->request_url != NULL)
+	free (ptr->request_url);
+    if (ptr->describe_url != NULL)
+	free (ptr->describe_url);
     free (ptr);
 }
 
@@ -575,26 +579,49 @@ compare_features (struct wfs_feature *f1, struct wfs_feature *f2)
 }
 
 static void
-set_wfs_catalog_url (struct wfs_catalog *ptr, const char *url)
+set_wfs_catalog_base_request_url (struct wfs_catalog *ptr, const char *url)
 {
-/* setting the base-URL for a WFS catalog */
+/* setting the request-URL for a WFS catalog */
     int len;
     int i;
     int force_marker = 1;
     if (ptr == NULL)
 	return;
-    if (ptr->base_url != NULL)
-	free (ptr->base_url);
+    if (ptr->request_url != NULL)
+	free (ptr->request_url);
     len = strlen (url);
-    ptr->base_url = malloc (len + 2);
-    strcpy (ptr->base_url, url);
-    for (i = 0; i < (int) strlen (ptr->base_url); i++)
+    ptr->request_url = malloc (len + 2);
+    strcpy (ptr->request_url, url);
+    for (i = 0; i < (int) strlen (ptr->request_url); i++)
       {
-	  if (*(ptr->base_url + i) == '?')
+	  if (*(ptr->request_url + i) == '?')
 	      force_marker = 0;
       }
     if (force_marker)
-	strcat (ptr->base_url, "?");
+	strcat (ptr->request_url, "?");
+}
+
+static void
+set_wfs_catalog_base_describe_url (struct wfs_catalog *ptr, const char *url)
+{
+/* setting the describe-URL for a WFS catalog */
+    int len;
+    int i;
+    int force_marker = 1;
+    if (ptr == NULL)
+	return;
+    if (ptr->describe_url != NULL)
+	free (ptr->describe_url);
+    len = strlen (url);
+    ptr->describe_url = malloc (len + 2);
+    strcpy (ptr->describe_url, url);
+    for (i = 0; i < (int) strlen (ptr->describe_url); i++)
+      {
+	  if (*(ptr->describe_url + i) == '?')
+	      force_marker = 0;
+      }
+    if (force_marker)
+	strcat (ptr->describe_url, "?");
 }
 
 static void
@@ -876,15 +903,60 @@ parse_attribute_type (xmlNodePtr node, int *is_geom)
     return SQLITE_TEXT;
 }
 
+static int
+parse_attribute_inner_node (struct _xmlAttr *attr, int *type, int *is_geom)
+{
+/* attempting to retrieve the data-type from a complex attribute */
+    while (attr != NULL)
+      {
+	  if (attr->name != NULL)
+	    {
+		if (strcmp ((const char *) (attr->name), "base") == 0)
+		  {
+		      *type = parse_attribute_type (attr->children, is_geom);
+		      return 1;
+		  }
+	    }
+	  attr = attr->next;
+      }
+    return 0;
+}
+
 static void
-parse_wfs_schema_element (struct _xmlAttr *attr,
-			  struct wfs_layer_schema *schema)
+parse_attribute_inner_type (xmlNodePtr node, int *type, int *is_geom)
+{
+/* recursively parsing a complex attribute declaration */
+    xmlNodePtr cur_node = NULL;
+
+    for (cur_node = node; cur_node; cur_node = cur_node->next)
+      {
+	  if (cur_node->type == XML_ELEMENT_NODE)
+	    {
+		const char *name = (const char *) (cur_node->name);
+		if (name != NULL)
+		  {
+		      if (strcmp (name, "restriction") == 0)
+			{
+			    if (parse_attribute_inner_node
+				(cur_node->properties, type, is_geom))
+				return;
+			}
+		  }
+		parse_attribute_inner_type (cur_node->children, type, is_geom);
+	    }
+      }
+}
+
+static void
+parse_wfs_schema_element (xmlNodePtr node, struct wfs_layer_schema *schema)
 {
 /* parsing a WFS attribute / column definition */
+    struct _xmlAttr *attr = node->properties;
     const char *name = NULL;
     int type = SQLITE_NULL;
     int is_nullable = 1;
     int is_geom = 0;
+    int type_declared = 0;
 
     while (attr != NULL)
       {
@@ -896,11 +968,14 @@ parse_wfs_schema_element (struct _xmlAttr *attr,
 		    is_nullable = parse_attribute_nillable (attr->children);
 		if (strcmp ((const char *) (attr->name), "type") == 0)
 		  {
+		      type_declared = 1;
 		      type = parse_attribute_type (attr->children, &is_geom);
 		  }
 	    }
 	  attr = attr->next;
       }
+    if (!type_declared)
+	parse_attribute_inner_type (node->children, &type, &is_geom);
 
     if (name == NULL || (is_geom == 0 && type == SQLITE_NULL)
 	|| (is_geom != 0 && type == GAIA_UNKNOWN))
@@ -927,8 +1002,7 @@ parse_wfs_schema (xmlNodePtr node, struct wfs_layer_schema *schema,
 		if (name != NULL)
 		  {
 		      if (strcmp (name, "element") == 0 && *sequence)
-			  parse_wfs_schema_element (cur_node->properties,
-						    schema);
+			  parse_wfs_schema_element (cur_node, schema);
 		      else
 			{
 			    if (strcmp (name, "sequence") == 0)
@@ -1314,7 +1388,6 @@ static int
 do_save_feature (struct wfs_layer_schema *schema, struct wfs_feature *feature)
 {
 /* saving the current feature data */
-    int ret;
     struct wfs_column_def *col;
 
     if (schema->error)
@@ -2258,8 +2331,10 @@ parse_wfs_layer (xmlNodePtr node, struct wfs_catalog *catalog)
 			      {
 				  struct wfs_layer_def *lyr = catalog->last;
 				  add_wfs_srid_to_layer (lyr, srid,
-							 cur_node->
-							 children->content);
+							 (const char
+							  *) (cur_node->
+							      children->
+							      content));
 			      }
 			}
 		      if (strcmp ((const char *) (cur_node->name), "Keywords")
@@ -2271,7 +2346,7 @@ parse_wfs_layer (xmlNodePtr node, struct wfs_catalog *catalog)
 }
 
 static void
-parse_wfs_get_100 (xmlNodePtr node, struct wfs_catalog *catalog)
+parse_wfs_get_100 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 {
 /* attempting to find the GetFeature base-URL (WFS 1.0.0) <Get> */
     struct _xmlAttr *attr = node->properties;
@@ -2285,9 +2360,19 @@ parse_wfs_get_100 (xmlNodePtr node, struct wfs_catalog *catalog)
 		      if (text != NULL)
 			{
 			    if (text->type == XML_TEXT_NODE)
-				set_wfs_catalog_url (catalog,
-						     (const char
-						      *) (text->content));
+			      {
+				  if (mode)
+				      set_wfs_catalog_base_request_url (catalog,
+									(const
+									 char
+									 *)
+									(text->
+									 content));
+				  else
+				      set_wfs_catalog_base_describe_url
+					  (catalog,
+					   (const char *) (text->content));
+			      }
 			}
 		  }
 	    }
@@ -2296,7 +2381,7 @@ parse_wfs_get_100 (xmlNodePtr node, struct wfs_catalog *catalog)
 }
 
 static void
-parse_wfs_http_100 (xmlNodePtr node, struct wfs_catalog *catalog)
+parse_wfs_http_100 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 {
 /* attempting to find the GetFeature base-URL (WFS 1.0.0) <HTTP> */
     xmlNodePtr cur_node = NULL;
@@ -2306,13 +2391,13 @@ parse_wfs_http_100 (xmlNodePtr node, struct wfs_catalog *catalog)
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
 		if (strcmp ((const char *) (cur_node->name), "Get") == 0)
-		    parse_wfs_get_100 (cur_node, catalog);
+		    parse_wfs_get_100 (cur_node, catalog, mode);
 	    }
       }
 }
 
 static void
-parse_wfs_dcptype_100 (xmlNodePtr node, struct wfs_catalog *catalog)
+parse_wfs_dcptype_100 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 {
 /* attempting to find the GetFeature base-URL (WFS 1.0.0) <DCPType> */
     xmlNodePtr cur_node = NULL;
@@ -2322,13 +2407,14 @@ parse_wfs_dcptype_100 (xmlNodePtr node, struct wfs_catalog *catalog)
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
 		if (strcmp ((const char *) (cur_node->name), "HTTP") == 0)
-		    parse_wfs_http_100 (cur_node->children, catalog);
+		    parse_wfs_http_100 (cur_node->children, catalog, mode);
 	    }
       }
 }
 
 static void
-parse_wfs_getfeature_100 (xmlNodePtr node, struct wfs_catalog *catalog)
+parse_wfs_getfeature_100 (xmlNodePtr node, struct wfs_catalog *catalog,
+			  int mode)
 {
 /* attempting to find the GetFeature base-URL (WFS 1.0.0) <GetFeature> */
     xmlNodePtr cur_node = NULL;
@@ -2338,7 +2424,7 @@ parse_wfs_getfeature_100 (xmlNodePtr node, struct wfs_catalog *catalog)
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
 		if (strcmp ((const char *) (cur_node->name), "DCPType") == 0)
-		    parse_wfs_dcptype_100 (cur_node->children, catalog);
+		    parse_wfs_dcptype_100 (cur_node->children, catalog, mode);
 	    }
       }
 }
@@ -2354,7 +2440,11 @@ parse_wfs_request_100 (xmlNodePtr node, struct wfs_catalog *catalog)
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
 		if (strcmp ((const char *) (cur_node->name), "GetFeature") == 0)
-		    parse_wfs_getfeature_100 (cur_node->children, catalog);
+		    parse_wfs_getfeature_100 (cur_node->children, catalog, 1);
+		if (strcmp
+		    ((const char *) (cur_node->name),
+		     "DescribeFeatureType") == 0)
+		    parse_wfs_getfeature_100 (cur_node->children, catalog, 0);
 	    }
       }
 }
@@ -2376,7 +2466,7 @@ parse_wfs_base_url_100 (xmlNodePtr node, struct wfs_catalog *catalog)
 }
 
 static void
-parse_wfs_get_110 (xmlNodePtr node, struct wfs_catalog *catalog)
+parse_wfs_get_110 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 {
 /* attempting to find the GetFeature base-URL (WFS 1.1.0) <Get> */
     struct _xmlAttr *attr = node->properties;
@@ -2390,9 +2480,19 @@ parse_wfs_get_110 (xmlNodePtr node, struct wfs_catalog *catalog)
 		      if (text != NULL)
 			{
 			    if (text->type == XML_TEXT_NODE)
-				set_wfs_catalog_url (catalog,
-						     (const char
-						      *) (text->content));
+			      {
+				  if (mode)
+				      set_wfs_catalog_base_request_url (catalog,
+									(const
+									 char
+									 *)
+									(text->
+									 content));
+				  else
+				      set_wfs_catalog_base_describe_url
+					  (catalog,
+					   (const char *) (text->content));
+			      }
 			}
 		  }
 	    }
@@ -2401,7 +2501,7 @@ parse_wfs_get_110 (xmlNodePtr node, struct wfs_catalog *catalog)
 }
 
 static void
-parse_wfs_http_110 (xmlNodePtr node, struct wfs_catalog *catalog)
+parse_wfs_http_110 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 {
 /* attempting to find the GetFeature base-URL (WFS 1.1.0) <HTTP> */
     xmlNodePtr cur_node = NULL;
@@ -2410,13 +2510,13 @@ parse_wfs_http_110 (xmlNodePtr node, struct wfs_catalog *catalog)
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
 		if (strcmp ((const char *) (cur_node->name), "Get") == 0)
-		    parse_wfs_get_110 (cur_node, catalog);
+		    parse_wfs_get_110 (cur_node, catalog, mode);
 	    }
       }
 }
 
 static void
-parse_wfs_dcp_110 (xmlNodePtr node, struct wfs_catalog *catalog)
+parse_wfs_dcp_110 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 {
 /* attempting to find the GetFeature base-URL (WFS 1.1.0) <DCP> */
     xmlNodePtr cur_node = NULL;
@@ -2425,13 +2525,14 @@ parse_wfs_dcp_110 (xmlNodePtr node, struct wfs_catalog *catalog)
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
 		if (strcmp ((const char *) (cur_node->name), "HTTP") == 0)
-		    parse_wfs_http_110 (cur_node->children, catalog);
+		    parse_wfs_http_110 (cur_node->children, catalog, mode);
 	    }
       }
 }
 
 static void
-parse_wfs_getfeature_110 (xmlNodePtr node, struct wfs_catalog *catalog)
+parse_wfs_getfeature_110 (xmlNodePtr node, struct wfs_catalog *catalog,
+			  int mode)
 {
 /* attempting to find the GetFeature base-URL (WFS 1.1.0) <Operation name="GetFeature"> */
     xmlNodePtr cur_node = NULL;
@@ -2440,7 +2541,7 @@ parse_wfs_getfeature_110 (xmlNodePtr node, struct wfs_catalog *catalog)
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
 		if (strcmp ((const char *) (cur_node->name), "DCP") == 0)
-		    parse_wfs_dcp_110 (cur_node->children, catalog);
+		    parse_wfs_dcp_110 (cur_node->children, catalog, mode);
 	    }
       }
 }
@@ -2465,7 +2566,12 @@ parse_wfs_operation_110 (xmlNodePtr node, struct wfs_catalog *catalog)
 				      ((const char *) (text->content),
 				       "GetFeature") == 0)
 				      parse_wfs_getfeature_110 (node->children,
-								catalog);
+								catalog, 1);
+				  if (strcmp
+				      ((const char *) (text->content),
+				       "DescribeFeatureType") == 0)
+				      parse_wfs_getfeature_110 (node->children,
+								catalog, 0);
 			      }
 			}
 		  }
@@ -2595,13 +2701,23 @@ destroy_wfs_catalog (gaiaWFScatalogPtr handle)
 }
 
 SPATIALITE_DECLARE const char *
-get_wfs_base_url (gaiaWFScatalogPtr handle)
+get_wfs_base_request_url (gaiaWFScatalogPtr handle)
 {
 /* return the base URL for any WFS-GetFeature call */
     struct wfs_catalog *ptr = (struct wfs_catalog *) handle;
     if (ptr == NULL)
 	return NULL;
-    return ptr->base_url;
+    return ptr->request_url;
+}
+
+SPATIALITE_DECLARE const char *
+get_wfs_base_describe_url (gaiaWFScatalogPtr handle)
+{
+/* return the base URL for any WFS-DescribeFeatureType call */
+    struct wfs_catalog *ptr = (struct wfs_catalog *) handle;
+    if (ptr == NULL)
+	return NULL;
+    return ptr->describe_url;
 }
 
 SPATIALITE_DECLARE int
@@ -2755,8 +2871,8 @@ get_wfs_keyword (gaiaWFSitemPtr handle, int index)
 }
 
 static char *
-build_url (struct wfs_catalog *ptr, struct wfs_layer_def *lyr,
-	   const char *version, int srid, int max_features)
+build_request_url (struct wfs_catalog *ptr, struct wfs_layer_def *lyr,
+		   const char *version, int srid, int max_features)
 {
 /* creating the request URL */
     char *url;
@@ -2764,7 +2880,7 @@ build_url (struct wfs_catalog *ptr, struct wfs_layer_def *lyr,
     const char *srs_name = NULL;
     int len;
     const char *ver = "1.1.0";
-    if (ptr->base_url == NULL)
+    if (ptr->request_url == NULL)
 	return NULL;
     if (version != NULL)
       {
@@ -2791,12 +2907,12 @@ build_url (struct wfs_catalog *ptr, struct wfs_layer_def *lyr,
 	      url =
 		  sqlite3_mprintf
 		  ("%sservice=WFS&version=%s&request=GetFeature&typeName=%s",
-		   ptr->base_url, ver, lyr->name);
+		   ptr->request_url, ver, lyr->name);
 	  else
 	      url =
 		  sqlite3_mprintf
 		  ("%sservice=WFS&version=%s&request=GetFeature&typeName=%s&srsName=%s",
-		   ptr->base_url, ver, lyr->name, srs_name);
+		   ptr->request_url, ver, lyr->name, srs_name);
       }
     else
       {
@@ -2804,12 +2920,12 @@ build_url (struct wfs_catalog *ptr, struct wfs_layer_def *lyr,
 	      url =
 		  sqlite3_mprintf
 		  ("%sservice=WFS&version=%s&request=GetFeature&typeName=%s&maxFeatures=%d",
-		   ptr->base_url, ver, lyr->name, max_features);
+		   ptr->request_url, ver, lyr->name, max_features);
 	  else
 	      url =
 		  sqlite3_mprintf
 		  ("%sservice=WFS&version=%s&request=GetFeature&typeName=%s&srsName=%s&maxFeatures=%d",
-		   ptr->base_url, ver, lyr->name, srs_name, max_features);
+		   ptr->request_url, ver, lyr->name, srs_name, max_features);
       }
     len = strlen (url);
     url2 = malloc (len + 1);
@@ -2827,15 +2943,155 @@ get_wfs_request_url (gaiaWFScatalogPtr handle, const char *name,
     struct wfs_catalog *ptr = (struct wfs_catalog *) handle;
     if (ptr == NULL)
 	return NULL;
+    if (name == NULL)
+	return NULL;
 
     lyr = ptr->first;
     while (lyr != NULL)
       {
 	  if (strcmp (lyr->name, name) == 0)
-	      return build_url (ptr, lyr, version, srid, max_features);
+	      return build_request_url (ptr, lyr, version, srid, max_features);
 	  lyr = lyr->next;
       }
     return NULL;
+}
+
+static char *
+build_describe_url (struct wfs_catalog *ptr, struct wfs_layer_def *lyr,
+		    const char *version)
+{
+/* creating the DescribeFeatureType URL */
+    char *url;
+    char *url2;
+    int len;
+    const char *ver = "1.1.0";
+    if (ptr->describe_url == NULL)
+	return NULL;
+    if (version != NULL)
+      {
+	  if (strcmp (version, "1.0.0") == 0)
+	      ver = "1.0.0";
+      }
+    url =
+	sqlite3_mprintf
+	("%sservice=WFS&version=%s&request=DescribeFeatureType&typeName=%s",
+	 ptr->describe_url, ver, lyr->name);
+    len = strlen (url);
+    url2 = malloc (len + 1);
+    strcpy (url2, url);
+    sqlite3_free (url);
+    return url2;
+}
+
+SPATIALITE_DECLARE char *
+get_wfs_describe_url (gaiaWFScatalogPtr handle, const char *name,
+		      const char *version)
+{
+/* attempting to format a DescribeFeatureType (GET) URL */
+    struct wfs_layer_def *lyr;
+    struct wfs_catalog *ptr = (struct wfs_catalog *) handle;
+    if (ptr == NULL)
+	return NULL;
+    if (name == NULL)
+	return NULL;
+
+    lyr = ptr->first;
+    while (lyr != NULL)
+      {
+	  if (strcmp (lyr->name, name) == 0)
+	      return build_describe_url (ptr, lyr, version);
+	  lyr = lyr->next;
+      }
+    return NULL;
+}
+
+SPATIALITE_DECLARE gaiaWFSschemaPtr
+create_wfs_schema (char *path_or_url, char **err_msg)
+{
+/* public method: creating a WFS-Schema object */
+    return (gaiaWFSschemaPtr) load_wfs_schema (path_or_url, 0, err_msg);
+}
+
+SPATIALITE_DECLARE void
+destroy_wfs_schema (gaiaWFSschemaPtr handle)
+{
+/* public metod: destroying a WFS-Schema object */
+    struct wfs_layer_schema *ptr = (struct wfs_layer_schema *) handle;
+    if (ptr == NULL)
+	return;
+    free_wfs_layer_schema (ptr);
+}
+
+SPATIALITE_DECLARE int
+get_wfs_schema_count (gaiaWFSschemaPtr handle)
+{
+/* counting how many layers are defined within a WFS-Schema */
+    int count = 0;
+    struct wfs_column_def *col;
+    struct wfs_layer_schema *ptr = (struct wfs_layer_schema *) handle;
+    if (ptr == NULL)
+	return -1;
+
+    col = ptr->first;
+    while (col != NULL)
+      {
+	  count++;
+	  col = col->next;
+      }
+    return count;
+}
+
+SPATIALITE_DECLARE gaiaWFScolumnPtr
+get_wfs_schema_column (gaiaWFSschemaPtr handle, int index)
+{
+/* attempting to get a reference to some WFS-Column object */
+    int count = 0;
+    struct wfs_column_def *col;
+    struct wfs_layer_schema *ptr = (struct wfs_layer_schema *) handle;
+    if (ptr == NULL)
+	return NULL;
+
+    col = ptr->first;
+    while (col != NULL)
+      {
+	  if (count == index)
+	      return (gaiaWFScolumnPtr) col;
+	  count++;
+	  col = col->next;
+      }
+    return NULL;
+}
+
+SPATIALITE_DECLARE int
+get_wfs_schema_geometry_info (gaiaWFSschemaPtr handle, const char **name,
+			      int *type, int *srid, int *dims, int *nullable)
+{
+/* Return the infos describing a WFS-GeometryColumn object */
+    struct wfs_layer_schema *ptr = (struct wfs_layer_schema *) handle;
+    if (ptr == NULL)
+	return 0;
+    if (ptr->geometry_name == NULL)
+	return 0;
+    *name = ptr->geometry_name;
+    *type = ptr->geometry_type;
+    *srid = ptr->srid;
+    *dims = ptr->dims;
+    *nullable = ptr->is_nullable;
+    return 1;
+}
+
+SPATIALITE_DECLARE int
+get_wfs_schema_column_info (gaiaWFScolumnPtr handle, const char **name,
+			    int *type, int *nullable)
+{
+/* Return the infos describing a WFS-Column object */
+    struct wfs_column_def *ptr = (struct wfs_column_def *) handle;
+    if (ptr == NULL)
+	return 0;
+    *name = ptr->name;
+    *type = ptr->type;
+    *nullable = ptr->is_nullable;
+    return 1;
 }
 
 #else /* LIBXML2 isn't enabled */
@@ -2846,9 +3102,9 @@ load_from_wfs (sqlite3 * sqlite, char *path_or_url, int swap_axes,
 	       char **err_msg, void (*progress_callback) (int))
 {
 /* LIBXML2 isn't enabled: always returning an error */
-    return load_from_wfs_page (sqlite, path_or_url, swap_axes, table,
-			       pk_column_name, spatial_index, -1, rows,
-			       err_msg, progress_callback);
+    return load_from_wfs_paged (sqlite, path_or_url, swap_axes, table,
+				pk_column_name, spatial_index, -1, rows,
+				err_msg, progress_callback);
 }
 
 SPATIALITE_DECLARE int
@@ -2864,7 +3120,7 @@ load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, int swap_axes,
 
 /* silencing stupid compiler warnings */
     if (sqlite == NULL || path_or_url == NULL || swap_axes == 0 || table == NULL
-	|| pk_column_name == NULL || spatial_index == NULL || ||page_size <= 0
+	|| pk_column_name == NULL || spatial_index == 0 || page_size == 0
 	|| rows == NULL || progress_callback == NULL)
 	path_or_url = NULL;
 
@@ -2880,7 +3136,7 @@ create_wfs_catalog (char *path_or_url, char **err_msg)
 /* LIBXML2 isn't enabled: always returning an error */
     int len;
     const char *msg = "Sorry ... libspatialite was built disabling LIBXML2\n"
-	"and is thus unable to support WFSCATALOG";
+	"and is thus unable to support WFS-CATALOG";
 
 /* silencing stupid compiler warnings */
     if (path_or_url != NULL)
@@ -2904,7 +3160,18 @@ destroy_wfs_catalog (gaiaWFScatalogPtr handle)
 }
 
 SPATIALITE_DECLARE const char *
-get_wfs_base_url (gaiaWFScatalogPtr handle)
+get_wfs_base_request_url (gaiaWFScatalogPtr handle)
+{
+/* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL)
+	handle = NULL;
+    return NULL;
+}
+
+SPATIALITE_DECLARE const char *
+get_wfs_base_describe_url (gaiaWFScatalogPtr handle)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
 
@@ -3013,16 +3280,93 @@ get_wfs_keyword (gaiaWFSitemPtr handle, int index)
     return NULL;
 }
 
-SPATIALITE_DECLARE const char *
+SPATIALITE_DECLARE char *
 get_wfs_request_url (gaiaWFScatalogPtr handle, const char *name,
-		     const char *version, int srid)
+		     const char *version, int srid, int max_features)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
 
 /* silencing stupid compiler warnings */
-    if (handle != NULL || name == NULL || version == NULL || srid < 0)
+    if (handle != NULL || name == NULL || version == NULL || srid == 0
+	|| max_features == 0)
 	handle = NULL;
     return NULL;
+}
+
+SPATIALITE_DECLARE gaiaWFSschemaPtr
+create_wfs_schema (char *path_or_url, char **err_msg)
+{
+/* LIBXML2 isn't enabled: does absolutely nothing */
+    int len;
+    const char *msg = "Sorry ... libspatialite was built disabling LIBXML2\n"
+	"and is thus unable to support WFS-SCHEMA";
+
+/* silencing stupid compiler warnings */
+    if (path_or_url != NULL)
+	path_or_url = NULL;
+
+    len = strlen (msg);
+    *err_msg = malloc (len + 1);
+    strcpy (*err_msg, msg);
+    return NULL;
+    return NULL;
+}
+
+SPATIALITE_DECLARE void
+destroy_wfs_schema (gaiaWFSschemaPtr handle)
+{
+/* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL)
+	handle = NULL;
+}
+
+SPATIALITE_DECLARE int
+get_wfs_schema_count (gaiaWFSschemaPtr handle)
+{
+/* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL)
+	handle = NULL;
+    return -1;
+}
+
+SPATIALITE_DECLARE gaiaWFScolumnPtr
+get_wfs_schema_column (gaiaWFSschemaPtr handle, int index)
+{
+/* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL || index == 0)
+	handle = NULL;
+    return NULL;
+}
+
+SPATIALITE_DECLARE int
+get_wfs_schema_geometry_info (gaiaWFSschemaPtr handle, const char **name,
+			      int *type, int *srid, int *dims, int *nullable)
+{
+/* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL || name == NULL || type == NULL || srid == NULL
+	|| dims == NULL || nullable == NULL)
+	handle = NULL;
+    return 0;
+}
+
+SPATIALITE_DECLARE int
+get_wfs_schema_column_info (gaiaWFScolumnPtr handle, const char **name,
+			    int *type, int *nullable)
+{
+/* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL || name == NULL || type == NULL || nullable == NULL)
+	handle = NULL;
+    return 0;
 }
 
 #endif /* end LIBXML2 conditionals */

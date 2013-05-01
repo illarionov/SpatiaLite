@@ -64,7 +64,13 @@ int main (int argc, char *argv[])
     int srid;
     gaiaWFScatalogPtr catalog = NULL;
     gaiaWFSitemPtr lyr;
+    gaiaWFSschemaPtr schema;
+    gaiaWFScolumnPtr column;
     const char *str;
+    const char *name;
+    int type;
+    int dims;
+    int nillable;
     void *cache = spatialite_alloc_connection();
 
     if (argc > 1 || argv[0] == NULL)
@@ -200,11 +206,25 @@ int main (int argc, char *argv[])
 	return -19;
     }
 
-    str = get_wfs_base_url (catalog);
-    if (strcmp(str, "http://www.gaia-gis.it:8080/geoserver/wfs?request=GetFeature") != 0) {
-	fprintf(stderr, "get_wfs_base_url() 1.0.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs?request=GetFeature\"\n", str);
+    str = get_wfs_base_request_url (catalog);
+    if (strcmp(str, "http://www.gaia-gis.it:8080/geoserver/wfs?") != 0) {
+	fprintf(stderr, "get_wfs_base_request_url() 1.0.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs?\"\n", str);
 	sqlite3_close(handle);
 	return -20;
+    }
+
+    str = get_wfs_request_url (catalog, "sf:roads", "1.0.0", 26713, -1);
+    if (strcmp(str, "http://www.gaia-gis.it:8080/geoserver/wfs?service=WFS&version=1.0.0&request=GetFeature&typeName=sf:roads&srsName=EPSG:26713") != 0) {
+	fprintf(stderr, "get_wfs_request_url() 1.0.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs?service=WFS&version=1.0.0&request=GetFeature&typeName=sf:roads&srsName=EPSG:26713\"\n", str);
+	sqlite3_close(handle);
+	return -21;
+    }
+
+    str = get_wfs_describe_url (catalog, "sf:roads", "1.0.0");
+    if (strcmp(str, "http://www.gaia-gis.it:8080/geoserver/wfs?service=WFS&version=1.0.0&request=DescribeFeatureType&typeName=sf:roads") != 0) {
+	fprintf(stderr, "get_wfs_describe_url() 1.0.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs?service=WFS&version=1.0.0&request=DescribeFeatureType&typeName=sf:roads\"\n", str);
+	sqlite3_close(handle);
+	return -22;
     }
     destroy_wfs_catalog(catalog);
 
@@ -213,106 +233,155 @@ int main (int argc, char *argv[])
         fprintf (stderr, "create_wfs_catalog() error for getcapabilities-1.1.0.wfs: %s\n", err_msg);
 	free(err_msg);
 	sqlite3_close(handle);
-	return -21;
+	return -23;
     }
 
     count = get_wfs_catalog_count (catalog);
     if (count != 49) {
 	fprintf(stderr, "get_wfs_catalog_count() 1.1.0 error: got %d, expected 49\n", count);
 	sqlite3_close(handle);
-	return -22;
+	return -24;
     }
 
     lyr = get_wfs_catalog_item(catalog, 3);
     if (lyr == NULL) {
 	fprintf(stderr, "get_wfs_catalog_item() 1.1.0 error (NULL)\n");
 	sqlite3_close(handle);
-	return -23;
+	return -25;
     }
     
     str = get_wfs_item_name(lyr);
     if (str == NULL) {
 	fprintf(stderr, "get_wfs_item_name() 1.1.0 error (NULL)\n");
 	sqlite3_close(handle);
-	return -24;
+	return -26;
     }
     if (strcmp(str, "sf:archsites") != 0) {
 	fprintf(stderr, "get_wfs_item_name() 1.1.0 error: got \"%s\", expected \"sf:archsites\"\n", str);
 	sqlite3_close(handle);
-	return -25;
+	return -27;
     }
     
     str = get_wfs_item_title(lyr);
     if (str == NULL) {
 	fprintf(stderr, "get_wfs_item_title() error (NULL)\n");
 	sqlite3_close(handle);
-	return -26;
+	return -28;
     }
     if (strcmp(str, "Spearfish archeological sites") != 0) {
 	fprintf(stderr, "get_wfs_item_title() 1.1.0 error: got \"%s\", expected \"Spearfish archeological sites\"\n", str);
 	sqlite3_close(handle);
-	return -27;
+	return -29;
     }
     
     str = get_wfs_item_abstract(lyr);
     if (str == NULL) {
 	fprintf(stderr, "get_wfs_item_abstract() 1.1.0 error (NULL)\n");
 	sqlite3_close(handle);
-	return -28;
+	return -30;
     }
     if (strcmp(str, "Sample data from GRASS, archeological sites location, Spearfish, South Dakota, USA") != 0) {
 	fprintf(stderr, "get_wfs_item_abstract() 1.1.0 error: got \"%s\", expected \"Sample data from GRASS, archeological sites location, Spearfish, South Dakota, USA\"\n", str);
 	sqlite3_close(handle);
-	return -29;
+	return -31;
     }
 
     count = get_wfs_layer_srid_count (lyr);
     if (count != 1) {
 	fprintf(stderr, "get_wfs_layer_srid_count() 1.1.0 error: got %d, expected 1\n", count);
 	sqlite3_close(handle);
-	return -30;
+	return -32;
     }
 
     srid = get_wfs_layer_srid (lyr, 0);
     if (srid != 26713) {
 	fprintf(stderr, "get_wfs_layer_srid() 1.1.0 error: got %d, expected 26713\n", srid);
 	sqlite3_close(handle);
-	return -31;
+	return -33;
     }
 
     srid = get_wfs_layer_srid (lyr, 10);
     if (srid != -1) {
 	fprintf(stderr, "get_wfs_layer_srid() 1.1.0 error: got %d, expected -1\n", srid);
 	sqlite3_close(handle);
-	return -32;
+	return -34;
     }
 
     count = get_wfs_keyword_count (lyr);
     if (count != 4) {
 	fprintf(stderr, "get_wfs_keyword_count() 1.1.0 error: got %d, expected 4\n", count);
 	sqlite3_close(handle);
-	return -33;
+	return -35;
     }
 
     str = get_wfs_keyword (lyr, 1);
     if (strcmp(str, "spearfish") != 0) {
 	fprintf(stderr, "get_wfs_keyword() 1.1.0 error: got \"%s\", expected \"spearfish\"\n", str);
 	sqlite3_close(handle);
-	return -34;
+	return -36;
     }
 
     str = get_wfs_keyword (lyr, 100);
     if (str != NULL) {
 	fprintf(stderr, "get_wfs_keyword() 1.1.0 error: expected NULL\n");
 	sqlite3_close(handle);
-	return -35;
+	return -37;
     }
 
-    str = get_wfs_base_url (catalog);
+    str = get_wfs_base_request_url (catalog);
     if (strcmp(str, "http://www.gaia-gis.it:8080/geoserver/wfs?") != 0) {
-	fprintf(stderr, "get_wfs_base_url() 1.1.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs?\"\n", str);
+	fprintf(stderr, "get_wfs_base_request_url() 1.1.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs?\"\n", str);
 	sqlite3_close(handle);
-	return -36;
+	return -38;
+    }
+
+    str = get_wfs_request_url (catalog, "sf:roads", "1.1.0", 26713, 100);
+    if (strcmp(str, "http://www.gaia-gis.it:8080/geoserver/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=sf:roads&srsName=urn:x-ogc:def:crs:EPSG:26713&maxFeatures=100") != 0) {
+	fprintf(stderr, "get_wfs_request_url() 1.1.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=sf:roads&srsName=urn:x-ogc:def:crs:EPSG:26713&maxFeatures=100\"\n", str);
+	sqlite3_close(handle);
+	return -39;
+    }
+
+    str = get_wfs_request_url (catalog, NULL, "1.1.0", 26713, -1);
+    if (str != NULL) {
+	fprintf(stderr, "get_wfs_request_url() 1.1.0 error: expected NULL\n");
+	sqlite3_close(handle);
+	return -40;
+    }
+
+    str = get_wfs_request_url (catalog, "sf:roads", NULL, -1, 100);
+    if (strcmp(str, "http://www.gaia-gis.it:8080/geoserver/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=sf:roads&maxFeatures=100") != 0) {
+	fprintf(stderr, "get_wfs_request_url() 1.1.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=sf:roads&maxFeatures=100\"\n", str);
+	sqlite3_close(handle);
+	return -41;
+    }
+
+    str = get_wfs_request_url (catalog, "sf:roads", NULL, 1234, 100);
+    if (strcmp(str, "http://www.gaia-gis.it:8080/geoserver/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=sf:roads&maxFeatures=100") != 0) {
+	fprintf(stderr, "get_wfs_request_url() 1.1.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs?service=WFS&version=1.1.0&request=GetFeature&typeName=sf:roads&maxFeatures=100\"\n", str);
+	sqlite3_close(handle);
+	return -42;
+    }
+
+    str = get_wfs_describe_url (catalog, "sf:roads", "1.1.0");
+    if (strcmp(str, "http://www.gaia-gis.it:8080/geoserver/wfs?service=WFS&version=1.1.0&request=DescribeFeatureType&typeName=sf:roads") != 0) {
+	fprintf(stderr, "get_wfs_describe_url() 1.1.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs?service=WFS&version=1.1.0&request=DescribeFeatureType&typeName=sf:roads\"\n", str);
+	sqlite3_close(handle);
+	return -43;
+    }
+
+    str = get_wfs_describe_url (catalog, NULL, "1.1.0");
+    if (str != NULL) {
+	fprintf(stderr, "get_wfs_describe_url() 1.1.0 error: : expected NULL\n");
+	sqlite3_close(handle);
+	return -44;
+    }
+
+    str = get_wfs_describe_url (catalog, "sf:roads", NULL);
+    if (strcmp(str, "http://www.gaia-gis.it:8080/geoserver/wfs?service=WFS&version=1.1.0&request=DescribeFeatureType&typeName=sf:roads") != 0) {
+	fprintf(stderr, "get_wfs_describe_url() 1.1.0 error: got \"%s\", expected \"http://www.gaia-gis.it:8080/geoserver/wfs?service=WFS&version=1.1.0&request=DescribeFeatureType&typeName=sf:roads\"\n", str);
+	sqlite3_close(handle);
+	return -45;
     }
     destroy_wfs_catalog(catalog);
 
@@ -320,72 +389,211 @@ int main (int argc, char *argv[])
     if (lyr != NULL) {
 	fprintf(stderr, "get_wfs_catalog_item() 1.1.0 error (NULL)\n");
 	sqlite3_close(handle);
-	return -37;
+	return -46;
     }
     
     str = get_wfs_item_name(NULL);
     if (str != NULL) {
 	fprintf(stderr, "get_wfs_item_name() 1.1.0 error (NULL)\n");
 	sqlite3_close(handle);
-	return -38;
+	return -47;
     }
     
     str = get_wfs_item_title(NULL);
     if (str != NULL) {
 	fprintf(stderr, "get_wfs_item_title() error (NULL)\n");
 	sqlite3_close(handle);
-	return -39;
+	return -48;
     }
     
     str = get_wfs_item_abstract(NULL);
     if (str != NULL) {
 	fprintf(stderr, "get_wfs_item_abstract() 1.1.0 error (NULL)\n");
 	sqlite3_close(handle);
-	return -40;
+	return -49;
     }
 
     count = get_wfs_layer_srid_count (NULL);
     if (count != -1) {
 	fprintf(stderr, "get_wfs_layer_srid_count() 1.1.0 error: got %d, expected -1\n", count);
 	sqlite3_close(handle);
-	return -41;
+	return -50;
     }
 
     srid = get_wfs_layer_srid (NULL, 0);
     if (srid != -1) {
 	fprintf(stderr, "get_wfs_layer_srid() 1.1.0 error: got %d, expected -1\n", srid);
 	sqlite3_close(handle);
-	return -42;
+	return -51;
     }
 
     count = get_wfs_keyword_count (NULL);
     if (count != -1) {
 	fprintf(stderr, "get_wfs_keyword_count() 1.1.0 error: got %d, expected -1\n", count);
 	sqlite3_close(handle);
-	return -43;
+	return -52;
     }
 
     str = get_wfs_keyword (NULL, 1);
     if (str != NULL) {
 	fprintf(stderr, "get_wfs_keyword() 1.1.0 error: expected NULL\n");
 	sqlite3_close(handle);
-	return -44;
+	return -53;
     }
 
     str = get_wfs_keyword (NULL, 100);
     if (str != NULL) {
 	fprintf(stderr, "get_wfs_keyword() 1.1.0 error: expected NULL\n");
 	sqlite3_close(handle);
-	return -45;
+	return -54;
     }
 
-    str = get_wfs_base_url (NULL);
+    str = get_wfs_base_request_url (NULL);
     if (str != NULL) {
-	fprintf(stderr, "get_wfs_base_url() 1.1.0 error: expected NULL\n");
+	fprintf(stderr, "get_wfs_base_request_url() error: expected NULL\n");
 	sqlite3_close(handle);
-	return -46;
+	return -55;
+    }
+
+    str = get_wfs_base_describe_url (NULL);
+    if (str != NULL) {
+	fprintf(stderr, "get_wfs_base_describe_url() error: expected NULL\n");
+	sqlite3_close(handle);
+	return -56;
+    }
+
+    str = get_wfs_request_url (NULL, "sf:roads", "1.1.0", 26713, -1);
+    if (str != NULL) {
+	fprintf(stderr, "get_wfs_request_url() error: expected NULL\n");
+	sqlite3_close(handle);
+	return -57;
+    }
+
+    str = get_wfs_describe_url (NULL, "sf:roads", "1.1.0");
+    if (str != NULL) {
+	fprintf(stderr, "get_wfs_describe_url() error: expected NULL\n");
+	sqlite3_close(handle);
+	return -58;
     }
     destroy_wfs_catalog(NULL);
+
+    schema = create_wfs_schema ("./describefeaturetype.wfs", &err_msg);
+    if (schema == NULL) {
+        fprintf (stderr, "create_wfs_schema() error for describefeaturetype.wfs: %s\n", err_msg);
+	free(err_msg);
+	sqlite3_close(handle);
+	return -59;
+    }
+
+    count = get_wfs_schema_count (schema);
+    if (count != 8) {
+	fprintf(stderr, "get_wfs_schema_count() error: got %d, expected 8\n", count);
+	sqlite3_close(handle);
+	return -60;
+    }
+
+    column = get_wfs_schema_column(schema, 5);
+    if (column == NULL) {
+	fprintf(stderr, "get_wfs_schema_column() error (NULL)\n");
+	sqlite3_close(handle);
+	return -61;
+    }
+
+    if (get_wfs_schema_column_info(column, &name, &type, &nillable) == 0) {
+	fprintf(stderr, "get_wfs_schema_column_info() error\n");
+	sqlite3_close(handle);
+	return -62;
+    }
+
+    if (strcmp(name, "codcom") != 0) {
+	fprintf(stderr, "get_wfs_schema_column_info() NAME error: got \"%s\", expected \"codcom\"\n", name);
+	sqlite3_close(handle);
+	return -63;
+    }
+
+    if (type != SQLITE_TEXT) {
+	fprintf(stderr, "get_wfs_schema_column_info() TYPE error: got %d, expected %d\n", type, SQLITE_TEXT);
+	sqlite3_close(handle);
+	return -64;
+    }
+
+    if (nillable == 0) {
+	fprintf(stderr, "get_wfs_schema_column_info() NILLABLE error: got %d, expected 1\n", nillable);
+	sqlite3_close(handle);
+	return -65;
+    }
+
+    if (get_wfs_schema_geometry_info(schema, &name, &type, &srid, &dims, &nillable) == 0) {
+	fprintf(stderr, "get_wfs_schema_geometry_info() error\n");
+	sqlite3_close(handle);
+	return -66;
+    }
+
+    if (strcmp(name, "geometry") != 0) {
+	fprintf(stderr, "get_wfs_schema_geometry_info() NAME error: got \"%s\", expected \"geometry\"\n", name);
+	sqlite3_close(handle);
+	return -67;
+    }
+
+    if (type != GAIA_MULTIPOLYGON) {
+	fprintf(stderr, "get_wfs_schema_geometry_info() TYPE error: got %d, expected %d\n", type, GAIA_MULTIPOLYGON);
+	sqlite3_close(handle);
+	return -68;
+    }
+
+    if (srid != -1) {
+	fprintf(stderr, "get_wfs_schema_geometry_info() TYPE error: got %d, expected -1\n", srid);
+	sqlite3_close(handle);
+	return -69;
+    }
+
+    if (dims != 2) {
+	fprintf(stderr, "get_wfs_schema_geometry_info() DIMS error: got %d, expected 2\n", dims);
+	sqlite3_close(handle);
+	return -70;
+    }
+
+    if (nillable == 0) {
+	fprintf(stderr, "get_wfs_schema_geometry_info() NILLABLE error: got %d, expected 1\n", nillable);
+	sqlite3_close(handle);
+	return -71;
+    }
+    destroy_wfs_schema (schema);
+
+    schema = create_wfs_schema (NULL, &err_msg);
+    if (schema != NULL) {
+        fprintf (stderr, "create_wfs_schema() unexpected result for NULL\n");
+	free(err_msg);
+	sqlite3_close(handle);
+	return -72;
+    }
+
+    count = get_wfs_schema_count (NULL);
+    if (count != -1) {
+	fprintf(stderr, "get_wfs_schema_count() unexpected result for NULL\n");
+	sqlite3_close(handle);
+	return -73;
+    }
+
+    column = get_wfs_schema_column(NULL, 5);
+    if (column != NULL) {
+	fprintf(stderr, "get_wfs_schema_column() unexpected result for NULL\n");
+	sqlite3_close(handle);
+	return -74;
+    }
+
+    if (get_wfs_schema_column_info(NULL, &name, &type, &nillable) != 0) {
+	fprintf(stderr, "get_wfs_schema_column_info() unexpected result for NULL\n");
+	sqlite3_close(handle);
+	return -75;
+    }
+
+    if (get_wfs_schema_geometry_info(NULL, &name, &type, &srid, &dims, &nillable) != 0) {
+	fprintf(stderr, "get_wfs_schema_geometry_info() unexpected result for NULL\n");
+	sqlite3_close(handle);
+	return -76;
+    }
+    destroy_wfs_schema (NULL);
 
     xmlCleanupParser();
 
@@ -394,7 +602,7 @@ int main (int argc, char *argv[])
     ret = sqlite3_close (handle);
     if (ret != SQLITE_OK) {
         fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
-	return -18;
+	return -77;
     }
     
     spatialite_cleanup_ex (cache);

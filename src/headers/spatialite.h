@@ -78,6 +78,12 @@ extern "C"
     typedef struct gaia_wfs_item gaiaWFSitem;
     typedef gaiaWFSitem *gaiaWFSitemPtr;
 
+    typedef struct gaia_wfs_schema gaiaWFSschema;
+    typedef gaiaWFSschema *gaiaWFSschemaPtr;
+
+    typedef struct gaia_wfs_column gaiaWFScolumn;
+    typedef gaiaWFScolumn *gaiaWFScolumnPtr;
+
 /**
  Return the current library version.
  */
@@ -806,7 +812,7 @@ extern "C"
 
  \return the pointer to the corresponding WFS-Catalog object: NULL on failure
  
- \sa destroy_wfs_catalog, get_wfs_catalog, get_wfs_catalog_item, load_from_wfs
+ \sa destroy_wfs_catalog, get_wfs_catalog_count, get_wfs_catalog_item, load_from_wfs
  
  \note an eventual error message returned via err_msg requires to be deallocated
  by invoking free().\n
@@ -833,9 +839,23 @@ extern "C"
 
  \return the base URL for any WFS-GetFeature call: NULL is undefined
  
- \sa get_wfs_catalog, get_wfs_request_url
+ \sa get_wfs_catalog, get_wfs_base_describe_url, get_wfs_request_url
  */
-    SPATIALITE_DECLARE const char *get_wfs_base_url (gaiaWFScatalogPtr handle);
+    SPATIALITE_DECLARE const char *get_wfs_base_request_url (gaiaWFScatalogPtr
+							     handle);
+
+/**
+ Return the base URL for any WFS-DescribeFeatureType call
+
+ \param handle the pointer to a valid WFS-Item returned by a previous call
+ to get_wfs_catalog_item().
+
+ \return the base URL for any WFS-DescribeFeatureType call: NULL is undefined
+ 
+ \sa create_wfs_catalog, get_wfs_base_request_url, get_wfs_describe_url
+ */
+    SPATIALITE_DECLARE const char *get_wfs_base_describe_url (gaiaWFScatalogPtr
+							      handle);
 
 /**
  Return a GetFeature URL (GET)
@@ -852,7 +872,7 @@ extern "C"
 
  \return the GetFeature URL: NULL if any error is found.
  
- \sa get_wfs_base_url
+ \sa get_wfs_base_request_url, get_wfs_describe_url
 
  \note you are responsible to destroy (before or after) any allocated
  memory returned by get_wfs_request_url().
@@ -861,6 +881,26 @@ extern "C"
 						  const char *name,
 						  const char *version,
 						  int srid, int max_features);
+
+/**
+ Return a DescribeFeatureType URL (GET)
+
+ \param handle the pointer to a valid WFS-Item returned by a previous call
+ to get_wfs_catalog_item().
+ \param name the NAME uniquely identifying the required WFS layer.
+ \param version could be "1.0.0" or "1.1.0"; if NULL or invalid "1.1.0"
+ will be assumed.
+
+ \return the DescribeFeatureType URL: NULL if any error is found.
+ 
+ \sa get_wfs_base_describe_url, get_wfs_request_url
+
+ \note you are responsible to destroy (before or after) any allocated
+ memory returned by get_wfs_describe_url().
+ */
+    SPATIALITE_DECLARE char *get_wfs_describe_url (gaiaWFScatalogPtr handle,
+						   const char *name,
+						   const char *version);
 
 /**
  Return the total count of items (aka Layers) defined within a WFS-Catalog object
@@ -992,6 +1032,114 @@ extern "C"
  */
     SPATIALITE_DECLARE const char *get_wfs_keyword (gaiaWFSitemPtr handle,
 						    int index);
+
+/**
+ Creates a Schema representing some WFS Layer 
+
+ \param path_or_url pointer to some WFS-DescribeFeatureType XML Document (could be a pathname or an URL). 
+ \param err_msg on completion will contain an error message (if any)
+
+ \return the pointer to the corresponding WFS-Schema object: NULL on failure
+ 
+ \sa destroy_wfs_schema,get_wfs_schema_count, get_wfs_schema_column_info,
+ get_wfs_schema_geometry_info
+ 
+ \note an eventual error message returned via err_msg requires to be deallocated
+ by invoking free().\n
+ you are responsible to destroy (before or after) any WFS-Schema returned by create_wfs_schema().
+ */
+    SPATIALITE_DECLARE gaiaWFSschemaPtr create_wfs_schema (char *path_or_url,
+							   char **err_msg);
+
+/**
+ Destroys a WFS-schema object freeing any allocated resource 
+
+ \param handle the pointer to a valid WFS-Catalog returned by a previous call
+ to create_wfs_schema()
+ 
+ \sa create_wfs_schema
+ */
+    SPATIALITE_DECLARE void destroy_wfs_schema (gaiaWFSschemaPtr handle);
+
+/**
+ Return the infos describing some WFS-GeometryColumn object
+
+ \param handle the pointer to a valid WFS-Schema returned by a previous call
+ to create_wfs_schema().
+ \param name on completion will contain a pointer to the GeometryColumn name
+ \param type on completion will contain the GeometryType set for the Column;
+ could be one of GAIA_POINT, GAIA_LINESTRING, GAIA_POLYGON, GAIA_MULTIPOINT,
+ GAIA_MULTILINESTRIN, GAIA_MULTIPOLYGON or GAIA_GEOMETRYCOLLECTION
+ \param srid on completion will contain the SRID-value set for the GeometryColumn
+ \param dims on completion will contain the dimensions (2 or 3) set
+ for the GeometryColumn
+ \param nullable on completion will contain a Boolean value; if TRUE
+ the Column may contain NULL-values.
+
+ \return TRUE on success, FALSE if any error is encountered or if
+ the WFS-Schema hasn't any Geometry-Column defined.
+ 
+ \sa create_wfs_schema, get_wfs_schema_count, get_wfs_schema_column,
+ get_wfs_schema_column_info
+ */
+    SPATIALITE_DECLARE int get_wfs_schema_geometry_info (gaiaWFSschemaPtr
+							 handle,
+							 const char **name,
+							 int *type, int *srid,
+							 int *dims,
+							 int *nullable);
+
+/**
+ Return the total count of items (aka Columns) defined within a WFS-Schema object
+
+ \param handle the pointer to a valid WFS-Schema returned by a previous call
+ to create_wfs_schema()
+
+ \return the total count of items (aka Columns) defined within a WFS-Schema object: 
+ a negative number if the WFS-Schema isn't valid
+ 
+ \sa create_wfs_schema, get_wfs_schema_geometry_info, 
+ get_wfs_schema_column, get_wfs_schema_column_info 
+ */
+    SPATIALITE_DECLARE int get_wfs_schema_count (gaiaWFSschemaPtr handle);
+
+/**
+ Return the pointer to some specific Column defined within a WFS-Schema object
+
+ \param handle the pointer to a valid WFS-Schema returned by a previous call
+ to create_wfs_schema()
+ \param index the relative index identifying the required WFS-Column (the first 
+ Item in the WFS-Schema object has index ZERO).
+
+ \return the pointer to the required WFS-Column object: NULL if the passed index
+ isn't valid
+ 
+ \sa create_wfs_schema, get_wfs_schema_geometry_info, 
+ get_wfs_schema_count, get_wfs_schema_column_info
+ */
+    SPATIALITE_DECLARE gaiaWFScolumnPtr get_wfs_schema_column (gaiaWFSschemaPtr
+							       handle,
+							       int index);
+
+/**
+ Return the infos describing some WFS-Column object
+
+ \param handle the pointer to a valid WFS-Column returned by a previous call
+ to get_wfs_schema_column().
+ \param name on completion will contain a pointer to the Column name
+ \param type on completion will contain the datatype set for the Column;
+ could be one of SQLITE_TEXT, SQLITE_INTEGER or SQLITE_FLOAT
+ \param nullable on completion will contain a Boolean value; if TRUE
+ the Column may contain NULL-values.
+
+ \return TRUE on success, FALSE if any error is encountered
+ 
+ \sa get_wfs_schema_column, get_wfs_schema_geometry_info
+ */
+    SPATIALITE_DECLARE int get_wfs_schema_column_info (gaiaWFScolumnPtr handle,
+						       const char **name,
+						       int *type,
+						       int *nullable);
 
 #ifdef __cplusplus
 }
