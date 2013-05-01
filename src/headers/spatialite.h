@@ -750,6 +750,8 @@ extern "C"
  \param err_msg on completion will contain an error message (if any)
  \param progress_callback pointer to a callback function to be invoked immediately
  after processing each WFS page (could be NULL)
+ \param callback_ptr an arbitrary pointer (to be passed as the second argument
+ by the callback function).
  
  \sa create_wfs_catalog, load_from_wfs_paged
 
@@ -765,7 +767,9 @@ extern "C"
 					  char *pk_column_name,
 					  int spatial_index, int *rows,
 					  char **err_msg,
-					  void (*progress_callback) (int));
+					  void (*progress_callback) (int,
+								     void *),
+					  void *callback_ptr);
 
 /**
  Loads data from some WFS source (using WFS paging)
@@ -783,6 +787,8 @@ extern "C"
  \param err_msg on completion will contain an error message (if any)
  \param progress_callback pointer to a callback function to be invoked immediately
  after processing each WFS page (could be NULL)
+ \param callback_ptr an arbitrary pointer (to be passed as the second argument
+ by the callback function).
  
  \sa create_wfs_catalog, load_from_wfs
 
@@ -791,7 +797,8 @@ extern "C"
  \note an eventual error message returned via err_msg requires to be deallocated
  by invoking free()
 
- \note the progress_callback function must have this signature: \b void \b myfunct(\b int \b count);
+ \note the progress_callback function must have this signature: 
+ \b void \b myfunct(\b int \b count, \b void \b *ptr);
  \n and will cyclically report how many features have been processed since the initial call start.
  */
     SPATIALITE_DECLARE int load_from_wfs_paged (sqlite3 * sqlite,
@@ -802,7 +809,8 @@ extern "C"
 						int page_size, int *rows,
 						char **err_msg,
 						void (*progress_callback)
-						(int));
+						(int, void *),
+						void *callback_ptr);
 
 /**
  Creates a Catalog for some WFS service 
@@ -1041,7 +1049,7 @@ extern "C"
 
  \return the pointer to the corresponding WFS-Schema object: NULL on failure
  
- \sa destroy_wfs_schema,get_wfs_schema_count, get_wfs_schema_column_info,
+ \sa destroy_wfs_schema,get_wfs_schema_column_count, get_wfs_schema_column_info,
  get_wfs_schema_geometry_info
  
  \note an eventual error message returned via err_msg requires to be deallocated
@@ -1079,7 +1087,7 @@ extern "C"
  \return TRUE on success, FALSE if any error is encountered or if
  the WFS-Schema hasn't any Geometry-Column defined.
  
- \sa create_wfs_schema, get_wfs_schema_count, get_wfs_schema_column,
+ \sa create_wfs_schema, get_wfs_schema_column_count, get_wfs_schema_column,
  get_wfs_schema_column_info
  */
     SPATIALITE_DECLARE int get_wfs_schema_geometry_info (gaiaWFSschemaPtr
@@ -1101,7 +1109,8 @@ extern "C"
  \sa create_wfs_schema, get_wfs_schema_geometry_info, 
  get_wfs_schema_column, get_wfs_schema_column_info 
  */
-    SPATIALITE_DECLARE int get_wfs_schema_count (gaiaWFSschemaPtr handle);
+    SPATIALITE_DECLARE int get_wfs_schema_column_count (gaiaWFSschemaPtr
+							handle);
 
 /**
  Return the pointer to some specific Column defined within a WFS-Schema object
@@ -1115,7 +1124,7 @@ extern "C"
  isn't valid
  
  \sa create_wfs_schema, get_wfs_schema_geometry_info, 
- get_wfs_schema_count, get_wfs_schema_column_info
+ get_wfs_schema_column_count, get_wfs_schema_column_info
  */
     SPATIALITE_DECLARE gaiaWFScolumnPtr get_wfs_schema_column (gaiaWFSschemaPtr
 							       handle,

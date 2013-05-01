@@ -24,7 +24,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2008-2012
+Portions created by the Initial Developer are Copyright (C) 2008-2013
 the Initial Developer. All Rights Reserved.
 
 Contributor(s): 
@@ -65,6 +65,8 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #ifdef ENABLE_LIBXML2		/* LIBXML2 enabled: supporting XML documents */
 
 #include <libxml/parser.h>
+
+#define MAX_GTYPES	28
 
 #ifdef _WIN32
 #define atoll	_atoi64
@@ -121,6 +123,13 @@ struct wfs_column_def
     struct wfs_column_def *next;
 };
 
+struct wfs_geom_type
+{
+/* Geometry Type statistics */
+    int type;
+    int count;
+};
+
 struct wfs_layer_schema
 {
 /* a WFS table / layer schema */
@@ -133,6 +142,7 @@ struct wfs_layer_schema
     int srid;
     int dims;
     int is_nullable;
+    struct wfs_geom_type *types;
     char *geometry_value;
     sqlite3_stmt *stmt;
     sqlite3 *sqlite;
@@ -196,6 +206,63 @@ alloc_wfs_layer_schema ()
     ptr->geometry_type = GAIA_UNKNOWN;
     ptr->srid = -1;
     ptr->dims = 2;
+    ptr->types = malloc (sizeof (struct wfs_geom_type) * MAX_GTYPES);
+    ptr->types[0].type = GAIA_POINT;
+    ptr->types[0].count = 0;
+    ptr->types[1].type = GAIA_LINESTRING;
+    ptr->types[1].count = 0;
+    ptr->types[2].type = GAIA_POLYGON;
+    ptr->types[2].count = 0;
+    ptr->types[3].type = GAIA_MULTIPOINT;
+    ptr->types[3].count = 0;
+    ptr->types[4].type = GAIA_MULTILINESTRING;
+    ptr->types[4].count = 0;
+    ptr->types[5].type = GAIA_MULTIPOLYGON;
+    ptr->types[5].count = 0;
+    ptr->types[6].type = GAIA_GEOMETRYCOLLECTION;
+    ptr->types[6].count = 0;
+    ptr->types[7].type = GAIA_POINTZ;
+    ptr->types[7].count = 0;
+    ptr->types[8].type = GAIA_LINESTRINGZ;
+    ptr->types[8].count = 0;
+    ptr->types[9].type = GAIA_POLYGONZ;
+    ptr->types[9].count = 0;
+    ptr->types[10].type = GAIA_MULTIPOINTZ;
+    ptr->types[10].count = 0;
+    ptr->types[11].type = GAIA_MULTILINESTRINGZ;
+    ptr->types[11].count = 0;
+    ptr->types[12].type = GAIA_MULTIPOLYGONZ;
+    ptr->types[12].count = 0;
+    ptr->types[13].type = GAIA_GEOMETRYCOLLECTIONZ;
+    ptr->types[13].count = 0;
+    ptr->types[14].type = GAIA_POINTM;
+    ptr->types[14].count = 0;
+    ptr->types[15].type = GAIA_LINESTRINGM;
+    ptr->types[15].count = 0;
+    ptr->types[16].type = GAIA_POLYGONM;
+    ptr->types[16].count = 0;
+    ptr->types[17].type = GAIA_MULTIPOINTM;
+    ptr->types[17].count = 0;
+    ptr->types[18].type = GAIA_MULTILINESTRINGM;
+    ptr->types[18].count = 0;
+    ptr->types[19].type = GAIA_MULTIPOLYGONM;
+    ptr->types[19].count = 0;
+    ptr->types[20].type = GAIA_GEOMETRYCOLLECTIONM;
+    ptr->types[20].count = 0;
+    ptr->types[21].type = GAIA_POINTZM;
+    ptr->types[21].count = 0;
+    ptr->types[22].type = GAIA_LINESTRINGZM;
+    ptr->types[22].count = 0;
+    ptr->types[23].type = GAIA_POLYGONZM;
+    ptr->types[23].count = 0;
+    ptr->types[24].type = GAIA_MULTIPOINTZM;
+    ptr->types[24].count = 0;
+    ptr->types[25].type = GAIA_MULTILINESTRINGZM;
+    ptr->types[25].count = 0;
+    ptr->types[26].type = GAIA_MULTIPOLYGONZM;
+    ptr->types[26].count = 0;
+    ptr->types[27].type = GAIA_GEOMETRYCOLLECTIONZM;
+    ptr->types[27].count = 0;
     ptr->geometry_value = NULL;
     ptr->stmt = NULL;
     return ptr;
@@ -218,6 +285,8 @@ free_wfs_layer_schema (struct wfs_layer_schema *ptr)
       }
     if (ptr->geometry_name != NULL)
 	free (ptr->geometry_name);
+    if (ptr->types != NULL)
+	free (ptr->types);
     if (ptr->geometry_value != NULL)
 	free (ptr->geometry_value);
     if (ptr->stmt != NULL)
@@ -1031,6 +1100,9 @@ load_wfs_schema (const char *path_or_url, int swap_axes, char **err_msg)
 
     gaiaOutBufferInitialize (&errBuf);
     xmlSetGenericErrorFunc (&errBuf, parsingError);
+    if (path_or_url == NULL)
+	goto end;
+
     xml_doc = xmlReadFile (path_or_url, NULL, 0);
     if (xml_doc == NULL)
       {
@@ -1063,6 +1135,15 @@ load_wfs_schema (const char *path_or_url, int swap_axes, char **err_msg)
     xmlSetGenericErrorFunc ((void *) stderr, NULL);
     if (xml_doc != NULL)
 	xmlFreeDoc (xml_doc);
+    if (schema != NULL)
+      {
+	  if (schema->first == NULL && schema->geometry_name == NULL)
+	    {
+		/* empty schema */
+		free_wfs_layer_schema (schema);
+		schema = NULL;
+	    }
+      }
     return schema;
 }
 
@@ -1265,6 +1346,238 @@ check_feature_value (xmlNodePtr node, struct wfs_layer_schema *schema)
 }
 
 static int
+test_effective_geom (struct wfs_layer_schema *schema, int *type, int *cast_type,
+		     int *cast_dims)
+{
+/* testing the effective GeometryType and dims */
+    int pts = 0;
+    int lns = 0;
+    int pgs = 0;
+    int mpts = 0;
+    int mlns = 0;
+    int mpgs = 0;
+    int colls = 0;
+    int dims_xy = 0;
+    int dims_xyz = 0;
+    int dims_xym = 0;
+    int dims_xyzm = 0;
+    int dims = GAIA_XY;
+    int i;
+    for (i = 0; i < MAX_GTYPES; i++)
+      {
+	  struct wfs_geom_type *p = schema->types + i;
+	  switch (p->type)
+	    {
+	    case GAIA_POINT:
+	    case GAIA_POINTZ:
+	    case GAIA_POINTM:
+	    case GAIA_POINTZM:
+		pts += p->count;
+		break;
+	    case GAIA_LINESTRING:
+	    case GAIA_LINESTRINGZ:
+	    case GAIA_LINESTRINGM:
+	    case GAIA_LINESTRINGZM:
+		lns += p->count;
+		break;
+	    case GAIA_POLYGON:
+	    case GAIA_POLYGONZ:
+	    case GAIA_POLYGONM:
+	    case GAIA_POLYGONZM:
+		pgs += p->count;
+		break;
+	    case GAIA_MULTIPOINT:
+	    case GAIA_MULTIPOINTZ:
+	    case GAIA_MULTIPOINTM:
+	    case GAIA_MULTIPOINTZM:
+		mpts += p->count;
+		break;
+	    case GAIA_MULTILINESTRING:
+	    case GAIA_MULTILINESTRINGZ:
+	    case GAIA_MULTILINESTRINGM:
+	    case GAIA_MULTILINESTRINGZM:
+		mlns += p->count;
+		break;
+	    case GAIA_MULTIPOLYGON:
+	    case GAIA_MULTIPOLYGONZ:
+	    case GAIA_MULTIPOLYGONM:
+	    case GAIA_MULTIPOLYGONZM:
+		mpgs += p->count;
+		break;
+	    case GAIA_GEOMETRYCOLLECTION:
+	    case GAIA_GEOMETRYCOLLECTIONZ:
+	    case GAIA_GEOMETRYCOLLECTIONM:
+	    case GAIA_GEOMETRYCOLLECTIONZM:
+		colls += p->count;
+		break;
+	    };
+	  if (p->count > 0)
+	    {
+		switch (p->type)
+		  {
+		  case GAIA_POINT:
+		  case GAIA_LINESTRING:
+		  case GAIA_POLYGON:
+		  case GAIA_MULTIPOINT:
+		  case GAIA_MULTILINESTRING:
+		  case GAIA_MULTIPOLYGON:
+		  case GAIA_GEOMETRYCOLLECTION:
+		      dims_xy++;
+		      break;
+		  case GAIA_POINTZ:
+		  case GAIA_LINESTRINGZ:
+		  case GAIA_POLYGONZ:
+		  case GAIA_MULTIPOINTZ:
+		  case GAIA_MULTILINESTRINGZ:
+		  case GAIA_MULTIPOLYGONZ:
+		  case GAIA_GEOMETRYCOLLECTIONZ:
+		      dims_xyz++;
+		      break;
+		  case GAIA_POINTM:
+		  case GAIA_LINESTRINGM:
+		  case GAIA_POLYGONM:
+		  case GAIA_MULTIPOINTM:
+		  case GAIA_MULTILINESTRINGM:
+		  case GAIA_MULTIPOLYGONM:
+		  case GAIA_GEOMETRYCOLLECTIONM:
+		      dims_xym++;
+		      break;
+		  case GAIA_POINTZM:
+		  case GAIA_LINESTRINGZM:
+		  case GAIA_POLYGONZM:
+		  case GAIA_MULTIPOINTZM:
+		  case GAIA_MULTILINESTRINGZM:
+		  case GAIA_MULTIPOLYGONZM:
+		  case GAIA_GEOMETRYCOLLECTIONZM:
+		      dims_xyzm++;
+		      break;
+		  };
+	    }
+      }
+    if (dims_xy > 0 && dims_xyz == 0 && dims_xym == 0 && dims_xyzm == 0)
+	dims = GAIA_XY;
+    if (dims_xyz > 0 && dims_xym == 0 && dims_xyzm == 0)
+	dims = GAIA_XY_Z;
+    if (dims_xyz == 0 && dims_xym > 0 && dims_xyzm == 0)
+	dims = GAIA_XY_M;
+    if (dims_xyzm > 0)
+	dims = GAIA_XY_Z_M;
+    *cast_dims = 0;
+    if (dims_xy > 0 && dims == GAIA_XY_Z)
+	*cast_dims = 1;
+    if (dims_xy > 0 && dims == GAIA_XY_M)
+	*cast_dims = 1;
+    if ((dims_xy > 0 || dims_xyz > 0 || dims_xym > 0) && dims == GAIA_XY_Z_M)
+	*cast_dims = 1;
+    if (pts > 0 && lns == 0 && pgs == 0 && mpts == 0 && mlns == 0 && mpgs == 0
+	&& colls == 0)
+      {
+	  if (dims == GAIA_XY_Z_M)
+	      *type = GAIA_POINTZM;
+	  else if (dims == GAIA_XY_Z)
+	      *type = GAIA_POINTZ;
+	  else if (dims == GAIA_XY_M)
+	      *type = GAIA_POINTM;
+	  else
+	      *type = GAIA_POINT;
+	  *cast_type = 0;
+	  return 1;
+      }
+    if (pts == 0 && lns > 0 && pgs == 0 && mpts == 0 && mlns == 0 && mpgs == 0
+	&& colls == 0)
+      {
+	  if (dims == GAIA_XY_Z_M)
+	      *type = GAIA_LINESTRINGZM;
+	  else if (dims == GAIA_XY_Z)
+	      *type = GAIA_LINESTRINGZ;
+	  else if (dims == GAIA_XY_M)
+	      *type = GAIA_LINESTRINGM;
+	  else
+	      *type = GAIA_LINESTRING;
+	  *cast_type = 0;
+	  return 1;
+      }
+    if (pts == 0 && lns == 0 && pgs > 0 && mpts == 0 && mlns == 0 && mpgs == 0
+	&& colls == 0)
+      {
+	  if (dims == GAIA_XY_Z_M)
+	      *type = GAIA_POLYGONZM;
+	  else if (dims == GAIA_XY_Z)
+	      *type = GAIA_POLYGONZ;
+	  else if (dims == GAIA_XY_M)
+	      *type = GAIA_POLYGONM;
+	  else
+	      *type = GAIA_POLYGON;
+	  *cast_type = 0;
+	  return 1;
+      }
+    if ((pts > 0 || mpts > 0) && lns == 0 && pgs == 0 && mlns == 0 && mpgs == 0
+	&& colls == 0)
+      {
+	  if (dims == GAIA_XY_Z_M)
+	      *type = GAIA_MULTIPOINTZM;
+	  else if (dims == GAIA_XY_Z)
+	      *type = GAIA_MULTIPOINTZ;
+	  else if (dims == GAIA_XY_M)
+	      *type = GAIA_MULTIPOINTM;
+	  else
+	      *type = GAIA_MULTIPOINT;
+	  if (pts > 0)
+	      *cast_type = 1;
+	  else
+	      *cast_type = 0;
+	  return 1;
+      }
+    if (pts == 0 && (lns > 0 || mlns > 0) && pgs == 0 && mpts == 0 && mpgs == 0
+	&& colls == 0)
+      {
+	  if (dims == GAIA_XY_Z_M)
+	      *type = GAIA_MULTILINESTRINGZM;
+	  else if (dims == GAIA_XY_Z)
+	      *type = GAIA_MULTILINESTRINGZ;
+	  else if (dims == GAIA_XY_M)
+	      *type = GAIA_MULTILINESTRINGM;
+	  else
+	      *type = GAIA_MULTILINESTRING;
+	  if (lns > 0)
+	      *cast_type = 1;
+	  else
+	      *cast_type = 0;
+	  return 1;
+      }
+    if (pts == 0 && lns == 0 && (pgs > 0 || mpgs > 0) && mpts == 0 && mlns == 0
+	&& colls == 0)
+      {
+	  if (dims == GAIA_XY_Z_M)
+	      *type = GAIA_MULTIPOLYGONZM;
+	  else if (dims == GAIA_XY_Z)
+	      *type = GAIA_MULTIPOLYGONZ;
+	  else if (dims == GAIA_XY_M)
+	      *type = GAIA_MULTIPOLYGONM;
+	  else
+	      *type = GAIA_MULTIPOLYGON;
+	  if (pgs > 0)
+	      *cast_type = 1;
+	  else
+	      *cast_type = 0;
+	  return 1;
+      }
+    if (dims == GAIA_XY_Z_M)
+	*type = GAIA_GEOMETRYCOLLECTIONZM;
+    else if (dims == GAIA_XY_Z)
+	*type = GAIA_GEOMETRYCOLLECTIONZ;
+    else if (dims == GAIA_XY_M)
+	*type = GAIA_GEOMETRYCOLLECTIONM;
+    else
+	*type = GAIA_GEOMETRYCOLLECTION;
+    if (pts > 0 || lns > 0 || pgs > 0 || mpts > 0 || mlns > 0 || mpgs > 0)
+	*cast_type = 1;
+    else
+	*cast_type = 0;
+    return 1;
+}
+
+static int
 parse_wfs_single_feature (xmlNodePtr node, struct wfs_layer_schema *schema)
 {
 /* attempting to extract data corresponding to a single feature */
@@ -1279,6 +1592,38 @@ parse_wfs_single_feature (xmlNodePtr node, struct wfs_layer_schema *schema)
       }
     cnt = count_wfs_values (schema);
     return cnt;
+}
+
+static int
+check_real_type (struct wfs_layer_schema *schema, int *type, int *cast_type,
+		 int *cast_dims)
+{
+/* attempting to assign a more precise GeometryType */
+    int xtype;
+    if (test_effective_geom (schema, &xtype, cast_type, cast_dims))
+      {
+	  *type = xtype;
+	  return 1;
+      }
+    return 0;
+}
+
+static void
+update_geom_stats (struct wfs_layer_schema *schema, int type)
+{
+/* updating the type statistics */
+    int i;
+    if (schema->geometry_type != GAIA_GEOMETRYCOLLECTION)
+	return;
+    for (i = 0; i < MAX_GTYPES; i++)
+      {
+	  struct wfs_geom_type *p = schema->types + i;
+	  if (p->type == type)
+	    {
+		p->count += 1;
+		return;
+	    }
+      }
 }
 
 static int
@@ -1338,12 +1683,14 @@ do_insert (struct wfs_layer_schema *schema)
 		  {
 		      unsigned char *blob;
 		      int blob_size;
+		      int type = gaiaGeometryType (geom);
 		      geom->Srid = schema->srid;
 		      if (schema->swap_axes != 0)
 			  gaiaSwapCoords (geom);
 		      gaiaToSpatiaLiteBlobWkb (geom, &blob, &blob_size);
 		      sqlite3_bind_blob (stmt, ind, blob, blob_size, free);
 		      gaiaFreeGeomColl (geom);
+		      update_geom_stats (schema, type);
 		  }
 	    }
 	  else
@@ -1668,6 +2015,7 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
     struct wfs_column_def *col;
     char auto_pk_name[1024];
     int is_auto_pk = 0;
+    int comma = 0;
     sqlite3_stmt *stmt = NULL;
 
 /* attempting to create the SQL Table */
@@ -1677,15 +2025,19 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
     free (quoted);
     gaiaAppendToOutBuffer (&sql, sql2);
     sqlite3_free (sql2);
-    strcpy (auto_pk_name, "pk_uid");
+    if (pk_column_name == NULL)
+	strcpy (auto_pk_name, "pk_uid");
+    else
+	strcpy (auto_pk_name, pk_column_name);
     if (!check_pk_name (schema, pk_column_name, auto_pk_name))
       {
 	  /* defining a default Primary Key */
 	  is_auto_pk = 1;
 	  quoted = gaiaDoubleQuotedSql (auto_pk_name);
 	  sql2 =
-	      sqlite3_mprintf ("\t\"%s\" INTEGER PRIMARY KEY AUTOINCREMENT,\n",
+	      sqlite3_mprintf ("\t\"%s\" INTEGER PRIMARY KEY AUTOINCREMENT",
 			       quoted);
+	  comma = 1;
 	  free (quoted);
 	  gaiaAppendToOutBuffer (&sql, sql2);
 	  sqlite3_free (sql2);
@@ -1693,6 +2045,11 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
     col = schema->first;
     while (col != NULL)
       {
+	  if (comma)
+	    {
+		gaiaAppendToOutBuffer (&sql, ",\n");
+		comma = 0;
+	    }
 	  const char *type = "TEXT";
 	  if (col->type == SQLITE_INTEGER)
 	      type = "INTEGER";
@@ -1707,7 +2064,7 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
 		      /* ok, we've found the PK column */
 		      if (col == schema->last)
 			  sql2 =
-			      sqlite3_mprintf ("\t\"%s\" %s PRIMARY KEY)",
+			      sqlite3_mprintf ("\t\"%s\" %s PRIMARY KEY",
 					       quoted, type);
 		      else
 			  sql2 =
@@ -1723,10 +2080,10 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
 	  if (col == schema->last)
 	    {
 		if (col->is_nullable)
-		    sql2 = sqlite3_mprintf ("\t\"%s\" %s)", quoted, type);
+		    sql2 = sqlite3_mprintf ("\t\"%s\" %s", quoted, type);
 		else
 		    sql2 =
-			sqlite3_mprintf ("\t\"%s\" %s NOT NULL)", quoted, type);
+			sqlite3_mprintf ("\t\"%s\" %s NOT NULL", quoted, type);
 	    }
 	  else
 	    {
@@ -1742,6 +2099,7 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
 	  sqlite3_free (sql2);
 	  col = col->next;
       }
+    gaiaAppendToOutBuffer (&sql, ")");
     ret = sqlite3_exec (sqlite, sql.Buffer, NULL, NULL, &errMsg);
     gaiaOutBufferReset (&sql);
     if (ret != SQLITE_OK)
@@ -1962,12 +2320,13 @@ do_rollback (sqlite3 * sqlite, struct wfs_layer_schema *schema)
 SPATIALITE_DECLARE int
 load_from_wfs (sqlite3 * sqlite, char *path_or_url, int swap_axes,
 	       char *table, char *pk_column_name, int spatial_index, int *rows,
-	       char **err_msg, void (*progress_callback) (int))
+	       char **err_msg, void (*progress_callback) (int, void *),
+	       void *callback_ptr)
 {
 /* attempting to load data from some WFS source [not-paged] */
     return load_from_wfs_paged (sqlite, path_or_url, swap_axes, table,
 				pk_column_name, spatial_index, -1, rows,
-				err_msg, progress_callback);
+				err_msg, progress_callback, callback_ptr);
 }
 
 static int
@@ -1983,6 +2342,12 @@ test_wfs_paging (char *path_or_url, int page_size, xmlNodePtr node,
     struct wfs_feature *feature_2 = create_feature (schema);
     *shift_index = 0;
     parse_wfs_last_feature (node, schema, feature_1, &nRows);
+    if (nRows < page_size)
+      {
+	  /* a single page is required: this means no-paging at all */
+	  free_feature (feature_1);
+	  return 1;
+      }
 
 /* loading the feature to be tested */
     page_url = sqlite3_mprintf ("%s&maxFeatures=1&startIndex=%d",
@@ -2036,11 +2401,670 @@ test_wfs_paging (char *path_or_url, int page_size, xmlNodePtr node,
     return 0;
 }
 
+static void
+do_adjust_geoms (sqlite3 * sqlite, const char *table, const char *geometry,
+		 int type, int cast_type, int cast_dims)
+{
+/* final adjustement for GeometryType and dims */
+    char *errMsg = NULL;
+    char *xtable;
+    char *xgeom;
+    char *xopen;
+    char *xclose;
+    char *sql;
+    int ret;
+    int dims;
+    int metadata_version = checkSpatialMetaData (sqlite);
+
+/* starting a transaction */
+    if (sqlite3_exec (sqlite, "BEGIN", NULL, NULL, &errMsg) != SQLITE_OK)
+      {
+	  spatialite_e ("loadwfs: BEGIN error:\"%s\"\n", errMsg);
+	  sqlite3_free (errMsg);
+      }
+
+    if (cast_type || cast_dims)
+      {
+	  xtable = gaiaDoubleQuotedSql (table);
+	  xgeom = gaiaDoubleQuotedSql (geometry);
+	  /* settting the dimension model */
+	  switch (type)
+	    {
+	    case GAIA_POINT:
+	    case GAIA_LINESTRING:
+	    case GAIA_POLYGON:
+	    case GAIA_MULTIPOINT:
+	    case GAIA_MULTILINESTRING:
+	    case GAIA_MULTIPOLYGON:
+	    case GAIA_GEOMETRYCOLLECTION:
+		dims = GAIA_XY;
+		break;
+	    case GAIA_POINTZ:
+	    case GAIA_LINESTRINGZ:
+	    case GAIA_POLYGONZ:
+	    case GAIA_MULTIPOINTZ:
+	    case GAIA_MULTILINESTRINGZ:
+	    case GAIA_MULTIPOLYGONZ:
+	    case GAIA_GEOMETRYCOLLECTIONZ:
+		dims = GAIA_XY_Z;
+		break;
+	    case GAIA_POINTM:
+	    case GAIA_LINESTRINGM:
+	    case GAIA_POLYGONM:
+	    case GAIA_MULTIPOINTM:
+	    case GAIA_MULTILINESTRINGM:
+	    case GAIA_MULTIPOLYGONM:
+	    case GAIA_GEOMETRYCOLLECTIONM:
+		dims = GAIA_XY_M;
+		break;
+	    case GAIA_POINTZM:
+	    case GAIA_LINESTRINGZM:
+	    case GAIA_POLYGONZM:
+	    case GAIA_MULTIPOINTZM:
+	    case GAIA_MULTILINESTRINGZM:
+	    case GAIA_MULTIPOLYGONZM:
+	    case GAIA_GEOMETRYCOLLECTIONZM:
+		dims = GAIA_XY_Z_M;
+		break;
+	    };
+	  /*preparing the SQL UPDATE statement */
+	  switch (type)
+	    {
+	    case GAIA_POINT:
+	    case GAIA_POINTZ:
+	    case GAIA_POINTM:
+	    case GAIA_POINTZM:
+		if (cast_type && !cast_dims)
+		  {
+		      xopen = "CastToPoint(";
+		      xclose = ")";
+		  }
+		else if (!cast_type && cast_dims)
+		  {
+		      switch (dims)
+			{
+			case GAIA_XY:
+			    xopen = "CastToXY(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_Z:
+			    xopen = "CastToXYZ(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_M:
+			    xopen = "CastToXYM(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_Z_M:
+			    xopen = "CastToXYZM(";
+			    xclose = ")";
+			    break;
+			};
+		  }
+		else
+		  {
+		      switch (dims)
+			{
+			case GAIA_XY:
+			    xopen = "CastToPoint(CastToXY(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_Z:
+			    xopen = "CastToPoint(CastToXYZ(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_M:
+			    xopen = "CastToPoint(CastToXYM(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_Z_M:
+			    xopen = "CastToPoint(CastToXYZM(";
+			    xclose = "))";
+			    break;
+			};
+		  }
+		break;
+	    case GAIA_LINESTRING:
+	    case GAIA_LINESTRINGZ:
+	    case GAIA_LINESTRINGM:
+	    case GAIA_LINESTRINGZM:
+		if (cast_type && !cast_dims)
+		  {
+		      xopen = "CastToLinestring(";
+		      xclose = ")";
+		  }
+		else if (!cast_type && cast_dims)
+		  {
+		      switch (dims)
+			{
+			case GAIA_XY:
+			    xopen = "CastToXY(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_Z:
+			    xopen = "CastToXYZ(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_M:
+			    xopen = "CastToXYM(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_Z_M:
+			    xopen = "CastToXYZM(";
+			    xclose = ")";
+			    break;
+			};
+		  }
+		else
+		  {
+		      switch (dims)
+			{
+			case GAIA_XY:
+			    xopen = "CastToLinestring(CastToXY(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_Z:
+			    xopen = "CastToLinestring(CastToXYZ(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_M:
+			    xopen = "CastToLinestring(CastToXYM(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_Z_M:
+			    xopen = "CastToLinestring(CastToXYZM(";
+			    xclose = "))";
+			    break;
+			};
+		  }
+		break;
+	    case GAIA_POLYGON:
+	    case GAIA_POLYGONZ:
+	    case GAIA_POLYGONM:
+	    case GAIA_POLYGONZM:
+		if (cast_type && !cast_dims)
+		  {
+		      xopen = "CastToPolygon(";
+		      xclose = ")";
+		  }
+		else if (!cast_type && cast_dims)
+		  {
+		      switch (dims)
+			{
+			case GAIA_XY:
+			    xopen = "CastToXY(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_Z:
+			    xopen = "CastToXYZ(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_M:
+			    xopen = "CastToXYM(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_Z_M:
+			    xopen = "CastToXYZM(";
+			    xclose = ")";
+			    break;
+			};
+		  }
+		else
+		  {
+		      switch (dims)
+			{
+			case GAIA_XY:
+			    xopen = "CastToPolygon(CastToXY(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_Z:
+			    xopen = "CastToPolygon(CastToXYZ(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_M:
+			    xopen = "CastToPolygon(CastToXYM(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_Z_M:
+			    xopen = "CastToPolygon(CastToXYZM(";
+			    xclose = "))";
+			    break;
+			};
+		  }
+		break;
+	    case GAIA_MULTIPOINT:
+	    case GAIA_MULTIPOINTZ:
+	    case GAIA_MULTIPOINTM:
+	    case GAIA_MULTIPOINTZM:
+		if (cast_type && !cast_dims)
+		  {
+		      xopen = "CastToMultiPoint(";
+		      xclose = ")";
+		  }
+		else if (!cast_type && cast_dims)
+		  {
+		      switch (dims)
+			{
+			case GAIA_XY:
+			    xopen = "CastToXY(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_Z:
+			    xopen = "CastToXYZ(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_M:
+			    xopen = "CastToXYM(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_Z_M:
+			    xopen = "CastToXYZM(";
+			    xclose = ")";
+			    break;
+			};
+		  }
+		else
+		  {
+		      switch (dims)
+			{
+			case GAIA_XY:
+			    xopen = "CastToMultiPoint(CastToXY(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_Z:
+			    xopen = "CastToMultiPoint(CastToXYZ(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_M:
+			    xopen = "CastToMultiPoint(CastToXYM(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_Z_M:
+			    xopen = "CastToMultiPoint(CastToXYZM(";
+			    xclose = "))";
+			    break;
+			};
+		  }
+		break;
+	    case GAIA_MULTILINESTRING:
+	    case GAIA_MULTILINESTRINGZ:
+	    case GAIA_MULTILINESTRINGM:
+	    case GAIA_MULTILINESTRINGZM:
+		if (cast_type && !cast_dims)
+		  {
+		      xopen = "CastToMultiLinestring(";
+		      xclose = ")";
+		  }
+		else if (!cast_type && cast_dims)
+		  {
+		      switch (dims)
+			{
+			case GAIA_XY:
+			    xopen = "CastToXY(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_Z:
+			    xopen = "CastToXYZ(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_M:
+			    xopen = "CastToXYM(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_Z_M:
+			    xopen = "CastToXYZM(";
+			    xclose = ")";
+			    break;
+			};
+		  }
+		else
+		  {
+		      switch (dims)
+			{
+			case GAIA_XY:
+			    xopen = "CastToMultiLinestring(CastToXY(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_Z:
+			    xopen = "CastToMultiLinestring(CastToXYZ(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_M:
+			    xopen = "CastToMultiLinestring(CastToXYM(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_Z_M:
+			    xopen = "CastToMultiLinestring(CastToXYZM(";
+			    xclose = "))";
+			    break;
+			};
+		  }
+		break;
+	    case GAIA_MULTIPOLYGON:
+	    case GAIA_MULTIPOLYGONZ:
+	    case GAIA_MULTIPOLYGONM:
+	    case GAIA_MULTIPOLYGONZM:
+		if (cast_type && !cast_dims)
+		  {
+		      xopen = "CastToMultiPolygon(";
+		      xclose = ")";
+		  }
+		else if (!cast_type && cast_dims)
+		  {
+		      switch (dims)
+			{
+			case GAIA_XY:
+			    xopen = "CastToXY(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_Z:
+			    xopen = "CastToXYZ(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_M:
+			    xopen = "CastToXYM(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_Z_M:
+			    xopen = "CastToXYZM(";
+			    xclose = ")";
+			    break;
+			};
+		  }
+		else
+		  {
+		      switch (dims)
+			{
+			case GAIA_XY:
+			    xopen = "CastToMultiPolygon(CastToXY(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_Z:
+			    xopen = "CastToMultiPolygon(CastToXYZ(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_M:
+			    xopen = "CastToMultiPolygon(CastToXYM(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_Z_M:
+			    xopen = "CastToMultiPolygon(CastToXYZM(";
+			    xclose = "))";
+			    break;
+			};
+		  }
+		break;
+	    case GAIA_GEOMETRYCOLLECTION:
+	    case GAIA_GEOMETRYCOLLECTIONZ:
+	    case GAIA_GEOMETRYCOLLECTIONM:
+	    case GAIA_GEOMETRYCOLLECTIONZM:
+		if (cast_type && !cast_dims)
+		  {
+		      xopen = "CastToGeometryCollection(";
+		      xclose = ")";
+		  }
+		else if (!cast_type && cast_dims)
+		  {
+		      switch (dims)
+			{
+			case GAIA_XY:
+			    xopen = "CastToXY(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_Z:
+			    xopen = "CastToXYZ(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_M:
+			    xopen = "CastToXYM(";
+			    xclose = ")";
+			    break;
+			case GAIA_XY_Z_M:
+			    xopen = "CastToXYZM(";
+			    xclose = ")";
+			    break;
+			};
+		  }
+		else
+		  {
+		      switch (dims)
+			{
+			case GAIA_XY:
+			    xopen = "CastToGeometryCollection(CastToXY(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_Z:
+			    xopen = "CastToGeometryCollection(CastToXYZ(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_M:
+			    xopen = "CastToGeometryCollection(CastToXYM(";
+			    xclose = "))";
+			    break;
+			case GAIA_XY_Z_M:
+			    xopen = "CastToGeometryCollection(CastToXYZM(";
+			    xclose = "))";
+			    break;
+			};
+		  }
+		break;
+	    };
+	  sql = sqlite3_mprintf ("UPDATE \"%s\" SET \"%s\" = %s\"%s\"%s",
+				 xtable, xgeom, xopen, xgeom, xclose);
+	  free (xtable);
+	  free (xgeom);
+	  ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	    {
+		spatialite_e ("loadwfs: UPDATE-GEOMS error:\"%s\"\n", errMsg);
+		sqlite3_free (errMsg);
+	    }
+      }
+
+/* adjusting GeometryColumns */
+    if (metadata_version == 1)
+      {
+	  /* legacy metadata style <= v.3.1.0 */
+	  const char *pType;
+	  const char *pDims;
+	  switch (type)
+	    {
+	    case GAIA_POINT:
+	    case GAIA_POINTZ:
+	    case GAIA_POINTM:
+	    case GAIA_POINTZM:
+		pType = "POINT";
+		break;
+	    case GAIA_LINESTRING:
+	    case GAIA_LINESTRINGZ:
+	    case GAIA_LINESTRINGM:
+	    case GAIA_LINESTRINGZM:
+		pType = "LINESTRING";
+		break;
+	    case GAIA_POLYGON:
+	    case GAIA_POLYGONZ:
+	    case GAIA_POLYGONM:
+	    case GAIA_POLYGONZM:
+		pType = "POLYGON";
+		break;
+	    case GAIA_MULTIPOINT:
+	    case GAIA_MULTIPOINTZ:
+	    case GAIA_MULTIPOINTM:
+	    case GAIA_MULTIPOINTZM:
+		pType = "MULTIPOINT";
+		break;
+	    case GAIA_MULTILINESTRING:
+	    case GAIA_MULTILINESTRINGZ:
+	    case GAIA_MULTILINESTRINGM:
+	    case GAIA_MULTILINESTRINGZM:
+		pType = "MULTILINESTRING";
+		break;
+	    case GAIA_MULTIPOLYGON:
+	    case GAIA_MULTIPOLYGONZ:
+	    case GAIA_MULTIPOLYGONM:
+	    case GAIA_MULTIPOLYGONZM:
+		pType = "MULTIPOLYGON";
+		break;
+	    case GAIA_GEOMETRYCOLLECTION:
+	    case GAIA_GEOMETRYCOLLECTIONZ:
+	    case GAIA_GEOMETRYCOLLECTIONM:
+	    case GAIA_GEOMETRYCOLLECTIONZM:
+		pType = "GEOMETRYCOLLECTION";
+		break;
+	    };
+	  switch (dims)
+	    {
+	    case GAIA_XY:
+		pDims = "XY";
+		break;
+	    case GAIA_XY_Z:
+		pDims = "XYZ";
+		break;
+	    case GAIA_XY_M:
+		pDims = "XYM";
+		break;
+	    case GAIA_XY_Z_M:
+		pDims = "XYZM";
+		break;
+	    };
+	  sql = sqlite3_mprintf ("UPDATE geometry_columns SET type = %Q, "
+				 "coord_dimension = %Q WHERE Lower(f_table_name) = Lower(%Q) "
+				 "AND Lower(f_geometry_column) = Lower(%Q)",
+				 pType, pDims, table, geometry);
+      }
+    else
+      {
+	  /* current metadata style >= v.4.0.0 */
+	  int nType;
+	  int nDims;
+	  switch (type)
+	    {
+	    case GAIA_POINT:
+		nType = 1;
+		break;
+	    case GAIA_POINTZ:
+		nType = 1001;
+		break;
+	    case GAIA_POINTM:
+		nType = 2001;
+		break;
+	    case GAIA_POINTZM:
+		nType = 3001;
+		break;
+	    case GAIA_LINESTRING:
+		nType = 2;
+		break;
+	    case GAIA_LINESTRINGZ:
+		nType = 1002;
+		break;
+	    case GAIA_LINESTRINGM:
+		nType = 2002;
+		break;
+	    case GAIA_LINESTRINGZM:
+		nType = 3002;
+		break;
+	    case GAIA_POLYGON:
+		nType = 3;
+		break;
+	    case GAIA_POLYGONZ:
+		nType = 1003;
+		break;
+	    case GAIA_POLYGONM:
+		nType = 2003;
+		break;
+	    case GAIA_POLYGONZM:
+		nType = 3003;
+		break;
+	    case GAIA_MULTIPOINT:
+		nType = 4;
+		break;
+	    case GAIA_MULTIPOINTZ:
+		nType = 1004;
+		break;
+	    case GAIA_MULTIPOINTM:
+		nType = 2004;
+	    case GAIA_MULTIPOINTZM:
+		nType = 3004;
+		break;
+	    case GAIA_MULTILINESTRING:
+		nType = 5;
+		break;
+	    case GAIA_MULTILINESTRINGZ:
+		nType = 1005;
+		break;
+	    case GAIA_MULTILINESTRINGM:
+		nType = 2005;
+	    case GAIA_MULTILINESTRINGZM:
+		nType = 3005;
+		break;
+	    case GAIA_MULTIPOLYGON:
+		nType = 6;
+		break;
+	    case GAIA_MULTIPOLYGONZ:
+		nType = 1006;
+		break;
+	    case GAIA_MULTIPOLYGONM:
+		nType = 2006;
+		break;
+	    case GAIA_MULTIPOLYGONZM:
+		nType = 3006;
+		break;
+	    case GAIA_GEOMETRYCOLLECTION:
+		nType = 7;
+		break;
+	    case GAIA_GEOMETRYCOLLECTIONZ:
+		nType = 1007;
+		break;
+	    case GAIA_GEOMETRYCOLLECTIONM:
+		nType = 2007;
+		break;
+	    case GAIA_GEOMETRYCOLLECTIONZM:
+		nType = 3007;
+		break;
+	    };
+	  switch (dims)
+	    {
+	    case GAIA_XY:
+		nDims = 2;
+		break;
+	    case GAIA_XY_Z:
+	    case GAIA_XY_M:
+		nDims = 3;
+		break;
+	    case GAIA_XY_Z_M:
+		nDims = 4;
+		break;
+	    };
+	  sql =
+	      sqlite3_mprintf
+	      ("UPDATE geometry_columns SET geometry_type = %d, "
+	       "coord_dimension = %d WHERE Lower(f_table_name) = Lower(%Q) "
+	       "AND Lower(f_geometry_column) = Lower(%Q)", nType, nDims, table,
+	       geometry);
+      }
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &errMsg);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("loadwfs: UPDATE-GEOMS error:\"%s\"\n", errMsg);
+	  sqlite3_free (errMsg);
+      }
+
+/* confirming the still pendenting SQL transaction */
+    if (sqlite3_exec (sqlite, "COMMIT", NULL, NULL, &errMsg) != SQLITE_OK)
+      {
+	  spatialite_e ("loadwfs: COMMIT error:\"%s\"\n", errMsg);
+	  sqlite3_free (errMsg);
+      }
+}
+
 SPATIALITE_DECLARE int
 load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, int swap_axes,
 		     char *table, char *pk_column_name, int spatial_index,
 		     int page_size, int *rows, char **err_msg,
-		     void (*progress_callback) (int))
+		     void (*progress_callback) (int, void *),
+		     void *callback_ptr)
 {
 /* attempting to load data from some WFS source [paged]*/
     xmlDocPtr xml_doc = NULL;
@@ -2145,7 +3169,7 @@ load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, int swap_axes,
 	    {
 		/* invoking the progress callback */
 		int ext_rows = *rows;
-		progress_callback (ext_rows);
+		progress_callback (ext_rows, callback_ptr);
 	    }
 
 	  if (schema->error)
@@ -2177,6 +3201,18 @@ load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, int swap_axes,
 	  startIdx += nRows;
       }
 
+    if (schema->geometry_type == GAIA_GEOMETRYCOLLECTION)
+      {
+	  /* attempting to set a more precise GeometryType */
+	  int type;
+	  int cast_type;
+	  int cast_dims;
+	  if (check_real_type (schema, &type, &cast_type, &cast_dims))
+	    {
+		do_adjust_geoms (sqlite, table, schema->geometry_name, type,
+				 cast_type, cast_dims);
+	    }
+      }
     ok = 1;
   end:
     if (schema != NULL)
@@ -2332,9 +3368,9 @@ parse_wfs_layer (xmlNodePtr node, struct wfs_catalog *catalog)
 				  struct wfs_layer_def *lyr = catalog->last;
 				  add_wfs_srid_to_layer (lyr, srid,
 							 (const char
-							  *) (cur_node->
-							      children->
-							      content));
+							  *)
+							 (cur_node->children->
+							  content));
 			      }
 			}
 		      if (strcmp ((const char *) (cur_node->name), "Keywords")
@@ -3023,7 +4059,7 @@ destroy_wfs_schema (gaiaWFSschemaPtr handle)
 }
 
 SPATIALITE_DECLARE int
-get_wfs_schema_count (gaiaWFSschemaPtr handle)
+get_wfs_schema_column_count (gaiaWFSschemaPtr handle)
 {
 /* counting how many layers are defined within a WFS-Schema */
     int count = 0;
@@ -3099,7 +4135,8 @@ get_wfs_schema_column_info (gaiaWFScolumnPtr handle, const char **name,
 SPATIALITE_DECLARE int
 load_from_wfs (sqlite3 * sqlite, char *path_or_url, int swap_axes,
 	       char *table, char *pk_column_name, int spatial_index, int *rows,
-	       char **err_msg, void (*progress_callback) (int))
+	       char **err_msg, void (*progress_callback) (int, void *),
+	       void *callback_ptr)
 {
 /* LIBXML2 isn't enabled: always returning an error */
     return load_from_wfs_paged (sqlite, path_or_url, swap_axes, table,
@@ -3111,7 +4148,8 @@ SPATIALITE_DECLARE int
 load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, int swap_axes,
 		     char *table, char *pk_column_name, int spatial_index,
 		     int page_size, int *rows, char **err_msg,
-		     void (*progress_callback) (int))
+		     void (*progress_callback) (int, void *),
+		     void *callback_ptr)
 {
 /* LIBXML2 isn't enabled: always returning an error */
     int len;
@@ -3121,7 +4159,7 @@ load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, int swap_axes,
 /* silencing stupid compiler warnings */
     if (sqlite == NULL || path_or_url == NULL || swap_axes == 0 || table == NULL
 	|| pk_column_name == NULL || spatial_index == 0 || page_size == 0
-	|| rows == NULL || progress_callback == NULL)
+	|| rows == NULL || progress_callback == NULL || progress_callback)
 	path_or_url = NULL;
 
     len = strlen (msg);
@@ -3323,7 +4361,7 @@ destroy_wfs_schema (gaiaWFSschemaPtr handle)
 }
 
 SPATIALITE_DECLARE int
-get_wfs_schema_count (gaiaWFSschemaPtr handle)
+get_wfs_schema_column_count (gaiaWFSschemaPtr handle)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
 
