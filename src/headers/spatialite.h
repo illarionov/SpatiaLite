@@ -740,7 +740,8 @@ extern "C"
  Loads data from some WFS source 
 
  \param sqlite handle to current DB connection
- \param path_or_url pointer to some WFS-GetFeature XML Document (could be a pathname or an URL). 
+ \param path_or_url pointer to some WFS-GetFeature XML Document (could be a pathname or an URL).
+ \param layer_name the name of the WFS layer. 
  \param swap_axes if TRUE the X and Y axes will be swapped 
  \param table the name of the table to be created
  \param pk_column name of the Primary Key column; if NULL or mismatching
@@ -763,8 +764,8 @@ extern "C"
  to load_from_wfs_paged() setting a negative page size. 
  */
     SPATIALITE_DECLARE int load_from_wfs (sqlite3 * sqlite, char *path_or_url,
-					  int swap_axes, char *table,
-					  char *pk_column_name,
+					  char *layer_name, int swap_axes,
+					  char *table, char *pk_column_name,
 					  int spatial_index, int *rows,
 					  char **err_msg,
 					  void (*progress_callback) (int,
@@ -776,6 +777,7 @@ extern "C"
 
  \param sqlite handle to current DB connection
  \param path_or_url pointer to some WFS-GetFeature XML Document (could be a pathname or an URL).
+ \param layer_name the name of the WFS layer.
  \param swap_axes if TRUE the X and Y axes will be swapped 
  \param table the name of the table to be created
  \param pk_column name of the Primary Key column; if NULL or mismatching
@@ -803,13 +805,15 @@ extern "C"
  */
     SPATIALITE_DECLARE int load_from_wfs_paged (sqlite3 * sqlite,
 						char *path_or_url,
-						int swap_axes, char *table,
+						char *layer_name, int swap_axes,
+						char *table,
 						char *pk_column_name,
 						int spatial_index,
 						int page_size, int *rows,
 						char **err_msg,
-						void (*progress_callback)
-						(int, void *),
+						void (*progress_callback) (int,
+									   void
+									   *),
 						void *callback_ptr);
 
 /**
@@ -1057,6 +1061,7 @@ extern "C"
  you are responsible to destroy (before or after) any WFS-Schema returned by create_wfs_schema().
  */
     SPATIALITE_DECLARE gaiaWFSschemaPtr create_wfs_schema (char *path_or_url,
+							   char *layer_name,
 							   char **err_msg);
 
 /**

@@ -16070,17 +16070,17 @@ fnct_Distance (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				    }
 				  if (use_ellipsoid)
 				      dist =
-					  gaiaGeodesicDistance (a, b, rf, x0,
-								y0, x1, y1);
+					  gaiaGeodesicDistance (a, b, rf, y0,
+								x0, y1, x1);
 				  else
 				    {
 					a = 6378137.0;
 					rf = 298.257223563;
 					b = (a * (1.0 - (1.0 / rf)));
 					dist =
-					    gaiaGreatCircleDistance (a, b, x0,
-								     y0, x1,
-								     y1);
+					    gaiaGreatCircleDistance (a, b, y0,
+								     x0, y1,
+								     x1);
 				    }
 				  if (dist < 0.0)
 				    {

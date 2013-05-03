@@ -119,7 +119,7 @@ struct wfs_column_def
     char *name;
     int type;
     int is_nullable;
-    char *value;
+    const char *pValue;
     struct wfs_column_def *next;
 };
 
@@ -135,6 +135,7 @@ struct wfs_layer_schema
 /* a WFS table / layer schema */
     int error;
     int swap_axes;
+    char *layer_name;
     struct wfs_column_def *first;
     struct wfs_column_def *last;
     char *geometry_name;
@@ -175,7 +176,7 @@ alloc_wfs_column (const char *name, int type, int is_nullable)
     strcpy (col->name, name);
     col->type = type;
     col->is_nullable = is_nullable;
-    col->value = NULL;
+    col->pValue = NULL;
     col->next = NULL;
     return col;
 }
@@ -188,18 +189,20 @@ free_wfs_column (struct wfs_column_def *col)
 	return;
     if (col->name != NULL)
 	free (col->name);
-    if (col->value != NULL)
-	free (col->value);
     free (col);
 }
 
 static struct wfs_layer_schema *
-alloc_wfs_layer_schema ()
+alloc_wfs_layer_schema (const char *layer_name, int swap_axes)
 {
 /* allocating an empty WFS schema descriptor */
+    int len;
     struct wfs_layer_schema *ptr = malloc (sizeof (struct wfs_layer_schema));
     ptr->error = 0;
-    ptr->swap_axes = 0;
+    ptr->swap_axes = swap_axes;
+    len = strlen (layer_name);
+    ptr->layer_name = malloc (len + 1);
+    strcpy (ptr->layer_name, layer_name);
     ptr->first = NULL;
     ptr->last = NULL;
     ptr->geometry_name = NULL;
@@ -276,6 +279,8 @@ free_wfs_layer_schema (struct wfs_layer_schema *ptr)
     struct wfs_column_def *n_col;
     if (ptr == NULL)
 	return;
+    if (ptr->layer_name != NULL)
+	free (ptr->layer_name);
     col = ptr->first;
     while (col != NULL)
       {
@@ -304,11 +309,7 @@ reset_wfs_values (struct wfs_layer_schema *ptr)
     col = ptr->first;
     while (col != NULL)
       {
-	  if (col->value != NULL)
-	    {
-		free (col->value);
-		col->value = NULL;
-	    }
+	  col->pValue = NULL;
 	  col = col->next;
       }
     if (ptr->geometry_value != NULL)
@@ -329,7 +330,7 @@ count_wfs_values (struct wfs_layer_schema *ptr)
     col = ptr->first;
     while (col != NULL)
       {
-	  if (col->value != NULL)
+	  if (col->pValue != NULL)
 	      count++;
 	  col = col->next;
       }
@@ -1087,7 +1088,8 @@ parse_wfs_schema (xmlNodePtr node, struct wfs_layer_schema *schema,
 }
 
 static struct wfs_layer_schema *
-load_wfs_schema (const char *path_or_url, int swap_axes, char **err_msg)
+load_wfs_schema (const char *path_or_url, const char *layer_name, int swap_axes,
+		 char **err_msg)
 {
 /* attempting to retrieve the WFS layer schema */
     xmlDocPtr xml_doc = NULL;
@@ -1101,6 +1103,8 @@ load_wfs_schema (const char *path_or_url, int swap_axes, char **err_msg)
     gaiaOutBufferInitialize (&errBuf);
     xmlSetGenericErrorFunc (&errBuf, parsingError);
     if (path_or_url == NULL)
+	goto end;
+    if (layer_name == NULL)
 	goto end;
 
     xml_doc = xmlReadFile (path_or_url, NULL, 0);
@@ -1116,8 +1120,7 @@ load_wfs_schema (const char *path_or_url, int swap_axes, char **err_msg)
 	  goto end;
       }
 
-    schema = alloc_wfs_layer_schema ();
-    schema->swap_axes = swap_axes;
+    schema = alloc_wfs_layer_schema (layer_name, swap_axes);
     root = xmlDocGetRootElement (xml_doc);
     parse_wfs_schema (root, schema, &sequence);
     if (schema->first == NULL && schema->geometry_name == NULL)
@@ -1312,15 +1315,10 @@ static void
 set_feature_value (xmlNodePtr node, struct wfs_column_def *col)
 {
 /* saving an attribute value */
+    if (node == NULL)
+	return;
     if (node->type == XML_TEXT_NODE)
-      {
-	  int len = strlen ((const char *) node->content);
-	  char *buf = malloc (len + 1);
-	  strcpy (buf, (const char *) node->content);
-	  if (col->value != NULL)
-	      free (col->value);
-	  col->value = buf;
-      }
+	col->pValue = (const char *) (node->content);
 }
 
 static void
@@ -1647,23 +1645,23 @@ do_insert (struct wfs_layer_schema *schema)
     col = schema->first;
     while (col != NULL)
       {
-	  if (col->value == NULL)
+	  if (col->pValue == NULL)
 	      sqlite3_bind_null (stmt, ind);
 	  else
 	    {
 		if (col->type == SQLITE_INTEGER)
 		  {
-		      sqlite3_int64 val = atoll (col->value);
+		      sqlite3_int64 val = atoll (col->pValue);
 		      sqlite3_bind_int64 (stmt, ind, val);
 		  }
 		else if (col->type == SQLITE_FLOAT)
 		  {
-		      double val = atof (col->value);
+		      double val = atof (col->pValue);
 		      sqlite3_bind_double (stmt, ind, val);
 		  }
 		else
-		    sqlite3_bind_text (stmt, ind, col->value,
-				       strlen (col->value), SQLITE_STATIC);
+		    sqlite3_bind_text (stmt, ind, col->pValue,
+				       strlen (col->pValue), SQLITE_STATIC);
 	    }
 	  ind++;
 	  col = col->next;
@@ -1719,11 +1717,11 @@ save_attribute (struct wfs_feature *feature, struct wfs_column_def *col)
 		if (attr->value != NULL)
 		    free (attr->value);
 		attr->value = NULL;
-		if (col->value != NULL)
+		if (col->pValue != NULL)
 		  {
-		      int len = strlen (col->value);
+		      int len = strlen (col->pValue);
 		      attr->value = malloc (len + 1);
-		      strcpy (attr->value, col->value);
+		      strcpy (attr->value, col->pValue);
 		  }
 		return;
 	    }
@@ -1773,17 +1771,28 @@ parse_wfs_features (xmlNodePtr node, struct wfs_layer_schema *schema, int *rows)
       {
 	  if (cur_node->type == XML_ELEMENT_NODE)
 	    {
-		if (parse_wfs_single_feature (cur_node, schema))
+		char *entity_name;
+		if (cur_node->ns != NULL)
+		    entity_name =
+			sqlite3_mprintf ("%s:%s", cur_node->ns->prefix,
+					 cur_node->name);
+		else
+		    entity_name = sqlite3_mprintf ("%s", cur_node->name);
+		if (strcmp (schema->layer_name, entity_name) == 0
+		    || strcmp (schema->layer_name, cur_node->name) == 0)
 		  {
-		      if (schema->error == 0)
+		      if (parse_wfs_single_feature (cur_node->children, schema))
 			{
-			    if (do_insert (schema))
-				*rows += 1;
+			    if (schema->error == 0)
+			      {
+				  if (do_insert (schema))
+				      *rows += 1;
+			      }
 			}
-		      return;
 		  }
 		else
 		    parse_wfs_features (cur_node->children, schema, rows);
+		sqlite3_free (entity_name);
 	    }
       }
 }
@@ -2318,14 +2327,14 @@ do_rollback (sqlite3 * sqlite, struct wfs_layer_schema *schema)
 }
 
 SPATIALITE_DECLARE int
-load_from_wfs (sqlite3 * sqlite, char *path_or_url, int swap_axes,
-	       char *table, char *pk_column_name, int spatial_index, int *rows,
-	       char **err_msg, void (*progress_callback) (int, void *),
-	       void *callback_ptr)
+load_from_wfs (sqlite3 * sqlite, char *path_or_url, char *layer_name,
+	       int swap_axes, char *table, char *pk_column_name,
+	       int spatial_index, int *rows, char **err_msg,
+	       void (*progress_callback) (int, void *), void *callback_ptr)
 {
 /* attempting to load data from some WFS source [not-paged] */
-    return load_from_wfs_paged (sqlite, path_or_url, swap_axes, table,
-				pk_column_name, spatial_index, -1, rows,
+    return load_from_wfs_paged (sqlite, path_or_url, layer_name, swap_axes,
+				table, pk_column_name, spatial_index, -1, rows,
 				err_msg, progress_callback, callback_ptr);
 }
 
@@ -2936,8 +2945,8 @@ do_adjust_geoms (sqlite3 * sqlite, const char *table, const char *geometry,
     else
       {
 	  /* current metadata style >= v.4.0.0 */
-	  int nType;
-	  int nDims;
+	  int nType = 0;
+	  int nDims = 2;
 	  switch (type)
 	    {
 	    case GAIA_POINT:
@@ -3060,10 +3069,10 @@ do_adjust_geoms (sqlite3 * sqlite, const char *table, const char *geometry,
 }
 
 SPATIALITE_DECLARE int
-load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, int swap_axes,
-		     char *table, char *pk_column_name, int spatial_index,
-		     int page_size, int *rows, char **err_msg,
-		     void (*progress_callback) (int, void *),
+load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, char *layer_name,
+		     int swap_axes, char *table, char *pk_column_name,
+		     int spatial_index, int page_size, int *rows,
+		     char **err_msg, void (*progress_callback) (int, void *),
 		     void *callback_ptr)
 {
 /* attempting to load data from some WFS source [paged]*/
@@ -3127,7 +3136,9 @@ load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, int swap_axes,
 		  }
 
 		/* loading and parsing the WFS schema */
-		schema = load_wfs_schema (describe_uri, swap_axes, err_msg);
+		schema =
+		    load_wfs_schema (describe_uri, layer_name, swap_axes,
+				     err_msg);
 		if (schema == NULL)
 		    goto end;
 
@@ -3247,8 +3258,7 @@ parse_keyword (xmlNodePtr node, struct wfs_catalog *catalog)
 				  add_wfs_keyword_to_layer (lyr,
 							    (const char
 							     *)
-							    (child_node->
-							     content));
+							    (child_node->content));
 			      }
 			}
 		  }
@@ -3369,8 +3379,8 @@ parse_wfs_layer (xmlNodePtr node, struct wfs_catalog *catalog)
 				  add_wfs_srid_to_layer (lyr, srid,
 							 (const char
 							  *)
-							 (cur_node->children->
-							  content));
+							 (cur_node->
+							  children->content));
 			      }
 			}
 		      if (strcmp ((const char *) (cur_node->name), "Keywords")
@@ -3402,8 +3412,7 @@ parse_wfs_get_100 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 									(const
 									 char
 									 *)
-									(text->
-									 content));
+									(text->content));
 				  else
 				      set_wfs_catalog_base_describe_url
 					  (catalog,
@@ -3522,8 +3531,7 @@ parse_wfs_get_110 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 									(const
 									 char
 									 *)
-									(text->
-									 content));
+									(text->content));
 				  else
 				      set_wfs_catalog_base_describe_url
 					  (catalog,
@@ -4042,10 +4050,11 @@ get_wfs_describe_url (gaiaWFScatalogPtr handle, const char *name,
 }
 
 SPATIALITE_DECLARE gaiaWFSschemaPtr
-create_wfs_schema (char *path_or_url, char **err_msg)
+create_wfs_schema (char *path_or_url, char *layer_name, char **err_msg)
 {
 /* public method: creating a WFS-Schema object */
-    return (gaiaWFSschemaPtr) load_wfs_schema (path_or_url, 0, err_msg);
+    return (gaiaWFSschemaPtr) load_wfs_schema (path_or_url, layer_name, 0,
+					       err_msg);
 }
 
 SPATIALITE_DECLARE void
@@ -4133,22 +4142,22 @@ get_wfs_schema_column_info (gaiaWFScolumnPtr handle, const char **name,
 #else /* LIBXML2 isn't enabled */
 
 SPATIALITE_DECLARE int
-load_from_wfs (sqlite3 * sqlite, char *path_or_url, int swap_axes,
-	       char *table, char *pk_column_name, int spatial_index, int *rows,
-	       char **err_msg, void (*progress_callback) (int, void *),
-	       void *callback_ptr)
+load_from_wfs (sqlite3 * sqlite, char *path_or_url, char *layer_name,
+	       int swap_axes, char *table, char *pk_column_name,
+	       int spatial_index, int *rows, char **err_msg,
+	       void (*progress_callback) (int, void *), void *callback_ptr)
 {
 /* LIBXML2 isn't enabled: always returning an error */
-    return load_from_wfs_paged (sqlite, path_or_url, swap_axes, table,
-				pk_column_name, spatial_index, -1, rows,
-				err_msg, progress_callback);
+    return load_from_wfs_paged (sqlite, path_or_url, layer_name, swap_axes,
+				table, pk_column_name, spatial_index, -1, rows,
+				err_msg, progress_callback, callback_ptr);
 }
 
 SPATIALITE_DECLARE int
-load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, int swap_axes,
-		     char *table, char *pk_column_name, int spatial_index,
-		     int page_size, int *rows, char **err_msg,
-		     void (*progress_callback) (int, void *),
+load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, char *layer_name,
+		     int swap_axes, char *table, char *pk_column_name,
+		     int spatial_index, int page_size, int *rows,
+		     char **err_msg, void (*progress_callback) (int, void *),
 		     void *callback_ptr)
 {
 /* LIBXML2 isn't enabled: always returning an error */
@@ -4332,7 +4341,7 @@ get_wfs_request_url (gaiaWFScatalogPtr handle, const char *name,
 }
 
 SPATIALITE_DECLARE gaiaWFSschemaPtr
-create_wfs_schema (char *path_or_url, char **err_msg)
+create_wfs_schema (char *path_or_url, char *layer_name, char **err_msg)
 {
 /* LIBXML2 isn't enabled: does absolutely nothing */
     int len;
@@ -4340,7 +4349,7 @@ create_wfs_schema (char *path_or_url, char **err_msg)
 	"and is thus unable to support WFS-SCHEMA";
 
 /* silencing stupid compiler warnings */
-    if (path_or_url != NULL)
+    if (path_or_url != NULL || layer_name == NULL)
 	path_or_url = NULL;
 
     len = strlen (msg);

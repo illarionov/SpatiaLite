@@ -94,7 +94,7 @@ int main (int argc, char *argv[])
     }
     
 #ifdef ENABLE_LIBXML2	/* only if LIBXML2 is supported */
-    ret = load_from_wfs (handle, "./test.wfs", 0, "test_wfs1", "objectid", 1, &row_count, &err_msg, NULL, NULL);
+    ret = load_from_wfs (handle, "./test.wfs", "topp:p02", 0, "test_wfs1", "objectid", 1, &row_count, &err_msg, NULL, NULL);
     if (!ret) {
         fprintf (stderr, "load_from_wfs() error for test.wfs (1): %s\n", err_msg);
 	free(err_msg);
@@ -107,7 +107,7 @@ int main (int argc, char *argv[])
 	return -4; 
     }
 
-    ret = load_from_wfs (handle, "./test.wfs", 0, "test_wfs2", NULL, 0, &row_count, &err_msg, NULL, NULL);
+    ret = load_from_wfs (handle, "./test.wfs", "topp:p02", 0, "test_wfs2", NULL, 0, &row_count, &err_msg, NULL, NULL);
     if (!ret) {
         fprintf (stderr, "load_from_wfs() error for test.wfs (2): %s\n", err_msg);
 	free(err_msg);
@@ -486,7 +486,7 @@ int main (int argc, char *argv[])
     }
     destroy_wfs_catalog(NULL);
 
-    schema = create_wfs_schema ("./describefeaturetype.wfs", &err_msg);
+    schema = create_wfs_schema ("./describefeaturetype.wfs", "sf:roads", &err_msg);
     if (schema == NULL) {
         fprintf (stderr, "create_wfs_schema() error for describefeaturetype.wfs: %s\n", err_msg);
 	free(err_msg);
@@ -569,7 +569,7 @@ int main (int argc, char *argv[])
     }
     destroy_wfs_schema (schema);
 
-    schema = create_wfs_schema (NULL, &err_msg);
+    schema = create_wfs_schema (NULL, NULL, &err_msg);
     if (schema != NULL) {
         fprintf (stderr, "create_wfs_schema() unexpected result for NULL\n");
 	free(err_msg);

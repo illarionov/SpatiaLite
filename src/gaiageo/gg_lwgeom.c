@@ -1304,6 +1304,35 @@ fromLWGeomValidated (const LWGEOM * lwgeom, const int dimension_model,
       default:
 	  if (check_valid_type (lwgeom, declared_type))
 	      gaia = fromLWGeom (lwgeom, dimension_model, declared_type);
+	  if (gaia == NULL)
+	    {
+		/* Andrea Peri: 2013-05-02 returning anyway the LWGEOM geometry,
+		   / even if it has a mismatching type */
+		int type = -1;
+		switch (lwgeom->type)
+		  {
+		  case POINTTYPE:
+		      type = GAIA_POINT;
+		      break;
+		  case LINETYPE:
+		      type = GAIA_LINESTRING;
+		      break;
+		  case POLYGONTYPE:
+		      type = GAIA_POLYGON;
+		      break;
+		  case MULTIPOINTTYPE:
+		      type = GAIA_MULTIPOINT;
+		      break;
+		  case MULTILINETYPE:
+		      type = GAIA_MULTILINESTRING;
+		      break;
+		  case MULTIPOLYGONTYPE:
+		      type = GAIA_MULTIPOLYGON;
+		      break;
+		  };
+		if (type >= 0)
+		    gaia = fromLWGeom (lwgeom, dimension_model, type);
+	    }
 	  break;
       }
     return gaia;
@@ -1347,8 +1376,14 @@ fromLWGeomDiscarded (const LWGEOM * lwgeom, const int dimension_model,
 		    fromLWGeomIncremental (gaia, lwg2);
 	    }
       }
+/*
+Andrea Peri: 2013-05-02
+when a single geometry is returned by LWGEOM it's always "valid"
+and there are no discarded items at all
+
     else if (!check_valid_type (lwgeom, declared_type))
 	gaia = fromLWGeom (lwgeom, dimension_model, declared_type);
+*/
     return gaia;
 }
 
@@ -1662,6 +1697,7 @@ toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
     int ngeoms;
     int has_z = 0;
     int has_m = 0;
+    int close_ring;
     gaiaRingPtr rng;
     POINTARRAY **ppaa;
     POINT4D point;
@@ -1673,7 +1709,11 @@ toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
     ngeoms = pg->NumInteriors;
     ppaa = lwalloc (sizeof (POINTARRAY *) * (ngeoms + 1));
     rng = pg->Exterior;
-    ppaa[0] = ptarray_construct (has_z, has_m, rng->Points);
+    close_ring = check_unclosed_ring (rng);
+    if (close_ring)
+	ppaa[0] = ptarray_construct (has_z, has_m, rng->Points + 1);
+    else
+	ppaa[0] = ptarray_construct (has_z, has_m, rng->Points);
     for (iv = 0; iv < rng->Points; iv++)
       {
 	  /* copying vertices - Exterior Ring */
@@ -1701,11 +1741,42 @@ toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
 	      point.m = m;
 	  ptarray_set_point4d (ppaa[0], iv, &point);
       }
+    if (close_ring)
+      {
+	  /* making an unclosed ring to be closed */
+	  if (pg->DimensionModel == GAIA_XY_Z)
+	    {
+		gaiaGetPointXYZ (rng->Coords, 0, &x, &y, &z);
+	    }
+	  else if (pg->DimensionModel == GAIA_XY_M)
+	    {
+		gaiaGetPointXYM (rng->Coords, 0, &x, &y, &m);
+	    }
+	  else if (pg->DimensionModel == GAIA_XY_Z_M)
+	    {
+		gaiaGetPointXYZM (rng->Coords, 0, &x, &y, &z, &m);
+	    }
+	  else
+	    {
+		gaiaGetPoint (rng->Coords, 0, &x, &y);
+	    }
+	  point.x = x;
+	  point.y = y;
+	  if (has_z)
+	      point.z = z;
+	  if (has_m)
+	      point.m = m;
+	  ptarray_set_point4d (ppaa[0], rng->Points, &point);
+      }
     for (ib = 0; ib < pg->NumInteriors; ib++)
       {
 	  /* copying vertices - Interior Rings */
 	  rng = pg->Interiors + ib;
-	  ppaa[1 + ib] = ptarray_construct (has_z, has_m, rng->Points);
+	  close_ring = check_unclosed_ring (rng);
+	  if (close_ring)
+	      ppaa[1 + ib] = ptarray_construct (has_z, has_m, rng->Points + 1);
+	  else
+	      ppaa[1 + ib] = ptarray_construct (has_z, has_m, rng->Points);
 	  for (iv = 0; iv < rng->Points; iv++)
 	    {
 		if (pg->DimensionModel == GAIA_XY_Z)
@@ -1731,6 +1802,33 @@ toLWGeomPolygon (gaiaPolygonPtr pg, int srid)
 		if (has_m)
 		    point.m = m;
 		ptarray_set_point4d (ppaa[1 + ib], iv, &point);
+	    }
+	  if (close_ring)
+	    {
+		/* making an unclosed ring to be closed */
+		if (pg->DimensionModel == GAIA_XY_Z)
+		  {
+		      gaiaGetPointXYZ (rng->Coords, 0, &x, &y, &z);
+		  }
+		else if (pg->DimensionModel == GAIA_XY_M)
+		  {
+		      gaiaGetPointXYM (rng->Coords, 0, &x, &y, &m);
+		  }
+		else if (pg->DimensionModel == GAIA_XY_Z_M)
+		  {
+		      gaiaGetPointXYZM (rng->Coords, 0, &x, &y, &z, &m);
+		  }
+		else
+		  {
+		      gaiaGetPoint (rng->Coords, 0, &x, &y);
+		  }
+		point.x = x;
+		point.y = y;
+		if (has_z)
+		    point.z = z;
+		if (has_m)
+		    point.m = m;
+		ptarray_set_point4d (ppaa[0], rng->Points, &point);
 	    }
       }
     return (LWGEOM *) lwpoly_construct (srid, NULL, ngeoms + 1, ppaa);

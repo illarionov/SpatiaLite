@@ -4,5 +4,5 @@ SELECT ST_Distance(MakePointM(11.1, 42.1, 0.1), MakePointM(11.2, 42.2, 0.2), 0);
 1 # rows (not including the header row)
 1 # columns
 ST_Distance(MakePointM(11.1, 42.1, 0.1), MakePointM(11.2, 42.2, 0.2), 0)
-15577.651163:6
+13842.154368:6
 
