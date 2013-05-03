@@ -851,7 +851,7 @@ extern "C"
 
  \return the base URL for any WFS-GetFeature call: NULL is undefined
  
- \sa get_wfs_catalog, get_wfs_base_describe_url, get_wfs_request_url
+ \sa create_wfs_catalog, get_wfs_base_describe_url, get_wfs_request_url
  */
     SPATIALITE_DECLARE const char *get_wfs_base_request_url (gaiaWFScatalogPtr
 							     handle);
@@ -938,9 +938,9 @@ extern "C"
  \return the pointer to the required WFS-Layer object: NULL if the passed index
  isn't valid
  
- \sa create_wfs_catalog, get_wfs_catalog_count, get_wfs_layer_name, get_wfs_layer_title, 
- get_wfs_layer_abstract, get_wfs_layer_srid_count, get_wfs_layer_srid, 
- get_wfs_layer_keyword_count, get_wfs_layer_keyword
+ \sa create_wfs_catalog, get_wfs_catalog_count, get_wfs_item_name, get_wfs_item_title, 
+ get_wfs_item_abstract, get_wfs_layer_srid_count, get_wfs_layer_srid, 
+ get_wfs_keyword_count, get_wfs_keyword
  */
     SPATIALITE_DECLARE gaiaWFSitemPtr get_wfs_catalog_item (gaiaWFScatalogPtr
 							    handle, int index);
@@ -954,7 +954,7 @@ extern "C"
  \return the name corresponding to the WFS-Layer object
  
  \sa get_wfs_layer_title, get_wfs_layer_abstract, get_wfs_layer_srid_count, get_wfs_layer_srid, 
- get_wfs_layer_keyword_count, get_wfs_layer_keyword
+ get_wfs_keyword_count, get_wfs_keyword
  */
     SPATIALITE_DECLARE const char *get_wfs_item_name (gaiaWFSitemPtr handle);
 
@@ -966,8 +966,8 @@ extern "C"
 
  \return the title corresponding to the WFS-Layer object
  
- \sa get_wfs_layer_name, get_wfs_layer_abstract, get_wfs_layer_srid_count, get_wfs_layer_srid, 
- get_wfs_layer_keyword_count, get_wfs_layer_keyword
+ \sa get_wfs_item_name, get_wfs_item_abstract, get_wfs_layer_srid_count, get_wfs_layer_srid, 
+ get_wfs_keyword_count, get_wfs_keyword
  */
     SPATIALITE_DECLARE const char *get_wfs_item_title (gaiaWFSitemPtr handle);
 
@@ -979,8 +979,8 @@ extern "C"
 
  \return the abstract corresponding to the WFS-Layer object
  
- \sa get_wfs_layer_name, get_wfs_layer_title, get_wfs_layer_srid_count, get_wfs_layer_srid, 
- get_wfs_layer_keyword_count, get_wfs_layer_keyword
+ \sa get_wfs_item_name, get_wfs_item_title, get_wfs_layer_srid_count, get_wfs_layer_srid, 
+ get_wfs_keyword_count, get_wfs_keyword
  */
     SPATIALITE_DECLARE const char *get_wfs_item_abstract (gaiaWFSitemPtr
 							  handle);
@@ -994,8 +994,8 @@ extern "C"
  \return the total count of SRIDs supported by a WFS-Item object: 
  a negative number if the WFS-Item isn't valid
  
- \sa get_wfs_layer_name, get_wfs_layer_title, get_wfs_layer_abstract, 
- get_wfs_layer_srid, get_wfs_layer_keyword_count, get_wfs_layer_keyword
+ \sa get_wfs_item_name, get_wfs_item_title, get_wfs_item_abstract, 
+ get_wfs_layer_srid, get_wfs_keyword_count, get_wfs_keyword
  */
     SPATIALITE_DECLARE int get_wfs_layer_srid_count (gaiaWFSitemPtr handle);
 
@@ -1009,8 +1009,8 @@ extern "C"
 
  \return the SRID-value: a negative number if the required SRID-value isn't defined.
  
- \sa get_wfs_layer_name, get_wfs_layer_title, get_wfs_layer_abstract, 
- get_wfs_layer_srid_count, get_wfs_layer_keyword_count, get_wfs_layer_keyword
+ \sa get_wfs_item_name, get_wfs_item_title, get_wfs_item_abstract, 
+ get_wfs_layer_srid_count, get_wfs_keyword_count, get_wfs_keyword
  */
     SPATIALITE_DECLARE int get_wfs_layer_srid (gaiaWFSitemPtr handle,
 					       int index);
@@ -1024,7 +1024,7 @@ extern "C"
  \return the total count of Keyword associated to a WFS-Item object: 
  a negative number if the WFS-Item isn't valid
  
- \sa get_wfs_layer_name, get_wfs_layer_title, get_wfs_layer_abstract, 
+ \sa get_wfs_item_name, get_wfs_item_title, get_wfs_item_abstract, 
  get_wfs_layer_srid_count, get_wfs_layer_srid, get_wfs_layer_keyword
  */
     SPATIALITE_DECLARE int get_wfs_keyword_count (gaiaWFSitemPtr handle);
@@ -1039,7 +1039,7 @@ extern "C"
 
  \return the Keyword value: NULL if the required Keyword isn't defined.
  
- \sa get_wfs_layer_name, get_wfs_layer_title, get_wfs_layer_abstract, 
+ \sa get_wfs_item_name, get_wfs_item_title, get_wfs_item_abstract, 
  get_wfs_layer_srid_count, get_wfs_layer_srid, get_wfs_layer_keyword
  */
     SPATIALITE_DECLARE const char *get_wfs_keyword (gaiaWFSitemPtr handle,
@@ -1082,7 +1082,7 @@ extern "C"
  \param name on completion will contain a pointer to the GeometryColumn name
  \param type on completion will contain the GeometryType set for the Column;
  could be one of GAIA_POINT, GAIA_LINESTRING, GAIA_POLYGON, GAIA_MULTIPOINT,
- GAIA_MULTILINESTRIN, GAIA_MULTIPOLYGON or GAIA_GEOMETRYCOLLECTION
+ GAIA_MULTILINESTRING, GAIA_MULTIPOLYGON or GAIA_GEOMETRYCOLLECTION
  \param srid on completion will contain the SRID-value set for the GeometryColumn
  \param dims on completion will contain the dimensions (2 or 3) set
  for the GeometryColumn
