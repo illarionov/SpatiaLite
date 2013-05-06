@@ -814,15 +814,7 @@ int main (int argc, char *argv[])
     }
 
     spatialite_init_ex (db_handle, cache, 0);
-    
-    ret = sqlite3_exec (db_handle, "SELECT InitSpatialMetadata(1)", NULL, NULL, &err_msg);
-    if (ret != SQLITE_OK) {
-	fprintf (stderr, "InitSpatialMetadata() error: %s\n", err_msg);
-	sqlite3_free(err_msg);
-	sqlite3_close(db_handle);
-	return -2;
-    }
-	
+
     ret = do_test(db_handle);
     if (ret != 0) {
 	fprintf(stderr, "error while testing legacy style metadata layout\n");
