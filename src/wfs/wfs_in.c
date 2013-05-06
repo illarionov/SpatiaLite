@@ -1111,7 +1111,7 @@ load_wfs_schema (const char *path_or_url, const char *layer_name, int swap_axes,
     if (xml_doc == NULL)
       {
 	  /* parsing error; not a well-formed XML */
-	  if (errBuf.Buffer != NULL)
+	  if (errBuf.Buffer != NULL && err_msg != NULL)
 	    {
 		len = strlen (errBuf.Buffer);
 		*err_msg = malloc (len + 1);
@@ -2118,11 +2118,16 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
       {
 	  spatialite_e ("loadwfs: CREATE TABLE '%s' error: %s\n", table,
 			errMsg);
+	  schema->error = 1;
+	  if (err_msg == NULL)
+	    {
+		sqlite3_free (errMsg);
+		return 0;
+	    }
 	  len = strlen (errMsg);
 	  *err_msg = malloc (len + 1);
 	  strcpy (*err_msg, errMsg);
 	  sqlite3_free (errMsg);
-	  schema->error = 1;
 	  return 0;
       }
 
@@ -2165,11 +2170,15 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
 	  if (ret != SQLITE_OK)
 	    {
 		spatialite_e ("loadwfs: AddGeometryColumn error: %s\n", errMsg);
+		schema->error = 1;
+		if (err_msg == NULL)
+		  {
+		      sqlite3_free (errMsg);
+		      return 0;
+		  }
 		len = strlen (errMsg);
 		*err_msg = malloc (len + 1);
 		strcpy (*err_msg, errMsg);
-		sqlite3_free (errMsg);
-		schema->error = 1;
 		return 0;
 	    }
 	  if (spatial_index)
@@ -2185,11 +2194,15 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
 		  {
 		      spatialite_e ("loadwfs: CreateSpatialIndex error: %s\n",
 				    errMsg);
+		      schema->error = 1;
+		      if (err_msg == NULL)
+			{
+			    sqlite3_free (errMsg);
+			    return 0;
+			}
 		      len = strlen (errMsg);
 		      *err_msg = malloc (len + 1);
 		      strcpy (*err_msg, errMsg);
-		      sqlite3_free (errMsg);
-		      schema->error = 1;
 		      return 0;
 		  }
 	    }
@@ -2257,10 +2270,12 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
       {
 	  errMsg = (char *) sqlite3_errmsg (sqlite);
 	  spatialite_e ("loadwfs: \"%s\"\n", errMsg);
+	  schema->error = 1;
+	  if (err_msg == NULL)
+	      return 0;
 	  len = strlen (errMsg);
 	  *err_msg = malloc (len + 1);
 	  strcpy (*err_msg, errMsg);
-	  schema->error = 1;
 	  return 0;
       }
     schema->stmt = stmt;
@@ -2270,11 +2285,16 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
     if (sqlite3_exec (sqlite, "BEGIN", NULL, NULL, &errMsg) != SQLITE_OK)
       {
 	  spatialite_e ("loadwfs: BEGIN error:\"%s\"\n", errMsg);
+	  schema->error = 1;
+	  if (err_msg == NULL)
+	    {
+		sqlite3_free (errMsg);
+		return 0;
+	    }
 	  len = strlen (errMsg);
 	  *err_msg = malloc (len + 1);
 	  strcpy (*err_msg, errMsg);
 	  sqlite3_free (errMsg);
-	  schema->error = 1;
       }
     if (schema->error)
 	return 0;
@@ -3094,7 +3114,8 @@ load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, char *layer_name,
     int shift_index;
     xmlGenericErrorFunc parsingError = (xmlGenericErrorFunc) wfsParsingError;
     *rows = 0;
-    *err_msg = NULL;
+    if (err_msg != NULL)
+	*err_msg = NULL;
     if (path_or_url == NULL)
 	return 0;
 
@@ -3116,7 +3137,7 @@ load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, char *layer_name,
 	  if (xml_doc == NULL)
 	    {
 		/* parsing error; not a well-formed XML */
-		if (errBuf.Buffer != NULL)
+		if (errBuf.Buffer != NULL && err_msg != NULL)
 		  {
 		      len = strlen (errBuf.Buffer);
 		      *err_msg = malloc (len + 1);
@@ -3132,9 +3153,12 @@ load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, char *layer_name,
 		  {
 		      const char *msg =
 			  "Unable to retrieve the DescribeFeatureType URI";
-		      len = strlen (msg);
-		      *err_msg = malloc (len + 1);
-		      strcpy (*err_msg, msg);
+		      if (err_msg != NULL)
+			{
+			    len = strlen (msg);
+			    *err_msg = malloc (len + 1);
+			    strcpy (*err_msg, msg);
+			}
 		      goto end;
 		  }
 
@@ -3160,9 +3184,12 @@ load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, char *layer_name,
 			    const char *err =
 				"loawfs: the WFS server doesn't seem to support STARTINDEX\n"
 				"and consequently WFS paging is not available";
-			    len = strlen (err);
-			    *err_msg = malloc (len + 1);
-			    strcpy (*err_msg, err);
+			    if (err_msg != NULL)
+			      {
+				  len = strlen (err);
+				  *err_msg = malloc (len + 1);
+				  strcpy (*err_msg, err);
+			      }
 			    goto end;
 			}
 		      startIdx += shift_index;
@@ -3261,8 +3288,7 @@ parse_keyword (xmlNodePtr node, struct wfs_catalog *catalog)
 				  add_wfs_keyword_to_layer (lyr,
 							    (const char
 							     *)
-							    (child_node->
-							     content));
+							    (child_node->content));
 			      }
 			}
 		  }
@@ -3383,8 +3409,8 @@ parse_wfs_layer (xmlNodePtr node, struct wfs_catalog *catalog)
 				  add_wfs_srid_to_layer (lyr, srid,
 							 (const char
 							  *)
-							 (cur_node->children->
-							  content));
+							 (cur_node->
+							  children->content));
 			      }
 			}
 		      if (strcmp ((const char *) (cur_node->name), "Keywords")
@@ -3416,8 +3442,7 @@ parse_wfs_get_100 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 									(const
 									 char
 									 *)
-									(text->
-									 content));
+									(text->content));
 				  else
 				      set_wfs_catalog_base_describe_url
 					  (catalog,
@@ -3536,8 +3561,7 @@ parse_wfs_get_110 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 									(const
 									 char
 									 *)
-									(text->
-									 content));
+									(text->content));
 				  else
 				      set_wfs_catalog_base_describe_url
 					  (catalog,
@@ -3701,7 +3725,8 @@ create_wfs_catalog (char *path_or_url, char **err_msg)
     int list = 0;
     gaiaOutBuffer errBuf;
     xmlGenericErrorFunc parsingError = (xmlGenericErrorFunc) wfsParsingError;
-    *err_msg = NULL;
+    if (err_msg != NULL)
+	*err_msg = NULL;
     if (path_or_url == NULL)
 	return 0;
 
@@ -3712,7 +3737,7 @@ create_wfs_catalog (char *path_or_url, char **err_msg)
     if (xml_doc == NULL)
       {
 	  /* parsing error; not a well-formed XML */
-	  if (errBuf.Buffer != NULL)
+	  if (errBuf.Buffer != NULL && err_msg != NULL)
 	    {
 		len = strlen (errBuf.Buffer);
 		*err_msg = malloc (len + 1);
@@ -4172,11 +4197,15 @@ load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, char *layer_name,
 	"and is thus unable to support LOADWFS";
 
 /* silencing stupid compiler warnings */
-    if (sqlite == NULL || path_or_url == NULL || swap_axes == 0 || table == NULL
-	|| pk_column_name == NULL || spatial_index == 0 || page_size == 0
-	|| rows == NULL || progress_callback == NULL || progress_callback)
+    if (sqlite == NULL || path_or_url == NULL || layer_name == NULL
+	|| swap_axes == 0 || table == NULL || pk_column_name == NULL
+	|| spatial_index == 0 || page_size == 0 || rows == NULL
+	|| progress_callback == NULL || progress_callback == NULL
+	|| callback_ptr == NULL)
 	path_or_url = NULL;
 
+    if (err_msg == NULL)
+	return 0;
     len = strlen (msg);
     *err_msg = malloc (len + 1);
     strcpy (*err_msg, msg);
@@ -4195,6 +4224,8 @@ create_wfs_catalog (char *path_or_url, char **err_msg)
     if (path_or_url != NULL)
 	path_or_url = NULL;
 
+    if (err_msg == NULL)
+	return 0;
     len = strlen (msg);
     *err_msg = malloc (len + 1);
     strcpy (*err_msg, msg);
@@ -4346,6 +4377,18 @@ get_wfs_request_url (gaiaWFScatalogPtr handle, const char *name,
     return NULL;
 }
 
+SPATIALITE_DECLARE char *
+get_wfs_describe_url (gaiaWFScatalogPtr handle, const char *name,
+		      const char *version)
+{
+/* LIBXML2 isn't enabled: does absolutely nothing */
+
+/* silencing stupid compiler warnings */
+    if (handle != NULL || name == NULL || version == NULL)
+	handle = NULL;
+    return NULL;
+}
+
 SPATIALITE_DECLARE gaiaWFSschemaPtr
 create_wfs_schema (char *path_or_url, char *layer_name, char **err_msg)
 {
@@ -4358,10 +4401,11 @@ create_wfs_schema (char *path_or_url, char *layer_name, char **err_msg)
     if (path_or_url != NULL || layer_name == NULL)
 	path_or_url = NULL;
 
+    if (err_msg == NULL)
+	return 0;
     len = strlen (msg);
     *err_msg = malloc (len + 1);
     strcpy (*err_msg, msg);
-    return NULL;
     return NULL;
 }
 

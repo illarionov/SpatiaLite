@@ -308,8 +308,10 @@ extern "C"
     typedef struct gaiaDbfFieldStruct
     {
 /* a DBF field definition - shapefile attribute */
-/** field name [max. 10 char] */
+/** field name */
 	char *Name;		/* field name */
+/** short field name [max. 10 char] */
+	char *ShortName;	/* field name <= 10 bytes */
 /** DBF data type */
 	unsigned char Type;	/* field type */
 /** DBF buffer offset [where the field value starts] */
