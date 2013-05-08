@@ -97,6 +97,20 @@ extern const char *locale_charset (void);
 
 #define SHAPEFILE_NO_DATA 1e-38
 
+struct auxdbf_fld
+{
+/* auxiliary DBF field struct */
+    char *name;
+    struct auxdbf_fld *next;
+};
+
+struct auxdbf_list
+{
+/* auxiliary DBF struct */
+    struct auxdbf_fld *first;
+    struct auxdbf_fld *last;
+};
+
 GAIAGEO_DECLARE void
 gaiaFreeValue (gaiaValuePtr p)
 {
@@ -165,8 +179,6 @@ gaiaAllocDbfField (char *name, unsigned char type,
     int len = strlen (name);
     p->Name = malloc (len + 1);
     strcpy (p->Name, name);
-    p->ShortName = malloc (len + 1);
-    strcpy (p->ShortName, name);
     p->Type = type;
     p->Offset = offset;
     p->Length = length;
@@ -184,8 +196,6 @@ gaiaFreeDbfField (gaiaDbfFieldPtr p)
 	return;
     if (p->Name)
 	free (p->Name);
-    if (p->ShortName)
-	free (p->ShortName);
     if (p->Value)
 	gaiaFreeValue (p->Value);
     free (p);
@@ -699,15 +709,72 @@ gaiaOpenShpRead (gaiaShapefilePtr shp, const char *path, const char *charFrom,
     return;
 }
 
+static struct auxdbf_list *
+alloc_auxdbf (gaiaDbfListPtr dbf_list)
+{
+/* allocating the auxiliary DBF struct */
+    int len;
+    gaiaDbfFieldPtr fld;
+    struct auxdbf_fld *fld_ex;
+    struct auxdbf_list *auxdbf = malloc (sizeof (struct auxdbf_list));
+    auxdbf->first = NULL;
+    auxdbf->last = NULL;
+    fld = dbf_list->First;
+    while (fld)
+      {
+	  fld_ex = malloc (sizeof (struct auxdbf_fld));
+	  len = strlen (fld->Name);
+	  fld_ex->name = malloc (len + 1);
+	  strcpy (fld_ex->name, fld->Name);
+	  fld_ex->next = NULL;
+	  if (auxdbf->first == NULL)
+	      auxdbf->first = fld_ex;
+	  if (auxdbf->last != NULL)
+	      auxdbf->last->next = fld_ex;
+	  auxdbf->last = fld_ex;
+	  fld = fld->Next;
+      }
+    return auxdbf;
+}
+
 static void
-truncate_long_name (gaiaDbfListPtr dbf_list, gaiaDbfFieldPtr xfld)
+free_auxdbf (struct auxdbf_list *auxdbf)
+{
+/* freeing an auxiliary DBF struct */
+    struct auxdbf_fld *n_fld;
+    struct auxdbf_fld *fld = auxdbf->first;
+    while (fld != NULL)
+      {
+	  n_fld = fld->next;
+	  if (fld->name != NULL)
+	      free (fld->name);
+	  free (fld);
+	  fld = n_fld;
+      }
+}
+
+static void
+truncate_long_name (struct auxdbf_list *list, gaiaDbfFieldPtr xfld)
 {
 /* attempting to create a unique short name <= 10 bytes */
     char suffix;
     char buf[16];
-    gaiaDbfFieldPtr fld;
-    memcpy (buf, xfld->ShortName, 9);
+    struct auxdbf_fld *fld;
+    struct auxdbf_fld *base = NULL;
+    memcpy (buf, xfld->Name, 9);
     buf[10] = '\0';
+
+    fld = list->first;
+    while (fld)
+      {
+	  /* identifying the base aux Field */
+	  if (strcmp (xfld->Name, fld->name) == 0)
+	    {
+		base = fld;
+		break;
+	    }
+	  fld = fld->next;
+      }
 
     suffix = '0';
     while (1)
@@ -715,23 +782,25 @@ truncate_long_name (gaiaDbfListPtr dbf_list, gaiaDbfFieldPtr xfld)
 	  /* attempting to find a numeric suffix ensuring uniqueness */
 	  int ok = 1;
 	  buf[9] = suffix;
-	  fld = dbf_list->First;
+	  fld = list->first;
 	  while (fld)
 	    {
-		if (xfld != fld)
+		if (base != fld)
 		  {
-		      if (strcasecmp (buf, fld->ShortName) == 0)
+		      if (strcasecmp (buf, fld->name) == 0)
 			{
 			    /* invalid: already defined */
 			    ok = 0;
 			    break;
 			}
 		  }
-		fld = fld->Next;
+		fld = fld->next;
 	    }
 	  if (ok)
 	    {
-		strcpy (xfld->ShortName, buf);
+		strcpy (xfld->Name, buf);
+		if (base != NULL)
+		    strcpy (base->name, buf);
 		return;
 	    }
 	  if (suffix == '9')
@@ -746,23 +815,25 @@ truncate_long_name (gaiaDbfListPtr dbf_list, gaiaDbfFieldPtr xfld)
 	  /* attempting to find a letter suffix ensuring uniqueness */
 	  int ok = 1;
 	  buf[9] = suffix;
-	  fld = dbf_list->First;
+	  fld = list->first;
 	  while (fld)
 	    {
-		if (xfld != fld)
+		if (base != fld)
 		  {
-		      if (strcasecmp (buf, fld->ShortName) == 0)
+		      if (strcasecmp (buf, fld->name) == 0)
 			{
 			    /* invalid: already defined */
 			    ok = 0;
 			    break;
 			}
 		  }
-		fld = fld->Next;
+		fld = fld->next;
 	    }
 	  if (ok)
 	    {
-		strcpy (xfld->ShortName, buf);
+		strcpy (xfld->Name, buf);
+		if (base != NULL)
+		    strcpy (base->name, buf);
 		return;
 	    }
 	  if (suffix == 'Z')
@@ -805,6 +876,7 @@ gaiaOpenShpWrite (gaiaShapefilePtr shp, const char *path, int shape,
     size_t utf8len;
     char *pUtf8buf;
     int defaultId = 1;
+    struct auxdbf_list *auxdbf = NULL;
     if (charFrom && charTo)
       {
 	  iconv_ret = iconv_open (charTo, charFrom);
@@ -878,17 +950,18 @@ gaiaOpenShpWrite (gaiaShapefilePtr shp, const char *path, int shape,
     memset (buf_shp, '\0', 32);
     fwrite (buf_shp, 1, 32, fl_dbf);
     dbf_size = 32;		/* note: DBF counts sizes in bytes */
+    auxdbf = alloc_auxdbf (dbf_list);
     fld = dbf_list->First;
     while (fld)
       {
 	  /* exporting DBF Fields specifications */
 	  memset (buf_shp, 0, 32);
-	  if (strlen (fld->ShortName) > 10)
+	  if (strlen (fld->Name) > 10)
 	    {
 		/* long name: attempting to safely truncate */
-		truncate_long_name (dbf_list, fld);
+		truncate_long_name (auxdbf, fld);
 	    }
-	  strcpy (buf, fld->ShortName);
+	  strcpy (buf, fld->Name);
 	  len = strlen (buf);
 	  utf8len = 2048;
 	  pBuf = buf;
@@ -912,6 +985,7 @@ gaiaOpenShpWrite (gaiaShapefilePtr shp, const char *path, int shape,
 	  dbf_size += 32;
 	  fld = fld->Next;
       }
+    free_auxdbf (auxdbf);
     fwrite ("\r", 1, 1, fl_dbf);	/* this one is a special DBF delimiter that closes file header */
     dbf_size++;
 /* setting up the SHP struct */
@@ -4676,6 +4750,7 @@ gaiaOpenDbfWrite (gaiaDbfPtr dbf, const char *path, const char *charFrom,
     size_t utf8len;
     char *pUtf8buf;
     int defaultId = 1;
+    struct auxdbf_list *auxdbf = NULL;
     if (charFrom && charTo)
       {
 	  iconv_ret = iconv_open (charTo, charFrom);
@@ -4720,17 +4795,18 @@ gaiaOpenDbfWrite (gaiaDbfPtr dbf, const char *path, const char *charFrom,
     memset (bf, '\0', 32);
     fwrite (bf, 1, 32, fl_dbf);
     dbf_size = 32;		/* note: DBF counts sizes in bytes */
+    auxdbf = alloc_auxdbf (dbf->Dbf);
     fld = dbf->Dbf->First;
     while (fld)
       {
 	  /* exporting DBF Fields specifications */
 	  memset (bf, 0, 32);
-	  if (strlen (fld->ShortName) > 10)
+	  if (strlen (fld->Name) > 10)
 	    {
 		/* long name: attempting to safely truncate */
-		truncate_long_name (dbf->Dbf, fld);
+		truncate_long_name (auxdbf, fld);
 	    }
-	  strcpy (buf, fld->ShortName);
+	  strcpy (buf, fld->Name);
 	  len = strlen (buf);
 	  utf8len = 2048;
 	  pBuf = buf;
@@ -4754,6 +4830,7 @@ gaiaOpenDbfWrite (gaiaDbfPtr dbf, const char *path, const char *charFrom,
 	  dbf_size += 32;
 	  fld = fld->Next;
       }
+    auxdbf = alloc_auxdbf (dbf->Dbf);
     fwrite ("\r", 1, 1, fl_dbf);	/* this one is a special DBF delimiter that closes file header */
     dbf_size++;
     dbf->Valid = 1;

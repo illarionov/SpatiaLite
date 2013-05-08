@@ -316,8 +316,8 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./shapefiles/libshapefiles.la ./srsinit/libsrsinit.la \
 	./virtualtext/libvirtualtext.la ./wfs/libwfs.la @LIBXML2_LIBS@ \
 	$(am__append_1) $(am__append_2)
-@ANDROID_FALSE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 5:1:0
-@ANDROID_TRUE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 5:1:0
+@ANDROID_FALSE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 6:0:1
+@ANDROID_TRUE@@MINGW_FALSE@libspatialite_la_LDFLAGS = -version-info 6:0:1
 @MINGW_TRUE@libspatialite_la_LDFLAGS = -version-info 4:1:0 -no-undefined
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-recursive
