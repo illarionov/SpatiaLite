@@ -462,6 +462,7 @@ EXTRA_DIST = addpoint10.testcase \
 	compressgeometry7.testcase \
 	compressgeometry8.testcase \
 	compressgeometry9.testcase \
+	createrastercoverages.testcase \
 	createuuid1.testcase \
 	dimension1.testcase \
 	dimension2.testcase \

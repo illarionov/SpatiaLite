@@ -71,8 +71,7 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_extra_relations_fncts$(EXEEXT) \
 	check_geoscvt_fncts$(EXEEXT) check_libxml2$(EXEEXT) \
 	check_styling$(EXEEXT) check_virtualxpath$(EXEEXT) \
-	check_wfsin$(EXEEXT) check_raster_coverages$(EXEEXT) \
-	$(am__EXEEXT_1)
+	check_wfsin$(EXEEXT) $(am__EXEEXT_1)
 @ENABLE_GEOPACKAGE_TRUE@am__append_1 = \
 @ENABLE_GEOPACKAGE_TRUE@		check_createBaseTables \
 @ENABLE_GEOPACKAGE_TRUE@		check_add_tile_triggers \
@@ -343,9 +342,6 @@ check_point_to_tile_wrong_arg_type_SOURCES =  \
 check_point_to_tile_wrong_arg_type_OBJECTS =  \
 	check_point_to_tile_wrong_arg_type.$(OBJEXT)
 check_point_to_tile_wrong_arg_type_LDADD = $(LDADD)
-check_raster_coverages_SOURCES = check_raster_coverages.c
-check_raster_coverages_OBJECTS = check_raster_coverages.$(OBJEXT)
-check_raster_coverages_LDADD = $(LDADD)
 check_recover_geom_SOURCES = check_recover_geom.c
 check_recover_geom_OBJECTS = check_recover_geom.$(OBJEXT)
 check_recover_geom_LDADD = $(LDADD)
@@ -460,16 +456,15 @@ SOURCES = check_add_rt_metadata_triggers.c \
 	check_point_to_tile_integer_coordinates.c \
 	check_point_to_tile_multiresult.c \
 	check_point_to_tile_no_tile.c \
-	check_point_to_tile_wrong_arg_type.c check_raster_coverages.c \
-	check_recover_geom.c check_relations_fncts.c check_shp_load.c \
-	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
-	check_styling.c check_version.c check_virtual_ovflw.c \
-	check_virtualtable1.c check_virtualtable2.c \
-	check_virtualtable3.c check_virtualtable4.c \
-	check_virtualtable5.c check_virtualtable6.c \
-	check_virtualxpath.c check_wfsin.c check_xls_load.c shape_3d.c \
-	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
-	shape_utf8_1ex.c shape_utf8_2.c
+	check_point_to_tile_wrong_arg_type.c check_recover_geom.c \
+	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
+	check_spatialindex.c check_sql_stmt.c check_styling.c \
+	check_version.c check_virtual_ovflw.c check_virtualtable1.c \
+	check_virtualtable2.c check_virtualtable3.c \
+	check_virtualtable4.c check_virtualtable5.c \
+	check_virtualtable6.c check_virtualxpath.c check_wfsin.c \
+	check_xls_load.c shape_3d.c shape_cp1252.c shape_primitives.c \
+	shape_utf8_1.c shape_utf8_1ex.c shape_utf8_2.c
 DIST_SOURCES = check_add_rt_metadata_triggers.c \
 	check_add_rt_metadata_triggers_bad_table_name.c \
 	check_add_rt_metadata_triggers_wrong_arg_type.c \
@@ -499,16 +494,15 @@ DIST_SOURCES = check_add_rt_metadata_triggers.c \
 	check_point_to_tile_integer_coordinates.c \
 	check_point_to_tile_multiresult.c \
 	check_point_to_tile_no_tile.c \
-	check_point_to_tile_wrong_arg_type.c check_raster_coverages.c \
-	check_recover_geom.c check_relations_fncts.c check_shp_load.c \
-	check_shp_load_3d.c check_spatialindex.c check_sql_stmt.c \
-	check_styling.c check_version.c check_virtual_ovflw.c \
-	check_virtualtable1.c check_virtualtable2.c \
-	check_virtualtable3.c check_virtualtable4.c \
-	check_virtualtable5.c check_virtualtable6.c \
-	check_virtualxpath.c check_wfsin.c check_xls_load.c shape_3d.c \
-	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
-	shape_utf8_1ex.c shape_utf8_2.c
+	check_point_to_tile_wrong_arg_type.c check_recover_geom.c \
+	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
+	check_spatialindex.c check_sql_stmt.c check_styling.c \
+	check_version.c check_virtual_ovflw.c check_virtualtable1.c \
+	check_virtualtable2.c check_virtualtable3.c \
+	check_virtualtable4.c check_virtualtable5.c \
+	check_virtualtable6.c check_virtualxpath.c check_wfsin.c \
+	check_xls_load.c shape_3d.c shape_cp1252.c shape_primitives.c \
+	shape_utf8_1.c shape_utf8_1ex.c shape_utf8_2.c
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -971,9 +965,6 @@ check_point_to_tile_no_tile$(EXEEXT): $(check_point_to_tile_no_tile_OBJECTS) $(c
 check_point_to_tile_wrong_arg_type$(EXEEXT): $(check_point_to_tile_wrong_arg_type_OBJECTS) $(check_point_to_tile_wrong_arg_type_DEPENDENCIES) $(EXTRA_check_point_to_tile_wrong_arg_type_DEPENDENCIES) 
 	@rm -f check_point_to_tile_wrong_arg_type$(EXEEXT)
 	$(LINK) $(check_point_to_tile_wrong_arg_type_OBJECTS) $(check_point_to_tile_wrong_arg_type_LDADD) $(LIBS)
-check_raster_coverages$(EXEEXT): $(check_raster_coverages_OBJECTS) $(check_raster_coverages_DEPENDENCIES) $(EXTRA_check_raster_coverages_DEPENDENCIES) 
-	@rm -f check_raster_coverages$(EXEEXT)
-	$(LINK) $(check_raster_coverages_OBJECTS) $(check_raster_coverages_LDADD) $(LIBS)
 check_recover_geom$(EXEEXT): $(check_recover_geom_OBJECTS) $(check_recover_geom_DEPENDENCIES) $(EXTRA_check_recover_geom_DEPENDENCIES) 
 	@rm -f check_recover_geom$(EXEEXT)
 	$(LINK) $(check_recover_geom_OBJECTS) $(check_recover_geom_LDADD) $(LIBS)
@@ -1103,7 +1094,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_multiresult.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_no_tile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_wrong_arg_type.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_raster_coverages.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_recover_geom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_relations_fncts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_shp_load.Po@am__quote@
