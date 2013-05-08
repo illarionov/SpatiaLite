@@ -74,6 +74,10 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #define FRMT64 "%lld"
 #endif
 
+#if defined(_WIN32) && !defined(__MINGW32__)
+#define strcasecmp	_stricmp
+#endif
+
 struct validity_report_row
 {
     sqlite3_int64 rowid;
