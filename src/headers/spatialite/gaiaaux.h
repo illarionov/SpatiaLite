@@ -1,7 +1,7 @@
 /* 
  gaiaaux.h -- Gaia common utility functions
   
- version 4.0, 2012 August 6
+ version 4.1, 2013 May 8
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -23,7 +23,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2008-2012
+Portions created by the Initial Developer are Copyright (C) 2008-2013
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -274,7 +274,10 @@ extern "C"
   is expected to be invoked immediately \b before executing the SQL
   statement itself.
  */
-    GAIAAUX_DECLARE void gaiaInsertIntoSqlLog(sqlite3 *sqlite, const char *user_agent, const char *utf8Sql, sqlite3_int64 *sqllog_pk);
+    GAIAAUX_DECLARE void gaiaInsertIntoSqlLog (sqlite3 * sqlite,
+					       const char *user_agent,
+					       const char *utf8Sql,
+					       sqlite3_int64 * sqllog_pk);
 
 /**
  SQL log: statement start
@@ -291,7 +294,9 @@ extern "C"
   is expected to be invoked immediately \b after executing the SQL
   statement itself.
  */
-    GAIAAUX_DECLARE void gaiaUpdateSqlLog(sqlite3 *sqlite, sqlite3_int64 sqllog_pk, int success, const char *errMsg);
+    GAIAAUX_DECLARE void gaiaUpdateSqlLog (sqlite3 * sqlite,
+					   sqlite3_int64 sqllog_pk, int success,
+					   const char *errMsg);
 
 #ifdef __cplusplus
 }

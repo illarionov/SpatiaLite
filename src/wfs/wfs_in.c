@@ -43,6 +43,16 @@ the terms of any one of the MPL, the GPL or the LGPL.
  
 */
 
+/*
+ 
+CREDITS:
+
+this module has been completely funded by:
+Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
+(WFS data import) 
+
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -2057,12 +2067,12 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
     col = schema->first;
     while (col != NULL)
       {
+	  const char *type = "TEXT";
 	  if (comma)
 	    {
 		gaiaAppendToOutBuffer (&sql, ",\n");
 		comma = 0;
 	    }
-	  const char *type = "TEXT";
 	  if (col->type == SQLITE_INTEGER)
 	      type = "INTEGER";
 	  if (col->type == SQLITE_FLOAT)
@@ -3288,7 +3298,8 @@ parse_keyword (xmlNodePtr node, struct wfs_catalog *catalog)
 				  add_wfs_keyword_to_layer (lyr,
 							    (const char
 							     *)
-							    (child_node->content));
+							    (child_node->
+							     content));
 			      }
 			}
 		  }
@@ -3409,8 +3420,8 @@ parse_wfs_layer (xmlNodePtr node, struct wfs_catalog *catalog)
 				  add_wfs_srid_to_layer (lyr, srid,
 							 (const char
 							  *)
-							 (cur_node->
-							  children->content));
+							 (cur_node->children->
+							  content));
 			      }
 			}
 		      if (strcmp ((const char *) (cur_node->name), "Keywords")
@@ -3442,7 +3453,8 @@ parse_wfs_get_100 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 									(const
 									 char
 									 *)
-									(text->content));
+									(text->
+									 content));
 				  else
 				      set_wfs_catalog_base_describe_url
 					  (catalog,
@@ -3561,7 +3573,8 @@ parse_wfs_get_110 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 									(const
 									 char
 									 *)
-									(text->content));
+									(text->
+									 content));
 				  else
 				      set_wfs_catalog_base_describe_url
 					  (catalog,

@@ -2,7 +2,7 @@
 
  gg_ewkt.c -- EWKT parser/lexer 
   
- version 4.0, 2012 August 6
+ version 4.1, 2013 May 8
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -24,7 +24,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2011-2012
+Portions created by the Initial Developer are Copyright (C) 2011-2013
 the Initial Developer. All Rights Reserved.
 
 Alternatively, the contents of this file may be used under the terms of

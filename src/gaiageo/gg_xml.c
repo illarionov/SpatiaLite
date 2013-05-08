@@ -2,7 +2,7 @@
 
  gg_xml.c -- XML Document implementation
     
- version 4.0, 2012 December 10
+ version 4.1, 2013 May 8
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -24,7 +24,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2008-2012
+Portions created by the Initial Developer are Copyright (C) 2008-2013
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -2721,8 +2721,8 @@ gaiaXmlGetInternalSchemaURI (void *p_cache, const unsigned char *xml,
 						    node->children->content);
 					uri = malloc (len + 1);
 					strcpy (uri,
-						(const char *) node->
-						children->content);
+						(const char *) node->children->
+						content);
 				    }
 			      }
 			}

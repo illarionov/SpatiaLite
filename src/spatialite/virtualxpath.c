@@ -2,7 +2,7 @@
 
  virtualxpath.c -- SQLite3 extension [VIRTUAL XPath handler]
 
- version 4.0, 2012 December 15
+ version 4.1, 2013 May 8
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -24,7 +24,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2008-2012
+Portions created by the Initial Developer are Copyright (C) 2008-2013
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -230,10 +230,10 @@ vxpath_feed_ns (struct vxpath_namespaces *ns_list, xmlNodePtr start)
 			      {
 				  /* a Namespace is defined */
 				  vxpath_add_ns (ns_list,
-						 (const char *) (attr->ns->
-								 prefix),
-						 (const char *) (attr->ns->
-								 href));
+						 (const char *) (attr->
+								 ns->prefix),
+						 (const char *) (attr->
+								 ns->href));
 			      }
 			}
 		      attr = attr->next;
@@ -296,7 +296,7 @@ gaiaIsValidXPathExpression (void *p_cache, const char *xpath_expr)
     xmlSetGenericErrorFunc (cache, xpathError);
 
 /* testing an XPath expression */
-    result = xmlXPathCompile ((const xmlChar *)xpath_expr);
+    result = xmlXPathCompile ((const xmlChar *) xpath_expr);
     xmlSetGenericErrorFunc ((void *) stderr, NULL);
     if (result)
       {

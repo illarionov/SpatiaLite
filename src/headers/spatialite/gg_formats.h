@@ -1,7 +1,7 @@
 /*
  gg_formats.h -- Gaia common support for geometries: formats
   
- version 4.0, 2012 August 6
+ version 4.1, 2013 May 8
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -23,7 +23,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2008-2012
+Portions created by the Initial Developer are Copyright (C) 2008-2013
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -121,8 +121,9 @@ extern "C"
  \note you are expected to pass an input buffer corresponding to an
  allocation size of (at least) 4 bytes.
  */
-    GAIAGEO_DECLARE unsigned int gaiaImportU32 (const unsigned char *p, int little_endian,
-				      int little_endian_arch);
+    GAIAGEO_DECLARE unsigned int gaiaImportU32 (const unsigned char *p,
+						int little_endian,
+						int little_endian_arch);
 
 /**
  Import a FLOAT-32 value in endian-aware fashion
@@ -232,8 +233,8 @@ extern "C"
  allocation size of (at least) 4 bytes.
  */
     GAIAGEO_DECLARE void gaiaExportU32 (unsigned char *p, unsigned int value,
-				       int little_endian,
-				       int little_endian_arch);
+					int little_endian,
+					int little_endian_arch);
 
 /**
  Export a FLOAT-32 value in endian-aware fashion

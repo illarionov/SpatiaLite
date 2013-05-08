@@ -64,17 +64,39 @@ extern "C"
 #endif
 
 /* Internal geopackage SQL function implementation */
-GEOPACKAGE_DECLARE void fnct_gpkgCreateBaseTables (sqlite3_context * context, int argc, sqlite3_value ** argv);
-GEOPACKAGE_DECLARE void fnct_gpkgCreateTilesTable (sqlite3_context * context, int argc, sqlite3_value **argv);
-GEOPACKAGE_DECLARE void fnct_gpkgCreateTilesZoomLevel (sqlite3_context * context, int argc, sqlite3_value **argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgCreateBaseTables (sqlite3_context *
+						       context, int argc,
+						       sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgCreateTilesTable (sqlite3_context *
+						       context, int argc,
+						       sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgCreateTilesZoomLevel (sqlite3_context *
+							   context, int argc,
+							   sqlite3_value **
+							   argv);
 
-GEOPACKAGE_DECLARE void fnct_gpkgAddTileTriggers (sqlite3_context * context, int argc, sqlite3_value ** argv);
-GEOPACKAGE_DECLARE void fnct_gpkgAddRasterTriggers (sqlite3_context * context, int argc, sqlite3_value ** argv);
-GEOPACKAGE_DECLARE void fnct_gpkgAddRtMetadataTriggers (sqlite3_context * context, int argc, sqlite3_value ** argv);
-GEOPACKAGE_DECLARE void fnct_gpkgGetNormalRow (sqlite3_context * context, int argc, sqlite3_value ** argv);
-GEOPACKAGE_DECLARE void fnct_gpkgGetNormalZoom (sqlite3_context * context, int argc, sqlite3_value ** argv);
-GEOPACKAGE_DECLARE void fnct_gpkgGetImageType (sqlite3_context * context, int argc, sqlite3_value ** argv);
-GEOPACKAGE_DECLARE void fnct_gpkgPointToTile (sqlite3_context * context, int argc, sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgAddTileTriggers (sqlite3_context * context,
+						      int argc,
+						      sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgAddRasterTriggers (sqlite3_context *
+							context, int argc,
+							sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgAddRtMetadataTriggers (sqlite3_context *
+							    context, int argc,
+							    sqlite3_value **
+							    argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgGetNormalRow (sqlite3_context * context,
+						   int argc,
+						   sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgGetNormalZoom (sqlite3_context * context,
+						    int argc,
+						    sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgGetImageType (sqlite3_context * context,
+						   int argc,
+						   sqlite3_value ** argv);
+    GEOPACKAGE_DECLARE void fnct_gpkgPointToTile (sqlite3_context * context,
+						  int argc,
+						  sqlite3_value ** argv);
 
 /* Markers for unused arguments / variable */
 #if __GNUC__

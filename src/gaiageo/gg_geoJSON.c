@@ -2,7 +2,7 @@
 
  gg_geoJSON.c -- GeoJSON parser/lexer 
   
- version 4.0, 2012 August 6
+ version 4.1, 2013 May 8
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -24,7 +24,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2011-2012
+Portions created by the Initial Developer are Copyright (C) 2011-2013
 the Initial Developer. All Rights Reserved.
 
 Alternatively, the contents of this file may be used under the terms of
@@ -201,8 +201,8 @@ geoJsonMapDynAlloc (struct geoJson_data *p_data, int type, void *ptr)
 	  p_data->geoJson_last_dyn_block->next = p;
 	  p_data->geoJson_last_dyn_block = p;
       }
-    p_data->geoJson_last_dyn_block->type[p_data->
-					 geoJson_last_dyn_block->index] = type;
+    p_data->geoJson_last_dyn_block->type[p_data->geoJson_last_dyn_block->
+					 index] = type;
     p_data->geoJson_last_dyn_block->ptr[p_data->geoJson_last_dyn_block->index] =
 	ptr;
     p_data->geoJson_last_dyn_block->index++;

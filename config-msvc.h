@@ -5,6 +5,12 @@
 /         using the OsGeo4W libraries
 */
 
+/* Should be defined in order to enable GeoPackage support. */
+/* #undef ENABLE_GEOPACKAGE */
+
+/* Should be defined in order to enable LIBXML2 support. */
+#define ENABLE_LIBXML2 1
+
 /* Should be defined in order to enable LWGEOM support. */
 #undef ENABLE_LWGEOM
 
@@ -175,7 +181,7 @@
 #define PACKAGE_NAME "libspatialite"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "libspatialite 4.0.0"
+#define PACKAGE_STRING "libspatialite 4.1.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "libspatialite"
@@ -184,7 +190,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "4.0.0"
+#define PACKAGE_VERSION "4.1.0"
 
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
@@ -196,7 +202,7 @@
 /* #undef TM_IN_SYS_TIME */
 
 /* Version number of package */
-#define VERSION "4.0.0"
+#define VERSION "4.1.0-RC1"
 
 /* Must be =64 in order to enable huge-file support. */
 #define _FILE_OFFSET_BITS 64

@@ -1,7 +1,7 @@
 /* 
  sqlite.h -- supporting SQLite headers in a flexible way
   
- version 4.0, 2012 August 6
+ version 4.1, 2013 May 8
 
  Author: Sandro Furieri a.furieri@lqt.it
 
@@ -23,7 +23,7 @@ The Original Code is the SpatiaLite library
 
 The Initial Developer of the Original Code is Alessandro Furieri
  
-Portions created by the Initial Developer are Copyright (C) 2012
+Portions created by the Initial Developer are Copyright (C) 2013
 the Initial Developer. All Rights Reserved.
 
 Contributor(s):
@@ -54,7 +54,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #endif
 /* We can't use SQLITE_EXTENSION_INIT1 as this is an intializer in recent version of sqlite */
 extern const sqlite3_api_routines *sqlite3_api;
-#else				/* ordinary lib */
+#else /* ordinary lib */
 #ifdef SPL_AMALGAMATION		/* spatialite-amalgamation */
 #include <spatialite/sqlite3.h>
 #else
