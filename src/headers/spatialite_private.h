@@ -299,6 +299,11 @@ extern "C"
 						  int n_bytes, void *p_id,
 						  const char *fileIdentifier);
 
+    SPATIALITE_PRIVATE int createRasterCoveragesTable (void *p_sqlite);
+
+    SPATIALITE_PRIVATE int checkPopulatedCoverage (void *p_sqlite,
+						   const char *coverage_name);
+
     SPATIALITE_PRIVATE const char *splite_lwgeom_version (void);
 
     SPATIALITE_PRIVATE void splite_lwgeom_init (void);

@@ -44,7 +44,8 @@ check_PROGRAMS = check_endian \
 		check_libxml2 \
 		check_styling \
 		check_virtualxpath \
-		check_wfsin
+		check_wfsin \
+		check_raster_coverages
 if ENABLE_GEOPACKAGE
 check_PROGRAMS += \
 		check_createBaseTables \

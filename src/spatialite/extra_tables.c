@@ -68,6 +68,961 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 
 #include <spatialite.h>
 #include <spatialite_private.h>
+#include <spatialite/gaiaaux.h>
+
+static int
+check_raster_coverages (sqlite3 * sqlite)
+{
+/* checking if the "raster_coverages" table already exists */
+    int exists = 0;
+    char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sql_statement = "SELECT name FROM sqlite_master WHERE type = 'table' "
+	"AND Upper(name) = Upper('raster_coverages')";
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
+check_raster_coverages_ref_sys (sqlite3 * sqlite)
+{
+/* checking if the "raster_coverages_ref_sys" view already exists */
+    int exists = 0;
+    char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sql_statement = "SELECT name FROM sqlite_master WHERE type = 'view' "
+	"AND Upper(name) = Upper('raster_coverages_ref_sys')";
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+static int
+create_raster_coverages (sqlite3 * sqlite)
+{
+/* creating the "raster_coverages" table */
+    char *sql;
+    int ret;
+    char *err_msg = NULL;
+    sql = "CREATE TABLE raster_coverages (\n"
+	"coverage_name TEXT NOT NULL PRIMARY KEY,\n"
+	"sample_type TEXT NOT NULL DEFAULT '*** undefined ***',\n"
+	"pixel_type TEXT NOT NULL DEFAULT '*** undefined ***',\n"
+	"num_bands INTEGER NOT NULL DEFAULT 1,\n"
+	"compression TEXT NOT NULL DEFAULT 'NONE',\n"
+	"quality INTEGER NOT NULL DEFAULT 100,\n"
+	"tile_width INTEGER NOT NULL DEFAULT 512,\n"
+	"tile_height INTEGER NOT NULL DEFAULT 512,\n"
+	"horz_resolution DOUBLE,\n"
+	"vert_resolution DOUBLE,\n"
+	"srid INTEGER,\n"
+	"nodata_pixel BLOB,\n"
+	"CONSTRAINT fk_rc_srs FOREIGN KEY (srid) "
+	"REFERENCES spatial_ref_sys (srid))";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE 'raster_coverages' error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* creating the raster_coverages triggers */
+    sql = "CREATE TRIGGER raster_coverages_name_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%''%');\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages_layers violates constraint: "
+	"coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"coverage_name value must be lower case')\n"
+	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_name_update\n"
+	"BEFORE UPDATE OF 'coverage_name' ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'update on raster_coverages violates constraint: "
+	"coverage_name value must not contain a single quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%''%');\n"
+	"SELECT RAISE(ABORT,'update on raster_coverages violates constraint: "
+	"coverage_name value must not contain a double quote')\n"
+	"WHERE NEW.coverage_name LIKE ('%\"%');\n"
+	"SELECT RAISE(ABORT,'update on raster_coverages violates constraint: "
+	"coverage_name value must be lower case')\n"
+	"WHERE NEW.coverage_name <> lower(NEW.coverage_name);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_sample_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"sample_type must be one of ''1-BIT'' | ''2-BIT'' | ''4-BIT'' | "
+	"''INT8'' | ''UINT8'' | ''INT16'' | ''UINT16'' | ''INT32'' | "
+	"''UINT32'' | ''FLOAT'' | ''DOUBLE''')\n"
+	"WHERE NEW.sample_type NOT IN ('1-BIT', '2-BIT', '4-BIT', "
+	"'INT8', 'UINT8', 'INT16', 'UINT16', 'INT32', "
+	"'UINT32', 'FLOAT', 'DOUBLE');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_sample_update\n"
+	"BEFORE UPDATE OF 'sample_type' ON 'raster_coverages'"
+	"\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"sample_type must be one of ''1-BIT'' | ''2-BIT'' | ''4-BIT'' | "
+	"''INT8'' | ''UINT8'' | ''INT16'' | ''UINT16'' | ''INT32'' | "
+	"''UINT32'' | ''FLOAT'' | ''DOUBLE''')\n"
+	"WHERE NEW.sample_type NOT IN ('1-BIT', '2-BIT', '4-BIT', "
+	"'INT8', 'UINT8', 'INT16', 'UINT16', 'INT32', "
+	"'UINT32', 'FLOAT', 'DOUBLE');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_pixel_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"pixel_type must be one of ''MONOCHROME'' | ''PALETTE'' | "
+	"''GRAYSCALE'' | ''RGB'' | ''MULTIBAND'' | ''DATAGRID''')\n"
+	"WHERE NEW.pixel_type NOT IN ('MONOCHROME', 'PALETTE', "
+	"'GRAYSCALE', 'RGB', 'MULTIBAND', 'DATAGRID');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_pixel_update\n"
+	"BEFORE UPDATE OF 'pixel_type' ON 'raster_coverages'"
+	"\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"pixel_type must be one of ''MONOCHROME'' | ''PALETTE'' | "
+	"''GRAYSCALE'' | ''RGB'' | ''MULTIBAND'' | ''DATAGRID''')\n"
+	"WHERE NEW.pixel_type NOT IN ('MONOCHROME', 'PALETTE', "
+	"'GRAYSCALE', 'RGB', 'MULTIBAND', 'DATAGRID');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_bands_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"num_bands must be >= 1')\nWHERE NEW.num_bands < 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_bands_update\n"
+	"BEFORE UPDATE OF 'num_bands' ON 'raster_coverages'"
+	"\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"num_bands must be >= 1')\nWHERE NEW.num_bands < 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_compression_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"compression must be one of ''NONE'' | ''DEFLATE'' | ''LZMA'' | "
+	"''GIF'' | ''PNG'' | ''JPEG'' | ''LOSSY_WEBP'' | ''LOSSLESS_WEBP''')\n"
+	"WHERE NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', "
+	"'GIF', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_compression_update\n"
+	"BEFORE UPDATE OF 'compression' ON 'raster_coverages'"
+	"\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"compression must be one of ''NONE'' | ''DEFLATE'' | ''LZMA'' | "
+	"''GIF'' | ''PNG'' | ''JPEG'' | ''LOSSY_WEBP'' | ''LOSSLESS_WEBP''')\n"
+	"WHERE NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', "
+	"'GIF', 'PNG', 'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_quality_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"quality must be between 0 and 100')\n"
+	"WHERE NEW.quality NOT BETWEEN 0 AND 100;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_quality_update\n"
+	"BEFORE UPDATE OF 'quality' ON 'raster_coverages'"
+	"\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"quality must be between 0 and 100')\n"
+	"WHERE NEW.quality NOT BETWEEN 0 AND 100;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_tilew_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"tile_width must be an exact multiple of 8 between 256 and 1024')\n"
+	"WHERE CastToInteger(NEW.tile_width) IS NULL OR "
+	"NEW.tile_width NOT BETWEEN 256 AND 1024 OR (NEW.tile_width % 8) <> 0;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_tilew_update\n"
+	"BEFORE UPDATE OF 'tile_width' ON 'raster_coverages'"
+	"\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"tile_width must be an exact multiple of 8 between 256 and 1024')\n"
+	"WHERE CastToInteger(NEW.tile_width) IS NULL OR "
+	"NEW.tile_width NOT BETWEEN 256 AND 1024 OR (NEW.tile_width % 8) <> 0;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_tileh_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"tile_height must be an exact multiple of 8 between 256 and 1024')\n"
+	"WHERE CastToInteger(NEW.tile_height) IS NULL OR "
+	"NEW.tile_height NOT BETWEEN 256 AND 1024 OR (NEW.tile_height % 8) <> 0;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_tileh_update\n"
+	"BEFORE UPDATE OF 'tile_height' ON 'raster_coverages'"
+	"\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"tile_height must be an exact multiple of 8 between 256 and 1024')\n"
+	"WHERE CastToInteger(NEW.tile_height) IS NULL OR "
+	"NEW.tile_height NOT BETWEEN 256 AND 1024 OR (NEW.tile_height % 8) <> 0;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_horzres_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"horz_resolution must be positive')\n"
+	"WHERE NEW.horz_resolution IS NOT NULL AND "
+	"(NEW.horz_resolution <= 0.0 OR CastToDouble(NEW.horz_resolution) IS NULL);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_horzres_update\n"
+	"BEFORE UPDATE OF 'horz_resolution' ON 'raster_coverages'"
+	"\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"horz_resolution must be positive')\n"
+	"WHERE NEW.horz_resolution IS NOT NULL AND "
+	"(NEW.horz_resolution <= 0.0 OR CastToDouble(NEW.horz_resolution) IS NULL);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_vertres_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"vert_resolution must be positive')\n"
+	"WHERE NEW.vert_resolution IS NOT NULL AND "
+	"(NEW.vert_resolution <= 0.0 OR CastToDouble(NEW.vert_resolution) IS NULL);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_vertres_update\n"
+	"BEFORE UPDATE OF 'vert_resolution' ON 'raster_coverages'"
+	"\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"vert_resolution must be positive')\n"
+	"WHERE NEW.vert_resolution IS NOT NULL AND "
+	"(NEW.vert_resolution <= 0.0 OR CastToDouble(NEW.vert_resolution) IS NULL);\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_nodata_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"invalid nodata_pixel')\nWHERE NEW.nodata_pixel IS NOT NULL AND "
+	"IsValidNoDataPixel(NEW.nodata_pixel, NEW.sample_type, NEW.num_bands) <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_nodata_update\n"
+	"BEFORE UPDATE OF 'vert_resolution' ON 'raster_coverages'"
+	"\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"invalid nodata_pixel')\nWHERE NEW.nodata_pixel IS NOT NULL AND "
+	"IsValidNoDataPixel(NEW.nodata_pixel, NEW.sample_type, NEW.num_bands) <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_monosample_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent MONOCHROME sample_type')\nWHERE NEW.pixel_type = 'MONOCHROME' "
+	"AND NEW.sample_type <> '1-BIT';\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_monosample_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent MONOCHROME sample_type')\nWHERE NEW.pixel_type = 'MONOCHROME' "
+	"AND NEW.sample_type <>'1-BIT';\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_monocompr_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent MONOCHROME compression')\nWHERE NEW.pixel_type = 'MONOCHROME' "
+	"AND NEW.compression NOT IN ('NONE', 'PNG');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_monocompr_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent MONOCHROME compression')\nWHERE NEW.pixel_type = 'MONOCHROME' "
+	"AND NEW.compression NOT IN ('NONE', 'PNG');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_monobands_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent MONOCHROME num_bands')\nWHERE NEW.pixel_type = 'MONOCHROME' "
+	"AND NEW.num_bands <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_monobands_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent MONOCHROME num_bands')\nWHERE NEW.pixel_type = 'MONOCHROME' "
+	"AND NEW.num_bands <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_pltsample_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent PALETTE sample_type')\nWHERE NEW.pixel_type = 'PALETTE' "
+	"AND NEW.sample_type NOT IN ('1-BIT', '2-BIT', '4-BIT', 'UINT8');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_pltsample_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent PALETTE sample_type')\nWHERE NEW.pixel_type = 'PALETTE' "
+	"AND NEW.sample_type NOT IN ('1-BIT', '2-BIT', '4-BIT', 'UINT8');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_pltcompr_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent PALETTE compression')\nWHERE NEW.pixel_type = 'PALETTE' "
+	"AND NEW.compression NOT IN ('NONE', 'GIF', 'PNG');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_pltcompr_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent PALETTE compression')\nWHERE NEW.pixel_type = 'PALETTE' "
+	"AND NEW.compression NOT IN ('NONE', 'GIF', 'PNG');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_pltbands_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent PALETTE num_bands')\nWHERE NEW.pixel_type = 'PALETTE' "
+	"AND NEW.num_bands <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_pltbands_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent PALETTE num_bands')\nWHERE NEW.pixel_type = 'PALETTE' "
+	"AND NEW.num_bands <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_graysample_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent GRAYSCALE sample_type')\nWHERE NEW.pixel_type = 'GRAYSCALE' "
+	"AND NEW.sample_type NOT IN ('2-BIT', '4-BIT', 'UINT8');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_graysample_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent GRAYSCALE sample_type')\nWHERE NEW.pixel_type = 'GRAYSCALE' "
+	"AND NEW.sample_type NOT IN ('2-BIT', '4-BIT', 'UINT8');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_graybands_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent GRAYSCALE num_bands')\nWHERE NEW.pixel_type = 'GRAYSCALE' "
+	"AND NEW.num_bands <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_graybands_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent GRAYSCALE num_bands')\nWHERE NEW.pixel_type = 'GRAYSCALE' "
+	"AND NEW.num_bands <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_rgbsample_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent RGB sample_type')\nWHERE NEW.pixel_type = 'RGB' "
+	"AND NEW.sample_type <> 'UINT8';\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_rgbsample_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent RGB sample_type')\nWHERE NEW.pixel_type = 'RGB' "
+	"AND NEW.sample_type <> 'UINT8';\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_rgbcompr_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent RGB compression')\nWHERE NEW.pixel_type = 'RGB' "
+	"AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', 'PNG', "
+	"'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_rgbcompr_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent RGB compression')\nWHERE NEW.pixel_type = 'RGB' "
+	"AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA', 'PNG', "
+	"'JPEG', 'LOSSY_WEBP', 'LOSSLESS_WEBP');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_rgbbands_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent RGB num_bands')\nWHERE NEW.pixel_type = 'RGB' "
+	"AND NEW.num_bands <> 3;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_rgbbands_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent RGB num_bands')\nWHERE NEW.pixel_type = 'RGB' "
+	"AND NEW.num_bands <> 3;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_multisample_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent MULTIBAND sample_type')\nWHERE NEW.pixel_type = 'MULTIBAND' "
+	"AND NEW.sample_type NOT IN ('UINT8', 'UINT16');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_multisample_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent MULTIBAND sample_type')\nWHERE NEW.pixel_type = 'MULTIBAND' "
+	"AND NEW.sample_type NOT IN ('UINT8', 'UINT16');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_multicompr_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent MULTIBAND compression')\nWHERE NEW.pixel_type = 'MULTIBAND' "
+	"AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_multicompr_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent MULTIBAND compression')\nWHERE NEW.pixel_type = 'MULTIBAND' "
+	"AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_gridsample_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent DATAGRID sample_type')\nWHERE NEW.pixel_type = 'DATAGRID' "
+	"AND NEW.sample_type NOT IN ('INT8', 'UINT8', 'INT16', 'UINT16', "
+	"'INT32', 'UINT32', 'FLOAT', 'DOUBLE');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_gridsample_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent DATAGRID sample_type')\nWHERE NEW.pixel_type = 'DATAGRID' "
+	"AND NEW.sample_type NOT IN ('INT8', 'UINT8', 'INT16', 'UINT16', "
+	"'INT32', 'UINT32', 'FLOAT', 'DOUBLE');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_gridcompr_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent DATAGRID compression')\nWHERE NEW.pixel_type = 'DATAGRID' "
+	"AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_gridcompr_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent DATAGRID compression')\nWHERE NEW.pixel_type = 'DATAGRID' "
+	"AND NEW.compression NOT IN ('NONE', 'DEFLATE', 'LZMA');\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_gridbands_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent DATAGRID num_bands')\nWHERE NEW.pixel_type = 'DATAGRID' "
+	"AND NEW.num_bands <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_gridbands_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"inconsistent DATAGRID num_bands')\nWHERE NEW.pixel_type = 'DATAGRID' "
+	"AND NEW.num_bands <> 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_georef_insert\n"
+	"BEFORE INSERT ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'insert on raster_coverages violates constraint: "
+	"inconsistent georeferencing infos')\n"
+	"WHERE NOT ((NEW.horz_resolution IS NULL AND NEW.vert_resolution IS NULL "
+	"AND NEW.srid IS NULL) OR (NEW.horz_resolution IS NOT NULL "
+	"AND NEW.vert_resolution IS NOT NULL AND NEW.srid IS NOT NULL));\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_georef_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT,'update on raster_coverages violates constraint: "
+	"inconsistent georeferencing infos')\n"
+	"WHERE NOT ((NEW.horz_resolution IS NULL AND NEW.vert_resolution IS NULL "
+	"AND NEW.srid IS NULL) OR (NEW.horz_resolution IS NOT NULL "
+	"AND NEW.vert_resolution IS NOT NULL AND NEW.srid IS NOT NULL));\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_update\n"
+	"BEFORE UPDATE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'update on raster_coverages violates constraint: "
+	"attempting to change the definition of an already populated Coverage')\n"
+	"WHERE IsPopulatedCoverage(OLD.coverage_name) = 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    sql = "CREATE TRIGGER raster_coverages_delete\n"
+	"BEFORE DELETE ON 'raster_coverages'\nFOR EACH ROW BEGIN\n"
+	"SELECT RAISE(ABORT, 'delete on raster_coverages violates constraint: "
+	"attempting to delete the definition of an already populated Coverage')\n"
+	"WHERE IsPopulatedCoverage(OLD.coverage_name) = 1;\nEND";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("SQL error: %s\n", err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+/* creating the raster_coverages_ref_sys view */
+    sql = "CREATE VIEW raster_coverages_ref_sys AS\n"
+	"SELECT c.coverage_name AS coverage_name, c.sample_type AS sample_type, "
+	"c.pixel_type AS pixel_type, c.num_bands AS num_bands, "
+	"c.compression AS compression, c.quality AS quality, "
+	"c.tile_width AS tile_width, c.tile_height AS tile_height, "
+	"c.horz_resolution AS horz_resolution, c.vert_resolution AS vert_resolution, "
+	"c.nodata_pixel AS nodata_pixel, c.srid AS srid, "
+	"s.auth_name AS auth_name, s.auth_srid AS auth_srid, "
+	"s.ref_sys_name AS ref_sys_name, s.proj4text AS ref_sys_name\n"
+	"FROM raster_coverages AS c\n"
+	"LEFT JOIN spatial_ref_sys AS s ON (c.srid = s.srid)";
+    ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW 'raster_coverages_ref_sys' error: %s\n",
+			err_msg);
+	  sqlite3_free (err_msg);
+	  return 0;
+      }
+    return 1;
+}
+
+SPATIALITE_PRIVATE int
+createRasterCoveragesTable (void *p_sqlite)
+{
+/* Creating the main RasterCoverages table */
+    int ok_table;
+    sqlite3 *sqlite = p_sqlite;
+
+/* checking if already defined */
+    ok_table = check_raster_coverages (sqlite);
+    if (ok_table)
+      {
+	  spatialite_e
+	      ("CreateRasterCoveragesTable() error: table 'raster_coverages' already exists\n");
+	  goto error;
+      }
+    ok_table = check_raster_coverages_ref_sys (sqlite);
+    if (ok_table)
+      {
+	  spatialite_e
+	      ("CreateRasterCoveragesTable() error: view 'raster_coverages_ref_sys' already exists\n");
+	  goto error;
+      }
+
+/* creating the main RasterCoverages table */
+    if (!create_raster_coverages (sqlite))
+	goto error;
+    return 1;
+
+  error:
+    return 0;
+}
+
+static int
+check_if_coverage_exists (sqlite3 * sqlite, const char *coverage)
+{
+/* checking if a Coverage table already exists */
+    int exists = 0;
+    char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sql_statement =
+	sqlite3_mprintf ("SELECT name FROM sqlite_master WHERE type = 'table' "
+			 "AND Upper(name) = Upper(%Q)", coverage);
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	exists = 1;
+    sqlite3_free_table (results);
+    return exists;
+}
+
+SPATIALITE_PRIVATE int
+checkPopulatedCoverage (void *p_sqlite, const char *coverage_name)
+{
+/* checking if a Coverage table is already populated */
+    int is_populated = 0;
+    char *xname;
+    char *sql_statement;
+    char *errMsg = NULL;
+    int ret;
+    char **results;
+    int rows;
+    int columns;
+    int i;
+    sqlite3 *sqlite = p_sqlite;
+    if (!check_if_coverage_exists (sqlite, coverage_name))
+	return 0;
+    xname = gaiaDoubleQuotedSql (coverage_name);
+    sql_statement =
+	sqlite3_mprintf ("SELECT ROWID FROM \"%s\" LIMIT 10", xname);
+    free (xname);
+    ret =
+	sqlite3_get_table (sqlite, sql_statement, &results, &rows, &columns,
+			   &errMsg);
+    sqlite3_free (sql_statement);
+    if (ret != SQLITE_OK)
+      {
+	  sqlite3_free (errMsg);
+	  return 0;
+      }
+    for (i = 1; i <= rows; i++)
+	is_populated = 1;
+    sqlite3_free_table (results);
+    return is_populated;
+}
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */
 
@@ -127,7 +1082,7 @@ create_external_graphics (sqlite3 * sqlite)
     sql = "CREATE TRIGGER sextgr_mime_type_insert\n"
 	"BEFORE INSERT ON 'SE_external_graphics'\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT,'insert on SE_external_graphics violates constraint: "
-	"GetMimeType(resource) must must be one of ''image/gif'' | ''image/png'' | "
+	"GetMimeType(resource) must be one of ''image/gif'' | ''image/png'' | "
 	"''image/jpeg'' | ''image/svg+xml''')\n"
 	"WHERE GetMimeType(NEW.resource) NOT IN ('image/gif', 'image/png', "
 	"'image/jpeg', 'image/svg+xml');\nEND";
@@ -142,7 +1097,7 @@ create_external_graphics (sqlite3 * sqlite)
 	"BEFORE UPDATE OF 'mime_type' ON 'SE_external_graphics'"
 	"\nFOR EACH ROW BEGIN\n"
 	"SELECT RAISE(ABORT, 'update on SE_external_graphics violates constraint: "
-	"GetMimeType(resource) must must be one of ''image/gif'' | ''image/png'' | "
+	"GetMimeType(resource) must be one of ''image/gif'' | ''image/png'' | "
 	"''image/jpeg'' | ''image/svg+xml''')\n"
 	"WHERE GetMimeType(NEW.resource) NOT IN ('image/gif', 'image/png', "
 	"'image/jpeg', 'image/svg+xml');\nEND";
@@ -169,7 +1124,10 @@ create_vector_styled_layers (sqlite3 * sqlite, int relaxed)
 	"style_id INTEGER NOT NULL,\n"
 	"style BLOB NOT NULL,\n"
 	"CONSTRAINT pk_sevstl PRIMARY KEY "
-	"(f_table_name, f_geometry_column, style_id))";
+	"(f_table_name, f_geometry_column, style_id),\n"
+	"CONSTRAINT fk_sevstl FOREIGN KEY (f_table_name, f_geometry_column) "
+	"REFERENCES geometry_columns (f_table_name, f_geometry_column) "
+	"ON DELETE CASCADE)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -321,7 +1279,9 @@ create_raster_styled_layers (sqlite3 * sqlite, int relaxed)
 	"coverage_name TEXT NOT NULL,\n"
 	"style_id INTEGER NOT NULL,\n"
 	"style BLOB NOT NULL,\n"
-	"CONSTRAINT pk_serstl PRIMARY KEY " "(coverage_name, style_id))";
+	"CONSTRAINT pk_serstl PRIMARY KEY " "(coverage_name, style_id),\n"
+	"CONSTRAINT fk_serstl FOREIGN KEY (coverage_name) "
+	"REFERENCES raster_coverages (coverage_name) " "ON DELETE CASCADE)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -501,14 +1461,17 @@ create_styled_group_refs (sqlite3 * sqlite)
 	"coverage_name TEXT,\n"
 	"raster_style_id INTEGER,\n"
 	"CONSTRAINT fk_se_refs FOREIGN KEY (group_name) "
-	"REFERENCES SE_styled_groups (group_name),\n"
+	"REFERENCES SE_styled_groups (group_name) "
+	"ON DELETE CASCADE,\n"
 	"CONSTRAINT fk_se_styled_vector FOREIGN KEY "
 	"(f_table_name, f_geometry_column, vector_style_id) "
 	"REFERENCES SE_vector_styled_layers "
-	"(f_table_name, f_geometry_column, style_id),\n"
+	"(f_table_name, f_geometry_column, style_id) "
+	"ON DELETE CASCADE,\n"
 	"CONSTRAINT fk_se_styled_raster FOREIGN KEY "
 	"(coverage_name, raster_style_id) "
-	"REFERENCES SE_raster_styled_layers (coverage_name, style_id))";
+	"REFERENCES SE_raster_styled_layers (coverage_name, style_id) "
+	"ON DELETE CASCADE)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);
     if (ret != SQLITE_OK)
       {
@@ -862,7 +1825,7 @@ createStylingTables (void *p_sqlite, int relaxed)
     int ok_table;
     sqlite3 *sqlite = p_sqlite;
 
-/* checking DLS/SE Styling tables */
+/* checking SLD/SE Styling tables */
     tables[0] = "SE_external_graphics";
     tables[1] = "SE_vector_styled_layers";
     tables[2] = "SE_raster_styled_layers";
@@ -899,6 +1862,12 @@ createStylingTables (void *p_sqlite, int relaxed)
       }
 
 /* creating the SLD/SE Styling tables */
+    if (!check_raster_coverages (sqlite))
+      {
+	  /* creating the main RasterCoverages table as well */
+	  if (!create_raster_coverages (sqlite))
+	      goto error;
+      }
     if (!create_external_graphics (sqlite))
 	goto error;
     if (!create_vector_styled_layers (sqlite, relaxed))

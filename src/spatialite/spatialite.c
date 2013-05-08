@@ -940,6 +940,54 @@ fnct_RTreeAlign (sqlite3_context * context, int argc, sqlite3_value ** argv)
       }
 }
 
+static void
+fnct_IsValidNoDataPixel (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsValidNoDataPixel(BLOBencoded pixel, text sample_type, int num_bands)
+/
+/ basic version intended to be overloaded by RasterLite-2
+/ always return 0 (FALSE)
+/ or -1 (INVALID ARGS)
+/
+*/
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
+	sqlite3_result_int (context, -1);
+    if (sqlite3_value_type (argv[1]) != SQLITE_TEXT)
+	sqlite3_result_int (context, -1);
+    if (sqlite3_value_type (argv[2]) != SQLITE_INTEGER)
+	sqlite3_result_int (context, -1);
+    sqlite3_result_int (context, 0);
+}
+
+static void
+fnct_IsPopulatedCoverage (sqlite3_context * context, int argc,
+			  sqlite3_value ** argv)
+{
+/* SQL function:
+/ IsPopulatedCoverage()
+/
+/ check if a RasterCoverage is already populated 
+/ returns 1 if TRUE, 0 if FALSE
+/ -1 on invalid arguments
+*/
+    const char *coverage;
+    int ret;
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) != SQLITE_TEXT)
+      {
+	  sqlite3_result_int (context, -1);
+	  return;
+      }
+    coverage = (const char *) sqlite3_value_text (argv[0]);
+    ret = checkPopulatedCoverage (sqlite, coverage);
+    sqlite3_result_int (context, ret);
+    return;
+}
+
 SPATIALITE_PRIVATE int
 checkSpatialMetaData (const void *handle)
 {
@@ -5536,6 +5584,32 @@ fnct_GetLayerExtent (sqlite3_context * context, int argc, sqlite3_value ** argv)
     return;
   error:
     sqlite3_result_null (context);
+    return;
+}
+
+static void
+fnct_CreateRasterCoveragesTable (sqlite3_context * context, int argc,
+				 sqlite3_value ** argv)
+{
+/* SQL function:
+/ CreateRasterCoveragesTable()
+/
+/ creates the main RasterCoverages table 
+/ returns 1 on success
+/ 0 on failure
+*/
+    sqlite3 *sqlite = sqlite3_context_db_handle (context);
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+
+    if (!createRasterCoveragesTable (sqlite))
+	goto error;
+    updateSpatiaLiteHistory (sqlite, "*** Raster Coveraverages ***", NULL,
+			     "Main table successfully created");
+    sqlite3_result_int (context, 1);
+    return;
+
+  error:
+    sqlite3_result_int (context, 0);
     return;
 }
 
@@ -14529,11 +14603,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 				    {
 					/* Linestrings */
 					l = gaiaGeodesicTotalLength (a, b, rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -14556,9 +14629,12 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      l = gaiaGeodesicTotalLength (a,
 									   b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -14602,11 +14678,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					/* Linestrings */
 					length +=
 					    gaiaGreatCircleTotalLength (a, b,
-									line->DimensionModel,
 									line->
-									Coords,
-									line->
-									Points);
+									DimensionModel,
+									line->Coords,
+									line->Points);
 					line = line->Next;
 				    }
 			      }
@@ -22657,8 +22732,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -22742,8 +22816,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -22752,8 +22825,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -24855,6 +24927,10 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_GeometryConstraints, 0, 0);
     sqlite3_create_function (db, "RTreeAlign", 3, SQLITE_ANY, 0,
 			     fnct_RTreeAlign, 0, 0);
+    sqlite3_create_function (db, "IsValidNoDataPixel", 3, SQLITE_ANY, 0,
+			     fnct_IsValidNoDataPixel, 0, 0);
+    sqlite3_create_function (db, "IsPopulatedCoverage", 1, SQLITE_ANY, 0,
+			     fnct_IsPopulatedCoverage, 0, 0);
     sqlite3_create_function (db, "CheckSpatialMetaData", 0, SQLITE_ANY, 0,
 			     fnct_CheckSpatialMetaData, 0, 0);
     sqlite3_create_function (db, "AutoFDOStart", 0, SQLITE_ANY, 0,
@@ -24925,6 +25001,8 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_GetLayerExtent, 0, 0);
     sqlite3_create_function (db, "GetLayerExtent", 3, SQLITE_ANY, 0,
 			     fnct_GetLayerExtent, 0, 0);
+    sqlite3_create_function (db, "CreateRasterCoveragesTable", 0, SQLITE_ANY, 0,
+			     fnct_CreateRasterCoveragesTable, 0, 0);
     sqlite3_create_function (db, "AsText", 1, SQLITE_ANY, 0, fnct_AsText, 0, 0);
     sqlite3_create_function (db, "ST_AsText", 1, SQLITE_ANY, 0, fnct_AsText,
 			     0, 0);
