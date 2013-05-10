@@ -1014,9 +1014,8 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 		      if (pk_type == SQLITE_TEXT)
 			  sqlite3_bind_text (stmt, 1,
 					     dbf_field->Value->TxtValue,
-					     strlen (dbf_field->
-						     Value->TxtValue),
-					     SQLITE_STATIC);
+					     strlen (dbf_field->Value->
+						     TxtValue), SQLITE_STATIC);
 		      else if (pk_type == SQLITE_FLOAT)
 			  sqlite3_bind_double (stmt, 1,
 					       dbf_field->Value->DblValue);
@@ -1057,8 +1056,8 @@ load_shapefile_ex (sqlite3 * sqlite, char *shp_path, char *table, char *charset,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->Value->
-						       TxtValue),
+					       strlen (dbf_field->
+						       Value->TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -3449,9 +3448,8 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 		      if (pk_type == SQLITE_TEXT)
 			  sqlite3_bind_text (stmt, 1,
 					     dbf_field->Value->TxtValue,
-					     strlen (dbf_field->
-						     Value->TxtValue),
-					     SQLITE_STATIC);
+					     strlen (dbf_field->Value->
+						     TxtValue), SQLITE_STATIC);
 		      else if (pk_type == SQLITE_FLOAT)
 			  sqlite3_bind_double (stmt, 1,
 					       dbf_field->Value->DblValue);
@@ -3493,8 +3491,8 @@ load_dbf_ex (sqlite3 * sqlite, char *dbf_path, char *table, char *pk_column,
 			case GAIA_TEXT_VALUE:
 			    sqlite3_bind_text (stmt, cnt + 2,
 					       dbf_field->Value->TxtValue,
-					       strlen (dbf_field->Value->
-						       TxtValue),
+					       strlen (dbf_field->
+						       Value->TxtValue),
 					       SQLITE_STATIC);
 			    break;
 			default:
@@ -4244,28 +4242,23 @@ do_delete_duplicates2 (sqlite3 * sqlite, sqlite3_stmt * stmt1,
       {
 	  if (col->type == SQLITE_BLOB)
 	    {
-		xname = gaiaDoubleQuotedSql (col->name);
-		sql = sqlite3_mprintf (", \"%s\"", xname);
-		free (xname);
+		sql = sqlite3_mprintf (", %s", col->name);
 		gaiaAppendToOutBuffer (&sql_statement, sql);
 		sqlite3_free (sql);
 		col->query_pos = qcnt++;
 	    }
 	  else if (col->type == SQLITE_NULL)
 	    {
-		xname = gaiaDoubleQuotedSql (col->name);
 		if (first)
 		  {
 		      first = 0;
-		      sql = sqlite3_mprintf ("\"%s\"", xname);
-		      free (xname);
+		      sql = sqlite3_mprintf ("%s", col->name);
 		      gaiaAppendToOutBuffer (&condition, sql);
 		      sqlite3_free (sql);
 		  }
 		else
 		  {
-		      sql = sqlite3_mprintf (" AND \"%s\"", xname);
-		      free (xname);
+		      sql = sqlite3_mprintf (" AND %s", col->name);
 		      gaiaAppendToOutBuffer (&condition, sql);
 		      sqlite3_free (sql);
 		  }
@@ -4275,19 +4268,16 @@ do_delete_duplicates2 (sqlite3 * sqlite, sqlite3_stmt * stmt1,
 	    }
 	  else
 	    {
-		xname = gaiaDoubleQuotedSql (col->name);
 		if (first)
 		  {
 		      first = 0;
-		      sql = sqlite3_mprintf ("\"%s\"", xname);
-		      free (xname);
+		      sql = sqlite3_mprintf ("%s", col->name);
 		      gaiaAppendToOutBuffer (&condition, sql);
 		      sqlite3_free (sql);
 		  }
 		else
 		  {
-		      sql = sqlite3_mprintf (" AND \"%s\"", xname);
-		      free (xname);
+		      sql = sqlite3_mprintf (" AND %s", col->name);
 		      gaiaAppendToOutBuffer (&condition, sql);
 		      sqlite3_free (sql);
 		  }
@@ -5787,8 +5777,8 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 						     cell.value.int_value);
 			    else if (cell.type == FREEXL_CELL_DOUBLE)
 				dummy = sqlite3_mprintf ("%1.2f ",
-							 cell.
-							 value.double_value);
+							 cell.value.
+							 double_value);
 			    else if (cell.type == FREEXL_CELL_TEXT
 				     || cell.type == FREEXL_CELL_SST_TEXT
 				     || cell.type == FREEXL_CELL_DATE
@@ -5799,8 +5789,8 @@ load_XL (sqlite3 * sqlite, const char *path, const char *table,
 				  if (len < 256)
 				      dummy =
 					  sqlite3_mprintf ("%s",
-							   cell.
-							   value.text_value);
+							   cell.value.
+							   text_value);
 				  else
 				      dummy = sqlite3_mprintf ("col_%d", col);
 			      }
