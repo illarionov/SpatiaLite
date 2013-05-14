@@ -1792,7 +1792,7 @@ parse_wfs_features (xmlNodePtr node, struct wfs_layer_schema *schema, int *rows)
 		else
 		    entity_name = sqlite3_mprintf ("%s", cur_node->name);
 		if (strcmp (schema->layer_name, entity_name) == 0
-		    || strcmp (schema->layer_name, cur_node->name) == 0)
+		    || strcmp (schema->layer_name, (const char *)(cur_node->name)) == 0)
 		  {
 		      if (parse_wfs_single_feature (cur_node->children, schema))
 			{

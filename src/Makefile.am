@@ -8,7 +8,8 @@ SUBDIRS = headers \
 	shapefiles \
 	srsinit \
 	virtualtext \
-	wfs
+	wfs \
+	dxf
 
 INCLUDES = @CFLAGS@
 INCLUDES += -I$(top_srcdir)/src/headers
@@ -24,6 +25,7 @@ libspatialite_la_LIBADD = ./gaiaaux/libgaiaaux.la \
 	./geopackage/libgeopackage.la \
 	./spatialite/libsplite.la \
 	./shapefiles/libshapefiles.la \
+	./dxf/libdxf.la \
 	./srsinit/libsrsinit.la \
 	./virtualtext/libvirtualtext.la \
 	./wfs/libwfs.la @LIBXML2_LIBS@

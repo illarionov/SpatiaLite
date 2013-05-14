@@ -17142,7 +17142,7 @@ else
 fi
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/gaiageo/flex/Makefile src/gaiageo/lemon/Makefile src/gaiageo/lemon/lemon_src/Makefile src/geopackage/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/srsinit/Makefile src/srsinit/epsg_update/Makefile src/virtualtext/Makefile src/wfs/Makefile test/Makefile test/sql_stmt_tests/Makefile test/sql_stmt_geos_tests/Makefile test/sql_stmt_geosadvanced_tests/Makefile test/sql_stmt_geostrunk_tests/Makefile test/sql_stmt_proj_tests/Makefile test/sql_stmt_mathsql_tests/Makefile test/sql_stmt_lwgeom_tests/Makefile test/sql_stmt_libxml2_tests/Makefile test/sql_stmt_security_tests/Makefile test/sql_stmt_xmlsec_tests/Makefile examples/Makefile Doxyfile spatialite.pc"
+ac_config_files="$ac_config_files Makefile src/Makefile src/headers/Makefile src/gaiaaux/Makefile src/gaiaexif/Makefile src/gaiageo/Makefile src/gaiageo/flex/Makefile src/gaiageo/lemon/Makefile src/gaiageo/lemon/lemon_src/Makefile src/geopackage/Makefile src/spatialite/Makefile src/shapefiles/Makefile src/dxf/Makefile src/srsinit/Makefile src/srsinit/epsg_update/Makefile src/virtualtext/Makefile src/wfs/Makefile test/Makefile test/sql_stmt_tests/Makefile test/sql_stmt_geos_tests/Makefile test/sql_stmt_geosadvanced_tests/Makefile test/sql_stmt_geostrunk_tests/Makefile test/sql_stmt_proj_tests/Makefile test/sql_stmt_mathsql_tests/Makefile test/sql_stmt_lwgeom_tests/Makefile test/sql_stmt_libxml2_tests/Makefile test/sql_stmt_security_tests/Makefile test/sql_stmt_xmlsec_tests/Makefile examples/Makefile Doxyfile spatialite.pc"
 
 
 #-----------------------------------------------------------------------
@@ -19550,6 +19550,7 @@ do
     "src/geopackage/Makefile") CONFIG_FILES="$CONFIG_FILES src/geopackage/Makefile" ;;
     "src/spatialite/Makefile") CONFIG_FILES="$CONFIG_FILES src/spatialite/Makefile" ;;
     "src/shapefiles/Makefile") CONFIG_FILES="$CONFIG_FILES src/shapefiles/Makefile" ;;
+    "src/dxf/Makefile") CONFIG_FILES="$CONFIG_FILES src/dxf/Makefile" ;;
     "src/srsinit/Makefile") CONFIG_FILES="$CONFIG_FILES src/srsinit/Makefile" ;;
     "src/srsinit/epsg_update/Makefile") CONFIG_FILES="$CONFIG_FILES src/srsinit/epsg_update/Makefile" ;;
     "src/virtualtext/Makefile") CONFIG_FILES="$CONFIG_FILES src/virtualtext/Makefile" ;;
