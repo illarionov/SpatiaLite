@@ -603,6 +603,7 @@ INPUT                  = src/headers/spatialite.h \
 			src/headers/spatialite/gg_formats.h \
 			src/headers/spatialite/gg_dynamic.h \
 			src/headers/spatialite/gg_advanced.h \
+			src/headers/spatialite/gg_xml.h \
 			examples/examples.doxy \
 			mainpage.doxy
 
