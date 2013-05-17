@@ -1907,7 +1907,7 @@ parse_dxf_line (gaiaDxfParserPtr dxf, const char *line)
 		break;
 	    };
       }
-    if (dxf->is_polyline)
+    if (dxf->is_polyline && dxf->is_vertex != 1)
       {
 	  /* parsing Polyline attributes */
 	  switch (dxf->op_code)
@@ -2071,7 +2071,8 @@ gaiaParseDxfFile (gaiaDxfParserPtr dxf, const char *path)
 /* parsing the whole DXF file */
     int c;
     char line[4192];
-    char *p = line;FILE *fl;
+    char *p = line;
+    FILE *fl;
 
     if (dxf == NULL)
 	return 0;

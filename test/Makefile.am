@@ -44,7 +44,8 @@ check_PROGRAMS = check_endian \
 		check_libxml2 \
 		check_styling \
 		check_virtualxpath \
-		check_wfsin 
+		check_wfsin \
+		check_dxf 
 if ENABLE_GEOPACKAGE
 check_PROGRAMS += \
 		check_createBaseTables \
@@ -163,7 +164,9 @@ EXTRA_DIST = asprintf4win.h \
 	test.wfs testDescribeFeatureType.wfs \
 	getcapabilities-1.0.0.wfs \
 	getcapabilities-1.1.0.wfs \
-	describefeaturetype.wfs	
+	describefeaturetype.wfs	\
+	22.dxf f06.dxf l02.dxf p05.dxf \
+	archaic.dxf linked.dxf
 
 SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_geostrunk_tests sql_stmt_libxml2_tests \
