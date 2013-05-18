@@ -2287,6 +2287,7 @@ create_layer_text_extra_attr_table (sqlite3 * handle, const char *name,
     xfk_name = gaiaDoubleQuotedSql (fk_name);
     xattr_name = gaiaDoubleQuotedSql (attr_name);
     xname = gaiaDoubleQuotedSql (name);
+    sqlite3_free (fk_name);
     sql = sqlite3_mprintf ("CREATE TABLE \"%s\" ("
 			   "    attr_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
 			   "    feature_id INTEGER NOT NULL,\n"
@@ -2300,7 +2301,7 @@ create_layer_text_extra_attr_table (sqlite3 * handle, const char *name,
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("CREATE TABLE %s error: %s\n", fk_name,
+	  spatialite_e ("CREATE TABLE %s error: %s\n", attr_name,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
@@ -2357,6 +2358,7 @@ create_layer_text_extra_attr_table (sqlite3 * handle, const char *name,
 			   "LEFT JOIN \"%s\" AS a ON (f.feature_id = a.feature_id)",
 			   xview_name, xname, xattr_name);
     free (xview_name);
+    free (xattr_name);
     free (xname);
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
@@ -2426,7 +2428,7 @@ create_layer_point_extra_attr_table (sqlite3 * handle, const char *name,
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("CREATE TABLE %s error: %s\n", fk_name,
+	  spatialite_e ("CREATE TABLE %s error: %s\n", attr_name,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
@@ -2451,6 +2453,7 @@ create_layer_point_extra_attr_table (sqlite3 * handle, const char *name,
 	("CREATE INDEX \"%s\" ON \"%s\" (feature_id)", xidx_name, xname);
     free (xidx_name);
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
 	  spatialite_e ("CREATE INDEX %s error: %s\n", idx_name,
@@ -2481,8 +2484,10 @@ create_layer_point_extra_attr_table (sqlite3 * handle, const char *name,
 			   "LEFT JOIN \"%s\" AS a ON (f.feature_id = a.feature_id)",
 			   xview_name, xname, xattr_name);
     free (xview_name);
+    free (xattr_name);
     free (xname);
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
 	  spatialite_e ("CREATE VIEW %s error: %s\n", view_name,
@@ -2549,7 +2554,7 @@ create_layer_line_extra_attr_table (sqlite3 * handle, const char *name,
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("CREATE TABLE %s error: %s\n", fk_name,
+	  spatialite_e ("CREATE TABLE %s error: %s\n", attr_name,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
@@ -2605,6 +2610,7 @@ create_layer_line_extra_attr_table (sqlite3 * handle, const char *name,
 			   "LEFT JOIN \"%s\" AS a ON (f.feature_id = a.feature_id)",
 			   xview_name, xname, xattr_name);
     free (xview_name);
+    free (xattr_name);
     free (xname);
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
@@ -2674,7 +2680,7 @@ create_layer_polyg_extra_attr_table (sqlite3 * handle, const char *name,
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("CREATE TABLE %s error: %s\n", fk_name,
+	  spatialite_e ("CREATE TABLE %s error: %s\n", attr_name,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
@@ -2730,6 +2736,7 @@ create_layer_polyg_extra_attr_table (sqlite3 * handle, const char *name,
 			   "LEFT JOIN \"%s\" AS a ON (f.feature_id = a.feature_id)",
 			   xview_name, xname, xattr_name);
     free (xview_name);
+    free (xattr_name);
     free (xname);
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);

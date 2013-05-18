@@ -1221,8 +1221,8 @@ reset_dxf_block (gaiaDxfParserPtr dxf)
 							   dxf->curr_text.x,
 							   dxf->curr_text.y,
 							   dxf->curr_text.z,
-							   dxf->
-							   curr_text.angle);
+							   dxf->curr_text.
+							   angle);
 		      blk =
 			  alloc_dxf_text_block (dxf->curr_layer_name,
 						dxf->curr_block_id, txt);
