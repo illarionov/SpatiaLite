@@ -211,6 +211,84 @@ extern "C"
  \sa gaiaDxfPolyline
  */
     typedef gaiaDxfPolyline *gaiaDxfPolylinePtr;
+/**
+ wrapper for DXF Pattern Segment object
+ */
+    typedef struct gaia_dxf_hatch_segm
+    {
+/** start X */
+	double x0;
+/** start Y */
+	double y0;
+/** end X */
+	double x1;
+/** end Y */
+	double y1;
+/** pointer to next item [linked list] */
+	struct gaia_dxf_hatch_segm *next;
+    } gaiaDxfHatchSegm;
+/**
+ Typedef for DXF Hatch Segment object
+
+ \sa gaiaDxfHatch
+ */
+    typedef gaiaDxfHatchSegm *gaiaDxfHatchSegmPtr;
+
+/**
+ wrapper for DXF Boundary Path object
+ */
+    typedef struct gaia_dxf_boundary_path
+    {
+/** pointer to first segment */
+	gaiaDxfHatchSegmPtr first;
+/** pointer to last segment */
+	gaiaDxfHatchSegmPtr last;
+/** pointer to next item [linked list] */
+	struct gaia_dxf_boundary_path *next;
+    } gaiaDxfBoundaryPath;
+/**
+ Typedef for DXF Boundary Path object
+
+ \sa gaiaDxfBoundaryPath
+ */
+    typedef gaiaDxfBoundaryPath *gaiaDxfBoundaryPathPtr;
+
+/**
+ wrapper for DXF Pattern Hatch object
+ */
+    typedef struct gaia_dxf_hatch
+    {
+/** hatch pattern spacing */
+	double spacing;
+/** hatch line angle */
+	double angle;
+/** hatch line base X */
+	double base_x;
+/** hatch line base Y */
+	double base_y;
+/** hatch line offset X */
+	double offset_x;
+/** hatch line offset Y */
+	double offset_y;
+/** pointer to first Boundary */
+	gaiaDxfBoundaryPathPtr first;
+/** pointer to last Boundary */
+	gaiaDxfBoundaryPathPtr last;
+/** pointer to Boundary geometry */
+	gaiaGeomCollPtr boundary;
+/** pointer to first Pattern segment */
+	gaiaDxfHatchSegmPtr first_out;
+/** pointer to last Pattern segment */
+	gaiaDxfHatchSegmPtr last_out;
+/** pointer to next item [linked list] */
+	struct gaia_dxf_hatch *next;
+    } gaiaDxfHatch;
+/**
+ Typedef for DXF Hatch object
+
+ \sa gaiaDxfHatch
+ */
+    typedef gaiaDxfHatch *gaiaDxfHatchPtr;
 
 /**
  wrapper for DXF Block object
@@ -227,6 +305,8 @@ extern "C"
 	gaiaDxfPointPtr point;
 /** pointer to DXF Polyline object */
 	gaiaDxfPolylinePtr line;
+/** pointer to DXF Hatch object */
+	gaiaDxfHatchPtr hatch;
 /** pointer to next item [linked list] */
 	struct gaia_dxf_block *next;
     } gaiaDxfBlock;
@@ -260,6 +340,10 @@ extern "C"
 	gaiaDxfPolylinePtr first_polyg;
 /** pointer to last DXF Polyline (Polygon) object [linked list] */
 	gaiaDxfPolylinePtr last_polyg;
+/** pointer to first DXF Hatch object [linked list] */
+	gaiaDxfHatchPtr first_hatch;
+/** pointer to last DXF Hatch object [linked list] */
+	gaiaDxfHatchPtr last_hatch;
 /** boolean flag: contains 3d Text objects */
 	int is3Dtext;
 /** boolean flag: contains 3d Point objects */
@@ -336,6 +420,10 @@ extern "C"
 /** internal parser variable */
 	int is_vertex;
 /** internal parser variable */
+	int is_hatch;
+/** internal parser variable */
+	int is_hatch_boundary;
+/** internal parser variable */
 	int is_insert;
 /** internal parser variable */
 	int eof;
@@ -349,6 +437,8 @@ extern "C"
 	gaiaDxfText curr_text;
 /** internal parser variable */
 	gaiaDxfPoint curr_point;
+/** internal parser variable */
+	gaiaDxfPoint curr_end_point;
 /** internal parser variable */
 	int is_closed_polyline;
 /** internal parser variable */
@@ -367,6 +457,8 @@ extern "C"
 	gaiaDxfBlockPtr first_blk;
 /** internal parser variable */
 	gaiaDxfBlockPtr last_blk;
+/** internal parser variable */
+	gaiaDxfHatchPtr curr_hatch;
 /** internal parser variable */
 	int undeclared_layers;
     } gaiaDxfParser;

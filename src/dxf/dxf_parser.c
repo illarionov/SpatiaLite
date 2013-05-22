@@ -46,6 +46,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #if defined(_WIN32) && !defined(__MINGW32__)
 #include "config-msvc.h"
@@ -90,6 +91,352 @@ typedef struct dxf_rings_collection
 typedef dxfRingsCollection *dxfRingsCollectionPtr;
 
 
+
+static gaiaDxfHatchSegmPtr
+alloc_dxf_hatch_segm (double x0, double y0, double x1, double y1)
+{
+/* allocating and initializing a DXF Hatch Segment object */
+    gaiaDxfHatchSegmPtr segm = malloc (sizeof (gaiaDxfHatchSegm));
+    segm->x0 = x0;
+    segm->y0 = y0;
+    segm->x1 = x1;
+    segm->y1 = y1;
+    segm->next = NULL;
+    return segm;
+}
+
+static void
+destroy_dxf_hatch_segm (gaiaDxfHatchSegmPtr segm)
+{
+/* memory cleanup - destroying a DXF Hatch Segment object */
+    if (segm == NULL)
+	return;
+    free (segm);
+}
+
+static gaiaDxfBoundaryPathPtr
+alloc_dxf_boundary_path ()
+{
+/* allocating and initializing a DXF Boundary Path object */
+    gaiaDxfBoundaryPathPtr path = malloc (sizeof (gaiaDxfBoundaryPath));
+    path->first = NULL;
+    path->last = NULL;
+    path->next = NULL;
+    return path;
+}
+
+static void
+insert_dxf_boundary_segm (gaiaDxfBoundaryPathPtr path, gaiaDxfHatchSegmPtr segm)
+{
+/* inserting a Segment into a Boundary Path */
+    if (path->first == NULL)
+	path->first = segm;
+    if (path->last != NULL)
+	path->last->next = segm;
+    path->last = segm;
+}
+
+static void
+destroy_dxf_boundary_path (gaiaDxfBoundaryPathPtr path)
+{
+/* memory cleanup - destroying a DXF Boundary Path object */
+    gaiaDxfHatchSegmPtr segm;
+    gaiaDxfHatchSegmPtr n_segm;
+    if (path == NULL)
+	return;
+    segm = path->first;
+    while (segm != NULL)
+      {
+	  n_segm = segm->next;
+	  destroy_dxf_hatch_segm (segm);
+	  segm = n_segm;
+      }
+    free (path);
+}
+
+static gaiaDxfHatchPtr
+alloc_dxf_hatch ()
+{
+/* allocating and initializing a DXF Pattern Hatch object */
+    gaiaDxfHatchPtr hatch = malloc (sizeof (gaiaDxfHatch));
+    hatch->spacing = 0.0;
+    hatch->angle = 0.0;
+    hatch->base_x = 0.0;
+    hatch->base_y = 0.0;
+    hatch->offset_x = 0.0;
+    hatch->offset_y = 0.0;
+    hatch->first = NULL;
+    hatch->last = NULL;
+    hatch->boundary = NULL;
+    hatch->first_out = NULL;
+    hatch->last_out = NULL;
+    hatch->next = NULL;
+    return hatch;
+}
+
+static void
+insert_dxf_boundary_path (gaiaDxfHatchPtr hatch, gaiaDxfBoundaryPathPtr path)
+{
+/* inserting a Boundary Path into a Hatch */
+    if (hatch->first == NULL)
+	hatch->first = path;
+    if (hatch->last != NULL)
+	hatch->last->next = path;
+    hatch->last = path;
+}
+
+static void
+insert_dxf_hatch_out (gaiaDxfHatchPtr hatch, gaiaDxfHatchSegmPtr segm)
+{
+/* inserting a Segment into a Hatch */
+    if (hatch->first_out == NULL)
+	hatch->first_out = segm;
+    if (hatch->last_out != NULL)
+	hatch->last_out->next = segm;
+    hatch->last_out = segm;
+}
+
+static void
+destroy_dxf_hatch (gaiaDxfHatchPtr hatch)
+{
+/* memory cleanup - destroying a DXF Pattern Hatch object */
+    gaiaDxfBoundaryPathPtr path;
+    gaiaDxfBoundaryPathPtr n_path;
+    gaiaDxfHatchSegmPtr out;
+    gaiaDxfHatchSegmPtr n_out;
+    if (hatch == NULL)
+	return;
+    path = hatch->first;
+    while (path != NULL)
+      {
+	  n_path = path->next;
+	  destroy_dxf_boundary_path (path);
+	  path = n_path;
+      }
+    if (hatch->boundary != NULL)
+	gaiaFreeGeomColl (hatch->boundary);
+    out = hatch->first_out;
+    while (out != NULL)
+      {
+	  n_out = out->next;
+	  destroy_dxf_hatch_segm (out);
+	  out = n_out;
+      }
+    free (hatch);
+}
+
+static int
+is_valid_dxf_hatch (gaiaDxfHatchPtr hatch)
+{
+/* testing for a valid Pattern Hatch */
+    if (hatch->first == NULL || hatch->spacing == 0.0)
+	return 0;
+    return 1;
+}
+
+static void
+apply_vertical_hatch (gaiaGeomCollPtr boundary, gaiaGeomCollPtr geom,
+		      double spacing, double base_x)
+{
+/* vertical Pattern Hatch Lines */
+    double min_x = boundary->MinX;
+    double max_x = boundary->MaxX;
+    double min_y = boundary->MinY;
+    double max_y = boundary->MaxY;
+    double x;
+    gaiaLinestringPtr ln;
+/* inserting all Hatch Lines into the collection */
+    x = base_x + boundary->MinX;
+    while (x < max_x)
+      {
+	  ln = gaiaAddLinestringToGeomColl (geom, 2);
+	  gaiaSetPoint (ln->Coords, 0, x, min_y);
+	  gaiaSetPoint (ln->Coords, 1, x, max_y);
+	  x += spacing;
+      }
+    x = base_x + boundary->MinX - spacing;
+    while (x > min_x)
+      {
+	  ln = gaiaAddLinestringToGeomColl (geom, 2);
+	  gaiaSetPoint (ln->Coords, 0, x, min_y);
+	  gaiaSetPoint (ln->Coords, 1, x, max_y);
+	  x -= spacing;
+      }
+}
+
+static void
+apply_horizontal_hatch (gaiaGeomCollPtr boundary, gaiaGeomCollPtr geom,
+			double spacing, double base_y)
+{
+/* horizontal Pattern Hatch Lines */
+    double min_x = boundary->MinX;
+    double max_x = boundary->MaxX;
+    double min_y = boundary->MinY;
+    double max_y = boundary->MaxY;
+    double y;
+    gaiaLinestringPtr ln;
+/* inserting all Hatch Lines into the collection */
+    y = base_y + boundary->MinY;
+    while (y < max_y)
+      {
+	  ln = gaiaAddLinestringToGeomColl (geom, 2);
+	  gaiaSetPoint (ln->Coords, 0, min_x, y);
+	  gaiaSetPoint (ln->Coords, 1, max_x, y);
+	  y += spacing;
+      }
+    y = base_y + boundary->MinY - spacing;
+    while (y > min_y)
+      {
+	  ln = gaiaAddLinestringToGeomColl (geom, 2);
+	  gaiaSetPoint (ln->Coords, 0, min_x, y);
+	  gaiaSetPoint (ln->Coords, 1, max_x, y);
+	  y -= spacing;
+      }
+}
+
+static void
+apply_hatch (gaiaGeomCollPtr boundary, gaiaGeomCollPtr geom, double angle,
+	     double spacing, double base_x, double base_y)
+{
+/* ordinary (slant) Pattern Hatch Lines */
+    double min_x = boundary->MinX;
+    double max_x = boundary->MaxX;
+    double min_y = boundary->MinY;
+    double max_y = boundary->MaxY;
+    double ext_x = max_x - min_x;
+    double ext_y = max_y - min_y;
+    double ext = (ext_x > ext_y) ? ext_x : ext_y;
+    double mnx = (ext * 2.0) * -1.0;
+    double mxx = ext * 3.0;
+    double mny = (ext * 2.0) * -1.0;
+    double mxy = ext * 3.0;
+    gaiaLinestringPtr ln;
+    double y;
+/* inserting all horizontal Hatch Lines into the collection */
+    y = 0.0;
+    while (y < mxy)
+      {
+	  ln = gaiaAddLinestringToGeomColl (geom, 2);
+	  gaiaSetPoint (ln->Coords, 0, mnx, y);
+	  gaiaSetPoint (ln->Coords, 1, mxx, y);
+	  y += spacing;
+      }
+    y = 0.0 - spacing;
+    while (y > mny)
+      {
+	  ln = gaiaAddLinestringToGeomColl (geom, 2);
+	  gaiaSetPoint (ln->Coords, 0, mnx, y);
+	  gaiaSetPoint (ln->Coords, 1, mxx, y);
+	  y -= spacing;
+      }
+/* applying the required rotation */
+    gaiaRotateCoords (geom, angle * -1.0);
+/* translating into base position */
+    gaiaShiftCoords (geom, base_x + min_x, base_y + min_y);
+}
+
+static void
+create_dxf_hatch_lines (gaiaDxfHatchPtr hatch, int srid)
+{
+/* creating Pattern Hatch lines */
+    gaiaDxfBoundaryPathPtr path;
+    gaiaDxfHatchSegmPtr out;
+    gaiaDxfHatchSegmPtr n_out;
+    gaiaGeomCollPtr geom;
+    gaiaGeomCollPtr geom2;
+    gaiaGeomCollPtr result;
+    gaiaGeomCollPtr clipped;
+    double angle;
+    double x0;
+    double y0;
+    double x1;
+    double y1;
+    gaiaLinestringPtr ln;
+
+    if (hatch == NULL)
+	return;
+    if (hatch == NULL)
+	return;
+    if (hatch->boundary != NULL)
+	gaiaFreeGeomColl (hatch->boundary);
+    out = hatch->first_out;
+    while (out != NULL)
+      {
+	  /* cleaning all Pattern Hatch lines */
+	  n_out = out->next;
+	  destroy_dxf_hatch_segm (out);
+	  out = n_out;
+      }
+    hatch->boundary = NULL;
+    hatch->first_out = NULL;
+    hatch->last_out = NULL;
+
+/* creating the Pattern Boundary */
+    geom = gaiaAllocGeomColl ();
+    path = hatch->first;
+    while (path != NULL)
+      {
+	  /* inserting Boundary lines */
+	  out = path->first;
+	  while (out != NULL)
+	    {
+		/* inserting all Boundary segments into the collection */
+		ln = gaiaAddLinestringToGeomColl (geom, 2);
+		gaiaSetPoint (ln->Coords, 0, out->x0, out->y0);
+		gaiaSetPoint (ln->Coords, 1, out->x1, out->y1);
+		out = out->next;
+	    }
+	  path = path->next;
+      }
+/* attempting to reassemble the Boundary */
+    result = gaiaPolygonize (geom, 0);
+    gaiaFreeGeomColl (geom);
+    gaiaMbrGeometry (result);
+    if (result == NULL)
+	return;
+    result->Srid = srid;
+    result->DeclaredType = GAIA_MULTIPOLYGON;
+    hatch->boundary = result;
+/* normalizing the angle */
+    angle = hatch->angle;
+    while (angle >= 360.0)
+	angle -= 360.0;
+    while (angle <= -360.0)
+	angle += 360;
+/* preparing the Hatch filling lines */
+    geom = gaiaAllocGeomColl ();
+    if (angle == 90.0 || angle == -90.0 || angle == 270.0 || angle == -270.0)
+	apply_vertical_hatch (result, geom, hatch->spacing, hatch->base_x);
+    else if (angle == 0.0 || angle == 180 || angle == -180)
+	apply_horizontal_hatch (result, geom, hatch->spacing, hatch->base_y);
+    else
+	apply_hatch (result, geom, angle, hatch->spacing, hatch->base_x,
+		     hatch->base_y);
+    geom2 = gaiaUnaryUnion (geom);
+    if (geom2 != NULL)
+      {
+	  gaiaFreeGeomColl (geom);
+	  geom = geom2;
+      }
+    gaiaMbrGeometry (geom);
+    clipped = gaiaGeometryIntersection (geom, result);
+    gaiaFreeGeomColl (geom);
+    if (clipped == NULL)
+	return;
+    ln = clipped->FirstLinestring;
+    while (ln != NULL)
+      {
+	  if (ln->Points == 2)
+	    {
+		gaiaGetPoint (ln->Coords, 0, &x0, &y0);
+		gaiaGetPoint (ln->Coords, 1, &x1, &y1);
+		n_out = alloc_dxf_hatch_segm (x0, y0, x1, y1);
+		insert_dxf_hatch_out (hatch, n_out);
+	    }
+	  ln = ln->Next;
+      }
+    gaiaFreeGeomColl (clipped);
+}
 
 static gaiaDxfHolePtr
 alloc_dxf_hole (int points)
@@ -293,6 +640,29 @@ linked_rings (gaiaDxfPolylinePtr line)
     gaiaFreeGeomColl (result);
 /* forcing the closure flag */
     line->is_closed = 1;
+}
+
+static void
+insert_dxf_hatch (gaiaDxfParserPtr dxf, const char *layer_name,
+		  gaiaDxfHatchPtr hatch)
+{
+/* inserting a HATCH object into the appropriate Layer */
+    gaiaDxfLayerPtr lyr = dxf->first;
+    while (lyr != NULL)
+      {
+	  if (strcmp (lyr->layer_name, layer_name) == 0)
+	    {
+		/* found the matching Layer */
+		if (lyr->first_hatch == NULL)
+		    lyr->first_hatch = hatch;
+		if (lyr->last_hatch != NULL)
+		    lyr->last_hatch->next = hatch;
+		lyr->last_hatch = hatch;
+		return;
+	    }
+	  lyr = lyr->next;
+      }
+    destroy_dxf_hatch (hatch);
 }
 
 static gaiaDxfExtraAttrPtr
@@ -508,7 +878,8 @@ alloc_dxf_polyline (int is_closed, int points)
 }
 
 static gaiaDxfPolylinePtr
-clone_dxf_polyline (gaiaDxfPolylinePtr in)
+clone_dxf_polyline (gaiaDxfPolylinePtr in, double shift_x, double shift_y,
+		    double shift_z)
 {
 /* cloning a DXF Polyline object */
     int i;
@@ -520,9 +891,9 @@ clone_dxf_polyline (gaiaDxfPolylinePtr in)
     ln->z = malloc (sizeof (double) * in->points);
     for (i = 0; i < in->points; i++)
       {
-	  *(ln->x + i) = *(in->x + i);
-	  *(ln->y + i) = *(in->y + i);
-	  *(ln->z + i) = *(in->z + i);
+	  *(ln->x + i) = *(in->x + i) + shift_x;
+	  *(ln->y + i) = *(in->y + i) + shift_y;
+	  *(ln->z + i) = *(in->z + i) + shift_z;
       }
     ln->first_hole = NULL;
     ln->last_hole = NULL;
@@ -957,6 +1328,8 @@ alloc_dxf_layer (const char *name, int force_dims)
     lyr->last_line = NULL;
     lyr->first_polyg = NULL;
     lyr->last_polyg = NULL;
+    lyr->first_hatch = NULL;
+    lyr->last_hatch = NULL;
     if (force_dims == GAIA_DXF_FORCE_3D)
       {
 	  lyr->is3Dtext = 1;
@@ -989,10 +1362,10 @@ destroy_dxf_layer (gaiaDxfLayerPtr lyr)
     gaiaDxfPointPtr n_pt;
     gaiaDxfPolylinePtr ln;
     gaiaDxfPolylinePtr n_ln;
+    gaiaDxfHatchPtr ht;
+    gaiaDxfHatchPtr n_ht;
     if (lyr == NULL)
 	return;
-    if (lyr->layer_name != NULL)
-	free (lyr->layer_name);
     txt = lyr->first_text;
     while (txt != NULL)
       {
@@ -1021,6 +1394,15 @@ destroy_dxf_layer (gaiaDxfLayerPtr lyr)
 	  destroy_dxf_polyline (ln);
 	  ln = n_ln;
       }
+    ht = lyr->first_hatch;
+    while (ht != NULL)
+      {
+	  n_ht = ht->next;
+	  destroy_dxf_hatch (ht);
+	  ht = n_ht;
+      }
+    if (lyr->layer_name != NULL)
+	free (lyr->layer_name);
     free (lyr);
 }
 
@@ -1147,7 +1529,7 @@ save_current_block_polyline (gaiaDxfParserPtr dxf)
     gaiaDxfPolylinePtr ln;
     gaiaDxfPointPtr n_pt;
     gaiaDxfPointPtr pt = dxf->first_pt;
-    if (dxf->curr_block_id != NULL)
+    if (dxf->curr_block_id != NULL && dxf->curr_layer_name != NULL)
       {
 	  /* saving the current Polyline Block */
 	  while (pt != NULL)
@@ -1212,6 +1594,14 @@ reset_dxf_block (gaiaDxfParserPtr dxf)
       }
     if (dxf->is_block == 1)
       {
+	  if (dxf->is_hatch)
+	    {
+		dxf->is_hatch = 0;
+		/* resetting curr_layer */
+		if (dxf->curr_layer_name != NULL)
+		    free (dxf->curr_layer_name);
+		dxf->curr_layer_name = NULL;
+	    }
 	  if (dxf->is_text)
 	    {
 		if (dxf->curr_block_id != NULL)
@@ -1221,8 +1611,8 @@ reset_dxf_block (gaiaDxfParserPtr dxf)
 							   dxf->curr_text.x,
 							   dxf->curr_text.y,
 							   dxf->curr_text.z,
-							   dxf->curr_text.
-							   angle);
+							   dxf->
+							   curr_text.angle);
 		      blk =
 			  alloc_dxf_text_block (dxf->curr_layer_name,
 						dxf->curr_block_id, txt);
@@ -1299,6 +1689,9 @@ reset_dxf_block (gaiaDxfParserPtr dxf)
       }
     dxf->first_ext = NULL;
     dxf->last_ext = NULL;
+    if (dxf->curr_hatch != NULL)
+	destroy_dxf_hatch (dxf->curr_hatch);
+    dxf->curr_hatch = NULL;
     if (dxf->curr_block_id != NULL)
 	free (dxf->curr_block_id);
     dxf->curr_block_id = NULL;
@@ -1313,7 +1706,9 @@ insert_dxf_indirect_entity (gaiaDxfParserPtr dxf, gaiaDxfBlockPtr blk)
 	  /* saving the Text Block */
 	  gaiaDxfTextPtr in = blk->text;
 	  gaiaDxfTextPtr txt =
-	      alloc_dxf_text (in->label, in->x, in->y, in->z, in->angle);
+	      alloc_dxf_text (in->label, dxf->curr_point.x + in->x,
+			      dxf->curr_point.y + in->y,
+			      dxf->curr_point.z + in->z, in->angle);
 	  force_missing_layer (dxf);
 	  insert_dxf_text (dxf, dxf->curr_layer_name, txt);
       }
@@ -1321,14 +1716,18 @@ insert_dxf_indirect_entity (gaiaDxfParserPtr dxf, gaiaDxfBlockPtr blk)
       {
 	  /* saving the Point Block */
 	  gaiaDxfPointPtr in = blk->point;
-	  gaiaDxfPointPtr pt = alloc_dxf_point (in->x, in->y, in->z);
+	  gaiaDxfPointPtr pt = alloc_dxf_point (dxf->curr_point.x + in->x,
+						dxf->curr_point.y + in->y,
+						dxf->curr_point.z + in->z);
 	  force_missing_layer (dxf);
 	  insert_dxf_point (dxf, dxf->curr_layer_name, pt);
       }
     if (blk->line)
       {
 	  /* saving the Polyline Block */
-	  gaiaDxfPolylinePtr ln = clone_dxf_polyline (blk->line);
+	  gaiaDxfPolylinePtr ln =
+	      clone_dxf_polyline (blk->line, dxf->curr_point.x,
+				  dxf->curr_point.y, dxf->curr_point.z);
 	  force_missing_layer (dxf);
 	  insert_dxf_polyline (dxf, dxf->curr_layer_name, ln);
       }
@@ -1387,6 +1786,26 @@ reset_dxf_entity (gaiaDxfParserPtr dxf)
 	  if (dxf->curr_block_id != NULL)
 	      free (dxf->curr_block_id);
 	  dxf->curr_block_id = NULL;
+      }
+    if (dxf->is_hatch)
+      {
+	  /* saving the current hatch */
+	  if (dxf->curr_hatch != NULL)
+	    {
+		if (is_valid_dxf_hatch (dxf->curr_hatch))
+		  {
+		      force_missing_layer (dxf);
+		      insert_dxf_hatch (dxf, dxf->curr_layer_name,
+					dxf->curr_hatch);
+		      create_dxf_hatch_lines (dxf->curr_hatch, dxf->srid);
+		      dxf->curr_hatch = NULL;
+		  }
+	    }
+	  dxf->is_hatch = 0;
+	  /* resetting curr_layer */
+	  if (dxf->curr_layer_name != NULL)
+	      free (dxf->curr_layer_name);
+	  dxf->curr_layer_name = NULL;
       }
     if (dxf->is_text)
       {
@@ -1448,6 +1867,9 @@ reset_dxf_entity (gaiaDxfParserPtr dxf)
       }
     dxf->first_ext = NULL;
     dxf->last_ext = NULL;
+    if (dxf->curr_hatch != NULL)
+	destroy_dxf_hatch (dxf->curr_hatch);
+    dxf->curr_hatch = NULL;
 }
 
 static void
@@ -1528,6 +1950,98 @@ set_dxf_extra_value (gaiaDxfParserPtr dxf, const char *value)
     strcpy (dxf->extra_value, value);
     if (dxf->extra_key != NULL && dxf->extra_value != NULL)
 	set_dxf_extra_attr (dxf);
+}
+
+static void
+create_dxf_curr_hatch (gaiaDxfParserPtr dxf)
+{
+/* creating the current Hatch being parsed */
+    if (dxf->curr_hatch != NULL)
+	destroy_dxf_hatch (dxf->curr_hatch);
+    dxf->curr_hatch = alloc_dxf_hatch ();
+}
+
+static void
+start_dxf_hatch_boundary (gaiaDxfParserPtr dxf)
+{
+/* starting a new Hatch Boundary Path */
+    if (dxf->curr_hatch != NULL)
+      {
+	  gaiaDxfBoundaryPathPtr path = alloc_dxf_boundary_path ();
+	  insert_dxf_boundary_path (dxf->curr_hatch, path);
+	  dxf->is_hatch_boundary = 1;
+      }
+}
+
+static void
+insert_dxf_hatch_boundary_segm (gaiaDxfParserPtr dxf)
+{
+    if (dxf->curr_hatch != NULL)
+      {
+	  gaiaDxfBoundaryPathPtr path = dxf->curr_hatch->last;
+	  if (path != NULL)
+	    {
+		gaiaDxfHatchSegmPtr segm =
+		    alloc_dxf_hatch_segm (dxf->curr_point.x, dxf->curr_point.y,
+					  dxf->curr_end_point.x,
+					  dxf->curr_end_point.y);
+		insert_dxf_boundary_segm (path, segm);
+	    }
+      }
+    dxf->curr_point.x = 0.0;
+    dxf->curr_point.y = 0.0;
+    dxf->curr_point.z = 0.0;
+    dxf->curr_end_point.x = 0.0;
+    dxf->curr_end_point.y = 0.0;
+    dxf->curr_end_point.z = 0.0;
+}
+
+static void
+set_dxf_hatch_spacing (gaiaDxfParserPtr dxf, double spacing)
+{
+/* saving the current Hatch spacing */
+    if (dxf->curr_hatch != NULL)
+	dxf->curr_hatch->spacing = spacing;
+}
+
+static void
+set_dxf_hatch_angle (gaiaDxfParserPtr dxf, double angle)
+{
+/* saving the current Hatch angle */
+    if (dxf->curr_hatch != NULL)
+	dxf->curr_hatch->angle = angle;
+}
+
+static void
+set_dxf_hatch_base_x (gaiaDxfParserPtr dxf, double x)
+{
+/* saving the current Hatch base X */
+    if (dxf->curr_hatch != NULL)
+	dxf->curr_hatch->base_x = x;
+}
+
+static void
+set_dxf_hatch_base_y (gaiaDxfParserPtr dxf, double y)
+{
+/* saving the current Hatch base Y */
+    if (dxf->curr_hatch != NULL)
+	dxf->curr_hatch->base_y = y;
+}
+
+static void
+set_dxf_hatch_offset_x (gaiaDxfParserPtr dxf, double x)
+{
+/* saving the current Hatch offset X */
+    if (dxf->curr_hatch != NULL)
+	dxf->curr_hatch->offset_x = x;
+}
+
+static void
+set_dxf_hatch_offset_y (gaiaDxfParserPtr dxf, double y)
+{
+/* saving the current Hatch offset Y */
+    if (dxf->curr_hatch != NULL)
+	dxf->curr_hatch->offset_y = y;
 }
 
 static int
@@ -1778,6 +2292,20 @@ parse_dxf_line (gaiaDxfParserPtr dxf, const char *line)
 		return 1;
 	    }
       }
+    if (strcmp (line, "HATCH") == 0)
+      {
+	  /* start HATCH tag */
+	  if (dxf->entities && dxf->op_code == 0)
+	    {
+		dxf->is_hatch = 1;
+		return 1;
+	    }
+	  if (dxf->is_block && dxf->op_code == 0)
+	    {
+		dxf->is_hatch = 1;
+		return 1;
+	    }
+      }
     if (strcmp (line, "EOF") == 0)
       {
 	  /* end of file marker tag */
@@ -1819,6 +2347,15 @@ parse_dxf_line (gaiaDxfParserPtr dxf, const char *line)
 		break;
 	    case 8:
 		set_dxf_layer_name (dxf, line);
+		break;
+	    case 10:
+		dxf->curr_point.x = atof (line);
+		break;
+	    case 20:
+		dxf->curr_point.y = atof (line);
+		break;
+	    case 30:
+		dxf->curr_point.z = atof (line);
 		break;
 	    };
       }
@@ -1945,6 +2482,57 @@ parse_dxf_line (gaiaDxfParserPtr dxf, const char *line)
 		break;
 	    };
       }
+    if (dxf->is_hatch)
+      {
+	  /* parsing Hatch attributes */
+	  switch (dxf->op_code)
+	    {
+	    case 8:
+		set_dxf_layer_name (dxf, line);
+		create_dxf_curr_hatch (dxf);
+		break;
+	    case 10:
+		if (dxf->is_hatch_boundary)
+		    dxf->curr_point.x = atof (line);
+		break;
+	    case 20:
+		if (dxf->is_hatch_boundary)
+		    dxf->curr_point.y = atof (line);
+		break;
+	    case 11:
+		if (dxf->is_hatch_boundary)
+		    dxf->curr_end_point.x = atof (line);
+		break;
+	    case 21:
+		dxf->curr_end_point.y = atof (line);
+		insert_dxf_hatch_boundary_segm (dxf);
+		break;
+	    case 41:
+		set_dxf_hatch_spacing (dxf, atof (line));
+		break;
+	    case 43:
+		set_dxf_hatch_base_x (dxf, atof (line));
+		break;
+	    case 44:
+		set_dxf_hatch_base_y (dxf, atof (line));
+		break;
+	    case 45:
+		set_dxf_hatch_offset_x (dxf, atof (line));
+		break;
+	    case 46:
+		set_dxf_hatch_offset_y (dxf, atof (line));
+		break;
+	    case 53:
+		set_dxf_hatch_angle (dxf, atof (line));
+		break;
+	    case 92:
+		start_dxf_hatch_boundary (dxf);
+		break;
+	    case 97:
+		dxf->is_hatch_boundary = 0;
+		break;
+	    };
+      }
     return 1;
 }
 
@@ -1970,6 +2558,8 @@ gaiaCreateDxfParser (int srid,
     dxf->is_polyline = 0;
     dxf->is_lwpolyline = 0;
     dxf->is_vertex = 0;
+    dxf->is_hatch = 0;
+    dxf->is_hatch_boundary = 0;
     dxf->is_insert = 0;
     dxf->eof = 0;
     dxf->error = 0;
@@ -1983,6 +2573,9 @@ gaiaCreateDxfParser (int srid,
     dxf->curr_point.x = 0.0;
     dxf->curr_point.y = 0.0;
     dxf->curr_point.z = 0.0;
+    dxf->curr_end_point.x = 0.0;
+    dxf->curr_end_point.y = 0.0;
+    dxf->curr_end_point.z = 0.0;
     dxf->is_closed_polyline = 0;
     dxf->extra_key = NULL;
     dxf->extra_value = NULL;
@@ -1994,6 +2587,7 @@ gaiaCreateDxfParser (int srid,
     dxf->last = NULL;
     dxf->first_blk = NULL;
     dxf->last_blk = NULL;
+    dxf->curr_hatch = NULL;
     dxf->force_dims = force_dims;
     if (srid <= 0)
 	srid = -1;
@@ -2062,6 +2656,8 @@ gaiaDestroyDxfParser (gaiaDxfParserPtr dxf)
 	  destroy_dxf_block (blk);
 	  blk = n_blk;
       }
+    if (dxf->curr_hatch != NULL)
+	destroy_dxf_hatch (dxf->curr_hatch);
     free (dxf);
 }
 

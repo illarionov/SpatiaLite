@@ -723,6 +723,81 @@ check_linked_legacy()
     return 0;
 }
 
+static int
+check_hatch()
+{
+/* testing hatch.dxf */
+    int ret;
+    sqlite3 *handle;
+    char *err_msg = NULL;
+    int row_count;
+    gaiaDxfParserPtr dxf;
+    void *cache = spatialite_alloc_connection();
+
+    ret = sqlite3_open_v2 (":memory:", &handle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+    if (ret != SQLITE_OK) {
+	fprintf(stderr, "cannot open in-memory database: %s\n", sqlite3_errmsg (handle));
+	sqlite3_close(handle);
+	return -1;
+    }
+
+    spatialite_init_ex (handle, cache, 0);
+    
+    ret = sqlite3_exec (handle, "SELECT InitSpatialMetadata(1)", NULL, NULL, &err_msg);
+    if (ret != SQLITE_OK) {
+	fprintf (stderr, "InitSpatialMetadata() error: %s\n", err_msg);
+	sqlite3_free(err_msg);
+	sqlite3_close(handle);
+	return -2;
+    }
+  
+    dxf = gaiaCreateDxfParser (3003, GAIA_DXF_AUTO_2D_3D, "lnk_", NULL, GAIA_DXF_RING_LINKED);
+    if (dxf == NULL) {
+	fprintf(stderr, "CREATE DXF PARSER: unexpected NULL \"hatch.dx\" auto)\n");
+	return -3;
+    }
+
+    ret = gaiaParseDxfFile (dxf, "./hatch.dxf");
+    if (ret == 0) {
+	fprintf(stderr, "Unable to parse \"hatch.dxf\" byLayers auto\n");
+	return -4;
+    }
+    
+    ret = gaiaLoadFromDxfParser (handle, dxf, GAIA_DXF_IMPORT_BY_LAYER, 0);
+    if (ret == 0) {
+	fprintf(stderr, "Unable to load \"hatch.dxf\" auto byLayer\n");
+	return -5;
+    } 
+    
+    ret = gaiaLoadFromDxfParser (handle, dxf, GAIA_DXF_IMPORT_BY_LAYER, 1);
+    if (ret == 0) {
+	fprintf(stderr, "Unable to load \"hatch.dxf\"  auto append byLayer\n");
+	return -6;
+    }
+    
+    ret = gaiaLoadFromDxfParser (handle, dxf, GAIA_DXF_IMPORT_MIXED, 0);
+    if (ret == 0) {
+	fprintf(stderr, "Unable to load \"hatch.dxf\" auto mixed\n");
+	return -7;
+    }
+    
+    ret = gaiaLoadFromDxfParser (handle, dxf, GAIA_DXF_IMPORT_MIXED, 1);
+    if (ret == 0) {
+	fprintf(stderr, "Unable to load \"hatch.dxf\" auto append mixed\n");
+	return -8;
+    }
+    gaiaDestroyDxfParser(dxf);
+
+    ret = sqlite3_close (handle);
+    if (ret != SQLITE_OK) {
+        fprintf (stderr, "sqlite3_close() error: %s\n", sqlite3_errmsg (handle));
+	return -9;
+    }
+    
+    spatialite_cleanup_ex (cache);
+    return 0;
+}
+
 int main (int argc, char *argv[])
 {
     if (argc > 1 || argv[0] == NULL)
@@ -751,6 +826,9 @@ int main (int argc, char *argv[])
 
     if (check_linked_legacy() != 0)
 	return -8;
+
+    if (check_hatch() != 0)
+	return -9;
 
     return 0;
 }
