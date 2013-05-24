@@ -61,6 +61,176 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 #include <spatialite/gaiageo.h>
 
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaMakeCircle (double cx, double cy, double radius, double step)
+{
+/* return a Linestring approximating a Circle */
+    return gaiaMakeEllipse (cx, cy, radius, radius, step);
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaMakeArc (double cx,
+	     double cy, double radius, double start, double stop, double step)
+{
+/* return a Linestring approximating a Circular Arc */
+    return gaiaMakeEllipticArc (cx, cy, radius, radius, start, stop, step);
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaMakeEllipse (double cx, double cy, double x_axis, double y_axis,
+		 double step)
+{
+/* return a Linestring approximating an Ellipse */
+    gaiaDynamicLinePtr dyn;
+    double x;
+    double y;
+    double angle = 0.0;
+    int points = 0;
+    gaiaPointPtr pt;
+    gaiaGeomCollPtr geom;
+    gaiaLinestringPtr ln;
+    int iv = 0;
+
+    if (step < 0.0)
+	step *= -1.0;
+    if (step == 0.0)
+	step = 10.0;
+    if (step < 0.1)
+	step = 0.1;
+    if (step > 45.0)
+	step = 45.0;
+    if (x_axis < 0.0)
+	x_axis *= -1.0;
+    if (y_axis < 0.0)
+	y_axis *= -1.0;
+    dyn = gaiaAllocDynamicLine ();
+    while (angle < 360.0)
+      {
+	  double rads = angle * .0174532925199432958;
+	  x = cx + (x_axis * cos (rads));
+	  y = cy + (y_axis * sin (rads));
+	  gaiaAppendPointToDynamicLine (dyn, x, y);
+	  angle += step;
+      }
+/* closing the ellipse */
+    gaiaAppendPointToDynamicLine (dyn, dyn->First->X, dyn->First->Y);
+
+    pt = dyn->First;
+    while (pt)
+      {
+	  /* counting how many points */
+	  points++;
+	  pt = pt->Next;
+      }
+    if (points == 0)
+      {
+	  gaiaFreeDynamicLine (dyn);
+	  return NULL;
+      }
+
+    geom = gaiaAllocGeomColl ();
+    ln = gaiaAddLinestringToGeomColl (geom, points);
+    pt = dyn->First;
+    while (pt)
+      {
+	  /* setting Vertices */
+	  gaiaSetPoint (ln->Coords, iv, pt->X, pt->Y);
+	  iv++;
+	  pt = pt->Next;
+      }
+    gaiaFreeDynamicLine (dyn);
+    return geom;
+}
+
+GAIAGEO_DECLARE gaiaGeomCollPtr
+gaiaMakeEllipticArc (double cx,
+		     double cy, double x_axis, double y_axis, double start,
+		     double stop, double step)
+{
+/* return a Linestring approximating an Elliptic Arc */
+    gaiaDynamicLinePtr dyn;
+    double x;
+    double y;
+    double angle;
+    double rads;
+    int points = 0;
+    gaiaPointPtr pt;
+    gaiaGeomCollPtr geom;
+    gaiaLinestringPtr ln;
+    int iv = 0;
+
+    if (step < 0.0)
+	step *= -1.0;
+    if (step == 0.0)
+	step = 10.0;
+    if (step < 0.1)
+	step = 0.1;
+    if (step > 45.0)
+	step = 45.0;
+    if (x_axis < 0.0)
+	x_axis *= -1.0;
+    if (y_axis < 0.0)
+	y_axis *= -1.0;
+/* normalizing Start/Stop angles */
+    while (start >= 360.0)
+	start -= 360.0;
+    while (start <= -360.0)
+	start += 360;
+    while (stop >= 360.0)
+	stop -= 360.0;
+    while (stop <= -360.0)
+	stop += 360;
+    if (start < 0.0)
+	start = 360.0 - start;
+    if (stop < 0.0)
+	stop = 360.0 - stop;
+    if (start > stop)
+	stop += 360.0;
+
+    dyn = gaiaAllocDynamicLine ();
+    angle = start;
+    while (angle < stop)
+      {
+	  rads = angle * .0174532925199432958;
+	  x = cx + (x_axis * cos (rads));
+	  y = cy + (y_axis * sin (rads));
+	  gaiaAppendPointToDynamicLine (dyn, x, y);
+	  angle += step;
+      }
+/* closing the arc */
+    rads = stop * .0174532925199432958;
+    x = cx + (x_axis * cos (rads));
+    y = cy + (y_axis * sin (rads));
+    if (x != dyn->Last->X || y != dyn->Last->Y)
+	gaiaAppendPointToDynamicLine (dyn, x, y);
+
+    pt = dyn->First;
+    while (pt)
+      {
+	  /* counting how many points */
+	  points++;
+	  pt = pt->Next;
+      }
+    if (points == 0)
+      {
+	  gaiaFreeDynamicLine (dyn);
+	  return NULL;
+      }
+
+    geom = gaiaAllocGeomColl ();
+    ln = gaiaAddLinestringToGeomColl (geom, points);
+    pt = dyn->First;
+    while (pt)
+      {
+	  /* setting Vertices */
+	  gaiaSetPoint (ln->Coords, iv, pt->X, pt->Y);
+	  iv++;
+	  pt = pt->Next;
+      }
+    gaiaFreeDynamicLine (dyn);
+    return geom;
+}
+
 GAIAGEO_DECLARE void
 gaiaShiftCoords (gaiaGeomCollPtr geom, double shift_x, double shift_y)
 {

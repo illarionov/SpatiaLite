@@ -464,6 +464,44 @@
 				<td>a Linestring Geometry will be returned connecting all the input Points (accordingly to input sequence); <b>direction=FALSE</b> implies <u>reverse order</u>.<br>
 				<u>Please note</u>: similar to the previuous one, but this one is an ordinary (not aggregate) function; a MultiPoint input is always expected.</b><hr>
 				NULL will be returned if any error is encountered</td></tr>
+                        <tr><td><b>MakeCircle</b></td>
+				<td>MakeCircle( cx <i>Double precision</i> , cy <i>Double precision</i> ,
+				radius <i>Double precision</i> [ , SRID <i>Integer</i> [ , 
+                                step <i>Double precision</i> ] ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>will return a closed LINESTRING approximating the Circle defined by <b>cx, cy</b> and <b>radius</b>.<br>
+                                The optional argument <b>step</b> if specified defines how many points will be interpolated on the circumference; a point will be set every <b>step</b> degrees.<br>
+                                The implicit default setting corresponds to a point every <u>10</u> degrees.</td></tr>
+                        <tr><td><b>MakeEllipse</b></td>
+				<td>MakeEllipse( cx <i>Double precision</i> , cy <i>Double precision</i> ,
+				x_axis <i>Double precision</i> , y_axis <i>Double precisin</i> [ , SRID <i>Integer</i> [ , 
+                                step <i>Double precision</i> ] ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>will return a closed LINESTRING approximating the Ellipse defined by <b>cx, cy</b> and <b>x_axis, y_axis</b>.<br>
+                                The optional argument <b>step</b> if specified defines how many points will be interpolated on the ellipse; a point will be set every <b>step</b> degrees.<br>
+                                The implicit default setting corresponds to a point every <u>10</u> degrees.</td></tr>
+                        <tr><td><b>MakeArc</b></td>
+				<td>MakeArc( cx <i>Double precision</i> , cy <i>Double precision</i> ,
+				radius <i>Double precision</i> , 
+                                start <i>Double precision</i> , stop <i>Double precision</i> [ , SRID <i>Integer</i> [ , 
+                                step <i>Double precision</i> ] ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>will return a LINESTRING approximating the Circular Arc defined by <b>cx, cy</b> and <b>radius</b>; the arc's extremities will be defined by <b>start, stop</b> angles expressed in degrees.<br>
+                                The optional argument <b>step</b> if specified defines how many points will be interpolated on the circumference; a point will be set every <b>step</b> degrees.<br>
+                                The implicit default setting corresponds to a point every <u>10</u> degrees.</td></tr>
+                        <tr><td><b>MakeEllipticArc</b></td>
+				<td>MakeEllipticArc( cx <i>Double precision</i> , cy <i>Double precision</i> ,
+				x_axis <i>Double precision</i> , y_axis <i>Double precision</i> , 
+                                start <i>Double precision</i> , stop <i>Double precision</i> [ , SRID <i>Integer</i> [ , 
+                                step <i>Double precision</i> ] ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>will return a LINESTRING approximating the Elliptic Arc defined by <b>cx, cy</b> and <b>x_axis, y_axis</b>; the arc's extremities will be defined by <b>start, stop</b> angles expressed in degrees.<br>
+                                The optional argument <b>step</b> if specified defines how many points will be interpolated on the ellipse; a point will be set every <b>step</b> degrees.<br>
+                                The implicit default setting corresponds to a point every <u>10</u> degrees.</td></tr>
 			<tr><td><b>SquareGrid</b></td>
 				<td>SquareGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i><hr>
                                     ST_SquareGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i></td>

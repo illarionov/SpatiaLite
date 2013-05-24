@@ -201,8 +201,8 @@ geoJsonMapDynAlloc (struct geoJson_data *p_data, int type, void *ptr)
 	  p_data->geoJson_last_dyn_block->next = p;
 	  p_data->geoJson_last_dyn_block = p;
       }
-    p_data->geoJson_last_dyn_block->type[p_data->geoJson_last_dyn_block->
-					 index] = type;
+    p_data->geoJson_last_dyn_block->type[p_data->
+					 geoJson_last_dyn_block->index] = type;
     p_data->geoJson_last_dyn_block->ptr[p_data->geoJson_last_dyn_block->index] =
 	ptr;
     p_data->geoJson_last_dyn_block->index++;

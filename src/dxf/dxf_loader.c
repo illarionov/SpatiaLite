@@ -179,9 +179,10 @@ create_polyg_stmt (sqlite3 * handle, const char *name, sqlite3_stmt ** xstmt)
 }
 
 static int
-create_hatch_stmt (sqlite3 * handle, const char *name, sqlite3_stmt ** xstmt)
+create_hatch_boundary_stmt (sqlite3 * handle, const char *name,
+			    sqlite3_stmt ** xstmt)
 {
-/* creating the "Hatch" insert statement */
+/* creating the "Hatch-Boundary" insert statement */
     char *sql;
     int ret;
     sqlite3_stmt *stmt;
@@ -191,8 +192,8 @@ create_hatch_stmt (sqlite3 * handle, const char *name, sqlite3_stmt ** xstmt)
     xname = gaiaDoubleQuotedSql (name);
     sql =
 	sqlite3_mprintf
-	("INSERT INTO \"%s\" (feature_id, layer, boundary_geom, pattern_geom) "
-	 "VALUES (NULL, ?, ?, ?)", xname);
+	("INSERT INTO \"%s\" (feature_id, layer, geometry) "
+	 "VALUES (NULL, ?, ?)", xname);
     free (xname);
     ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
     sqlite3_free (sql);
@@ -202,6 +203,38 @@ create_hatch_stmt (sqlite3 * handle, const char *name, sqlite3_stmt ** xstmt)
 			sqlite3_errmsg (handle));
 	  return 0;
       }
+    *xstmt = stmt;
+    return 1;
+}
+
+static int
+create_hatch_pattern_stmt (sqlite3 * handle, const char *name,
+			   sqlite3_stmt ** xstmt)
+{
+/* creating the "Hatch-Pattern" insert statement */
+    char *sql;
+    int ret;
+    sqlite3_stmt *stmt;
+    char *xpattern;
+    char *pattern;
+    *xstmt = NULL;
+
+    pattern = sqlite3_mprintf ("%s_pattern", name);
+    xpattern = gaiaDoubleQuotedSql (pattern);
+    sql =
+	sqlite3_mprintf
+	("INSERT INTO \"%s\" (feature_id, layer, geometry) "
+	 "VALUES (?, ?, ?)", xpattern);
+    free (xpattern);
+    ret = sqlite3_prepare_v2 (handle, sql, strlen (sql), &stmt, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE STATEMENT %s error: %s\n", pattern,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sqlite3_free (pattern);
     *xstmt = stmt;
     return 1;
 }
@@ -447,15 +480,22 @@ create_mixed_polyg_table (sqlite3 * handle, const char *name, int srid,
 
 static int
 create_mixed_hatch_table (sqlite3 * handle, const char *name, int srid,
-			  sqlite3_stmt ** xstmt)
+			  sqlite3_stmt ** xstmt, sqlite3_stmt ** xstmt2)
 {
 /* attempting to create the "Hatch-mixed" table */
     char *sql;
     int ret;
     sqlite3_stmt *stmt;
+    sqlite3_stmt *stmt2;
     char *xname;
+    char *pattern;
+    char *xpattern;
+    char *fk_name;
+    char *xfk_name;
     *xstmt = NULL;
+    *xstmt2 = NULL;
 
+/* creating the Hatch-Boundary table */
     xname = gaiaDoubleQuotedSql (name);
     sql = sqlite3_mprintf ("CREATE TABLE \"%s\" ("
 			   "    feature_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
@@ -471,53 +511,80 @@ create_mixed_hatch_table (sqlite3 * handle, const char *name, int srid,
       }
     sql =
 	sqlite3_mprintf
-	("SELECT AddGeometryColumn(%Q, 'boundary_geom', "
+	("SELECT AddGeometryColumn(%Q, 'geometry', "
 	 "%d, 'MULTIPOLYGON', 'XY')", name, srid);
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("ADD GEOMETRY %s (boundary) error: %s\n", name,
+	  spatialite_e ("ADD GEOMETRY %s error: %s\n", name,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
-    sql =
-	sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, 'boundary_geom')",
-			 name);
+    sql = sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, 'geometry')", name);
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("CREATE SPATIAL INDEX %s (boundary) error: %s\n", name,
+	  spatialite_e ("CREATE SPATIAL INDEX %s error: %s\n", name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+
+/* creating the Hatch-Pattern table */
+    xname = gaiaDoubleQuotedSql (name);
+    pattern = sqlite3_mprintf ("%s_pattern", name);
+    xpattern = gaiaDoubleQuotedSql (pattern);
+    fk_name = sqlite3_mprintf ("fk_%s_pattern", name);
+    xfk_name = gaiaDoubleQuotedSql (fk_name);
+    sqlite3_free (fk_name);
+    sql = sqlite3_mprintf ("CREATE TABLE \"%s\" ("
+			   "    feature_id INTEGER PRIMARY KEY NOT NULL,\n"
+			   "    layer TEXT NOT NULL,\n"
+			   "    CONSTRAINT \"%s\" FOREIGN KEY (feature_id) "
+			   "    REFERENCES \"%s\" (feature_id))", xpattern,
+			   xfk_name, xname);
+    free (xname);
+    free (xfk_name);
+    free (xpattern);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE %s error: %s\n", pattern,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
     sql =
 	sqlite3_mprintf
-	("SELECT AddGeometryColumn(%Q, 'pattern_geom', "
-	 "%d, 'MULTILINESTRING', 'XY')", name, srid);
+	("SELECT AddGeometryColumn(%Q, 'geometry', "
+	 "%d, 'MULTILINESTRING', 'XY')", pattern, srid);
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("ADD GEOMETRY %s (pattern) error: %s\n", name,
+	  spatialite_e ("ADD GEOMETRY %s error: %s\n", pattern,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
     sql =
-	sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, 'pattern_geom')", name);
+	sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, 'geometry')", pattern);
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("CREATE SPATIAL INDEX %s (pattern) error: %s\n", name,
+	  spatialite_e ("CREATE SPATIAL INDEX %s error: %s\n", pattern,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
-    if (!create_hatch_stmt (handle, name, &stmt))
+    sqlite3_free (pattern);
+    if (!create_hatch_boundary_stmt (handle, name, &stmt))
+	return 0;
+    if (!create_hatch_pattern_stmt (handle, name, &stmt2))
 	return 0;
 
     *xstmt = stmt;
+    *xstmt2 = stmt2;
     return 1;
 }
 
@@ -1371,15 +1438,18 @@ check_polyg_table (sqlite3 * handle, const char *name, int srid, int is3D)
 }
 
 static int
-check_hatch_table (sqlite3 * handle, const char *name, int srid)
+check_hatch_tables (sqlite3 * handle, const char *name, int srid)
 {
-/* checking if a Hatch table already exists */
+/* checking if Hatch tables already exist */
     char *sql;
     int ok_geom = 0;
-    int ok_data = 0;
+    int ok_pdata = 0;
+    int ok_bdata = 0;
     int ret;
     int i;
     char *xname;
+    char *pattern = sqlite3_mprintf ("%s_pattern", name);
+    char *xpattern;
     char **results;
     int n_rows;
     int n_columns;
@@ -1396,48 +1466,54 @@ check_hatch_table (sqlite3 * handle, const char *name, int srid)
 	  int pdims2d = 0;
 	  sql =
 	      sqlite3_mprintf
-	      ("SELECT f_geometry_column, srid, type, coord_dimension "
+	      ("SELECT srid, type, coord_dimension "
 	       "FROM geometry_columns "
 	       "WHERE Lower(f_table_name) = Lower(%Q) AND "
-	       "(Lower(f_geometry_column) = Lower(%Q) OR "
-	       "Lower(f_geometry_column) = Lower(%Q))", name, "boundary_geom",
-	       "pattern_geom");
+	       "Lower(f_geometry_column) = Lower(%Q)", name, "geometry");
 	  ret =
 	      sqlite3_get_table (handle, sql, &results, &n_rows, &n_columns,
 				 NULL);
 	  sqlite3_free (sql);
 	  if (ret != SQLITE_OK)
-	      return 0;
+	      goto stop;
 	  if (n_rows > 0)
 	    {
 		for (i = 1; i <= n_rows; i++)
 		  {
-		      if (strcasecmp
-			  ("boundary_geom", results[(i * n_columns) + 0]) == 0)
-			{
-			    if (atoi (results[(i * n_columns) + 1]) == srid)
-				ok_bsrid = 1;
-			    if (strcmp
-				("MULTIPOLYGON",
-				 results[(i * n_columns) + 2]) == 0)
-				ok_btype = 1;
-			    if (strcmp ("XY", results[(i * n_columns) + 3]) ==
-				0)
-				bdims2d = 1;
-			}
-		      if (strcasecmp
-			  ("pattern_geom", results[(i * n_columns) + 0]) == 0)
-			{
-			    if (atoi (results[(i * n_columns) + 1]) == srid)
-				ok_psrid = 1;
-			    if (strcmp
-				("MULTILINESTRING",
-				 results[(i * n_columns) + 2]) == 0)
-				ok_ptype = 1;
-			    if (strcmp ("XY", results[(i * n_columns) + 3]) ==
-				0)
-				pdims2d = 1;
-			}
+		      if (atoi (results[(i * n_columns) + 0]) == srid)
+			  ok_bsrid = 1;
+		      if (strcmp
+			  ("MULTIPOLYGON", results[(i * n_columns) + 1]) == 0)
+			  ok_btype = 1;
+		      if (strcmp ("XY", results[(i * n_columns) + 2]) == 0)
+			  bdims2d = 1;
+		  }
+	    }
+	  sqlite3_free_table (results);
+	  sql =
+	      sqlite3_mprintf
+	      ("SELECT srid, type, coord_dimension "
+	       "FROM geometry_columns "
+	       "WHERE Lower(f_table_name) = Lower(%Q) AND "
+	       "Lower(f_geometry_column) = Lower(%Q)", pattern, "geometry");
+	  ret =
+	      sqlite3_get_table (handle, sql, &results, &n_rows, &n_columns,
+				 NULL);
+	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	      goto stop;
+	  if (n_rows > 0)
+	    {
+		for (i = 1; i <= n_rows; i++)
+		  {
+		      if (atoi (results[(i * n_columns) + 0]) == srid)
+			  ok_psrid = 1;
+		      if (strcmp
+			  ("MULTILINESTRING",
+			   results[(i * n_columns) + 1]) == 0)
+			  ok_ptype = 1;
+		      if (strcmp ("XY", results[(i * n_columns) + 2]) == 0)
+			  pdims2d = 1;
 		  }
 	    }
 	  sqlite3_free_table (results);
@@ -1453,38 +1529,48 @@ check_hatch_table (sqlite3 * handle, const char *name, int srid)
 	  int ok_bsrid = 0;
 	  int ok_btype = 0;
 	  sql =
-	      sqlite3_mprintf ("SELECT f_geometry_column, srid, geometry_type "
+	      sqlite3_mprintf ("SELECT srid, geometry_type "
 			       "FROM geometry_columns "
 			       "WHERE Lower(f_table_name) = Lower(%Q) AND "
-			       "(Lower(f_geometry_column) = Lower(%Q) OR "
-			       "Lower(f_geometry_column) = Lower(%Q))", name,
-			       "boundary_geom", "pattern_geom");
+			       "Lower(f_geometry_column) = Lower(%Q)", name,
+			       "geometry");
 	  ret =
 	      sqlite3_get_table (handle, sql, &results, &n_rows, &n_columns,
 				 NULL);
 	  sqlite3_free (sql);
 	  if (ret != SQLITE_OK)
-	      return 0;
+	      goto stop;
 	  if (n_rows > 0)
 	    {
 		for (i = 1; i <= n_rows; i++)
 		  {
-		      if (strcasecmp
-			  ("boundary_geom", results[(i * n_columns) + 0]) == 0)
-			{
-			    if (atoi (results[(i * n_columns) + 1]) == srid)
-				ok_bsrid = 1;
-			    if (atoi (results[(i * n_columns) + 2]) == 6)
-				ok_btype = 1;
-			}
-		      if (strcasecmp
-			  ("pattern_geom", results[(i * n_columns) + 0]) == 0)
-			{
-			    if (atoi (results[(i * n_columns) + 1]) == srid)
-				ok_psrid = 1;
-			    if (atoi (results[(i * n_columns) + 2]) == 5)
-				ok_ptype = 1;
-			}
+		      if (atoi (results[(i * n_columns) + 0]) == srid)
+			  ok_bsrid = 1;
+		      if (atoi (results[(i * n_columns) + 1]) == 6)
+			  ok_btype = 1;
+		  }
+	    }
+	  sqlite3_free_table (results);
+	  sql =
+	      sqlite3_mprintf ("SELECT srid, geometry_type "
+			       "FROM geometry_columns "
+			       "WHERE Lower(f_table_name) = Lower(%Q) AND "
+			       "Lower(f_geometry_column) = Lower(%Q)", pattern,
+			       "geometry");
+	  ret =
+	      sqlite3_get_table (handle, sql, &results, &n_rows, &n_columns,
+				 NULL);
+	  sqlite3_free (sql);
+	  if (ret != SQLITE_OK)
+	      goto stop;
+	  if (n_rows > 0)
+	    {
+		for (i = 1; i <= n_rows; i++)
+		  {
+		      if (atoi (results[(i * n_columns) + 0]) == srid)
+			  ok_psrid = 1;
+		      if (atoi (results[(i * n_columns) + 1]) == 5)
+			  ok_ptype = 1;
 		  }
 	    }
 	  sqlite3_free_table (results);
@@ -1498,7 +1584,7 @@ check_hatch_table (sqlite3 * handle, const char *name, int srid)
     ret = sqlite3_get_table (handle, sql, &results, &n_rows, &n_columns, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
-	return 0;
+	goto stop;
     if (n_rows > 0)
       {
 	  int ok_feature_id = 0;
@@ -1512,12 +1598,41 @@ check_hatch_table (sqlite3 * handle, const char *name, int srid)
 		    ok_layer = 1;
 	    }
 	  if (ok_feature_id && ok_layer)
-	      ok_data = 1;
+	      ok_bdata = 1;
       }
     sqlite3_free_table (results);
 
-    if (ok_geom && ok_data)
-	return 1;
+    xpattern = gaiaDoubleQuotedSql (pattern);
+    sql = sqlite3_mprintf ("PRAGMA table_info(\"%s\")", xpattern);
+    free (xpattern);
+    ret = sqlite3_get_table (handle, sql, &results, &n_rows, &n_columns, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+	goto stop;
+    if (n_rows > 0)
+      {
+	  int ok_feature_id = 0;
+	  int ok_layer = 0;
+	  for (i = 1; i <= n_rows; i++)
+	    {
+		if (strcasecmp ("feature_id", results[(i * n_columns) + 1]) ==
+		    0)
+		    ok_feature_id = 1;
+		if (strcasecmp ("layer", results[(i * n_columns) + 1]) == 0)
+		    ok_layer = 1;
+	    }
+	  if (ok_feature_id && ok_layer)
+	      ok_pdata = 1;
+      }
+    sqlite3_free_table (results);
+
+    if (ok_geom && ok_bdata && ok_pdata)
+      {
+	  sqlite3_free (pattern);
+	  return 1;
+      }
+  stop:
+    sqlite3_free (pattern);
     return 0;
 }
 
@@ -1590,15 +1705,14 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
     int ret;
     sqlite3_stmt *stmt;
     sqlite3_stmt *stmt_ext;
+    sqlite3_stmt *stmt_pattern;
     unsigned char *blob;
     int blob_size;
-    unsigned char *blob2;
-    int blob_size2;
     gaiaGeomCollPtr geom;
     char *name;
     char *extra_name;
 
-    gaiaDxfLayerPtr lyr = dxf->first;
+    gaiaDxfLayerPtr lyr = dxf->first_layer;
     while (lyr != NULL)
       {
 	  /* exploring Layers by type */
@@ -1683,7 +1797,7 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 		    sqlite3_finalize (stmt_ext);
 		return 0;
 	    }
-	  lyr = dxf->first;
+	  lyr = dxf->first_layer;
 	  while (lyr != NULL)
 	    {
 		gaiaDxfTextPtr txt = lyr->first_text;
@@ -1831,7 +1945,7 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 		    sqlite3_finalize (stmt_ext);
 		return 0;
 	    }
-	  lyr = dxf->first;
+	  lyr = dxf->first_layer;
 	  while (lyr != NULL)
 	    {
 		gaiaDxfPointPtr pt = lyr->first_point;
@@ -1975,7 +2089,7 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 		    sqlite3_finalize (stmt_ext);
 		return 0;
 	    }
-	  lyr = dxf->first;
+	  lyr = dxf->first_layer;
 	  while (lyr != NULL)
 	    {
 		gaiaDxfPolylinePtr ln = lyr->first_line;
@@ -2133,7 +2247,7 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 		    sqlite3_finalize (stmt_ext);
 		return 0;
 	    }
-	  lyr = dxf->first;
+	  lyr = dxf->first_layer;
 	  while (lyr != NULL)
 	    {
 		gaiaDxfPolylinePtr pg = lyr->first_polyg;
@@ -2284,16 +2398,19 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 	      name = sqlite3_mprintf ("hatch_layer");
 	  else
 	      name = sqlite3_mprintf ("%shatch_layer", dxf->prefix);
-	  if (append && check_hatch_table (handle, name, dxf->srid))
+	  if (append && check_hatch_tables (handle, name, dxf->srid))
 	    {
-		/* appending into the already existing table */
-		if (!create_hatch_stmt (handle, name, &stmt))
+		/* appending into the already existing tables */
+		if (!create_hatch_boundary_stmt (handle, name, &stmt))
+		    return 0;
+		if (!create_hatch_pattern_stmt (handle, name, &stmt_pattern))
 		    return 0;
 	    }
 	  else
 	    {
 		/* creating a new table */
-		if (!create_mixed_hatch_table (handle, name, dxf->srid, &stmt))
+		if (!create_mixed_hatch_table
+		    (handle, name, dxf->srid, &stmt, &stmt_pattern))
 		    return 0;
 	    }
 	  ret = sqlite3_exec (handle, "BEGIN", NULL, NULL, NULL);
@@ -2306,13 +2423,15 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 		    sqlite3_finalize (stmt_ext);
 		return 0;
 	    }
-	  lyr = dxf->first;
+	  lyr = dxf->first_layer;
 	  while (lyr != NULL)
 	    {
 		gaiaDxfHatchPtr hatch = lyr->first_hatch;
 		while (hatch != NULL)
 		  {
+		      sqlite3_int64 feature_id;
 		      gaiaDxfHatchSegmPtr segm;
+		      /* inserting the Boundary Geometry */
 		      sqlite3_reset (stmt);
 		      sqlite3_clear_bindings (stmt);
 		      sqlite3_bind_text (stmt, 1, lyr->layer_name,
@@ -2322,16 +2441,37 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 			  sqlite3_bind_null (stmt, 2);
 		      else
 			{
-			    /* saving the Boundary Geometry */
 			    gaiaToSpatiaLiteBlobWkb (hatch->boundary, &blob,
 						     &blob_size);
 			    sqlite3_bind_blob (stmt, 2, blob, blob_size, free);
 			}
-		      if (hatch->first_out == NULL)
-			  sqlite3_bind_null (stmt, 3);
+		      ret = sqlite3_step (stmt);
+		      if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+			  ;
 		      else
 			{
-			    /* saving the Pattern Geometry */
+			    spatialite_e ("INSERT %s error: %s\n", name,
+					  sqlite3_errmsg (handle));
+			    sqlite3_finalize (stmt);
+			    sqlite3_finalize (stmt_pattern);
+			    ret =
+				sqlite3_exec (handle, "ROLLBACK", NULL, NULL,
+					      NULL);
+			    return 0;
+			}
+		      feature_id = sqlite3_last_insert_rowid (handle);
+
+		      /* inserting the Pattern Geometry */
+		      sqlite3_reset (stmt_pattern);
+		      sqlite3_clear_bindings (stmt_pattern);
+		      sqlite3_bind_int64 (stmt_pattern, 1, feature_id);
+		      sqlite3_bind_text (stmt_pattern, 2, lyr->layer_name,
+					 strlen (lyr->layer_name),
+					 SQLITE_STATIC);
+		      if (hatch->first_out == NULL)
+			  sqlite3_bind_null (stmt_pattern, 3);
+		      else
+			{
 			    geom = gaiaAllocGeomColl ();
 			    geom->Srid = dxf->srid;
 			    geom->DeclaredType = GAIA_MULTILINESTRING;
@@ -2346,12 +2486,12 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 						segm->y1);
 				  segm = segm->next;
 			      }
-			    gaiaToSpatiaLiteBlobWkb (geom, &blob2, &blob_size2);
+			    gaiaToSpatiaLiteBlobWkb (geom, &blob, &blob_size);
 			    gaiaFreeGeomColl (geom);
-			    sqlite3_bind_blob (stmt, 3, blob2, blob_size2,
+			    sqlite3_bind_blob (stmt_pattern, 3, blob, blob_size,
 					       free);
 			}
-		      ret = sqlite3_step (stmt);
+		      ret = sqlite3_step (stmt_pattern);
 		      if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 			  ;
 		      else
@@ -2359,8 +2499,7 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 			    spatialite_e ("INSERT %s error: %s\n", name,
 					  sqlite3_errmsg (handle));
 			    sqlite3_finalize (stmt);
-			    if (stmt_ext != NULL)
-				sqlite3_finalize (stmt_ext);
+			    sqlite3_finalize (stmt_pattern);
 			    ret =
 				sqlite3_exec (handle, "ROLLBACK", NULL, NULL,
 					      NULL);
@@ -2372,6 +2511,7 @@ import_mixed (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 	    }
 	  sqlite3_free (name);
 	  sqlite3_finalize (stmt);
+	  sqlite3_finalize (stmt_pattern);
 	  ret = sqlite3_exec (handle, "COMMIT", NULL, NULL, NULL);
 	  if (ret != SQLITE_OK)
 	    {
@@ -2593,16 +2733,23 @@ create_layer_polyg_table (sqlite3 * handle, const char *name, int srid,
 }
 
 static int
-create_layer_hatch_table (sqlite3 * handle, const char *name, int srid,
-			  sqlite3_stmt ** xstmt)
+create_layer_hatch_tables (sqlite3 * handle, const char *name, int srid,
+			   sqlite3_stmt ** xstmt, sqlite3_stmt ** xstmt2)
 {
-/* attempting to create the "Hatch-layer" table */
+/* attempting to create the "Hatch-layer" tables */
     char *sql;
     int ret;
     sqlite3_stmt *stmt;
+    sqlite3_stmt *stmt2;
     char *xname;
+    char *fk_name;
+    char *xfk_name;
+    char *pattern;
+    char *xpattern;
     *xstmt = NULL;
+    *xstmt2 = NULL;
 
+/* creating the Hatch-Boundary table */
     xname = gaiaDoubleQuotedSql (name);
     sql = sqlite3_mprintf ("CREATE TABLE \"%s\" ("
 			   "    feature_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
@@ -2617,52 +2764,80 @@ create_layer_hatch_table (sqlite3 * handle, const char *name, int srid,
 	  return 0;
       }
     sql =
-	sqlite3_mprintf ("SELECT AddGeometryColumn(%Q, 'boundary_geom', "
+	sqlite3_mprintf ("SELECT AddGeometryColumn(%Q, 'geometry', "
 			 "%d, 'MULTIPOLYGON', 'XY')", name, srid);
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("ADD GEOMETRY %s (boundary) error: %s\n", name,
+	  spatialite_e ("ADD GEOMETRY %s error: %s\n", name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sql = sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, 'geometry')", name);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE SPATIAL INDEX %s error: %s\n",
+			name, sqlite3_errmsg (handle));
+	  return 0;
+      }
+
+/* creating the Hatch-Pattern table */
+    xname = gaiaDoubleQuotedSql (name);
+    pattern = sqlite3_mprintf ("%s_pattern", name);
+    xpattern = gaiaDoubleQuotedSql (pattern);
+    fk_name = sqlite3_mprintf ("fk_%s_pattern", name);
+    xfk_name = gaiaDoubleQuotedSql (fk_name);
+    sqlite3_free (fk_name);
+    sql = sqlite3_mprintf ("CREATE TABLE \"%s\" ("
+			   "    feature_id INTEGER PRIMARY KEY NOT NULL,\n"
+			   "    layer TEXT NOT NULL,\n"
+			   "    CONSTRAINT \"%s\" FOREIGN KEY (feature_id) "
+			   "    REFERENCES \"%s\" (feature_id))", xpattern,
+			   xfk_name, xname);
+    free (xname);
+    free (xfk_name);
+    free (xpattern);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE %s error: %s\n", pattern,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
     sql =
-	sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, 'boundary_geom')",
-			 name);
+	sqlite3_mprintf ("SELECT AddGeometryColumn(%Q, 'geometry', "
+			 "%d, 'MULTILINESTRING', 'XY')", pattern, srid);
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("CREATE SPATIAL INDEX %s (boundary) error: %s\n",
-			name, sqlite3_errmsg (handle));
-	  return 0;
-      }
-    sql =
-	sqlite3_mprintf ("SELECT AddGeometryColumn(%Q, 'pattern_geom', "
-			 "%d, 'MULTILINESTRING', 'XY')", name, srid);
-    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
-    sqlite3_free (sql);
-    if (ret != SQLITE_OK)
-      {
-	  spatialite_e ("ADD GEOMETRY %s (pattern) error: %s\n", name,
+	  spatialite_e ("ADD GEOMETRY %s error: %s\n", pattern,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
     sql =
-	sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, 'pattern_geom')", name);
+	sqlite3_mprintf ("SELECT CreateSpatialIndex(%Q, 'geometry')", pattern);
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
       {
-	  spatialite_e ("CREATE SPATIAL INDEX %s (pattern) error: %s\n",
-			name, sqlite3_errmsg (handle));
+	  spatialite_e ("CREATE SPATIAL INDEX %s error: %s\n",
+			pattern, sqlite3_errmsg (handle));
 	  return 0;
       }
-    if (!create_hatch_stmt (handle, name, &stmt))
+
+    sqlite3_free (pattern);
+    if (!create_hatch_boundary_stmt (handle, name, &stmt))
+	return 0;
+    if (!create_hatch_pattern_stmt (handle, name, &stmt2))
 	return 0;
 
     *xstmt = stmt;
+    *xstmt2 = stmt2;
     return 1;
 }
 
@@ -3199,10 +3374,9 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
     int ret;
     sqlite3_stmt *stmt;
     sqlite3_stmt *stmt_ext;
+    sqlite3_stmt *stmt_pattern;
     unsigned char *blob;
     int blob_size;
-    unsigned char *blob2;
-    int blob_size2;
     gaiaGeomCollPtr geom;
     gaiaLinestringPtr p_ln;
     gaiaPolygonPtr p_pg;
@@ -3216,7 +3390,7 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
     gaiaDxfPolylinePtr pg;
     gaiaDxfHatchPtr p_hatch;
 
-    gaiaDxfLayerPtr lyr = dxf->first;
+    gaiaDxfLayerPtr lyr = dxf->first_layer;
     while (lyr != NULL)
       {
 	  /* looping on layers */
@@ -4033,17 +4207,20 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 			      sqlite3_mprintf ("%s%s", dxf->prefix,
 					       lyr->layer_name);
 		  }
-		if (append && check_hatch_table (handle, name, dxf->srid))
+		if (append && check_hatch_tables (handle, name, dxf->srid))
 		  {
 		      /* appending into the already existing table */
-		      if (!create_hatch_stmt (handle, name, &stmt))
+		      if (!create_hatch_boundary_stmt (handle, name, &stmt))
+			  return 0;
+		      if (!create_hatch_pattern_stmt
+			  (handle, name, &stmt_pattern))
 			  return 0;
 		  }
 		else
 		  {
 		      /* creating a new table */
-		      if (!create_layer_hatch_table
-			  (handle, name, dxf->srid, &stmt))
+		      if (!create_layer_hatch_tables
+			  (handle, name, dxf->srid, &stmt, &stmt_pattern))
 			{
 
 			    sqlite3_free (name);
@@ -4066,7 +4243,9 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 		p_hatch = lyr->first_hatch;
 		while (p_hatch != NULL)
 		  {
+		      sqlite3_int64 feature_id;
 		      gaiaDxfHatchSegmPtr segm;
+		      /* inserting the Boundary Geometry */
 		      sqlite3_reset (stmt);
 		      sqlite3_clear_bindings (stmt);
 		      sqlite3_bind_text (stmt, 1, lyr->layer_name,
@@ -4076,16 +4255,40 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 			  sqlite3_bind_null (stmt, 2);
 		      else
 			{
-			    /* saving the Boundary Geometry */
 			    gaiaToSpatiaLiteBlobWkb (p_hatch->boundary, &blob,
 						     &blob_size);
 			    sqlite3_bind_blob (stmt, 2, blob, blob_size, free);
 			}
-		      if (p_hatch->first_out == NULL)
-			  sqlite3_bind_null (stmt, 3);
+		      ret = sqlite3_step (stmt);
+		      if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+			  ;
 		      else
 			{
-			    /* saving the Pattern Geometry */
+			    spatialite_e ("INSERT %s error: %s\n", name,
+					  sqlite3_errmsg (handle));
+			    sqlite3_finalize (stmt);
+			    sqlite3_finalize (stmt_pattern);
+			    ret =
+				sqlite3_exec (handle, "ROLLBACK", NULL, NULL,
+					      NULL);
+			    sqlite3_free (name);
+			    if (attr_name)
+				sqlite3_free (attr_name);
+			    return 0;
+			}
+		      feature_id = sqlite3_last_insert_rowid (handle);
+
+		      /* inserting the Pattern Geometry */
+		      sqlite3_reset (stmt_pattern);
+		      sqlite3_clear_bindings (stmt_pattern);
+		      sqlite3_bind_int64 (stmt_pattern, 1, feature_id);
+		      sqlite3_bind_text (stmt_pattern, 2, lyr->layer_name,
+					 strlen (lyr->layer_name),
+					 SQLITE_STATIC);
+		      if (p_hatch->first_out == NULL)
+			  sqlite3_bind_null (stmt_pattern, 3);
+		      else
+			{
 			    geom = gaiaAllocGeomColl ();
 			    geom->Srid = dxf->srid;
 			    geom->DeclaredType = GAIA_MULTILINESTRING;
@@ -4100,12 +4303,12 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 						segm->y1);
 				  segm = segm->next;
 			      }
-			    gaiaToSpatiaLiteBlobWkb (geom, &blob2, &blob_size2);
+			    gaiaToSpatiaLiteBlobWkb (geom, &blob, &blob_size);
 			    gaiaFreeGeomColl (geom);
-			    sqlite3_bind_blob (stmt, 3, blob2, blob_size2,
+			    sqlite3_bind_blob (stmt_pattern, 3, blob, blob_size,
 					       free);
 			}
-		      ret = sqlite3_step (stmt);
+		      ret = sqlite3_step (stmt_pattern);
 		      if (ret == SQLITE_DONE || ret == SQLITE_ROW)
 			  ;
 		      else
@@ -4113,8 +4316,7 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 			    spatialite_e ("INSERT %s error: %s\n", name,
 					  sqlite3_errmsg (handle));
 			    sqlite3_finalize (stmt);
-			    if (stmt_ext != NULL)
-				sqlite3_finalize (stmt_ext);
+			    sqlite3_finalize (stmt_pattern);
 			    ret =
 				sqlite3_exec (handle, "ROLLBACK", NULL, NULL,
 					      NULL);
@@ -4126,8 +4328,7 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 		      p_hatch = p_hatch->next;
 		  }
 		sqlite3_finalize (stmt);
-		if (stmt_ext != NULL)
-		    sqlite3_finalize (stmt_ext);
+		sqlite3_finalize (stmt_pattern);
 		ret = sqlite3_exec (handle, "COMMIT", NULL, NULL, NULL);
 		if (ret != SQLITE_OK)
 		  {
@@ -4156,7 +4357,7 @@ gaiaLoadFromDxfParser (sqlite3 * handle,
 
     if (dxf == NULL)
 	return 0;
-    if (dxf->first == NULL)
+    if (dxf->first_layer == NULL)
 	return 0;
 
     if (mode == GAIA_DXF_IMPORT_MIXED)

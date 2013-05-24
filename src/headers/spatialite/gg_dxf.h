@@ -102,6 +102,41 @@ extern "C"
     typedef gaiaDxfExtraAttr *gaiaDxfExtraAttrPtr;
 
 /**
+ wrapper for DXF Insert object
+ */
+    typedef struct gaia_dxf_insert
+    {
+/** pointer to Block ID string */
+	char *block_id;
+/** X coordinate */
+	double x;
+/** Y coordinate */
+	double y;
+/** Z coordinate */
+	double z;
+/** X scale factor */
+	double scale_x;
+/** Y scale factor */
+	double scale_y;
+/** Z scale factor */
+	double scale_z;
+/** rotation angle */
+	double angle;
+/** pointer to first Extra Attribute [linked list] */
+	gaiaDxfExtraAttrPtr first;
+/** pointer to last Extra Attribute [linked list] */
+	gaiaDxfExtraAttrPtr last;
+/** pointer to next item [linked list] */
+	struct gaia_dxf_insert *next;
+    } gaiaDxfInsert;
+/**
+ Typedef for DXF Insert object
+
+ \sa gaiaDxfText
+ */
+    typedef gaiaDxfInsert *gaiaDxfInsertPtr;
+
+/**
  wrapper for DXF Text object
  */
     typedef struct gaia_dxf_text
@@ -299,14 +334,34 @@ extern "C"
 	char *layer_name;
 /** pointer to Block ID string */
 	char *block_id;
-/** pointer to DXF Text object */
-	gaiaDxfTextPtr text;
-/** pointer to DXF Point object */
-	gaiaDxfPointPtr point;
-/** pointer to DXF Polyline object */
-	gaiaDxfPolylinePtr line;
-/** pointer to DXF Hatch object */
-	gaiaDxfHatchPtr hatch;
+/** pointer to first DXF Text object [linked list] */
+	gaiaDxfTextPtr first_text;
+/** pointer to last DXF Text object [linked list] */
+	gaiaDxfTextPtr last_text;
+/** pointer to first DXF Point object [linked list] */
+	gaiaDxfPointPtr first_point;
+/** pointer to last DXF Point object [linked list] */
+	gaiaDxfPointPtr last_point;
+/** pointer to first DXF Polyline (Linestring) object [linked list] */
+	gaiaDxfPolylinePtr first_line;
+/** pointer to last DXF Polyline (Linestring) object [linked list] */
+	gaiaDxfPolylinePtr last_line;
+/** pointer to first DXF Polyline (Polygon) object [linked list] */
+	gaiaDxfPolylinePtr first_polyg;
+/** pointer to last DXF Polyline (Polygon) object [linked list] */
+	gaiaDxfPolylinePtr last_polyg;
+/** pointer to first DXF Hatch object [linked list] */
+	gaiaDxfHatchPtr first_hatch;
+/** pointer to last DXF Hatch object [linked list] */
+	gaiaDxfHatchPtr last_hatch;
+/** boolean flag: contains 3d Text objects */
+	int is3Dtext;
+/** boolean flag: contains 3d Point objects */
+	int is3Dpoint;
+/** boolean flag: contains 3d Polyline (Linestring) objects */
+	int is3Dline;
+/** boolean flag: contains 3d Polyline (Polygon) objects */
+	int is3Dpolyg;
 /** pointer to next item [linked list] */
 	struct gaia_dxf_block *next;
     } gaiaDxfBlock;
@@ -344,6 +399,10 @@ extern "C"
 	gaiaDxfHatchPtr first_hatch;
 /** pointer to last DXF Hatch object [linked list] */
 	gaiaDxfHatchPtr last_hatch;
+/** pointer to first DXF Insert object [linked list] */
+	gaiaDxfInsertPtr first_insert;
+/** pointer to last DXF Insert object [linked list] */
+	gaiaDxfInsertPtr last_insert;
 /** boolean flag: contains 3d Text objects */
 	int is3Dtext;
 /** boolean flag: contains 3d Point objects */
@@ -360,6 +419,8 @@ extern "C"
 	int hasExtraLine;
 /** boolean flag: contains Polyline (Polygon) Extra Attributes */
 	int hasExtraPolyg;
+/** boolean flag: contains Insert Extra Attributes */
+	int hasExtraInsert;
 /** pointer to next item [linked list] */
 	struct gaia_dxf_layer *next;
     } gaiaDxfLayer;
@@ -376,9 +437,13 @@ extern "C"
     typedef struct gaia_dxf_parser
     {
 /** OUT: pointer to first DXF Layer object [linked list] */
-	gaiaDxfLayerPtr first;
+	gaiaDxfLayerPtr first_layer;
 /** OUT: pointer to last DXF Layer object [linked list] */
-	gaiaDxfLayerPtr last;
+	gaiaDxfLayerPtr last_layer;
+/** pointer to first DXF Block object [linked list] */
+	gaiaDxfBlockPtr first_block;
+/** pointer to last DXF Block object [linked list] */
+	gaiaDxfBlockPtr last_block;
 /** IN: parser option - dimension handlig */
 	int force_dims;
 /** IN: parser option - the SRID */
@@ -418,6 +483,8 @@ extern "C"
 /** internal parser variable */
 	int is_lwpolyline;
 /** internal parser variable */
+	int is_line;
+/** internal parser variable */
 	int is_vertex;
 /** internal parser variable */
 	int is_hatch;
@@ -430,11 +497,13 @@ extern "C"
 /** internal parser variable */
 	int error;
 /** internal parser variable */
-	char *curr_block_id;
-/** internal parser variable */
 	char *curr_layer_name;
 /** internal parser variable */
 	gaiaDxfText curr_text;
+/** internal parser variable */
+	gaiaDxfInsert curr_insert;
+/** internal parser variable */
+	gaiaDxfBlock curr_block;
 /** internal parser variable */
 	gaiaDxfPoint curr_point;
 /** internal parser variable */
@@ -453,10 +522,6 @@ extern "C"
 	gaiaDxfExtraAttrPtr first_ext;
 /** internal parser variable */
 	gaiaDxfExtraAttrPtr last_ext;
-/** internal parser variable */
-	gaiaDxfBlockPtr first_blk;
-/** internal parser variable */
-	gaiaDxfBlockPtr last_blk;
 /** internal parser variable */
 	gaiaDxfHatchPtr curr_hatch;
 /** internal parser variable */

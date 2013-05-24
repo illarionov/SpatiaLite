@@ -229,7 +229,7 @@ static int
 is_valid_dxf_hatch (gaiaDxfHatchPtr hatch)
 {
 /* testing for a valid Pattern Hatch */
-    if (hatch->first == NULL || hatch->spacing == 0.0)
+    if (hatch->first == NULL)
 	return 0;
     return 1;
 }
@@ -343,7 +343,6 @@ create_dxf_hatch_lines (gaiaDxfHatchPtr hatch, int srid)
     gaiaDxfHatchSegmPtr out;
     gaiaDxfHatchSegmPtr n_out;
     gaiaGeomCollPtr geom;
-    gaiaGeomCollPtr geom2;
     gaiaGeomCollPtr result;
     gaiaGeomCollPtr clipped;
     double angle;
@@ -353,8 +352,6 @@ create_dxf_hatch_lines (gaiaDxfHatchPtr hatch, int srid)
     double y1;
     gaiaLinestringPtr ln;
 
-    if (hatch == NULL)
-	return;
     if (hatch == NULL)
 	return;
     if (hatch->boundary != NULL)
@@ -389,14 +386,20 @@ create_dxf_hatch_lines (gaiaDxfHatchPtr hatch, int srid)
 	  path = path->next;
       }
 /* attempting to reassemble the Boundary */
+
     result = gaiaPolygonize (geom, 0);
     gaiaFreeGeomColl (geom);
-    gaiaMbrGeometry (result);
     if (result == NULL)
 	return;
+    gaiaMbrGeometry (result);
     result->Srid = srid;
     result->DeclaredType = GAIA_MULTIPOLYGON;
     hatch->boundary = result;
+if (hatch->spacing == 0.0)
+{
+	/* no pattern filling, just the boundary */
+return;
+}
 /* normalizing the angle */
     angle = hatch->angle;
     while (angle >= 360.0)
@@ -412,12 +415,6 @@ create_dxf_hatch_lines (gaiaDxfHatchPtr hatch, int srid)
     else
 	apply_hatch (result, geom, angle, hatch->spacing, hatch->base_x,
 		     hatch->base_y);
-    geom2 = gaiaUnaryUnion (geom);
-    if (geom2 != NULL)
-      {
-	  gaiaFreeGeomColl (geom);
-	  geom = geom2;
-      }
     gaiaMbrGeometry (geom);
     clipped = gaiaGeometryIntersection (geom, result);
     gaiaFreeGeomColl (geom);
@@ -647,7 +644,7 @@ insert_dxf_hatch (gaiaDxfParserPtr dxf, const char *layer_name,
 		  gaiaDxfHatchPtr hatch)
 {
 /* inserting a HATCH object into the appropriate Layer */
-    gaiaDxfLayerPtr lyr = dxf->first;
+    gaiaDxfLayerPtr lyr = dxf->first_layer;
     while (lyr != NULL)
       {
 	  if (strcmp (lyr->layer_name, layer_name) == 0)
@@ -663,6 +660,17 @@ insert_dxf_hatch (gaiaDxfParserPtr dxf, const char *layer_name,
 	  lyr = lyr->next;
       }
     destroy_dxf_hatch (hatch);
+}
+
+static void
+insert_dxf_block_hatch (gaiaDxfParserPtr dxf, gaiaDxfHatchPtr hatch)
+{
+/* inserting a HATCH object into the current Block */
+		if (dxf->curr_block.first_hatch == NULL)
+		    dxf->curr_block.first_hatch = hatch;
+		if (dxf->curr_block.last_hatch != NULL)
+		    dxf->curr_block.last_hatch->next = hatch;
+		dxf->curr_block.last_hatch = hatch;
 }
 
 static gaiaDxfExtraAttrPtr
@@ -742,7 +750,7 @@ insert_dxf_text (gaiaDxfParserPtr dxf, const char *layer_name,
 		 gaiaDxfTextPtr txt)
 {
 /* inserting a TEXT object into the appropriate Layer */
-    gaiaDxfLayerPtr lyr = dxf->first;
+    gaiaDxfLayerPtr lyr = dxf->first_layer;
     while (lyr != NULL)
       {
 	  if (strcmp (lyr->layer_name, layer_name) == 0)
@@ -772,6 +780,97 @@ insert_dxf_text (gaiaDxfParserPtr dxf, const char *layer_name,
 	  lyr = lyr->next;
       }
     destroy_dxf_text (txt);
+}
+
+static void
+insert_dxf_block_text (gaiaDxfParserPtr dxf, gaiaDxfTextPtr txt)
+{
+/* inserting a TEXT object into the current Block */
+    if (dxf->curr_block.first_text == NULL)
+	dxf->curr_block.first_text = txt;
+    if (dxf->curr_block.last_text != NULL)
+	dxf->curr_block.last_text->next = txt;
+    dxf->curr_block.last_text = txt;
+    if (dxf->force_dims == GAIA_DXF_FORCE_2D
+	|| dxf->force_dims == GAIA_DXF_FORCE_3D)
+	;
+    else
+      {
+	  if (is_3d_text (txt))
+	      dxf->curr_block.is3Dtext = 1;
+      }
+}
+
+static gaiaDxfInsertPtr
+alloc_dxf_insert (const char *block_id, double x, double y, double z,
+		  double scale_x, double scale_y, double scale_z, double angle)
+{
+/* allocating and initializing a DXF Insertt object */
+    int len;
+    gaiaDxfInsertPtr ins = malloc (sizeof (gaiaDxfInsert));
+    len = strlen (block_id);
+    ins->block_id = malloc (len + 1);
+    strcpy (ins->block_id, block_id);
+    ins->x = x;
+    ins->y = y;
+    ins->z = z;
+    ins->scale_x = scale_x;
+    ins->scale_y = scale_y;
+    ins->scale_z = scale_z;
+    ins->angle = angle;
+    ins->first = NULL;
+    ins->last = NULL;
+    ins->next = NULL;
+    return ins;
+}
+
+static void
+destroy_dxf_insert (gaiaDxfInsertPtr ins)
+{
+/* memory cleanup - destroying a DXF Insert object */
+    gaiaDxfExtraAttrPtr ext;
+    gaiaDxfExtraAttrPtr n_ext;
+    if (ins == NULL)
+	return;
+    if (ins->block_id != NULL)
+	free (ins->block_id);
+    ext = ins->first;
+    while (ext != NULL)
+      {
+	  n_ext = ext->next;
+	  destroy_dxf_extra (ext);
+	  ext = n_ext;
+      }
+    free (ins);
+}
+
+static void
+insert_dxf_insert (gaiaDxfParserPtr dxf, const char *layer_name,
+		   gaiaDxfInsertPtr ins)
+{
+/* inserting an INSERT object into the appropriate Layer */
+    gaiaDxfLayerPtr lyr = dxf->first_layer;
+    while (lyr != NULL)
+      {
+	  if (strcmp (lyr->layer_name, layer_name) == 0)
+	    {
+		/* found the matching Layer */
+		if (lyr->first_insert == NULL)
+		    lyr->first_insert = ins;
+		if (lyr->last_insert != NULL)
+		    lyr->last_insert->next = ins;
+		lyr->last_insert = ins;
+		ins->first = dxf->first_ext;
+		ins->last = dxf->last_ext;
+		dxf->first_ext = NULL;
+		dxf->last_ext = NULL;
+		if (ins->first != NULL)
+		    lyr->hasExtraInsert = 1;
+		return;
+	    }
+	  lyr = lyr->next;
+      }
+    destroy_dxf_insert (ins);
 }
 
 static gaiaDxfPointPtr
@@ -820,7 +919,7 @@ insert_dxf_point (gaiaDxfParserPtr dxf, const char *layer_name,
 		  gaiaDxfPointPtr pt)
 {
 /* inserting a POINT object into the appropriate Layer */
-    gaiaDxfLayerPtr lyr = dxf->first;
+    gaiaDxfLayerPtr lyr = dxf->first_layer;
     while (lyr != NULL)
       {
 	  if (strcmp (lyr->layer_name, layer_name) == 0)
@@ -852,6 +951,25 @@ insert_dxf_point (gaiaDxfParserPtr dxf, const char *layer_name,
     destroy_dxf_point (pt);
 }
 
+static void
+insert_dxf_block_point (gaiaDxfParserPtr dxf, gaiaDxfPointPtr pt)
+{
+/* inserting a POINT object into the current Block */
+    if (dxf->curr_block.first_point == NULL)
+	dxf->curr_block.first_point = pt;
+    if (dxf->curr_block.last_point != NULL)
+	dxf->curr_block.last_point->next = pt;
+    dxf->curr_block.last_point = pt;
+    if (dxf->force_dims == GAIA_DXF_FORCE_2D
+	|| dxf->force_dims == GAIA_DXF_FORCE_3D)
+	;
+    else
+      {
+	  if (is_3d_point (pt))
+	      dxf->curr_block.is3Dpoint = 1;
+      }
+}
+
 static gaiaDxfPolylinePtr
 alloc_dxf_polyline (int is_closed, int points)
 {
@@ -878,23 +996,21 @@ alloc_dxf_polyline (int is_closed, int points)
 }
 
 static gaiaDxfPolylinePtr
-clone_dxf_polyline (gaiaDxfPolylinePtr in, double shift_x, double shift_y,
-		    double shift_z)
+alloc_dxf_line (double x0, double y0, double z0, double x1, double y1, double z1)
 {
-/* cloning a DXF Polyline object */
-    int i;
+/* allocating and initializing a DXF Line object */
     gaiaDxfPolylinePtr ln = malloc (sizeof (gaiaDxfPolyline));
-    ln->is_closed = in->is_closed;
-    ln->points = in->points;
-    ln->x = malloc (sizeof (double) * in->points);
-    ln->y = malloc (sizeof (double) * in->points);
-    ln->z = malloc (sizeof (double) * in->points);
-    for (i = 0; i < in->points; i++)
-      {
-	  *(ln->x + i) = *(in->x + i) + shift_x;
-	  *(ln->y + i) = *(in->y + i) + shift_y;
-	  *(ln->z + i) = *(in->z + i) + shift_z;
-      }
+    ln->is_closed = 0;
+    ln->points = 2;
+    ln->x = malloc (sizeof (double) * 2);
+    ln->y = malloc (sizeof (double) * 2);
+    ln->z = malloc (sizeof (double) * 2);
+	  *(ln->x + 0) = x0;
+	  *(ln->y + 0) = y0;
+	  *(ln->z + 0) = z0;
+	  *(ln->x + 1) = x1;
+	  *(ln->y + 1) = y1;
+	  *(ln->z + 1) = z1;
     ln->first_hole = NULL;
     ln->last_hole = NULL;
     ln->first = NULL;
@@ -1158,7 +1274,7 @@ insert_dxf_polyline (gaiaDxfParserPtr dxf, const char *layer_name,
 		     gaiaDxfPolylinePtr ln)
 {
 /* inserting a POLYLINE object into the appropriate Layer */
-    gaiaDxfLayerPtr lyr = dxf->first;
+    gaiaDxfLayerPtr lyr = dxf->first_layer;
     while (lyr != NULL)
       {
 	  if (strcmp (lyr->layer_name, layer_name) == 0)
@@ -1217,9 +1333,56 @@ insert_dxf_polyline (gaiaDxfParserPtr dxf, const char *layer_name,
     destroy_dxf_polyline (ln);
 }
 
+static void
+insert_dxf_block_polyline (gaiaDxfParserPtr dxf, gaiaDxfPolylinePtr ln)
+{
+/* inserting a POLYLINE object into the current Block */
+		if (dxf->linked_rings)
+		    linked_rings (ln);
+		if (dxf->unlinked_rings)
+		    unlinked_rings (ln);
+		if (ln->is_closed)
+		  {
+		      /* it's a Ring */
+		      if (dxf->curr_block.first_polyg == NULL)
+			  dxf->curr_block.first_polyg = ln;
+		      if (dxf->curr_block.last_polyg != NULL)
+			  dxf->curr_block.last_polyg->next = ln;
+		      dxf->curr_block.last_polyg = ln;
+		      if (dxf->force_dims == GAIA_DXF_FORCE_2D
+			  || dxf->force_dims == GAIA_DXF_FORCE_3D)
+			  ;
+		      else
+			{
+			    if (is_3d_line (ln))
+				dxf->curr_block.is3Dpolyg = 1;
+			}
+		  }
+		else
+		  {
+		      /* it's a Linestring */
+		      if (dxf->curr_block.first_line == NULL)
+			  dxf->curr_block.first_line = ln;
+		      if (dxf->curr_block.last_line != NULL)
+			  dxf->curr_block.last_line->next = ln;
+		      dxf->curr_block.last_line = ln;
+		      if (dxf->force_dims == GAIA_DXF_FORCE_2D
+			  || dxf->force_dims == GAIA_DXF_FORCE_3D)
+			  ;
+		      else
+			{
+			    if (is_3d_line (ln))
+				dxf->curr_block.is3Dline = 1;
+			}
+		  }
+		ln->first = dxf->first_ext;
+		ln->last = dxf->last_ext;
+		dxf->first_ext = NULL;
+		dxf->last_ext = NULL;
+}
+
 static gaiaDxfBlockPtr
-alloc_dxf_block (const char *layer, const char *id, gaiaDxfTextPtr text,
-		 gaiaDxfPointPtr point, gaiaDxfPolylinePtr line)
+alloc_dxf_block (const char *layer, const char *id)
 {
 /* allocating and initializing a DXF Block object */
     int len;
@@ -1230,85 +1393,120 @@ alloc_dxf_block (const char *layer, const char *id, gaiaDxfTextPtr text,
     len = strlen (id);
     blk->block_id = malloc (len + 1);
     strcpy (blk->block_id, id);
-    blk->text = text;
-    blk->point = point;
-    blk->line = line;
+    blk->first_text = NULL;
+    blk->last_text = NULL;
+    blk->first_point = NULL;
+    blk->last_point = NULL;
+    blk->first_line = NULL;
+    blk->last_line = NULL;
+    blk->first_polyg = NULL;
+    blk->last_polyg = NULL;
+    blk->first_hatch = NULL;
+    blk->last_hatch = NULL;
     blk->next = NULL;
     return blk;
-}
-
-static gaiaDxfBlockPtr
-alloc_dxf_text_block (const char *layer, const char *id, gaiaDxfTextPtr text)
-{
-/* convenience method - Text Block */
-    return alloc_dxf_block (layer, id, text, NULL, NULL);
-}
-
-static gaiaDxfBlockPtr
-alloc_dxf_point_block (const char *layer, const char *id, gaiaDxfPointPtr point)
-{
-/* convenience method - Point Block */
-    return alloc_dxf_block (layer, id, NULL, point, NULL);
-}
-
-static gaiaDxfBlockPtr
-alloc_dxf_line_block (const char *layer, const char *id,
-		      gaiaDxfPolylinePtr line)
-{
-/* convenience method - Line Block */
-    return alloc_dxf_block (layer, id, NULL, NULL, line);
 }
 
 static void
 destroy_dxf_block (gaiaDxfBlockPtr blk)
 {
 /* memory cleanup - destroying a DXF Block object */
+    gaiaDxfTextPtr txt;
+    gaiaDxfTextPtr n_txt;
+    gaiaDxfPointPtr pt;
+    gaiaDxfPointPtr n_pt;
+    gaiaDxfPolylinePtr ln;
+    gaiaDxfPolylinePtr n_ln;
+    gaiaDxfHatchPtr htc;
+    gaiaDxfHatchPtr n_htc;
     if (blk == NULL)
 	return;
     if (blk->layer_name != NULL)
 	free (blk->layer_name);
     if (blk->block_id != NULL)
 	free (blk->block_id);
-    if (blk->text != NULL)
-	destroy_dxf_text (blk->text);
-    if (blk->point != NULL)
-	destroy_dxf_point (blk->point);
-    if (blk->line != NULL)
-	destroy_dxf_polyline (blk->line);
+    txt = blk->first_text;
+    while (txt != NULL)
+      {
+	  n_txt = txt->next;
+	  destroy_dxf_text (txt);
+	  txt = n_txt;
+      }
+    pt = blk->first_point;
+    while (pt != NULL)
+      {
+	  n_pt = pt->next;
+	  destroy_dxf_point (pt);
+	  pt = n_pt;
+      }
+    ln = blk->first_line;
+    while (ln != NULL)
+      {
+	  n_ln = ln->next;
+	  destroy_dxf_polyline (ln);
+	  ln = n_ln;
+      }
+    ln = blk->first_polyg;
+    while (ln != NULL)
+      {
+	  n_ln = ln->next;
+	  destroy_dxf_polyline (ln);
+	  ln = n_ln;
+      }
+    htc = blk->first_hatch;
+    while (htc != NULL)
+      {
+	  n_htc = htc->next;
+	  destroy_dxf_hatch (htc);
+	  htc = n_htc;
+      }
     free (blk);
 }
 
 static void
-insert_dxf_block (gaiaDxfParserPtr dxf, gaiaDxfBlockPtr blk)
+insert_dxf_block (gaiaDxfParserPtr dxf)
 {
 /* inserting a DXF Block object */
-    if (dxf->first_blk == NULL)
-	dxf->first_blk = blk;
-    if (dxf->last_blk != NULL)
-	dxf->last_blk->next = blk;
-    dxf->last_blk = blk;
-}
+    gaiaDxfBlockPtr blk;
+    int ok = 0;
+    if (dxf->curr_block.layer_name == NULL)
+	return;
+    if (dxf->curr_block.block_id == NULL)
+	return;
+    if (dxf->curr_block.first_text != NULL)
+	ok++;
+    if (dxf->curr_block.first_point != NULL)
+	ok++;
+    if (dxf->curr_block.first_line != NULL)
+	ok++;
+    if (dxf->curr_block.first_hatch != NULL)
+	ok++;
+    if (ok == 0)
+	return;
+    blk =
+	alloc_dxf_block (dxf->curr_block.layer_name, dxf->curr_block.block_id);
+    blk->first_text = dxf->curr_block.first_text;
+    blk->last_text = dxf->curr_block.last_text;
+    dxf->curr_block.first_text = NULL;
+    dxf->curr_block.last_text = NULL;
+    blk->first_point = dxf->curr_block.first_point;
+    blk->last_point = dxf->curr_block.last_point;
+    dxf->curr_block.first_point = NULL;
+    dxf->curr_block.last_point = NULL;
+    blk->first_line = dxf->curr_block.first_line;
+    blk->last_line = dxf->curr_block.last_line;
+    dxf->curr_block.first_line = NULL;
+    dxf->curr_block.last_line = NULL;
+    blk->first_hatch = dxf->curr_block.first_hatch;
+    blk->last_hatch = dxf->curr_block.last_hatch;
+    dxf->curr_block.first_hatch = NULL;
+    dxf->curr_block.last_hatch = NULL;
 
-static gaiaDxfBlockPtr
-find_dxf_block (gaiaDxfParserPtr dxf, const char *layer_name,
-		const char *block_id)
-{
-/* attempting to find a Block object by its Id */
-    gaiaDxfBlockPtr blk = dxf->first_blk;
-    while (blk != NULL)
-      {
-	  if (layer_name != NULL && block_id != NULL)
-	    {
-		if (strcmp (blk->layer_name, layer_name) == 0
-		    && strcmp (blk->block_id, block_id) == 0)
-		  {
-		      /* ok, matching item found */
-		      return blk;
-		  }
-	    }
-	  blk = blk->next;
-      }
-    return NULL;
+    if (dxf->first_block == NULL)
+	dxf->first_block = blk;
+    if (dxf->last_block != NULL)
+	dxf->last_block->next = blk;
+    dxf->last_block = blk;
 }
 
 static gaiaDxfLayerPtr
@@ -1330,6 +1528,8 @@ alloc_dxf_layer (const char *name, int force_dims)
     lyr->last_polyg = NULL;
     lyr->first_hatch = NULL;
     lyr->last_hatch = NULL;
+    lyr->first_insert = NULL;
+    lyr->last_insert = NULL;
     if (force_dims == GAIA_DXF_FORCE_3D)
       {
 	  lyr->is3Dtext = 1;
@@ -1348,6 +1548,7 @@ alloc_dxf_layer (const char *name, int force_dims)
     lyr->hasExtraPoint = 0;
     lyr->hasExtraLine = 0;
     lyr->hasExtraPolyg = 0;
+    lyr->hasExtraInsert = 0;
     lyr->next = NULL;
     return lyr;
 }
@@ -1364,6 +1565,8 @@ destroy_dxf_layer (gaiaDxfLayerPtr lyr)
     gaiaDxfPolylinePtr n_ln;
     gaiaDxfHatchPtr ht;
     gaiaDxfHatchPtr n_ht;
+    gaiaDxfInsertPtr ins;
+    gaiaDxfInsertPtr n_ins;
     if (lyr == NULL)
 	return;
     txt = lyr->first_text;
@@ -1401,6 +1604,13 @@ destroy_dxf_layer (gaiaDxfLayerPtr lyr)
 	  destroy_dxf_hatch (ht);
 	  ht = n_ht;
       }
+    ins = lyr->first_insert;
+    while (ins != NULL)
+      {
+	  n_ins = ins->next;
+	  destroy_dxf_insert (ins);
+	  ins = n_ins;
+      }
     if (lyr->layer_name != NULL)
 	free (lyr->layer_name);
     free (lyr);
@@ -1410,11 +1620,11 @@ static void
 insert_dxf_layer (gaiaDxfParserPtr dxf, gaiaDxfLayerPtr lyr)
 {
 /* inserting a Layer object into the DXF struct */
-    if (dxf->first == NULL)
-	dxf->first = lyr;
-    if (dxf->last != NULL)
-	dxf->last->next = lyr;
-    dxf->last = lyr;
+    if (dxf->first_layer == NULL)
+	dxf->first_layer = lyr;
+    if (dxf->last_layer != NULL)
+	dxf->last_layer->next = lyr;
+    dxf->last_layer = lyr;
 }
 
 static void
@@ -1433,7 +1643,7 @@ force_missing_layer (gaiaDxfParserPtr dxf)
     if (ok_layer)
       {
 	  int already_defined = 0;
-	  gaiaDxfLayerPtr lyr = dxf->first;
+	  gaiaDxfLayerPtr lyr = dxf->first_layer;
 	  while (lyr != NULL)
 	    {
 		if (strcmp (lyr->layer_name, dxf->curr_layer_name) == 0)
@@ -1500,8 +1710,13 @@ save_current_polyline (gaiaDxfParserPtr dxf)
 	  points++;
 	  pt = pt->next;
       }
+if (dxf->is_block)
+    insert_dxf_block_polyline (dxf, ln);
+else
+{
     force_missing_layer (dxf);
     insert_dxf_polyline (dxf, dxf->curr_layer_name, ln);
+}
     /* resetting the current polyline */
   clear:
     pt = dxf->first_pt;
@@ -1510,59 +1725,11 @@ save_current_polyline (gaiaDxfParserPtr dxf)
 	  n_pt = pt->next;
 	  destroy_dxf_point (pt);
 	  pt = n_pt;
-	  dxf->is_insert = 0;
+}
 	  /* resetting curr_layer */
 	  if (dxf->curr_layer_name != NULL)
 	      free (dxf->curr_layer_name);
 	  dxf->curr_layer_name = NULL;
-      }
-    dxf->first_pt = NULL;
-    dxf->last_pt = NULL;
-}
-
-static void
-save_current_block_polyline (gaiaDxfParserPtr dxf)
-{
-/* saving the current Polyline Block */
-    int points = 0;
-    gaiaDxfBlockPtr blk;
-    gaiaDxfPolylinePtr ln;
-    gaiaDxfPointPtr n_pt;
-    gaiaDxfPointPtr pt = dxf->first_pt;
-    if (dxf->curr_block_id != NULL && dxf->curr_layer_name != NULL)
-      {
-	  /* saving the current Polyline Block */
-	  while (pt != NULL)
-	    {
-		/* counting how many vertices are into the polyline */
-		points++;
-		pt = pt->next;
-	    }
-	  ln = alloc_dxf_polyline (dxf->is_closed_polyline, points);
-	  points = 0;
-	  pt = dxf->first_pt;
-	  while (pt != NULL)
-	    {
-		/* setting vertices into the polyline */
-		*(ln->x + points) = pt->x;
-		*(ln->y + points) = pt->y;
-		*(ln->z + points) = pt->z;
-		points++;
-		pt = pt->next;
-	    }
-	  blk =
-	      alloc_dxf_line_block (dxf->curr_layer_name, dxf->curr_block_id,
-				    ln);
-	  insert_dxf_block (dxf, blk);
-      }
-    /* resetting the current polyline */
-    pt = dxf->first_pt;
-    while (pt != NULL)
-      {
-	  n_pt = pt->next;
-	  destroy_dxf_point (pt);
-	  pt = n_pt;
-      }
     dxf->first_pt = NULL;
     dxf->last_pt = NULL;
 }
@@ -1571,7 +1738,7 @@ static void
 reset_dxf_polyline (gaiaDxfParserPtr dxf)
 {
 /* resetting the current DXF polyline */
-    if (dxf->is_polyline && dxf->is_block == 0)
+    if (dxf->is_polyline)
       {
 	  if (dxf->first_pt != NULL)
 	      save_current_polyline (dxf);
@@ -1582,160 +1749,92 @@ reset_dxf_polyline (gaiaDxfParserPtr dxf)
 static void
 reset_dxf_block (gaiaDxfParserPtr dxf)
 {
-/* resetting the current DXF block */
-    gaiaDxfExtraAttrPtr ext;
-    gaiaDxfExtraAttrPtr n_ext;
-    gaiaDxfBlockPtr blk;
-    if (dxf->is_vertex)
+/* memory cleanup - resetting the current DXF Block */
+    gaiaDxfTextPtr txt;
+    gaiaDxfTextPtr n_txt;
+    gaiaDxfPointPtr pt;
+    gaiaDxfPointPtr n_pt;
+    gaiaDxfPolylinePtr ln;
+    gaiaDxfPolylinePtr n_ln;
+    gaiaDxfHatchPtr htc;
+    gaiaDxfHatchPtr n_htc;
+    if (dxf->curr_block.layer_name != NULL)
+	free (dxf->curr_block.layer_name);
+    if (dxf->curr_block.block_id != NULL)
+	free (dxf->curr_block.block_id);
+    txt = dxf->curr_block.first_text;
+    while (txt != NULL)
       {
-	  /* saving the current Vertex */
-	  set_dxf_vertex (dxf);
-	  dxf->is_vertex = 0;
+	  n_txt = txt->next;
+	  destroy_dxf_text (txt);
+	  txt = n_txt;
       }
-    if (dxf->is_block == 1)
+    pt = dxf->curr_block.first_point;
+    while (pt != NULL)
       {
-	  if (dxf->is_hatch)
-	    {
-		dxf->is_hatch = 0;
-		/* resetting curr_layer */
-		if (dxf->curr_layer_name != NULL)
-		    free (dxf->curr_layer_name);
-		dxf->curr_layer_name = NULL;
-	    }
-	  if (dxf->is_text)
-	    {
-		if (dxf->curr_block_id != NULL)
-		  {
-		      /* saving the current Text Block */
-		      gaiaDxfTextPtr txt = alloc_dxf_text (dxf->curr_text.label,
-							   dxf->curr_text.x,
-							   dxf->curr_text.y,
-							   dxf->curr_text.z,
-							   dxf->
-							   curr_text.angle);
-		      blk =
-			  alloc_dxf_text_block (dxf->curr_layer_name,
-						dxf->curr_block_id, txt);
-		      insert_dxf_block (dxf, blk);
-		  }
-		/* resetting curr_text */
-		dxf->curr_text.x = 0.0;
-		dxf->curr_text.y = 0.0;
-		dxf->curr_text.z = 0.0;
-		dxf->curr_text.angle = 0.0;
-		if (dxf->curr_text.label != NULL)
-		    free (dxf->curr_text.label);
-		dxf->curr_text.label = NULL;
-		dxf->is_text = 0;
-		dxf->is_block = 0;
-		/* resetting curr_block_id */
-		if (dxf->curr_block_id != NULL)
-		    free (dxf->curr_block_id);
-		dxf->curr_block_id = NULL;
-	    }
-	  if (dxf->is_point)
-	    {
-		if (dxf->curr_block_id != NULL)
-		  {
-		      /* saving the current Point Block */
-		      gaiaDxfPointPtr pt =
-			  alloc_dxf_point (dxf->curr_point.x, dxf->curr_point.y,
-					   dxf->curr_point.z);
-		      blk =
-			  alloc_dxf_point_block (dxf->curr_layer_name,
-						 dxf->curr_block_id, pt);
-		      insert_dxf_block (dxf, blk);
-		  }
-		/* resetting curr_point */
-		dxf->curr_point.x = 0.0;
-		dxf->curr_point.y = 0.0;
-		dxf->curr_point.z = 0.0;
-		dxf->is_text = 0;
-		dxf->is_block = 0;
-		/* resetting curr_block_id */
-		if (dxf->curr_block_id != NULL)
-		    free (dxf->curr_block_id);
-		dxf->curr_block_id = NULL;
-	    }
-	  if (dxf->is_polyline)
-	    {
-		if (dxf->curr_block_id != NULL)
-		  {
-		      /* saving the current Polyline Block */
-		      save_current_block_polyline (dxf);
-		      dxf->is_polyline = 0;
-		  }
-	    }
-	  if (dxf->is_lwpolyline)
-	    {
-		if (dxf->curr_block_id != NULL)
-		  {
-		      /* saving the current LWPolyline Block */
-		      save_current_block_polyline (dxf);
-		      dxf->is_lwpolyline = 0;
-		  }
-	    }
+	  n_pt = pt->next;
+	  destroy_dxf_point (pt);
+	  pt = n_pt;
       }
-    if (dxf->extra_key != NULL)
-	free (dxf->extra_key);
-    if (dxf->extra_value != NULL)
-	free (dxf->extra_value);
-    ext = dxf->first_ext;
-    while (ext != NULL)
+    ln = dxf->curr_block.first_line;
+    while (ln != NULL)
       {
-	  n_ext = ext->next;
-	  destroy_dxf_extra (ext);
-	  ext = n_ext;
+	  n_ln = ln->next;
+	  destroy_dxf_polyline (ln);
+	  ln = n_ln;
       }
-    dxf->first_ext = NULL;
-    dxf->last_ext = NULL;
-    if (dxf->curr_hatch != NULL)
-	destroy_dxf_hatch (dxf->curr_hatch);
-    dxf->curr_hatch = NULL;
-    if (dxf->curr_block_id != NULL)
-	free (dxf->curr_block_id);
-    dxf->curr_block_id = NULL;
+    ln = dxf->curr_block.first_polyg;
+    while (ln != NULL)
+      {
+	  n_ln = ln->next;
+	  destroy_dxf_polyline (ln);
+	  ln = n_ln;
+      }
+    htc = dxf->curr_block.first_hatch;
+    while (htc != NULL)
+      {
+	  n_htc = htc->next;
+	  destroy_dxf_hatch (htc);
+	  htc = n_htc;
+      }
+    dxf->curr_block.layer_name = NULL;
+    dxf->curr_block.block_id = NULL;
+    dxf->curr_block.first_text = NULL;
+    dxf->curr_block.last_text = NULL;
+    dxf->curr_block.first_point = NULL;
+    dxf->curr_block.last_point = NULL;
+    dxf->curr_block.first_line = NULL;
+    dxf->curr_block.last_line = NULL;
+    dxf->curr_block.first_polyg = NULL;
+    dxf->curr_block.last_polyg = NULL;
+    dxf->curr_block.first_hatch = NULL;
+    dxf->curr_block.last_hatch = NULL;
+    dxf->curr_block.is3Dtext = 0;
+    dxf->curr_block.is3Dpoint = 0;
+    dxf->curr_block.is3Dline = 0;
+    dxf->curr_block.is3Dpolyg = 0;
 }
 
-static void
-insert_dxf_indirect_entity (gaiaDxfParserPtr dxf, gaiaDxfBlockPtr blk)
+static int
+find_dxf_block (gaiaDxfParserPtr dxf, const char *layer_name,
+		const char *block_id)
 {
-/* inderting an entity indirectly referencing a Block */
-    if (blk->text != NULL)
+/* attempting to find a Block object by its Id */
+    gaiaDxfBlockPtr blk = dxf->first_block;
+    while (blk != NULL)
       {
-	  /* saving the Text Block */
-	  gaiaDxfTextPtr in = blk->text;
-	  gaiaDxfTextPtr txt =
-	      alloc_dxf_text (in->label, dxf->curr_point.x + in->x,
-			      dxf->curr_point.y + in->y,
-			      dxf->curr_point.z + in->z, in->angle);
-	  force_missing_layer (dxf);
-	  insert_dxf_text (dxf, dxf->curr_layer_name, txt);
+	  if (layer_name != NULL && block_id != NULL)
+	    {
+		if (strcmp (blk->layer_name, layer_name) == 0
+		    && strcmp (blk->block_id, block_id) == 0)
+		  {
+		      /* ok, matching item found */
+		      return 1;
+		  }
+	    }
+	  blk = blk->next;
       }
-    if (blk->point)
-      {
-	  /* saving the Point Block */
-	  gaiaDxfPointPtr in = blk->point;
-	  gaiaDxfPointPtr pt = alloc_dxf_point (dxf->curr_point.x + in->x,
-						dxf->curr_point.y + in->y,
-						dxf->curr_point.z + in->z);
-	  force_missing_layer (dxf);
-	  insert_dxf_point (dxf, dxf->curr_layer_name, pt);
-      }
-    if (blk->line)
-      {
-	  /* saving the Polyline Block */
-	  gaiaDxfPolylinePtr ln =
-	      clone_dxf_polyline (blk->line, dxf->curr_point.x,
-				  dxf->curr_point.y, dxf->curr_point.z);
-	  force_missing_layer (dxf);
-	  insert_dxf_polyline (dxf, dxf->curr_layer_name, ln);
-      }
-    dxf->is_insert = 0;
-    /* resetting curr_layer */
-    if (dxf->curr_layer_name != NULL)
-	free (dxf->curr_layer_name);
-    dxf->curr_layer_name = NULL;
+    return 0;
 }
 
 static void
@@ -1778,14 +1877,61 @@ reset_dxf_entity (gaiaDxfParserPtr dxf)
       }
     if (dxf->is_insert)
       {
-	  /* attempting to replace the current Insert */
-	  gaiaDxfBlockPtr blk =
-	      find_dxf_block (dxf, dxf->curr_layer_name, dxf->curr_block_id);
-	  if (blk != NULL)
-	      insert_dxf_indirect_entity (dxf, blk);
-	  if (dxf->curr_block_id != NULL)
-	      free (dxf->curr_block_id);
-	  dxf->curr_block_id = NULL;
+if (find_dxf_block (dxf, dxf->curr_layer_name, dxf->curr_insert.block_id))
+{
+	  /* saving the current Insert */
+	  gaiaDxfInsertPtr ins =
+	      alloc_dxf_insert (dxf->curr_insert.block_id, dxf->curr_insert.x,
+				dxf->curr_insert.y, dxf->curr_insert.z,
+				dxf->curr_insert.scale_x,
+				dxf->curr_insert.scale_y,
+				dxf->curr_insert.scale_z,
+				dxf->curr_insert.angle);
+	  force_missing_layer (dxf);
+	  insert_dxf_insert (dxf, dxf->curr_layer_name, ins);
+}
+	  /* resetting curr_insert */
+	  dxf->curr_insert.x = 0.0;
+	  dxf->curr_insert.y = 0.0;
+	  dxf->curr_insert.z = 0.0;
+	  dxf->curr_insert.scale_x = 0.0;
+	  dxf->curr_insert.scale_y = 0.0;
+	  dxf->curr_insert.scale_z = 0.0;
+	  dxf->curr_insert.angle = 0.0;
+	  if (dxf->curr_insert.block_id != NULL)
+	      free (dxf->curr_insert.block_id);
+	  dxf->curr_insert.block_id = NULL;
+	  dxf->is_insert = 0;
+	  /* resetting curr_layer */
+	  if (dxf->curr_layer_name != NULL)
+	      free (dxf->curr_layer_name);
+	  dxf->curr_layer_name = NULL;
+      }
+    if (dxf->is_line)
+      {
+	  /* saving the current Line */
+	  gaiaDxfPolylinePtr ln =
+	      alloc_dxf_line (dxf->curr_point.x, dxf->curr_point.y, dxf->curr_point.z,
+dxf->curr_end_point.x, dxf->curr_end_point.y ,dxf->curr_end_point.z);
+	  if (dxf->is_block)
+	      insert_dxf_block_polyline (dxf, ln);
+	  else
+{
+	  force_missing_layer (dxf);
+	  insert_dxf_polyline (dxf, dxf->curr_layer_name, ln);
+}
+	  /* resetting curr_line */
+	  dxf->curr_point.x = 0.0;
+	  dxf->curr_point.y = 0.0;
+	  dxf->curr_point.z = 0.0;
+	  dxf->curr_end_point.x = 0.0;
+	  dxf->curr_end_point.y = 0.0;
+	  dxf->curr_end_point.z = 0.0;
+	  dxf->is_line = 0;
+	  /* resetting curr_layer */
+	  if (dxf->curr_layer_name != NULL)
+	      free (dxf->curr_layer_name);
+	  dxf->curr_layer_name = NULL;
       }
     if (dxf->is_hatch)
       {
@@ -1794,10 +1940,15 @@ reset_dxf_entity (gaiaDxfParserPtr dxf)
 	    {
 		if (is_valid_dxf_hatch (dxf->curr_hatch))
 		  {
+		      create_dxf_hatch_lines (dxf->curr_hatch, dxf->srid);
+	  if (dxf->is_block)
+	      insert_dxf_block_hatch (dxf, dxf->curr_hatch);
+	  else
+{
 		      force_missing_layer (dxf);
 		      insert_dxf_hatch (dxf, dxf->curr_layer_name,
 					dxf->curr_hatch);
-		      create_dxf_hatch_lines (dxf->curr_hatch, dxf->srid);
+}
 		      dxf->curr_hatch = NULL;
 		  }
 	    }
@@ -1814,8 +1965,13 @@ reset_dxf_entity (gaiaDxfParserPtr dxf)
 	      alloc_dxf_text (dxf->curr_text.label, dxf->curr_text.x,
 			      dxf->curr_text.y, dxf->curr_text.z,
 			      dxf->curr_text.angle);
+	  if (dxf->is_block)
+	      insert_dxf_block_text (dxf, txt);
+	  else
+{
 	  force_missing_layer (dxf);
-	  insert_dxf_text (dxf, dxf->curr_layer_name, txt);
+	      insert_dxf_text (dxf, dxf->curr_layer_name, txt);
+}
 	  /* resetting curr_text */
 	  dxf->curr_text.x = 0.0;
 	  dxf->curr_text.y = 0.0;
@@ -1836,8 +1992,13 @@ reset_dxf_entity (gaiaDxfParserPtr dxf)
 	  gaiaDxfPointPtr pt =
 	      alloc_dxf_point (dxf->curr_point.x, dxf->curr_point.y,
 			       dxf->curr_point.z);
+	  if (dxf->is_block)
+	      insert_dxf_block_point (dxf, pt);
+	  else
+{
 	  force_missing_layer (dxf);
-	  insert_dxf_point (dxf, dxf->curr_layer_name, pt);
+	      insert_dxf_point (dxf, dxf->curr_layer_name, pt);
+}
 	  /* resetting curr_point */
 	  dxf->curr_point.x = 0.0;
 	  dxf->curr_point.y = 0.0;
@@ -1848,7 +2009,7 @@ reset_dxf_entity (gaiaDxfParserPtr dxf)
 	      free (dxf->curr_layer_name);
 	  dxf->curr_layer_name = NULL;
       }
-    if (dxf->is_lwpolyline && dxf->is_block == 0)
+    if (dxf->is_lwpolyline)
       {
 	  /* saving the current Polyline */
 	  save_current_polyline (dxf);
@@ -1885,15 +2046,39 @@ set_dxf_layer_name (gaiaDxfParserPtr dxf, const char *name)
 }
 
 static void
+set_dxf_block_layer_name (gaiaDxfParserPtr dxf, const char *name)
+{
+/* saving the current Block Layer Name */
+    int len;
+    if (dxf->curr_block.layer_name != NULL)
+	free (dxf->curr_block.layer_name);
+    len = strlen (name);
+    dxf->curr_block.layer_name = malloc (len + 1);
+    strcpy (dxf->curr_block.layer_name, name);
+}
+
+static void
 set_dxf_block_id (gaiaDxfParserPtr dxf, const char *id)
 {
 /* saving the current Block Id */
     int len;
-    if (dxf->curr_block_id != NULL)
-	free (dxf->curr_block_id);
+    if (dxf->curr_block.block_id != NULL)
+	free (dxf->curr_block.block_id);
     len = strlen (id);
-    dxf->curr_block_id = malloc (len + 1);
-    strcpy (dxf->curr_block_id, id);
+    dxf->curr_block.block_id = malloc (len + 1);
+    strcpy (dxf->curr_block.block_id, id);
+}
+
+static void
+set_dxf_insert_block_id (gaiaDxfParserPtr dxf, const char *id)
+{
+/* saving the current Block Id */
+    int len;
+    if (dxf->curr_insert.block_id != NULL)
+	free (dxf->curr_insert.block_id);
+    len = strlen (id);
+    dxf->curr_insert.block_id = malloc (len + 1);
+    strcpy (dxf->curr_insert.block_id, id);
 }
 
 static void
@@ -2184,9 +2369,10 @@ parse_dxf_line (gaiaDxfParserPtr dxf, const char *line)
     if (strcmp (line, "ENDBLK") == 0)
       {
 	  /* end BLOCK tag */
+	  reset_dxf_polyline (dxf);
 	  if (dxf->is_block)
 	    {
-		reset_dxf_block (dxf);
+		insert_dxf_block (dxf);
 		dxf->is_block = 0;
 		dxf->op_code_line = 1;
 		return 1;
@@ -2210,6 +2396,16 @@ parse_dxf_line (gaiaDxfParserPtr dxf, const char *line)
 	  if (dxf->tables && dxf->op_code == 0)
 	    {
 		dxf->is_layer = 1;
+		return 1;
+	    }
+      }
+    if (strcmp (line, "INSERT") == 0)
+      {
+	  /* start INSERT tag */
+	  reset_dxf_polyline (dxf);
+	  if (dxf->entities && dxf->op_code == 0)
+	    {
+		dxf->is_insert = 1;
 		return 1;
 	    }
       }
@@ -2283,6 +2479,21 @@ parse_dxf_line (gaiaDxfParserPtr dxf, const char *line)
 		return 1;
 	    }
       }
+    if (strcmp (line, "LINE") == 0)
+      {
+	  /* start LINE tag */
+	  reset_dxf_polyline (dxf);
+	  if (dxf->entities && dxf->op_code == 0)
+	    {
+		dxf->is_line = 1;
+		return 1;
+	    }
+	  if (dxf->is_block && dxf->op_code == 0)
+	    {
+		dxf->is_line = 1;
+		return 1;
+	    }
+      }
     if (strcmp (line, "VERTEX") == 0)
       {
 	  /* start VERTEX tag */
@@ -2309,7 +2520,6 @@ parse_dxf_line (gaiaDxfParserPtr dxf, const char *line)
     if (strcmp (line, "EOF") == 0)
       {
 	  /* end of file marker tag */
-	  reset_dxf_block (dxf);
 	  reset_dxf_polyline (dxf);
 	  dxf->eof = 1;
 	  return 1;
@@ -2333,18 +2543,15 @@ parse_dxf_line (gaiaDxfParserPtr dxf, const char *line)
 		set_dxf_block_id (dxf, line);
 		break;
 	    case 8:
-		set_dxf_layer_name (dxf, line);
+		set_dxf_block_layer_name (dxf, line);
 		break;
 	    };
       }
-    if (dxf->is_insert)
+    if (dxf->is_line)
       {
-	  /* parsing Insert attributes */
+	  /* parsing Line attributes */
 	  switch (dxf->op_code)
 	    {
-	    case 2:
-		set_dxf_block_id (dxf, line);
-		break;
 	    case 8:
 		set_dxf_layer_name (dxf, line);
 		break;
@@ -2356,6 +2563,55 @@ parse_dxf_line (gaiaDxfParserPtr dxf, const char *line)
 		break;
 	    case 30:
 		dxf->curr_point.z = atof (line);
+		break;
+	    case 11:
+		dxf->curr_end_point.x = atof (line);
+		break;
+	    case 21:
+		dxf->curr_end_point.y = atof (line);
+		break;
+	    case 31:
+		dxf->curr_end_point.z = atof (line);
+		break;
+	    };
+      }
+    if (dxf->is_insert)
+      {
+	  /* parsing Insert attributes */
+	  switch (dxf->op_code)
+	    {
+	    case 2:
+		set_dxf_insert_block_id (dxf, line);
+		break;
+	    case 8:
+		set_dxf_layer_name (dxf, line);
+		break;
+	    case 10:
+		dxf->curr_insert.x = atof (line);
+		break;
+	    case 20:
+		dxf->curr_insert.y = atof (line);
+		break;
+	    case 30:
+		dxf->curr_insert.z = atof (line);
+		break;
+	    case 41:
+		dxf->curr_insert.scale_x = atof (line);
+		break;
+	    case 42:
+		dxf->curr_insert.scale_y = atof (line);
+		break;
+	    case 43:
+		dxf->curr_insert.scale_z = atof (line);
+		break;
+	    case 50:
+		dxf->curr_insert.angle = atof (line);
+		break;
+	    case 1000:
+		set_dxf_extra_value (dxf, line);
+		break;
+	    case 1001:
+		set_dxf_extra_key (dxf, line);
 		break;
 	    };
       }
@@ -2557,14 +2813,22 @@ gaiaCreateDxfParser (int srid,
     dxf->is_point = 0;
     dxf->is_polyline = 0;
     dxf->is_lwpolyline = 0;
+dxf->is_line = 0;
     dxf->is_vertex = 0;
     dxf->is_hatch = 0;
     dxf->is_hatch_boundary = 0;
     dxf->is_insert = 0;
     dxf->eof = 0;
     dxf->error = 0;
-    dxf->curr_block_id = NULL;
     dxf->curr_layer_name = NULL;
+    dxf->curr_insert.x = 0.0;
+    dxf->curr_insert.y = 0.0;
+    dxf->curr_insert.z = 0.0;
+    dxf->curr_insert.scale_x = 0.0;
+    dxf->curr_insert.scale_y = 0.0;
+    dxf->curr_insert.scale_z = 0.0;
+    dxf->curr_insert.angle = 0.0;
+    dxf->curr_insert.block_id = NULL;
     dxf->curr_text.x = 0.0;
     dxf->curr_text.y = 0.0;
     dxf->curr_text.z = 0.0;
@@ -2573,6 +2837,22 @@ gaiaCreateDxfParser (int srid,
     dxf->curr_point.x = 0.0;
     dxf->curr_point.y = 0.0;
     dxf->curr_point.z = 0.0;
+    dxf->curr_block.layer_name = NULL;
+    dxf->curr_block.block_id = NULL;
+    dxf->curr_block.first_text = NULL;
+    dxf->curr_block.last_text = NULL;
+    dxf->curr_block.first_point = NULL;
+    dxf->curr_block.last_point = NULL;
+    dxf->curr_block.first_line = NULL;
+    dxf->curr_block.last_line = NULL;
+    dxf->curr_block.first_polyg = NULL;
+    dxf->curr_block.last_polyg = NULL;
+    dxf->curr_block.first_hatch = NULL;
+    dxf->curr_block.last_hatch = NULL;
+    dxf->curr_block.is3Dtext = 0;
+    dxf->curr_block.is3Dpoint = 0;
+    dxf->curr_block.is3Dline = 0;
+    dxf->curr_block.is3Dpolyg = 0;
     dxf->curr_end_point.x = 0.0;
     dxf->curr_end_point.y = 0.0;
     dxf->curr_end_point.z = 0.0;
@@ -2583,10 +2863,10 @@ gaiaCreateDxfParser (int srid,
     dxf->last_pt = NULL;
     dxf->first_ext = NULL;
     dxf->last_ext = NULL;
-    dxf->first = NULL;
-    dxf->last = NULL;
-    dxf->first_blk = NULL;
-    dxf->last_blk = NULL;
+    dxf->first_layer = NULL;
+    dxf->last_layer = NULL;
+    dxf->first_block = NULL;
+    dxf->last_block = NULL;
     dxf->curr_hatch = NULL;
     dxf->force_dims = force_dims;
     if (srid <= 0)
@@ -2622,9 +2902,7 @@ gaiaDestroyDxfParser (gaiaDxfParserPtr dxf)
 	free (dxf->curr_text.label);
     if (dxf->curr_layer_name != NULL)
 	free (dxf->curr_layer_name);
-    if (dxf->curr_block_id != NULL)
-	free (dxf->curr_block_id);
-    lyr = dxf->first;
+    lyr = dxf->first_layer;
     while (lyr != NULL)
       {
 	  n_lyr = lyr->next;
@@ -2649,7 +2927,7 @@ gaiaDestroyDxfParser (gaiaDxfParserPtr dxf)
 	  destroy_dxf_extra (ext);
 	  ext = n_ext;
       }
-    blk = dxf->first_blk;
+    blk = dxf->first_block;
     while (blk != NULL)
       {
 	  n_blk = blk->next;
@@ -2658,6 +2936,7 @@ gaiaDestroyDxfParser (gaiaDxfParserPtr dxf)
       }
     if (dxf->curr_hatch != NULL)
 	destroy_dxf_hatch (dxf->curr_hatch);
+    reset_dxf_block (dxf);
     free (dxf);
 }
 
@@ -2672,7 +2951,7 @@ gaiaParseDxfFile (gaiaDxfParserPtr dxf, const char *path)
 
     if (dxf == NULL)
 	return 0;
-    if (dxf->first != NULL)
+    if (dxf->first_layer != NULL || dxf->first_block != NULL)
 	return 0;
 
 /* attempting to open the input file */

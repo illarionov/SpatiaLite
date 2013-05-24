@@ -1772,6 +1772,81 @@ extern "C"
     GAIAGEO_DECLARE int gaiaConvertLength (double value, int unit_from,
 					   int unit_to, double *cvt);
 
+/**
+ Creates a Circle (Linestring) Geometry
+
+ \param center_x center point X coordinate.
+ \param center_y center point Y coordinate.
+ \param radius the circle's radius.
+ \param step angular distance (in degrees) between points on the circumference.
+
+ \sa gaiaMakeArc, gaiaMakeEllipse, gaiaMakeEllipticArc
+
+ \note simply a convenience method defaulting to gaiaMakeEllipse
+ with both axes set to radius value
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMakeCircle (double center_x,
+						    double center_y,
+						    double radius, double step);
+
+/**
+ Creates an Ellipse (Linestring) Geometry
+
+ \param center_x center point X coordinate.
+ \param center_y center point Y coordinate.
+ \param x_axis the ellipses's X axis.
+ \param y_axis the ellipses's Y axis.
+ \param step angular distance (in degrees) between points on the ellipse.
+
+ \sa gaiaMakeEllipticArc, gaiaMakeCircle, gaiaMakeArc
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMakeEllipse (double center_x,
+						     double center_y,
+						     double x_axis,
+						     double y_axis,
+						     double step);
+
+/**
+ Creates a Circular Arc (Linestring) Geometry
+
+ \param center_x center point X coordinate.
+ \param center_y center point Y coordinate.
+ \param radius the circle's radius.
+ \param start the start angle (in degrees).
+ \param start the stop angle (in degrees).
+ \param step angular distance (in degrees) between points on the circumference.
+
+ \sa gaiaMakeCircle, gaiaMakeEllipse, gaiaMakeEllipticArc
+
+ \note simply a convenience method defaulting to gaiaMakeEllipticArc
+ with both axes set to radius value
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMakeArc (double center_x,
+						 double center_y, double radius,
+						 double start, double stop,
+						 double step);
+
+/**
+ Creates an Elliptic Arc (Linestring) Geometry
+
+ \param center_x center point X coordinate.
+ \param center_y center point Y coordinate.
+ \param x_axis the ellipses's X axis.
+ \param y_axis the ellipses's Y axis.
+ \param start the start angle (in degrees).
+ \param start the stop angle (in degrees).
+ \param step angular distance (in degrees) between points on the ellipse.
+
+ \sa gaiaMakeCircle
+ */
+    GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMakeEllipticArc (double center_x,
+							 double center_y,
+							 double x_axis,
+							 double y_axis,
+							 double start,
+							 double stop,
+							 double step);
+
 #ifdef __cplusplus
 }
 #endif
