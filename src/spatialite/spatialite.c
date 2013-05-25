@@ -7932,6 +7932,332 @@ fnct_MakeEllipticArc (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_MakeCircularSector (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ MakeCircularSector(double cx, double cy, double radius, double start, double stop)
+/     or
+/ MakeCircularSector(double cx, double cy, double radius, double start, double stop, 
+/         int srid)
+/     or
+/ MakeCircularSector(double cx, double cy, double radius, double start, double stop, 
+/         int srid, double step)
+/
+/ - builds a Polygon approximating a Circular Sector
+/ - start and stop are the initial and final angles (in degrees)
+/ - step is the angular distance (in degrees) between points on 
+/   the circurmference (by default: every 10 degs) 
+/ - or NULL if any error is encountered
+*/
+    int len;
+    unsigned char *p_result = NULL;
+    gaiaGeomCollPtr geom = NULL;
+    gaiaGeomCollPtr sector = NULL;
+    int ival;
+    double cx;
+    double cy;
+    double r;
+    double start;
+    double stop;
+    int srid = 0;
+    double step = 10.0;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[0]);
+	  cx = ival;
+      }
+    else if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	cx = sqlite3_value_double (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[1]);
+	  cy = ival;
+      }
+    else if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	cy = sqlite3_value_double (argv[1]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[2]);
+	  r = ival;
+      }
+    else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	r = sqlite3_value_double (argv[2]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[3]);
+	  start = ival;
+      }
+    else if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
+	start = sqlite3_value_double (argv[3]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[4]);
+	  stop = ival;
+      }
+    else if (sqlite3_value_type (argv[4]) == SQLITE_FLOAT)
+	stop = sqlite3_value_double (argv[4]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc >= 6)
+      {
+	  if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
+	      srid = sqlite3_value_int (argv[5]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 7)
+      {
+	  if (sqlite3_value_type (argv[6]) == SQLITE_INTEGER)
+	    {
+		ival = sqlite3_value_int (argv[6]);
+		step = ival;
+	    }
+	  else if (sqlite3_value_type (argv[6]) == SQLITE_FLOAT)
+	      step = sqlite3_value_double (argv[6]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+
+    geom = gaiaMakeArc (cx, cy, r, start, stop, step);
+    if (!geom)
+	sqlite3_result_null (context);
+    else
+      {
+	  int ii;
+	  int io;
+	  double x;
+	  double y;
+	  gaiaLinestringPtr in = geom->FirstLinestring;
+	  gaiaPolygonPtr pg;
+	  gaiaRingPtr out;
+	  sector = gaiaAllocGeomColl ();
+	  pg = gaiaAddPolygonToGeomColl (sector, in->Points + 2, 0);
+	  out = pg->Exterior;
+	  /* inserting the Centre - first point */
+	  gaiaSetPoint (out->Coords, io, cx, cy);
+	  io++;
+	  for (ii = 0; ii < in->Points; ii++)
+	    {
+		/* copying the Arc's points */
+		gaiaGetPoint (in->Coords, ii, &x, &y);
+		gaiaSetPoint (out->Coords, io, x, y);
+		io++;
+	    }
+	  /* inserting the Centre - last point */
+	  gaiaSetPoint (out->Coords, io, cx, cy);
+	  if (srid != 0)
+	      sector->Srid = srid;
+	  gaiaToSpatiaLiteBlobWkb (sector, &p_result, &len);
+	  sqlite3_result_blob (context, p_result, len, free);
+      }
+    if (geom)
+	gaiaFreeGeomColl (geom);
+    if (sector)
+	gaiaFreeGeomColl (sector);
+}
+
+static void
+fnct_MakeEllipticSector (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ MakeEllipticSector(double cx, double cy, double x_axis, double y_axis, 
+/                 double start, double stop)
+/     or
+/ MakeEllipticSector(double cx, double cy, double x_axis, double y_axis,
+/                 double start, double stop, int srid)
+/     or
+/ MakeEllipticSector(double cx, double cy, double x_axis, double y_axis,
+/                 double start, double stop, int srid, double step)
+/
+/ - builds a Polygon approximating an Elliptic Sector
+/ - start and stop are the initial and final angles (in degrees)
+/ - step is the angular distance (in degrees) between points on 
+/   the ellipse (by default: every 10 degs) 
+/ - or NULL if any error is encountered
+*/
+    int len;
+    unsigned char *p_result = NULL;
+    gaiaGeomCollPtr geom = NULL;
+    gaiaGeomCollPtr sector = NULL;
+    int ival;
+    double cx;
+    double cy;
+    double x_axis;
+    double y_axis;
+    double start;
+    double stop;
+    int srid = 0;
+    double step = 10.0;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[0]);
+	  cx = ival;
+      }
+    else if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	cx = sqlite3_value_double (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[1]);
+	  cy = ival;
+      }
+    else if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	cy = sqlite3_value_double (argv[1]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[2]);
+	  x_axis = ival;
+      }
+    else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	x_axis = sqlite3_value_double (argv[2]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[3]);
+	  y_axis = ival;
+      }
+    else if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
+	y_axis = sqlite3_value_double (argv[3]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[4]);
+	  start = ival;
+      }
+    else if (sqlite3_value_type (argv[4]) == SQLITE_FLOAT)
+	start = sqlite3_value_double (argv[4]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[5]);
+	  stop = ival;
+      }
+    else if (sqlite3_value_type (argv[5]) == SQLITE_FLOAT)
+	stop = sqlite3_value_double (argv[5]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc >= 7)
+      {
+	  if (sqlite3_value_type (argv[6]) == SQLITE_INTEGER)
+	      srid = sqlite3_value_int (argv[6]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 8)
+      {
+	  if (sqlite3_value_type (argv[7]) == SQLITE_INTEGER)
+	    {
+		ival = sqlite3_value_int (argv[7]);
+		step = ival;
+	    }
+	  else if (sqlite3_value_type (argv[7]) == SQLITE_FLOAT)
+	      step = sqlite3_value_double (argv[7]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+
+    geom = gaiaMakeEllipticArc (cx, cy, x_axis, y_axis, start, stop, step);
+    if (!geom)
+	sqlite3_result_null (context);
+    else
+      {
+	  int ii;
+	  int io;
+	  double x;
+	  double y;
+	  gaiaLinestringPtr in = geom->FirstLinestring;
+	  gaiaPolygonPtr pg;
+	  gaiaRingPtr out;
+	  sector = gaiaAllocGeomColl ();
+	  pg = gaiaAddPolygonToGeomColl (sector, in->Points + 2, 0);
+	  out = pg->Exterior;
+	  /* inserting the Centre - first point */
+	  gaiaSetPoint (out->Coords, io, cx, cy);
+	  io++;
+	  for (ii = 0; ii < in->Points; ii++)
+	    {
+		/* copying the Arc's points */
+		gaiaGetPoint (in->Coords, ii, &x, &y);
+		gaiaSetPoint (out->Coords, io, x, y);
+		io++;
+	    }
+	  /* inserting the Centre - last point */
+	  gaiaSetPoint (out->Coords, io, cx, cy);
+	  if (srid != 0)
+	      sector->Srid = srid;
+	  gaiaToSpatiaLiteBlobWkb (sector, &p_result, &len);
+	  sqlite3_result_blob (context, p_result, len, free);
+      }
+    if (geom)
+	gaiaFreeGeomColl (geom);
+    if (sector)
+	gaiaFreeGeomColl (sector);
+}
+
+static void
 fnct_Collect_step (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
@@ -26050,6 +26376,18 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_MakeEllipticArc, 0, 0);
     sqlite3_create_function (db, "MakeEllipticArc", 8, SQLITE_ANY, 0,
 			     fnct_MakeEllipticArc, 0, 0);
+    sqlite3_create_function (db, "MakeCircularSector", 5, SQLITE_ANY, 0,
+			     fnct_MakeCircularSector, 0, 0);
+    sqlite3_create_function (db, "MakeCircularSector", 6, SQLITE_ANY, 0,
+			     fnct_MakeCircularSector, 0, 0);
+    sqlite3_create_function (db, "MakeCircularSector", 7, SQLITE_ANY, 0,
+			     fnct_MakeCircularSector, 0, 0);
+    sqlite3_create_function (db, "MakeEllipticSector", 6, SQLITE_ANY, 0,
+			     fnct_MakeEllipticSector, 0, 0);
+    sqlite3_create_function (db, "MakeEllipticSector", 7, SQLITE_ANY, 0,
+			     fnct_MakeEllipticSector, 0, 0);
+    sqlite3_create_function (db, "MakeEllipticSector", 8, SQLITE_ANY, 0,
+			     fnct_MakeEllipticSector, 0, 0);
     sqlite3_create_function (db, "Collect", 1, SQLITE_ANY, 0, 0,
 			     fnct_Collect_step, fnct_Collect_final);
     sqlite3_create_function (db, "Collect", 2, SQLITE_ANY, 0, fnct_Collect, 0,

@@ -4626,7 +4626,7 @@ if test "x$ac_cv_header_zlib_h" = xyes; then :
 _ACEOF
 
 else
-  as_fn_error $? "cannot find sqlite3ext.h, bailing out" "$LINENO" 5
+  as_fn_error $? "cannot find zlib.h, bailing out" "$LINENO" 5
 fi
 
 done

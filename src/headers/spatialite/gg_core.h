@@ -1837,7 +1837,7 @@ extern "C"
  \param start the stop angle (in degrees).
  \param step angular distance (in degrees) between points on the ellipse.
 
- \sa gaiaMakeCircle
+ \sa gaiaMakeCircle, gaiaMakeEllipse, gaiaMakeEllipticArc
  */
     GAIAGEO_DECLARE gaiaGeomCollPtr gaiaMakeEllipticArc (double center_x,
 							 double center_y,

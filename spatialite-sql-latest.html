@@ -502,6 +502,26 @@
 				<td>will return a LINESTRING approximating the Elliptic Arc defined by <b>cx, cy</b> and <b>x_axis, y_axis</b>; the arc's extremities will be defined by <b>start, stop</b> angles expressed in degrees.<br>
                                 The optional argument <b>step</b> if specified defines how many points will be interpolated on the ellipse; a point will be set every <b>step</b> degrees.<br>
                                 The implicit default setting corresponds to a point every <u>10</u> degrees.</td></tr>
+                        <tr><td><b>MakeCircularSector</b></td>
+				<td>MakeCircularSector( cx <i>Double precision</i> , cy <i>Double precision</i> ,
+				radius <i>Double precision</i> , 
+                                start <i>Double precision</i> , stop <i>Double precision</i> [ , SRID <i>Integer</i> [ , 
+                                step <i>Double precision</i> ] ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>will return a POLYGON approximating the Circular Sector defined by <b>cx, cy</b> and <b>radius</b>; the arc's extremities will be defined by <b>start, stop</b> angles expressed in degrees.<br>
+                                The optional argument <b>step</b> if specified defines how many points will be interpolated on the circumference; a point will be set every <b>step</b> degrees.<br>
+                                The implicit default setting corresponds to a point every <u>10</u> degrees.</td></tr>
+                        <tr><td><b>MakeEllipticSector</b></td>
+				<td>MakeEllipticSector( cx <i>Double precision</i> , cy <i>Double precision</i> ,
+				x_axis <i>Double precision</i> , y_axis <i>Double precision</i> , 
+                                start <i>Double precision</i> , stop <i>Double precision</i> [ , SRID <i>Integer</i> [ , 
+                                step <i>Double precision</i> ] ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>will return a POLYGON approximating the Elliptic Sector defined by <b>cx, cy</b> and <b>x_axis, y_axis</b>; the arc's extremities will be defined by <b>start, stop</b> angles expressed in degrees.<br>
+                                The optional argument <b>step</b> if specified defines how many points will be interpolated on the ellipse; a point will be set every <b>step</b> degrees.<br>
+                                The implicit default setting corresponds to a point every <u>10</u> degrees.</td></tr>
 			<tr><td><b>SquareGrid</b></td>
 				<td>SquareGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i><hr>
                                     ST_SquareGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i></td>
