@@ -393,32 +393,9 @@ create_layer_hatch_tables (sqlite3 * handle, const char *name, int srid,
     return 1;
 }
 
-static char *
-create_layer_extra_attr_table_name (const char *prefix, int suffix,
-				    const char *layer_name, const char *type)
-{
-/* preparing the Extra Attributes table name */
-    if (prefix == NULL)
-      {
-	  if (suffix)
-	      return sqlite3_mprintf ("%s_%s_attr", layer_name, type);
-	  else
-	      return sqlite3_mprintf ("%s_attr", layer_name);
-      }
-    else
-      {
-	  if (suffix)
-	      return sqlite3_mprintf ("%s%s_%s_attr", prefix, layer_name, type);
-	  else
-	      return sqlite3_mprintf ("%s%s_attr", prefix, layer_name);
-      }
-}
-
 static int
 create_layer_text_extra_attr_table (sqlite3 * handle, const char *name,
-				    const char *prefix, int suffix,
-				    const char *layer_name, char *attr_name,
-				    sqlite3_stmt ** xstmt_ext)
+				    char *attr_name, sqlite3_stmt ** xstmt_ext)
 {
 /* attempting to create the "Text-layer-extra-attr" table */
     char *sql;
@@ -434,21 +411,7 @@ create_layer_text_extra_attr_table (sqlite3 * handle, const char *name,
     char *xview_name;
     *xstmt_ext = NULL;
 
-    if (prefix == NULL)
-      {
-	  if (suffix)
-	      fk_name = sqlite3_mprintf ("fk_%s_text_attr", layer_name);
-	  else
-	      fk_name = sqlite3_mprintf ("fk_%s_attr", layer_name);
-      }
-    else
-      {
-	  if (suffix)
-	      fk_name =
-		  sqlite3_mprintf ("fk_%s%s_text_attr", prefix, layer_name);
-	  else
-	      fk_name = sqlite3_mprintf ("fk_%s%s_attr", prefix, layer_name);
-      }
+    fk_name = sqlite3_mprintf ("fk_%s_attr", name);
     xfk_name = gaiaDoubleQuotedSql (fk_name);
     xattr_name = gaiaDoubleQuotedSql (attr_name);
     xname = gaiaDoubleQuotedSql (name);
@@ -470,21 +433,7 @@ create_layer_text_extra_attr_table (sqlite3 * handle, const char *name,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
-    if (prefix == NULL)
-      {
-	  if (suffix)
-	      idx_name = sqlite3_mprintf ("idx_%s_text_attr", layer_name);
-	  else
-	      idx_name = sqlite3_mprintf ("idx_%s_attr", layer_name);
-      }
-    else
-      {
-	  if (suffix)
-	      idx_name =
-		  sqlite3_mprintf ("idx_%s%s_text_attr", prefix, layer_name);
-	  else
-	      idx_name = sqlite3_mprintf ("idx_%s%s_attr", prefix, layer_name);
-      }
+    idx_name = sqlite3_mprintf ("idx_%s_attr", name);
     xidx_name = gaiaDoubleQuotedSql (idx_name);
     sql =
 	sqlite3_mprintf
@@ -499,21 +448,7 @@ create_layer_text_extra_attr_table (sqlite3 * handle, const char *name,
 	  return 0;
       }
     sqlite3_free (idx_name);
-    if (prefix == NULL)
-      {
-	  if (suffix)
-	      view_name = sqlite3_mprintf ("%s_text_view", layer_name);
-	  else
-	      view_name = sqlite3_mprintf ("%s_view", layer_name);
-      }
-    else
-      {
-	  if (suffix)
-	      view_name =
-		  sqlite3_mprintf ("%s%s_text_view", prefix, layer_name);
-	  else
-	      view_name = sqlite3_mprintf ("%s%s_view", prefix, layer_name);
-      }
+    view_name = sqlite3_mprintf ("%s_view", name);
     xview_name = gaiaDoubleQuotedSql (view_name);
     sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS "
 			   "SELECT f.feature_id AS feature_id, f.layer AS layer, f.label AS label, "
@@ -543,9 +478,7 @@ create_layer_text_extra_attr_table (sqlite3 * handle, const char *name,
 
 static int
 create_layer_point_extra_attr_table (sqlite3 * handle, const char *name,
-				     const char *prefix, int suffix,
-				     const char *layer_name, char *attr_name,
-				     sqlite3_stmt ** xstmt_ext)
+				     char *attr_name, sqlite3_stmt ** xstmt_ext)
 {
 /* attempting to create the "Point-layer-extra-attr" table */
     char *sql;
@@ -561,21 +494,7 @@ create_layer_point_extra_attr_table (sqlite3 * handle, const char *name,
     char *xview_name;
     *xstmt_ext = NULL;
 
-    if (prefix == NULL)
-      {
-	  if (suffix)
-	      fk_name = sqlite3_mprintf ("fk_%s_point_attr", layer_name);
-	  else
-	      fk_name = sqlite3_mprintf ("fk_%s_attr", layer_name);
-      }
-    else
-      {
-	  if (suffix)
-	      fk_name =
-		  sqlite3_mprintf ("fk_%s%s_point_attr", prefix, layer_name);
-	  else
-	      fk_name = sqlite3_mprintf ("fk_%s%s_attr", prefix, layer_name);
-      }
+    fk_name = sqlite3_mprintf ("fk_%s_attr", name);
     xfk_name = gaiaDoubleQuotedSql (fk_name);
     xattr_name = gaiaDoubleQuotedSql (attr_name);
     xname = gaiaDoubleQuotedSql (name);
@@ -597,21 +516,7 @@ create_layer_point_extra_attr_table (sqlite3 * handle, const char *name,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
-    if (prefix == NULL)
-      {
-	  if (suffix)
-	      idx_name = sqlite3_mprintf ("idx_%s_poiny_attr", layer_name);
-	  else
-	      idx_name = sqlite3_mprintf ("idx_%s_attr", layer_name);
-      }
-    else
-      {
-	  if (suffix)
-	      idx_name =
-		  sqlite3_mprintf ("idx_%s%s_point_attr", prefix, layer_name);
-	  else
-	      idx_name = sqlite3_mprintf ("idx_%s%s_attr", prefix, layer_name);
-      }
+    idx_name = sqlite3_mprintf ("idx_%s_attr", name);
     xidx_name = gaiaDoubleQuotedSql (idx_name);
     sql =
 	sqlite3_mprintf
@@ -626,21 +531,7 @@ create_layer_point_extra_attr_table (sqlite3 * handle, const char *name,
 	  return 0;
       }
     sqlite3_free (idx_name);
-    if (prefix == NULL)
-      {
-	  if (suffix)
-	      view_name = sqlite3_mprintf ("%s_point_view", layer_name);
-	  else
-	      view_name = sqlite3_mprintf ("%s_view", layer_name);
-      }
-    else
-      {
-	  if (suffix)
-	      view_name =
-		  sqlite3_mprintf ("%s%s_point_view", prefix, layer_name);
-	  else
-	      view_name = sqlite3_mprintf ("%s%s_view", prefix, layer_name);
-      }
+    view_name = sqlite3_mprintf ("%s_view", name);
     xview_name = gaiaDoubleQuotedSql (view_name);
     sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS "
 			   "SELECT f.feature_id AS feature_id, f.layer AS layer, f.geometry AS geometry, "
@@ -669,9 +560,7 @@ create_layer_point_extra_attr_table (sqlite3 * handle, const char *name,
 
 static int
 create_layer_line_extra_attr_table (sqlite3 * handle, const char *name,
-				    const char *prefix, int suffix,
-				    const char *layer_name, char *attr_name,
-				    sqlite3_stmt ** xstmt_ext)
+				    char *attr_name, sqlite3_stmt ** xstmt_ext)
 {
 /* attempting to create the "Line-layer-extra-attr" table */
     char *sql;
@@ -687,21 +576,7 @@ create_layer_line_extra_attr_table (sqlite3 * handle, const char *name,
     char *xview_name;
     *xstmt_ext = NULL;
 
-    if (prefix == NULL)
-      {
-	  if (suffix)
-	      fk_name = sqlite3_mprintf ("fk_%s_line_attr", layer_name);
-	  else
-	      fk_name = sqlite3_mprintf ("fk_%s_attr", layer_name);
-      }
-    else
-      {
-	  if (suffix)
-	      fk_name =
-		  sqlite3_mprintf ("fk_%s%s_line_attr", prefix, layer_name);
-	  else
-	      fk_name = sqlite3_mprintf ("fk_%s%s_attr", prefix, layer_name);
-      }
+    fk_name = sqlite3_mprintf ("fk_%s_attr", name);
     xfk_name = gaiaDoubleQuotedSql (fk_name);
     xattr_name = gaiaDoubleQuotedSql (attr_name);
     xname = gaiaDoubleQuotedSql (name);
@@ -723,21 +598,7 @@ create_layer_line_extra_attr_table (sqlite3 * handle, const char *name,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
-    if (prefix == NULL)
-      {
-	  if (suffix)
-	      idx_name = sqlite3_mprintf ("idx_%s_line_attr", layer_name);
-	  else
-	      idx_name = sqlite3_mprintf ("idx_%s_attr", layer_name);
-      }
-    else
-      {
-	  if (suffix)
-	      idx_name =
-		  sqlite3_mprintf ("idx_%s%s_line_attr", prefix, layer_name);
-	  else
-	      idx_name = sqlite3_mprintf ("idx_%s%s_attr", prefix, layer_name);
-      }
+    idx_name = sqlite3_mprintf ("idx_%s_attr", name);
     xidx_name = gaiaDoubleQuotedSql (idx_name);
     sql =
 	sqlite3_mprintf
@@ -752,21 +613,7 @@ create_layer_line_extra_attr_table (sqlite3 * handle, const char *name,
 	  return 0;
       }
     sqlite3_free (idx_name);
-    if (prefix == NULL)
-      {
-	  if (suffix)
-	      view_name = sqlite3_mprintf ("%s_line_view", layer_name);
-	  else
-	      view_name = sqlite3_mprintf ("%s_view", layer_name);
-      }
-    else
-      {
-	  if (suffix)
-	      view_name =
-		  sqlite3_mprintf ("%s%s_line_view", prefix, layer_name);
-	  else
-	      view_name = sqlite3_mprintf ("%s%s_view", prefix, layer_name);
-      }
+    view_name = sqlite3_mprintf ("%s_view", name);
     xview_name = gaiaDoubleQuotedSql (view_name);
     sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS "
 			   "SELECT f.feature_id AS feature_id, f.layer AS layer, f.geometry AS geometry, "
@@ -795,9 +642,7 @@ create_layer_line_extra_attr_table (sqlite3 * handle, const char *name,
 
 static int
 create_layer_polyg_extra_attr_table (sqlite3 * handle, const char *name,
-				     const char *prefix, int suffix,
-				     const char *layer_name, char *attr_name,
-				     sqlite3_stmt ** xstmt_ext)
+				     char *attr_name, sqlite3_stmt ** xstmt_ext)
 {
 /* attempting to create the "Polyg-layer-extra-attr" table */
     char *sql;
@@ -813,21 +658,7 @@ create_layer_polyg_extra_attr_table (sqlite3 * handle, const char *name,
     char *xview_name;
     *xstmt_ext = NULL;
 
-    if (prefix == NULL)
-      {
-	  if (suffix)
-	      fk_name = sqlite3_mprintf ("fk_%s_polyg_attr", layer_name);
-	  else
-	      fk_name = sqlite3_mprintf ("fk_%s_attr", layer_name);
-      }
-    else
-      {
-	  if (suffix)
-	      fk_name =
-		  sqlite3_mprintf ("fk_%s%s_polyg_attr", prefix, layer_name);
-	  else
-	      fk_name = sqlite3_mprintf ("fk_%s%s_attr", prefix, layer_name);
-      }
+    fk_name = sqlite3_mprintf ("fk_%s_attr", name);
     xfk_name = gaiaDoubleQuotedSql (fk_name);
     xattr_name = gaiaDoubleQuotedSql (attr_name);
     xname = gaiaDoubleQuotedSql (name);
@@ -849,21 +680,7 @@ create_layer_polyg_extra_attr_table (sqlite3 * handle, const char *name,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
-    if (prefix == NULL)
-      {
-	  if (suffix)
-	      idx_name = sqlite3_mprintf ("idx_%s_polyg_attr", layer_name);
-	  else
-	      idx_name = sqlite3_mprintf ("idx_%s_attr", layer_name);
-      }
-    else
-      {
-	  if (suffix)
-	      idx_name =
-		  sqlite3_mprintf ("idx_%s%s_polyg_attr", prefix, layer_name);
-	  else
-	      idx_name = sqlite3_mprintf ("idx_%s%s_attr", prefix, layer_name);
-      }
+    idx_name = sqlite3_mprintf ("idx_%s_attr", name);
     xidx_name = gaiaDoubleQuotedSql (idx_name);
     sql =
 	sqlite3_mprintf
@@ -878,21 +695,7 @@ create_layer_polyg_extra_attr_table (sqlite3 * handle, const char *name,
 	  return 0;
       }
     sqlite3_free (idx_name);
-    if (prefix == NULL)
-      {
-	  if (suffix)
-	      view_name = sqlite3_mprintf ("%s_polyg_view", layer_name);
-	  else
-	      view_name = sqlite3_mprintf ("%s_view", layer_name);
-      }
-    else
-      {
-	  if (suffix)
-	      view_name =
-		  sqlite3_mprintf ("%s%s_polyg_view", prefix, layer_name);
-	  else
-	      view_name = sqlite3_mprintf ("%s%s_view", prefix, layer_name);
-      }
+    view_name = sqlite3_mprintf ("%s_view", name);
     xview_name = gaiaDoubleQuotedSql (view_name);
     sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS "
 			   "SELECT f.feature_id AS feature_id, f.layer AS layer, f.geometry AS geometry, "
@@ -936,11 +739,13 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
     int iv;
     char *name;
     char *attr_name;
+    char *block;
     gaiaDxfTextPtr txt;
     gaiaDxfPointPtr pt;
     gaiaDxfPolylinePtr ln;
     gaiaDxfPolylinePtr pg;
     gaiaDxfHatchPtr p_hatch;
+    gaiaDxfInsertPtr ins;
 
     gaiaDxfLayerPtr lyr = dxf->first_layer;
     while (lyr != NULL)
@@ -951,7 +756,11 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 	  int line = 0;
 	  int polyg = 0;
 	  int hatch = 0;
-	  int suffix = 0;
+	  int ins_text = 0;
+	  int ins_point = 0;
+	  int ins_line = 0;
+	  int ins_polyg = 0;
+	  int ins_hatch = 0;
 	  if (lyr->first_text != NULL)
 	      text = 1;
 	  if (lyr->first_point != NULL)
@@ -962,10 +771,16 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 	      polyg = 1;
 	  if (lyr->first_hatch != NULL)
 	      hatch = 1;
-	  if (text + point + line + polyg + hatch > 1)
-	      suffix = 1;
-	  else
-	      suffix = 0;
+	  if (lyr->first_ins_text != NULL)
+	      ins_text = 1;
+	  if (lyr->first_ins_point != NULL)
+	      ins_point = 1;
+	  if (lyr->first_ins_line != NULL)
+	      ins_line = 1;
+	  if (lyr->first_ins_polyg != NULL)
+	      ins_polyg = 1;
+	  if (lyr->first_ins_hatch != NULL)
+	      ins_hatch = 1;
 	  if (text)
 	    {
 		/* creating and populating the TEXT-layer */
@@ -994,18 +809,13 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 		      if (!create_layer_text_table
 			  (handle, name, dxf->srid, lyr->is3Dtext, &stmt))
 			{
-
 			    sqlite3_free (name);
 			    return 0;
 			}
 		  }
 		if (lyr->hasExtraText)
 		  {
-		      attr_name =
-			  create_layer_extra_attr_table_name (dxf->prefix,
-							      suffix,
-							      lyr->layer_name,
-							      "text");
+		      attr_name = create_extra_attr_table_name (name);
 		      if (append && check_extra_attr_table (handle, attr_name))
 			{
 			    /* appending into the already existing table */
@@ -1017,8 +827,7 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 			{
 			    /* creating the Extra Attribute table */
 			    if (!create_layer_text_extra_attr_table
-				(handle, name, dxf->prefix, suffix,
-				 lyr->layer_name, attr_name, &stmt_ext))
+				(handle, name, attr_name, &stmt_ext))
 			      {
 				  sqlite3_finalize (stmt);
 				  return 0;
@@ -1175,11 +984,7 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 		  }
 		if (lyr->hasExtraPoint)
 		  {
-		      attr_name =
-			  create_layer_extra_attr_table_name (dxf->prefix,
-							      suffix,
-							      lyr->layer_name,
-							      "point");
+		      attr_name = create_extra_attr_table_name (name);
 		      if (append && check_extra_attr_table (handle, attr_name))
 			{
 			    /* appending into the already existing table */
@@ -1191,8 +996,7 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 			{
 			    /* creating the Extra Attribute table */
 			    if (!create_layer_point_extra_attr_table
-				(handle, name, dxf->prefix, suffix,
-				 lyr->layer_name, attr_name, &stmt_ext))
+				(handle, name, attr_name, &stmt_ext))
 			      {
 				  sqlite3_finalize (stmt);
 				  return 0;
@@ -1345,11 +1149,7 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 		  }
 		if (lyr->hasExtraLine)
 		  {
-		      attr_name =
-			  create_layer_extra_attr_table_name (dxf->prefix,
-							      suffix,
-							      lyr->layer_name,
-							      "line");
+		      attr_name = create_extra_attr_table_name (name);
 		      if (append && check_extra_attr_table (handle, attr_name))
 			{
 			    /* appending into the already existing table */
@@ -1361,8 +1161,7 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 			{
 			    /* creating the Extra Attribute table */
 			    if (!create_layer_line_extra_attr_table
-				(handle, name, dxf->prefix, suffix,
-				 lyr->layer_name, attr_name, &stmt_ext))
+				(handle, name, attr_name, &stmt_ext))
 			      {
 				  sqlite3_finalize (stmt);
 				  return 0;
@@ -1527,11 +1326,7 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 		  }
 		if (lyr->hasExtraPolyg)
 		  {
-		      attr_name =
-			  create_layer_extra_attr_table_name (dxf->prefix,
-							      suffix,
-							      lyr->layer_name,
-							      "polyg");
+		      attr_name = create_extra_attr_table_name (name);
 		      if (append && check_extra_attr_table (handle, attr_name))
 			{
 			    /* appending into the already existing table */
@@ -1543,8 +1338,7 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 			{
 			    /* creating the Extra Attribute table */
 			    if (!create_layer_polyg_extra_attr_table
-				(handle, name, dxf->prefix, suffix,
-				 lyr->layer_name, attr_name, &stmt_ext))
+				(handle, name, attr_name, &stmt_ext))
 			      {
 				  sqlite3_finalize (stmt);
 				  return 0;
@@ -1845,6 +1639,774 @@ import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append)
 		  }
 		sqlite3_finalize (stmt);
 		sqlite3_finalize (stmt_pattern);
+		ret = sqlite3_exec (handle, "COMMIT", NULL, NULL, NULL);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("COMMIT %s error: %s\n", name,
+				    sqlite3_errmsg (handle));
+		      sqlite3_free (name);
+		      if (attr_name)
+			  sqlite3_free (attr_name);
+		      return 0;
+		  }
+		sqlite3_free (name);
+		if (attr_name)
+		    sqlite3_free (attr_name);
+	    }
+
+	  if (ins_text)
+	    {
+		/* creating and populating the INSERT (Text reference) layer */
+		stmt_ext = NULL;
+		attr_name = NULL;
+		if (dxf->prefix == NULL)
+		    name =
+			sqlite3_mprintf ("%s_instext_%s", lyr->layer_name,
+					 lyr->is3DinsText ? "3d" : "2d");
+		else
+		    name =
+			sqlite3_mprintf ("%s%s_instext_%s", dxf->prefix,
+					 lyr->layer_name,
+					 lyr->is3DinsText ? "3d" : "2d");
+		if (append && check_insert_table (handle, name))
+		  {
+		      /* appending into the already existing table */
+		      if (!create_insert_stmt (handle, name, &stmt))
+			  return 0;
+		  }
+		else
+		  {
+		      /* creating a new table */
+		      if (dxf->prefix == NULL)
+			  block =
+			      sqlite3_mprintf ("block_text_%s",
+					       lyr->is3DinsText ? "3d" : "2d");
+		      else
+			  block =
+			      sqlite3_mprintf ("%sblock_text_%s", dxf->prefix,
+					       lyr->is3DinsText ? "3d" : "2d");
+		      if (!create_instext_table
+			  (handle, name, block, lyr->is3Dtext, &stmt))
+			{
+			    sqlite3_free (name);
+			    return 0;
+			}
+		      sqlite3_free (block);
+		  }
+		if (lyr->hasExtraInsText)
+		  {
+		      attr_name = create_extra_attr_table_name (name);
+		      if (append && check_extra_attr_table (handle, attr_name))
+			{
+			    /* appending into the already existing table */
+			    if (!create_extra_stmt
+				(handle, attr_name, &stmt_ext))
+				return 0;
+			}
+		      else
+			{
+			    /* creating the Extra Attribute table */
+			    if (!create_insert_extra_attr_table
+				(handle, name, attr_name, &stmt_ext))
+			      {
+				  sqlite3_finalize (stmt);
+				  return 0;
+			      }
+			}
+		  }
+		ret = sqlite3_exec (handle, "BEGIN", NULL, NULL, NULL);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("BEGIN %s error: %s\n", name,
+				    sqlite3_errmsg (handle));
+		      sqlite3_finalize (stmt);
+		      if (stmt_ext != NULL)
+			  sqlite3_finalize (stmt_ext);
+		      sqlite3_free (name);
+		      if (attr_name)
+			  sqlite3_free (attr_name);
+		      return 0;
+		  }
+		ins = lyr->first_ins_text;
+		while (ins != NULL)
+		  {
+		      sqlite3_reset (stmt);
+		      sqlite3_clear_bindings (stmt);
+		      sqlite3_bind_text (stmt, 1, dxf->filename,
+					 strlen (dxf->filename), SQLITE_STATIC);
+		      sqlite3_bind_text (stmt, 2, lyr->layer_name,
+					 strlen (lyr->layer_name),
+					 SQLITE_STATIC);
+		      sqlite3_bind_text (stmt, 3, ins->block_id,
+					 strlen (ins->block_id), SQLITE_STATIC);
+		      sqlite3_bind_double (stmt, 4, ins->x);
+		      sqlite3_bind_double (stmt, 5, ins->y);
+		      sqlite3_bind_double (stmt, 6, ins->z);
+		      sqlite3_bind_double (stmt, 7, ins->scale_x);
+		      sqlite3_bind_double (stmt, 8, ins->scale_y);
+		      sqlite3_bind_double (stmt, 9, ins->scale_z);
+		      sqlite3_bind_double (stmt, 10, ins->angle);
+		      ret = sqlite3_step (stmt);
+		      if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+			  ;
+		      else
+			{
+			    spatialite_e ("INSERT %s error: %s\n", name,
+					  sqlite3_errmsg (handle));
+			    sqlite3_finalize (stmt);
+			    if (stmt_ext != NULL)
+				sqlite3_finalize (stmt_ext);
+			    ret =
+				sqlite3_exec (handle, "ROLLBACK", NULL, NULL,
+					      NULL);
+			    sqlite3_free (name);
+			    if (attr_name)
+				sqlite3_free (attr_name);
+			    return 0;
+			}
+		      if (stmt_ext != NULL)
+			{
+			    /* inserting all Extra Attributes */
+			    sqlite3_int64 feature_id =
+				sqlite3_last_insert_rowid (handle);
+			    gaiaDxfExtraAttrPtr ext = txt->first;
+			    while (ext != NULL)
+			      {
+				  sqlite3_reset (stmt_ext);
+				  sqlite3_clear_bindings (stmt_ext);
+				  sqlite3_bind_int64 (stmt_ext, 1, feature_id);
+				  sqlite3_bind_text (stmt_ext, 2, ext->key,
+						     strlen (ext->key),
+						     SQLITE_STATIC);
+				  sqlite3_bind_text (stmt_ext, 3, ext->value,
+						     strlen (ext->value),
+						     SQLITE_STATIC);
+				  ret = sqlite3_step (stmt_ext);
+				  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+				      ;
+				  else
+				    {
+					spatialite_e ("INSERT %s error: %s\n",
+						      attr_name,
+						      sqlite3_errmsg (handle));
+					sqlite3_finalize (stmt);
+					sqlite3_finalize (stmt_ext);
+					sqlite3_free (name);
+					if (attr_name)
+					    sqlite3_free (attr_name);
+					ret =
+					    sqlite3_exec (handle, "ROLLBACK",
+							  NULL, NULL, NULL);
+					return 0;
+				    }
+				  ext = ext->next;
+			      }
+			}
+		      ins = ins->next;
+		  }
+		sqlite3_finalize (stmt);
+		if (stmt_ext != NULL)
+		    sqlite3_finalize (stmt_ext);
+		ret = sqlite3_exec (handle, "COMMIT", NULL, NULL, NULL);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("COMMIT %s error: %s\n", name,
+				    sqlite3_errmsg (handle));
+		      sqlite3_free (name);
+		      if (attr_name)
+			  sqlite3_free (attr_name);
+		      return 0;
+		  }
+		sqlite3_free (name);
+		if (attr_name)
+		    sqlite3_free (attr_name);
+	    }
+
+	  if (ins_point)
+	    {
+		/* creating and populating the INSERT (Point reference) layer */
+		stmt_ext = NULL;
+		attr_name = NULL;
+		if (dxf->prefix == NULL)
+		    name =
+			sqlite3_mprintf ("%s_inspoint_%s", lyr->layer_name,
+					 lyr->is3DinsPoint ? "3d" : "2d");
+		else
+		    name =
+			sqlite3_mprintf ("%s%s_inspoint_%s", dxf->prefix,
+					 lyr->layer_name,
+					 lyr->is3DinsPoint ? "3d" : "2d");
+		if (append && check_insert_table (handle, name))
+		  {
+		      /* appending into the already existing table */
+		      if (!create_insert_stmt (handle, name, &stmt))
+			  return 0;
+		  }
+		else
+		  {
+		      /* creating a new table */
+		      if (dxf->prefix == NULL)
+			  block =
+			      sqlite3_mprintf ("block_point_%s",
+					       lyr->is3DinsPoint ? "3d" : "2d");
+		      else
+			  block =
+			      sqlite3_mprintf ("%sblock_point_%s", dxf->prefix,
+					       lyr->is3DinsPoint ? "3d" : "2d");
+		      if (!create_inspoint_table
+			  (handle, name, block, lyr->is3Dpoint, &stmt))
+			{
+			    sqlite3_free (name);
+			    return 0;
+			}
+		      sqlite3_free (block);
+		  }
+		if (lyr->hasExtraInsPoint)
+		  {
+		      attr_name = create_extra_attr_table_name (name);
+		      if (append && check_extra_attr_table (handle, attr_name))
+			{
+			    /* appending into the already existing table */
+			    if (!create_extra_stmt
+				(handle, attr_name, &stmt_ext))
+				return 0;
+			}
+		      else
+			{
+			    /* creating the Extra Attribute table */
+			    if (!create_insert_extra_attr_table
+				(handle, name, attr_name, &stmt_ext))
+			      {
+				  sqlite3_finalize (stmt);
+				  return 0;
+			      }
+			}
+		  }
+		ret = sqlite3_exec (handle, "BEGIN", NULL, NULL, NULL);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("BEGIN %s error: %s\n", name,
+				    sqlite3_errmsg (handle));
+		      sqlite3_finalize (stmt);
+		      if (stmt_ext != NULL)
+			  sqlite3_finalize (stmt_ext);
+		      sqlite3_free (name);
+		      if (attr_name)
+			  sqlite3_free (attr_name);
+		      return 0;
+		  }
+		ins = lyr->first_ins_point;
+		while (ins != NULL)
+		  {
+		      sqlite3_reset (stmt);
+		      sqlite3_clear_bindings (stmt);
+		      sqlite3_bind_text (stmt, 1, dxf->filename,
+					 strlen (dxf->filename), SQLITE_STATIC);
+		      sqlite3_bind_text (stmt, 2, lyr->layer_name,
+					 strlen (lyr->layer_name),
+					 SQLITE_STATIC);
+		      sqlite3_bind_text (stmt, 3, ins->block_id,
+					 strlen (ins->block_id), SQLITE_STATIC);
+		      sqlite3_bind_double (stmt, 4, ins->x);
+		      sqlite3_bind_double (stmt, 5, ins->y);
+		      sqlite3_bind_double (stmt, 6, ins->z);
+		      sqlite3_bind_double (stmt, 7, ins->scale_x);
+		      sqlite3_bind_double (stmt, 8, ins->scale_y);
+		      sqlite3_bind_double (stmt, 9, ins->scale_z);
+		      sqlite3_bind_double (stmt, 10, ins->angle);
+		      ret = sqlite3_step (stmt);
+		      if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+			  ;
+		      else
+			{
+			    spatialite_e ("INSERT %s error: %s\n", name,
+					  sqlite3_errmsg (handle));
+			    sqlite3_finalize (stmt);
+			    if (stmt_ext != NULL)
+				sqlite3_finalize (stmt_ext);
+			    ret =
+				sqlite3_exec (handle, "ROLLBACK", NULL, NULL,
+					      NULL);
+			    sqlite3_free (name);
+			    if (attr_name)
+				sqlite3_free (attr_name);
+			    return 0;
+			}
+		      if (stmt_ext != NULL)
+			{
+			    /* inserting all Extra Attributes */
+			    sqlite3_int64 feature_id =
+				sqlite3_last_insert_rowid (handle);
+			    gaiaDxfExtraAttrPtr ext = txt->first;
+			    while (ext != NULL)
+			      {
+				  sqlite3_reset (stmt_ext);
+				  sqlite3_clear_bindings (stmt_ext);
+				  sqlite3_bind_int64 (stmt_ext, 1, feature_id);
+				  sqlite3_bind_text (stmt_ext, 2, ext->key,
+						     strlen (ext->key),
+						     SQLITE_STATIC);
+				  sqlite3_bind_text (stmt_ext, 3, ext->value,
+						     strlen (ext->value),
+						     SQLITE_STATIC);
+				  ret = sqlite3_step (stmt_ext);
+				  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+				      ;
+				  else
+				    {
+					spatialite_e ("INSERT %s error: %s\n",
+						      attr_name,
+						      sqlite3_errmsg (handle));
+					sqlite3_finalize (stmt);
+					sqlite3_finalize (stmt_ext);
+					sqlite3_free (name);
+					if (attr_name)
+					    sqlite3_free (attr_name);
+					ret =
+					    sqlite3_exec (handle, "ROLLBACK",
+							  NULL, NULL, NULL);
+					return 0;
+				    }
+				  ext = ext->next;
+			      }
+			}
+		      ins = ins->next;
+		  }
+		sqlite3_finalize (stmt);
+		if (stmt_ext != NULL)
+		    sqlite3_finalize (stmt_ext);
+		ret = sqlite3_exec (handle, "COMMIT", NULL, NULL, NULL);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("COMMIT %s error: %s\n", name,
+				    sqlite3_errmsg (handle));
+		      sqlite3_free (name);
+		      if (attr_name)
+			  sqlite3_free (attr_name);
+		      return 0;
+		  }
+		sqlite3_free (name);
+		if (attr_name)
+		    sqlite3_free (attr_name);
+	    }
+
+	  if (ins_line)
+	    {
+		/* creating and populating the INSERT (Line reference) layer */
+		stmt_ext = NULL;
+		attr_name = NULL;
+		if (dxf->prefix == NULL)
+		    name =
+			sqlite3_mprintf ("%s_insline_%s", lyr->layer_name,
+					 lyr->is3DinsLine ? "3d" : "2d");
+		else
+		    name =
+			sqlite3_mprintf ("%s%s_insline_%s", dxf->prefix,
+					 lyr->layer_name,
+					 lyr->is3DinsLine ? "3d" : "2d");
+		if (append && check_insert_table (handle, name))
+		  {
+		      /* appending into the already existing table */
+		      if (!create_insert_stmt (handle, name, &stmt))
+			  return 0;
+		  }
+		else
+		  {
+		      /* creating a new table */
+		      if (dxf->prefix == NULL)
+			  block =
+			      sqlite3_mprintf ("block_line_%s",
+					       lyr->is3DinsLine ? "3d" : "2d");
+		      else
+			  block =
+			      sqlite3_mprintf ("%sblock_line_%s", dxf->prefix,
+					       lyr->is3DinsLine ? "3d" : "2d");
+		      if (!create_insline_table
+			  (handle, name, block, lyr->is3Dline, &stmt))
+			{
+			    sqlite3_free (name);
+			    return 0;
+			}
+		      sqlite3_free (block);
+		  }
+		if (lyr->hasExtraInsLine)
+		  {
+		      attr_name = create_extra_attr_table_name (name);
+		      if (append && check_extra_attr_table (handle, attr_name))
+			{
+			    /* appending into the already existing table */
+			    if (!create_extra_stmt
+				(handle, attr_name, &stmt_ext))
+				return 0;
+			}
+		      else
+			{
+			    /* creating the Extra Attribute table */
+			    if (!create_insert_extra_attr_table
+				(handle, name, attr_name, &stmt_ext))
+			      {
+				  sqlite3_finalize (stmt);
+				  return 0;
+			      }
+			}
+		  }
+		ret = sqlite3_exec (handle, "BEGIN", NULL, NULL, NULL);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("BEGIN %s error: %s\n", name,
+				    sqlite3_errmsg (handle));
+		      sqlite3_finalize (stmt);
+		      if (stmt_ext != NULL)
+			  sqlite3_finalize (stmt_ext);
+		      sqlite3_free (name);
+		      if (attr_name)
+			  sqlite3_free (attr_name);
+		      return 0;
+		  }
+		ins = lyr->first_ins_line;
+		while (ins != NULL)
+		  {
+		      sqlite3_reset (stmt);
+		      sqlite3_clear_bindings (stmt);
+		      sqlite3_bind_text (stmt, 1, dxf->filename,
+					 strlen (dxf->filename), SQLITE_STATIC);
+		      sqlite3_bind_text (stmt, 2, lyr->layer_name,
+					 strlen (lyr->layer_name),
+					 SQLITE_STATIC);
+		      sqlite3_bind_text (stmt, 3, ins->block_id,
+					 strlen (ins->block_id), SQLITE_STATIC);
+		      sqlite3_bind_double (stmt, 4, ins->x);
+		      sqlite3_bind_double (stmt, 5, ins->y);
+		      sqlite3_bind_double (stmt, 6, ins->z);
+		      sqlite3_bind_double (stmt, 7, ins->scale_x);
+		      sqlite3_bind_double (stmt, 8, ins->scale_y);
+		      sqlite3_bind_double (stmt, 9, ins->scale_z);
+		      sqlite3_bind_double (stmt, 10, ins->angle);
+		      ret = sqlite3_step (stmt);
+		      if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+			  ;
+		      else
+			{
+			    spatialite_e ("INSERT %s error: %s\n", name,
+					  sqlite3_errmsg (handle));
+			    sqlite3_finalize (stmt);
+			    if (stmt_ext != NULL)
+				sqlite3_finalize (stmt_ext);
+			    ret =
+				sqlite3_exec (handle, "ROLLBACK", NULL, NULL,
+					      NULL);
+			    sqlite3_free (name);
+			    if (attr_name)
+				sqlite3_free (attr_name);
+			    return 0;
+			}
+		      if (stmt_ext != NULL)
+			{
+			    /* inserting all Extra Attributes */
+			    sqlite3_int64 feature_id =
+				sqlite3_last_insert_rowid (handle);
+			    gaiaDxfExtraAttrPtr ext = txt->first;
+			    while (ext != NULL)
+			      {
+				  sqlite3_reset (stmt_ext);
+				  sqlite3_clear_bindings (stmt_ext);
+				  sqlite3_bind_int64 (stmt_ext, 1, feature_id);
+				  sqlite3_bind_text (stmt_ext, 2, ext->key,
+						     strlen (ext->key),
+						     SQLITE_STATIC);
+				  sqlite3_bind_text (stmt_ext, 3, ext->value,
+						     strlen (ext->value),
+						     SQLITE_STATIC);
+				  ret = sqlite3_step (stmt_ext);
+				  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+				      ;
+				  else
+				    {
+					spatialite_e ("INSERT %s error: %s\n",
+						      attr_name,
+						      sqlite3_errmsg (handle));
+					sqlite3_finalize (stmt);
+					sqlite3_finalize (stmt_ext);
+					sqlite3_free (name);
+					if (attr_name)
+					    sqlite3_free (attr_name);
+					ret =
+					    sqlite3_exec (handle, "ROLLBACK",
+							  NULL, NULL, NULL);
+					return 0;
+				    }
+				  ext = ext->next;
+			      }
+			}
+		      ins = ins->next;
+		  }
+		sqlite3_finalize (stmt);
+		if (stmt_ext != NULL)
+		    sqlite3_finalize (stmt_ext);
+		ret = sqlite3_exec (handle, "COMMIT", NULL, NULL, NULL);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("COMMIT %s error: %s\n", name,
+				    sqlite3_errmsg (handle));
+		      sqlite3_free (name);
+		      if (attr_name)
+			  sqlite3_free (attr_name);
+		      return 0;
+		  }
+		sqlite3_free (name);
+		if (attr_name)
+		    sqlite3_free (attr_name);
+	    }
+
+	  if (ins_polyg)
+	    {
+		/* creating and populating the INSERT (Polygon reference) layer */
+		stmt_ext = NULL;
+		attr_name = NULL;
+		if (dxf->prefix == NULL)
+		    name =
+			sqlite3_mprintf ("%s_inspolyg_%s", lyr->layer_name,
+					 lyr->is3DinsPolyg ? "3d" : "2d");
+		else
+		    name =
+			sqlite3_mprintf ("%s%s_inspolyg_%s", dxf->prefix,
+					 lyr->layer_name,
+					 lyr->is3DinsPolyg ? "3d" : "2d");
+		if (append && check_insert_table (handle, name))
+		  {
+		      /* appending into the already existing table */
+		      if (!create_insert_stmt (handle, name, &stmt))
+			  return 0;
+		  }
+		else
+		  {
+		      /* creating a new table */
+		      if (dxf->prefix == NULL)
+			  block =
+			      sqlite3_mprintf ("block_polyg_%s",
+					       lyr->is3DinsPolyg ? "3d" : "2d");
+		      else
+			  block =
+			      sqlite3_mprintf ("%sblock_polyg_%s", dxf->prefix,
+					       lyr->is3DinsPolyg ? "3d" : "2d");
+		      if (!create_inspolyg_table
+			  (handle, name, block, lyr->is3Dpolyg, &stmt))
+			{
+			    sqlite3_free (name);
+			    return 0;
+			}
+		      sqlite3_free (block);
+		  }
+		if (lyr->hasExtraInsPolyg)
+		  {
+		      attr_name = create_extra_attr_table_name (name);
+		      if (append && check_extra_attr_table (handle, attr_name))
+			{
+			    /* appending into the already existing table */
+			    if (!create_extra_stmt
+				(handle, attr_name, &stmt_ext))
+				return 0;
+			}
+		      else
+			{
+			    /* creating the Extra Attribute table */
+			    if (!create_insert_extra_attr_table
+				(handle, name, attr_name, &stmt_ext))
+			      {
+				  sqlite3_finalize (stmt);
+				  return 0;
+			      }
+			}
+		  }
+		ret = sqlite3_exec (handle, "BEGIN", NULL, NULL, NULL);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("BEGIN %s error: %s\n", name,
+				    sqlite3_errmsg (handle));
+		      sqlite3_finalize (stmt);
+		      if (stmt_ext != NULL)
+			  sqlite3_finalize (stmt_ext);
+		      sqlite3_free (name);
+		      if (attr_name)
+			  sqlite3_free (attr_name);
+		      return 0;
+		  }
+		ins = lyr->first_ins_polyg;
+		while (ins != NULL)
+		  {
+		      sqlite3_reset (stmt);
+		      sqlite3_clear_bindings (stmt);
+		      sqlite3_bind_text (stmt, 1, dxf->filename,
+					 strlen (dxf->filename), SQLITE_STATIC);
+		      sqlite3_bind_text (stmt, 2, lyr->layer_name,
+					 strlen (lyr->layer_name),
+					 SQLITE_STATIC);
+		      sqlite3_bind_text (stmt, 3, ins->block_id,
+					 strlen (ins->block_id), SQLITE_STATIC);
+		      sqlite3_bind_double (stmt, 4, ins->x);
+		      sqlite3_bind_double (stmt, 5, ins->y);
+		      sqlite3_bind_double (stmt, 6, ins->z);
+		      sqlite3_bind_double (stmt, 7, ins->scale_x);
+		      sqlite3_bind_double (stmt, 8, ins->scale_y);
+		      sqlite3_bind_double (stmt, 9, ins->scale_z);
+		      sqlite3_bind_double (stmt, 10, ins->angle);
+		      ret = sqlite3_step (stmt);
+		      if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+			  ;
+		      else
+			{
+			    spatialite_e ("INSERT %s error: %s\n", name,
+					  sqlite3_errmsg (handle));
+			    sqlite3_finalize (stmt);
+			    if (stmt_ext != NULL)
+				sqlite3_finalize (stmt_ext);
+			    ret =
+				sqlite3_exec (handle, "ROLLBACK", NULL, NULL,
+					      NULL);
+			    sqlite3_free (name);
+			    if (attr_name)
+				sqlite3_free (attr_name);
+			    return 0;
+			}
+		      if (stmt_ext != NULL)
+			{
+			    /* inserting all Extra Attributes */
+			    sqlite3_int64 feature_id =
+				sqlite3_last_insert_rowid (handle);
+			    gaiaDxfExtraAttrPtr ext = txt->first;
+			    while (ext != NULL)
+			      {
+				  sqlite3_reset (stmt_ext);
+				  sqlite3_clear_bindings (stmt_ext);
+				  sqlite3_bind_int64 (stmt_ext, 1, feature_id);
+				  sqlite3_bind_text (stmt_ext, 2, ext->key,
+						     strlen (ext->key),
+						     SQLITE_STATIC);
+				  sqlite3_bind_text (stmt_ext, 3, ext->value,
+						     strlen (ext->value),
+						     SQLITE_STATIC);
+				  ret = sqlite3_step (stmt_ext);
+				  if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+				      ;
+				  else
+				    {
+					spatialite_e ("INSERT %s error: %s\n",
+						      attr_name,
+						      sqlite3_errmsg (handle));
+					sqlite3_finalize (stmt);
+					sqlite3_finalize (stmt_ext);
+					sqlite3_free (name);
+					if (attr_name)
+					    sqlite3_free (attr_name);
+					ret =
+					    sqlite3_exec (handle, "ROLLBACK",
+							  NULL, NULL, NULL);
+					return 0;
+				    }
+				  ext = ext->next;
+			      }
+			}
+		      ins = ins->next;
+		  }
+		sqlite3_finalize (stmt);
+		if (stmt_ext != NULL)
+		    sqlite3_finalize (stmt_ext);
+		ret = sqlite3_exec (handle, "COMMIT", NULL, NULL, NULL);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("COMMIT %s error: %s\n", name,
+				    sqlite3_errmsg (handle));
+		      sqlite3_free (name);
+		      if (attr_name)
+			  sqlite3_free (attr_name);
+		      return 0;
+		  }
+		sqlite3_free (name);
+		if (attr_name)
+		    sqlite3_free (attr_name);
+	    }
+
+	  if (ins_hatch)
+	    {
+		/* creating and populating the INSERT (Hatch reference) layer */
+		stmt_ext = NULL;
+		attr_name = NULL;
+		if (dxf->prefix == NULL)
+		    name = sqlite3_mprintf ("%s_inshatch_2d", lyr->layer_name);
+		else
+		    name =
+			sqlite3_mprintf ("%s%s_inspolyg_2d", dxf->prefix,
+					 lyr->layer_name);
+		if (append && check_insert_table (handle, name))
+		  {
+		      /* appending into the already existing table */
+		      if (!create_insert_stmt (handle, name, &stmt))
+			  return 0;
+		  }
+		else
+		  {
+		      /* creating a new table */
+		      if (dxf->prefix == NULL)
+			  block = sqlite3_mprintf ("block_hatch_2d");
+		      else
+			  block =
+			      sqlite3_mprintf ("%sblock_polyg_2d", dxf->prefix);
+		      if (!create_inshatch_table (handle, name, block, &stmt))
+			{
+			    sqlite3_free (name);
+			    return 0;
+			}
+		      sqlite3_free (block);
+		  }
+		ret = sqlite3_exec (handle, "BEGIN", NULL, NULL, NULL);
+		if (ret != SQLITE_OK)
+		  {
+		      spatialite_e ("BEGIN %s error: %s\n", name,
+				    sqlite3_errmsg (handle));
+		      sqlite3_finalize (stmt);
+		      sqlite3_free (name);
+		      if (attr_name)
+			  sqlite3_free (attr_name);
+		      return 0;
+		  }
+		ins = lyr->first_ins_polyg;
+		while (ins != NULL)
+		  {
+		      sqlite3_reset (stmt);
+		      sqlite3_clear_bindings (stmt);
+		      sqlite3_bind_text (stmt, 1, dxf->filename,
+					 strlen (dxf->filename), SQLITE_STATIC);
+		      sqlite3_bind_text (stmt, 2, lyr->layer_name,
+					 strlen (lyr->layer_name),
+					 SQLITE_STATIC);
+		      sqlite3_bind_text (stmt, 3, ins->block_id,
+					 strlen (ins->block_id), SQLITE_STATIC);
+		      sqlite3_bind_double (stmt, 4, ins->x);
+		      sqlite3_bind_double (stmt, 5, ins->y);
+		      sqlite3_bind_double (stmt, 6, ins->z);
+		      sqlite3_bind_double (stmt, 7, ins->scale_x);
+		      sqlite3_bind_double (stmt, 8, ins->scale_y);
+		      sqlite3_bind_double (stmt, 9, ins->scale_z);
+		      sqlite3_bind_double (stmt, 10, ins->angle);
+		      ret = sqlite3_step (stmt);
+		      if (ret == SQLITE_DONE || ret == SQLITE_ROW)
+			  ;
+		      else
+			{
+			    spatialite_e ("INSERT %s error: %s\n", name,
+					  sqlite3_errmsg (handle));
+			    sqlite3_finalize (stmt);
+			    ret =
+				sqlite3_exec (handle, "ROLLBACK", NULL, NULL,
+					      NULL);
+			    sqlite3_free (name);
+			    return 0;
+			}
+		      ins = ins->next;
+		  }
+		sqlite3_finalize (stmt);
+		if (stmt_ext != NULL)
+		    sqlite3_finalize (stmt_ext);
 		ret = sqlite3_exec (handle, "COMMIT", NULL, NULL, NULL);
 		if (ret != SQLITE_OK)
 		  {

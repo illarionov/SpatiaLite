@@ -1524,6 +1524,10 @@ alloc_dxf_block (const char *layer, const char *id)
     blk->last_polyg = NULL;
     blk->first_hatch = NULL;
     blk->last_hatch = NULL;
+    blk->is3Dtext = 0;
+    blk->is3Dpoint = 0;
+    blk->is3Dline = 0;
+    blk->is3Dpolyg = 0;
     blk->next = NULL;
     return blk;
 }
@@ -2102,6 +2106,10 @@ reset_dxf_entity (gaiaDxfParserPtr dxf)
 	  dxf->curr_insert.scale_y = 0.0;
 	  dxf->curr_insert.scale_z = 0.0;
 	  dxf->curr_insert.angle = 0.0;
+	  dxf->curr_insert.is3Dtext = 0;
+	  dxf->curr_insert.is3Dpoint = 0;
+	  dxf->curr_insert.is3Dline = 0;
+	  dxf->curr_insert.is3Dpolyg = 0;
 	  if (dxf->curr_insert.block_id != NULL)
 	      free (dxf->curr_insert.block_id);
 	  dxf->curr_insert.block_id = NULL;
@@ -3035,6 +3043,10 @@ gaiaCreateDxfParser (int srid,
     dxf->curr_insert.scale_z = 0.0;
     dxf->curr_insert.angle = 0.0;
     dxf->curr_insert.block_id = NULL;
+    dxf->curr_insert.is3Dtext = 0;
+    dxf->curr_insert.is3Dpoint = 0;
+    dxf->curr_insert.is3Dline = 0;
+    dxf->curr_insert.is3Dpolyg = 0;
     dxf->curr_text.x = 0.0;
     dxf->curr_text.y = 0.0;
     dxf->curr_text.z = 0.0;

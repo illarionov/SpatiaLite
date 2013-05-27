@@ -1441,6 +1441,657 @@ check_block_text_table (sqlite3 * handle, const char *name, int srid, int is3D)
     return 0;
 }
 
+DXF_PRIVATE int
+create_instext_table (sqlite3 * handle, const char *name,
+		      const char *block, int is3d, sqlite3_stmt ** xstmt)
+{
+/* attempting to create the "Insert-mixed-Text" table */
+    char *sql;
+    int ret;
+    sqlite3_stmt *stmt;
+    char *xname;
+    char *idx_name;
+    char *xidx_name;
+    char *view;
+    char *xview;
+    char *xblock;
+    *xstmt = NULL;
+
+    xname = gaiaDoubleQuotedSql (name);
+    sql = sqlite3_mprintf ("CREATE TABLE \"%s\" ("
+			   "    feature_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+			   "    filename TEXT NOT NULL, \n"
+			   "    layer TEXT NOT NULL,\n"
+			   "    block_id TEXT NOT NULL,\n"
+			   "    x DOUBLE NOT NULL,\n"
+			   "    y DOUBLE NOT NULL,\n"
+			   "    z DOUBLE NOT NULL,\n"
+			   "    scale_x DOUBLE NOT NULL,\n"
+			   "    scale_y DOUBLE NOT NULL,\n"
+			   "    scale_z DOUBLE NOT NULL,\n"
+			   "    angle DOUBLE NOT NULL)", xname);
+    free (xname);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE %s error: %s\n", name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    idx_name = sqlite3_mprintf ("idx_%s", name);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    xname = gaiaDoubleQuotedSql (name);
+    sql =
+	sqlite3_mprintf
+	("CREATE INDEX \"%s\" ON \"%s\" (layer, block_id)", xidx_name, xname);
+    free (xidx_name);
+    free (xname);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX %s error: %s\n", idx_name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sqlite3_free (idx_name);
+
+    view = sqlite3_mprintf ("%s_view", name);
+    xview = gaiaDoubleQuotedSql (view);
+    xname = gaiaDoubleQuotedSql (name);
+    xblock = gaiaDoubleQuotedSql (block);
+    if (is3d)
+      {
+	  sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS "
+				 "SELECT b.ROWID AS rowid, i.feature_id AS feature_id, "
+				 "i.filename AS filename, i.layer AS layer, i.block_id AS block_id, "
+				 "ST_Translate(ScaleCoords(RotateCoords(b.geometry, i.angle), "
+				 "i.scale_x, i.scale_y), i.x, i.y, i.z) AS geometry "
+				 "FROM \"%s\" AS i JOIN \"%s\" AS b ON "
+				 "(b.layer = i.layer AND b.block_id = i.block_id)",
+				 xview, xname, xblock);
+      }
+    else
+      {
+	  sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS "
+				 "SELECT b.ROWID AS rowid, i.feature_id AS feature_id, "
+				 "i.filename AS filename, i.layer AS layer, i.block_id AS block_id, "
+				 "ShiftCoords(ScaleCoords(RotateCoords(b.geometry, i.angle), "
+				 "i.scale_x, i.scale_y), i.x, i.y) AS geometry "
+				 "FROM \"%s\" AS i JOIN \"%s\" AS b ON "
+				 "(b.layer = i.layer AND b.block_id = i.block_id)",
+				 xview, xname, xblock);
+      }
+    free (xname);
+    free (xview);
+    free (xblock);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW %s error: %s\n", view,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			   "view_name, view_geometry, view_rowid, f_table_name, "
+			   "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
+			   "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
+			   "geometry", "rowid", block, "geometry");
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Register Spatial VIEW %s error: %s\n", view,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sqlite3_free (view);
+
+    if (!create_insert_stmt (handle, name, &stmt))
+	return 0;
+
+    *xstmt = stmt;
+    return 1;
+}
+
+DXF_PRIVATE int
+create_inspoint_table (sqlite3 * handle, const char *name,
+		       const char *block, int is3d, sqlite3_stmt ** xstmt)
+{
+/* attempting to create the "Insert-mixed-Point" table */
+    char *sql;
+    int ret;
+    sqlite3_stmt *stmt;
+    char *xname;
+    char *idx_name;
+    char *xidx_name;
+    char *view;
+    char *xview;
+    char *xblock;
+    *xstmt = NULL;
+
+    xname = gaiaDoubleQuotedSql (name);
+    sql = sqlite3_mprintf ("CREATE TABLE \"%s\" ("
+			   "    feature_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+			   "    filename TEXT NOT NULL, \n"
+			   "    layer TEXT NOT NULL,\n"
+			   "    block_id TEXT NOT NULL,\n"
+			   "    x DOUBLE NOT NULL,\n"
+			   "    y DOUBLE NOT NULL,\n"
+			   "    z DOUBLE NOT NULL,\n"
+			   "    scale_x DOUBLE NOT NULL,\n"
+			   "    scale_y DOUBLE NOT NULL,\n"
+			   "    scale_z DOUBLE NOT NULL,\n"
+			   "    angle DOUBLE NOT NULL)", xname);
+    free (xname);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE %s error: %s\n", name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    idx_name = sqlite3_mprintf ("idx_%s", name);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    xname = gaiaDoubleQuotedSql (name);
+    sql =
+	sqlite3_mprintf
+	("CREATE INDEX \"%s\" ON \"%s\" (layer, block_id)", xidx_name, xname);
+    free (xidx_name);
+    free (xname);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX %s error: %s\n", idx_name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sqlite3_free (idx_name);
+
+    view = sqlite3_mprintf ("%s_view", name);
+    xview = gaiaDoubleQuotedSql (view);
+    xname = gaiaDoubleQuotedSql (name);
+    xblock = gaiaDoubleQuotedSql (block);
+    if (is3d)
+      {
+	  sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS "
+				 "SELECT b.ROWID AS rowid, i.feature_id AS feature_id, "
+				 "i.filename AS filename, i.layer AS layer, i.block_id AS block_id, "
+				 "ST_Translate(ScaleCoords(RotateCoords(b.geometry, i.angle), "
+				 "i.scale_x, i.scale_y), i.x, i.y, i.z) AS geometry "
+				 "FROM \"%s\" AS i JOIN \"%s\" AS b ON "
+				 "(b.layer = i.layer AND b.block_id = i.block_id)",
+				 xview, xname, xblock);
+      }
+    else
+      {
+	  sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS "
+				 "SELECT b.ROWID as rowid, i.feature_id AS feature_id, "
+				 "i.filename AS filename, i.layer AS layer, i.block_id AS block_id, "
+				 "ShiftCoords(ScaleCoords(RotateCoords(b.geometry, i.angle), "
+				 "i.scale_x, i.scale_y), i.x, i.y) AS geometry "
+				 "FROM \"%s\" AS i JOIN \"%s\" AS b ON "
+				 "(b.layer = i.layer AND b.block_id = i.block_id)",
+				 xview, xname, xblock);
+      }
+    free (xname);
+    free (xview);
+    free (xblock);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW %s error: %s\n", view,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			   "view_name, view_geometry, view_rowid, f_table_name, "
+			   "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
+			   "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
+			   "geometry", "rowid", block, "geometry");
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Register Spatial VIEW %s error: %s\n", view,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sqlite3_free (view);
+
+    if (!create_insert_stmt (handle, name, &stmt))
+	return 0;
+
+    *xstmt = stmt;
+    return 1;
+}
+
+DXF_PRIVATE int
+create_insline_table (sqlite3 * handle, const char *name,
+		      const char *block, int is3d, sqlite3_stmt ** xstmt)
+{
+/* attempting to create the "Insert-mixed-Line" table */
+    char *sql;
+    int ret;
+    sqlite3_stmt *stmt;
+    char *xname;
+    char *idx_name;
+    char *xidx_name;
+    char *view;
+    char *xview;
+    char *xblock;
+    *xstmt = NULL;
+
+    xname = gaiaDoubleQuotedSql (name);
+    sql = sqlite3_mprintf ("CREATE TABLE \"%s\" ("
+			   "    feature_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+			   "    filename TEXT NOT NULL, \n"
+			   "    layer TEXT NOT NULL,\n"
+			   "    block_id TEXT NOT NULL,\n"
+			   "    x DOUBLE NOT NULL,\n"
+			   "    y DOUBLE NOT NULL,\n"
+			   "    z DOUBLE NOT NULL,\n"
+			   "    scale_x DOUBLE NOT NULL,\n"
+			   "    scale_y DOUBLE NOT NULL,\n"
+			   "    scale_z DOUBLE NOT NULL,\n"
+			   "    angle DOUBLE NOT NULL)", xname);
+    free (xname);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE %s error: %s\n", name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    idx_name = sqlite3_mprintf ("idx_%s", name);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    xname = gaiaDoubleQuotedSql (name);
+    sql =
+	sqlite3_mprintf
+	("CREATE INDEX \"%s\" ON \"%s\" (layer, block_id)", xidx_name, xname);
+    free (xidx_name);
+    free (xname);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX %s error: %s\n", idx_name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sqlite3_free (idx_name);
+
+    view = sqlite3_mprintf ("%s_view", name);
+    xview = gaiaDoubleQuotedSql (view);
+    xname = gaiaDoubleQuotedSql (name);
+    xblock = gaiaDoubleQuotedSql (block);
+    if (is3d)
+      {
+	  sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS "
+				 "SELECT b.ROWID AS rowid, i.feature_id AS feature_id, "
+				 "i.filename AS filename, i.layer AS layer, i.block_id AS block_id, "
+				 "ST_Translate(ScaleCoords(RotateCoords(b.geometry, i.angle), "
+				 "i.scale_x, i.scale_y), i.x, i.y, i.z) AS geometry "
+				 "FROM \"%s\" AS i JOIN \"%s\" AS b ON "
+				 "(b.layer = i.layer AND b.block_id = i.block_id)",
+				 xview, xname, xblock);
+      }
+    else
+      {
+	  sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS "
+				 "SELECT b.ROWID AS rowid, i.feature_id AS feature_id, "
+				 "i.filename AS filename, i.layer AS layer, i.block_id AS block_id, "
+				 "ShiftCoords(ScaleCoords(RotateCoords(b.geometry, i.angle), "
+				 "i.scale_x, i.scale_y), i.x, i.y) AS geometry "
+				 "FROM \"%s\" AS i JOIN \"%s\" AS b ON "
+				 "(b.layer = i.layer AND b.block_id = i.block_id)",
+				 xview, xname, xblock);
+      }
+    free (xname);
+    free (xview);
+    free (xblock);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW %s error: %s\n", view,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			   "view_name, view_geometry, view_rowid, f_table_name, "
+			   "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
+			   "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
+			   "geometry", "rowid", block, "geometry");
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Register Spatial VIEW %s error: %s\n", view,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sqlite3_free (view);
+
+    if (!create_insert_stmt (handle, name, &stmt))
+	return 0;
+
+    *xstmt = stmt;
+    return 1;
+}
+
+DXF_PRIVATE int
+create_inspolyg_table (sqlite3 * handle, const char *name,
+		       const char *block, int is3d, sqlite3_stmt ** xstmt)
+{
+/* attempting to create the "Insert-mixed-Polyg" table */
+    char *sql;
+    int ret;
+    sqlite3_stmt *stmt;
+    char *xname;
+    char *idx_name;
+    char *xidx_name;
+    char *view;
+    char *xview;
+    char *xblock;
+    *xstmt = NULL;
+
+    xname = gaiaDoubleQuotedSql (name);
+    sql = sqlite3_mprintf ("CREATE TABLE \"%s\" ("
+			   "    feature_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+			   "    filename TEXT NOT NULL, \n"
+			   "    layer TEXT NOT NULL,\n"
+			   "    block_id TEXT NOT NULL,\n"
+			   "    x DOUBLE NOT NULL,\n"
+			   "    y DOUBLE NOT NULL,\n"
+			   "    z DOUBLE NOT NULL,\n"
+			   "    scale_x DOUBLE NOT NULL,\n"
+			   "    scale_y DOUBLE NOT NULL,\n"
+			   "    scale_z DOUBLE NOT NULL,\n"
+			   "    angle DOUBLE NOT NULL)", xname);
+    free (xname);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE %s error: %s\n", name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    idx_name = sqlite3_mprintf ("idx_%s", name);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    xname = gaiaDoubleQuotedSql (name);
+    sql =
+	sqlite3_mprintf
+	("CREATE INDEX \"%s\" ON \"%s\" (layer, block_id)", xidx_name, xname);
+    free (xidx_name);
+    free (xname);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX %s error: %s\n", idx_name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sqlite3_free (idx_name);
+
+    view = sqlite3_mprintf ("%s_view", name);
+    xview = gaiaDoubleQuotedSql (view);
+    xname = gaiaDoubleQuotedSql (name);
+    xblock = gaiaDoubleQuotedSql (block);
+    if (is3d)
+      {
+	  sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS "
+				 "SELECT b.ROWID AS rowid, i.feature_id AS feature_id, "
+				 "i.filename AS filename, i.layer AS layer, i.block_id AS block_id, "
+				 "ST_Translate(ScaleCoords(RotateCoords(b.geometry, i.angle), "
+				 "i.scale_x, i.scale_y), i.x, i.y, i.z) AS geometry "
+				 "FROM \"%s\" AS i JOIN \"%s\" AS b ON "
+				 "(b.layer = i.layer AND b.block_id = i.block_id)",
+				 xview, xname, xblock);
+      }
+    else
+      {
+	  sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS "
+				 "SELECT b.ROWID AS rowid, i.feature_id AS feature_id, "
+				 "i.filename AS filename, i.layer AS layer, i.block_id AS block_id, "
+				 "ShiftCoords(ScaleCoords(RotateCoords(b.geometry, i.angle), "
+				 "i.scale_x, i.scale_y), i.x, i.y) AS geometry "
+				 "FROM \"%s\" AS i JOIN \"%s\" AS b ON "
+				 "(b.layer = i.layer AND b.block_id = i.block_id)",
+				 xview, xname, xblock);
+      }
+    free (xname);
+    free (xview);
+    free (xblock);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW %s error: %s\n", view,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			   "view_name, view_geometry, view_rowid, f_table_name, "
+			   "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
+			   "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
+			   "geometry", "rowid", block, "geometry");
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Register Spatial VIEW %s error: %s\n", view,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sqlite3_free (view);
+
+    if (!create_insert_stmt (handle, name, &stmt))
+	return 0;
+
+    *xstmt = stmt;
+    return 1;
+}
+
+DXF_PRIVATE int
+create_inshatch_table (sqlite3 * handle, const char *name,
+		       const char *block, sqlite3_stmt ** xstmt)
+{
+/* attempting to create the "Insert-mixed-Hatch" table */
+    char *sql;
+    int ret;
+    sqlite3_stmt *stmt;
+    char *xname;
+    char *idx_name;
+    char *xidx_name;
+    char *view;
+    char *xview;
+    char *xblock;
+    *xstmt = NULL;
+
+    xname = gaiaDoubleQuotedSql (name);
+    sql = sqlite3_mprintf ("CREATE TABLE \"%s\" ("
+			   "    feature_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+			   "    filename TEXT NOT NULL, \n"
+			   "    layer TEXT NOT NULL,\n"
+			   "    block_id TEXT NOT NULL,\n"
+			   "    x DOUBLE NOT NULL,\n"
+			   "    y DOUBLE NOT NULL,\n"
+			   "    z DOUBLE NOT NULL,\n"
+			   "    scale_x DOUBLE NOT NULL,\n"
+			   "    scale_y DOUBLE NOT NULL,\n"
+			   "    scale_z DOUBLE NOT NULL,\n"
+			   "    angle DOUBLE NOT NULL)", xname);
+    free (xname);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE %s error: %s\n", name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    idx_name = sqlite3_mprintf ("idx_%s", name);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    xname = gaiaDoubleQuotedSql (name);
+    sql =
+	sqlite3_mprintf
+	("CREATE INDEX \"%s\" ON \"%s\" (layer, block_id)", xidx_name, xname);
+    free (xidx_name);
+    free (xname);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX %s error: %s\n", idx_name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sqlite3_free (idx_name);
+
+    view = sqlite3_mprintf ("%s_view", name);
+    xview = gaiaDoubleQuotedSql (view);
+    xname = gaiaDoubleQuotedSql (name);
+    xblock = gaiaDoubleQuotedSql (block);
+    sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS "
+			   "SELECT b.ROWID AS rowid, i.feature_id AS feature_id, "
+			   "i.filename AS filename, i.layer AS layer, i.block_id AS block_id, "
+			   "ShiftCoords(ScaleCoords(RotateCoords(b.geometry, i.angle), "
+			   "i.scale_x, i.scale_y), i.x, i.y) AS geometry "
+			   "FROM \"%s\" AS i JOIN \"%s\" AS b ON "
+			   "(b.layer = i.layer AND b.block_id = i.block_id)",
+			   xview, xname, xblock);
+    free (xname);
+    free (xview);
+    free (xblock);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW %s error: %s\n", view,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			   "view_name, view_geometry, view_rowid, f_table_name, "
+			   "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
+			   "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
+			   "geometry", "rowid", block, "geometry");
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("Register Spatial VIEW %s error: %s\n", view,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sqlite3_free (view);
+
+    if (!create_insert_stmt (handle, name, &stmt))
+	return 0;
+
+    *xstmt = stmt;
+    return 1;
+}
+
+DXF_PRIVATE int
+create_insert_extra_attr_table (sqlite3 * handle, const char *name,
+				char *extra_name, sqlite3_stmt ** xstmt_ext)
+{
+/* attempting to create the "Insert-mixed-extra-attr" table */
+    char *sql;
+    int ret;
+    sqlite3_stmt *stmt_ext;
+    char *xname;
+    char *xextra_name;
+    char *fk_name;
+    char *xfk_name;
+    char *idx_name;
+    char *xidx_name;
+    char *view_name;
+    char *xview_name;
+    *xstmt_ext = NULL;
+
+    fk_name = sqlite3_mprintf ("fk_%s", extra_name);
+    xextra_name = gaiaDoubleQuotedSql (extra_name);
+    xfk_name = gaiaDoubleQuotedSql (fk_name);
+    xname = gaiaDoubleQuotedSql (name);
+    sql = sqlite3_mprintf ("CREATE TABLE \"%s\" ("
+			   "    attr_id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+			   "    feature_id INTEGER NOT NULL,\n"
+			   "    attr_key TEXT NOT NULL,\n"
+			   "    attr_value TEXT NOT NULL,\n"
+			   "    CONSTRAINT \"%s\" FOREIGN KEY (feature_id) "
+			   "REFERENCES \"%s\" (feature_id))",
+			   xextra_name, xfk_name, xname);
+    free (xextra_name);
+    free (xfk_name);
+    free (xname);
+    sqlite3_free (fk_name);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE TABLE %s error: %s\n", extra_name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    idx_name = sqlite3_mprintf ("idx_%s", extra_name);
+    xidx_name = gaiaDoubleQuotedSql (idx_name);
+    xextra_name = gaiaDoubleQuotedSql (extra_name);
+    sql =
+	sqlite3_mprintf
+	("CREATE INDEX \"%s\" ON \"%s\" (feature_id)", xidx_name, xextra_name);
+    free (xidx_name);
+    free (xextra_name);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE INDEX %s error: %s\n", idx_name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sqlite3_free (idx_name);
+    view_name = sqlite3_mprintf ("%s_view", name);
+    xview_name = gaiaDoubleQuotedSql (view_name);
+    xname = gaiaDoubleQuotedSql (name);
+    xextra_name = gaiaDoubleQuotedSql (extra_name);
+    sql = sqlite3_mprintf ("CREATE VIEW \"%s\" AS "
+			   "SELECT f.feature_id AS feature_id, f.filename AS filename, "
+			   "f.layer AS layer, f.x AS x, f.y AS y, f.z AS z, f.scale_x AS scale_x, "
+			   "f.scale_y AS scale_y, f.scale_z AS scale_z, f.angle AS angle, "
+			   "a.attr_id AS attr_id, a.attr_key AS attr_key, a.attr_value AS attr_value "
+			   "FROM \"%s\" AS f "
+			   "LEFT JOIN \"%s\" AS a ON (f.feature_id = a.feature_id)",
+			   xview_name, xname, xextra_name);
+    free (xview_name);
+    free (xname);
+    free (xextra_name);
+    ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
+    sqlite3_free (sql);
+    if (ret != SQLITE_OK)
+      {
+	  spatialite_e ("CREATE VIEW %s error: %s\n", view_name,
+			sqlite3_errmsg (handle));
+	  return 0;
+      }
+    sqlite3_free (view_name);
+    if (!create_extra_stmt (handle, extra_name, &stmt_ext))
+	return 0;
+
+    *xstmt_ext = stmt_ext;
+    return 1;
+}
+
 static int
 check_block_point_table (sqlite3 * handle, const char *name, int srid, int is3D)
 {

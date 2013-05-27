@@ -134,6 +134,35 @@ extern "C"
     DXF_PRIVATE int
 	import_by_layer (sqlite3 * handle, gaiaDxfParserPtr dxf, int append);
 
+    DXF_PRIVATE int
+	create_instext_table (sqlite3 * handle, const char *name,
+			      const char *block, int is3d,
+			      sqlite3_stmt ** xstmt);
+
+    DXF_PRIVATE int
+	create_inspoint_table (sqlite3 * handle, const char *name,
+			       const char *block, int is3d,
+			       sqlite3_stmt ** xstmt);
+
+    DXF_PRIVATE int
+	create_insline_table (sqlite3 * handle, const char *name,
+			      const char *block, int is3d,
+			      sqlite3_stmt ** xstmt);
+
+    DXF_PRIVATE int
+	create_inspolyg_table (sqlite3 * handle, const char *name,
+			       const char *block, int is3d,
+			       sqlite3_stmt ** xstmt);
+
+    DXF_PRIVATE int
+	create_inshatch_table (sqlite3 * handle, const char *name,
+			       const char *block, sqlite3_stmt ** xstmt);
+
+    DXF_PRIVATE int
+	create_insert_extra_attr_table (sqlite3 * handle, const char *name,
+					char *extra_name,
+					sqlite3_stmt ** xstmt_ext);
+
 #ifdef __cplusplus
 }
 #endif
