@@ -1279,7 +1279,7 @@ EXTRA_DIST = addpoint10.testcase \
 	makeellipticsector16.testcase \
 	makeellipticsector17.testcase \
 	makeellipticsector18.testcase \
-	makeelliptisector19.testcase \
+	makeellipticsector19.testcase \
 	makeellipticsector20.testcase \
 	makeellipticsector21.testcase \
 	makeellipticsector22.testcase \

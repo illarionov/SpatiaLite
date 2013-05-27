@@ -293,6 +293,7 @@ fnct_lwgeom_version (sqlite3_context * context, int argc, sqlite3_value ** argv)
     len = strlen (p_result);
     sqlite3_result_text (context, p_result, len, SQLITE_TRANSIENT);
 #else
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     sqlite3_result_null (context);
 #endif
 }
@@ -315,6 +316,7 @@ fnct_libxml2_version (sqlite3_context * context, int argc,
     len = strlen (p_result);
     sqlite3_result_text (context, p_result, len, free);
 #else
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     sqlite3_result_null (context);
 #endif
 }
@@ -8055,7 +8057,7 @@ fnct_MakeCircularSector (sqlite3_context * context, int argc,
     else
       {
 	  int ii;
-	  int io;
+	  int io = 0;
 	  double x;
 	  double y;
 	  gaiaLinestringPtr in = geom->FirstLinestring;
@@ -8225,7 +8227,7 @@ fnct_MakeEllipticSector (sqlite3_context * context, int argc,
     else
       {
 	  int ii;
-	  int io;
+	  int io = 0;
 	  double x;
 	  double y;
 	  gaiaLinestringPtr in = geom->FirstLinestring;
@@ -15605,11 +15607,13 @@ fnct_Area (sqlite3_context * context, int argc, sqlite3_value ** argv)
     double area = 0.0;
     int ret;
     int use_ellipsoid = -1;
+#ifdef ENABLE_LWGEOM		/* only if LWGEOM is enabled */
     double a;
     double b;
     double rf;
-    gaiaGeomCollPtr geo = NULL;
     sqlite3 *sqlite = sqlite3_context_db_handle (context);
+#endif /* end LWGEOM conditional */
+    gaiaGeomCollPtr geo = NULL;
     GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
     if (sqlite3_value_type (argv[0]) != SQLITE_BLOB)
       {
@@ -27392,9 +27396,9 @@ static void
 free_internal_cache (struct splite_internal_cache *cache)
 {
 /* freeing an internal cache */
-    int i;
     struct splite_geos_cache_item *p;
 #ifdef ENABLE_LIBXML2
+    int i;
     struct splite_xmlSchema_cache_item *p_xmlSchema;
 #endif
 /* freeing the XML error buffers */

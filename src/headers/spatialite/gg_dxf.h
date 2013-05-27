@@ -122,6 +122,24 @@ extern "C"
 	double scale_z;
 /** rotation angle */
 	double angle;
+/** boolean flag: contains Text objects */
+	int hasText;
+/** boolean flag: contains Point objects */
+	int hasPoint;
+/** boolean flag: contains Polyline (Linestring) objects */
+	int hasLine;
+/** boolean flag: contains Polyline (Polygon) objects */
+	int hasPolyg;
+/** boolean flag: contains Hatch objects */
+	int hasHatch;
+/** boolean flag: contains 3d Text objects */
+	int is3Dtext;
+/** boolean flag: contains 3d Point objects */
+	int is3Dpoint;
+/** boolean flag: contains 3d Polyline (Linestring) objects */
+	int is3Dline;
+/** boolean flag: contains 3d Polyline (Polygon) objects */
+	int is3Dpolyg;
 /** pointer to first Extra Attribute [linked list] */
 	gaiaDxfExtraAttrPtr first;
 /** pointer to last Extra Attribute [linked list] */
@@ -330,6 +348,8 @@ extern "C"
  */
     typedef struct gaia_dxf_block
     {
+/** Boolean flag: this block is referenced by some Insert */
+	int hasInsert;
 /** pointer to Layer Name string */
 	char *layer_name;
 /** pointer to Block ID string */
@@ -399,10 +419,26 @@ extern "C"
 	gaiaDxfHatchPtr first_hatch;
 /** pointer to last DXF Hatch object [linked list] */
 	gaiaDxfHatchPtr last_hatch;
-/** pointer to first DXF Insert object [linked list] */
-	gaiaDxfInsertPtr first_insert;
-/** pointer to last DXF Insert object [linked list] */
-	gaiaDxfInsertPtr last_insert;
+/** pointer to first DXF Insert Text object [linked list] */
+	gaiaDxfInsertPtr first_ins_text;
+/** pointer to last DXF Insert Text object [linked list] */
+	gaiaDxfInsertPtr last_ins_text;
+/** pointer to first DXF Insert Point object [linked list] */
+	gaiaDxfInsertPtr first_ins_point;
+/** pointer to last DXF Insert Point object [linked list] */
+	gaiaDxfInsertPtr last_ins_point;
+/** pointer to first DXF Insert Polyline (Linestring) object [linked list] */
+	gaiaDxfInsertPtr first_ins_line;
+/** pointer to last DXF Insert Polyline (Linestring) object [linked list] */
+	gaiaDxfInsertPtr last_ins_line;
+/** pointer to first DXF Insert Polyline (Polygon) object [linked list] */
+	gaiaDxfInsertPtr first_ins_polyg;
+/** pointer to last DXF Insert Polyline (Polygon) object [linked list] */
+	gaiaDxfInsertPtr last_ins_polyg;
+/** pointer to first DXF Insert Hatch object [linked list] */
+	gaiaDxfInsertPtr first_ins_hatch;
+/** pointer to last DXF Insert Hatch object [linked list] */
+	gaiaDxfInsertPtr last_ins_hatch;
 /** boolean flag: contains 3d Text objects */
 	int is3Dtext;
 /** boolean flag: contains 3d Point objects */
@@ -411,6 +447,14 @@ extern "C"
 	int is3Dline;
 /** boolean flag: contains 3d Polyline (Polygon) objects */
 	int is3Dpolyg;
+/** boolean flag: contains 3d Insert Text objects */
+	int is3DinsText;
+/** boolean flag: contains 3d Insert Point objects */
+	int is3DinsPoint;
+/** boolean flag: contains 3d Insert Polyline (Linestring) objects */
+	int is3DinsLine;
+/** boolean flag: contains 3d Insert Polyline (Polygon) objects */
+	int is3DinsPolyg;
 /** boolean flag: contains Text Extra Attributes */
 	int hasExtraText;
 /** boolean flag: contains Point Extra Attributes */
@@ -419,8 +463,14 @@ extern "C"
 	int hasExtraLine;
 /** boolean flag: contains Polyline (Polygon) Extra Attributes */
 	int hasExtraPolyg;
-/** boolean flag: contains Insert Extra Attributes */
-	int hasExtraInsert;
+/** boolean flag: contains Insert Text Extra Attributes */
+	int hasExtraInsText;
+/** boolean flag: contains Insert Text Extra Attributes */
+	int hasExtraInsPoint;
+/** boolean flag: contains Insert Polyline (Linestring) Extra Attributes */
+	int hasExtraInsLine;
+/** boolean flag: contains Insert Polyline (Polygon) Extra Attributes */
+	int hasExtraInsPolyg;
 /** pointer to next item [linked list] */
 	struct gaia_dxf_layer *next;
     } gaiaDxfLayer;
@@ -436,13 +486,15 @@ extern "C"
  */
     typedef struct gaia_dxf_parser
     {
+/** OUT: origin/input filename */
+	char *filename;
 /** OUT: pointer to first DXF Layer object [linked list] */
 	gaiaDxfLayerPtr first_layer;
 /** OUT: pointer to last DXF Layer object [linked list] */
 	gaiaDxfLayerPtr last_layer;
-/** pointer to first DXF Block object [linked list] */
+/** OUT: pointer to first DXF Block object [linked list] */
 	gaiaDxfBlockPtr first_block;
-/** pointer to last DXF Block object [linked list] */
+/** OUT: pointer to last DXF Block object [linked list] */
 	gaiaDxfBlockPtr last_block;
 /** IN: parser option - dimension handlig */
 	int force_dims;

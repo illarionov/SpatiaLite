@@ -288,7 +288,6 @@ static struct auxdbf_list *
 alloc_auxdbf (gaiaDbfListPtr dbf_list)
 {
 /* allocating the auxiliary DBF struct */
-    int len;
     gaiaDbfFieldPtr fld;
     struct auxdbf_fld *fld_ex;
     struct auxdbf_list *auxdbf = malloc (sizeof (struct auxdbf_list));

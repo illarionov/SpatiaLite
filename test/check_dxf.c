@@ -58,7 +58,6 @@ check_22_auto()
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
-    int row_count;
     gaiaDxfParserPtr dxf;
     void *cache = spatialite_alloc_connection();
 
@@ -133,7 +132,6 @@ check_22_2d()
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
-    int row_count;
     gaiaDxfParserPtr dxf;
     void *cache = spatialite_alloc_connection();
 
@@ -208,7 +206,6 @@ check_22_3d()
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
-    int row_count;
     gaiaDxfParserPtr dxf;
     void *cache = spatialite_alloc_connection();
 
@@ -283,7 +280,6 @@ check_22_single()
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
-    int row_count;
     gaiaDxfParserPtr dxf;
     void *cache = spatialite_alloc_connection();
 
@@ -358,7 +354,6 @@ check_merano()
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
-    int row_count;
     gaiaDxfParserPtr dxf;
     void *cache = spatialite_alloc_connection();
 
@@ -391,7 +386,7 @@ check_merano()
 	return -4;
     }
     
-    ret = gaiaLoadFromDxfParser (handle, dxf, GAIA_DXF_IMPORT_BY_LAYER, 0);
+    ret = gaiaLoadFromDxfParser (handle, dxf, GAIA_DXF_IMPORT_BY_LAYER, 1);
     if (ret == 0) {
 	fprintf(stderr, "Unable to load \"f06.dxf\" byLayer\n");
 	return -5;
@@ -403,7 +398,7 @@ check_merano()
 	return -6;
     }
     
-    ret = gaiaLoadFromDxfParser (handle, dxf, GAIA_DXF_IMPORT_MIXED, 0);
+    ret = gaiaLoadFromDxfParser (handle, dxf, GAIA_DXF_IMPORT_MIXED, 1);
     if (ret == 0) {
 	fprintf(stderr, "Unable to load \"f06.dxf\" mixed\n");
 	return -7;
@@ -428,7 +423,7 @@ check_merano()
 	return -10;
     }
     
-    ret = gaiaLoadFromDxfParser (handle, dxf, GAIA_DXF_IMPORT_BY_LAYER, 0);
+    ret = gaiaLoadFromDxfParser (handle, dxf, GAIA_DXF_IMPORT_BY_LAYER, 1);
     if (ret == 0) {
 	fprintf(stderr, "Unable to load \"l02.dxf\" byLayer\n");
 	return -11;
@@ -459,7 +454,7 @@ check_merano()
 	return -15;
     }
     
-    ret = gaiaLoadFromDxfParser (handle, dxf, GAIA_DXF_IMPORT_BY_LAYER, 0);
+    ret = gaiaLoadFromDxfParser (handle, dxf, GAIA_DXF_IMPORT_BY_LAYER, 1);
     if (ret == 0) {
 	fprintf(stderr, "Unable to load \"p05.dxf\" byLayer\n");
 	return -16;
@@ -471,7 +466,7 @@ check_merano()
 	return -17;
     }
     
-    ret = gaiaLoadFromDxfParser (handle, dxf, GAIA_DXF_IMPORT_MIXED, 0);
+    ret = gaiaLoadFromDxfParser (handle, dxf, GAIA_DXF_IMPORT_MIXED, 1);
     if (ret == 0) {
 	fprintf(stderr, "Unable to load \"p05.dxf\" mixed\n");
 	return -18;
@@ -501,7 +496,6 @@ check_archaic()
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
-    int row_count;
     gaiaDxfParserPtr dxf;
     void *cache = spatialite_alloc_connection();
 
@@ -576,7 +570,6 @@ check_linked()
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
-    int row_count;
     gaiaDxfParserPtr dxf;
     void *cache = spatialite_alloc_connection();
 
@@ -650,8 +643,6 @@ check_linked_legacy()
 /* testing linked.dxf - legacy DB */
     int ret;
     sqlite3 *handle;
-    char *err_msg = NULL;
-    int row_count;
     gaiaDxfParserPtr dxf;
     void *cache = spatialite_alloc_connection();
 
@@ -730,7 +721,6 @@ check_hatch()
     int ret;
     sqlite3 *handle;
     char *err_msg = NULL;
-    int row_count;
     gaiaDxfParserPtr dxf;
     void *cache = spatialite_alloc_connection();
 
@@ -804,8 +794,6 @@ check_hatch_legacy()
 /* testing hatch.dxf - legacy DB */
     int ret;
     sqlite3 *handle;
-    char *err_msg = NULL;
-    int row_count;
     gaiaDxfParserPtr dxf;
     void *cache = spatialite_alloc_connection();
 

@@ -1437,6 +1437,55 @@ EXTRA_DIST = addpoint10.testcase \
 	makeellipticarc24.testcase \
 	makeellipticarc25.testcase \
 	makeellipticarc26.testcase \
+	makecircularsector1.testcase \
+	makecircularsector2.testcase \
+	makecircularsector3.testcase \
+	makecircularsector4.testcase \
+	makecircularsector5.testcase \
+	makecircularsector6.testcase \
+	makecircularsector7.testcase \
+	makecircularsector8.testcase \
+	makecircularsector9.testcase \
+	makecircularsector10.testcase \
+	makecircularsector11.testcase \
+	makecircularsector12.testcase \
+	makecircularsector13.testcase \
+	makecircularsector14.testcase \
+	makecircularsector15.testcase \
+	makecircularsector16.testcase \
+	makecircularsector17.testcase \
+	makecircularsector18.testcase \
+	makecircularsector19.testcase \
+	makecircularsector20.testcase \
+	makecircularsector21.testcase \
+	makecircularsector22.testcase \
+	makecircularsector23.testcase \
+	makeellipticsector1.testcase \
+	makeellipticsector2.testcase \
+	makeellipticsector3.testcase \
+	makeellipticsector4.testcase \
+	makeellipticsector5.testcase \
+	makeellipticsector6.testcase \
+	makeellipticsector7.testcase \
+	makeellipticsector8.testcase \
+	makeellipticsector9.testcase \
+	makeellipticsector10.testcase \
+	makeellipticsector11.testcase \
+	makeellipticsector12.testcase \
+	makeellipticsector13.testcase \
+	makeellipticsector14.testcase \
+	makeellipticsector15.testcase \
+	makeellipticsector16.testcase \
+	makeellipticsector17.testcase \
+	makeellipticsector18.testcase \
+	makeellipticsector19.testcase \
+	makeellipticsector20.testcase \
+	makeellipticsector21.testcase \
+	makeellipticsector22.testcase \
+	makeellipticsector23.testcase \
+	makeellipticsector24.testcase \
+	makeellipticsector25.testcase \
+	makeellipticsector26.testcase \
 	maxm1.testcase \
 	maxm2.testcase \
 	maxm3.testcase \
