@@ -68,7 +68,7 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libdxf_la_LIBADD =
 am_libdxf_la_OBJECTS = dxf_parser.lo dxf_loader.lo \
-	dxf_load_distinct.lo dxf_load_mixed.lo
+	dxf_load_distinct.lo dxf_load_mixed.lo dxf_writer.lo
 libdxf_la_OBJECTS = $(am_libdxf_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -226,7 +226,8 @@ INCLUDES = @CFLAGS@ -I$(top_srcdir)/src/headers -I.
 noinst_HEADERS = dxf_private.h
 noinst_LTLIBRARIES = libdxf.la
 libdxf_la_SOURCES = dxf_parser.c dxf_loader.c \
-	dxf_load_distinct.c dxf_load_mixed.c
+	dxf_load_distinct.c dxf_load_mixed.c \
+	dxf_writer.c
 
 MOSTLYCLEANFILES = *.gcna *.gcno *.gcda
 all: all-am
@@ -287,6 +288,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dxf_load_mixed.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dxf_loader.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dxf_parser.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dxf_writer.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

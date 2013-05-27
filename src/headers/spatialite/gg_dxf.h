@@ -79,6 +79,9 @@ extern "C"
 #define GAIA_DXF_RING_UNLINKED		8
 
 
+/** DXF version [Writer] */
+#define GAIA_DXF_V12	1000
+
 /* data structs */
 
 
@@ -586,6 +589,27 @@ extern "C"
  */
     typedef gaiaDxfParser *gaiaDxfParserPtr;
 
+/**
+ wrapper for DXF Write object
+ */
+    typedef struct gaia_dxf_write
+    {
+/** IN: output DXF file handle */
+	FILE *out;
+/** IN: coord's precision (number of decimal digits) */
+	int precision;
+/** IN: DXF version number */
+	int version;
+/** OUT: count of exported geometries */
+	int count;
+/** OUT: error flag */
+	int error;
+    } gaiaDxfWriter;
+/**
+ Typedef for DXF Writer object
+ */
+    typedef gaiaDxfWriter *gaiaDxfWriterPtr;
+
 
 /* function prototypes */
 
@@ -668,6 +692,211 @@ extern "C"
     GAIAGEO_DECLARE int gaiaLoadFromDxfParser (sqlite3 * db_handle,
 					       gaiaDxfParserPtr parser,
 					       int mode, int append);
+
+/**
+ Initializing a DXF Writer Object
+
+ \param writer pointer to the gaiaDxfWriter object to be initialized
+ \param out file handle to DXF output file
+ \param precision number of decimal digits for any coordinate
+ \param version currently always expected to be GAIA_DXF_V12
+
+ \return 0 on failure, any other value on success
+
+ \sa gaiaDxfWriteHeader, gaiaExportDxf
+ */
+    GAIAGEO_DECLARE int gaiaDxfWriterInit (gaiaDxfWriterPtr dxf,
+					   FILE * out, int precision,
+					   int version);
+
+/**
+ Writing the DXF Header
+
+ \param dxf pointer to a properly initialized gaiaDxfWriter object
+ \param minx the minimum X coordinate contained within the DXF
+ \param minx the minimum Y coordinate contained within the DXF
+ \param minx the minimum Z coordinate contained within the DXF
+ \param minx the maximum X coordinate contained within the DXF
+ \param minx the maximum Y coordinate contained within the DXF
+ \param minx the maximum Z coordinate contained within the DXF
+
+ \return 0 on failure, any other value on success
+
+ \sa gaiaDxfWriterInit, gaiaDxfWriteFooter, gaiaDxfWriteTables, gaiaDxfWriteEntities
+ */
+    GAIAGEO_DECLARE int
+	gaiaDxfWriteHeader (gaiaDxfWriterPtr dxf, double minx, double miny,
+			    double minz, double maxx, double maxy, double maxz);
+
+/**
+ Writing a DXF Entities Section Header 
+
+ \param dxf pointer to a properly initialized gaiaDxfWriter object
+
+ \return 0 on failure, any other value on success
+
+ \sa gaiaDxfWriteHeader
+ */
+    GAIAGEO_DECLARE int gaiaDxfWriteFooter (gaiaDxfWriterPtr dxf);
+
+/**
+ Writing the DXF Tables Section Header 
+
+ \param dxf pointer to a properly initialized gaiaDxfWriter object
+
+ \return 0 on failure, any other value on success
+
+ \sa gaiaDxfWriteHeader, gaiaDxfWriteEndSection
+ */
+    GAIAGEO_DECLARE int gaiaDxfWriteTables (gaiaDxfWriterPtr dxf);
+
+/**
+ Writing a DXF Table/Layer definition 
+
+ \param dxf pointer to a properly initialized gaiaDxfWriter object
+ \param layer_name name of the layer
+
+ \return 0 on failure, any other value on success
+
+ \sa gaiaDxfWriteTables, gaiaDxfWriteEndSection
+ */
+    GAIAGEO_DECLARE int gaiaDxfWriteLayer (gaiaDxfWriterPtr dxf,
+					   const char *layer_name);
+
+/**
+ Writing a DXF Entities Section Header 
+
+ \param dxf pointer to a properly initialized gaiaDxfWriter object
+
+ \return 0 on failure, any other value on success
+
+ \sa gaiaDxfWriteHeader, gaiaDxfWriteEndSection, gaiaDxfWritePoint,
+ gaiaDxfWriteText, gaiaDxfWriteLine, gaiaDxfWritePolygon, gaiaDxfWriteGeometry 
+ */
+    GAIAGEO_DECLARE int gaiaDxfWriteEntities (gaiaDxfWriterPtr dxf);
+
+/**
+ Writing a DXF Entities Section Header 
+
+ \param dxf pointer to a properly initialized gaiaDxfWriter object
+
+ \return 0 on failure, any other value on success
+
+ \sa gaiaDxfWriteTables, gaiaDxfWriteEntities
+ */
+    GAIAGEO_DECLARE int gaiaDxfWriteEndSection (gaiaDxfWriterPtr dxf);
+
+/**
+ Writing a DXF Point Entity 
+
+ \param dxf pointer to a properly initialized gaiaDxfWriter object
+ \param layer_name name of the corresponding layer
+ \param x X coordinate value
+ \param y Y coordinate value
+ \param z Z coordinate value
+
+ \return 0 on failure, any other value on success
+
+ \sa gaiaDxfWriteEntities, gaiaDxfWriteEndSection, gaiaDxfWriteText, 
+ gaiaDxfWriteLine, gaiaDxfWriteRing, gaiaDxfWriteGeometry 
+ */
+    GAIAGEO_DECLARE int gaiaDxfWritePoint (gaiaDxfWriterPtr dxf,
+					   const char *layer_name, double x,
+					   double y, double z);
+
+/**
+ Writing a DXF Text Entity 
+
+ \param dxf pointer to a properly initialized gaiaDxfWriter object
+ \param layer_name name of the corresponding layer
+ \param x X coordinate value
+ \param y Y coordinate value
+ \param z Z coordinate value
+ \param label text string containing the label value
+ \param angle text rotation angle
+
+ \return 0 on failure, any other value on success
+
+ \sa gaiaDxfWriteEntities, gaiaDxfWriteEndSection, gaiaDxfWritePoint, 
+ gaiaDxfWriteLine, gaiaDxfWriteRing, gaiaDxfWriteGeometry 
+ */
+    GAIAGEO_DECLARE int gaiaDxfWriteText (gaiaDxfWriterPtr dxf,
+					  const char *layer_name, double x,
+					  double y, double z, const char *label,
+					  double angle);
+
+/**
+ Writing a DXF Polyline (opened) Entity 
+
+ \param dxf pointer to a properly initialized gaiaDxfWriter object
+ \param layer_name name of the corresponding layer
+ \param line pointer to the internal Linestring to be exported into the DXF
+
+ \return 0 on failure, any other value on success
+
+ \sa gaiaDxfWriteEntities, gaiaDxfWriteEndSection, gaiaDxfWritePoint, 
+ gaiaDxfWriteText, gaiaDxfWriteRing, gaiaDxfWriteGeometry 
+ */
+    GAIAGEO_DECLARE int
+	gaiaDxfWriteLine (gaiaDxfWriterPtr dxf, const char *layer_name,
+			  gaiaLinestringPtr line);
+
+/**
+ Writing a DXF Polyline (closed) Entity 
+
+ \param dxf pointer to a properly initialized gaiaDxfWriter object
+ \param layer_name name of the corresponding layer
+ \param line pointer to the internal Ring to be exported into the DXF
+
+ \return 0 on failure, any other value on success
+
+ \sa gaiaDxfWriteEntities, gaiaDxfWriteEndSection, gaiaDxfWritePoint, 
+ gaiaDxfWriteText, gaiaDxfWriteLine, gaiaDxfWriteGeometry
+ */
+    GAIAGEO_DECLARE int
+	gaiaDxfWriteRing (gaiaDxfWriterPtr dxf, const char *layer_name,
+			  gaiaRingPtr ring);
+
+/**
+ Writing a DXF Polyline (closed) Entity 
+
+ \param dxf pointer to a properly initialized gaiaDxfWriter object
+ \param layer_name name of the corresponding layer
+ \param line pointer to the internal Ring to be exported into the DXF
+ \param label text string containing the label value (could be NULL)
+
+ \return 0 on failure, any other value on success
+
+ \sa gaiaDxfWriteEntities, gaiaDxfWriteEndSection, gaiaDxfWritePoint, 
+ gaiaDxfWriteText, gaiaDxfWriteLine, gaiaDxfWritePolygon
+ */
+    GAIAGEO_DECLARE int
+	gaiaDxfWriteGeometry (gaiaDxfWriterPtr dxf, const char *layer_name,
+			      const char *label, gaiaGeomCollPtr geometry);
+
+/**
+ Exporting a complex DXF file 
+
+ \param dxf pointer to a properly initialized gaiaDxfWriter object
+ \param db_hanlde handle to the current DB connection
+ \param sql a text string defining the SQL query to be used for
+ extracting all geometries/entities to be exported into the output DXF
+ \param layer_col_name name of the SQL resultset column containing the Layer name
+ \param geom_col_name name of the SQL resultset column containing Geometries
+ \param label_col_name name of the SQL resultset column containing Label values
+ (could be NULL)
+ \param geom_filter an optional arbitrary Geometry to be used as a Spatial Filter
+ (could be NULL) 
+
+ \return 0 on failure; the total count of exported  entities on success
+
+ \sa gaiaDxfWriterInit
+ */
+    GAIAGEO_DECLARE int
+	gaiaExportDxf (gaiaDxfWriterPtr dxf, sqlite3 * db_handle,
+		       const char *sql, const char *layer_col_name,
+		       const char *geom_col_name, const char *label_col_name,
+		       gaiaGeomCollPtr geom_filter);
 
 #ifdef __cplusplus
 }

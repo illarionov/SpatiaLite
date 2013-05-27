@@ -69,6 +69,28 @@ extern "C"
 {
 #endif
 
+    typedef struct dxf_out_layer
+    {
+	double minx;
+	double miny;
+	double maxx;
+	double maxy;
+	char *layer_name;
+	struct dxf_out_layer *next;
+    } gaiaDxfExportLayer;
+    typedef gaiaDxfExportLayer *gaiaDxfExportLayerPtr;
+
+    typedef struct dxf_out
+    {
+	double minx;
+	double miny;
+	double maxx;
+	double maxy;
+	gaiaDxfExportLayer *first;
+	gaiaDxfExportLayer *last;
+    } gaiaDxfExport;
+    typedef gaiaDxfExport *gaiaDxfExportPtr;
+
     DXF_PRIVATE int
 	create_text_stmt (sqlite3 * handle, const char *name,
 			  sqlite3_stmt ** xstmt);
