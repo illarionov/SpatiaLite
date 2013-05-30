@@ -1304,39 +1304,30 @@ gaiaGetExifTags (const unsigned char *blob, int size)
     unsigned short i;
     int x;
     int app1_offset;
-    int app1_marker = 0;
     gaiaExifTagPtr pT;
     if (!blob)
 	goto error;
     if (size < 14)
 	goto error;
-/* cecking for SOI [Start Of Image] */
+/* checking for SOI [Start Of Image] */
     if (*(blob + 0) == 0xff && *(blob + 1) == 0xd8)
 	;
     else
 	goto error;
-    app1_offset = 2;
-    for (x = 2; x < size; x++)
+    for (app1_offset = 2; app1_offset < size - 1; app1_offset++)
       {
-	  /* retrieving the APP1 Marker */
-	  if (*(blob + x) == 0xff)
-	      app1_marker = 1;
-	  if (*(blob + x) == 0xe1)
+	  if (*(blob + app1_offset) == 0xff
+	      && *(blob + app1_offset + 1) == 0xe1)
 	    {
-		if (app1_marker)
-		  {
-		      app1_offset = x - 1;
-		      break;
-		  }
-		else
-		    app1_marker = 0;
+		/* found APP1 marker */
+		break;
 	    }
       }
-/* checking for APP1 Marker */
-    if (*(blob + app1_offset) == 0xff && *(blob + app1_offset + 1) == 0xe1)
-	;
-    else
-	goto error;
+    if (app1_offset == size - 1)
+      {
+	  /* we've reached the end of the file, but not found the marker */
+	  goto error;
+      }
 /* checking for EXIF identifier */
     if (memcmp (blob + app1_offset + 4, "Exif", 4) == 0)
 	;

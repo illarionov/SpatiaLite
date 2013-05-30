@@ -1460,6 +1460,32 @@ EXTRA_DIST = addpoint10.testcase \
 	makecircularsector21.testcase \
 	makecircularsector22.testcase \
 	makecircularsector23.testcase \
+	makecircularstripe1.testcase \
+	makecircularstripe2.testcase \
+	makecircularstripe3.testcase \
+	makecircularstripe4.testcase \
+	makecircularstripe5.testcase \
+	makecircularstripe6.testcase \
+	makecircularstripe7.testcase \
+	makecircularstripe8.testcase \
+	makecircularstripe9.testcase \
+	makecircularstripe10.testcase \
+	makecircularstripe11.testcase \
+	makecircularstripe12.testcase \
+	makecircularstripe13.testcase \
+	makecircularstripe14.testcase \
+	makecircularstripe15.testcase \
+	makecircularstripe16.testcase \
+	makecircularstripe17.testcase \
+	makecircularstripe18.testcase \
+	makecircularstripe19.testcase \
+	makecircularstripe20.testcase \
+	makecircularstripe21.testcase \
+	makecircularstripe22.testcase \
+	makecircularstripe23.testcase \
+	makecircularstripe24.testcase \
+	makecircularstripe25.testcase \
+	makecircularstripe26.testcase \
 	makeellipticsector1.testcase \
 	makeellipticsector2.testcase \
 	makeellipticsector3.testcase \

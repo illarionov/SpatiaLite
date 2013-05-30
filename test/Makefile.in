@@ -67,7 +67,8 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_virtualtable4$(EXEEXT) check_virtualtable5$(EXEEXT) \
 	check_virtualtable6$(EXEEXT) check_virtual_ovflw$(EXEEXT) \
 	check_mbrcache$(EXEEXT) check_spatialindex$(EXEEXT) \
-	check_exif$(EXEEXT) check_relations_fncts$(EXEEXT) \
+	check_exif$(EXEEXT) check_exif2$(EXEEXT) \
+	check_relations_fncts$(EXEEXT) \
 	check_extra_relations_fncts$(EXEEXT) \
 	check_geoscvt_fncts$(EXEEXT) check_libxml2$(EXEEXT) \
 	check_styling$(EXEEXT) check_virtualxpath$(EXEEXT) \
@@ -191,6 +192,9 @@ check_endian_LDADD = $(LDADD)
 check_exif_SOURCES = check_exif.c
 check_exif_OBJECTS = check_exif.$(OBJEXT)
 check_exif_LDADD = $(LDADD)
+check_exif2_SOURCES = check_exif2.c
+check_exif2_OBJECTS = check_exif2.$(OBJEXT)
+check_exif2_LDADD = $(LDADD)
 check_extension_SOURCES = check_extension.c
 check_extension_OBJECTS = check_extension.$(OBJEXT)
 check_extension_LDADD = $(LDADD)
@@ -436,12 +440,12 @@ SOURCES = check_add_rt_metadata_triggers.c \
 	check_add_tile_triggers.c \
 	check_add_tile_triggers_bad_table_name.c check_bufovflw.c \
 	check_create.c check_createBaseTables.c check_dbf_load.c \
-	check_dxf.c check_endian.c check_exif.c check_extension.c \
-	check_extra_relations_fncts.c check_fdo1.c check_fdo2.c \
-	check_fdo3.c check_fdo_bufovflw.c check_gaia_utf8.c \
-	check_gaia_util.c check_geom_aux.c check_geometry_cols.c \
-	check_geoscvt_fncts.c check_get_normal_row.c \
-	check_get_normal_row_bad_geopackage.c \
+	check_dxf.c check_endian.c check_exif.c check_exif2.c \
+	check_extension.c check_extra_relations_fncts.c check_fdo1.c \
+	check_fdo2.c check_fdo3.c check_fdo_bufovflw.c \
+	check_gaia_utf8.c check_gaia_util.c check_geom_aux.c \
+	check_geometry_cols.c check_geoscvt_fncts.c \
+	check_get_normal_row.c check_get_normal_row_bad_geopackage.c \
 	check_get_normal_row_bad_geopackage2.c check_get_normal_zoom.c \
 	check_get_normal_zoom_bad_geopackage.c \
 	check_get_normal_zoom_bad_geopackage2.c \
@@ -474,12 +478,12 @@ DIST_SOURCES = check_add_rt_metadata_triggers.c \
 	check_add_tile_triggers.c \
 	check_add_tile_triggers_bad_table_name.c check_bufovflw.c \
 	check_create.c check_createBaseTables.c check_dbf_load.c \
-	check_dxf.c check_endian.c check_exif.c check_extension.c \
-	check_extra_relations_fncts.c check_fdo1.c check_fdo2.c \
-	check_fdo3.c check_fdo_bufovflw.c check_gaia_utf8.c \
-	check_gaia_util.c check_geom_aux.c check_geometry_cols.c \
-	check_geoscvt_fncts.c check_get_normal_row.c \
-	check_get_normal_row_bad_geopackage.c \
+	check_dxf.c check_endian.c check_exif.c check_exif2.c \
+	check_extension.c check_extra_relations_fncts.c check_fdo1.c \
+	check_fdo2.c check_fdo3.c check_fdo_bufovflw.c \
+	check_gaia_utf8.c check_gaia_util.c check_geom_aux.c \
+	check_geometry_cols.c check_geoscvt_fncts.c \
+	check_get_normal_row.c check_get_normal_row_bad_geopackage.c \
 	check_get_normal_row_bad_geopackage2.c check_get_normal_zoom.c \
 	check_get_normal_zoom_bad_geopackage.c \
 	check_get_normal_zoom_bad_geopackage2.c \
@@ -763,7 +767,7 @@ EXTRA_DIST = asprintf4win.h \
 	raster_se.xml thunderstorm_mild.svg \
 	tile000.jpeg  tile101.jpeg  tile111.jpeg \
 	test.webp tile100.jpeg  tile110.jpeg \
-	empty.png  empty.tif \
+	Apple-iPhone-4.jpg empty.png  empty.tif \
 	test.wfs testDescribeFeatureType.wfs \
 	getcapabilities-1.0.0.wfs \
 	getcapabilities-1.1.0.wfs \
@@ -856,6 +860,9 @@ check_endian$(EXEEXT): $(check_endian_OBJECTS) $(check_endian_DEPENDENCIES) $(EX
 check_exif$(EXEEXT): $(check_exif_OBJECTS) $(check_exif_DEPENDENCIES) $(EXTRA_check_exif_DEPENDENCIES) 
 	@rm -f check_exif$(EXEEXT)
 	$(LINK) $(check_exif_OBJECTS) $(check_exif_LDADD) $(LIBS)
+check_exif2$(EXEEXT): $(check_exif2_OBJECTS) $(check_exif2_DEPENDENCIES) $(EXTRA_check_exif2_DEPENDENCIES) 
+	@rm -f check_exif2$(EXEEXT)
+	$(LINK) $(check_exif2_OBJECTS) $(check_exif2_LDADD) $(LIBS)
 check_extension$(EXEEXT): $(check_extension_OBJECTS) $(check_extension_DEPENDENCIES) $(EXTRA_check_extension_DEPENDENCIES) 
 	@rm -f check_extension$(EXEEXT)
 	$(LINK) $(check_extension_OBJECTS) $(check_extension_LDADD) $(LIBS)
@@ -1064,6 +1071,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_dxf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_endian.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_exif.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_exif2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_extension.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_extra_relations_fncts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_fdo1.Po@am__quote@
