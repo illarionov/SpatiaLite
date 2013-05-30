@@ -1302,7 +1302,6 @@ gaiaGetExifTags (const unsigned char *blob, int size)
     unsigned int offset;
     unsigned short items;
     unsigned short i;
-    int x;
     int app1_offset;
     gaiaExifTagPtr pT;
     if (!blob)
