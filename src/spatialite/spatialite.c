@@ -8091,6 +8091,188 @@ fnct_MakeCircularSector (sqlite3_context * context, int argc,
 }
 
 static void
+fnct_MakeCircularStripe (sqlite3_context * context, int argc,
+			 sqlite3_value ** argv)
+{
+/* SQL function:
+/ MakeCircularStripe(double cx, double cy, double radius_1, double radius_2,
+/                    double start, double stop)
+/     or
+/ MakeCircularStripe(double cx, double cy, double radius_1, double radius_2,
+/                    double start, double stop, int srid)
+/     or
+/ MakeCircularStripe(double cx, double cy, double radius_1, double radius_2, 
+/                    double start, double stop, int srid, double step)
+/
+/ - builds a Polygon approximating a Circular Stripe delimited by two
+/   arcs sharing the same Centre-Point but having different radii
+/ - start and stop are the initial and final angles (in degrees)
+/ - step is the angular distance (in degrees) between points on 
+/   the circurmference (by default: every 10 degs) 
+/ - or NULL if any error is encountered
+*/
+    int len;
+    unsigned char *p_result = NULL;
+    gaiaGeomCollPtr arc1 = NULL;
+    gaiaGeomCollPtr arc2 = NULL;
+    gaiaGeomCollPtr stripe = NULL;
+    int ival;
+    double cx;
+    double cy;
+    double r1;
+    double r2;
+    double start;
+    double stop;
+    int srid = 0;
+    double step = 10.0;
+    GAIA_UNUSED ();		/* LCOV_EXCL_LINE */
+    if (sqlite3_value_type (argv[0]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[0]);
+	  cx = ival;
+      }
+    else if (sqlite3_value_type (argv[0]) == SQLITE_FLOAT)
+	cx = sqlite3_value_double (argv[0]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[1]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[1]);
+	  cy = ival;
+      }
+    else if (sqlite3_value_type (argv[1]) == SQLITE_FLOAT)
+	cy = sqlite3_value_double (argv[1]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[2]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[2]);
+	  r1 = ival;
+      }
+    else if (sqlite3_value_type (argv[2]) == SQLITE_FLOAT)
+	r1 = sqlite3_value_double (argv[2]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[3]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[3]);
+	  r2 = ival;
+      }
+    else if (sqlite3_value_type (argv[3]) == SQLITE_FLOAT)
+	r2 = sqlite3_value_double (argv[3]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[4]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[4]);
+	  start = ival;
+      }
+    else if (sqlite3_value_type (argv[4]) == SQLITE_FLOAT)
+	start = sqlite3_value_double (argv[4]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (sqlite3_value_type (argv[5]) == SQLITE_INTEGER)
+      {
+	  ival = sqlite3_value_int (argv[5]);
+	  stop = ival;
+      }
+    else if (sqlite3_value_type (argv[5]) == SQLITE_FLOAT)
+	stop = sqlite3_value_double (argv[5]);
+    else
+      {
+	  sqlite3_result_null (context);
+	  return;
+      }
+    if (argc >= 7)
+      {
+	  if (sqlite3_value_type (argv[6]) == SQLITE_INTEGER)
+	      srid = sqlite3_value_int (argv[6]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+    if (argc == 8)
+      {
+	  if (sqlite3_value_type (argv[7]) == SQLITE_INTEGER)
+	    {
+		ival = sqlite3_value_int (argv[7]);
+		step = ival;
+	    }
+	  else if (sqlite3_value_type (argv[7]) == SQLITE_FLOAT)
+	      step = sqlite3_value_double (argv[7]);
+	  else
+	    {
+		sqlite3_result_null (context);
+		return;
+	    }
+      }
+
+    arc1 = gaiaMakeArc (cx, cy, r1, start, stop, step);
+    arc2 = gaiaMakeArc (cx, cy, r2, start, stop, step);
+    if (arc1 == NULL || arc2 == NULL)
+	sqlite3_result_null (context);
+    else
+      {
+	  int ii;
+	  int io = 0;
+	  double x;
+	  double y;
+	  gaiaLinestringPtr in1 = arc1->FirstLinestring;
+	  gaiaLinestringPtr in2 = arc2->FirstLinestring;
+	  gaiaPolygonPtr pg;
+	  gaiaRingPtr out;
+	  stripe = gaiaAllocGeomColl ();
+	  pg = gaiaAddPolygonToGeomColl (stripe, in1->Points + in2->Points + 1,
+					 0);
+	  out = pg->Exterior;
+	  for (ii = 0; ii < in1->Points; ii++)
+	    {
+		/* copying the first Arc's points - direct order */
+		gaiaGetPoint (in1->Coords, ii, &x, &y);
+		gaiaSetPoint (out->Coords, io, x, y);
+		io++;
+	    }
+	  for (ii = in2->Points - 1; ii >= 0; ii--)
+	    {
+		/* copying the second Arc's points - reverse order */
+		gaiaGetPoint (in2->Coords, ii, &x, &y);
+		gaiaSetPoint (out->Coords, io, x, y);
+		io++;
+	    }
+	  /* closing the Polygon Ring */
+	  gaiaGetPoint (out->Coords, 0, &x, &y);
+	  gaiaSetPoint (out->Coords, io, x, y);
+	  if (srid != 0)
+	      stripe->Srid = srid;
+	  gaiaToSpatiaLiteBlobWkb (stripe, &p_result, &len);
+	  sqlite3_result_blob (context, p_result, len, free);
+      }
+    if (arc1)
+	gaiaFreeGeomColl (arc1);
+    if (arc2)
+	gaiaFreeGeomColl (arc2);
+    if (stripe)
+	gaiaFreeGeomColl (stripe);
+}
+
+static void
 fnct_MakeEllipticSector (sqlite3_context * context, int argc,
 			 sqlite3_value ** argv)
 {
@@ -15423,11 +15605,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 				    {
 					/* Linestrings */
 					l = gaiaGeodesicTotalLength (a, b, rf,
-								     line->DimensionModel,
 								     line->
-								     Coords,
-								     line->
-								     Points);
+								     DimensionModel,
+								     line->Coords,
+								     line->Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -15450,9 +15631,12 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      l = gaiaGeodesicTotalLength (a,
 									   b,
 									   rf,
-									   ring->DimensionModel,
-									   ring->Coords,
-									   ring->Points);
+									   ring->
+									   DimensionModel,
+									   ring->
+									   Coords,
+									   ring->
+									   Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -15496,11 +15680,10 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					/* Linestrings */
 					length +=
 					    gaiaGreatCircleTotalLength (a, b,
-									line->DimensionModel,
 									line->
-									Coords,
-									line->
-									Points);
+									DimensionModel,
+									line->Coords,
+									line->Points);
 					line = line->Next;
 				    }
 			      }
@@ -23639,8 +23822,7 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->
-							       DimensionModel,
+							       ring->DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -23724,8 +23906,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->
-							    DimensionModel,
+							    ring->DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -23734,8 +23915,7 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->
-								  DimensionModel,
+								  ring->DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -26475,6 +26655,12 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 			     fnct_MakeCircularSector, 0, 0);
     sqlite3_create_function (db, "MakeCircularSector", 7, SQLITE_ANY, 0,
 			     fnct_MakeCircularSector, 0, 0);
+    sqlite3_create_function (db, "MakeCircularStripe", 6, SQLITE_ANY, 0,
+			     fnct_MakeCircularStripe, 0, 0);
+    sqlite3_create_function (db, "MakeCircularStripe", 7, SQLITE_ANY, 0,
+			     fnct_MakeCircularStripe, 0, 0);
+    sqlite3_create_function (db, "MakeCircularStripe", 8, SQLITE_ANY, 0,
+			     fnct_MakeCircularStripe, 0, 0);
     sqlite3_create_function (db, "MakeEllipticSector", 6, SQLITE_ANY, 0,
 			     fnct_MakeEllipticSector, 0, 0);
     sqlite3_create_function (db, "MakeEllipticSector", 7, SQLITE_ANY, 0,

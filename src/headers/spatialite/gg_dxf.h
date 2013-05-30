@@ -771,7 +771,7 @@ extern "C"
  \return 0 on failure, any other value on success
 
  \sa gaiaDxfWriteHeader, gaiaDxfWriteEndSection, gaiaDxfWritePoint,
- gaiaDxfWriteText, gaiaDxfWriteLine, gaiaDxfWritePolygon, gaiaDxfWriteGeometry 
+ gaiaDxfWriteText, gaiaDxfWriteLine, gaiaDxfWriteRing, gaiaDxfWriteGeometry 
  */
     GAIAGEO_DECLARE int gaiaDxfWriteEntities (gaiaDxfWriterPtr dxf);
 
@@ -868,7 +868,7 @@ extern "C"
  \return 0 on failure, any other value on success
 
  \sa gaiaDxfWriteEntities, gaiaDxfWriteEndSection, gaiaDxfWritePoint, 
- gaiaDxfWriteText, gaiaDxfWriteLine, gaiaDxfWritePolygon
+ gaiaDxfWriteText, gaiaDxfWriteLine, gaiaDxfWriteRing
  */
     GAIAGEO_DECLARE int
 	gaiaDxfWriteGeometry (gaiaDxfWriterPtr dxf, const char *layer_name,
