@@ -522,6 +522,17 @@
 				<td>will return a POLYGON approximating the Elliptic Sector defined by <b>cx, cy</b> and <b>x_axis, y_axis</b>; the arc's extremities will be defined by <b>start, stop</b> angles expressed in degrees.<br>
                                 The optional argument <b>step</b> if specified defines how many points will be interpolated on the ellipse; a point will be set every <b>step</b> degrees.<br>
                                 The implicit default setting corresponds to a point every <u>10</u> degrees.</td></tr>
+                        <tr><td><b>MakeCircularStripe</b></td>
+				<td>MakeCircularStripe( cx <i>Double precision</i> , cy <i>Double precision</i> ,
+				radius_1 <i>Double precision</i> , radius_2 <i>Double precision</i> , 
+                                start <i>Double precision</i> , stop <i>Double precision</i> [ , SRID <i>Integer</i> [ , 
+                                step <i>Double precision</i> ] ] ) : <i>Geometry</i></td>
+				<td></td>
+				<td align="center" bgcolor="#d0f0d0">base</td>
+				<td>will return a POLYGON approximating the Circular Stripe delimited by two arcs sharing the same Centre [<b>cx</b>, <b>cy</b>]
+                                but having different radii [<b>radius_1</b>, <b>radius_2</b>]; the arc's extremities will be defined by <b>start, stop</b> angles expressed in degrees.<br>
+                                The optional argument <b>step</b> if specified defines how many points will be interpolated on the circumference; a point will be set every <b>step</b> degrees.<br>
+                                The implicit default setting corresponds to a point every <u>10</u> degrees.</td></tr>
 			<tr><td><b>SquareGrid</b></td>
 				<td>SquareGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i><hr>
                                     ST_SquareGrid( geom <i>ArealGeometry</i> , size <i>Double precision</i> [ , edges_only <i>Boolean</i> , [ origing <i>PointGeometry</i> ] ] ) : <i>Geometry</i></td>

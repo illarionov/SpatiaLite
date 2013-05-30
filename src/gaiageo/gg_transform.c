@@ -174,16 +174,16 @@ gaiaMakeEllipticArc (double cx,
 /* normalizing Start/Stop angles */
     while (start >= 360.0)
 	start -= 360.0;
-    while (start <= -360.0)
+    while (start <= -720.0)
 	start += 360;
     while (stop >= 360.0)
 	stop -= 360.0;
-    while (stop <= -360.0)
+    while (stop <= -720.0)
 	stop += 360;
     if (start < 0.0)
-	start = 360.0 - start;
+	start = 360.0 + start;
     if (stop < 0.0)
-	stop = 360.0 - stop;
+	stop = 360.0 + stop;
     if (start > stop)
 	stop += 360.0;
 
