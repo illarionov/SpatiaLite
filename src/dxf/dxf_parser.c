@@ -2016,6 +2016,96 @@ find_dxf_block (gaiaDxfParserPtr dxf, const char *layer_name,
 }
 
 static void
+save_current_circle (gaiaDxfParserPtr dxf)
+{
+/* saving the current Circle */
+    int iv;
+    double x;
+    double y;
+    gaiaGeomCollPtr geom = NULL;
+    gaiaLinestringPtr circle;
+    gaiaDxfPolylinePtr ln;
+    if (dxf->curr_layer_name == NULL)
+	return;
+    geom =
+	gaiaMakeCircle (dxf->curr_circle.cx, dxf->curr_circle.cy,
+			dxf->curr_circle.radius, 2.5);
+    if (geom == NULL)
+	goto stop;
+    circle = geom->FirstLinestring;
+    if (circle == NULL)
+	goto stop;
+    ln = alloc_dxf_polyline (0, circle->Points);
+    for (iv = 0; iv < circle->Points; iv++)
+      {
+	  /* setting vertices into the polyline */
+	  gaiaGetPoint (circle->Coords, iv, &x, &y);
+	  *(ln->x + iv) = x;
+	  *(ln->y + iv) = y;
+	  *(ln->z + iv) = dxf->curr_circle.cz;
+      }
+    if (dxf->is_block)
+	insert_dxf_block_polyline (dxf, ln);
+    else
+      {
+	  force_missing_layer (dxf);
+	  insert_dxf_polyline (dxf, dxf->curr_layer_name, ln);
+      }
+  stop:
+    /* resetting curr_layer */
+    if (dxf->curr_layer_name != NULL)
+	free (dxf->curr_layer_name);
+    dxf->curr_layer_name = NULL;
+    if (geom != NULL)
+	gaiaFreeGeomColl (geom);
+}
+
+static void
+save_current_arc (gaiaDxfParserPtr dxf)
+{
+/* saving the current Arc */
+    int iv;
+    double x;
+    double y;
+    gaiaGeomCollPtr geom;
+    gaiaLinestringPtr arc;
+    gaiaDxfPolylinePtr ln;
+    if (dxf->curr_layer_name == NULL)
+	return;
+    geom =
+	gaiaMakeArc (dxf->curr_arc.cx, dxf->curr_arc.cy, dxf->curr_arc.radius,
+		     dxf->curr_arc.start, dxf->curr_arc.stop, 2.5);
+    if (geom == NULL)
+	goto stop;
+    arc = geom->FirstLinestring;
+    if (arc == NULL)
+	goto stop;
+    ln = alloc_dxf_polyline (0, arc->Points);
+    for (iv = 0; iv < arc->Points; iv++)
+      {
+	  /* setting vertices into the polyline */
+	  gaiaGetPoint (arc->Coords, iv, &x, &y);
+	  *(ln->x + iv) = x;
+	  *(ln->y + iv) = y;
+	  *(ln->z + iv) = dxf->curr_arc.cz;
+      }
+    if (dxf->is_block)
+	insert_dxf_block_polyline (dxf, ln);
+    else
+      {
+	  force_missing_layer (dxf);
+	  insert_dxf_polyline (dxf, dxf->curr_layer_name, ln);
+      }
+  stop:
+    /* resetting curr_layer */
+    if (dxf->curr_layer_name != NULL)
+	free (dxf->curr_layer_name);
+    dxf->curr_layer_name = NULL;
+    if (geom != NULL)
+	gaiaFreeGeomColl (geom);
+}
+
+static void
 reset_dxf_entity (gaiaDxfParserPtr dxf)
 {
 /* resetting the current DXF entity */
@@ -2228,6 +2318,38 @@ reset_dxf_entity (gaiaDxfParserPtr dxf)
 	  /* saving the current Polyline */
 	  save_current_polyline (dxf);
 	  dxf->is_lwpolyline = 0;
+      }
+    if (dxf->is_circle)
+      {
+	  /* saving the current Circle */
+	  save_current_circle (dxf);
+	  /* resetting curr_circle */
+	  dxf->curr_circle.cx = 0.0;
+	  dxf->curr_circle.cy = 0.0;
+	  dxf->curr_circle.cz = 0.0;
+	  dxf->curr_circle.radius = 0.0;
+	  dxf->is_circle = 0;
+	  /* resetting curr_layer */
+	  if (dxf->curr_layer_name != NULL)
+	      free (dxf->curr_layer_name);
+	  dxf->curr_layer_name = NULL;
+      }
+    if (dxf->is_arc)
+      {
+	  /* saving the current Arc */
+	  save_current_arc (dxf);
+	  /* resetting curr_arc */
+	  dxf->curr_arc.cx = 0.0;
+	  dxf->curr_arc.cy = 0.0;
+	  dxf->curr_arc.cz = 0.0;
+	  dxf->curr_arc.radius = 0.0;
+	  dxf->curr_arc.start = 0.0;
+	  dxf->curr_arc.stop = 0.0;
+	  dxf->is_arc = 0;
+	  /* resetting curr_layer */
+	  if (dxf->curr_layer_name != NULL)
+	      free (dxf->curr_layer_name);
+	  dxf->curr_layer_name = NULL;
       }
     if (dxf->extra_key != NULL)
 	free (dxf->extra_key);
@@ -2708,6 +2830,36 @@ parse_dxf_line (gaiaDxfParserPtr dxf, const char *line)
 		return 1;
 	    }
       }
+    if (strcmp (line, "CIRCLE") == 0)
+      {
+	  /* start CIRCLE tag */
+	  reset_dxf_polyline (dxf);
+	  if (dxf->entities && dxf->op_code == 0)
+	    {
+		dxf->is_circle = 1;
+		return 1;
+	    }
+	  if (dxf->is_block && dxf->op_code == 0)
+	    {
+		dxf->is_circle = 1;
+		return 1;
+	    }
+      }
+    if (strcmp (line, "ARC") == 0)
+      {
+	  /* start ARC tag */
+	  reset_dxf_polyline (dxf);
+	  if (dxf->entities && dxf->op_code == 0)
+	    {
+		dxf->is_arc = 1;
+		return 1;
+	    }
+	  if (dxf->is_block && dxf->op_code == 0)
+	    {
+		dxf->is_arc = 1;
+		return 1;
+	    }
+      }
     if (strcmp (line, "VERTEX") == 0)
       {
 	  /* start VERTEX tag */
@@ -2786,6 +2938,56 @@ parse_dxf_line (gaiaDxfParserPtr dxf, const char *line)
 		break;
 	    case 31:
 		dxf->curr_end_point.z = atof (line);
+		break;
+	    };
+      }
+    if (dxf->is_circle)
+      {
+	  /* parsing Circle attributes */
+	  switch (dxf->op_code)
+	    {
+	    case 8:
+		set_dxf_layer_name (dxf, line);
+		break;
+	    case 10:
+		dxf->curr_circle.cx = atof (line);
+		break;
+	    case 20:
+		dxf->curr_circle.cy = atof (line);
+		break;
+	    case 30:
+		dxf->curr_circle.cz = atof (line);
+		break;
+	    case 40:
+		dxf->curr_circle.radius = atof (line);
+		break;
+	    };
+      }
+    if (dxf->is_arc)
+      {
+	  /* parsing Arc attributes */
+	  switch (dxf->op_code)
+	    {
+	    case 8:
+		set_dxf_layer_name (dxf, line);
+		break;
+	    case 10:
+		dxf->curr_arc.cx = atof (line);
+		break;
+	    case 20:
+		dxf->curr_arc.cy = atof (line);
+		break;
+	    case 30:
+		dxf->curr_arc.cz = atof (line);
+		break;
+	    case 40:
+		dxf->curr_arc.radius = atof (line);
+		break;
+	    case 50:
+		dxf->curr_arc.start = atof (line);
+		break;
+	    case 51:
+		dxf->curr_arc.stop = atof (line);
 		break;
 	    };
       }
@@ -3028,6 +3230,8 @@ gaiaCreateDxfParser (int srid,
     dxf->is_polyline = 0;
     dxf->is_lwpolyline = 0;
     dxf->is_line = 0;
+    dxf->is_circle = 0;
+    dxf->is_arc = 0;
     dxf->is_vertex = 0;
     dxf->is_hatch = 0;
     dxf->is_hatch_boundary = 0;
@@ -3074,6 +3278,16 @@ gaiaCreateDxfParser (int srid,
     dxf->curr_end_point.x = 0.0;
     dxf->curr_end_point.y = 0.0;
     dxf->curr_end_point.z = 0.0;
+    dxf->curr_circle.cx = 0.0;
+    dxf->curr_circle.cy = 0.0;
+    dxf->curr_circle.cz = 0.0;
+    dxf->curr_circle.radius = 0.0;
+    dxf->curr_arc.cx = 0.0;
+    dxf->curr_arc.cy = 0.0;
+    dxf->curr_arc.cz = 0.0;
+    dxf->curr_arc.radius = 0.0;
+    dxf->curr_arc.start = 0.0;
+    dxf->curr_arc.stop = 0.0;
     dxf->is_closed_polyline = 0;
     dxf->extra_key = NULL;
     dxf->extra_value = NULL;
@@ -3239,6 +3453,11 @@ gaiaParseDxfFile (gaiaDxfParserPtr dxf, const char *path)
 		*p = '\0';
 		if (!parse_dxf_line (dxf, line))
 		    goto stop;
+		if (dxf->eof)
+		  {
+		      /* EOF marker found - quitting */
+		      break;
+		  }
 		p = line;
 		continue;
 	    }

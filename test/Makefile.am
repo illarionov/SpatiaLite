@@ -167,7 +167,8 @@ EXTRA_DIST = asprintf4win.h \
 	getcapabilities-1.1.0.wfs \
 	describefeaturetype.wfs	\
 	22.dxf f06.dxf l02.dxf p05.dxf \
-	archaic.dxf linked.dxf hatch.dxf
+	archaic.dxf linked.dxf hatch.dxf \
+	symbol.dxf
 
 SUBDIRS = sql_stmt_geosadvanced_tests sql_stmt_geos_tests \
 	sql_stmt_geostrunk_tests sql_stmt_libxml2_tests \

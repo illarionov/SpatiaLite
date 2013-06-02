@@ -1725,7 +1725,7 @@ do_insert (struct wfs_layer_schema *schema, char **err_msg)
 			    geom->DeclaredType = GAIA_MULTIPOINT;
 			}
 		      if (type == GAIA_LINESTRING
-			  && schema->geometry_type == GAIA_LINESTRING)
+			  && schema->geometry_type == GAIA_MULTILINESTRING)
 			{
 			    /* promoting to MultiLinestring */
 			    geom->DeclaredType = GAIA_MULTILINESTRING;
@@ -3376,8 +3376,7 @@ parse_keyword (xmlNodePtr node, struct wfs_catalog *catalog)
 				  add_wfs_keyword_to_layer (lyr,
 							    (const char
 							     *)
-							    (child_node->
-							     content));
+							    (child_node->content));
 			      }
 			}
 		  }
@@ -3498,8 +3497,8 @@ parse_wfs_layer (xmlNodePtr node, struct wfs_catalog *catalog)
 				  add_wfs_srid_to_layer (lyr, srid,
 							 (const char
 							  *)
-							 (cur_node->children->
-							  content));
+							 (cur_node->
+							  children->content));
 			      }
 			}
 		      if (strcmp ((const char *) (cur_node->name), "Keywords")
@@ -3531,8 +3530,7 @@ parse_wfs_get_100 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 									(const
 									 char
 									 *)
-									(text->
-									 content));
+									(text->content));
 				  else
 				      set_wfs_catalog_base_describe_url
 					  (catalog,
@@ -3651,8 +3649,7 @@ parse_wfs_get_110 (xmlNodePtr node, struct wfs_catalog *catalog, int mode)
 									(const
 									 char
 									 *)
-									(text->
-									 content));
+									(text->content));
 				  else
 				      set_wfs_catalog_base_describe_url
 					  (catalog,
@@ -4265,22 +4262,26 @@ get_wfs_schema_column_info (gaiaWFScolumnPtr handle, const char **name,
 #else /* LIBXML2 isn't enabled */
 
 SPATIALITE_DECLARE int
-load_from_wfs (sqlite3 * sqlite, char *path_or_url, char *layer_name,
-	       int swap_axes, char *table, char *pk_column_name,
+load_from_wfs (sqlite3 * sqlite, const char *path_or_url,
+	       const char *alt_describe_uri, const char *layer_name,
+	       int swap_axes, const char *table, const char *pk_column_name,
 	       int spatial_index, int *rows, char **err_msg,
 	       void (*progress_callback) (int, void *), void *callback_ptr)
 {
 /* LIBXML2 isn't enabled: always returning an error */
-    return load_from_wfs_paged (sqlite, path_or_url, layer_name, swap_axes,
-				table, pk_column_name, spatial_index, -1, rows,
-				err_msg, progress_callback, callback_ptr);
+    return load_from_wfs_paged (sqlite, path_or_url, alt_describe_uri,
+				layer_name, swap_axes, table, pk_column_name,
+				spatial_index, -1, rows, err_msg,
+				progress_callback, callback_ptr);
 }
 
 SPATIALITE_DECLARE int
-load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, char *layer_name,
-		     int swap_axes, char *table, char *pk_column_name,
-		     int spatial_index, int page_size, int *rows,
-		     char **err_msg, void (*progress_callback) (int, void *),
+load_from_wfs_paged (sqlite3 * sqlite, const char *path_or_url,
+		     const char *alt_describe_uri, const char *layer_name,
+		     int swap_axes, const char *table,
+		     const char *pk_column_name, int spatial_index,
+		     int page_size, int *rows, char **err_msg,
+		     void (*progress_callback) (int, void *),
 		     void *callback_ptr)
 {
 /* LIBXML2 isn't enabled: always returning an error */
@@ -4290,10 +4291,10 @@ load_from_wfs_paged (sqlite3 * sqlite, char *path_or_url, char *layer_name,
 
 /* silencing stupid compiler warnings */
     if (sqlite == NULL || path_or_url == NULL || layer_name == NULL
-	|| swap_axes == 0 || table == NULL || pk_column_name == NULL
-	|| spatial_index == 0 || page_size == 0 || rows == NULL
-	|| progress_callback == NULL || progress_callback == NULL
-	|| callback_ptr == NULL)
+	|| alt_describe_uri == NULL || swap_axes == 0 || table == NULL
+	|| pk_column_name == NULL || spatial_index == 0 || page_size == 0
+	|| rows == NULL || progress_callback == NULL
+	|| progress_callback == NULL || callback_ptr == NULL)
 	path_or_url = NULL;
 
     if (err_msg == NULL)

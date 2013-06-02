@@ -1441,6 +1441,32 @@ check_block_text_table (sqlite3 * handle, const char *name, int srid, int is3D)
     return 0;
 }
 
+static int
+has_viewgeom_rdonly (sqlite3 * handle)
+{
+/* testing if "views_geometry_columns" has a "read_only" column */
+    int has_rdonly = 0;
+    int ret;
+    int i;
+    char **results;
+    int n_rows;
+    int n_columns;
+    char *sql = "PRAGMA table_info(views_geometry_columns)";
+    ret = sqlite3_get_table (handle, sql, &results, &n_rows, &n_columns, NULL);
+    if (ret != SQLITE_OK)
+	return 0;
+    if (n_rows > 0)
+      {
+	  for (i = 1; i <= n_rows; i++)
+	    {
+		if (strcasecmp ("read_only", results[(i * n_columns) + 1]) == 0)
+		    has_rdonly = 1;
+	    }
+      }
+    sqlite3_free_table (results);
+    return has_rdonly;
+}
+
 DXF_PRIVATE int
 create_instext_table (sqlite3 * handle, const char *name,
 		      const char *block, int is3d, sqlite3_stmt ** xstmt)
@@ -1534,11 +1560,18 @@ create_instext_table (sqlite3 * handle, const char *name,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
-    sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
-			   "view_name, view_geometry, view_rowid, f_table_name, "
-			   "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
-			   "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
-			   "geometry", "rowid", block, "geometry");
+    if (has_viewgeom_rdonly (handle))
+	sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			       "view_name, view_geometry, view_rowid, f_table_name, "
+			       "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
+			       "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
+			       "geometry", "rowid", block, "geometry");
+    else
+	sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			       "view_name, view_geometry, view_rowid, f_table_name, "
+			       "f_geometry_column) VALUES (Lower(%Q), Lower(%Q), "
+			       "Lower(%Q), Lower(%Q), Lower(%Q))", view,
+			       "geometry", "rowid", block, "geometry");
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -1649,11 +1682,18 @@ create_inspoint_table (sqlite3 * handle, const char *name,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
-    sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
-			   "view_name, view_geometry, view_rowid, f_table_name, "
-			   "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
-			   "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
-			   "geometry", "rowid", block, "geometry");
+    if (has_viewgeom_rdonly (handle))
+	sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			       "view_name, view_geometry, view_rowid, f_table_name, "
+			       "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
+			       "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
+			       "geometry", "rowid", block, "geometry");
+    else
+	sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			       "view_name, view_geometry, view_rowid, f_table_name, "
+			       "f_geometry_column) VALUES (Lower(%Q), Lower(%Q), "
+			       "Lower(%Q), Lower(%Q), Lower(%Q))", view,
+			       "geometry", "rowid", block, "geometry");
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -1764,11 +1804,18 @@ create_insline_table (sqlite3 * handle, const char *name,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
-    sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
-			   "view_name, view_geometry, view_rowid, f_table_name, "
-			   "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
-			   "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
-			   "geometry", "rowid", block, "geometry");
+    if (has_viewgeom_rdonly (handle))
+	sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			       "view_name, view_geometry, view_rowid, f_table_name, "
+			       "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
+			       "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
+			       "geometry", "rowid", block, "geometry");
+    else
+	sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			       "view_name, view_geometry, view_rowid, f_table_name, "
+			       "f_geometry_column) VALUES (Lower(%Q), Lower(%Q), "
+			       "Lower(%Q), Lower(%Q), Lower(%Q))", view,
+			       "geometry", "rowid", block, "geometry");
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -1879,11 +1926,18 @@ create_inspolyg_table (sqlite3 * handle, const char *name,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
-    sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
-			   "view_name, view_geometry, view_rowid, f_table_name, "
-			   "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
-			   "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
-			   "geometry", "rowid", block, "geometry");
+    if (has_viewgeom_rdonly (handle))
+	sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			       "view_name, view_geometry, view_rowid, f_table_name, "
+			       "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
+			       "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
+			       "geometry", "rowid", block, "geometry");
+    else
+	sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			       "view_name, view_geometry, view_rowid, f_table_name, "
+			       "f_geometry_column) VALUES (Lower(%Q), Lower(%Q), "
+			       "Lower(%Q), Lower(%Q), Lower(%Q))", view,
+			       "geometry", "rowid", block, "geometry");
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)
@@ -1980,11 +2034,18 @@ create_inshatch_table (sqlite3 * handle, const char *name,
 			sqlite3_errmsg (handle));
 	  return 0;
       }
-    sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
-			   "view_name, view_geometry, view_rowid, f_table_name, "
-			   "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
-			   "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
-			   "geometry", "rowid", block, "geometry");
+    if (has_viewgeom_rdonly (handle))
+	sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			       "view_name, view_geometry, view_rowid, f_table_name, "
+			       "f_geometry_column, read_only) VALUES (Lower(%Q), Lower(%Q), "
+			       "Lower(%Q), Lower(%Q), Lower(%Q), 1)", view,
+			       "geometry", "rowid", block, "geometry");
+    else
+	sql = sqlite3_mprintf ("INSERT INTO views_geometry_columns ("
+			       "view_name, view_geometry, view_rowid, f_table_name, "
+			       "f_geometry_column) VALUES (Lower(%Q), Lower(%Q), "
+			       "Lower(%Q), Lower(%Q), Lower(%Q))", view,
+			       "geometry", "rowid", block, "geometry");
     ret = sqlite3_exec (handle, sql, NULL, NULL, NULL);
     sqlite3_free (sql);
     if (ret != SQLITE_OK)

@@ -212,6 +212,52 @@ extern "C"
     typedef gaiaDxfPoint *gaiaDxfPointPtr;
 
 /**
+ wrapper for DXF Circle object
+ */
+    typedef struct gaia_dxf_circle
+    {
+/** Center X coordinate */
+	double cx;
+/** Center Y coordinate */
+	double cy;
+/** Center Z coordinate */
+	double cz;
+/** radius */
+	double radius;
+    } gaiaDxfCircle;
+/**
+ Typedef for DXF Circle object
+
+ \sa gaiaDxfCircle
+ */
+    typedef gaiaDxfCircle *gaiaDxfCirclePtr;
+
+/**
+ wrapper for DXF Arc object
+ */
+    typedef struct gaia_dxf_arc
+    {
+/** Center X coordinate */
+	double cx;
+/** Center Y coordinate */
+	double cy;
+/** Center Z coordinate */
+	double cz;
+/** radius */
+	double radius;
+/** start angle */
+	double start;
+/** stop angle */
+	double stop;
+    } gaiaDxfArc;
+/**
+ Typedef for DXF Arc object
+
+ \sa gaiaDxfArc
+ */
+    typedef gaiaDxfArc *gaiaDxfArcPtr;
+
+/**
  wrapper for DXF Polygon interior hole object
  */
     typedef struct gaia_dxf_hole
@@ -540,6 +586,10 @@ extern "C"
 /** internal parser variable */
 	int is_line;
 /** internal parser variable */
+	int is_circle;
+/** internal parser variable */
+	int is_arc;
+/** internal parser variable */
 	int is_vertex;
 /** internal parser variable */
 	int is_hatch;
@@ -563,6 +613,10 @@ extern "C"
 	gaiaDxfPoint curr_point;
 /** internal parser variable */
 	gaiaDxfPoint curr_end_point;
+/** internal parser variable */
+	gaiaDxfCircle curr_circle;
+/** internal parser variable */
+	gaiaDxfArc curr_arc;
 /** internal parser variable */
 	int is_closed_polyline;
 /** internal parser variable */
