@@ -3462,6 +3462,10 @@ gaiaParseDxfFile (gaiaDxfParserPtr dxf, const char *path)
 		continue;
 	    }
 	  *p++ = c;
+	  /* Even Rouault 2013-06-02 - avoiding a potential buffer overflow */
+	  if (p - line == sizeof (line) - 1)
+	      goto stop;
+	  /* END - Even Rouault 2013-06-02 */
       }
 
     fclose (fl);

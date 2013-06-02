@@ -2106,7 +2106,13 @@ prepare_sql (sqlite3 * sqlite, struct wfs_layer_schema *schema,
     if (pk_column_name == NULL)
 	strcpy (auto_pk_name, "pk_uid");
     else
-	strcpy (auto_pk_name, pk_column_name);
+      {
+	  /* Even Rouault 2013-06-02 - avoiding a potential buffer overflow */
+	  if (strlen (pk_column_name) >= sizeof (auto_pk_name) - 1)
+	      return 0;
+	  /* END - Even Rouault 2013-06-02 */
+	  strcpy (auto_pk_name, pk_column_name);
+      }
     if (!check_pk_name (schema, pk_column_name, auto_pk_name))
       {
 	  /* defining a default Primary Key */
