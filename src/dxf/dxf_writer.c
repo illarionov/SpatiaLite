@@ -235,7 +235,7 @@ gaiaDxfWriteText (gaiaDxfWriterPtr dxf, const char *layer, double x, double y,
 	     dxf->precision, dxf->precision, dxf->precision);
     fprintf (dxf->out, format, 10, x, 20, y, 30, z);
     sprintf (format, "%%3d\r\n%%1.%df\r\n%%3d\r\n%%1.%df\r\n%%3d\r\n%%s\r\n",
-	     dxf->precision);
+	     dxf->precision, dxf->precision);
     fprintf (dxf->out, format, 40, text_height, 50, angle, 1, label);
     dxf->count++;
     return 1;

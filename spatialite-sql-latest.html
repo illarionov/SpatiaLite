@@ -940,7 +940,9 @@ a Geometry will be returned representing the MBR for the corresponding GARS area
 				<td colspan="3">Will export a whole DXF file.<ul>
                                         <li>The output file path is controlled by <b>out_dir</b> and <b>filename</b>.</li>
 					<li><b>sql_query</b> is a complete SQL Statement returning the dataset to be exported.</li>
-					<li><b>layer_col_name</b>, <b>geom_col_name</b>, <b>label_col_name</b>, <b>text_height_col_name</b> and <b>text_rotation_col_name</b> must specify the corresponding <u>column names</u> within the resultset returned by <b>sql_query</b> (<i>label_col_name</i>, <i>text_height_col_name</i> and <i>text_rotation_col_name</i> could be eventually <b>NULL</b>).</li>
+					<li><b>layer_col_name</b>, <b>geom_col_name</b>, <b>label_col_name</b>, <b>text_height_col_name</b> 
+					and <b>text_rotation_col_name</b> must specify the corresponding <u>column names</u> within the resultset
+					returned by <b>sql_query</b> (<i>label_col_name</i>, <i>text_height_col_name</i> and <i>text_rotation_col_name</i> could be eventually <b>NULL</b>).</li>
 					<li><b>geom_filter</b> acts as a <u>spatial filter</u> selecting which entities have to be exported (could be <b>NULL</b>).</li>
 					<li>the optional argument <b>precision</b> specificies how many <u>decimal digits</u> are required for coordinate values: if not specified the default is <b>3</b>.</li>
 					</ul>
