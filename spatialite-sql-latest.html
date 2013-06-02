@@ -932,7 +932,21 @@ a Geometry will be returned representing the MBR for the corresponding GARS area
 				<td>GeomFromFGF( fgfGeometry <i>Binary</i> [ , SRID <i>Integer</i>] ) : <i>Geometry</i></td>
 				<td></td>
 				<td align="center" bgcolor="#d0f0d0">base</td>
-				<td>construct a geometric object given its FGF binary Representation</td></tr>	
+				<td>construct a geometric object given its FGF binary Representation</td></tr>
+			<tr><td><b>ExportDXF</b></td>
+				<td>ExportDXF( out_dir <i>String</i> , filename <i>String</i> , sql_query <i>String</i> , layer_col_name <i>String</i> , 
+                                geom_col_name <i>String</i> , label_col_name <i>String</i> , text_height_col_name <i>String</i> , 
+                                text_rotation_col_name <i>String</i> , geom_filter <i>Geometry</i> [ , precision <i>Integer</i> ] ) : <i>Integer</i></td>
+				<td colspan="3">Will export a whole DXF file.<ul>
+                                        <li>The output file path is controlled by <b>out_dir</b> and <b>filename</b>.</li>
+					<li><b>sql_query</b> is a complete SQL Statement returning the dataset to be exported.</li>
+					<li><b>layer_col_name</b>, <b>geom_col_name</b>, <b>label_col_name</b>, <b>text_height_col_name</b> and <b>text_rotation_col_name</b> must specify the corresponding <u>column names</u> within the resultset returned by <b>sql_query</b> (<i>label_col_name</i>, <i>text_height_col_name</i> and <i>text_rotation_col_name</i> could be eventually <b>NULL</b>).</li>
+					<li><b>geom_filter</b> acts as a <u>spatial filter</u> selecting which entities have to be exported (could be <b>NULL</b>).</li>
+					<li>the optional argument <b>precision</b> specificies how many <u>decimal digits</u> are required for coordinate values: if not specified the default is <b>3</b>.</li>
+					</ul>
+					Will return <b>0</b> (i.e. <b>FALSE</b>) on failure, any other value (i.e. <b>TRUE</b>) on success.<hr>
+                                        <u>Please note well</u>: this SQL function open the doors to many potential security issues, and thus is always <i>disabled by default</i>.<br>
+                                        Explicitly setting the environmente variable <b>SPATIALITE_SECURITY=relaxed</b> is absolutely required in order to effectively enable this function.</td></tr>	
 			<tr><td colspan="5" align="center" bgcolor="#f0f0c0">
 				<h3><a name="p4">SQL functions on type Geometry</a></h3></td></tr>
 			<tr><th bgcolor="#d0d0d0">Function</th>

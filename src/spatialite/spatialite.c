@@ -15605,10 +15605,11 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 				    {
 					/* Linestrings */
 					l = gaiaGeodesicTotalLength (a, b, rf,
+								     line->DimensionModel,
 								     line->
-								     DimensionModel,
-								     line->Coords,
-								     line->Points);
+								     Coords,
+								     line->
+								     Points);
 					if (l < 0.0)
 					  {
 					      length = -1.0;
@@ -15631,12 +15632,9 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					      l = gaiaGeodesicTotalLength (a,
 									   b,
 									   rf,
-									   ring->
-									   DimensionModel,
-									   ring->
-									   Coords,
-									   ring->
-									   Points);
+									   ring->DimensionModel,
+									   ring->Coords,
+									   ring->Points);
 					      if (l < 0.0)
 						{
 						    length = -1.0;
@@ -15680,10 +15678,11 @@ length_common (sqlite3_context * context, int argc, sqlite3_value ** argv,
 					/* Linestrings */
 					length +=
 					    gaiaGreatCircleTotalLength (a, b,
+									line->DimensionModel,
 									line->
-									DimensionModel,
-									line->Coords,
-									line->Points);
+									Coords,
+									line->
+									Points);
 					line = line->Next;
 				    }
 			      }
@@ -23623,11 +23622,12 @@ fnct_ExportDXF (sqlite3_context * context, int argc, sqlite3_value ** argv)
 {
 /* SQL function:
 / ExportDXF(TEXT out_dir, TEXT filename, TEXT sql_query, TEXT layer_col_name,
-/           TEXT geom_col_name, TEXT label_col_name, BLOB geom_filter)
+/           TEXT geom_col_name, TEXT label_col_name, TEXT text_height_col_name,
+/           TEXT text_rotation_col_name, BLOB geom_filter)
 /     or
 / ExportDXF(TEXT out_dir, TEXT filename, TEXT sql_query, TEXT layer_col_name,
-/           TEXT geom_col_name, TEXT label_col_name, BLOB geom_filter,
-/           INT precision)
+/           TEXT geom_col_name, TEXT label_col_name, TEXT text_height_col_name,
+/           TEXT text_rotation_col_name, BLOB geom_filter, INT precision)
 /
 / returns:
 / 1 on success
@@ -23643,6 +23643,8 @@ fnct_ExportDXF (sqlite3_context * context, int argc, sqlite3_value ** argv)
     const char *layer_col_name = NULL;
     const char *geom_col_name = NULL;
     const char *label_col_name = NULL;
+    const char *text_height_col_name = NULL;
+    const char *text_rotation_col_name = NULL;
     gaiaGeomCollPtr geom = NULL;
     int precision = 3;
     int ret = 1;
@@ -23660,16 +23662,20 @@ fnct_ExportDXF (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	geom_col_name = (const char *) sqlite3_value_text (argv[4]);
     if (sqlite3_value_type (argv[5]) == SQLITE_TEXT)
 	label_col_name = (const char *) sqlite3_value_text (argv[5]);
-    if (sqlite3_value_type (argv[6]) == SQLITE_BLOB)
+    if (sqlite3_value_type (argv[6]) == SQLITE_TEXT)
+	text_height_col_name = (const char *) sqlite3_value_text (argv[6]);
+    if (sqlite3_value_type (argv[7]) == SQLITE_TEXT)
+	text_rotation_col_name = (const char *) sqlite3_value_text (argv[7]);
+    if (sqlite3_value_type (argv[8]) == SQLITE_BLOB)
       {
-	  p_blob = (unsigned char *) sqlite3_value_blob (argv[6]);
-	  n_bytes = sqlite3_value_bytes (argv[6]);
+	  p_blob = (unsigned char *) sqlite3_value_blob (argv[8]);
+	  n_bytes = sqlite3_value_bytes (argv[8]);
 	  geom = gaiaFromSpatiaLiteBlobWkb (p_blob, n_bytes);
       }
-    if (argc == 8)
+    if (argc == 10)
       {
-	  if (sqlite3_value_type (argv[7]) == SQLITE_INTEGER)
-	      precision = sqlite3_value_int (argv[7]);
+	  if (sqlite3_value_type (argv[9]) == SQLITE_INTEGER)
+	      precision = sqlite3_value_int (argv[9]);
       }
     if (dir_path == NULL || filename == NULL || sql_query == NULL
 	|| layer_col_name == NULL || geom_col_name == NULL)
@@ -23693,7 +23699,9 @@ fnct_ExportDXF (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  gaiaDxfWriter dxf;
 	  gaiaDxfWriterInit (&dxf, out, precision, GAIA_DXF_V12);
 	  ret = gaiaExportDxf (&dxf, db_handle, sql_query, layer_col_name,
-			       geom_col_name, label_col_name, geom);
+			       geom_col_name, label_col_name,
+			       text_height_col_name, text_rotation_col_name,
+			       geom);
 	  if (ret > 0)
 	      ret = 1;
 	  fclose (out);
@@ -23822,7 +23830,8 @@ fnct_GeodesicLength (sqlite3_context * context, int argc, sqlite3_value ** argv)
 				  /* interior Rings */
 				  ring = polyg->Interiors + ib;
 				  l = gaiaGeodesicTotalLength (a, b, rf,
-							       ring->DimensionModel,
+							       ring->
+							       DimensionModel,
 							       ring->Coords,
 							       ring->Points);
 				  if (l < 0.0)
@@ -23906,7 +23915,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 			    ring = polyg->Exterior;
 			    length +=
 				gaiaGreatCircleTotalLength (a, b,
-							    ring->DimensionModel,
+							    ring->
+							    DimensionModel,
 							    ring->Coords,
 							    ring->Points);
 			    for (ib = 0; ib < polyg->NumInteriors; ib++)
@@ -23915,7 +23925,8 @@ fnct_GreatCircleLength (sqlite3_context * context, int argc,
 				  ring = polyg->Interiors + ib;
 				  length +=
 				      gaiaGreatCircleTotalLength (a, b,
-								  ring->DimensionModel,
+								  ring->
+								  DimensionModel,
 								  ring->Coords,
 								  ring->Points);
 			      }
@@ -26831,9 +26842,9 @@ register_spatialite_sql_functions (void *p_db, void *p_cache)
 				   fnct_BlobFromFile, 0, 0);
 	  sqlite3_create_function (db, "BlobToFile", 2, SQLITE_ANY, 0,
 				   fnct_BlobToFile, 0, 0);
-	  sqlite3_create_function (db, "ExportDXF", 7, SQLITE_ANY, 0,
+	  sqlite3_create_function (db, "ExportDXF", 9, SQLITE_ANY, 0,
 				   fnct_ExportDXF, 0, 0);
-	  sqlite3_create_function (db, "ExportDXF", 8, SQLITE_ANY, 0,
+	  sqlite3_create_function (db, "ExportDXF", 10, SQLITE_ANY, 0,
 				   fnct_ExportDXF, 0, 0);
 
 #ifdef ENABLE_LIBXML2		/* including LIBXML2 */

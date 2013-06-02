@@ -867,6 +867,7 @@ extern "C"
  \param y Y coordinate value
  \param z Z coordinate value
  \param label text string containing the label value
+ \param text_height height of the text in map units
  \param angle text rotation angle
 
  \return 0 on failure, any other value on success
@@ -877,7 +878,7 @@ extern "C"
     GAIAGEO_DECLARE int gaiaDxfWriteText (gaiaDxfWriterPtr dxf,
 					  const char *layer_name, double x,
 					  double y, double z, const char *label,
-					  double angle);
+					  double text_height, double angle);
 
 /**
  Writing a DXF Polyline (opened) Entity 
@@ -912,12 +913,14 @@ extern "C"
 			  gaiaRingPtr ring);
 
 /**
- Writing a DXF Polyline (closed) Entity 
+ Writing a DXF generic Entity
 
  \param dxf pointer to a properly initialized gaiaDxfWriter object
  \param layer_name name of the corresponding layer
  \param line pointer to the internal Ring to be exported into the DXF
  \param label text string containing the label value (could be NULL)
+ \param text_height only for Text Labels: ingnored in any other case.
+ \param text_rotation only for Text Labels: ingnored in any other case.
 
  \return 0 on failure, any other value on success
 
@@ -926,7 +929,8 @@ extern "C"
  */
     GAIAGEO_DECLARE int
 	gaiaDxfWriteGeometry (gaiaDxfWriterPtr dxf, const char *layer_name,
-			      const char *label, gaiaGeomCollPtr geometry);
+			      const char *label, double text_height,
+			      double text_rotation, gaiaGeomCollPtr geometry);
 
 /**
  Exporting a complex DXF file 
@@ -939,6 +943,10 @@ extern "C"
  \param geom_col_name name of the SQL resultset column containing Geometries
  \param label_col_name name of the SQL resultset column containing Label values
  (could be NULL)
+ \param text_height_col_name name of the SQL resultset column containing Text Height values
+ (could be NULL)
+ \param text_rotation_col_name name of the SQL resultset column containing Text Rotation values
+ (could be NULL)
  \param geom_filter an optional arbitrary Geometry to be used as a Spatial Filter
  (could be NULL) 
 
@@ -950,6 +958,8 @@ extern "C"
 	gaiaExportDxf (gaiaDxfWriterPtr dxf, sqlite3 * db_handle,
 		       const char *sql, const char *layer_col_name,
 		       const char *geom_col_name, const char *label_col_name,
+		       const char *text_height_col_name,
+		       const char *text_rotation_col_name,
 		       gaiaGeomCollPtr geom_filter);
 
 #ifdef __cplusplus

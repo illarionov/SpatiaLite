@@ -219,7 +219,7 @@ gaiaDxfWritePoint (gaiaDxfWriterPtr dxf, const char *layer, double x, double y,
 
 GAIAGEO_DECLARE int
 gaiaDxfWriteText (gaiaDxfWriterPtr dxf, const char *layer, double x, double y,
-		  double z, const char *label, double angle)
+		  double z, const char *label, double text_height, double angle)
 {
 /* printing a DXF TEXT */
     char format[128];
@@ -234,8 +234,9 @@ gaiaDxfWriteText (gaiaDxfWriterPtr dxf, const char *layer, double x, double y,
 	     "%%3d\r\n%%1.%df\r\n%%3d\r\n%%1.%df\r\n%%3d\r\n%%1.%df\r\n",
 	     dxf->precision, dxf->precision, dxf->precision);
     fprintf (dxf->out, format, 10, x, 20, y, 30, z);
-    sprintf (format, "%%3d\r\n%%1.%df\r\n%%3d\r\n%%s\r\n", dxf->precision);
-    fprintf (dxf->out, format, 40, angle, 1, label);
+    sprintf (format, "%%3d\r\n%%1.%df\r\n%%3d\r\n%%1.%df\r\n%%3d\r\n%%s\r\n",
+	     dxf->precision);
+    fprintf (dxf->out, format, 40, text_height, 50, angle, 1, label);
     dxf->count++;
     return 1;
 }
@@ -341,7 +342,8 @@ gaiaDxfWriteRing (gaiaDxfWriterPtr dxf, const char *layer, gaiaRingPtr ring)
 
 GAIAGEO_DECLARE int
 gaiaDxfWriteGeometry (gaiaDxfWriterPtr dxf, const char *layer,
-		      const char *label, gaiaGeomCollPtr geom)
+		      const char *label, double text_height,
+		      double text_rotation, gaiaGeomCollPtr geom)
 {
 /* exporting a whole Geometry into the DXF */
     gaiaPointPtr pt;
@@ -361,7 +363,8 @@ gaiaDxfWriteGeometry (gaiaDxfWriterPtr dxf, const char *layer,
 	  if (label == NULL)
 	      gaiaDxfWritePoint (dxf, layer, pt->X, pt->Y, pt->Z);
 	  else
-	      gaiaDxfWriteText (dxf, layer, pt->X, pt->Y, pt->Z, label, 0.0);
+	      gaiaDxfWriteText (dxf, layer, pt->X, pt->Y, pt->Z, label,
+				text_height, text_rotation);
 	  pt = pt->Next;
       }
     ln = geom->FirstLinestring;
@@ -490,7 +493,8 @@ GAIAGEO_DECLARE int
 gaiaExportDxf (gaiaDxfWriterPtr dxf, sqlite3 * db_handle,
 	       const char *sql, const char *layer_col_name,
 	       const char *geom_col_name, const char *label_col_name,
-	       gaiaGeomCollPtr geom_filter)
+	       const char *text_height_col_name,
+	       const char *text_rotation_col_name, gaiaGeomCollPtr geom_filter)
 {
 /* exporting a complex DXF by executing an arbitrary SQL query */
     sqlite3_stmt *stmt = NULL;
@@ -500,6 +504,8 @@ gaiaExportDxf (gaiaDxfWriterPtr dxf, sqlite3 * db_handle,
     int layer_col = -1;
     int geom_col = -1;
     int label_col = -1;
+    int text_height_col = -1;
+    int text_rotation_col = -1;
     int i;
     unsigned char *p_blob;
     const unsigned char *blob;
@@ -582,6 +588,20 @@ gaiaExportDxf (gaiaDxfWriterPtr dxf, sqlite3 * db_handle,
 				       sqlite3_column_name (stmt, i)) == 0)
 				      label_col = i;
 			      }
+			    if (text_height_col_name != NULL)
+			      {
+				  if (strcasecmp
+				      (text_height_col_name,
+				       sqlite3_column_name (stmt, i)) == 0)
+				      text_height_col = i;
+			      }
+			    if (text_rotation_col_name != NULL)
+			      {
+				  if (strcasecmp
+				      (text_rotation_col_name,
+				       sqlite3_column_name (stmt, i)) == 0)
+				      text_rotation_col = i;
+			      }
 			}
 		      if (layer_col < 0)
 			{
@@ -626,6 +646,9 @@ gaiaExportDxf (gaiaDxfWriterPtr dxf, sqlite3 * db_handle,
     while (1)
       {
 	  /* scrolling the result set rows */
+	  int ival;
+	  double height = 10.0;
+	  double rotation = 0.0;
 	  ret = sqlite3_step (stmt);
 	  if (ret == SQLITE_DONE)
 	      break;		/* end of result set */
@@ -635,12 +658,39 @@ gaiaExportDxf (gaiaDxfWriterPtr dxf, sqlite3 * db_handle,
 		if (label_col >= 0)
 		    label =
 			(const char *) sqlite3_column_text (stmt, label_col);
+		if (text_height_col >= 0)
+		  {
+		      if (sqlite3_column_type (stmt, text_height_col) ==
+			  SQLITE_INTEGER)
+			{
+			    ival = sqlite3_column_int (stmt, text_height_col);
+			    height = ival;
+			}
+		      if (sqlite3_column_type (stmt, text_height_col) ==
+			  SQLITE_FLOAT)
+			  height =
+			      sqlite3_column_double (stmt, text_height_col);
+		  }
+		if (text_rotation_col >= 0)
+		  {
+		      if (sqlite3_column_type (stmt, text_rotation_col) ==
+			  SQLITE_INTEGER)
+			{
+			    ival = sqlite3_column_int (stmt, text_rotation_col);
+			    rotation = ival;
+			}
+		      if (sqlite3_column_type (stmt, text_height_col) ==
+			  SQLITE_FLOAT)
+			  rotation =
+			      sqlite3_column_double (stmt, text_rotation_col);
+		  }
 		blob = sqlite3_column_blob (stmt, geom_col);
 		len = sqlite3_column_bytes (stmt, geom_col);
 		geom = gaiaFromSpatiaLiteBlobWkb (blob, len);
 		if (geom)
 		  {
-		      gaiaDxfWriteGeometry (dxf, layer, label, geom);
+		      gaiaDxfWriteGeometry (dxf, layer, label, height, rotation,
+					    geom);
 		      gaiaFreeGeomColl (geom);
 		  }
 	    }
