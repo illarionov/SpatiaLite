@@ -12,6 +12,7 @@ check_PROGRAMS = check_endian \
 		check_fdo2 \
 		check_fdo3 \
                 check_fdo_bufovflw \
+		check_md5 \
 		check_dbf_load \
 		check_shp_load \
 		check_shp_load_3d \

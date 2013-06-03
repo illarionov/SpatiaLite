@@ -298,6 +298,68 @@ extern "C"
 					   sqlite3_int64 sqllog_pk, int success,
 					   const char *errMsg);
 
+/**
+ Creates a persistent MD5 checksum object
+
+ \return the handle of an MD5 checksum object, or NULL on failure
+
+ \sa gaiaFreeMD5Checksum, gaiaUpdateMD5Checksum, gaiaFinalizeMD5Checksum
+
+ \note you must properly destroy the MD5 object 
+ when it isn't any longer used.
+ */
+    GAIAAUX_DECLARE void *gaiaCreateMD5Checksum (void);
+
+/**
+ Destroys an MD5 checksum object
+
+ \param md5 the handle of the MD5 checksum object (returned by
+ a previous call to gaiaCreateMD5Checksum).
+
+ \sa gaiaCreateMD5Checksum
+ */
+    GAIAAUX_DECLARE void gaiaFreeMD5Checksum (void *md5);
+
+/**
+ Updates an MD5 checksum object
+
+ \param md5 the handle of the MD5 checksum object (returned by
+ a previous call to gaiaCreateMD5Checksum).
+ \param blob an arbitrary sequence of binary data
+ \param blob_size the length (in bytes) of the binary data
+
+ \sa gaiaCreateMD5Checksum, gaiaFreeMD5Checksum, gaiaFinalizeMD5Checksum
+
+ \note you can repeatedly invoke gaiaUpdateMD5Checksum more than a single
+ time and always using the same MD5 object. 
+ In this case the final MD5 checksum returned by gaiaGetMD5Checsum will be 
+ the total checksum for any data processed by the MD5 object since its
+ initialization.
+ */
+    GAIAAUX_DECLARE void gaiaUpdateMD5Checksum (void *md5,
+						const unsigned char *blob,
+						int blob_len);
+
+/**
+ Return an MD5 checksum value
+
+ \param md5 the handle of the MD5 checksum object (returned by
+ a previous call to gaiaCreateMD5Checksum).
+
+ \return an hexadecimal text string representing the MD checksum:
+ NULL on failure
+
+ \sa gaiaCreateMD5Checksum, gaiaUpdateMD5Checksum, gaiaFreeMD5Checksum
+
+ \note this function will return the MD5 checksum into a dynamically allocated 
+ buffer created by malloc(). 
+ You are required to explicitly free() any string returned by this function.
+
+ \note gaiaFinalizeMD5Checksum will implicitly reset the MD5 object to its
+ initial state.
+ */
+    GAIAAUX_DECLARE char *gaiaFinalizeMD5Checksum (void *md5);
+
 #ifdef __cplusplus
 }
 #endif

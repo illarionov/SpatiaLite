@@ -54,21 +54,21 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_geom_aux$(EXEEXT) check_geometry_cols$(EXEEXT) \
 	check_create$(EXEEXT) check_bufovflw$(EXEEXT) \
 	check_fdo1$(EXEEXT) check_fdo2$(EXEEXT) check_fdo3$(EXEEXT) \
-	check_fdo_bufovflw$(EXEEXT) check_dbf_load$(EXEEXT) \
-	check_shp_load$(EXEEXT) check_shp_load_3d$(EXEEXT) \
-	shape_cp1252$(EXEEXT) shape_primitives$(EXEEXT) \
-	shape_utf8_1$(EXEEXT) shape_utf8_1ex$(EXEEXT) \
-	shape_utf8_2$(EXEEXT) shape_3d$(EXEEXT) \
-	check_xls_load$(EXEEXT) check_math_funcs$(EXEEXT) \
-	check_gaia_util$(EXEEXT) check_gaia_utf8$(EXEEXT) \
-	check_extension$(EXEEXT) check_recover_geom$(EXEEXT) \
-	check_sql_stmt$(EXEEXT) check_virtualtable1$(EXEEXT) \
-	check_virtualtable2$(EXEEXT) check_virtualtable3$(EXEEXT) \
-	check_virtualtable4$(EXEEXT) check_virtualtable5$(EXEEXT) \
-	check_virtualtable6$(EXEEXT) check_virtual_ovflw$(EXEEXT) \
-	check_mbrcache$(EXEEXT) check_spatialindex$(EXEEXT) \
-	check_exif$(EXEEXT) check_exif2$(EXEEXT) \
-	check_relations_fncts$(EXEEXT) \
+	check_fdo_bufovflw$(EXEEXT) check_md5$(EXEEXT) \
+	check_dbf_load$(EXEEXT) check_shp_load$(EXEEXT) \
+	check_shp_load_3d$(EXEEXT) shape_cp1252$(EXEEXT) \
+	shape_primitives$(EXEEXT) shape_utf8_1$(EXEEXT) \
+	shape_utf8_1ex$(EXEEXT) shape_utf8_2$(EXEEXT) \
+	shape_3d$(EXEEXT) check_xls_load$(EXEEXT) \
+	check_math_funcs$(EXEEXT) check_gaia_util$(EXEEXT) \
+	check_gaia_utf8$(EXEEXT) check_extension$(EXEEXT) \
+	check_recover_geom$(EXEEXT) check_sql_stmt$(EXEEXT) \
+	check_virtualtable1$(EXEEXT) check_virtualtable2$(EXEEXT) \
+	check_virtualtable3$(EXEEXT) check_virtualtable4$(EXEEXT) \
+	check_virtualtable5$(EXEEXT) check_virtualtable6$(EXEEXT) \
+	check_virtual_ovflw$(EXEEXT) check_mbrcache$(EXEEXT) \
+	check_spatialindex$(EXEEXT) check_exif$(EXEEXT) \
+	check_exif2$(EXEEXT) check_relations_fncts$(EXEEXT) \
 	check_extra_relations_fncts$(EXEEXT) \
 	check_geoscvt_fncts$(EXEEXT) check_libxml2$(EXEEXT) \
 	check_styling$(EXEEXT) check_virtualxpath$(EXEEXT) \
@@ -302,6 +302,9 @@ check_math_funcs_LDADD = $(LDADD)
 check_mbrcache_SOURCES = check_mbrcache.c
 check_mbrcache_OBJECTS = check_mbrcache.$(OBJEXT)
 check_mbrcache_LDADD = $(LDADD)
+check_md5_SOURCES = check_md5.c
+check_md5_OBJECTS = check_md5.$(OBJEXT)
+check_md5_LDADD = $(LDADD)
 check_point_to_tile_SOURCES = check_point_to_tile.c
 check_point_to_tile_OBJECTS = check_point_to_tile.$(OBJEXT)
 check_point_to_tile_LDADD = $(LDADD)
@@ -455,7 +458,8 @@ SOURCES = check_add_rt_metadata_triggers.c \
 	check_gpkgGetImageFormat_png.c check_gpkgGetImageFormat_tiff.c \
 	check_gpkgGetImageFormat_webp.c check_init.c check_init2.c \
 	check_libxml2.c check_math_funcs.c check_mbrcache.c \
-	check_point_to_tile.c check_point_to_tile_bad_tablename.c \
+	check_md5.c check_point_to_tile.c \
+	check_point_to_tile_bad_tablename.c \
 	check_point_to_tile_broken_geopackage.c \
 	check_point_to_tile_broken_geopackage2.c \
 	check_point_to_tile_broken_srid.c \
@@ -493,7 +497,8 @@ DIST_SOURCES = check_add_rt_metadata_triggers.c \
 	check_gpkgGetImageFormat_png.c check_gpkgGetImageFormat_tiff.c \
 	check_gpkgGetImageFormat_webp.c check_init.c check_init2.c \
 	check_libxml2.c check_math_funcs.c check_mbrcache.c \
-	check_point_to_tile.c check_point_to_tile_bad_tablename.c \
+	check_md5.c check_point_to_tile.c \
+	check_point_to_tile_bad_tablename.c \
 	check_point_to_tile_broken_geopackage.c \
 	check_point_to_tile_broken_geopackage2.c \
 	check_point_to_tile_broken_srid.c \
@@ -951,6 +956,9 @@ check_math_funcs$(EXEEXT): $(check_math_funcs_OBJECTS) $(check_math_funcs_DEPEND
 check_mbrcache$(EXEEXT): $(check_mbrcache_OBJECTS) $(check_mbrcache_DEPENDENCIES) $(EXTRA_check_mbrcache_DEPENDENCIES) 
 	@rm -f check_mbrcache$(EXEEXT)
 	$(LINK) $(check_mbrcache_OBJECTS) $(check_mbrcache_LDADD) $(LIBS)
+check_md5$(EXEEXT): $(check_md5_OBJECTS) $(check_md5_DEPENDENCIES) $(EXTRA_check_md5_DEPENDENCIES) 
+	@rm -f check_md5$(EXEEXT)
+	$(LINK) $(check_md5_OBJECTS) $(check_md5_LDADD) $(LIBS)
 check_point_to_tile$(EXEEXT): $(check_point_to_tile_OBJECTS) $(check_point_to_tile_DEPENDENCIES) $(EXTRA_check_point_to_tile_DEPENDENCIES) 
 	@rm -f check_point_to_tile$(EXEEXT)
 	$(LINK) $(check_point_to_tile_OBJECTS) $(check_point_to_tile_LDADD) $(LIBS)
@@ -1102,6 +1110,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_libxml2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_math_funcs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_mbrcache.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_md5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_bad_tablename.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_point_to_tile_broken_geopackage.Po@am__quote@

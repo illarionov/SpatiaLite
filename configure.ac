@@ -115,6 +115,7 @@ AC_CONFIG_FILES([Makefile \
 		src/spatialite/Makefile \
 		src/shapefiles/Makefile \
 		src/dxf/Makefile \
+		src/md5/Makefile \
 		src/srsinit/Makefile \
 		src/srsinit/epsg_update/Makefile \
 		src/virtualtext/Makefile \
