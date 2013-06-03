@@ -21479,12 +21479,12 @@ fnct_Project (sqlite3_context * context, int argc, sqlite3_value ** argv)
 	  return;
       }
     srid = geom->Srid;
+    gaiaFreeGeomColl (geom);
     if (!getEllipsoidParams (sqlite, srid, &a, &b, &rf))
       {
 	  sqlite3_result_null (context);
 	  return;
       }
-    gaiaFreeGeomColl (geom);
     if (distance == 0.0)
       {
 	  /* returning the Start Point */
