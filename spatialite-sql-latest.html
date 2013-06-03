@@ -139,10 +139,10 @@
 				<td>CreateUUID( void ) : <i>Text</i></td>
 				<td colspan="3">returns a Version 4 (random) UUID (<a href="http://en.wikipedia.org/wiki/Universally_unique_identifier">Universally unique identifier</a>).</td></tr>
 			<tr><td><b>MD5Checksum</b></td>
-				<td>MD5Checksum( BLOB ) : <i>Text</i></td>
-				<td colspan="3">returns the <a href="http://en.wikipedia.org/wiki/MD5">MD5 checksum</a> corresponding to the passed BLOB.<br>Will return <b>NULL</b> for non-BLOB input.</td></tr>
+				<td>MD5Checksum( BLOB | TEXT ) : <i>Text</i></td>
+				<td colspan="3">returns the <a href="http://en.wikipedia.org/wiki/MD5">MD5 checksum</a> corresponding to the input value.<br>Will return <b>NULL</b> for non-BLOB or non-TEXT input.</td></tr>
 			<tr><td><b>MD5TotalChecksum</b></td>
-				<td>MD5TotalChecksum( BLOB ) : <i>Text</i></td>
+				<td>MD5TotalChecksum( BLOB | TEXT ) : <i>Text</i></td>
 				<td colspan="3">returns a cumulative MD5 checksum.<br><b><u>aggregate function</u></b></td></tr>
 			<tr><td colspan="5" align="center" bgcolor="#f0e0c0">
 				<h3><a name="math">SQL math functions</a></h3></td></tr>

@@ -22,7 +22,9 @@ LIBOBJ = src\gaiaaux\gg_sqlaux.obj src\gaiaaux\gg_utf8.obj \
 	src\spatialite\virtualXL.obj src\spatialite\extra_tables.obj \
 	src\spatialite\virtualxpath.obj src\spatialite\spatialite_init.obj \
 	src\wfs\wfs_in.obj src\srsinit\srs_init.obj \
-	src\shapefiles\validator.obj \
+	src\dxf\dxf_parser.obj src\dxf\dxf_loader.obj src\dxf\dxf_writer.obj \
+	src\dxf\dxf_load_distinct.obj src\dxf\dxf_load_mixed.obj \
+	src\shapefiles\validator.obj src\md5\md5.obj src\md5\gaia_md5.obj \
 	src\srsinit\epsg_inlined_00.obj src\srsinit\epsg_inlined_01.obj \
 	src\srsinit\epsg_inlined_02.obj src\srsinit\epsg_inlined_03.obj \
 	src\srsinit\epsg_inlined_04.obj src\srsinit\epsg_inlined_05.obj \
@@ -88,6 +90,8 @@ clean:
 	del src\versioninfo\*.obj
 	del src\virtualtext\*.obj
 	del src\wfs\*.obj
+	del src\dxf\*.obj
+	del src\md5\*.obj
 	del *.pdb
 
 install: all
