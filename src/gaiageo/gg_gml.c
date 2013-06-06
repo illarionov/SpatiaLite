@@ -1217,6 +1217,57 @@ gml_parse_posList (gmlCoordPtr coord, gaiaDynamicLinePtr dyn, int has_z)
 }
 
 static int
+gml_parse_pos_chain (gmlNodePtr * xnode, gaiaDynamicLinePtr dyn, int *x_has_z)
+{
+/* parsing a chain of gml:pos elements */
+    int has_z;
+    int error = 0;
+    int dim_3d = 0;
+    double x;
+    double y;
+    double z;
+    int count = 0;
+    gmlNodePtr last_node = *xnode;
+    gmlNodePtr node = *xnode;
+    while (node != NULL)
+      {
+	  if (strcmp (node->Tag, "gml:pos") == 0
+	      || strcmp (node->Tag, "pos") == 0)
+	      ;
+	  else
+	      break;
+	  if (!gml_parse_point_v3 (node->Coordinates, &x, &y, &z, &has_z))
+	      return 0;
+	  if (has_z)
+	    {
+		gml_add_point_to_lineZ (dyn, x, y, z);
+		dim_3d = 1;
+	    }
+	  else
+	      gml_add_point_to_line (dyn, x, y);
+	  node = node->Next;
+	  if (strcmp (node->Tag, "gml:pos") == 0
+	      || strcmp (node->Tag, "pos") == 0)
+	      last_node = node;
+	  else
+	    {
+		error = 1;
+		break;
+	    }
+	  count++;
+	  node = node->Next;
+      }
+    if (count >= 2 && error == 0)
+      {
+	  /* valid <gml:pos> sequence found */
+	  *x_has_z = dim_3d;
+	  *xnode = last_node;
+	  return 1;
+      }
+    return 0;
+}
+
+static int
 gml_count_dyn_points (gaiaDynamicLinePtr dyn)
 {
 /* count how many vertices are into sone linestring/ring */
@@ -1296,7 +1347,23 @@ gml_parse_linestring (struct gml_data *p_data, gaiaGeomCollPtr geom,
 	  *next = node->Next;
 	  goto ok;
       }
-    goto error;
+    if (strcmp (node->Tag, "gml:pos") == 0 || strcmp (node->Tag, "pos") == 0)
+      {
+	  /* parsing a GML v.3.x <gml:LineString><gml:pos ...> */
+	  gmlNodePtr node2 = node;
+	  if (!gml_parse_pos_chain (&node2, dyn, &has_z))
+	      goto error;
+	  node = node2->Next;
+	  if (node == NULL)
+	      goto error;
+	  if (strcmp (node->Tag, "gml:LineString") == 0
+	      || strcmp (node->Tag, "LineString") == 0)
+	      ;
+	  else
+	      goto error;
+	  *next = node->Next;
+	  goto ok;
+      }
 
   ok:
 /* ok, GML nodes match as expected */
@@ -1384,18 +1451,32 @@ gml_parse_curve (struct gml_data *p_data, gaiaGeomCollPtr geom, gmlNodePtr node,
 	      goto error;
 	  if (strcmp (node->Tag, "gml:posList") == 0
 	      || strcmp (node->Tag, "posList") == 0)
-	      ;
-	  else
-	      goto error;
-	  has_z = gml_get_srsDimension (node);
-	  if (!gml_parse_posList (node->Coordinates, dyn, has_z))
-	      goto error;
-	  node = node->Next;
-	  if (node == NULL)
-	      goto error;
-	  if (strcmp (node->Tag, "gml:posList") == 0
-	      || strcmp (node->Tag, "posList") == 0)
-	      ;
+	    {
+		/* parsing a GML v.3.x <gml:LineStringSegment><gml:posList ...> */
+		has_z = gml_get_srsDimension (node);
+		if (!gml_parse_posList (node->Coordinates, dyn, has_z))
+		    goto error;
+		node = node->Next;
+		if (node == NULL)
+		    goto error;
+		if (strcmp (node->Tag, "gml:posList") == 0
+		    || strcmp (node->Tag, "posList") == 0)
+		    ;
+		else
+		    goto error;
+
+	    }
+	  else if (strcmp (node->Tag, "gml:pos") == 0
+		   || strcmp (node->Tag, "pos") == 0)
+	    {
+		/* parsing a GML v.3.x <gml:LineStringSegment><gml:pos ...> */
+		gmlNodePtr node2 = node;
+		if (!gml_parse_pos_chain (&node2, dyn, &has_z))
+		    goto error;
+		node = node2;
+		if (node == NULL)
+		    goto error;
+	    }
 	  else
 	      goto error;
 	  node = node->Next;
@@ -1536,6 +1617,17 @@ gml_parse_ring (struct gml_data *p_data, gmlNodePtr node, int *interior,
 		else
 		    goto error;
 	    }
+	  else if (strcmp (node->Tag, "gml:pos") == 0
+		   || strcmp (node->Tag, "pos") == 0)
+	    {
+		/* parsing a GML v.3.x <gml:LinearRing><gml:pos ...> */
+		gmlNodePtr node2 = node;
+		if (!gml_parse_pos_chain (&node2, dyn, has_z))
+		    goto error;
+		node = node2;
+		if (node == NULL)
+		    goto error;
+	    }
 	  else
 	      goto error;
 	  node = node->Next;
@@ -1604,6 +1696,17 @@ gml_parse_ring (struct gml_data *p_data, gmlNodePtr node, int *interior,
 		else
 		    goto error;
 	    }
+	  else if (strcmp (node->Tag, "gml:pos") == 0
+		   || strcmp (node->Tag, "pos") == 0)
+	    {
+		/* parsing a GML v.3.x <gml:LinearRing><gml:pos ...> */
+		gmlNodePtr node2 = node;
+		if (!gml_parse_pos_chain (&node2, dyn, has_z))
+		    goto error;
+		node = node2;
+		if (node == NULL)
+		    goto error;
+	    }
 	  else
 	      goto error;
 	  node = node->Next;
@@ -1643,18 +1746,31 @@ gml_parse_ring (struct gml_data *p_data, gmlNodePtr node, int *interior,
 	      goto error;
 	  if (strcmp (node->Tag, "gml:posList") == 0
 	      || strcmp (node->Tag, "posList") == 0)
-	      ;
-	  else
-	      goto error;
-	  *has_z = gml_get_srsDimension (node);
-	  if (!gml_parse_posList (node->Coordinates, dyn, *has_z))
-	      goto error;
-	  node = node->Next;
-	  if (node == NULL)
-	      goto error;
-	  if (strcmp (node->Tag, "gml:posList") == 0
-	      || strcmp (node->Tag, "posList") == 0)
-	      ;
+	    {
+		/* parsing a GML v.3.x <gml:LinearRing><gml:posList ...> */
+		*has_z = gml_get_srsDimension (node);
+		if (!gml_parse_posList (node->Coordinates, dyn, *has_z))
+		    goto error;
+		node = node->Next;
+		if (node == NULL)
+		    goto error;
+		if (strcmp (node->Tag, "gml:posList") == 0
+		    || strcmp (node->Tag, "posList") == 0)
+		    ;
+		else
+		    goto error;
+	    }
+	  else if (strcmp (node->Tag, "gml:pos") == 0
+		   || strcmp (node->Tag, "pos") == 0)
+	    {
+		/* parsing a GML v.3.x <gml:LinearRing><gml:pos ...> */
+		gmlNodePtr node2 = node;
+		if (!gml_parse_pos_chain (&node2, dyn, has_z))
+		    goto error;
+		node = node2;
+		if (node == NULL)
+		    goto error;
+	    }
 	  else
 	      goto error;
 	  node = node->Next;
@@ -1694,18 +1810,31 @@ gml_parse_ring (struct gml_data *p_data, gmlNodePtr node, int *interior,
 	      goto error;
 	  if (strcmp (node->Tag, "gml:posList") == 0
 	      || strcmp (node->Tag, "posList") == 0)
-	      ;
-	  else
-	      goto error;
-	  *has_z = gml_get_srsDimension (node);
-	  if (!gml_parse_posList (node->Coordinates, dyn, *has_z))
-	      goto error;
-	  node = node->Next;
-	  if (node == NULL)
-	      goto error;
-	  if (strcmp (node->Tag, "gml:posList") == 0
-	      || strcmp (node->Tag, "posList") == 0)
-	      ;
+	    {
+		/* parsing a GML v.3.x <gml:LinearRing><gml:posList ...> */
+		*has_z = gml_get_srsDimension (node);
+		if (!gml_parse_posList (node->Coordinates, dyn, *has_z))
+		    goto error;
+		node = node->Next;
+		if (node == NULL)
+		    goto error;
+		if (strcmp (node->Tag, "gml:posList") == 0
+		    || strcmp (node->Tag, "posList") == 0)
+		    ;
+		else
+		    goto error;
+	    }
+	  else if (strcmp (node->Tag, "gml:pos") == 0
+		   || strcmp (node->Tag, "pos") == 0)
+	    {
+		/* parsing a GML v.3.x <gml:LinearRing><gml:pos ...> */
+		gmlNodePtr node2 = node;
+		if (!gml_parse_pos_chain (&node2, dyn, has_z))
+		    goto error;
+		node = node2;
+		if (node == NULL)
+		    goto error;
+	    }
 	  else
 	      goto error;
 	  node = node->Next;
