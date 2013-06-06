@@ -1311,7 +1311,7 @@ parseDbfField (unsigned char *buf_dbf, void *iconv_obj, gaiaDbfFieldPtr pFld)
 / fixing an issue reported by Filip Arlet <filip.arlet@gmail.com>
 		for (i = strlen ((char *) buf) - 1; i > 1; i--)
 */
-		for (i = strlen ((char *) buf) - 1; i > 0; i--)
+		for (i = strlen ((char *) buf) - 1; i >= 0; i--)
 		  {
 		      /* cleaning up trailing spaces */
 		      if (buf[i] == ' ')
