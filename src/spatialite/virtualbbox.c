@@ -357,23 +357,33 @@ vbbox_read_row (VirtualBBoxCursorPtr cursor)
 		gaiaSetPoint (rng->Coords, 4, minx, miny);
 		if (ok_srid == 'Y')
 		  {
-		      gaiaGeomCollPtr geom2 = NULL;
-		      char *proj_from = NULL;
-		      char *proj_to = NULL;
-		      geom->Srid = srid;
-		      getProjParams (cursor->pVtab->db, srid, &proj_from);
-		      getProjParams (cursor->pVtab->db, 4326, &proj_to);
-		      if (proj_to == NULL || proj_from == NULL)
-			  geom2 = NULL;
+		      if (cursor->pVtab->ForceWGS84)
+			{
+			    /* converting to WGS84 long-lat */
+			    gaiaGeomCollPtr geom2 = NULL;
+			    char *proj_from = NULL;
+			    char *proj_to = NULL;
+			    geom->Srid = srid;
+			    getProjParams (cursor->pVtab->db, srid, &proj_from);
+			    getProjParams (cursor->pVtab->db, 4326, &proj_to);
+			    if (proj_to == NULL || proj_from == NULL)
+				geom2 = NULL;
+			    else
+				geom2 =
+				    gaiaTransform (geom, proj_from, proj_to);
+			    geom2->Srid = 4326;
+			    cursor->pVtab->BBoxGeom = geom2;
+			    gaiaFreeGeomColl (geom);
+			    if (proj_from)
+				free (proj_from);
+			    if (proj_to)
+				free (proj_to);
+			}
 		      else
-			  geom2 = gaiaTransform (geom, proj_from, proj_to);
-		      geom2->Srid = 4326;
-		      cursor->pVtab->BBoxGeom = geom2;
-		      gaiaFreeGeomColl (geom);
-		      if (proj_from)
-			  free (proj_from);
-		      if (proj_to)
-			  free (proj_to);
+			{
+			    geom->Srid = srid;
+			    cursor->pVtab->BBoxGeom = geom;
+			}
 		  }
 		else
 		  {
@@ -578,7 +588,7 @@ vbbox_create (sqlite3 * db, void *pAux, int argc, const char *const *argv,
 	goto illegal;
 /* preparing the COLUMNs for this VIRTUAL TABLE */
     xname = gaiaDoubleQuotedSql (vtable);
-    sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (BBox Polygon", xname);
+    sql = sqlite3_mprintf ("CREATE TABLE \"%s\" (Geometry Polygon", xname);
     free (xname);
     gaiaAppendToOutBuffer (&sql_statement, sql);
     sqlite3_free (sql);
