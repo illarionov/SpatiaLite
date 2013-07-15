@@ -151,7 +151,7 @@ int main (int argc, char *argv[])
     }
 
 /* testing the VirtualBBox table #1 */
-    ret = sqlite3_get_table (db_handle, "SELECT ROWID, pk_uid, name, count, measure, Length(odd), GeometryType(BBox), Srid(BBox) FROM test1", &results, &rows, &columns, &err_msg);
+    ret = sqlite3_get_table (db_handle, "SELECT ROWID, pk_uid, name, count, measure, Length(odd), GeometryType(Geometry), Srid(Geometry) FROM test1", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Error: %s\n", err_msg);
 	sqlite3_free (err_msg);
@@ -185,11 +185,11 @@ int main (int argc, char *argv[])
 	fprintf (stderr, "Unexpected error: header() bad result: %s.\n", results[5]);
 	return  -17;
     }
-    if (strcasecmp(results[6], "GeometryType(BBox)") != 0) {
+    if (strcasecmp(results[6], "GeometryType(Geometry)") != 0) {
 	fprintf (stderr, "Unexpected error: header() bad result: %s.\n", results[6]);
 	return  -18;
     }
-    if (strcasecmp(results[7], "Srid(BBox)") != 0) {
+    if (strcasecmp(results[7], "Srid(Geometry)") != 0) {
 	fprintf (stderr, "Unexpected error: header() bad result: %s.\n", results[7]);
 	return  -19;
     }
@@ -285,7 +285,7 @@ int main (int argc, char *argv[])
 	fprintf (stderr, "Unexpected error: row-3 bad result: %s.\n", results[30]);
 	return  -42;
     }
-    if (strcmp(results[31], "4326") != 0) {
+    if (strcmp(results[31], "3003") != 0) {
 	fprintf (stderr, "Unexpected error: row-3 bad result: %s.\n", results[31]);
 	return  -43;
     }
@@ -375,7 +375,7 @@ int main (int argc, char *argv[])
     }
 
 /* testing the VirtualBBox table #2 */
-    ret = sqlite3_get_table (db_handle, "SELECT DISTINCT GeometryType(BBox), Srid(BBox) FROM test2", &results, &rows, &columns, &err_msg);
+    ret = sqlite3_get_table (db_handle, "SELECT DISTINCT GeometryType(Geometry), Srid(Geometry) FROM test2", &results, &rows, &columns, &err_msg);
     if (ret != SQLITE_OK) {
 	fprintf (stderr, "Error: %s\n", err_msg);
 	sqlite3_free (err_msg);
