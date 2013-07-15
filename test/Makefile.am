@@ -46,6 +46,7 @@ check_PROGRAMS = check_endian \
 		check_libxml2 \
 		check_styling \
 		check_virtualxpath \
+		check_virtualbbox \
 		check_wfsin \
 		check_dxf 
 if ENABLE_GEOPACKAGE

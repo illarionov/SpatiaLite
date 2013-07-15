@@ -52,8 +52,6 @@ Regione Toscana - Settore Sistema Informativo Territoriale ed Ambientale
 
 */
 
-#include "config.h"
-
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>

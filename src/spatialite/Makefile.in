@@ -71,6 +71,7 @@ am_libsplite_la_OBJECTS = libsplite_la-mbrcache.lo \
 	libsplite_la-metatables.lo libsplite_la-statistics.lo \
 	libsplite_la-extra_tables.lo libsplite_la-virtualdbf.lo \
 	libsplite_la-virtualXL.lo libsplite_la-virtualfdo.lo \
+	libsplite_la-virtualbbox.lo \
 	libsplite_la-virtualspatialindex.lo \
 	libsplite_la-virtualnetwork.lo libsplite_la-virtualshape.lo \
 	libsplite_la-virtualxpath.lo
@@ -241,6 +242,7 @@ libsplite_la_SOURCES = mbrcache.c \
 	virtualdbf.c \
 	virtualXL.c \
 	virtualfdo.c \
+	virtualbbox.c \
 	virtualspatialindex.c \
 	virtualnetwork.c \
 	virtualshape.c \
@@ -309,6 +311,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-spatialite_init.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-statistics.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualXL.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualbbox.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualdbf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualfdo.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsplite_la-virtualnetwork.Plo@am__quote@
@@ -399,6 +402,13 @@ libsplite_la-virtualfdo.lo: virtualfdo.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='virtualfdo.c' object='libsplite_la-virtualfdo.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-virtualfdo.lo `test -f 'virtualfdo.c' || echo '$(srcdir)/'`virtualfdo.c
+
+libsplite_la-virtualbbox.lo: virtualbbox.c
+@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -MT libsplite_la-virtualbbox.lo -MD -MP -MF $(DEPDIR)/libsplite_la-virtualbbox.Tpo -c -o libsplite_la-virtualbbox.lo `test -f 'virtualbbox.c' || echo '$(srcdir)/'`virtualbbox.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libsplite_la-virtualbbox.Tpo $(DEPDIR)/libsplite_la-virtualbbox.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='virtualbbox.c' object='libsplite_la-virtualbbox.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -c -o libsplite_la-virtualbbox.lo `test -f 'virtualbbox.c' || echo '$(srcdir)/'`virtualbbox.c
 
 libsplite_la-virtualspatialindex.lo: virtualspatialindex.c
 @am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsplite_la_CFLAGS) $(CFLAGS) -MT libsplite_la-virtualspatialindex.lo -MD -MP -MF $(DEPDIR)/libsplite_la-virtualspatialindex.Tpo -c -o libsplite_la-virtualspatialindex.lo `test -f 'virtualspatialindex.c' || echo '$(srcdir)/'`virtualspatialindex.c

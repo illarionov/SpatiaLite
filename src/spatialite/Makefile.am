@@ -13,6 +13,7 @@ libsplite_la_SOURCES = mbrcache.c \
 	virtualdbf.c \
 	virtualXL.c \
 	virtualfdo.c \
+	virtualbbox.c \
 	virtualspatialindex.c \
 	virtualnetwork.c \
 	virtualshape.c \

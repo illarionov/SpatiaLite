@@ -913,7 +913,7 @@ create_raster_coverages (sqlite3 * sqlite)
 	"c.horz_resolution AS horz_resolution, c.vert_resolution AS vert_resolution, "
 	"c.nodata_pixel AS nodata_pixel, c.srid AS srid, "
 	"s.auth_name AS auth_name, s.auth_srid AS auth_srid, "
-	"s.ref_sys_name AS ref_sys_name, s.proj4text AS ref_sys_name\n"
+	"s.ref_sys_name AS ref_sys_name, s.proj4text AS proj4text\n"
 	"FROM raster_coverages AS c\n"
 	"LEFT JOIN spatial_ref_sys AS s ON (c.srid = s.srid)";
     ret = sqlite3_exec (sqlite, sql, NULL, NULL, &err_msg);

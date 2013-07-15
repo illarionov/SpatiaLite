@@ -72,7 +72,8 @@ check_PROGRAMS = check_endian$(EXEEXT) check_version$(EXEEXT) \
 	check_extra_relations_fncts$(EXEEXT) \
 	check_geoscvt_fncts$(EXEEXT) check_libxml2$(EXEEXT) \
 	check_styling$(EXEEXT) check_virtualxpath$(EXEEXT) \
-	check_wfsin$(EXEEXT) check_dxf$(EXEEXT) $(am__EXEEXT_1)
+	check_virtualbbox$(EXEEXT) check_wfsin$(EXEEXT) \
+	check_dxf$(EXEEXT) $(am__EXEEXT_1)
 @ENABLE_GEOPACKAGE_TRUE@am__append_1 = \
 @ENABLE_GEOPACKAGE_TRUE@		check_createBaseTables \
 @ENABLE_GEOPACKAGE_TRUE@		check_add_tile_triggers \
@@ -379,6 +380,9 @@ check_version_LDADD = $(LDADD)
 check_virtual_ovflw_SOURCES = check_virtual_ovflw.c
 check_virtual_ovflw_OBJECTS = check_virtual_ovflw.$(OBJEXT)
 check_virtual_ovflw_LDADD = $(LDADD)
+check_virtualbbox_SOURCES = check_virtualbbox.c
+check_virtualbbox_OBJECTS = check_virtualbbox.$(OBJEXT)
+check_virtualbbox_LDADD = $(LDADD)
 check_virtualtable1_SOURCES = check_virtualtable1.c
 check_virtualtable1_OBJECTS = check_virtualtable1.$(OBJEXT)
 check_virtualtable1_LDADD = $(LDADD)
@@ -470,12 +474,13 @@ SOURCES = check_add_rt_metadata_triggers.c \
 	check_point_to_tile_wrong_arg_type.c check_recover_geom.c \
 	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
 	check_spatialindex.c check_sql_stmt.c check_styling.c \
-	check_version.c check_virtual_ovflw.c check_virtualtable1.c \
-	check_virtualtable2.c check_virtualtable3.c \
-	check_virtualtable4.c check_virtualtable5.c \
-	check_virtualtable6.c check_virtualxpath.c check_wfsin.c \
-	check_xls_load.c shape_3d.c shape_cp1252.c shape_primitives.c \
-	shape_utf8_1.c shape_utf8_1ex.c shape_utf8_2.c
+	check_version.c check_virtual_ovflw.c check_virtualbbox.c \
+	check_virtualtable1.c check_virtualtable2.c \
+	check_virtualtable3.c check_virtualtable4.c \
+	check_virtualtable5.c check_virtualtable6.c \
+	check_virtualxpath.c check_wfsin.c check_xls_load.c shape_3d.c \
+	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	shape_utf8_1ex.c shape_utf8_2.c
 DIST_SOURCES = check_add_rt_metadata_triggers.c \
 	check_add_rt_metadata_triggers_bad_table_name.c \
 	check_add_rt_metadata_triggers_wrong_arg_type.c \
@@ -509,12 +514,13 @@ DIST_SOURCES = check_add_rt_metadata_triggers.c \
 	check_point_to_tile_wrong_arg_type.c check_recover_geom.c \
 	check_relations_fncts.c check_shp_load.c check_shp_load_3d.c \
 	check_spatialindex.c check_sql_stmt.c check_styling.c \
-	check_version.c check_virtual_ovflw.c check_virtualtable1.c \
-	check_virtualtable2.c check_virtualtable3.c \
-	check_virtualtable4.c check_virtualtable5.c \
-	check_virtualtable6.c check_virtualxpath.c check_wfsin.c \
-	check_xls_load.c shape_3d.c shape_cp1252.c shape_primitives.c \
-	shape_utf8_1.c shape_utf8_1ex.c shape_utf8_2.c
+	check_version.c check_virtual_ovflw.c check_virtualbbox.c \
+	check_virtualtable1.c check_virtualtable2.c \
+	check_virtualtable3.c check_virtualtable4.c \
+	check_virtualtable5.c check_virtualtable6.c \
+	check_virtualxpath.c check_wfsin.c check_xls_load.c shape_3d.c \
+	shape_cp1252.c shape_primitives.c shape_utf8_1.c \
+	shape_utf8_1ex.c shape_utf8_2.c
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -1016,6 +1022,9 @@ check_version$(EXEEXT): $(check_version_OBJECTS) $(check_version_DEPENDENCIES) $
 check_virtual_ovflw$(EXEEXT): $(check_virtual_ovflw_OBJECTS) $(check_virtual_ovflw_DEPENDENCIES) $(EXTRA_check_virtual_ovflw_DEPENDENCIES) 
 	@rm -f check_virtual_ovflw$(EXEEXT)
 	$(LINK) $(check_virtual_ovflw_OBJECTS) $(check_virtual_ovflw_LDADD) $(LIBS)
+check_virtualbbox$(EXEEXT): $(check_virtualbbox_OBJECTS) $(check_virtualbbox_DEPENDENCIES) $(EXTRA_check_virtualbbox_DEPENDENCIES) 
+	@rm -f check_virtualbbox$(EXEEXT)
+	$(LINK) $(check_virtualbbox_OBJECTS) $(check_virtualbbox_LDADD) $(LIBS)
 check_virtualtable1$(EXEEXT): $(check_virtualtable1_OBJECTS) $(check_virtualtable1_DEPENDENCIES) $(EXTRA_check_virtualtable1_DEPENDENCIES) 
 	@rm -f check_virtualtable1$(EXEEXT)
 	$(LINK) $(check_virtualtable1_OBJECTS) $(check_virtualtable1_LDADD) $(LIBS)
@@ -1130,6 +1139,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_styling.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtual_ovflw.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualbbox.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_virtualtable3.Po@am__quote@
